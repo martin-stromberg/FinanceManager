@@ -18,6 +18,7 @@ In den Profileinstellungen (`Setup → Profil`) kann die Option *Startseiten-KPI
 
 - Wenn die Option **aktiv** ist:
   - Werden abgerufene KPI-Daten der Startseite nach dem erfolgreichen Laden im `localStorage` des Browsers gespeichert.
+  - Das betrifft vorgegebene Kacheln (Budget, Anzahlen) ebenso wie auf Berichts-Favoriten basierende Kacheln.
   - Beim nächsten Aufruf der Startseite werden die gespeicherten Werte sofort in den Kacheln angezeigt.
   - Im Hintergrund werden die Daten trotzdem neu vom Server abgerufen und die Anzeige nach erfolgreicher Aktualisierung ersetzt.
   - Die zwischengespeicherten Daten sind pro Benutzer und Anwendung durch das Präfix `fm.kpi.*` voneinander getrennt.

@@ -144,6 +144,7 @@
             {
                 _kpis = cached;
                 PruneMonthlyBudgetKpiViewModels();
+                await RestoreFavoriteCacheAsync();
                 StateHasChanged();
             }
         }
@@ -162,10 +163,28 @@
             if (_kpiCache?.Context.Enabled == true)
             {
                 await _kpiCache.SetAsync("home.kpi.list", _kpis);
+                await RestoreFavoriteCacheAsync();
             }
         }
         catch { }
         StateHasChanged();
+    }
+
+    private async Task RestoreFavoriteCacheAsync()
+    {
+        if (_kpiCache?.Context.Enabled != true)
+        {
+            return;
+        }
+
+        foreach (var k in _kpis.Where(k => k.Kind == HomeKpiKind.ReportFavorite))
+        {
+            var cached = await _kpiCache.GetAsync<FavKpiData>($"home.kpi.favorite-{k.Id}");
+            if (cached != null)
+            {
+                _favData[k.Id] = cached;
+            }
+        }
     }
 
     private void OpenAddKpiDialog()
@@ -606,6 +625,11 @@
                               .Where(p => p.YearAgoAmount.HasValue).Sum(p => p.YearAgoAmount!.Value);
             }
             _favData[k.Id] = new FavKpiData(amount, prev, year, series, (int)fav.PostingKind);
+
+            if (_kpiCache?.Context.Enabled == true)
+            {
+                await _kpiCache.SetAsync($"home.kpi.favorite-{k.Id}", _favData[k.Id]);
+            }
         }
         catch { }
         finally
@@ -615,6 +639,6 @@
         }
     }
 
-    private sealed record FavKpiData(decimal Amount, decimal? Prev, decimal? Year, List<SeriesPoint> Series, int Kind);
-    private sealed record SeriesPoint(DateTime Date, decimal Amount);
+    public sealed record FavKpiData(decimal Amount, decimal? Prev, decimal? Year, List<SeriesPoint> Series, int Kind);
+    public sealed record SeriesPoint(DateTime Date, decimal Amount);
 }

@@ -1,0 +1,15 @@
+feat: Berichts-Favoriten-KPIs im LocalStorage cachen
+
+- `HomeKpiGrid.razor` speichert jetzt auch auf Berichts-Favoriten basierende
+  KPI-Kacheln (`home.kpi.favorite-{id}`) im LocalStorage.
+- Beim Start und nach dem Neuladen der KPI-Liste werden vorhandene
+  Favoriten-Daten aus dem Cache in `_favData` wiederhergestellt, sodass
+  die Kacheln sofort angezeigt werden und nicht in "Loading" verweilen.
+- `FavKpiData` und `SeriesPoint` sind jetzt öffentlich, damit sie vom
+  JSON-Cache serialisiert/deserialisiert werden können.
+- Hilfeseite `Docs/help/benutzeroberflaeche/startseite.md` um Berichts-Favoriten
+  ergänzt.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
