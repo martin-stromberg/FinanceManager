@@ -5,7 +5,7 @@
 - ASP.NET Core 8.0+ (für die Web-Anwendung)
 - GitHub-Repository mit Releases (als Update-Quelle)
 - Admin-Berechtigungen zum Verwalten von Updates
-- Lokales NuGet-Paket `msTools.Updater 0.9.0` unter `external/msTools.Updater/msTools.Updater.0.9.0.nupkg`
+- Lokales NuGet-Paket `msTools.Updater 0.10.0-rc.1` unter `external/msTools.Updater/msTools.Updater.0.10.0-rc.1.nupkg`
 - Auf Windows: Windows Service mit entsprechender Dienstkonfiguration
 - Auf Linux: systemd-Service oder Daemon-Mechanismus für Dienst-Restart
 - Auf Linux: Dienstbenutzer muss Berechtigungen zum Starten transienter systemd-Units besitzen (siehe Abschnitt „Dienstbenutzer-Berechtigungen“)
@@ -67,7 +67,7 @@ Diese Konfiguration stellt sicher, dass der Installer-Prozess zuverlässig ausge
 
 Das Update-System ist bereits im Projekt integriert. Es erfordert keine zusätzliche Installation, sondern nur Konfiguration.
 
-Die Updater-Library wird als lokales NuGet-Paket referenziert. `FinanceManager.Web.csproj` verweist über `PackageReference` auf `msTools.Updater` Version `0.9.0`; das Paket liegt als `external/msTools.Updater/msTools.Updater.0.9.0.nupkg` vor. In `NuGet.config` ist der Ordner `external/msTools.Updater` als Paketquelle registriert.
+Die Updater-Library wird als lokales NuGet-Paket referenziert. `FinanceManager.Web.csproj` verweist über `PackageReference` auf `msTools.Updater` Version `0.10.0-rc.1`; das Paket liegt als `external/msTools.Updater/msTools.Updater.0.10.0-rc.1.nupkg` vor. In `NuGet.config` ist der Ordner `external/msTools.Updater` als Paketquelle registriert.
 
 1. **Abhängigkeiten in DI-Container registrieren** (in `Program.cs`):
    ```csharp
@@ -129,7 +129,7 @@ Update-Einstellungen werden in `appsettings.json` konfiguriert und teilweise üb
 
 Die Update-Sektion befindet sich in der Admin-Setup-Seite. Änderungen an den sichtbaren Einstellungen werden über den globalen Ribbon-Button **Speichern** gespeichert. Der frühere Button **Einstellungen speichern** im Update-Register ist entfallen.
 
-Die Checkbox **Vorabversionen berücksichtigen** ist standardmäßig aus. Solange sie deaktiviert ist, bleiben automatische und manuelle Prüfungen auf stabile GitHub-Releases beschränkt. Nach dem Aktivieren und Speichern wird die Einstellung dauerhaft abgelegt und sofort an `msTools.Updater 0.9.0` weitergegeben; die nächste Prüfung kann dann auch GitHub-Prereleases finden.
+Die Checkbox **Vorabversionen berücksichtigen** ist standardmäßig aus. Solange sie deaktiviert ist, bleiben automatische und manuelle Prüfungen auf stabile GitHub-Releases beschränkt. Nach dem Aktivieren und Speichern wird die Einstellung dauerhaft abgelegt und sofort an `msTools.Updater 0.10.0-rc.1` weitergegeben; die nächste Prüfung kann dann auch GitHub-Prereleases finden.
 
 Im Ribbon der Setup-Seite stehen außerdem die Update-Aktionen bereit:
 - **Jetzt prüfen** lädt Manifest und passendes Paket.

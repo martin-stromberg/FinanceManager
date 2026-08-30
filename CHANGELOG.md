@@ -41,7 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- **msTools.Updater auf 0.9.0 aktualisiert:** `FinanceManager.Web`, `FinanceManager.Tests` und `FinanceManager.Tests.Integration` referenzieren jetzt das lokale NuGet-Paket `msTools.Updater 0.9.0`. Die alte `0.8.0-rc.1`-Paketdatei in `external/msTools.Updater/` wurde entfernt.
+- **msTools.Updater auf 0.10.0-rc.1 aktualisiert:** `FinanceManager.Web`, `FinanceManager.Tests` und `FinanceManager.Tests.Integration` referenzieren jetzt das lokale NuGet-Paket `msTools.Updater 0.10.0-rc.1`. Die alte `0.8.0-rc.1`-Paketdatei in `external/msTools.Updater/` wurde entfernt.
 
 - **Schnellbearbeitung im Kontoauszug:** `Strg`+`Pfeil hoch` bzw. `Strg`+`Pfeil runter` navigiert im Schnellbearbeitungsmodus in derselben Feldspalte zur vorherigen bzw. nächsten sichtbaren editierbaren Zeile.
 

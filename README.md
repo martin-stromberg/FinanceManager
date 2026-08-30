@@ -150,7 +150,7 @@ FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUn
 FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
 
-external/msTools.Updater/msTools.Updater.0.9.0.nupkg  # Lokales NuGet-Paket fuer msTools.Updater
+external/msTools.Updater/msTools.Updater.0.10.0-rc.1.nupkg  # Lokales NuGet-Paket fuer msTools.Updater
 external/msTools.Web.Blazor             # Lokales NuGet-Paket fuer wiederverwendbare Blazor-Komponenten
 ```
 
@@ -160,7 +160,7 @@ external/msTools.Web.Blazor             # Lokales NuGet-Paket fuer wiederverwend
 
 Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` eingebunden. Die fruehere lokale Bibliothek `SoftwareSchmiede.AutoUpdate` und ihr Testprojekt sind nicht mehr Teil der Solution.
 
-Die Bibliothek `msTools.Updater` wird als lokal bereitgestelltes NuGet-Paket `msTools.Updater.0.9.0.nupkg` unter `external/msTools.Updater/` referenziert. Die Paketquelle ist in `NuGet.config` als `local-msTools.Updater` registriert. Der Quelltext der verwendeten Version liegt als `msTools.Updater-main.zip` im Repository-Root bereit.
+Die Bibliothek `msTools.Updater` wird als lokal bereitgestelltes NuGet-Paket `msTools.Updater.0.10.0-rc.1.nupkg` unter `external/msTools.Updater/` referenziert. Die Paketquelle ist in `NuGet.config` als `local-msTools.Updater` registriert.
 
 `FinanceManager.Web` bindet das Paket über eine normale `PackageReference` ein. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
 

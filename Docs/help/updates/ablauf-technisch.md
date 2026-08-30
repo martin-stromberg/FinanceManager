@@ -4,7 +4,7 @@
 
 ## Übersicht
 
-Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen herunter und orchestriert die Installation über einen eigenständigen Installer-Prozess. Die Installation wird nicht vom Host-Prozess selbst durchgeführt, sondern über eine transient service unit, die mittels systemd-run gestartet wird. Dadurch kann der Host-Prozess sich selbst beenden, während das Installer-Skript unabhängig weiterläuft. Nach dem Neustart validiert das System, ob die neue Version erfolgreich geladen wurde. Lock-Dateien verhindern parallele Installationen; bei Fehlern werden Locks automatisch bereinigt. Das lokale NuGet-Paket `msTools.Updater 0.9.0` stellt die Runtime-Option `AutoUpdateOptions.AllowPrereleaseUpdates` und die GitHub-Source-Erzeugung mit `includePrereleases` bereit.
+Das Update-System prüft GitHub-Releases regelmäßig, lädt neue Versionen herunter und orchestriert die Installation über einen eigenständigen Installer-Prozess. Die Installation wird nicht vom Host-Prozess selbst durchgeführt, sondern über eine transient service unit, die mittels systemd-run gestartet wird. Dadurch kann der Host-Prozess sich selbst beenden, während das Installer-Skript unabhängig weiterläuft. Nach dem Neustart validiert das System, ob die neue Version erfolgreich geladen wurde. Lock-Dateien verhindern parallele Installationen; bei Fehlern werden Locks automatisch bereinigt. Das lokale NuGet-Paket `msTools.Updater 0.10.0-rc.1` stellt die Runtime-Option `AutoUpdateOptions.AllowPrereleaseUpdates` und die GitHub-Source-Erzeugung mit `includePrereleases` bereit.
 
 ## Ablauf
 

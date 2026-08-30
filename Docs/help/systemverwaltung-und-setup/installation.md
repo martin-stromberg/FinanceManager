@@ -128,8 +128,8 @@ Benutzerprofilen hinterlegen.
 
 Das Self-Update ist im Setup nur fuer Administratoren sichtbar und wird durch
 die externe Bibliothek `msTools.Updater` bereitgestellt. FinanceManager
-referenziert als lokales NuGet-Paket `msTools.Updater 0.9.0` unter
-`external/msTools.Updater/msTools.Updater.0.9.0.nupkg`. Updates koennen aus GitHub-Releases
+referenziert als lokales NuGet-Paket `msTools.Updater 0.10.0-rc.1` unter
+`external/msTools.Updater/msTools.Updater.0.10.0-rc.1.nupkg`. Updates koennen aus GitHub-Releases
 (`Updates:SourceType: Github`, Standardwert) oder aus einem lokalen Verzeichnis
 (`Updates:SourceType: LocalFolder`, `Updates:LocalFolderPath`) geladen werden.
 
