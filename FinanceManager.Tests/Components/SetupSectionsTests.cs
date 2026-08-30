@@ -30,6 +30,7 @@ public sealed class SetupSectionsTests : BunitContext
         // Arrange
         Services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         Services.AddSingleton<IApiClient>(new Mock<IApiClient>().Object);
+        Services.AddSingleton<IKpiLocalStorageCache>(Mock.Of<IKpiLocalStorageCache>());
         Services.AddScoped<LoadingBarService>();
         JSInterop.SetupVoid("financeManager.loadingBar.start").SetVoidResult();
         JSInterop.SetupVoid("financeManager.loadingBar.stop").SetVoidResult();

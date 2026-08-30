@@ -2787,4 +2787,10 @@
   <data name="Users_Title" xml:space="preserve">
     <value>Benutzer</value>
   </data>
+  <data name="SetupProfile_Label_CacheKpis" xml:space="preserve">
+    <value>Startseiten-KPIs zwischenspeichern</value>
+  </data>
+  <data name="SetupProfile_Help_CacheKpis" xml:space="preserve">
+    <value>KPI-Daten der Startseite im Browser zwischenspeichern, um sie schneller zu laden.</value>
+  </data>
 </root>

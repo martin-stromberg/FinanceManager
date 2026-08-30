@@ -1,5 +1,7 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using FinanceManager.Web.Services
 @rendermode InteractiveServer
 @inject IHttpContextAccessor httpContextAccessor
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
@@ -12,6 +14,7 @@
 @using FinanceManager.Shared.Dtos.Securities
 @using Microsoft.Extensions.DependencyInjection
 @inject IServiceProvider ServiceProvider
+@inject IKpiLocalStorageCache KpiCache
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
 <Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
@@ -152,7 +155,25 @@ else
         _vm = ActivatorUtilities.CreateInstance<FinanceManager.Web.ViewModels.Home.HomeViewModel>(ServiceProvider);
         _vm.StateChanged += VmOnStateChanged;
         _vm.UiActionRequested += VmOnUiActionRequested;
-        await Task.CompletedTask;
+
+        await InitializeKpiCacheContextAsync();
+    }
+
+    private async Task InitializeKpiCacheContextAsync()
+    {
+        var enabled = false;
+        try
+        {
+            var profile = await Api.UserSettings_GetProfileAsync();
+            enabled = profile?.CacheKpisInLocalStorage ?? false;
+        }
+        catch
+        {
+            enabled = false;
+        }
+
+        var userId = httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        KpiCache.SetContext(new KpiLocalStorageContext(enabled, userId));
     }
 
     private void VmOnUiActionRequested(object? _, string? action)

@@ -7,8 +7,10 @@
 @inject NavigationManager Nav
 @inject ILogger<MonthlyBudgetKpi> Logger
 @inject TimeProvider TimeProvider
+@inject IServiceProvider Services
 
 @using FinanceManager.Web.ViewModels.Budget
+@using FinanceManager.Web.Services
 @implements IDisposable
 
 @code {
@@ -17,6 +19,9 @@
     [Parameter] public bool EditMode { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public MonthlyBudgetKpiViewModel? ViewModel { get; set; }
+    [Parameter] public string? CacheKey { get; set; }
+
+    private IKpiLocalStorageCache? _kpiCache;
 
     private bool DataLoaded => ViewModel?.DataLoaded ?? false;
     private bool HasLoadError => !string.IsNullOrWhiteSpace(ViewModel?.ErrorMessage);
@@ -130,9 +135,26 @@
 
     private async Task LoadViewModelAsync(MonthlyBudgetKpiViewModel viewModel, CancellationToken ct)
     {
+        _kpiCache ??= Services.GetService<IKpiLocalStorageCache>();
+
         try
         {
+            if (_kpiCache?.Context.Enabled == true && !string.IsNullOrWhiteSpace(CacheKey))
+            {
+                var cached = await _kpiCache.GetAsync<MonthlyBudgetKpiViewModelSnapshot>(CacheKey, ct);
+                if (cached is not null)
+                {
+                    viewModel.LoadFromSnapshot(cached);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+
             await viewModel.LoadAsync(Api, TimeProvider, ct);
+
+            if (_kpiCache?.Context.Enabled == true && !string.IsNullOrWhiteSpace(CacheKey))
+            {
+                await _kpiCache.SetAsync(CacheKey, viewModel.CreateSnapshot(), ct);
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
