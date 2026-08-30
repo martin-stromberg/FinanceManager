@@ -952,6 +952,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     /// </summary>
     public bool ValidateQuickEditRow(Guid id)
     {
+        if (_pendingDeleteIds.Contains(id)) { _entryHints.Remove(id); return true; }
         var item = Items.FirstOrDefault(i => i.Id == id);
         if (item == null || item.IsPlaceholder) return true;
         var errors = ValidateRow(item).ToList();

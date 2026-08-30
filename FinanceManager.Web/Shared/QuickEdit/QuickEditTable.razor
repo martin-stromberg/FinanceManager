@@ -470,19 +470,19 @@ else
                     <td style="vertical-align:middle;display:flex;gap:.25rem;align-items:center;">
                         @if (editable && !item.IsPlaceholder)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => ResetRow(item.Id)">@(localizer != null ? localizer["Ribbon_Reset"].Value : "Reset")</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => ResetRow(item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)">@(localizer != null ? localizer["Ribbon_Reset"].Value : "Reset")</button>
                         }
                         @if (vm.CanDeleteRow(item))
                         {
                             var deleteLabel = localizer != null ? (localizer["QuickEdit_DeleteRow"].ResourceNotFound ? "Delete row" : localizer["QuickEdit_DeleteRow"].Value) : "Delete row";
-                            <button type="button" class="quick-edit-delete-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)">
+                            <button type="button" class="quick-edit-delete-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)">
                                 <svg aria-hidden="true"><use href="/icons/sprite.svg#delete"></use></svg>
                             </button>
                         }
                         @* Show Reset Dup only for items marked as AlreadyBooked (duplicate) *@
                         @if (isMuted)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset duplicate status")" style="pointer-events:auto;" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="@(() => ResetDuplicateStatus(item.Id))" @onpointerdown="@(() => ResetDuplicateStatus(item.Id))">@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset Dup")</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset duplicate status")" style="pointer-events:auto;" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="@(() => ResetDuplicateStatus(item.Id))" @onpointerdown="@(() => ResetDuplicateStatus(item.Id))" @onblur="async (e) => await OnRowBlur(item.Id)">@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset Dup")</button>
                         }
                     </td>
                 </tr>
