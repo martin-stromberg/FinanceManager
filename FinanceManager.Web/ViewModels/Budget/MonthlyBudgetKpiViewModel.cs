@@ -103,7 +103,7 @@ namespace FinanceManager.Web.ViewModels.Budget
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task LoadAsync(FinanceManager.Shared.IApiClient api, TimeProvider? timeProvider = null, CancellationToken ct = default)
         {
-            DataLoaded = false;
+            // Do not reset DataLoaded so cached values stay visible during a background refresh.
             ErrorMessage = null;
             LoadedAtUtc = null;
             LoadedMonth = null;
