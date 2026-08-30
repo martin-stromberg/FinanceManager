@@ -439,7 +439,7 @@ public sealed class StatementDraftCardViewModelTests
         entriesVm.SetEditValue(placeholder.Id, "BookingDescription", string.Empty);
 
         var errors = entriesVm.ValidateRow(placeholder).ToList();
-        Assert.Contains(errors, e => e.Message.Contains("Subject or booking description", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, e => e.Message.Contains("QuickEdit_Validation_SubjectOrDescriptionRequired", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

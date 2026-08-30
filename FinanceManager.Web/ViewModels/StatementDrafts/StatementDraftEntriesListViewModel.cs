@@ -18,6 +18,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private readonly int _take = 50;
     // API client and maps for symbols/names (per-instance)
     private readonly IApiClient _api;
+    private readonly IStringLocalizer<Pages> _localizer;
     private Dictionary<Guid, Guid?> _contactSymbols = new();
     private Dictionary<Guid, string?> _contactNames = new();
     private Dictionary<Guid, Guid?> _savingsPlanSymbols = new();
@@ -44,6 +45,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     {
         _draftId = draftId;
         _api = sp.GetRequiredService<IApiClient>();
+        _localizer = sp.GetRequiredService<IStringLocalizer<Pages>>();
     }
 
     /// <summary>
@@ -449,33 +451,33 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
 
         // BookingDate must be set and have a realistic 4-digit year
         if (!map.TryGetValue("BookingDate", out var bd) || bd is not DateTime bdt || !IsValidEditDate(bdt))
-            yield return ("BookingDate", "Booking date is required");
+            yield return ("BookingDate", _localizer["QuickEdit_Validation_BookingDateRequired"].Value!);
 
         // ValutaDate must be set and have a realistic 4-digit year
         if (!map.TryGetValue("ValutaDate", out var vd) || vd is not DateTime vdt || !IsValidEditDate(vdt))
-            yield return ("ValutaDate", "Valuta date is required");
+            yield return ("ValutaDate", _localizer["QuickEdit_Validation_ValutaDateRequired"].Value!);
 
         // Amount must be a non-zero decimal
         if (!map.TryGetValue("Amount", out var amt) || amt is not decimal dec || dec == 0m)
-            yield return ("Amount", "Amount is required");
+            yield return ("Amount", _localizer["QuickEdit_Validation_AmountRequired"].Value!);
 
         // At least one of subject (purpose) or booking description must be provided
         map.TryGetValue("Subject", out var subj);
         map.TryGetValue("BookingDescription", out var desc);
         if (string.IsNullOrWhiteSpace(subj as string) && string.IsNullOrWhiteSpace(desc as string))
-            yield return ("Subject", "Subject or booking description is required");
+            yield return ("Subject", _localizer["QuickEdit_Validation_SubjectOrDescriptionRequired"].Value!);
 
         // Subject length
         if (subj is string s && s.Length > 1000)
-            yield return ("Subject", "Subject too long");
+            yield return ("Subject", _localizer["QuickEdit_Validation_SubjectTooLong"].Value!);
 
         // BookingDescription length
         if (desc is string bookingDescription && bookingDescription.Length > 1000)
-            yield return ("BookingDescription", "Booking description too long");
+            yield return ("BookingDescription", _localizer["QuickEdit_Validation_BookingDescriptionTooLong"].Value!);
 
         // RecipientName length (optional field)
         if (map.TryGetValue("RecipientName", out var rec) && rec is string r && r.Length > 250)
-            yield return ("RecipientName", "Recipient name too long");
+            yield return ("RecipientName", _localizer["QuickEdit_Validation_RecipientTooLong"].Value!);
     }
 
     protected override async Task LoadPageAsync(bool resetPaging)
