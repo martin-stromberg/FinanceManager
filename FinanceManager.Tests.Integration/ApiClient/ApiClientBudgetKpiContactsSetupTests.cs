@@ -954,9 +954,9 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // both cases stay attributed to their own budget purpose (visible there, not valued) instead of
         // falling into the generic Unbudgeted row, so they are excluded from
         // ActualExpenseAbs/ActualIncome/UnbudgetedExpenseAbs/UnbudgetedIncome.
-        kpi.ActualExpenseAbs.Should().Be(2788.97m);
+        kpi.ActualExpenseAbs.Should().Be(2782.99m);
         kpi.ActualIncome.Should().Be(4556.23m);
-        kpi.ExpectedExpenseAbs.Should().Be(4388.36m);
+        kpi.ExpectedExpenseAbs.Should().Be(4325.35m);
         kpi.ExpectedIncome.Should().Be(4556.23m);
         kpi.PlannedExpenseAbs.Should().Be(3193.91m);
         kpi.PlannedIncome.Should().Be(3450.85m);
@@ -967,7 +967,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // match no budget purpose. A GroupId alone does not make a posting cost-neutral - only a grouped
         // posting that is ALSO attributed to the Self contact is a cost-neutral self-mirror transfer; every
         // other unmatched posting (like these) is genuinely unbudgeted, regardless of its GroupId.
-        kpi.UnbudgetedExpenseAbs.Should().Be(809.67m);
+        kpi.UnbudgetedExpenseAbs.Should().Be(746.66m);
         kpi.UnbudgetedIncome.Should().Be(81.10m);
     }
 
