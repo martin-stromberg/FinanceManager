@@ -12,15 +12,15 @@ Branch: `task/issue-349-c02f99639a7f41fa91dab7e9fee6c9e7-speichern-von-massenaen
 | [x] | 5 | Umsetzungsplanung | `plan.md` |
 | [x] | 5a | Offene Punkte prüfen und ggf. Planung wiederholen | `plan.md` (aktualisiert) |
 | [x] | 5b | Plan gegen Anforderung und Testbedarf prüfen | `plan-check.md` |
-| [ ] | 5c | Planungscommit | – |
-| [ ] | 6 | Implementierung | Codeänderungen |
-| [ ] | 7 | Plan-Review (bedingt) | `review.md` |
-| [ ] | 8 | Code-Review | `review-code.md` |
-| [ ] | 8b | Tests ausführen | `test-results.md` |
-| [ ] | – | Iteration oder Abschluss entscheiden | – |
+| [x] | 5c | Planungscommit | – |
+| [x] | 6 | Implementierung | Codeänderungen |
+| [x] | 7 | Plan-Review (bedingt) | `review.md` |
+| [x] | 8 | Code-Review | `review-code.md` |
+| [x] | 8b | Tests ausführen | `test-results.md` |
+| [x] | – | Iteration oder Abschluss entscheiden | – |
 | [ ] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
-| [ ] | 9 | Dokumentation erstellen | `docs/help/` |
-| [ ] | 9b | README aktualisieren | `README.md` |
-| [ ] | 9c | Release Notes aktualisieren | `docs/RELEASE_NOTES.md` |
+| [x] | 9 | Dokumentation erstellen | `docs/help/` |
+| [x] | 9b | README aktualisieren | `README.md` |
+| [x] | 9c | Release Notes aktualisieren | `docs/RELEASE_NOTES.md` |
 | [ ] | – | Feature-Verzeichnis löschen | – |
 | [ ] | – | Commit durchführen | – |

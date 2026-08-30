@@ -128,7 +128,7 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
     }
 
     [Fact]
-    public async Task QuickEdit_BookingDateChange_ShouldCopyToEmptyValutaDateOnly()
+    public async Task QuickEdit_BookingDateChange_ShouldCopyToEmptyOrMatchedValutaDateOnly()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
@@ -147,17 +147,45 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
 
         await WaitForInputValueAsync(emptyValutaDate, copiedDate);
 
-        var bookingDateWithValuta = page.Locator("input[id^='qe_booking_']").Nth(1);
+        var bookingDateWithMatchedValuta = page.Locator("input[id^='qe_booking_']").Nth(1);
         var existingValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(1);
         var existingValutaValue = await existingValutaDate.InputValueAsync();
         const string changedBookingDate = "2026-09-15";
 
         existingValutaValue.Should().NotBeNullOrWhiteSpace();
 
-        await bookingDateWithValuta.FillAsync(changedBookingDate);
-        await bookingDateWithValuta.PressAsync("Tab");
+        await bookingDateWithMatchedValuta.FillAsync(changedBookingDate);
+        await bookingDateWithMatchedValuta.PressAsync("Tab");
 
-        await WaitForInputValueAsync(existingValutaDate, existingValutaValue);
+        await WaitForInputValueAsync(existingValutaDate, changedBookingDate);
+    }
+
+    [Fact]
+    public async Task QuickEdit_SaveButton_IsEnabledWhenAllRowsComplete()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "save-state");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var saveButton = page.Locator("button#SaveQuickEdit");
+        await saveButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+
+        // No pending changes yet -> save should be disabled
+        (await saveButton.IsDisabledAsync()).Should().BeTrue();
+
+        var bookingDateWithoutValuta = page.Locator("input[id^='qe_booking_']").Nth(0);
+        var emptyValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(0);
+        const string bookingDate = "2026-08-30";
+
+        await bookingDateWithoutValuta.FillAsync(bookingDate);
+        await bookingDateWithoutValuta.PressAsync("Tab");
+
+        await WaitForInputValueAsync(emptyValutaDate, bookingDate);
+
+        // With a valid changed row the save button must become enabled
+        await Assertions.Expect(saveButton).ToBeEnabledAsync(new() { Timeout = 15000 });
     }
 
     [Fact]

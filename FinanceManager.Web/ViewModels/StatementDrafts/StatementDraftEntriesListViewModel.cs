@@ -1,5 +1,6 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using System.Globalization;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -34,6 +35,9 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private readonly HashSet<Guid> _pendingDeleteIds = new();
     private readonly HashSet<Guid> _newEntryIds = new();
     private Guid? _placeholderId;
+    private string? _bankContactName;
+
+    public string? RecipientPlaceholder => _bankContactName;
 
     public StatementDraftEntriesListViewModel(IServiceProvider sp, Guid draftId)
         : base(sp)
@@ -179,10 +183,15 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     /// <summary>
     /// Sets an edited value for the given entry id and field key.
     /// Raises state changed so UI can re-render.
+    /// For BookingDate, the ValutaDate is automatically copied if it was empty
+    /// or matched the previous booking date, and only valid 4-digit years are accepted.
     /// </summary>
     public void SetEditValue(Guid entryId, string field, object? value)
     {
         if (!_editValues.TryGetValue(entryId, out var map)) return;
+        // Snapshot previous date values before updating so the Valuta auto-copy rule can be applied.
+        map.TryGetValue("ValutaDate", out var previousValuta);
+        map.TryGetValue("BookingDate", out var previousBooking);
         map[field] = value;
         var item = Items.FirstOrDefault(i => i.Id == entryId);
         if (item != null)
@@ -190,10 +199,18 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             switch (field)
             {
                 case "BookingDate":
-                    item.BookingDate = value is DateTime bd ? bd : DateTime.MinValue;
+                    var newBooking = value is DateTime newBdt && IsValidEditDate(newBdt) ? newBdt : (DateTime?)null;
+                    item.BookingDate = newBooking ?? DateTime.MinValue;
+                    var oldBooking = previousBooking as DateTime?;
+                    var oldValuta = previousValuta as DateTime?;
+                    if (newBooking.HasValue && (oldValuta == null || (oldBooking.HasValue && oldValuta.Value == oldBooking.Value)))
+                    {
+                        map["ValutaDate"] = newBooking.Value;
+                        item.ValutaDate = newBooking;
+                    }
                     break;
                 case "ValutaDate":
-                    item.ValutaDate = value is DateTime vd ? vd : null;
+                    item.ValutaDate = value is DateTime newVdt && IsValidEditDate(newVdt) ? newVdt : (DateTime?)null;
                     break;
                 case "Amount":
                     item.Amount = value is decimal amount ? amount : 0m;
@@ -218,6 +235,8 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         }
         RaiseStateChanged();
     }
+
+    private static bool IsValidEditDate(DateTime dt) => dt.Year >= 1000;
 
     /// <summary>
     /// Copies the value of the given field from the row directly above the
@@ -420,7 +439,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     }
 
     /// <summary>
-    /// Performs basic client-side validation for a single row based on current edit values.
+    /// Performs client-side validation for a single row based on current edit values.
     /// Returns tuples of (field, message) for validation errors.
     /// </summary>
     public override IEnumerable<(string Field, string Message)> ValidateRow(object item)
@@ -428,52 +447,35 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         if (item is not StatementDraftEntryItem it) yield break;
         if (!_editValues.TryGetValue(it.Id, out var map)) yield break;
 
-        // BookingDate must be set
-        if (!map.TryGetValue("BookingDate", out var bd) || bd is not DateTime dt)
-        {
-            if (it.IsNew || it.IsPlaceholder)
-                yield return ("BookingDate", "Booking date is required");
-        }
-        else
-        {
-            if (dt == DateTime.MinValue)
-                yield return ("BookingDate", "Booking date is required");
-        }
+        // BookingDate must be set and have a realistic 4-digit year
+        if (!map.TryGetValue("BookingDate", out var bd) || bd is not DateTime bdt || !IsValidEditDate(bdt))
+            yield return ("BookingDate", "Booking date is required");
 
-        // Amount must be a valid decimal
-        if (map.TryGetValue("Amount", out var amt))
-        {
-            if (amt == null || !(amt is decimal))
-                yield return ("Amount", "Amount is required");
-            else if (amt is decimal dec && dec == 0m)
-                yield return ("Amount", "Amount must not be zero");
-        }
-        else if (it.IsNew || it.IsPlaceholder)
-        {
+        // ValutaDate must be set and have a realistic 4-digit year
+        if (!map.TryGetValue("ValutaDate", out var vd) || vd is not DateTime vdt || !IsValidEditDate(vdt))
+            yield return ("ValutaDate", "Valuta date is required");
+
+        // Amount must be a non-zero decimal
+        if (!map.TryGetValue("Amount", out var amt) || amt is not decimal dec || dec == 0m)
             yield return ("Amount", "Amount is required");
-        }
+
+        // At least one of subject (purpose) or booking description must be provided
+        map.TryGetValue("Subject", out var subj);
+        map.TryGetValue("BookingDescription", out var desc);
+        if (string.IsNullOrWhiteSpace(subj as string) && string.IsNullOrWhiteSpace(desc as string))
+            yield return ("Subject", "Subject or booking description is required");
 
         // Subject length
-        if (map.TryGetValue("Subject", out var subj) && subj is string s)
-        {
-            if ((it.IsNew || it.IsPlaceholder) && string.IsNullOrWhiteSpace(s)) yield return ("Subject", "Subject is required");
-            if (s.Length > 1000) yield return ("Subject", "Subject too long");
-        }
-        else if (it.IsNew || it.IsPlaceholder)
-        {
-            yield return ("Subject", "Subject is required");
-        }
+        if (subj is string s && s.Length > 1000)
+            yield return ("Subject", "Subject too long");
 
-        // RecipientName length
-        if (map.TryGetValue("RecipientName", out var rec) && rec is string r)
-        {
-            if (r.Length > 250) yield return ("RecipientName", "Recipient name too long");
-        }
+        // BookingDescription length
+        if (desc is string bookingDescription && bookingDescription.Length > 1000)
+            yield return ("BookingDescription", "Booking description too long");
 
-        if (map.TryGetValue("BookingDescription", out var desc) && desc is string bookingDescription)
-        {
-            if (bookingDescription.Length > 1000) yield return ("BookingDescription", "Booking description too long");
-        }
+        // RecipientName length (optional field)
+        if (map.TryGetValue("RecipientName", out var rec) && rec is string r && r.Length > 250)
+            yield return ("RecipientName", "Recipient name too long");
     }
 
     protected override async Task LoadPageAsync(bool resetPaging)
@@ -506,12 +508,31 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 _securityNames = draft?.SecurityNames != null ? new Dictionary<Guid, string?>(draft.SecurityNames) : new Dictionary<Guid, string?>();
                 _accountBankContactId = draft?.AccountBankContactId;
                 _selfContactId = draft?.SelfContactId;
+                _bankContactName = null;
+                if (_accountBankContactId.HasValue)
+                {
+                    if (_contactNames != null && _contactNames.TryGetValue(_accountBankContactId.Value, out var bankName) && !string.IsNullOrWhiteSpace(bankName))
+                    {
+                        _bankContactName = bankName;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var contact = await _api.Contacts_GetAsync(_accountBankContactId.Value, CancellationToken.None);
+                            if (contact != null)
+                                _bankContactName = contact.Name;
+                        }
+                        catch { }
+                    }
+                }
             }
             catch
             {
                 _allEntries = new List<StatementDraftEntryDto>();
                 _accountBankContactId = null;
                 _selfContactId = null;
+                _bankContactName = null;
             }
         }
 
@@ -913,23 +934,34 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     public bool ValidateAllQuickEditRows()
     {
         _entryHints.Clear();
-        var idsToValidate = CollectChangedRows().Keys
-            .Concat(_newEntryIds)
-            .Distinct()
-            .ToList();
-        foreach (var id in idsToValidate)
+        foreach (var recItem in GetQuickEditRowsToValidate())
         {
-            var recItem = Items.FirstOrDefault(i => i.Id == id);
-            if (recItem == null || recItem.IsPlaceholder) continue;
             var errors = ValidateRow(recItem).ToList();
             if (errors.Any())
             {
-                _entryHints[id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
+                _entryHints[recItem.Id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
             }
         }
         BuildRecords();
         RaiseStateChanged();
         return !_entryHints.Any();
+    }
+
+    /// <summary>
+    /// Validates a single quick-edit row, updates the hint for it and triggers a re-render.
+    /// </summary>
+    public bool ValidateQuickEditRow(Guid id)
+    {
+        var item = Items.FirstOrDefault(i => i.Id == id);
+        if (item == null || item.IsPlaceholder) return true;
+        var errors = ValidateRow(item).ToList();
+        if (errors.Any())
+            _entryHints[id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
+        else
+            _entryHints.Remove(id);
+        BuildRecords();
+        RaiseStateChanged();
+        return !errors.Any();
     }
 
     /// <summary>
@@ -964,16 +996,54 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
 
     public bool QuickEditRowsAreValid()
     {
-        var idsToValidate = CollectChangedRows().Keys
-            .Concat(_newEntryIds)
-            .Distinct();
-        foreach (var id in idsToValidate)
+        foreach (var recItem in GetQuickEditRowsToValidate())
         {
-            var recItem = Items.FirstOrDefault(i => i.Id == id);
-            if (recItem == null || recItem.IsPlaceholder) continue;
             var errors = ValidateRow(recItem);
             if (errors.Any()) return false;
         }
         return true;
+    }
+
+    /// <summary>
+    /// Returns all visible quick-edit rows that should participate in the validity check.
+    /// Excludes placeholders, rows marked for deletion, and non-editable (AlreadyBooked / announced) rows.
+    /// </summary>
+    private IEnumerable<StatementDraftEntryItem> GetQuickEditRowsToValidate()
+        => VisibleQuickEditItems
+            .Where(i => !i.IsPlaceholder && !_pendingDeleteIds.Contains(i.Id) && IsRowEditable(i));
+
+    /// <summary>
+    /// Parses a raw yyyy-MM-dd date string from the UI and stores it as the BookingDate.
+    /// Only valid dates with a 4-digit year (>= 1000) are accepted. Invalid input clears the field.
+    /// The ValutaDate is automatically copied from the new BookingDate when the copy rule applies.
+    /// </summary>
+    public void SetBookingDateFromUi(Guid entryId, string? rawDate)
+    {
+        if (!_editValues.TryGetValue(entryId, out var map)) return;
+        DateTime? parsed = null;
+        if (!string.IsNullOrWhiteSpace(rawDate) &&
+            DateTime.TryParseExact(rawDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) &&
+            IsValidEditDate(dt))
+        {
+            parsed = dt;
+        }
+        SetEditValue(entryId, "BookingDate", parsed);
+    }
+
+    /// <summary>
+    /// Parses a raw yyyy-MM-dd date string from the UI and stores it as the ValutaDate.
+    /// Only valid dates with a 4-digit year (>= 1000) are accepted. Invalid input clears the field.
+    /// </summary>
+    public void SetValutaDateFromUi(Guid entryId, string? rawDate)
+    {
+        if (!_editValues.TryGetValue(entryId, out var map)) return;
+        DateTime? parsed = null;
+        if (!string.IsNullOrWhiteSpace(rawDate) &&
+            DateTime.TryParseExact(rawDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) &&
+            IsValidEditDate(dt))
+        {
+            parsed = dt;
+        }
+        SetEditValue(entryId, "ValutaDate", parsed);
     }
 }

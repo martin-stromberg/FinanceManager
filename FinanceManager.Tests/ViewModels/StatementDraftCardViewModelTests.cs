@@ -43,12 +43,15 @@ public sealed class StatementDraftCardViewModelTests
         Guid id,
         int entryNumber = 1,
         bool isAnnounced = false,
-        StatementDraftEntryStatus status = StatementDraftEntryStatus.Open)
-        => new(
+        StatementDraftEntryStatus status = StatementDraftEntryStatus.Open,
+        DateTime? valutaDate = null)
+    {
+        var bookingDate = new DateTime(2026, 7, 20);
+        return new StatementDraftEntryDto(
             id,
             entryNumber,
-            new DateTime(2026, 7, 20),
-            null,
+            bookingDate,
+            valutaDate ?? bookingDate,
             12.34m,
             "EUR",
             $"Subject {entryNumber}",
@@ -66,6 +69,7 @@ public sealed class StatementDraftCardViewModelTests
             null,
             null,
             null);
+    }
 
     private static StatementDraftDetailDto Draft(Guid draftId, IReadOnlyList<StatementDraftEntryDto> entries)
         => new(
@@ -375,5 +379,100 @@ public sealed class StatementDraftCardViewModelTests
         Assert.Equal(entryId, update.EntryId);
         Assert.Equal(StatementDraftEntryStatus.Open, update.Fields["Status"]);
         Assert.Equal("Corrected duplicate", update.Fields["Subject"]);
+    }
+
+    [Fact]
+    public async Task SetBookingDateFromUi_RejectsYear0002_AndDoesNotCopyToValuta()
+    {
+        var cardVm = await CreateLoadedCardAsync(Array.Empty<StatementDraftEntryDto>());
+        var entriesVm = EmbeddedEntries(cardVm);
+        await entriesVm.BeginQuickEditAsync();
+        var placeholder = entriesVm.Items.Single(i => i.IsPlaceholder);
+
+        entriesVm.SetBookingDateFromUi(placeholder.Id, "0002-01-01");
+
+        Assert.Null(entriesVm.GetEditValue(placeholder.Id, "BookingDate"));
+        Assert.Null(entriesVm.GetEditValue(placeholder.Id, "ValutaDate"));
+    }
+
+    [Fact]
+    public async Task SetBookingDateFromUi_CopiesToEmptyValuta_AndAcceptsFourDigitYear()
+    {
+        var cardVm = await CreateLoadedCardAsync(Array.Empty<StatementDraftEntryDto>());
+        var entriesVm = EmbeddedEntries(cardVm);
+        await entriesVm.BeginQuickEditAsync();
+        var placeholder = entriesVm.Items.Single(i => i.IsPlaceholder);
+
+        entriesVm.SetBookingDateFromUi(placeholder.Id, "2026-08-30");
+
+        Assert.Equal(new DateTime(2026, 8, 30), entriesVm.GetEditValue(placeholder.Id, "BookingDate"));
+        Assert.Equal(new DateTime(2026, 8, 30), entriesVm.GetEditValue(placeholder.Id, "ValutaDate"));
+    }
+
+    [Fact]
+    public async Task SetBookingDateFromUi_KeepsDifferentValuta()
+    {
+        var cardVm = await CreateLoadedCardAsync(Array.Empty<StatementDraftEntryDto>());
+        var entriesVm = EmbeddedEntries(cardVm);
+        await entriesVm.BeginQuickEditAsync();
+        var placeholder = entriesVm.Items.Single(i => i.IsPlaceholder);
+
+        entriesVm.SetEditValue(placeholder.Id, "BookingDate", new DateTime(2026, 8, 30));
+        entriesVm.SetEditValue(placeholder.Id, "ValutaDate", new DateTime(2026, 09, 01));
+        entriesVm.SetBookingDateFromUi(placeholder.Id, "2026-08-31");
+
+        Assert.Equal(new DateTime(2026, 8, 31), entriesVm.GetEditValue(placeholder.Id, "BookingDate"));
+        Assert.Equal(new DateTime(2026, 9, 1), entriesVm.GetEditValue(placeholder.Id, "ValutaDate"));
+    }
+
+    [Fact]
+    public async Task ValidateRow_Fails_WhenBookingDescriptionAndSubjectMissing()
+    {
+        var cardVm = await CreateLoadedCardAsync(Array.Empty<StatementDraftEntryDto>());
+        var entriesVm = EmbeddedEntries(cardVm);
+        await entriesVm.BeginQuickEditAsync();
+        var placeholder = entriesVm.Items.Single(i => i.IsPlaceholder);
+
+        entriesVm.SetEditValue(placeholder.Id, "BookingDate", new DateTime(2026, 8, 30));
+        entriesVm.SetEditValue(placeholder.Id, "Amount", 9.99m);
+        entriesVm.SetEditValue(placeholder.Id, "Subject", string.Empty);
+        entriesVm.SetEditValue(placeholder.Id, "BookingDescription", string.Empty);
+
+        var errors = entriesVm.ValidateRow(placeholder).ToList();
+        Assert.Contains(errors, e => e.Message.Contains("Subject or booking description", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task QuickEditRowsAreValid_RequiresAllEditableVisibleRows()
+    {
+        var cardVm = await CreateLoadedCardAsync(Array.Empty<StatementDraftEntryDto>());
+        var entriesVm = EmbeddedEntries(cardVm);
+        await entriesVm.BeginQuickEditAsync();
+        var placeholder = entriesVm.Items.Single(i => i.IsPlaceholder);
+
+        entriesVm.SetEditValue(placeholder.Id, "BookingDate", new DateTime(2026, 8, 30));
+        entriesVm.SetEditValue(placeholder.Id, "Amount", 9.99m);
+
+        Assert.False(entriesVm.QuickEditRowsAreValid());
+
+        entriesVm.SetEditValue(placeholder.Id, "Subject", "Valid row");
+
+        Assert.True(entriesVm.QuickEditRowsAreValid());
+    }
+
+    [Fact]
+    public async Task ValidateQuickEditRow_AppliesHintForInvalidRow()
+    {
+        var cardVm = await CreateLoadedCardAsync(Array.Empty<StatementDraftEntryDto>());
+        var entriesVm = EmbeddedEntries(cardVm);
+        await entriesVm.BeginQuickEditAsync();
+        var placeholder = entriesVm.Items.Single(i => i.IsPlaceholder);
+
+        entriesVm.SetEditValue(placeholder.Id, "Subject", "Incomplete");
+
+        entriesVm.ValidateQuickEditRow(placeholder.Id);
+
+        var record = Assert.Single(entriesVm.Records.Where(r => ((StatementDraftEntryItem)r.Item).Id == placeholder.Id));
+        Assert.False(string.IsNullOrWhiteSpace(record.Hint));
     }
 }
