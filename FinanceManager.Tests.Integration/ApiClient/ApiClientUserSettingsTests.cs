@@ -41,9 +41,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
 
         var profile = await api.UserSettings_GetProfileAsync();
         profile.Should().NotBeNull();
-        // defaults: no language, no timezone, no API key
+        // defaults: no language, no timezone, no API key, KPI caching disabled
         profile!.HasAlphaVantageApiKey.Should().BeFalse();
         profile.ShareAlphaVantageApiKey.Should().BeFalse();
+        profile.CacheKpisInLocalStorage.Should().BeFalse();
     }
 
     [Fact]
@@ -57,13 +58,34 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             TimeZoneId: "Europe/Berlin",
             AlphaVantageApiKey: null,
             ClearAlphaVantageApiKey: null,
-            ShareAlphaVantageApiKey: null));
+            ShareAlphaVantageApiKey: null,
+            CacheKpisInLocalStorage: false));
         ok.Should().BeTrue();
 
         var profile = await api.UserSettings_GetProfileAsync();
         profile.Should().NotBeNull();
         profile!.PreferredLanguage.Should().Be("de");
         profile.TimeZoneId.Should().Be("Europe/Berlin");
+    }
+
+    [Fact]
+    public async Task UserSettings_UpdateProfile_Persists_CacheKpis()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        var ok = await api.UserSettings_UpdateProfileAsync(new UserProfileSettingsUpdateRequest(
+            PreferredLanguage: null,
+            TimeZoneId: null,
+            AlphaVantageApiKey: null,
+            ClearAlphaVantageApiKey: null,
+            ShareAlphaVantageApiKey: null,
+            CacheKpisInLocalStorage: true));
+        ok.Should().BeTrue();
+
+        var profile = await api.UserSettings_GetProfileAsync();
+        profile.Should().NotBeNull();
+        profile!.CacheKpisInLocalStorage.Should().BeTrue();
     }
 
     [Fact]
@@ -78,7 +100,8 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             TimeZoneId: null,
             AlphaVantageApiKey: plaintext,
             ClearAlphaVantageApiKey: null,
-            ShareAlphaVantageApiKey: null));
+            ShareAlphaVantageApiKey: null,
+            CacheKpisInLocalStorage: false));
 
         ok.Should().BeTrue();
         using var scope = _factory.Services.CreateScope();
@@ -107,14 +130,16 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             TimeZoneId: null,
             AlphaVantageApiKey: "ALPHAVANTAGE-SECRET",
             ClearAlphaVantageApiKey: null,
-            ShareAlphaVantageApiKey: null));
+            ShareAlphaVantageApiKey: null,
+            CacheKpisInLocalStorage: false));
 
         var ok = await api.UserSettings_UpdateProfileAsync(new UserProfileSettingsUpdateRequest(
             PreferredLanguage: null,
             TimeZoneId: null,
             AlphaVantageApiKey: null,
             ClearAlphaVantageApiKey: true,
-            ShareAlphaVantageApiKey: null));
+            ShareAlphaVantageApiKey: null,
+            CacheKpisInLocalStorage: false));
 
         ok.Should().BeTrue();
         using var scope = _factory.Services.CreateScope();

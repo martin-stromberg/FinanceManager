@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -15,10 +16,13 @@ public sealed class SetupProfileViewModelTests
         public bool IsAdmin { get; set; }
     }
 
-    private static IServiceProvider CreateSp(IApiClient api)
+    private static IServiceProvider CreateSp(IApiClient api) => CreateSp(api, Mock.Of<IKpiLocalStorageCache>());
+
+    private static IServiceProvider CreateSp(IApiClient api, IKpiLocalStorageCache kpiCache)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
+        services.AddSingleton(kpiCache);
         services.AddSingleton(api);
         return services.BuildServiceProvider();
     }
@@ -95,5 +99,34 @@ public sealed class SetupProfileViewModelTests
         Assert.Equal("de-DE", vm.Model.PreferredLanguage);
         Assert.Equal("Europe/Berlin", vm.Model.TimeZoneId);
         Assert.True(vm.Dirty);
+    }
+
+    [Fact]
+    public async Task Save_WithCacheKpisDisabled_ClearsKpiCache()
+    {
+        var dto = new UserProfileSettingsDto
+        {
+            PreferredLanguage = "de",
+            TimeZoneId = "Europe/Berlin",
+            HasAlphaVantageApiKey = true,
+            ShareAlphaVantageApiKey = false,
+            CacheKpisInLocalStorage = true
+        };
+
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.UserSettings_GetProfileAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        apiMock.Setup(a => a.UserSettings_UpdateProfileAsync(It.IsAny<UserProfileSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var kpiCacheMock = new Mock<IKpiLocalStorageCache>();
+        var vm = new SetupProfileViewModel(CreateSp(apiMock.Object, kpiCacheMock.Object));
+        await vm.LoadAsync();
+
+        vm.Model.CacheKpisInLocalStorage = false;
+        vm.OnChanged();
+
+        await vm.SaveAsync();
+
+        Assert.True(vm.SavedOk);
+        kpiCacheMock.Verify(k => k.RemoveAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -25,6 +25,8 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - RFC-9116-konforme `security.txt` unter `/security.txt` und `/.well-known/security.txt`, zusätzlich als Markdown (`/.well-known/security.md`) und HTML (`/.well-known/security.html`); Direktiven (Contact, Expires, Canonical, Encryption, Acknowledgments, Preferred-Languages, Policy, Hiring) im Setup konfigurierbar — `Canonical` optional als vollständige HTTPS-URL ohne Query/Fragment und ohne localhost/Loopback, sonst Fallback auf `<Api:BaseAddress>/.well-known/security.txt`; liefert HTTP 503, solange keine Konfiguration vorhanden ist
 - Vorläufige Buchungen für Sparkonten erfassen und stornieren: aus der Bankkonten-Detailansicht lässt sich ein provisorischer Kontoauszug anlegen, dessen Posten in den Übersichten für Bankkonten, Kontakte, Sparpläne und Wertpapiere als „Vorläufig“ markiert werden; beim späteren Buchen eines echten Kontoauszugs für dasselbe Konto werden diese Posten automatisch storniert
 
+- Optionales clientseitiges Zwischenspeichern der Startseiten-KPIs im Browser-LocalStorage: in den Profileinstellungen pro Benutzer aktivierbar, zeigt gespeicherte Werte sofort an und aktualisiert sie im Hintergrund; bei Deaktivierung werden alle zugehörigen Cache-Einträge sofort gelöscht
+
 ## Installation / Setup
 
 ### Voraussetzungen

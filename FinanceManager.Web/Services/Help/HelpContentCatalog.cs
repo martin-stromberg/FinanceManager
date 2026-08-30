@@ -14,6 +14,7 @@ public static class HelpContentCatalog
     private static readonly IReadOnlyList<HelpTopicDocument> UserInterfaceDocuments =
     [
         new("beschreibung", "beschreibung.md", "Uebersicht"),
+        new("startseite", "startseite.md", "Startseite und KPI-Kacheln"),
         new("ablauf-anwender", "ablauf-anwender.md", "Bedienablauf"),
         new("installation", "installation.md", "Einrichtung")
     ];

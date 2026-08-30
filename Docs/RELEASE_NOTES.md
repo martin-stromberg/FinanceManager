@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Startseiten-KPIs können in den Profileinstellungen optional im Browser-LocalStorage zwischengespeichert werden; gespeicherte Werte werden sofort angezeigt und im Hintergrund aktualisiert.
 - Aktive Navigation, Benutzerinteraktion und Kontoauszugs-Schnellbearbeitung halten die Anmeldung nun im Hintergrund per Keepalive aktiv.
 - Beim Verlassen eines QuickEdit-Eingabefelds wird ein gedrosselter Server-Ping ausgelöst, ohne lokale Eingaben zu verlieren oder die Seite neu zu laden.
 - Nicht erneuerbare Sessions bleiben kontrolliert: Keepalive-Fehler lösen keinen Redirect-Sturm aus; geschützte Aktionen führen wie bisher einmalig zum Login mit Return-URL.

@@ -1,3 +1,4 @@
+using FinanceManager.Shared.Dtos.Budget;
 using System;
 using System.Net.Http;
 using System.Threading;
@@ -102,7 +103,7 @@ namespace FinanceManager.Web.ViewModels.Budget
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task LoadAsync(FinanceManager.Shared.IApiClient api, TimeProvider? timeProvider = null, CancellationToken ct = default)
         {
-            DataLoaded = false;
+            // Do not reset DataLoaded so cached values stay visible during a background refresh.
             ErrorMessage = null;
             LoadedAtUtc = null;
             LoadedMonth = null;
@@ -218,5 +219,74 @@ namespace FinanceManager.Web.ViewModels.Budget
 
             return false;
         }
+
+        /// <summary>
+        /// Restores the view model from a previously cached snapshot without calling the API.
+        /// </summary>
+        /// <param name="snapshot">The cached snapshot to restore from.</param>
+        public void LoadFromSnapshot(MonthlyBudgetKpiViewModelSnapshot snapshot)
+        {
+            if (snapshot?.Dto is null)
+            {
+                return;
+            }
+
+            PlannedIncome = snapshot.Dto.PlannedIncome;
+            PlannedExpenseAbs = snapshot.Dto.PlannedExpenseAbs;
+            ActualIncome = snapshot.Dto.ActualIncome;
+            ActualExpenseAbs = snapshot.Dto.ActualExpenseAbs;
+            SollErgebnis = snapshot.Dto.PlannedResult;
+            ExpectedIncome = snapshot.Dto.ExpectedIncome;
+            ExpectedExpenseAbs = snapshot.Dto.ExpectedExpenseAbs;
+            UnbudgetedIncome = snapshot.Dto.UnbudgetedIncome;
+            UnbudgetedExpenseAbs = snapshot.Dto.UnbudgetedExpenseAbs;
+            Month = snapshot.Month;
+            LoadedAtUtc = snapshot.LoadedAtUtc;
+            LoadedMonth = snapshot.LoadedMonth;
+            DataLoaded = true;
+            ErrorMessage = null;
+        }
+
+        /// <summary>
+        /// Creates a serializable snapshot of the currently loaded data.
+        /// </summary>
+        /// <returns>A snapshot containing the current values.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the view model has no loaded data.</exception>
+        public MonthlyBudgetKpiViewModelSnapshot CreateSnapshot()
+        {
+            if (!DataLoaded)
+            {
+                throw new InvalidOperationException("Cannot create a snapshot before data is loaded.");
+            }
+
+            var dto = new MonthlyBudgetKpiDto
+            {
+                PlannedIncome = PlannedIncome,
+                PlannedExpenseAbs = PlannedExpenseAbs,
+                ActualIncome = ActualIncome,
+                ActualExpenseAbs = ActualExpenseAbs,
+                ActualResult = ActualIncome - ActualExpenseAbs,
+                PlannedResult = SollErgebnis,
+                ExpectedIncome = ExpectedIncome,
+                ExpectedExpenseAbs = ExpectedExpenseAbs,
+                UnbudgetedIncome = UnbudgetedIncome,
+                UnbudgetedExpenseAbs = UnbudgetedExpenseAbs,
+            };
+
+            return new MonthlyBudgetKpiViewModelSnapshot(
+                dto,
+                Month,
+                LoadedAtUtc ?? DateTime.UtcNow,
+                LoadedMonth);
+        }
     }
+
+    /// <summary>
+    /// Snapshot of a <see cref="MonthlyBudgetKpiViewModel"/> used for browser local storage caching.
+    /// </summary>
+    public sealed record MonthlyBudgetKpiViewModelSnapshot(
+        MonthlyBudgetKpiDto Dto,
+        DateTime Month,
+        DateTime LoadedAtUtc,
+        DateOnly? LoadedMonth);
 }
