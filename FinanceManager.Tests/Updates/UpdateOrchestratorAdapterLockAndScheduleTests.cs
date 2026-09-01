@@ -13,6 +13,12 @@ namespace FinanceManager.Tests.Updates;
 /// </summary>
 public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
 {
+    /// <summary>
+    /// Verifies that resetting the update lock when no lock is currently recorded throws a typed
+    /// <see cref="UpdateLockResetException"/> with <see cref="UpdateLockResetFailureKind.NoLock"/> and does not
+    /// attempt to delete anything - an admin manually clearing a lock that has already gone away should get a clear
+    /// "there was nothing to reset" error rather than a generic failure.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenNoLockActive_ThrowsTypedNoLock()
     {
@@ -28,6 +34,12 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
         packageStore.Verify(s => s.DeleteLockAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that resetting a lock that is still recent (not yet considered stale) is refused with
+    /// <see cref="UpdateLockResetFailureKind.LockNotStale"/> and the lock is left in place - manual lock reset is a
+    /// last-resort admin action for a genuinely stuck update; it must not be able to interrupt an update that is
+    /// still legitimately in progress.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenLockNotStale_ThrowsTypedLockNotStale()
     {
@@ -45,6 +57,13 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
         packageStore.Verify(s => s.DeleteLockAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that when the lock is stale but the package store reports it could not delete the lock file
+    /// (returns false rather than throwing), the adapter surfaces
+    /// <see cref="UpdateLockResetFailureKind.LockDeleteFailed"/> attributed to
+    /// <see cref="UpdateLockResetFailureSource.FinanceManager"/> - distinguishing this from an updater-side I/O
+    /// failure lets the admin-facing error message point at the right layer.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenDeleteReturnsFalse_ThrowsTypedLockDeleteFailed()
     {
@@ -62,6 +81,14 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
         exception.Which.FailureSource.Should().Be(UpdateLockResetFailureSource.FinanceManager);
     }
 
+    /// <summary>
+    /// Verifies that when the lock is stale but deleting it throws an <see cref="IOException"/> from the updater
+    /// library, the adapter wraps it as <see cref="UpdateLockResetFailureKind.LockDeleteFailed"/> attributed to
+    /// <see cref="UpdateLockResetFailureSource.Updater"/> with the original exception preserved as the inner
+    /// exception - the failure-source split (this test) vs. the store-returned-false split (the previous test) lets
+    /// the caller tell "our code refused" apart from "the filesystem failed", which matters for diagnosing a locked
+    /// file held by another process.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenDeleteThrowsIOException_ThrowsTypedLockDeleteFailed()
     {
@@ -81,6 +108,12 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
         exception.Which.InnerException.Should().BeSameAs(ioException);
     }
 
+    /// <summary>
+    /// Verifies that a failure to even read the lock's creation time (before the stale check can run) is reported
+    /// as the broader <see cref="UpdateLockResetFailureKind.ResetFailed"/> rather than one of the more specific
+    /// kinds - an early I/O failure means the code never learned enough about the lock to classify the failure more
+    /// precisely.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenGetLockCreatedAtThrowsIOException_ThrowsTypedResetFailed()
     {
@@ -97,6 +130,11 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
         exception.Which.InnerException.Should().BeSameAs(ioException);
     }
 
+    /// <summary>
+    /// Verifies the success path: a genuinely stale lock is deleted, and the update status snapshot is updated to
+    /// reflect the unlocked state with the reset reason recorded in <c>LastError</c> - so the reset is both
+    /// effective and auditable from the status the UI displays afterward.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenLockStale_DeletesLockAndUpdatesStatus()
     {
@@ -117,6 +155,11 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
         snapshot.LastError.Should().Be("Lock reset: stale lock cleared");
     }
 
+    /// <summary>
+    /// Verifies that scheduling a new install time persists it via the settings store and immediately applies the
+    /// saved settings onto the live <c>AutoUpdateOptions</c> - a scheduled install time set through the UI must take
+    /// effect right away rather than only after the next application restart re-reads settings.
+    /// </summary>
     [Fact]
     public async Task ScheduleAsync_SavesScheduleAndAppliesToAutoUpdateOptions()
     {

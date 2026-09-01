@@ -4,8 +4,19 @@ using msTools.Updater;
 
 namespace FinanceManager.Tests.Updates;
 
+/// <summary>
+/// Covers <see cref="InstalledReleaseMetadataProvider"/>, the adapter that exposes the currently installed
+/// release's version, commit, repository, and runtime identifier (as reported by the msTools.Updater's
+/// <see cref="IInstalledVersionProvider"/>) to the rest of the application - e.g. for display in the update status
+/// UI or diagnostic pages.
+/// </summary>
 public sealed class InstalledReleaseMetadataProviderTests
 {
+    /// <summary>
+    /// Verifies that the provider maps every field of the underlying <see cref="IInstalledVersionProvider"/> result
+    /// through unchanged - a thin adapter test guarding against a field being dropped or mismapped when a new field
+    /// is added upstream.
+    /// </summary>
     [Fact]
     public async Task InstalledReleaseMetadataProvider_DelegatesToInstalledVersionProvider()
     {

@@ -8,8 +8,23 @@ using msTools.Updater;
 
 namespace FinanceManager.Tests.Updates;
 
+/// <summary>
+/// Covers the core of <see cref="UpdateOrchestratorAdapter"/>: mapping the msTools.Updater's status snapshot,
+/// check/download results, and settings into the DTOs the web UI consumes; translating a failed
+/// <c>InstallAsync</c>/<c>CheckForUpdateAsync</c> result back into the original exception type (or a friendlier
+/// message for a recognizable GitHub rate-limit failure); and the post-install lock-cleanup diagnostics that warn
+/// when the updater's lock file unexpectedly survives a successful install. Lock reset and schedule handling are
+/// covered separately by <see cref="UpdateOrchestratorAdapterLockAndScheduleTests"/>.
+/// </summary>
 public sealed class UpdateOrchestratorAdapterTests
 {
+    /// <summary>
+    /// Verifies that a "ready to install" orchestrator snapshot is mapped into an <c>UpdateStatusDto</c> with the
+    /// installed and available versions, current runtime platform, downloaded asset name, scheduled install time,
+    /// and the available update's asset list all populated from their respective sources (orchestrator snapshot,
+    /// installed-release provider, settings store, platform resolver) - the status endpoint aggregates several
+    /// independent sources into one DTO, so each source's contribution needs its own coverage.
+    /// </summary>
     [Fact]
     public async Task Adapter_MapsSnapshotToUpdateStatusDto()
     {
@@ -44,6 +59,13 @@ public sealed class UpdateOrchestratorAdapterTests
         status.AvailableUpdate!.Assets.Should().ContainSingle(asset => asset.AssetName == "app.zip");
     }
 
+    /// <summary>
+    /// Verifies that when the underlying orchestrator's install attempt fails, the adapter rethrows the original
+    /// exception instance/type carried on the <c>AutoUpdateResult</c> rather than wrapping it in a generic failure -
+    /// callers (and their exception handling/logging) rely on seeing the real exception type (e.g. a
+    /// <see cref="FileNotFoundException"/> vs. an <see cref="IOException"/>) to react appropriately.
+    /// </summary>
+    /// <param name="exceptionType">The exception type the mocked install failure carries, to verify it survives unchanged.</param>
     [Theory]
     [InlineData(typeof(FileNotFoundException))]
     [InlineData(typeof(IOException))]
@@ -62,6 +84,12 @@ public sealed class UpdateOrchestratorAdapterTests
         thrown.Which.GetType().Should().Be(exceptionType);
     }
 
+    /// <summary>
+    /// Verifies that when a check discovers an available update, the adapter's <c>CheckAsync</c> automatically
+    /// triggers the download and returns a result reflecting the post-download "ready to install" status - so the UI
+    /// only needs to call check once to end up with a downloaded, installable update, instead of orchestrating a
+    /// separate download step itself.
+    /// </summary>
     [Fact]
     public async Task Adapter_CheckAsync_MapsSuccessOutcomeToUpdateCheckResultDto()
     {
@@ -94,6 +122,11 @@ public sealed class UpdateOrchestratorAdapterTests
         orchestrator.Verify(o => o.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies the complementary case to the auto-download test: when the check finds no update available, the
+    /// adapter must not call <c>DownloadAsync</c> at all - downloading is only ever appropriate once an update has
+    /// actually been found.
+    /// </summary>
     [Fact]
     public async Task Adapter_CheckAsync_WhenNoUpdate_DoesNotDownload()
     {
@@ -118,6 +151,12 @@ public sealed class UpdateOrchestratorAdapterTests
         orchestrator.Verify(o => o.DownloadAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that saving update settings through the adapter both persists them via the settings store and
+    /// immediately applies them to the live runtime options - mirroring
+    /// <see cref="UpdateOrchestratorAdapterLockAndScheduleTests.ScheduleAsync_SavesScheduleAndAppliesToAutoUpdateOptions"/>
+    /// for the full settings form rather than just the scheduled install time.
+    /// </summary>
     [Fact]
     public async Task Adapter_SaveSettings_AppliesToAutoUpdateOptions()
     {
@@ -136,6 +175,13 @@ public sealed class UpdateOrchestratorAdapterTests
         applied.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that a GitHub API rate-limit failure (a 403 with a specific message pattern) is translated into
+    /// <see cref="UpdateErrorMessageMapper.GithubRateLimitMessage"/>, both in the check result and in the status's
+    /// <c>LastError</c> - the raw exception text is technical and unhelpful to an end user, while rate limiting is
+    /// common enough (frequent update checks against the public GitHub API) to deserve a specific, actionable
+    /// message instead of a generic error.
+    /// </summary>
     [Fact]
     public async Task Adapter_CheckAsync_WhenRateLimitedResult_ReturnsFriendlyMessage()
     {
@@ -161,6 +207,11 @@ public sealed class UpdateOrchestratorAdapterTests
         result.Status.LastError.Should().Be(UpdateErrorMessageMapper.GithubRateLimitMessage);
     }
 
+    /// <summary>
+    /// Verifies that when a successful install leaves no lock file behind (the expected, healthy outcome), the
+    /// adapter's post-install cleanup check logs nothing - the diagnostic logging introduced for the
+    /// lock-leak/lock-cleanup checks below must stay silent on the happy path.
+    /// </summary>
     [Fact]
     public async Task Adapter_StartInstallAsync_WhenLockAbsentAfterInstall_DoesNotLog()
     {
@@ -177,6 +228,12 @@ public sealed class UpdateOrchestratorAdapterTests
         logger.Entries.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that starting an install when the status is only "update available" (not yet downloaded) makes the
+    /// adapter download the package first and only then install it - a caller can invoke install directly without
+    /// having explicitly called check/download beforehand, and the adapter must fill that gap itself rather than
+    /// failing or installing a stale/nonexistent package.
+    /// </summary>
     [Fact]
     public async Task Adapter_StartInstallAsync_WhenUpdateAvailableWithoutDownload_DownloadsBeforeInstall()
     {
@@ -199,6 +256,11 @@ public sealed class UpdateOrchestratorAdapterTests
         orchestrator.Verify(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that a successful install always triggers the post-install lock check exactly once - the adapter
+    /// must proactively verify the updater cleaned up its lock file rather than only checking it reactively when
+    /// something looks wrong.
+    /// </summary>
     [Fact]
     public async Task Adapter_StartInstallAsync_WhenSuccess_ValidatesLockCleanup()
     {
@@ -214,6 +276,11 @@ public sealed class UpdateOrchestratorAdapterTests
         packageStore.Verify(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that when the lock file is unexpectedly still present after a reported-successful install, the
+    /// adapter logs a warning - a lingering lock after "success" is a symptom worth surfacing to operators (it could
+    /// block the next update cycle), even though the install itself is not treated as failed.
+    /// </summary>
     [Fact]
     public async Task Adapter_StartInstallAsync_WhenLockStillPresentAfterInstall_LogsWarning()
     {
@@ -230,6 +297,12 @@ public sealed class UpdateOrchestratorAdapterTests
         logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
     }
 
+    /// <summary>
+    /// Verifies that if the post-install lock check itself throws an <see cref="IOException"/> (e.g. transient
+    /// filesystem contention while probing the lock), the adapter still returns the successful install status and
+    /// merely logs a warning instead of letting the diagnostic check's own failure mask a successful install as an
+    /// error.
+    /// </summary>
     [Fact]
     public async Task Adapter_StartInstallAsync_WhenLockCleanupCheckThrowsIOException_StillReturnsSuccessStatus()
     {
