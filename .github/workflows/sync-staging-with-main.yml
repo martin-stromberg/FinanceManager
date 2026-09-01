@@ -1,0 +1,71 @@
+name: Backmerge Main to Staging
+
+# Every promotion to main creates a merge commit that exists only on main. Without
+# syncing back, staging immediately falls behind the latest release tag. This
+# workflow creates a PR main -> staging after each push to main to keep tags and
+# history consistent for the next release cycle.
+#
+# Important: The back-merge PR must be merged with "Create a merge commit", not
+# "Rebase and merge", so that the release merge commit and tag remain reachable
+# from staging.
+
+"on":
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sync-staging-with-main
+  cancel-in-progress: false
+
+jobs:
+  backmerge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: staging
+
+      - name: Fetch main
+        run: git fetch origin main
+        shell: pwsh
+
+      - name: Check if staging is behind main
+        id: diff
+        run: |
+          $count = git rev-list HEAD..origin/main --count
+          "commits_behind=$count" | Add-Content -Path $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Ensure automated-backmerge label exists
+        if: steps.diff.outputs.commits_behind != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create automated-backmerge --color "1D76DB" --description "Automated back-merge PR from main to staging" --force
+        shell: pwsh
+
+      - name: Create back-merge pull request
+        if: steps.diff.outputs.commits_behind != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $existing = gh pr list --base staging --head main --state open --json number | ConvertFrom-Json
+          if ($existing.Count -eq 0) {
+            gh pr create `
+              --base staging `
+              --head main `
+              --title "Backmerge from main to staging" `
+              --body "Automated back-merge PR after a promotion to main. Please merge with **Create a merge commit** (not Rebase) so the new release tag remains reachable from staging for future version calculations." `
+              --label "automated-backmerge"
+          } else {
+            Write-Host "An open back-merge PR from main to staging already exists (#$($existing[0].number))."
+          }
+        shell: pwsh

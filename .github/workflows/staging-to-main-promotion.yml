@@ -1,0 +1,81 @@
+name: Staging to Main Promotion
+
+# After a successful "Pre-Release" run on staging, this workflow checks whether main is
+# behind staging. If so, it creates a draft PR staging -> main. The final merge must be
+# approved and completed manually by a maintainer.
+#
+# Critical: this workflow_run trigger references the *display name* of staging-ci.yml, not
+# its filename. If staging-ci.yml's `name:` field ever changes again, this array must be
+# updated in the same commit - otherwise the promotion silently stops firing (no error, it
+# just never runs). See ci-target-schema.md section 3.
+
+"on":
+  workflow_run:
+    workflows: ["Pre-Release"]
+    types: [completed]
+    branches: [staging]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: staging-to-main-promotion
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Fetch main
+        run: git fetch origin main
+        shell: pwsh
+
+      - name: Check if main is behind staging
+        id: diff
+        run: |
+          $changed = git diff --name-only origin/main HEAD
+          if ([string]::IsNullOrWhiteSpace(($changed -join ''))) {
+            Write-Host "Tree is identical to main (back-merge) - no promotion needed."
+            "commits_ahead=0" | Add-Content -Path $env:GITHUB_OUTPUT
+          } else {
+            $count = git rev-list origin/main..HEAD --count
+            "commits_ahead=$count" | Add-Content -Path $env:GITHUB_OUTPUT
+          }
+        shell: pwsh
+
+      - name: Ensure automated-promotion label exists
+        if: steps.diff.outputs.commits_ahead != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create automated-promotion --color "0E8A16" --description "Automated PR from staging to main" --force
+        shell: pwsh
+
+      - name: Create promotion pull request
+        if: steps.diff.outputs.commits_ahead != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $existing = gh pr list --base main --head staging --state open --json number | ConvertFrom-Json
+          if ($existing.Count -eq 0) {
+            gh pr create `
+              --base main `
+              --head staging `
+              --title "Automated promotion from staging to main" `
+              --body "Automated promotion from staging to main. Contains all changes that have been integrated and successfully validated on staging. Requires manual review and merge by a maintainer." `
+              --draft `
+              --label "automated-promotion"
+          } else {
+            Write-Host "An open promotion PR from staging to main already exists (#$($existing[0].number))."
+          }
+        shell: pwsh
