@@ -83,6 +83,11 @@ public sealed class ContactsViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that initializing the view model while unauthenticated does not throw and simply leaves the
+    /// contact list empty — the view model itself does not enforce authentication (that's the page's job),
+    /// so it must degrade gracefully rather than crash when used before sign-in completes.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_ShouldRequestAuth_WhenNotAuthenticated()
     {
@@ -95,6 +100,10 @@ public sealed class ContactsViewModelTests
         Assert.Equal(0, vm.Items.Count);
     }
 
+    /// <summary>
+    /// Verifies that initializing an authenticated view model loads both the contact categories and the
+    /// first page of contacts, and that a contact's category id is resolved to its display name.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_ShouldLoadCategories_And_FirstPage_WhenAuthenticated()
     {
@@ -116,6 +125,11 @@ public sealed class ContactsViewModelTests
         Assert.Equal("Friends", vm.Items[0].CategoryName);
     }
 
+    /// <summary>
+    /// Verifies that loading more contacts appends the next page to the existing list, and that
+    /// <c>CanLoadMore</c> correctly turns false once a page comes back smaller than the page size — the
+    /// signal the view model uses to know it has reached the end of the list.
+    /// </summary>
     [Fact]
     public async Task LoadMoreAsync_ShouldPaginate_And_SetAllLoaded()
     {
@@ -143,6 +157,11 @@ public sealed class ContactsViewModelTests
         Assert.False(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that applying a search filter discards the previously loaded page and reloads from the
+    /// filtered result set, and that the ribbon then exposes a "clear filter" action so the user has a
+    /// visible way to tell a filter is active and remove it.
+    /// </summary>
     [Fact]
     public async Task SetFilterAsync_ShouldResetAndReload_AndRibbonIncludesClear()
     {

@@ -27,6 +27,12 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Tests for <see cref="StatementDraftsController"/> against a real SQLite-backed <see cref="AppDbContext"/>,
+/// covering statement upload/parsing, draft entry lookups (including split-sum aggregation across an
+/// upload group of files that belong to the same statement), booking conflict handling, and the mass-import
+/// batch endpoint.
+/// </summary>
 public sealed class StatementDraftsControllerTests
 {
     private static (StatementDraftsController controller, AppDbContext db, Guid userId) Create(IMassImportOrchestrator? massImportOrchestrator = null)
@@ -103,6 +109,10 @@ public sealed class StatementDraftsControllerTests
     }
 
 
+    /// <summary>
+    /// Verifies that uploading a recognized statement file (a Backup-format JSON export here) is parsed and
+    /// persisted as a new <see cref="FinanceManager.Domain.Statements.StatementDraft"/>.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldCreateDraft()
     {
@@ -122,6 +132,10 @@ public sealed class StatementDraftsControllerTests
         Assert.IsType<OkObjectResult>(result);
     }
 
+    /// <summary>
+    /// Verifies that adding an entry to a draft id that does not exist returns 404 rather than creating an
+    /// orphaned entry.
+    /// </summary>
     [Fact]
     public async Task AddEntry_ShouldReturnNotFound_ForUnknownDraft()
     {
@@ -130,6 +144,9 @@ public sealed class StatementDraftsControllerTests
         Assert.IsType<NotFoundResult>(response);
     }
 
+    /// <summary>
+    /// Verifies that committing a draft id that does not exist returns 404.
+    /// </summary>
     [Fact]
     public async Task Commit_ShouldReturnNotFound_WhenDraftMissing()
     {
@@ -138,6 +155,12 @@ public sealed class StatementDraftsControllerTests
         Assert.IsType<NotFoundResult>(response);
     }
 
+    /// <summary>
+    /// Verifies that when a parent entry is split across multiple statement files that were uploaded together
+    /// (an "upload group" — e.g. a multi-page PDF split into several drafts), the reported <c>SplitSum</c> and
+    /// <c>Difference</c> are computed across all entries in the whole group, not just the one draft explicitly
+    /// linked via <c>SetEntrySplitDraftAsync</c>.
+    /// </summary>
     [Fact]
     public async Task GetEntryAsync_ShouldReturnSplitSumAcrossUploadGroup()
     {
@@ -294,6 +317,10 @@ public sealed class StatementDraftsControllerTests
         Assert.Equal("trace-entry-already-booked", problem.Extensions["traceId"]);
     }
 
+    /// <summary>
+    /// Verifies that submitting a mass-import batch with an empty file list is rejected with 400 and the
+    /// <c>Err_Invalid_File</c> error code, before any orchestration is attempted.
+    /// </summary>
     [Fact]
     public async Task ProcessMassImportAsync_ShouldReturnBadRequest_WhenRequestHasNoFiles()
     {
@@ -306,6 +333,11 @@ public sealed class StatementDraftsControllerTests
         Assert.Equal("Err_Invalid_File", error.code);
     }
 
+    /// <summary>
+    /// Verifies that when the controller is constructed without an <see cref="IMassImportOrchestrator"/>
+    /// (the feature's optional dependency is unresolved), a mass-import request fails with 500 instead of a
+    /// null-reference exception, since this configuration gap should be diagnosable rather than crash opaquely.
+    /// </summary>
     [Fact]
     public async Task ProcessMassImportAsync_ShouldReturnInternalServerError_WhenOrchestratorIsMissing()
     {
@@ -329,6 +361,11 @@ public sealed class StatementDraftsControllerTests
         Assert.Equal(StatusCodes.Status500InternalServerError, error.StatusCode);
     }
 
+    /// <summary>
+    /// Verifies that a mass-import request is forwarded to the <see cref="IMassImportOrchestrator"/> together
+    /// with the current user's id and the request's trace identifier, so the orchestrator's async processing
+    /// can be correlated back to the originating request and user.
+    /// </summary>
     [Fact]
     public async Task ProcessMassImportAsync_ShouldDelegateToOrchestrator_WithCurrentUserAndTraceId()
     {

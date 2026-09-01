@@ -8,17 +8,32 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Web.Help;
 
+/// <summary>
+/// Tests for <see cref="HelpAssetIntegrityValidator"/>, which decides whether a help asset on disk (markdown
+/// source, legacy HTML page, or a static wwwroot help asset) is trustworthy enough to serve based on a
+/// SHA-256 manifest, plus tests that verify the build-time contract producing that manifest and the search
+/// indexes: the manifest lists every delivered help asset with a matching hash, the MSBuild targets that
+/// generate it run at the correct point in the build, and the standalone search-index generator tool fails
+/// safely on a missing source directory or an empty per-language result.
+/// </summary>
 public sealed class HelpAssetIntegrityValidatorTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"fm-help-integrity-{Guid.NewGuid():N}");
     private readonly string _contentRoot;
 
+    /// <summary>
+    /// Creates the temporary content root with an empty <c>wwwroot/help</c> directory used by each test.
+    /// </summary>
     public HelpAssetIntegrityValidatorTests()
     {
         _contentRoot = Path.Combine(_root, "app");
         Directory.CreateDirectory(Path.Combine(_contentRoot, "wwwroot", "help"));
     }
 
+    /// <summary>
+    /// Verifies that with no <c>help-assets.sha256</c> manifest present, no file is considered trusted — the
+    /// validator fails closed rather than falling back to trusting any file that exists on disk.
+    /// </summary>
     [Fact]
     public async Task IsTrustedHelpFile_ReturnsFalseWhenManifestIsMissing()
     {
@@ -31,6 +46,10 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.False(validator.IsTrustedHelpFile(assetPath));
     }
 
+    /// <summary>
+    /// Verifies that a file present on disk but absent from the manifest is not trusted, even though a
+    /// manifest exists and lists other, unrelated files.
+    /// </summary>
     [Fact]
     public async Task IsTrustedHelpFile_ReturnsFalseWhenAssetIsNotListed()
     {
@@ -46,6 +65,10 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.False(validator.IsTrustedHelpFile(unlistedPath));
     }
 
+    /// <summary>
+    /// Verifies that a manifest entry whose recorded hash does not match the file's actual content causes the
+    /// file to be rejected as untrusted.
+    /// </summary>
     [Fact]
     public async Task IsTrustedHelpFile_ReturnsFalseWhenHashDiffers()
     {
@@ -59,6 +82,11 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.False(validator.IsTrustedHelpFile(assetPath));
     }
 
+    /// <summary>
+    /// Verifies that a file that validated successfully against the manifest is re-checked (not cached as
+    /// permanently trusted): modifying it on disk afterwards causes a subsequent check to correctly report it
+    /// as no longer trustworthy.
+    /// </summary>
     [Fact]
     public async Task IsTrustedHelpFile_RehashesAfterSuccessfulValidation()
     {
@@ -76,6 +104,11 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.False(validator.IsTrustedHelpFile(assetPath));
     }
 
+    /// <summary>
+    /// Verifies that manifest entries for markdown source files under the repository's <c>Docs/help</c> tree
+    /// (referenced with a relative <c>../Docs/help/...</c> path, outside <c>wwwroot</c>) are also honored, not
+    /// just entries for static <c>wwwroot</c> assets.
+    /// </summary>
     [Fact]
     public async Task IsTrustedHelpFile_TrustsDocsHelpPathFromBuildManifest()
     {
@@ -89,6 +122,14 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.True(validator.IsTrustedHelpFile(markdownPath));
     }
 
+    /// <summary>
+    /// Verifies the real build output: the generated <c>help-assets.sha256</c> manifest contains exactly one
+    /// entry per delivered static help asset (CSS/JS/JSON/HTML) and per markdown source file, with no extra
+    /// or missing entries, and that every recorded hash matches the actual file content — including the
+    /// per-language search indexes, which must exist and be present in the manifest for every supported
+    /// language. This is an end-to-end guard against the manifest generation silently drifting from what is
+    /// actually shipped.
+    /// </summary>
     [Fact]
     public void BuildManifest_CoversAndHashesAllDeliveredHelpAssets()
     {
@@ -137,6 +178,14 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Verifies that the MSBuild help-generation targets in <c>FinanceManager.Web.csproj</c> stay wired
+    /// correctly: <c>HelpLanguages.props</c> defines the same supported/default languages as the
+    /// <see cref="HelpLanguages"/> class used at runtime, the search-index and manifest generation targets run
+    /// at the right points in the build/publish pipeline (before asset resolution, after build), and the
+    /// publish step includes the generated help assets and manifest. Prevents a build-script change from
+    /// silently breaking help delivery without any test noticing.
+    /// </summary>
     [Fact]
     public void HelpBuildContract_UsesSharedLanguagesAndOutputManifestPaths()
     {
@@ -169,6 +218,11 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.Contains("help-assets.sha256", includePublishAssets.ToString(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that the standalone search-index generator tool fails with a non-zero exit code and a
+    /// descriptive error, and does not create an output directory, when the source Docs folder does not
+    /// exist.
+    /// </summary>
     [Fact]
     public void HelpSearchIndexGenerator_ReturnsFailureWhenDocsSourceIsMissing()
     {
@@ -182,6 +236,11 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_root, "out")));
     }
 
+    /// <summary>
+    /// Verifies that generating a search index for a language with no matching documents fails with a
+    /// descriptive error and does not leave behind an empty <c>search-index.json</c> for that language,
+    /// avoiding an empty-but-present index that would otherwise look valid to consumers.
+    /// </summary>
     [Fact]
     public void HelpSearchIndexGenerator_ReturnsFailureAndRemovesEmptyLanguageIndex()
     {
@@ -272,6 +331,9 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         return candidates.First(candidate => File.Exists(Path.Combine(candidate, "wwwroot", "help", "help-assets.sha256")));
     }
 
+    /// <summary>
+    /// Removes the temporary content root directory tree created for the test.
+    /// </summary>
     public void Dispose()
     {
         if (Directory.Exists(_root))

@@ -9,12 +9,22 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Security-focused tests for <see cref="HelpController"/>: markdown/legacy-HTML rendering is sanitized against
+/// script injection and unsafe links, help content is only served when it passes the
+/// <see cref="IHelpAssetIntegrityValidator"/> check against a manifest (guarding against tampered on-disk help
+/// files), and the search-index endpoint drops malformed or unsafe entries instead of failing outright.
+/// Uses a temporary on-disk content/web root per test to exercise the real file-reading code paths.
+/// </summary>
 public sealed class HelpControllerSecurityTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"fm-help-{Guid.NewGuid():N}");
     private readonly string _contentRoot;
     private readonly string _webRoot;
 
+    /// <summary>
+    /// Creates the temporary content/web root directory structure used by each test.
+    /// </summary>
     public HelpControllerSecurityTests()
     {
         _contentRoot = Path.Combine(_root, "app");
@@ -22,6 +32,10 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Directory.CreateDirectory(_webRoot);
     }
 
+    /// <summary>
+    /// Verifies that rendering a help document strips an embedded <c>&lt;script&gt;</c> tag, a
+    /// <c>javascript:</c> link, and the raw front-matter block, while still rendering the legitimate heading.
+    /// </summary>
     [Fact]
     public async Task GetMarkdown_ReturnsSanitizedHtml()
     {
@@ -47,6 +61,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.DoesNotContain("title: Test", content.Content, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that a route segment naming a specific file within a topic folder (e.g.
+    /// <c>budgetplanung/beschreibung</c>) resolves to that nested document rather than only the topic's
+    /// default page.
+    /// </summary>
     [Fact]
     public async Task GetMarkdown_ReturnsNestedDocumentForCatchAllHelpPath()
     {
@@ -60,6 +79,12 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.Contains("Beschreibung", content.Content);
     }
 
+    /// <summary>
+    /// Verifies that once a markdown file's hash has been recorded via the manifest and served successfully,
+    /// modifying the file on disk afterwards causes subsequent requests to be blocked with 404 by the real
+    /// <see cref="HelpAssetIntegrityValidator"/> — protection against a compromised or corrupted help file
+    /// being served silently.
+    /// </summary>
     [Fact]
     public async Task GetMarkdown_WithRealValidatorBlocksManipulatedMarkdown()
     {
@@ -80,6 +105,10 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.IsType<NotFoundObjectResult>(manipulatedResult);
     }
 
+    /// <summary>
+    /// Verifies that the real integrity validator fails closed: with no manifest file present at all, a
+    /// help document is not served even though the file itself exists and is unmodified.
+    /// </summary>
     [Fact]
     public async Task GetMarkdown_WithRealValidatorBlocksWhenManifestIsMissing()
     {
@@ -92,6 +121,12 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
+    /// <summary>
+    /// Verifies that, using the real validator and renderer together, a document combining tables, inline
+    /// code, a relative internal link, and unsafe content (a <c>javascript:</c> link, an <c>onerror</c> image,
+    /// and a fenced-code script sample) renders the safe structural elements and internal link correctly while
+    /// the unsafe content is either stripped or safely escaped.
+    /// </summary>
     [Fact]
     public async Task GetMarkdown_WithRealValidatorSanitizesNestedTablesCodeAndLinks()
     {
@@ -122,6 +157,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.DoesNotContain("<img", content.Content, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that a document marked as technical-only (e.g. an internal <c>api.md</c>) is not exposed
+    /// through the public help endpoint even though the file exists on disk, keeping implementation-detail
+    /// docs out of user-facing help.
+    /// </summary>
     [Fact]
     public async Task GetMarkdown_ReturnsNotFoundForTechnicalOnlyDocument()
     {
@@ -135,6 +175,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
+    /// <summary>
+    /// Verifies that requesting the search index for a language with no pre-built <c>search-index.json</c>
+    /// returns 404 rather than an empty or error response, for both supported languages.
+    /// </summary>
+    /// <param name="language">The help language code to request the search index for.</param>
     [Theory]
     [InlineData("de")]
     [InlineData("en")]
@@ -145,6 +190,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
+    /// <summary>
+    /// Verifies that the legacy (pre-markdown) HTML help-page path strips an inline <c>onclick</c> handler
+    /// and a <c>&lt;script&gt;</c> tag while keeping the legitimate content, mirroring the sanitization applied
+    /// to the newer markdown-based help pages.
+    /// </summary>
     [Fact]
     public async Task GetHelpPage_SanitizesLegacyHtml()
     {
@@ -164,6 +214,10 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.DoesNotContain("<script", content.Content, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that, like markdown documents, a legacy HTML help page modified after its hash was recorded in
+    /// the manifest is blocked by the real integrity validator on subsequent requests.
+    /// </summary>
     [Fact]
     public async Task GetHelpPage_WithRealValidatorBlocksManipulatedLegacyHtml()
     {
@@ -184,6 +238,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.IsType<NotFoundObjectResult>(manipulatedResult);
     }
 
+    /// <summary>
+    /// Verifies that search-index entries with an unsafe id (a <c>javascript:</c> URI) or an unsafe title
+    /// (containing an <c>&lt;img&gt;</c> tag) are silently dropped from the response rather than being exposed
+    /// to the client, leaving only the well-formed, safe entry.
+    /// </summary>
     [Fact]
     public async Task GetSearchIndex_DropsInvalidDocuments()
     {
@@ -208,6 +267,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.Equal("Konten", GetProperty<string>(document, "Title"));
     }
 
+    /// <summary>
+    /// Verifies that search-index entries missing a required field (id, title, or excerpt) or with a field of
+    /// the wrong JSON type (keywords as a string instead of an array) are dropped rather than causing a parse
+    /// failure of the whole index or being passed through with null/invalid data.
+    /// </summary>
     [Fact]
     public async Task GetSearchIndex_DropsDocumentsWithMissingRequiredFields()
     {
@@ -233,6 +297,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.Equal("budgetplanung", GetProperty<string>(document, "Id"));
     }
 
+    /// <summary>
+    /// Verifies that the search index JSON is also covered by the real integrity validator: once served
+    /// successfully, an on-disk modification to <c>search-index.json</c> causes subsequent requests to be
+    /// blocked with 404.
+    /// </summary>
     [Fact]
     public async Task GetSearchIndex_WithRealValidatorBlocksManipulatedJson()
     {
@@ -265,6 +334,10 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.IsType<NotFoundObjectResult>(manipulatedResult);
     }
 
+    /// <summary>
+    /// Verifies that a search index JSON file missing the expected <c>documents</c> array (e.g. using a
+    /// different top-level property) is rejected with 400 rather than throwing or returning an empty result.
+    /// </summary>
     [Fact]
     public async Task GetSearchIndex_RejectsIndexWithoutDocumentsArray()
     {
@@ -279,6 +352,11 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
+    /// <summary>
+    /// Verifies that the client-side help search script avoids <c>innerHTML</c> and inline event handlers
+    /// (e.g. <c>onclick</c>) in favor of <c>textContent</c> and <c>addEventListener</c> — a static safeguard
+    /// against DOM-based XSS when rendering search results built from user-supplied query text.
+    /// </summary>
     [Fact]
     public void HelpSearchScript_DoesNotUseHtmlInterpolationOrInlineHandlers()
     {
@@ -346,6 +424,9 @@ public sealed class HelpControllerSecurityTests : IDisposable
         return (T)value.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)!.GetValue(value)!;
     }
 
+    /// <summary>
+    /// Removes the temporary content/web root directory tree created for the test.
+    /// </summary>
     public void Dispose()
     {
         if (Directory.Exists(_root))

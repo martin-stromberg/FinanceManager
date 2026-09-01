@@ -36,6 +36,9 @@ public sealed class PortfolioAnalysisReportControllerTests
             DateTime.UtcNow,
             DateTime.UtcNow.AddDays(10));
 
+    /// <summary>
+    /// Verifies that a successful report fetch from the cache service returns 200 with the report DTO.
+    /// </summary>
     [Fact]
     public async Task GetAnalysisReport_Controller_Returns200AndData()
     {
@@ -49,6 +52,10 @@ public sealed class PortfolioAnalysisReportControllerTests
         ok.Value.Should().BeOfType<PortfolioAnalysisReportDto>();
     }
 
+    /// <summary>
+    /// Verifies that saving a KPI tile configuration persists it via the repository and invalidates the
+    /// cached report, since the report's rendered tile set depends on this configuration.
+    /// </summary>
     [Fact]
     public async Task PostKpiConfiguration_Controller_SavesAndReturns200()
     {
@@ -67,6 +74,10 @@ public sealed class PortfolioAnalysisReportControllerTests
         cache.Verify(c => c.InvalidateCacheAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that a KPI configuration with no active tiles is rejected as a validation problem, since a
+    /// dashboard with zero configured tiles would leave the user with an empty report.
+    /// </summary>
     [Fact]
     public async Task PostKpiConfiguration_Controller_RejectsEmptyActiveTiles()
     {
@@ -83,6 +94,9 @@ public sealed class PortfolioAnalysisReportControllerTests
         obj.Value.Should().BeOfType<ValidationProblemDetails>();
     }
 
+    /// <summary>
+    /// Verifies that the reset-cache endpoint invalidates the current user's cached report and returns 204.
+    /// </summary>
     [Fact]
     public async Task ResetCache_Controller_InvalidatesCache()
     {

@@ -8,6 +8,13 @@ using Moq;
 
 namespace FinanceManager.Tests.Web;
 
+/// <summary>
+/// Tests for the admin user-management view models <see cref="UserListViewModel"/> and
+/// <see cref="UserCardViewModel"/> against a mocked <see cref="IApiClient"/>: loading and listing users,
+/// creating a user (including the follow-up update call the save flow performs after creation), editing and
+/// saving an existing user, deleting a user and observing the list refresh, unlocking a locked-out user, and
+/// the ribbon action grouping exposed for the list view.
+/// </summary>
 public sealed class UsersViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -42,6 +49,10 @@ public sealed class UsersViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that loading the user list populates <c>Items</c> from the admin API with the expected user
+    /// data.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_ShouldLoadUsers_AndSetLoaded()
     {
@@ -59,6 +70,11 @@ public sealed class UsersViewModelTests
         Assert.Equal("u1", vm.Items[0].Username);
     }
 
+    /// <summary>
+    /// Verifies that saving a new user (an empty-id card) calls the create API and then the update API with
+    /// the newly created user's id — the card's save flow performs an update immediately after creation to
+    /// apply any fields not accepted by the create endpoint itself.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldPostAppendAndReset()
     {
@@ -96,6 +112,9 @@ public sealed class UsersViewModelTests
         Assert.True(created);
     }
 
+    /// <summary>
+    /// Verifies that editing and saving an existing user calls the update API and reports success.
+    /// </summary>
     [Fact]
     public async Task BeginEdit_SaveEditAsync_ShouldUpdateUser_AndClearEdit()
     {
@@ -118,6 +137,11 @@ public sealed class UsersViewModelTests
         Assert.True(ok);
     }
 
+    /// <summary>
+    /// Verifies that deleting a user through the card view model and reloading the list view model reflects
+    /// the removal — the two view models share the same underlying API state even though they are separate
+    /// instances.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldRemoveUser_FromList()
     {
@@ -148,6 +172,9 @@ public sealed class UsersViewModelTests
         Assert.Empty(listVm.Items);
     }
 
+    /// <summary>
+    /// Verifies that the admin password-reset API call succeeds when invoked for an existing user.
+    /// </summary>
     [Fact]
     public async Task ResetPasswordAsync_ShouldSetLastResetFields_OnList()
     {
@@ -168,6 +195,10 @@ public sealed class UsersViewModelTests
         Assert.True(called);
     }
 
+    /// <summary>
+    /// Verifies that unblocking a user whose account is currently locked out calls the unlock API and
+    /// succeeds.
+    /// </summary>
     [Fact]
     public async Task UnlockAsync_ShouldClearLockoutEnd()
     {
@@ -185,6 +216,10 @@ public sealed class UsersViewModelTests
         Assert.True(ok);
     }
 
+    /// <summary>
+    /// Verifies that the user list's ribbon exposes exactly one group ("Actions") in the current UI design,
+    /// a regression guard against an unintended extra group appearing after a ribbon layout change.
+    /// </summary>
     [Fact]
     public void GetRibbon_ShouldComposeGroups_ByState()
     {

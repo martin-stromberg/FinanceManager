@@ -8,6 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Web
 {
+    /// <summary>
+    /// Tests for <see cref="PostingsQueryService"/> covering a transfer between two accounts represented as
+    /// two linked contact postings, verifying both postings correctly reference each other as their
+    /// <c>LinkedPostingId</c> and correctly resolve their respective bank account symbols (falling back to
+    /// the bank contact's symbol) for both sides of the transfer.
+    /// </summary>
     public sealed class PostingsQueryServiceTests
     {
         private static (PostingsQueryService svc, AppDbContext db, Guid owner) Create()
@@ -27,6 +33,12 @@ namespace FinanceManager.Tests.Web
             return (svc, db, owner.Id);
         }
 
+        /// <summary>
+        /// Verifies that a transfer between two different accounts (each represented as a linked contact
+        /// posting) is returned as two entries that correctly point to each other via
+        /// <c>LinkedPostingId</c>, each carrying its own bank account symbol and the other side's symbol via
+        /// <c>LinkedPostingAccountSymbolAttachmentId</c>.
+        /// </summary>
         [Fact]
         public async Task GetContactPostings_TwoLinkedPostingsOnDifferentAccounts_ReturnsBothWithLinkedInfo()
         {

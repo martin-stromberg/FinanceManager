@@ -40,6 +40,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         return new PortfolioAnalysisReportPageViewModel(services.BuildServiceProvider());
     }
 
+    /// <summary>
+    /// Verifies that loading the report fetches both the analysis report and the KPI tile configuration from
+    /// the API and populates the view model's data.
+    /// </summary>
     [Fact]
     public async Task LoadReport_ViewModel_CallsServiceAndSetsData()
     {
@@ -57,6 +61,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Verify(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that saving a KPI configuration while in edit mode persists it via the API and exits edit
+    /// mode afterward.
+    /// </summary>
     [Fact]
     public async Task EditMode_SaveConfiguration_PersistsAndInvalidatesCache()
     {
@@ -82,6 +90,11 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Verify(a => a.Portfolio_SaveKpiConfigurationAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that entering edit mode seeds the editable <c>EditOrder</c>/<c>EditActive</c> working state
+    /// from the currently loaded KPI configuration, so the edit UI starts from the user's saved tile
+    /// selection rather than an empty state.
+    /// </summary>
     [Fact]
     public async Task EnterEditMode_ViewModel_PopulatesEditOrderAndActiveFromConfiguration()
     {
@@ -95,6 +108,11 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         vm.EditActive.Should().Contain(PortfolioTileId.Structure);
     }
 
+    /// <summary>
+    /// Verifies that toggling a tile off in edit mode and saving sends a request with that tile removed from
+    /// <c>ActiveTileIds</c> (while it remains in <c>TileOrder</c>), and that the edit working state is cleared
+    /// and edit mode exited afterward.
+    /// </summary>
     [Fact]
     public async Task SaveEditConfiguration_ViewModel_PersistsEditStateAndExitsEditMode()
     {
@@ -119,6 +137,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that the "SaveEdit" ribbon action is absent in normal view mode and only appears once edit
+    /// mode has been entered, so the save button can't be triggered outside of an active edit.
+    /// </summary>
     [Fact]
     public async Task GetRibbonRegisters_ViewModel_ExposesSaveActionOnlyInEditMode()
     {
@@ -141,6 +163,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
             .SelectMany(x => x.Items ?? new List<FinanceManager.Web.ViewModels.Common.UiRibbonAction>())
             .ToList();
 
+    /// <summary>
+    /// Verifies that refreshing the report invalidates the server-side cache first and then reloads the
+    /// report, so a refresh always reflects the latest underlying data rather than a stale cached report.
+    /// </summary>
     [Fact]
     public async Task Refresh_ViewModel_ClearsAndReloadsReport()
     {

@@ -8,8 +8,18 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Web;
 
+/// <summary>
+/// Tests for <see cref="AlphaVantageKeyResolver"/>, which resolves the AlphaVantage API key to use for a user:
+/// their own protected key if set, a legacy plaintext key that gets transparently re-protected on read, or an
+/// admin's shared key as a fallback — plus the failure mode when a stored protected value can no longer be
+/// decrypted.
+/// </summary>
 public sealed class AlphaVantageKeyResolverTests
 {
+    /// <summary>
+    /// Verifies that a personal key stored in protected form is returned in plaintext to the caller while
+    /// remaining protected (not overwritten in plaintext) in the database.
+    /// </summary>
     [Fact]
     public async Task GetForUserAsync_ProtectedPersonalKey_ShouldReturnPlaintext()
     {
@@ -27,6 +37,11 @@ public sealed class AlphaVantageKeyResolverTests
         db.Users.Single().AlphaVantageApiKey.Should().NotBe("personal-key");
     }
 
+    /// <summary>
+    /// Verifies that a personal key stored as legacy plaintext (from before key protection was introduced) is
+    /// returned correctly and is transparently re-encrypted in the database on read, migrating it to the
+    /// protected format without requiring any explicit user action.
+    /// </summary>
     [Fact]
     public async Task GetForUserAsync_LegacyPlaintextPersonalKey_ShouldReturnAndReprotect()
     {
@@ -47,6 +62,11 @@ public sealed class AlphaVantageKeyResolverTests
         protector.Unprotect(stored).Should().Be("legacy-key");
     }
 
+    /// <summary>
+    /// Verifies that when a user has no personal AlphaVantage key configured, the resolver falls back to an
+    /// admin's key that has been explicitly marked as shared — letting non-admin users use market data
+    /// features without needing their own API key.
+    /// </summary>
     [Fact]
     public async Task GetForUserAsync_WhenPersonalMissing_ShouldReturnProtectedSharedAdminKey()
     {
@@ -65,6 +85,12 @@ public sealed class AlphaVantageKeyResolverTests
         key.Should().Be("shared-key");
     }
 
+    /// <summary>
+    /// Verifies that a stored key with the protected-value prefix but a payload that fails to decrypt (e.g.
+    /// corrupted or protected under a different key ring) surfaces as a generic
+    /// <see cref="AlphaVantageSecretProtectionException"/> rather than leaking decryption internals or the
+    /// raw stored value in the error message.
+    /// </summary>
     [Fact]
     public async Task GetForUserAsync_InvalidProtectedKey_ShouldThrowGenericException()
     {

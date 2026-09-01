@@ -10,6 +10,13 @@ using Moq;
 
 namespace FinanceManager.Tests.Web;
 
+/// <summary>
+/// Tests for <see cref="SetupUpdateViewModel"/>, the self-update setup screen's view model: loading and
+/// saving update settings, dirty-tracking edits so only actually-changed fields trigger a save prompt,
+/// the check/install/reset-lock workflow against a mocked <see cref="IApiClient"/> (including surfacing
+/// specific API error codes), the install-confirmation gate that requires a caller-supplied callback before
+/// starting an install, and the ribbon action wiring that reflects update readiness and confirmation state.
+/// </summary>
 public sealed class SetupUpdateViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -20,6 +27,11 @@ public sealed class SetupUpdateViewModelTests
         public bool IsAdmin { get; set; } = true;
     }
 
+    /// <summary>
+    /// Verifies that when the install API call fails because no update package is ready, the view model
+    /// surfaces the API's specific error code/message and leaves <c>Installing</c>/<c>Busy</c> false, rather
+    /// than getting stuck showing an in-progress install that never actually started.
+    /// </summary>
     [Fact]
     public async Task StartInstallAsync_WhenApiReportsNotReady_DoesNotSetInstalling()
     {
@@ -39,6 +51,11 @@ public sealed class SetupUpdateViewModelTests
         vm.LastError.Should().Be("No ready update package is available.");
     }
 
+    /// <summary>
+    /// Verifies that when resetting the update lock fails because no lock actually exists, the view model
+    /// surfaces that specific error and does not attempt to reload status afterward, since there is nothing
+    /// meaningful to reload.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenApiReportsSpecificError_SetsError()
     {
@@ -58,6 +75,10 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Verify(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that a successful lock reset reloads the update status from the API afterward, so the UI
+    /// reflects the now-unlocked state immediately rather than a stale cached status.
+    /// </summary>
     [Fact]
     public async Task ResetLockAsync_WhenSuccessful_ReloadsStatus()
     {
@@ -79,6 +100,12 @@ public sealed class SetupUpdateViewModelTests
     }
 
 
+    /// <summary>
+    /// Verifies that starting an install through the confirmation-gated entry point without a
+    /// <c>ConfirmInstallAsync</c> callback set is refused with a specific error and never calls the install
+    /// API — installs that cause application downtime must not be startable without an explicit user
+    /// confirmation step being wired up.
+    /// </summary>
     [Fact]
     public async Task StartInstallWithConfirmationAsync_WhenNoConfirmationCallback_DoesNotStartInstall()
     {
@@ -95,6 +122,12 @@ public sealed class SetupUpdateViewModelTests
         vm.LastErrorCode.Should().Be("Err_Update_ConfirmationRequired");
     }
 
+    /// <summary>
+    /// Verifies that the "Install" ribbon action is disabled while an update is ready but no confirmation
+    /// callback has been supplied, and becomes enabled the moment a callback is assigned — the ribbon state
+    /// reflects the same confirmation-gate rule enforced in
+    /// <see cref="StartInstallWithConfirmationAsync_WhenNoConfirmationCallback_DoesNotStartInstall"/>.
+    /// </summary>
     [Fact]
     public async Task GetRibbonRegisters_WhenReadyButNoConfirmationCallback_DisablesInstallAction()
     {
@@ -112,6 +145,10 @@ public sealed class SetupUpdateViewModelTests
         GetAction(vm, "UpdateInstall").Disabled.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that loading the view model populates both the update settings and the current update status
+    /// from the API.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_PopulatesSettingsAndStatus()
     {
@@ -128,6 +165,11 @@ public sealed class SetupUpdateViewModelTests
         vm.Status!.Status.Should().Be(UpdateStatusKind.Ready);
     }
 
+    /// <summary>
+    /// Verifies that saving edited settings sends the full update request (including the source-check time
+    /// window) to the API, applies the API's returned settings back onto the view model, and clears the dirty
+    /// flag.
+    /// </summary>
     [Fact]
     public async Task SaveAsync_PersistsUpdatedSettings()
     {
@@ -154,6 +196,11 @@ public sealed class SetupUpdateViewModelTests
         vm.Dirty.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that triggering an update check while settings have unsaved edits saves them first and only
+    /// then performs the check (asserted via call order), so a check never runs against stale, not-yet-saved
+    /// settings such as an unsaved prerelease-inclusion toggle.
+    /// </summary>
     [Fact]
     public async Task CheckAsync_WhenSettingsAreDirty_SavesSettingsBeforeChecking()
     {
@@ -188,6 +235,9 @@ public sealed class SetupUpdateViewModelTests
         vm.Status.Should().Be(ready);
     }
 
+    /// <summary>
+    /// Verifies that changing a user-editable settings field (service name) marks the view model dirty.
+    /// </summary>
     [Fact]
     public async Task UpdateSettings_WhenEditableValueChanges_SetsDirty()
     {
@@ -203,6 +253,9 @@ public sealed class SetupUpdateViewModelTests
         vm.Dirty.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that toggling the "include prereleases" setting marks the view model dirty.
+    /// </summary>
     [Fact]
     public async Task UpdateSettings_WhenIncludePrereleasesChanges_SetsDirty()
     {
@@ -218,6 +271,9 @@ public sealed class SetupUpdateViewModelTests
         vm.Dirty.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that changing the scheduled source-check time window marks the view model dirty.
+    /// </summary>
     [Fact]
     public async Task UpdateSettings_WhenSourceCheckWindowChanges_SetsDirty()
     {
@@ -233,6 +289,11 @@ public sealed class SetupUpdateViewModelTests
         vm.Dirty.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that changing fields the view model no longer considers user-editable (repository owner,
+    /// working directory, health timeout) does not mark it dirty — a regression guard ensuring the dirty-check
+    /// only tracks the fields actually exposed for editing in the current UI, not every property on the DTO.
+    /// </summary>
     [Fact]
     public async Task UpdateSettings_WhenRemovedValueChanges_DoesNotSetDirty()
     {
@@ -248,6 +309,10 @@ public sealed class SetupUpdateViewModelTests
         vm.Dirty.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that calling <c>Reset</c> after making unsaved edits discards those edits and restores the
+    /// settings as they were originally loaded, clearing the dirty flag.
+    /// </summary>
     [Fact]
     public async Task Reset_RestoresLoadedSettings()
     {
@@ -265,6 +330,10 @@ public sealed class SetupUpdateViewModelTests
         vm.Dirty.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that requesting service-name suggestions (for the systemd/Windows service autocomplete field)
+    /// delegates to the API client with the given query and populates the results.
+    /// </summary>
     [Fact]
     public async Task LoadServiceSuggestionsAsync_UsesApiClient()
     {
@@ -278,6 +347,10 @@ public sealed class SetupUpdateViewModelTests
         vm.ServiceSuggestions.Should().ContainSingle().Which.Should().Be("financemanager.service");
     }
 
+    /// <summary>
+    /// Verifies that a successful install start updates the status to <c>Installing</c> and flips the
+    /// view model's <c>Installing</c> flag.
+    /// </summary>
     [Fact]
     public async Task StartInstallAsync_WhenReady_SetsInstallingState()
     {
@@ -293,6 +366,11 @@ public sealed class SetupUpdateViewModelTests
         vm.Installing.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that setting the install phase updates <c>InstallPhase</c> and raises <c>StateChanged</c> for
+    /// each transition, so the UI can display live progress text as the install moves from "installing" to
+    /// "waiting for restart".
+    /// </summary>
     [Fact]
     public void SetInstallPhase_TransitionsFromInstallingToWaiting()
     {

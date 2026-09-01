@@ -20,6 +20,11 @@ using System.Net.Http;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Tests for <see cref="AttachmentsController"/> covering upload validation (size limits, MIME allow-list,
+/// content-type sniffing, SVG sanitization against script injection), download content-type handling
+/// (including the "nosniff" downgrade for risky types), category CRUD, and the paginated listing endpoint.
+/// </summary>
 public sealed class AttachmentsControllerTests
 {
     private sealed class TestCurrentUser : ICurrentUserService
@@ -80,6 +85,9 @@ public sealed class AttachmentsControllerTests
         return (controller, svc, cats, current);
     }
 
+    /// <summary>
+    /// Verifies that a zero-byte upload is rejected with a 400 and an "empty file" error before it reaches storage.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_EmptyFile()
     {
@@ -94,6 +102,10 @@ public sealed class AttachmentsControllerTests
         Assert.Contains("empty file", err.message!.ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Verifies that uploads exceeding the configured <c>MaxSizeBytes</c> are rejected with a descriptive
+    /// "file too large" error before the file content is persisted.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_TooLarge()
     {
@@ -109,6 +121,10 @@ public sealed class AttachmentsControllerTests
         Assert.Contains("file too large", err.message!.ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Verifies that a file whose content type is not in the configured MIME allow-list is rejected with 400,
+    /// preventing arbitrary file types from being stored as attachments.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_UnsupportedContentType()
     {
@@ -125,6 +141,10 @@ public sealed class AttachmentsControllerTests
         Assert.Contains("unsupported", err.message!.ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Verifies that a PDF whose declared content type matches its byte-level signature is accepted and
+    /// forwarded to <see cref="IAttachmentService"/>'s upload method.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldAccept_ValidPdf()
     {
@@ -153,6 +173,10 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that an SVG containing no scripts or event handlers passes the content-safety sanitization
+    /// check and is accepted for upload.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldAccept_SafeSvg()
     {
@@ -182,6 +206,11 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that an SVG containing a <c>&lt;script&gt;</c> element and an inline <c>onload</c> handler is
+    /// rejected as invalid content — SVG can carry executable script and is a known stored-XSS vector for
+    /// uploaded attachments.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_UnsafeSvg()
     {
@@ -197,6 +226,11 @@ public sealed class AttachmentsControllerTests
         Assert.Equal("Err_Invalid_ContentType", err.code);
     }
 
+    /// <summary>
+    /// Verifies that a file whose byte-level signature does not match its declared content type (client claims
+    /// PDF, bytes are actually PNG) is rejected — guards against MIME-type spoofing via a manipulated
+    /// Content-Type header.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_HeaderBytesMismatch()
     {
@@ -213,6 +247,10 @@ public sealed class AttachmentsControllerTests
         Assert.Equal("Err_Invalid_ContentType", err.code);
     }
 
+    /// <summary>
+    /// Verifies that when the client sends an empty Content-Type header, the controller sniffs the real content
+    /// type from the file's byte signature (here PNG) and normalizes it before forwarding to the service.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldNormalize_EmptyClientContentType_FromBytes()
     {
@@ -231,6 +269,10 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that a file declared as <c>text/plain</c> but containing a NUL byte is rejected, since binary
+    /// content masquerading as text should not be accepted as a text attachment.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_TextWithNulByte()
     {
@@ -245,6 +287,12 @@ public sealed class AttachmentsControllerTests
         Assert.Equal(StatusCodes.Status400BadRequest, bad.StatusCode);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="AttachmentUploadSizeLimitAttribute"/> reads the configured
+    /// <c>AttachmentUploadOptions.MaxSizeBytes</c> at request time (rather than a fixed compile-time constant) to
+    /// set the request body size limit, and that no conflicting <c>RequestSizeLimit</c>/<c>RequestFormLimits</c>
+    /// attributes are also present on the action, which would silently override it.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldUse_RuntimeConfiguredAttachmentSizeLimits()
     {
@@ -286,6 +334,11 @@ public sealed class AttachmentsControllerTests
         Assert.Single(form.Files);
     }
 
+    /// <summary>
+    /// Verifies that a non-positive configured size limit (0 or negative, e.g. from a misconfigured setting) is
+    /// normalized to the built-in default rather than disabling the upload size check entirely.
+    /// </summary>
+    /// <param name="configuredLimit">A non-positive value that should not be honored as-is.</param>
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -338,6 +391,10 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that supplying a URL instead of a file routes the request to
+    /// <see cref="IAttachmentService.CreateUrlAsync"/>, producing an attachment with <c>IsUrl</c> set.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldCreateUrl_WhenUrlProvided()
     {
@@ -364,6 +421,10 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that omitting both file and URL is rejected with a 400 "file or url required" error, since the
+    /// endpoint requires exactly one content source.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_WhenNeitherFileNorUrlProvided()
     {
@@ -376,6 +437,10 @@ public sealed class AttachmentsControllerTests
         Assert.Contains("file or url", err.message!.ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Verifies that an out-of-range <c>entityKind</c> value is rejected with a 400 before any file/URL
+    /// processing is attempted.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldReject_InvalidEntityKind()
     {
@@ -386,6 +451,10 @@ public sealed class AttachmentsControllerTests
         Assert.Contains("invalid entitykind", err.message!.ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Verifies that an optional <c>categoryId</c> is forwarded unchanged to the attachment service when
+    /// uploading a file.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldPass_CategoryId_ToService_OnUpload()
     {
@@ -404,6 +473,10 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that an optional <c>categoryId</c> is forwarded unchanged to the attachment service when
+    /// creating a URL attachment (i.e. the URL path shares the same category handling as the file-upload path).
+    /// </summary>
     [Fact]
     public async Task UploadAsync_ShouldPass_CategoryId_ToService_OnCreateUrl()
     {
@@ -418,6 +491,9 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that downloading a non-existent attachment returns 404 rather than throwing.
+    /// </summary>
     [Fact]
     public async Task DownloadAsync_ShouldReturn_NotFound_WhenMissing()
     {
@@ -431,6 +507,11 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that a successful download streams the file back with the correct file name and content type,
+    /// and sets the <c>X-Content-Type-Options: nosniff</c> response header to stop browsers from
+    /// MIME-sniffing the body into something more dangerous than the declared type.
+    /// </summary>
     [Fact]
     public async Task DownloadAsync_ShouldReturn_FileContentResult()
     {
@@ -448,6 +529,11 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that a stored attachment with a potentially dangerous content type (e.g. <c>text/html</c>) is
+    /// served back as <c>application/octet-stream</c> instead, preventing the browser from rendering or
+    /// executing it inline when the attachment is opened directly from a download link.
+    /// </summary>
     [Fact]
     public async Task DownloadAsync_ShouldFallback_RiskyContentType_ToOctetStream()
     {
@@ -466,6 +552,11 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that SVG attachments — already sanitized against scripts at upload time — keep their
+    /// <c>image/svg+xml</c> content type on download rather than being forced to octet-stream like other
+    /// risky types.
+    /// </summary>
     [Fact]
     public async Task DownloadAsync_ShouldReturnSvgContentType_ForStoredSvg()
     {
@@ -484,6 +575,9 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that a successful delete returns 204 No Content.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldReturn_NoContent_WhenDeleted()
     {
@@ -496,6 +590,9 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that deleting a non-existent attachment returns 404 rather than a generic error.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldReturn_NotFound_WhenMissing()
     {
@@ -508,6 +605,9 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that a successful core-metadata update (e.g. renaming a file) returns 204 No Content.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldReturn_NoContent_WhenUpdated()
     {
@@ -520,6 +620,9 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that updating a non-existent attachment's core metadata returns 404.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldReturn_NotFound_WhenMissing()
     {
@@ -532,6 +635,9 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that successfully re-assigning an attachment's category returns 204 No Content.
+    /// </summary>
     [Fact]
     public async Task UpdateCategoryAsync_ShouldReturn_NoContent_WhenUpdated()
     {
@@ -545,6 +651,9 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that re-assigning a category on a non-existent attachment returns 404.
+    /// </summary>
     [Fact]
     public async Task UpdateCategoryAsync_ShouldReturn_NotFound_WhenMissing()
     {
@@ -557,6 +666,10 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that listing attachments with an out-of-range <c>entityKind</c> is rejected with 400 before the
+    /// service is queried.
+    /// </summary>
     [Fact]
     public async Task ListAsync_ShouldReject_InvalidEntityKind()
     {
@@ -567,6 +680,10 @@ public sealed class AttachmentsControllerTests
         Assert.Contains("invalid entitykind", err.message!.ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Verifies that the paginated list endpoint wraps the service's results in a <see cref="PageResult{T}"/>
+    /// envelope with the correct <c>Items</c>, <c>Total</c>, and <c>HasMore</c> values.
+    /// </summary>
     [Fact]
     public async Task ListAsync_ShouldReturn_EnvelopeWithItems()
     {
@@ -585,6 +702,10 @@ public sealed class AttachmentsControllerTests
         service.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that the category list endpoint passes through the categories returned by
+    /// <see cref="IAttachmentCategoryService"/> unchanged.
+    /// </summary>
     [Fact]
     public async Task ListCategoriesAsync_ShouldReturn_ListFromService()
     {
@@ -598,6 +719,9 @@ public sealed class AttachmentsControllerTests
         cats.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that creating a category returns a 201 Created result carrying the persisted category DTO.
+    /// </summary>
     [Fact]
     public async Task CreateCategoryAsync_ShouldReturn_CreatedDto()
     {
@@ -612,6 +736,10 @@ public sealed class AttachmentsControllerTests
         cats.VerifyAll();
     }
 
+    /// <summary>
+    /// Verifies that an invalid category name — rejected by the service via <see cref="ArgumentException"/> —
+    /// is translated into a 400 response with a descriptive error message rather than an unhandled exception.
+    /// </summary>
     [Fact]
     public async Task CreateCategoryAsync_ShouldReturn_BadRequest_WhenInvalid()
     {

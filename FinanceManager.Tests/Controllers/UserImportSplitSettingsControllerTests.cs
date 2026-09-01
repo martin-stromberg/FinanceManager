@@ -18,6 +18,12 @@ using System.Security.Claims;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Tests for the statement mass-import split settings endpoints on <see cref="UserSettingsController"/>,
+/// covering the default values a new user starts with and the validation rules that tie together
+/// <c>MonthlySplitThreshold</c> and <c>MinEntriesPerDraft</c>/<c>MaxEntriesPerDraft</c> depending on the
+/// chosen <see cref="ImportSplitMode"/>.
+/// </summary>
 public sealed class UserImportSplitSettingsControllerTests
 {
     private sealed class TestCurrentUser : ICurrentUserService
@@ -66,6 +72,10 @@ public sealed class UserImportSplitSettingsControllerTests
         return (controller, db, current);
     }
 
+    /// <summary>
+    /// Verifies the default import-split settings a newly created user starts with, including the
+    /// <c>MinEntriesPerDraft</c> default of 8 introduced alongside the min/max entry validation.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ShouldReturnDefaults()
     {
@@ -81,6 +91,10 @@ public sealed class UserImportSplitSettingsControllerTests
         Assert.Equal(MassImportDialogPolicy.OnMissingInformation, dto.MassImportDialogPolicy);
     }
 
+    /// <summary>
+    /// Verifies that a valid update, including the <c>MinEntriesPerDraft</c> field, is persisted onto the
+    /// user's settings.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldPersistValues_IncludingMinEntries()
     {
@@ -101,6 +115,11 @@ public sealed class UserImportSplitSettingsControllerTests
         Assert.Equal(MassImportDialogPolicy.AlwaysConfirm, user.MassImportDialogPolicy);
     }
 
+    /// <summary>
+    /// Verifies that a <c>MonthlySplitThreshold</c> lower than the plan's typical monthly entry count is
+    /// rejected as a validation error on that specific field, and that the user's existing settings are left
+    /// unchanged rather than partially applied.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldValidateThreshold()
     {
@@ -121,6 +140,11 @@ public sealed class UserImportSplitSettingsControllerTests
         Assert.Equal(8, user.ImportMinEntriesPerDraft);   // unchanged default
     }
 
+    /// <summary>
+    /// Verifies that <see cref="ImportSplitMode.FixedSize"/> mode does not require a
+    /// <c>MonthlySplitThreshold</c> (which only applies to the monthly-based modes) and that
+    /// <c>MinEntriesPerDraft</c> is still persisted correctly alongside it.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldAllowFixedSizeWithoutThreshold_AndPersistMinEntries()
     {
@@ -141,6 +165,11 @@ public sealed class UserImportSplitSettingsControllerTests
         Assert.Equal(MassImportDialogPolicy.AlwaysConfirm, user.MassImportDialogPolicy);
     }
 
+    /// <summary>
+    /// Verifies that a <c>MinEntriesPerDraft</c> greater than <c>MaxEntriesPerDraft</c> is rejected as a
+    /// validation error on the min-entries field — an inconsistent range that would make every draft either
+    /// too small or impossible to create — and that existing settings remain unchanged.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldFail_WhenMinEntriesGreaterThanMax()
     {

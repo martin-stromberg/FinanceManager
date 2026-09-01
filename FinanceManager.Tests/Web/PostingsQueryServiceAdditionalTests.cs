@@ -10,6 +10,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Web
 {
+    /// <summary>
+    /// Additional tests for <see cref="PostingsQueryService"/> against a real SQLite-backed
+    /// <see cref="AppDbContext"/>, focused on the account/bank "symbol" attachment resolution (an account's
+    /// own symbol vs. falling back to its bank contact's symbol) and on the linked-posting symbol lookup for
+    /// transfers between two accounts, including the case where a linked contact posting has no corresponding
+    /// bank posting to derive a symbol from.
+    /// </summary>
     public sealed class PostingsQueryServiceAdditionalTests
     {
         private static (PostingsQueryService svc, AppDbContext db, Guid owner) Create()
@@ -29,6 +36,10 @@ namespace FinanceManager.Tests.Web
             return (svc, db, owner.Id);
         }
 
+        /// <summary>
+        /// Verifies that when an account has its own symbol attachment set, a bank posting on that account
+        /// reports that account-level symbol directly, without needing to look up the bank contact's symbol.
+        /// </summary>
         [Fact]
         public async Task GetAccountPostingsAsync_ReturnsBankPostingWithAccountSymbol_WhenAccountHasSymbol()
         {
@@ -58,6 +69,10 @@ namespace FinanceManager.Tests.Web
             Assert.Equal(sym, dto.BankPostingAccountSymbolAttachmentId);
         }
 
+        /// <summary>
+        /// Verifies that postings linked to a savings plan owned by the requesting user are returned with the
+        /// correct kind and savings plan id.
+        /// </summary>
         [Fact]
         public async Task GetSavingsPlanPostingsAsync_ReturnsSavingsPlanPostings_WhenOwned()
         {
@@ -79,6 +94,10 @@ namespace FinanceManager.Tests.Web
             Assert.Equal(plan.Id, res[0].SavingsPlanId);
         }
 
+        /// <summary>
+        /// Verifies that postings linked to a security owned by the requesting user are returned with the
+        /// correct kind and security id.
+        /// </summary>
         [Fact]
         public async Task GetSecurityPostingsAsync_ReturnsSecurityPostings_WhenOwned()
         {
@@ -100,6 +119,11 @@ namespace FinanceManager.Tests.Web
             Assert.Equal(sec.Id, res[0].SecurityId);
         }
 
+        /// <summary>
+        /// Verifies that when an account has no symbol attachment of its own, a bank posting on that account
+        /// falls back to the symbol attached to the account's bank contact, so accounts still display a
+        /// recognizable icon even without a per-account symbol configured.
+        /// </summary>
         [Fact]
         public async Task GetAccountPostingsAsync_FallsBackToBankContactSymbol_WhenAccountHasNoSymbol()
         {
@@ -126,6 +150,12 @@ namespace FinanceManager.Tests.Web
             Assert.Equal(bankSym, res[0].BankPostingAccountSymbolAttachmentId);
         }
 
+        /// <summary>
+        /// Verifies that for a transfer between two accounts (each posting linked to the other), the
+        /// "self" contact's postings report both their own bank account's symbol and the *linked* posting's
+        /// bank account symbol — each falling back to its respective bank contact's symbol — so a transfer
+        /// entry can display icons for both sides of the transfer.
+        /// </summary>
         [Fact]
         public async Task GetContactPostingsAsync_LinkedPostingSymbolFallbacksToLinkedAccountContactSymbol()
         {
@@ -186,6 +216,11 @@ namespace FinanceManager.Tests.Web
             Assert.Equal(sym1, r2.LinkedPostingAccountSymbolAttachmentId);
         }
 
+        /// <summary>
+        /// Verifies that when two contact postings are linked to each other but neither has a corresponding
+        /// bank posting in their group (e.g. a pure contact-to-contact transfer), the linked posting's symbol
+        /// is null rather than throwing or resolving to an unrelated symbol.
+        /// </summary>
         [Fact]
         public async Task GetContactPostingsAsync_LinkedPostingWithoutBankPosting_YieldsNullLinkedSymbol()
         {

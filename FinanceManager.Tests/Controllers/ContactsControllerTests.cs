@@ -11,6 +11,11 @@ using Moq;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Tests for <see cref="ContactsController"/>, focused on the create-with-parent-assignment failure path:
+/// what happens when a contact is created but the accompanying parent-assignment step conflicts, including
+/// the rollback of the just-created contact and the localized error message shown to the user.
+/// </summary>
 public sealed class ContactsControllerTests
 {
     private const string ParentAssignmentConflictLocalizationKey = "API_Contacts_Err_Conflict_ParentAssignment";
