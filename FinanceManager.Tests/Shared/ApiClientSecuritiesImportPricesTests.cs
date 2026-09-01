@@ -7,6 +7,11 @@ using FinanceManager.Shared.Dtos.Securities;
 
 namespace FinanceManager.UnitTests.Http;
 
+/// <summary>
+/// Covers <see cref="FinanceManager.Shared.ApiClient.Securities_ImportPricesAsync"/>, which uploads a CSV price
+/// file as multipart form data - verifying the request shape (file + provider parts), successful deserialization
+/// of the import result, and that API-level validation errors on the price data are surfaced to the caller.
+/// </summary>
 public sealed class ApiClientSecuritiesImportPricesTests
 {
     /// <summary>

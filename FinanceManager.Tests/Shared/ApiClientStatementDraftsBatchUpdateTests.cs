@@ -6,8 +6,14 @@ using FinanceManager.Shared.Dtos.Statements;
 
 namespace FinanceManager.UnitTests.Http;
 
+/// <summary>
+/// Covers <see cref="ApiClient.StatementDrafts_BatchUpdateDetailedAsync"/>'s JSON payload shape - in particular
+/// that booking/valuta dates are serialized as plain date-only strings ("yyyy-MM-dd") without a time component,
+/// since the server-side model treats them as dates rather than timestamps.
+/// </summary>
 public sealed class ApiClientStatementDraftsBatchUpdateTests
 {
+    /// <summary>Verifies that create-entry dates are serialized without a time-of-day component, so the request body carries "2026-07-21" rather than a full ISO datetime that would misrepresent booking/valuta dates as timestamps.</summary>
     [Fact]
     public async Task StatementDrafts_BatchUpdateDetailedAsync_ShouldSerializeCreateDatesAsDateOnlyStrings()
     {

@@ -12,8 +12,15 @@ using Moq;
 
 namespace FinanceManager.Tests.Notifications;
 
+/// <summary>
+/// Covers <see cref="MonthlyReminderJob"/>'s daily-run scheduling logic over a full calendar year: since the
+/// job is invoked once per day (not just on the target day), it must recognize the last business day of each
+/// month exactly once and stay idempotent for every other day, so a user with monthly reminders enabled ends
+/// up with precisely one notification per month rather than duplicates or gaps.
+/// </summary>
 public sealed class MonthlyReminderSchedulerTests
 {
+    /// <summary>Runs the job for every single day of 2024 and asserts exactly 12 notifications were created, each dated on that month's last business day as computed by <see cref="BusinessDayCalculator"/> - verifying both the trigger condition and the idempotent re-run behavior across a full year in one pass.</summary>
     [Fact]
     public async Task Run_ForFullYear2024_ShouldCreateNotifications_OnEachLastBusinessDay()
     {
