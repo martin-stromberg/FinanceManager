@@ -83,7 +83,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <summary>
     /// Indicates whether any setup section currently has unsaved changes.
     /// </summary>
-    public bool HasPendingChanges
+    /// <remarks>
+    /// Intentionally hides <see cref="BaseCardViewModel{TKeyValue}.HasPendingChanges"/> (which is not virtual and
+    /// tracks a single field-level pending-changes dictionary): this card aggregates several independent setup
+    /// sections, so "pending changes" here means "any section is dirty", not "any field on this card changed".
+    /// </remarks>
+    public new bool HasPendingChanges
     {
         get
         {

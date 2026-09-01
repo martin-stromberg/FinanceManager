@@ -386,13 +386,10 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             // Additionally, allow status changes applied to the lightweight item (e.g., ResetDup) to be included
             if (Items.FirstOrDefault(i => i.Id == kv.Key) is var lightweight && lightweight != null)
             {
-                if (lightweight.Status != null)
+                // if original snapshot did not include status change, include it
+                if (!orig.TryGetValue("Status", out var origStatus) || !object.Equals(origStatus, lightweight.Status))
                 {
-                    // if original snapshot did not include status change, include it
-                    if (!orig.TryGetValue("Status", out var origStatus) || !object.Equals(origStatus, lightweight.Status))
-                    {
-                        diffs["Status"] = lightweight.Status;
-                    }
+                    diffs["Status"] = lightweight.Status;
                 }
             }
             if (diffs.Count > 0) result[kv.Key] = diffs;

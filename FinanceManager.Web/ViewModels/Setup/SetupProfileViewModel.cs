@@ -28,10 +28,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
     public UserProfileSettingsDto Model { get; private set; } = new();
     private UserProfileSettingsDto _original = new();
 
-    /// <summary>
-    /// Indicates whether a load operation is in progress.
-    /// </summary>
-    public bool Loading { get; private set; }
+    // Loading is inherited from BaseViewModel (protected set) - no local redeclaration needed.
 
     /// <summary>
     /// Indicates whether a save operation is in progress.
