@@ -315,7 +315,7 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
         if (val is DateTime dt)
             if (dt == DateTime.MinValue)
                 return "";
-            else 
+            else
                 return dt.ToString("u");
         return "";
     }

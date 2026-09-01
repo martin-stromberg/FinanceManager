@@ -5,7 +5,7 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
-[Collection("IntegrationTests")] 
+[Collection("IntegrationTests")]
 public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;

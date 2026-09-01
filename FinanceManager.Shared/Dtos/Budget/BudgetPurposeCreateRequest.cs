@@ -6,7 +6,7 @@ namespace FinanceManager.Shared.Dtos.Budget;
 /// Request for creating a budget purpose.
 /// </summary>
 public sealed record BudgetPurposeCreateRequest(
-    [Required, MinLength(2), MaxLength(150)]string Name,
+    [Required, MinLength(2), MaxLength(150)] string Name,
     BudgetSourceType SourceType,
     Guid SourceId,
     [MaxLength(500)] string? Description,

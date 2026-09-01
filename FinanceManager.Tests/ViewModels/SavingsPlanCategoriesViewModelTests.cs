@@ -76,7 +76,7 @@ public sealed class SavingsPlanCategoriesViewModelTests
         var actions = groups.First();
         Assert.Contains(actions.Items, i => i.Action == "Back");
         // Flatten groups to avoid relying on specific grouping order/structure in viewmodels
-        var items = groups.SelectMany(g => g.Items).ToList();        
+        var items = groups.SelectMany(g => g.Items).ToList();
         Assert.Contains(items, i => i.Action == "Back");
         Assert.Contains(items, i => i.Action == "New");
     }

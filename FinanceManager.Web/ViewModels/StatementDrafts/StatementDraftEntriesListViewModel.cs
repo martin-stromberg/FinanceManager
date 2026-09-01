@@ -566,7 +566,8 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             new ListColumn("status", L["List_Th_Status"].Value ?? "Status", "8rem", ListColumnAlign.Left)
         };
 
-        Records = Items.Select(i => {
+        Records = Items.Select(i =>
+        {
             // resolve symbol ids and names from draft-level maps if available
             _contactSymbols.TryGetValue(i.Id, out var contactSym);
             _contactNames.TryGetValue(i.Id, out var contactName);
@@ -779,7 +780,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                                                 formattedParams.Add(p);
                                             }
                                         }
-                                        
+
                                         msgLocalized = string.Format(localizedString.Value, formattedParams.ToArray());
                                     }
                                     catch (FormatException)

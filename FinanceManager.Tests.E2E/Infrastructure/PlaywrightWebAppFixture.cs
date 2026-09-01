@@ -311,14 +311,14 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
     private string GetServerLogs()
     {
         lock (_serverOutput)
-        lock (_serverError)
-        {
-            return string.Join(Environment.NewLine, new[]
+            lock (_serverError)
             {
+                return string.Join(Environment.NewLine, new[]
+                {
                 _serverOutput.ToString(),
                 _serverError.ToString()
             }.Where(x => !string.IsNullOrWhiteSpace(x)));
-        }
+            }
     }
 
     private static string GetArtifactDirectory()

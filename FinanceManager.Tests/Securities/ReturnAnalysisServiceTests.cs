@@ -230,20 +230,20 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             NullLogger<ReturnAnalysisService>.Instance,
             new TestReturnAnalysisLocalizer());
 
-        var groupBuy  = new Guid("9be20b76-c600-4ab5-b388-e02a2b89bffa");
+        var groupBuy = new Guid("9be20b76-c600-4ab5-b388-e02a2b89bffa");
         var groupSell = new Guid("ca09994a-decd-40a7-9eff-a51d1ba581ed");
-        const decimal buyAmount     = -957.75m;
-        const decimal buyFeeAmount  = -7.29m;
-        const decimal sellAmount    =  1151.50m;
+        const decimal buyAmount = -957.75m;
+        const decimal buyFeeAmount = -7.29m;
+        const decimal sellAmount = 1151.50m;
         const decimal sellFeeAmount = -7.78m;
 
         // Expected derived values
         const decimal historicalInvestedCapital = 957.75m + 7.29m;     // 965,04 — used internally for return calc
-        const decimal expectedSalesProceeds     = 1151.50m - 7.78m;    // 1143,72
-        const decimal expectedReturnAbsolute    = expectedSalesProceeds - historicalInvestedCapital; // 178,68
+        const decimal expectedSalesProceeds = 1151.50m - 7.78m;    // 1143,72
+        const decimal expectedReturnAbsolute = expectedSalesProceeds - historicalInvestedCapital; // 178,68
 
         var (security, user) = SetupSecurityAndUser();
-        var buyDate  = new DateTime(2020, 3, 26);
+        var buyDate = new DateTime(2020, 3, 26);
         var sellDate = new DateTime(2024, 8, 6);
 
         // Quantity on Sell is negative in the domain model (outflow of shares)
@@ -1754,7 +1754,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = DateTime.Today.AddDays(-10);
+        var buyDate = DateTime.Today.AddDays(-10);
         var sellDate = DateTime.Today.AddDays(-5);
 
         // Buy: 10 shares; amount is negative (cash outflow), quantity is positive
@@ -1775,7 +1775,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         _db.Postings.AddRange(buy, sell);
 
         // Price of 120 on and after the sell date; the test verifies market value = 0, not 2400
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,  100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 120m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
 
@@ -1816,7 +1816,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = new DateTime(2020, 1, 15);
+        var buyDate = new DateTime(2020, 1, 15);
         var sellDate = new DateTime(2020, 1, 20);
 
         // Buy: 10 shares, 100€ outflow → implied price = 10€/share
@@ -1883,8 +1883,8 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate   = new DateTime(2020, 1, 15);
-        var sellDate  = new DateTime(2020, 1, 20);
+        var buyDate = new DateTime(2020, 1, 15);
+        var sellDate = new DateTime(2020, 1, 20);
         var priceDate = new DateTime(2020, 1, 25); // real price only AFTER the sell
 
         var buy = CreateBuyPosting(security.Id, buyDate, -100m, 10m); // 10€/share
@@ -1944,9 +1944,9 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate   = new DateTime(2020, 1,  1);
+        var buyDate = new DateTime(2020, 1, 1);
         var priceDate = new DateTime(2020, 1, 11); // real price starts mid-ownership
-        var sellDate  = new DateTime(2020, 1, 21);
+        var sellDate = new DateTime(2020, 1, 21);
 
         // Buy: 10 shares, 100€ → 10€/share
         var buy = CreateBuyPosting(security.Id, buyDate, -100m, 10m);
@@ -2009,7 +2009,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange – buy on 2020-06-01, sell on 2021-03-01 (both in the past)
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = new DateTime(2020, 6, 1);
+        var buyDate = new DateTime(2020, 6, 1);
         var sellDate = new DateTime(2021, 3, 1);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
@@ -2019,7 +2019,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             1_200m, null, null, null, SecurityPostingSubType.Sell, -10m);
 
         _db.Postings.AddRange(buy, sell);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,  100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 120m));
         await _db.SaveChangesAsync();
 
@@ -2049,13 +2049,13 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         //           Year-end price is 120 €/share → 20 % gain.
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate     = new DateTime(2022, 1, 2);
+        var buyDate = new DateTime(2022, 1, 2);
         var yearEndDate = new DateTime(2022, 12, 31);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
 
         _db.Postings.Add(buy);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,     100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, yearEndDate, 120m));
         await _db.SaveChangesAsync();
 
@@ -2087,7 +2087,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         //   2023-06-01: fee                    → amount -   10 €
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = new DateTime(2022, 1, 2);
+        var buyDate = new DateTime(2022, 1, 2);
         var sellDate = new DateTime(2023, 6, 1);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
@@ -2103,9 +2103,9 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             -10m, null, null, null, SecurityPostingSubType.Fee, null);
 
         _db.Postings.AddRange(buy, sell, fee);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,                   100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, new DateTime(2022, 12, 31), 100m));
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate,                  130m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 130m));
         await _db.SaveChangesAsync();
 
         // Act
@@ -2132,13 +2132,13 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         //           Month-end price (March 31) is 110 €/share.
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate      = new DateTime(2022, 3, 15);
+        var buyDate = new DateTime(2022, 3, 15);
         var marchEndDate = new DateTime(2022, 3, 31);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
 
         _db.Postings.Add(buy);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,      100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, marchEndDate, 110m));
         await _db.SaveChangesAsync();
 

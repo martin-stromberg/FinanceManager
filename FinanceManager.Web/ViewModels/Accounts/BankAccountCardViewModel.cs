@@ -7,7 +7,7 @@ using Microsoft.Extensions.Localization;
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
-    
+
     /// <summary>
     /// View model for the account detail card displayed in the UI.
     /// Responsible for loading a single account, building the card record and handling save / delete actions.
@@ -23,7 +23,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             : base(sp)
         {
         }
-        
+
         /// <summary>
         /// Identifier of the currently loaded account.
         /// </summary>

@@ -139,7 +139,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             foreach (var dataRow in rowElems.Skip(1))
             {
                 var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-                for (var i = 0; i < maxCol; i++) dict[headers[i] ?? $"Column{i+1}"] = string.Empty;
+                for (var i = 0; i < maxCol; i++) dict[headers[i] ?? $"Column{i + 1}"] = string.Empty;
 
                 int dataSeq = 0;
                 foreach (var c in dataRow.Elements().Where(e => string.Equals(e.Name.LocalName, "c", StringComparison.OrdinalIgnoreCase)))
@@ -230,18 +230,18 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         return sheetDataMap;
     }
 
-        static int ColLettersToIndex(string letters)
+    static int ColLettersToIndex(string letters)
+    {
+        if (string.IsNullOrEmpty(letters)) return 0;
+        var l = letters.ToUpperInvariant().Trim();
+        int sum = 0;
+        foreach (var ch in l)
         {
-            if (string.IsNullOrEmpty(letters)) return 0;
-            var l = letters.ToUpperInvariant().Trim();
-            int sum = 0;
-            foreach (var ch in l)
-            {
-                if (ch < 'A' || ch > 'Z') continue;
-                sum = sum * 26 + (ch - 'A' + 1);
-            }
-            return sum;
+            if (ch < 'A' || ch > 'Z') continue;
+            sum = sum * 26 + (ch - 'A' + 1);
         }
+        return sum;
+    }
 
     private static async Task CreateAndBookStatementAsync(FinanceManager.Shared.ApiClient api, Guid accountId, List<ContactDto> createdContacts, List<SavingsPlanDto> createdSavings)
     {
@@ -299,7 +299,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         }
 
         // entries from the provided CSV-like data
-        var entries = new (DateTime Booking, DateTime? Valuta, decimal Amount, string Subject, string? ContactName, string? SavingsPlan)[ ]
+        var entries = new (DateTime Booking, DateTime? Valuta, decimal Amount, string Subject, string? ContactName, string? SavingsPlan)[]
         {
             (new DateTime(2026,1,27), new DateTime(2026,1,27), -3.81m, "Anlage 1", "Ich", "Anlage 1"),
             (new DateTime(2026,1,27), new DateTime(2026,1,27), -8m, "Dienstleistungsvertrag 1", "Ich", "Dienstleistungsvertrag 1"),
@@ -507,26 +507,26 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             switch (def.SourceType)
             {
                 case BudgetSourceType.Contact:
-                {
-                    var contact = createdContacts.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
-                    contact.Should().NotBeNull($"contact '{def.SourceName}' must exist");
-                    sourceId = contact!.Id;
-                    break;
-                }
+                    {
+                        var contact = createdContacts.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
+                        contact.Should().NotBeNull($"contact '{def.SourceName}' must exist");
+                        sourceId = contact!.Id;
+                        break;
+                    }
                 case BudgetSourceType.ContactGroup:
-                {
-                    var cat = createdCategories.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
-                    cat.Should().NotBeNull($"contact group '{def.SourceName}' must exist");
-                    sourceId = cat!.Id;
-                    break;
-                }
+                    {
+                        var cat = createdCategories.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
+                        cat.Should().NotBeNull($"contact group '{def.SourceName}' must exist");
+                        sourceId = cat!.Id;
+                        break;
+                    }
                 case BudgetSourceType.SavingsPlan:
-                {
-                    var sp = createdSavings.SingleOrDefault(s => string.Equals(s.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
-                    sp.Should().NotBeNull($"savings plan '{def.SourceName}' must exist");
-                    sourceId = sp!.Id;
-                    break;
-                }
+                    {
+                        var sp = createdSavings.SingleOrDefault(s => string.Equals(s.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
+                        sp.Should().NotBeNull($"savings plan '{def.SourceName}' must exist");
+                        sourceId = sp!.Id;
+                        break;
+                    }
                 default:
                     throw new InvalidOperationException("Unknown source type");
             }
@@ -826,7 +826,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             ("Versicherung 7", ContactType.Organization),
             ("Versicherung 8", ContactType.Organization),
         };
-        
+
         // create contacts via helper
         var createdContacts = await CreateContactsAsync(api, contacts);
 
@@ -887,7 +887,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         accounts.Should().NotBeEmpty();
         var accountId = accounts[0].Id;
         await CreateAndBookStatementAsync(api, accountId, createdContacts, createdSavings);
-        
+
         // Request budget report for January 2026 and verify category details
         var reportReq = new BudgetReportRequest(
             AsOfDate: new DateOnly(2026, 1, 1),
@@ -900,7 +900,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             CategoryValueScope: BudgetReportValueScope.TotalRange,
             IncludePurposeRows: true,
             DateBasis: BudgetReportDateBasis.BookingDate);
-              
+
         var report = await api.Budgets_GetReportAsync(reportReq);
         report.Should().NotBeNull();
 

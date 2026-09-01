@@ -693,7 +693,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         await SecurityCategories
             .Where(c => c.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);        
+        progressCallback(++count, total);
 
         // Budgets
         var budgetPurposes = await BudgetPurposes.Where(x => x.OwnerUserId == userId).ToListAsync(ct);

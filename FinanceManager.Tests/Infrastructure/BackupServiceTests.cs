@@ -278,7 +278,7 @@ namespace FinanceManager.Tests.Infrastructure
 
             var filename = "todownload.zip";
             var filepath = Path.Combine(temp, "backups", filename);
-            await using (var fs = File.Create(filepath)) { var b = new byte[] {1,2,3}; await fs.WriteAsync(b); }
+            await using (var fs = File.Create(filepath)) { var b = new byte[] { 1, 2, 3 }; await fs.WriteAsync(b); }
             var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = filename, SizeBytes = new FileInfo(filepath).Length, Source = "Test", StoragePath = filename };
             db.Backups.Add(rec);
             await db.SaveChangesAsync();
@@ -287,7 +287,7 @@ namespace FinanceManager.Tests.Infrastructure
             Assert.NotNull(stream);
             using var sr = new MemoryStream();
             await stream!.CopyToAsync(sr);
-            Assert.Equal(new byte[] {1,2,3}, sr.ToArray());
+            Assert.Equal(new byte[] { 1, 2, 3 }, sr.ToArray());
 
             try { Directory.Delete(temp, true); } catch { }
         }

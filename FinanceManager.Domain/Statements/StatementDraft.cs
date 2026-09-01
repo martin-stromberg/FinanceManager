@@ -228,7 +228,7 @@ public sealed class StatementDraft : Entity, IAggregateRoot
         IsPreliminary = dto.IsPreliminary;
         UploadGroupId = dto.UploadGroupId;
         SetDates(dto.CreatedUtc, dto.ModifiedUtc);
-        if (includeEntries) 
+        if (includeEntries)
         {
             _entries.Clear();
             foreach (var e in dto.Entries)
@@ -333,7 +333,7 @@ public sealed class StatementDraftEntry : Entity
     /// Currency code for the amount (ISO code). Default is "EUR".
     /// </summary>
     public string CurrencyCode { get; private set; } = "EUR";
-    
+
     /// <summary>
     /// Optional booking description (longer textual information).
     /// </summary>
@@ -398,7 +398,7 @@ public sealed class StatementDraftEntry : Entity
     /// Optional tax amount related to a security transaction.
     /// </summary>
     public decimal? SecurityTaxAmount { get; private set; }
-    
+
 
     /// <summary>
     /// Updates core fields of the draft entry.

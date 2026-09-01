@@ -330,23 +330,23 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             switch (dto.SourceType)
             {
                 case BudgetSourceType.Contact:
-                {
-                    var contact = await ApiClient.Contacts_GetAsync(dto.SourceId);
-                    name = contact?.Name;
-                    break;
-                }
+                    {
+                        var contact = await ApiClient.Contacts_GetAsync(dto.SourceId);
+                        name = contact?.Name;
+                        break;
+                    }
                 case BudgetSourceType.ContactGroup:
-                {
-                    var cats = await ApiClient.ContactCategories_ListAsync();
-                    name = cats?.FirstOrDefault(c => c.Id == dto.SourceId)?.Name;
-                    break;
-                }
+                    {
+                        var cats = await ApiClient.ContactCategories_ListAsync();
+                        name = cats?.FirstOrDefault(c => c.Id == dto.SourceId)?.Name;
+                        break;
+                    }
                 case BudgetSourceType.SavingsPlan:
-                {
-                    var plans = await ApiClient.SavingsPlans_ListAsync(true, CancellationToken.None);
-                    name = plans?.FirstOrDefault(p => p.Id == dto.SourceId)?.Name;
-                    break;
-                }
+                    {
+                        var plans = await ApiClient.SavingsPlans_ListAsync(true, CancellationToken.None);
+                        name = plans?.FirstOrDefault(p => p.Id == dto.SourceId)?.Name;
+                        break;
+                    }
             }
 
             if (!string.IsNullOrWhiteSpace(name))

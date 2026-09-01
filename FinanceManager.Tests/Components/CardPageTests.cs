@@ -29,7 +29,7 @@ namespace FinanceManager.Tests.Components
             JSInterop.SetupVoid("financeManager.loadingBar.start").SetVoidResult();
             JSInterop.SetupVoid("financeManager.loadingBar.stop").SetVoidResult();
         }
-        
+
         [Fact]
         public async Task ContactCard_EditFields_And_Save_CallsApiUpdate()
         {
@@ -105,7 +105,7 @@ namespace FinanceManager.Tests.Components
                 .Add(p => p.Id, id)
             );
 
-            cut.WaitForState(() => cut.FindAll("button").Any(b => b.Id == "Attachments") );
+            cut.WaitForState(() => cut.FindAll("button").Any(b => b.Id == "Attachments"));
 
             // Act: click Attachments ribbon button
             var attachBtn = cut.FindAll("button").First(b => b.Id == "Attachments");
@@ -156,7 +156,7 @@ namespace FinanceManager.Tests.Components
 
             // Category (should be the 3rd input)
             Assert.Equal("MyCategory", inputs[2].GetAttribute("value"));
-            
+
             // Description (should be the 4th input according to field order)
             Assert.Equal("Some description", inputs[3].GetAttribute("value"));
 

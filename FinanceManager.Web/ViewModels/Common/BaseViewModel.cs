@@ -107,7 +107,7 @@ namespace FinanceManager.Web.ViewModels.Common
         /// <summary>
         /// Lazily resolved API client instance taken from the service provider.
         /// </summary>
-        protected IApiClient ApiClient  => _ApiClient ??= ServiceProvider.GetRequiredService<IApiClient>();
+        protected IApiClient ApiClient => _ApiClient ??= ServiceProvider.GetRequiredService<IApiClient>();
 
         /// <summary>
         /// Lazily resolved navigation manager used for composing navigation URLs.
@@ -547,7 +547,7 @@ namespace FinanceManager.Web.ViewModels.Common
             }
             return null;
         }
-        
+
         /// <summary>
         /// Determines whether the provided child view model should be considered active for purposes of aggregating its ribbon registers.
         /// Derived classes may override to control which child view models contribute ribbon items.

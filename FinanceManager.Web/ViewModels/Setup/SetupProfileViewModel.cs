@@ -73,7 +73,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
     /// </summary>
     public string KeyInput { get; set; } = string.Empty;
     private bool _clearRequested;
-    
+
     /// <summary>
     /// Loads the profile settings for the current user from the API and prepares the editable model.
     /// </summary>

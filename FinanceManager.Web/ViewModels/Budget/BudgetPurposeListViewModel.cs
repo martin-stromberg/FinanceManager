@@ -112,7 +112,7 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         Columns = new List<ListColumn>
         {
             new ListColumn("category", L["Budget_List_Th_Category"], "15%", ListColumnAlign.Left),
-            new ListColumn("name", L["List_Th_Name"], "25%", ListColumnAlign.Left),            
+            new ListColumn("name", L["List_Th_Name"], "25%", ListColumnAlign.Left),
             new ListColumn("rules", L["Budget_List_Th_Rules"], "80px", ListColumnAlign.Right),
             new ListColumn("budget", L["Budget_List_Th_Budget"], "120px", ListColumnAlign.Right),
             new ListColumn("actual", L["Budget_List_Th_Actual"], "120px", ListColumnAlign.Right),
@@ -123,7 +123,7 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         Records = Items.Select(i => new ListRecord(new List<ListCell>
         {
             new ListCell(ListCellKind.Text, Text: i.CategoryName),
-            new ListCell(ListCellKind.Text, Text: i.Name),            
+            new ListCell(ListCellKind.Text, Text: i.Name),
             new ListCell(ListCellKind.Text, Text: i.RuleCount.ToString(System.Globalization.CultureInfo.CurrentCulture)),
             new ListCell(ListCellKind.Currency, Amount: i.BudgetSum),
             new ListCell(ListCellKind.Currency, Amount: i.ActualSum),

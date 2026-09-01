@@ -251,7 +251,7 @@ public partial class ApiClient
         }
         catch
         {
-            
+
             // ignore parse errors
         }
 

@@ -3,7 +3,7 @@ namespace FinanceManager.Domain.Securities;
 /// <summary>
 /// Represents a financial security (e.g. stock, bond) tracked by a user. Contains metadata, status and optional price error state.
 /// </summary>
-public sealed class Security: Entity
+public sealed class Security : Entity
 {
     /// <summary>
     /// Parameterless constructor for ORM/deserialization.

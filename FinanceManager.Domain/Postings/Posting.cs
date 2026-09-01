@@ -140,7 +140,7 @@ public sealed class Posting : Entity, IAggregateRoot
         OriginalAmount = null;
     }
 
-     /// <summary>
+    /// <summary>
     /// Creates a posting with explicit booking and valuta dates and optional subtype.
     /// </summary>
     /// <param name="sourceId">Source identifier (external/import id).</param>
@@ -364,7 +364,7 @@ public sealed class Posting : Entity, IAggregateRoot
         {
             throw new ArgumentNullException(nameof(reversalPosting));
         }
-        
+
         if (ReversedByPostingId.HasValue)
         {
             throw new InvalidOperationException($"Posting {Id} is already reversed by posting {ReversedByPostingId.Value}");
@@ -388,7 +388,7 @@ public sealed class Posting : Entity, IAggregateRoot
         {
             throw new ArgumentNullException(nameof(originalPosting));
         }
-        
+
         if (ReversalForPostingId.HasValue)
         {
             throw new InvalidOperationException($"Posting {Id} is already a reversal for posting {ReversalForPostingId.Value}");

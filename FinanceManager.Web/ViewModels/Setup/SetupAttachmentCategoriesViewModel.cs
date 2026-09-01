@@ -69,7 +69,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// </summary>
     public void OnChanged()
     {
-        ActionOk = false; SetError(null,null); RaiseStateChanged();
+        ActionOk = false; SetError(null, null); RaiseStateChanged();
     }
 
     /// <summary>
@@ -109,7 +109,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     {
         var name = NewName?.Trim() ?? string.Empty;
         if (name.Length < 2) { return; }
-        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null, null); ActionOk = false; RaiseStateChanged();
         try
         {
             var dto = await ApiClient.Attachments_CreateCategoryAsync(name, ct);
@@ -138,7 +138,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     public void BeginEdit(Guid id, string currentName)
     {
         if (Busy) { return; }
-        EditId = id; EditName = currentName; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        EditId = id; EditName = currentName; SetError(null, null); ActionOk = false; RaiseStateChanged();
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// </summary>
     public void CancelEdit()
     {
-        EditId = Guid.Empty; EditName = string.Empty; SetError(null,null); RaiseStateChanged();
+        EditId = Guid.Empty; EditName = string.Empty; SetError(null, null); RaiseStateChanged();
     }
 
     /// <summary>
@@ -161,7 +161,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
         if (EditId == Guid.Empty) { return; }
         var name = EditName?.Trim() ?? string.Empty;
         if (name.Length < 2) { return; }
-        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null, null); ActionOk = false; RaiseStateChanged();
         try
         {
             var dto = await ApiClient.Attachments_UpdateCategoryNameAsync(EditId, name, ct);
@@ -192,7 +192,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// <returns>A task representing the asynchronous delete operation.</returns>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null, null); ActionOk = false; RaiseStateChanged();
         try
         {
             var ok = await ApiClient.Attachments_DeleteCategoryAsync(id, ct);

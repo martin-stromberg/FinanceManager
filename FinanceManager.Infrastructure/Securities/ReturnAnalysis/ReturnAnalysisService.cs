@@ -222,7 +222,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         var sells = transactions.Where(t => t.Type == SecurityPostingSubType.Sell).ToList();
         var fees = transactions.Where(t => t.Type == SecurityPostingSubType.Fee).ToList();
         var feesByGroupId = fees.ToLookup(f => f.GroupId);
-        
+
         decimal totalSalesProceeds = 0m;
         foreach (var sell in sells)
         {
@@ -382,7 +382,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         var sells = transactions.Where(t => t.Type == SecurityPostingSubType.Sell).ToList();
         var fees = transactions.Where(t => t.Type == SecurityPostingSubType.Fee).ToList();
         var feesByGroupId = fees.ToLookup(f => f.GroupId);
-        
+
         decimal totalSalesProceeds = 0m;
         foreach (var sell in sells)
         {
@@ -494,7 +494,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
         // When the position is fully closed, only compute returns up to the last transaction year
         // to avoid showing empty years after the final sale.
-        decimal sharesHeldToday= ComputeSharesHeldOnDate(transactions, DateTime.Today);
+        decimal sharesHeldToday = ComputeSharesHeldOnDate(transactions, DateTime.Today);
         int lastYear = sharesHeldToday > 0m
             ? currentYear
             : transactions.Max(t => t.Date).Year;

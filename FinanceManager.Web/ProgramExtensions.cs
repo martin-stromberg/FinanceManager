@@ -124,7 +124,7 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<InMemoryHolidayProvider>();
             builder.Services.AddSingleton<NagerDateHolidayProvider>();
             builder.Services.AddSingleton<IHolidaySubdivisionService, NagerDateSubdivisionService>();
-            builder.Services.AddSingleton<IHolidayProviderResolver, HolidayProviderResolver>();            
+            builder.Services.AddSingleton<IHolidayProviderResolver, HolidayProviderResolver>();
 
             // Notifications
             builder.Services.AddScoped<INotificationService, NotificationService>();

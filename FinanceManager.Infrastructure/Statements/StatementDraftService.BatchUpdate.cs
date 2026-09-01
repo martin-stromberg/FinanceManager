@@ -234,7 +234,7 @@ public sealed partial class StatementDraftService
                             }
                             else
                             {
-                            newAmount = dec;
+                                newAmount = dec;
                             }
                         }
                         catch

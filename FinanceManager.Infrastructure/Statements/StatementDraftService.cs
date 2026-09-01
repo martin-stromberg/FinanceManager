@@ -46,8 +46,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
     // helper: move entry attachments to bank posting and create references for other postings
     private async Task PropagateEntryAttachmentsAsync(
-        Guid ownerUserId, 
-        StatementDraftEntry entry, 
+        Guid ownerUserId,
+        StatementDraftEntry entry,
         Guid bankPostingId, IEnumerable<Guid> otherPostingIds, CancellationToken ct)
     {
         if (_attachments == null) { return; }
@@ -98,12 +98,12 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// <param name="logger">Optional logger instance; a null logger is used when omitted.</param>
     /// <param name="attachments">Optional attachment service for storing and moving attachments.</param>
     public StatementDraftService(
-        AppDbContext db, 
-        IPostingAggregateService aggregateService, 
+        AppDbContext db,
+        IPostingAggregateService aggregateService,
         IAccountService accountService,
         IStatementFileFactory statementFileFactory,
-        IEnumerable<IStatementFileParser>? readers = null, 
-        ILogger<StatementDraftService>? logger = null, 
+        IEnumerable<IStatementFileParser>? readers = null,
+        ILogger<StatementDraftService>? logger = null,
         IAttachmentService? attachments = null,
         IReportCacheService? reportCacheService = null,
         IBudgetImpactEvaluationService? budgetImpactEvaluationService = null,
@@ -383,35 +383,35 @@ public sealed partial class StatementDraftService : IStatementDraftService
             {
                 foreach (var draft in allDrafts.Where(draft => draft.DetectedAccountId == account.Id))
                 {
-                var draftEntries = (await _db.StatementDraftEntries
-                    .Where(e => e.DraftId == draft.DraftId)
-                    .Where(e => e.ContactId == account.BankContactId)
-                    .Where(e => e.SecurityId == security.Id)
-                    .Where(e => e.Amount == line.Amount)
-                    .ToListAsync(ct))
-                    .Where(e => (e.BookingDate == line.BookingDate) || (line.ValutaDate == e.ValutaDate && e.BookingDate.ToFirstOfMonth() == line.BookingDate.ToFirstOfMonth()))
-                    .ToList();
-                if (!draftEntries.Any()) continue;
+                    var draftEntries = (await _db.StatementDraftEntries
+                        .Where(e => e.DraftId == draft.DraftId)
+                        .Where(e => e.ContactId == account.BankContactId)
+                        .Where(e => e.SecurityId == security.Id)
+                        .Where(e => e.Amount == line.Amount)
+                        .ToListAsync(ct))
+                        .Where(e => (e.BookingDate == line.BookingDate) || (line.ValutaDate == e.ValutaDate && e.BookingDate.ToFirstOfMonth() == line.BookingDate.ToFirstOfMonth()))
+                        .ToList();
+                    if (!draftEntries.Any()) continue;
 
-                if (draftEntries.Count > 1)
-                {
-                    var entry2 = draftEntries.FirstOrDefault();
-                    ApplySecurityDetails(entry2, line);
-                    await _db.SaveChangesAsync(ct);
-
-                    foreach (var entry3 in draftEntries.Skip(1))
+                    if (draftEntries.Count > 1)
                     {
-                        entry3.MarkAlreadyBooked();
+                        var entry2 = draftEntries.FirstOrDefault();
+                        ApplySecurityDetails(entry2, line);
                         await _db.SaveChangesAsync(ct);
-                    }
-                    continue;
-                }
 
-                var entry = draftEntries.FirstOrDefault();
-                ApplySecurityDetails(entry, line);
-                await _db.SaveChangesAsync(ct);
-                break;
-            }
+                        foreach (var entry3 in draftEntries.Skip(1))
+                        {
+                            entry3.MarkAlreadyBooked();
+                            await _db.SaveChangesAsync(ct);
+                        }
+                        continue;
+                    }
+
+                    var entry = draftEntries.FirstOrDefault();
+                    ApplySecurityDetails(entry, line);
+                    await _db.SaveChangesAsync(ct);
+                    break;
+                }
             }
         }
     }

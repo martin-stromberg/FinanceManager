@@ -71,7 +71,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         protected override void OnBeforeParseLine(ref string line)
         {
             base.OnBeforeParseLine(ref line);
-            switch(CurrentMode)
+            switch (CurrentMode)
             {
                 case ParseMode.KeyValue:
                     if (line.StartsWith("Herrn") || line.StartsWith("Frau"))
@@ -125,7 +125,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 
         private void CheckSetSelfCounterparty(StatementMovement rec)
         {
-            if ((rec.Subject?? "").Contains("Eigenleistung"))
+            if ((rec.Subject ?? "").Contains("Eigenleistung"))
                 rec.Counterparty = rec.Counterparty ?? _contactName;
         }
 

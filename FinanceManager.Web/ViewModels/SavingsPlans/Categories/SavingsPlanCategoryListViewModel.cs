@@ -99,7 +99,7 @@ public sealed class SavingsPlanCategoryListViewModel : BaseListViewModel<Savings
             })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage}) };
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };
     }
 
     /// <summary>

@@ -113,14 +113,14 @@ public sealed class PostingsSecurityViewModelTests
         Assert.Contains("quantity", keys);
 
         // Quantity must come after kind and before amount
-        var kindIdx     = Array.IndexOf(keys, "kind");
+        var kindIdx = Array.IndexOf(keys, "kind");
         var quantityIdx = Array.IndexOf(keys, "quantity");
-        var amountIdx   = Array.IndexOf(keys, "amount");
+        var amountIdx = Array.IndexOf(keys, "amount");
 
-        Assert.True(kindIdx >= 0,     "Column 'kind' must be present");
+        Assert.True(kindIdx >= 0, "Column 'kind' must be present");
         Assert.True(quantityIdx >= 0, "Column 'quantity' must be present");
-        Assert.True(amountIdx >= 0,   "Column 'amount' must be present");
-        Assert.True(quantityIdx > kindIdx,   "Quantity must come after Kind");
+        Assert.True(amountIdx >= 0, "Column 'amount' must be present");
+        Assert.True(quantityIdx > kindIdx, "Quantity must come after Kind");
         Assert.True(quantityIdx < amountIdx, "Quantity must come before Amount");
     }
 
@@ -136,8 +136,8 @@ public sealed class PostingsSecurityViewModelTests
         var vm = new FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel(CreateSp(apiMock), securityId);
         await vm.InitializeAsync();
 
-        var record   = Assert.Single(vm.Records);
-        var qtyCell  = GetQuantityCell(vm, record);
+        var record = Assert.Single(vm.Records);
+        var qtyCell = GetQuantityCell(vm, record);
         Assert.Equal(string.Empty, qtyCell.Text);
     }
 
@@ -153,7 +153,7 @@ public sealed class PostingsSecurityViewModelTests
         var vm = new FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel(CreateSp(apiMock), securityId);
         await vm.InitializeAsync();
 
-        var record  = Assert.Single(vm.Records);
+        var record = Assert.Single(vm.Records);
         var qtyCell = GetQuantityCell(vm, record);
         Assert.Equal(string.Empty, qtyCell.Text);
     }
@@ -170,7 +170,7 @@ public sealed class PostingsSecurityViewModelTests
         var vm = new FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel(CreateSp(apiMock), securityId);
         await vm.InitializeAsync();
 
-        var record  = Assert.Single(vm.Records);
+        var record = Assert.Single(vm.Records);
         var qtyCell = GetQuantityCell(vm, record);
 
         // Value must be non-empty and not contain excessive trailing zeros

@@ -130,7 +130,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
         /// </summary>
         /// <param name="Posting">Posting DTO wrapped by this navigation item.</param>
         protected sealed record PostingListItem(PostingServiceDto Posting) : IListItemNavigation
-         {
+        {
             /// <summary>
             /// Returns the target URL for navigating to the posting card.
             /// </summary>

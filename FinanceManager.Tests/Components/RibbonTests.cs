@@ -66,7 +66,7 @@ public class RibbonTests : Bunit.BunitContext
     {
         // Arrange
         var clicked = false;
-        var action = new UiRibbonAction("run","Run","<svg></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(() => { clicked = true; return Task.CompletedTask; }));
+        var action = new UiRibbonAction("run", "Run", "<svg></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(() => { clicked = true; return Task.CompletedTask; }));
         var registers = new List<UiRibbonRegister>
         {
             new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>

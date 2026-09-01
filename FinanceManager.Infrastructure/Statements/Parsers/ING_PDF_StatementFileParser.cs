@@ -407,17 +407,17 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 
         private static readonly string[] PostingDescriptions = {
             "Lastschrift-Einzug",
-            "Lastschrift",             
+            "Lastschrift",
             "Dauerauftrag/Terminüberweisung",
             "Gutschrift/Dauerauftrag",
             "Überweisung",
-            "Gutschrift", 
-            "Zins/Dividende WP", 
-            "Echtzeitüberweisung", 
-            "Gehalt/Rente", 
-            "Wertpapierkauf", 
-            "Kapitalertragsteuer", 
-            "Solidaritätszuschlag", 
+            "Gutschrift",
+            "Zins/Dividende WP",
+            "Echtzeitüberweisung",
+            "Gehalt/Rente",
+            "Wertpapierkauf",
+            "Kapitalertragsteuer",
+            "Solidaritätszuschlag",
             "Zinsertrag" };
         private void ExtractPostingdescriptionFromCounterparty(StatementMovement rec)
         {

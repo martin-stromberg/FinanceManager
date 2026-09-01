@@ -3,7 +3,7 @@ namespace FinanceManager.Domain.Savings;
 /// <summary>
 /// Represents a user's savings plan which may be recurring or one-off and can have a target amount/date, category and optional contract/attachment.
 /// </summary>
-public sealed class SavingsPlan: Entity
+public sealed class SavingsPlan : Entity
 {
     /// <summary>
     /// Gets the owner user identifier for this savings plan.

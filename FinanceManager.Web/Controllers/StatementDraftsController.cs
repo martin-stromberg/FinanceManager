@@ -647,7 +647,7 @@ public sealed class StatementDraftsController : ControllerBase
         if (fileMeta == null) { return NotFound(); }
         var payload = await _attachments.DownloadAsync(_current.UserId, fileMeta.Id, ct);
         if (payload == null) { return NotFound(); }
-        var downloaded = payload.Value; 
+        var downloaded = payload.Value;
         var content = downloaded.Item1;
         var fileName = downloaded.Item2;
         var contentType = downloaded.Item3;

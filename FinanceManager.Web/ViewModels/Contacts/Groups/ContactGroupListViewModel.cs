@@ -93,7 +93,7 @@ public sealed class ContactGroupListViewModel : BaseListViewModel<ContactGroupLi
             })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{tab}) };
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab }) };
     }
 
     /// <summary>

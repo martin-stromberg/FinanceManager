@@ -594,7 +594,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             DateTime AlignToHalfYearStart(DateTime d)
             {
                 var hIndex = (d.Month - 1) / 6; // 0..1
-                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{hIndex*6+1}-1");
+                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{hIndex * 6 + 1}-1");
                 return new DateTime(d.Year, hIndex * 6 + 1, 1);
             }
 
@@ -1054,7 +1054,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         {
             ApplyProjectionAmounts(points, dividendEvents);
         }
-               
+
         // Compute comparisons
         if (query.ComparePrevious)
         {

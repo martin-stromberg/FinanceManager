@@ -134,13 +134,13 @@ public static class BrowserApiHelper
                 return JSON.stringify(await response.json());
             }
             """, new
-            {
-                path,
-                fileName,
-                contentType,
-                contentBase64 = Convert.ToBase64String(content),
-                additionalFormFields
-            });
+        {
+            path,
+            fileName,
+            contentType,
+            contentBase64 = Convert.ToBase64String(content),
+            additionalFormFields
+        });
 
         var value = JsonSerializer.Deserialize<TResponse>(json, JsonOptions);
         return value ?? throw new InvalidOperationException($"Unable to deserialize response for {typeof(TResponse).Name}.");

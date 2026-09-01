@@ -23,7 +23,7 @@ public class UserPreferenceRequestCultureProviderTests
     {
         var services = new ServiceCollection();
         var serviceProvider = services.BuildServiceProvider();
-        
+
         var context = new DefaultHttpContext
         {
             User = user,
@@ -40,12 +40,12 @@ public class UserPreferenceRequestCultureProviderTests
             new(ClaimTypes.NameIdentifier, id.ToString()),
             new(ClaimTypes.Name, "testuser")
         };
-        
+
         if (!string.IsNullOrWhiteSpace(prefLangClaim))
         {
             claims.Add(new Claim("pref_lang", prefLangClaim));
         }
-        
+
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
     }
 

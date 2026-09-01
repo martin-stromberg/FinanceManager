@@ -33,7 +33,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
             ParsingMode = LineParsingMode.TextAndTables;
             if (!base.Load(fileName, fileBytes))
                 return false;
-            
+
             var okay = ReadContent().First().StartsWith("ING-DiBa AG");
             if (!okay)
                 return false;

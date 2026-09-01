@@ -81,7 +81,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             beforeSnapshot = await CaptureSnapshotAsync(db, scope.ServiceProvider, userId);
         }
-        
+
 
         // create backup via API
         var created = await api.Backups_CreateAsync();

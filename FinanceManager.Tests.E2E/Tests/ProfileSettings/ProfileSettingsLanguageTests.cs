@@ -32,19 +32,19 @@ public sealed class ProfileSettingsLanguageTests
         // Arrange: Create and login user
         var username = $"langtest-{Guid.NewGuid():N}";
         const string password = "Secret123";
-        
+
         await seed.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
-        
+
         // Navigate to Setup/Profile tab
         await page.GotoAsync("/card/setup");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        
+
         var setupProfileTab = new SetupProfileTabPageObject(page, _fixture.BaseUrl);
-        
+
         // Act: Save English via API (same endpoint as the UI save) + reload
         await setupProfileTab.SaveLanguageViaApiAsync("en");
-        
+
         // Assert: After reload, expand section and verify label is English
         await setupProfileTab.ExpandProfileSectionAsync();
         var langLabelText = await page.Locator("label[for=lang]").InnerTextAsync();
@@ -69,7 +69,7 @@ public sealed class ProfileSettingsLanguageTests
         // only occurs when a user is created directly in the database.
         // The ChangeLanguage_ToAutomatic_RespectsBrowserLanguage test covers the real scenario
         // where a user explicitly switches to "Auto" mode and browser language should be used.
-        
+
         await using var session = await _fixture.CreateSessionAsync(
             new PlaywrightWebAppFixture.PlaywrightSessionOptions { Locale = "en-US" });
         var page = session.Page;
@@ -110,38 +110,38 @@ public sealed class ProfileSettingsLanguageTests
         // Arrange: Create and login user with German preference (default)
         var username = $"cookietest-{Guid.NewGuid():N}";
         const string password = "Secret123";
-        
+
         await seed.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
-        
+
         // Navigate to Setup/Profile tab
         await page.GotoAsync("/card/setup");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        
+
         var setupProfileTab = new SetupProfileTabPageObject(page, _fixture.BaseUrl);
         await setupProfileTab.ExpandProfileSectionAsync();
-        
+
         // Get the initial auth cookie
         var initialCookies = await page.Context.CookiesAsync();
         var initialAuthCookie = initialCookies.FirstOrDefault(c => c.Name == "FinanceManager.Auth");
         initialAuthCookie.Should().NotBeNull("Auth cookie should exist after login");
-        
+
         // Extract initial pref_lang claim from JWT (if present)
         var initialClaim = ExtractJwtClaim(initialAuthCookie!.Value, "pref_lang");
-        
+
         // Act: Save English via API + page reload
         await setupProfileTab.SaveLanguageViaApiAsync("en");
-        
+
         // Assert: Auth cookie has been updated with new token (re-issued by server during API call)
         var updatedCookies = await page.Context.CookiesAsync();
         var updatedAuthCookie = updatedCookies.FirstOrDefault(c => c.Name == "FinanceManager.Auth");
-        
+
         updatedAuthCookie.Should().NotBeNull("Auth cookie should still exist after language change");
-        
+
         // The new token should have pref_lang claim = "en"
         var updatedClaim = ExtractJwtClaim(updatedAuthCookie!.Value, "pref_lang");
         updatedClaim.Should().Be("en", "Updated JWT should contain pref_lang claim with value 'en'");
-        
+
         // Assert: After reload the UI should be in English — expand section to access the language label
         await setupProfileTab.ExpandProfileSectionAsync();
         var langLabelText = await page.Locator("label[for=lang]").InnerTextAsync();
@@ -202,44 +202,44 @@ public sealed class ProfileSettingsLanguageTests
         var username = $"sessiontest-{Guid.NewGuid():N}";
         const string password = "Secret123";
         var seed = new TestUserSeeder(_fixture.DatabasePath);
-        
+
         // Session 1: Set language to English
         {
             await using var session1 = await _fixture.CreateSessionAsync();
             var page1 = session1.Page;
             var auth1 = new AuthGateway(page1, _fixture.BaseUrl);
-            
+
             await seed.EnsureUserAsync(username, password);
             await auth1.LoginAsync(username, password);
-            
+
             await page1.GotoAsync("/card/setup");
             await page1.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            
+
             var setupProfileTab1 = new SetupProfileTabPageObject(page1, _fixture.BaseUrl);
             await setupProfileTab1.SaveLanguageViaApiAsync("en");
-            
+
             // After reload, expand section and verify English label
             await setupProfileTab1.ExpandProfileSectionAsync();
             var englishLabel1 = await page1.Locator("label[for=lang]").InnerTextAsync();
             englishLabel1.Should().BeEquivalentTo("Language", "English should be displayed after save");
         }
-        
+
         // Session 2: Login again with same user, verify English is still used
         {
             await using var session2 = await _fixture.CreateSessionAsync();
             var page2 = session2.Page;
             var auth2 = new AuthGateway(page2, _fixture.BaseUrl);
-            
+
             await auth2.LoginAsync(username, password);
             await page2.GotoAsync("/card/setup");
             await page2.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            
+
             // Assert: UI should be in English (language preference is persisted)
             // Expand profile section to access the language label
             var setupProfileTab2 = new SetupProfileTabPageObject(page2, _fixture.BaseUrl);
             await setupProfileTab2.ExpandProfileSectionAsync();
             var langLabelText = await page2.Locator("label[for=lang]").InnerTextAsync();
-            
+
             langLabelText.Should().BeEquivalentTo("Language", "English should still be displayed in new session");
         }
     }
@@ -256,26 +256,26 @@ public sealed class ProfileSettingsLanguageTests
             var parts = token.Split('.');
             if (parts.Length != 3)
                 return null;
-            
+
             // Decode payload (base64-url to base64 conversion)
             var payload = parts[1];
             // Add padding if needed
             var padding = 4 - (payload.Length % 4);
             if (padding != 4)
                 payload += new string('=', padding);
-            
+
             var decodedBytes = Convert.FromBase64String(payload);
             var json = System.Text.Encoding.UTF8.GetString(decodedBytes);
-            
+
             // Parse JSON and extract claim
             using var document = System.Text.Json.JsonDocument.Parse(json);
             var root = document.RootElement;
-            
+
             if (root.TryGetProperty(claimName, out var claimValue))
             {
                 return claimValue.GetString();
             }
-            
+
             return null;
         }
         catch
@@ -381,7 +381,7 @@ internal sealed class SetupProfileTabPageObject
         // Wait for success message to appear
         var successMessage = _page.Locator("text=/Einstellungen gespeichert|Settings saved/");
         await successMessage.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
-        
+
         // Verify it's visible
         var isVisible = await successMessage.IsVisibleAsync();
         isVisible.Should().BeTrue("Success message should be visible after save");

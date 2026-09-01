@@ -14,7 +14,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
     /// Implementations provide a set of XML templates and a mechanism to read text content from a file bytes array.
     /// The template controls how lines are parsed into statement header data and individual movements.
     /// </summary>
-    public abstract class TemplateStatementFileParser: BaseStatementFileParser
+    public abstract class TemplateStatementFileParser : BaseStatementFileParser
     {
         /// <summary>
         /// Initializes a new instance of the TemplateStatementFileReader class with the specified templates.
@@ -22,7 +22,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <param name="templates">An array of template strings to be used by the file reader. Cannot be null.</param>
         /// <param name="logger">Logger instance for logging parsing activities and errors.</param>
         protected TemplateStatementFileParser(string[] templates, ILogger logger)
-            :base(logger)
+            : base(logger)
         {
             Templates = templates;
         }
@@ -51,7 +51,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             var DraftId = Guid.NewGuid();
             XmlDoc = new XmlDocument();
             var fileContent = statementFile.ReadContent().ToList();
-            if (!fileContent.Any() ) 
+            if (!fileContent.Any())
             {
                 LogWarning("Statement file content is empty.");
                 return null;
@@ -269,7 +269,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     else
                     {
                         var record = ParseTableRecord(line);
-                                                if (record is not null && record.IsError)
+                        if (record is not null && record.IsError)
                         {
                             CurrentMode = ParseMode.None;
                             foreach (var record2 in ParseNextLine(line))
@@ -535,7 +535,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             return outputRecord;
         }
         private StatementMovement InternalParseTableRecord(string line)
-        { 
+        {
             if ((IgnoreRecordKeywords is not null) && IgnoreRecordKeywords.Any(kw => line.Contains(kw)))
                 return null;
             string[] Values = line.Split(TableFieldSeparator);
