@@ -18,6 +18,7 @@ public sealed class BudgetPurpose : Entity, IAggregateRoot
     /// <param name="sourceType">Source type used to map actual values.</param>
     /// <param name="sourceId">Identifier of the source entity (depends on <paramref name="sourceType"/>).</param>
     /// <param name="description">Optional description.</param>
+    /// <param name="valuationType">Valuation type used when computing actual values.</param>
     public BudgetPurpose(Guid ownerUserId, string name, BudgetSourceType sourceType, Guid sourceId, string? description = null, BudgetValuationType valuationType = BudgetValuationType.ExactPostings)
     {
         OwnerUserId = Guards.NotEmpty(ownerUserId, nameof(ownerUserId));

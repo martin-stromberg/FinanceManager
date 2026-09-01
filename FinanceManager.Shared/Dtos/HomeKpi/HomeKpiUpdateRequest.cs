@@ -3,18 +3,18 @@ namespace FinanceManager.Shared.Dtos.HomeKpi;
 /// <summary>
 /// Request payload to update an existing KPI tile for the home dashboard.
 /// </summary>
+/// <param name="Kind">Kind/source of the KPI.</param>
+/// <param name="ReportFavoriteId">Optional linked report favorite identifier.</param>
+/// <param name="PredefinedType">Optional predefined KPI type.</param>
+/// <param name="Title">Optional custom title override.</param>
+/// <param name="DisplayMode">Display mode of the KPI tile.</param>
+/// <param name="SortOrder">Sort order for placement on the dashboard.</param>
 public sealed record HomeKpiUpdateRequest(
-    /// <summary>Kind/source of the KPI.</summary>
     HomeKpiKind Kind,
-    /// <summary>Optional linked report favorite identifier.</summary>
     Guid? ReportFavoriteId,
-    /// <summary>Optional predefined KPI type.</summary>
     HomeKpiPredefined? PredefinedType,
-    /// <summary>Optional custom title override.</summary>
     string? Title,
-    /// <summary>Display mode of the KPI tile.</summary>
     HomeKpiDisplayMode DisplayMode,
-    /// <summary>Sort order for placement on the dashboard.</summary>
     int SortOrder
 )
 {

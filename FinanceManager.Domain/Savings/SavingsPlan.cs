@@ -157,6 +157,7 @@ public sealed class SavingsPlan : Entity
     /// <param name="modifiedUtc">The UTC date and time to set as the modification timestamp. If <see langword="null"/>, the modification
     /// timestamp is not changed.</param>
     /// <param name="archivedUtc">The UTC date and time to set as the archive timestamp. If <see langword="null"/>, the archive
+    /// timestamp is not changed.</param>
     private void SetDates(DateTime? createdUtc, DateTime? modifiedUtc, DateTime? archivedUtc)
     {
         base.SetDates(createdUtc, modifiedUtc);

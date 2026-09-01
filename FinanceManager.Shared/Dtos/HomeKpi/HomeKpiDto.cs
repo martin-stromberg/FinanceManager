@@ -3,25 +3,25 @@ namespace FinanceManager.Shared.Dtos.HomeKpi;
 /// <summary>
 /// DTO representing a KPI tile displayed on the home dashboard.
 /// </summary>
+/// <param name="Id">Unique KPI identifier.</param>
+/// <param name="Kind">Kind/source of the KPI.</param>
+/// <param name="ReportFavoriteId">Optional linked report favorite identifier.</param>
+/// <param name="ReportFavoriteName">Optional linked report favorite name.</param>
+/// <param name="Title">Optional custom title override.</param>
+/// <param name="PredefinedType">Optional predefined KPI type.</param>
+/// <param name="DisplayMode">Display mode of the KPI tile.</param>
+/// <param name="SortOrder">Sort order for placement on the dashboard.</param>
+/// <param name="CreatedUtc">UTC timestamp when the KPI was created.</param>
+/// <param name="ModifiedUtc">UTC timestamp when the KPI was last modified, if any.</param>
 public sealed record HomeKpiDto(
-    /// <summary>Unique KPI identifier.</summary>
     Guid Id,
-    /// <summary>Kind/source of the KPI.</summary>
     HomeKpiKind Kind,
-    /// <summary>Optional linked report favorite identifier.</summary>
     Guid? ReportFavoriteId,
-    /// <summary>Optional linked report favorite name.</summary>
     string? ReportFavoriteName,
-    /// <summary>Optional custom title override.</summary>
     string? Title,
-    /// <summary>Optional predefined KPI type.</summary>
     HomeKpiPredefined? PredefinedType,
-    /// <summary>Display mode of the KPI tile.</summary>
     HomeKpiDisplayMode DisplayMode,
-    /// <summary>Sort order for placement on the dashboard.</summary>
     int SortOrder,
-    /// <summary>UTC timestamp when the KPI was created.</summary>
     DateTime CreatedUtc,
-    /// <summary>UTC timestamp when the KPI was last modified, if any.</summary>
     DateTime? ModifiedUtc
 );

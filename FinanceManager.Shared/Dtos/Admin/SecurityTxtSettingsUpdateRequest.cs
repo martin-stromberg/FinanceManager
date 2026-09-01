@@ -8,22 +8,22 @@ namespace FinanceManager.Shared.Dtos.Admin;
 /// <summary>
 /// Request payload for updating security.txt settings.
 /// </summary>
+/// <param name="Contact">Contact directive.</param>
+/// <param name="Expires">Expires directive.</param>
+/// <param name="Encryption">Encryption directive.</param>
+/// <param name="Acknowledgments">Acknowledgments directive.</param>
+/// <param name="PreferredLanguages">Preferred-Languages directive.</param>
+/// <param name="Policy">Policy directive.</param>
+/// <param name="Hiring">Hiring directive.</param>
+/// <param name="Canonical">Canonical directive.</param>
 public sealed record SecurityTxtSettingsUpdateRequest(
-    /// <summary>Contact directive.</summary>
     [Required, MaxLength(2048)] string Contact,
-    /// <summary>Expires directive.</summary>
     DateTimeOffset Expires,
-    /// <summary>Encryption directive.</summary>
     [MaxLength(2048)] string? Encryption,
-    /// <summary>Acknowledgments directive.</summary>
     [MaxLength(2048)] string? Acknowledgments,
-    /// <summary>Preferred-Languages directive.</summary>
     [MaxLength(2048)] string? PreferredLanguages,
-    /// <summary>Policy directive.</summary>
     [MaxLength(2048)] string? Policy,
-    /// <summary>Hiring directive.</summary>
     [MaxLength(2048)] string? Hiring,
-    /// <summary>Canonical directive.</summary>
     [MaxLength(2048)] string? Canonical) : IValidatableObject
 {
     /// <inheritdoc />

@@ -112,11 +112,15 @@ namespace FinanceManager.Application
                         (processed, total, message, warnings, errors) =>
                         {
                             var previous = _manager.Get(info.Id);
+                            if (previous is null)
+                            {
+                                return;
+                            }
                             var updated = previous with
                             {
                                 Processed = processed,
                                 Total = total,
-                                Message = message ?? previous?.Message,
+                                Message = message ?? previous.Message,
                                 Warnings = warnings,
                                 Errors = errors
                             };
@@ -126,22 +130,28 @@ namespace FinanceManager.Application
                     {
                         await executor.ExecuteAsync(context, ctSource.Token);
                         var finished = DateTime.UtcNow;
-                        var final = _manager.Get(info.Id) with { Status = BackgroundTaskStatus.Completed, FinishedUtc = finished };
-                        _manager.UpdateTaskInfo(final);
+                        if (_manager.Get(info.Id) is { } current)
+                        {
+                            _manager.UpdateTaskInfo(current with { Status = BackgroundTaskStatus.Completed, FinishedUtc = finished });
+                        }
                         _logger.LogInformation("Task {TaskId} completed in {Duration}ms", info.Id, (finished - started).TotalMilliseconds);
                     }
                     catch (OperationCanceledException)
                     {
                         var finished = DateTime.UtcNow;
-                        var cancelled = _manager.Get(info.Id) with { Status = BackgroundTaskStatus.Cancelled, FinishedUtc = finished };
-                        _manager.UpdateTaskInfo(cancelled);
+                        if (_manager.Get(info.Id) is { } current)
+                        {
+                            _manager.UpdateTaskInfo(current with { Status = BackgroundTaskStatus.Cancelled, FinishedUtc = finished });
+                        }
                         _logger.LogInformation("Task {TaskId} cancelled", info.Id);
                     }
                     catch (Exception ex)
                     {
                         var finished = DateTime.UtcNow;
-                        var failed = _manager.Get(info.Id) with { Status = BackgroundTaskStatus.Failed, ErrorDetail = ex.ToMessageWithInner(), FinishedUtc = finished };
-                        _manager.UpdateTaskInfo(failed);
+                        if (_manager.Get(info.Id) is { } current)
+                        {
+                            _manager.UpdateTaskInfo(current with { Status = BackgroundTaskStatus.Failed, ErrorDetail = ex.ToMessageWithInner(), FinishedUtc = finished });
+                        }
                         _logger.LogError(ex, "Task {TaskId} failed: {Message}", info.Id, ex.Message);
                     }
                     finally
