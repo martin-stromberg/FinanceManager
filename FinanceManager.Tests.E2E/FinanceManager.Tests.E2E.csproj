@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <DocumentationFile>FinanceManager.Tests.E2E.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
