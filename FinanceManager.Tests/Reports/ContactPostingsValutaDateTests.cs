@@ -9,6 +9,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="ReportAggregationService.QueryAsync"/>'s <c>UseValutaDate</c> switch for Contact postings -
+/// whether a monthly report buckets postings by their valuta date or by their booking date, since a posting's
+/// booking and valuta dates can fall in different calendar months.
+/// </summary>
 public sealed class ContactPostingsValutaDateTests
 {
     private static AppDbContext CreateDb()
@@ -21,6 +26,11 @@ public sealed class ContactPostingsValutaDateTests
         return db;
     }
 
+    /// <summary>
+    /// With <c>UseValutaDate = true</c>, two postings booked in the same month but with valuta dates falling in
+    /// different months (Jan 31 vs Feb 1) must be aggregated into separate January and February buckets by their
+    /// valuta date, not merged into a single booking-month bucket.
+    /// </summary>
     [Fact]
     public async Task Query_WithUseValutaDate_ContactPostingsGroupedByValuta()
     {
@@ -118,6 +128,12 @@ public sealed class ContactPostingsValutaDateTests
         Assert.Equal(200m, febRow.Amount);
     }
 
+    /// <summary>
+    /// With <c>UseValutaDate = false</c>, the same two postings (same booking month, differing valuta months)
+    /// must instead be aggregated by booking date into a single January bucket read from the precomputed
+    /// <see cref="PostingAggregate"/>, with February correctly showing zero - confirming the query reads from the
+    /// booking-date aggregate rather than the valuta-date one when the flag is off.
+    /// </summary>
     [Fact]
     public async Task Query_WithUseValutaDate_ContactPostingsGroupedByPostingDate()
     {

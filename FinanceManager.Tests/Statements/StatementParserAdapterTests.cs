@@ -137,6 +137,11 @@ public sealed class StatementParserAdapterTests
         Assert.Single(result);
     }
 
+    /// <summary>
+    /// An ING CSV export that bundles multiple accounts' blocks into a single file (a collection-account /
+    /// "Sammelkonto" export) must be split by the parser into more than one <see cref="StatementParseResult"/>,
+    /// one per embedded account block, rather than merging all blocks' movements into a single result.
+    /// </summary>
     [Fact]
     public void Parse_ShouldReturnMultipleResults_ForCollectionAccountCSV()
     {
@@ -182,6 +187,12 @@ public sealed class StatementParserAdapterTests
         Assert.True(result!.Count > 1, "Collection account CSV should produce multiple StatementParseResult instances");
     }
 
+    /// <summary>
+    /// The ING PDF parser's "Sparbrief" (fixed-term deposit) template must extract the correct normalized IBAN
+    /// and correctly parse each movement's German-formatted date and amount - including a negative amount for
+    /// the account-closure line - even though the fixed-term deposit layout differs from a regular checking
+    /// account statement.
+    /// </summary>
     [Fact]
     public void Parse_IngPdfSparbriefTemplate_ShouldReturnExpectedIbanAndMovements()
     {
@@ -215,6 +226,11 @@ public sealed class StatementParserAdapterTests
         Assert.Equal(-12706.67m, kontoloeschung.Amount);
     }
 
+    /// <summary>
+    /// An older/legacy ING PDF statement layout (different header and column markers than the current template)
+    /// must still be recognized and parsed correctly, extracting the IBAN and the movement's counterparty/amount
+    /// - a regression guard ensuring backward compatibility with older exported statement formats.
+    /// </summary>
     [Fact]
     public void Parse_IngPdfLegacyTemplate_ShouldStillParse()
     {

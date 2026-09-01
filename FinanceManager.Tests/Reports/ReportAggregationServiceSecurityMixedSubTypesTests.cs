@@ -7,6 +7,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="ReportAggregationService.QueryAsync"/>'s handling of Security postings that are stored as
+/// separate <see cref="PostingAggregate"/> rows per <see cref="SecurityPostingSubType"/> (Buy, Fee, Dividend,
+/// Tax, etc.) for the same security and period - specifically that querying without a subtype filter collapses
+/// them all into a single summed row per security/period rather than one row per subtype.
+/// </summary>
 public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
 {
     private static AppDbContext CreateDb()
@@ -19,6 +25,11 @@ public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
         return db;
     }
 
+    /// <summary>
+    /// When a security has four separate per-subtype aggregates (Buy, Fee, Dividend, Tax) for the same month and
+    /// no subtype filter is applied, the query must sum all four into a single result row for that security and
+    /// period - not report them as four separate rows or silently drop any subtype.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityMonth_NoSubtypeFilter_ShouldSumAllSubTypes()
     {

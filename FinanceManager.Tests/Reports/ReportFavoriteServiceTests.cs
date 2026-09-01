@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="ReportFavoriteService"/>'s CRUD operations for a user's saved report configurations
+/// ("favorites"): per-user unique naming, full round-trip of all configuration fields (including the projection
+/// comparison flag), and ownership enforcement for update/delete/get/list.
+/// </summary>
 public sealed class ReportFavoriteServiceTests
 {
     private static AppDbContext CreateDb()
@@ -17,6 +22,11 @@ public sealed class ReportFavoriteServiceTests
         return db;
     }
 
+    /// <summary>
+    /// Creating a favorite must persist it and return a DTO whose id, name, and configuration fields (e.g.
+    /// <c>IncludeCategory</c>, <c>Interval</c>) match the request, with the underlying database row reflecting
+    /// the same data.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldPersistAndReturnDto()
     {
@@ -35,6 +45,10 @@ public sealed class ReportFavoriteServiceTests
         Assert.Equal("MyFav", entity.Name);
     }
 
+    /// <summary>
+    /// A favorite name must be unique per user; creating a second favorite with the same name for the same user
+    /// must throw <see cref="InvalidOperationException"/> rather than silently creating a duplicate.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldThrow_OnDuplicateNamePerUser()
     {
@@ -46,6 +60,10 @@ public sealed class ReportFavoriteServiceTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => svc.CreateAsync(user.Id, new ReportFavoriteCreateRequest("Dup", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None));
     }
 
+    /// <summary>
+    /// The uniqueness constraint on favorite names is scoped per user - two different users can each create a
+    /// favorite with the identical name without conflict.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldAllowSameNameForDifferentUsers()
     {
@@ -59,6 +77,12 @@ public sealed class ReportFavoriteServiceTests
         Assert.Equal(2, await db.ReportFavorites.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
+    /// <summary>
+    /// Renaming a favorite to a name already used by another of the same user's favorites must be rejected with
+    /// <see cref="InvalidOperationException"/> (the same per-user uniqueness rule applies on update, not just
+    /// create), while a valid update must persist every changed field (name, posting kind, include-category,
+    /// interval, previous/year comparisons, chart visibility, and expandability).
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldModifyFields_AndRejectDuplicate()
     {
@@ -85,6 +109,11 @@ public sealed class ReportFavoriteServiceTests
         Assert.True(updated.Expandable);
     }
 
+    /// <summary>
+    /// The <c>CompareProjection</c> flag (dividend projection comparison) must round-trip correctly through the
+    /// full lifecycle: set to true on create and reflected in the create response, the persisted entity, a
+    /// subsequent list, and a subsequent get - then flipped to false via update and again reflected everywhere.
+    /// </summary>
     [Fact]
     public async Task CreateListGetAndUpdate_ShouldRoundtripCompareProjection()
     {
@@ -135,6 +164,11 @@ public sealed class ReportFavoriteServiceTests
         Assert.False((await db.ReportFavorites.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).CompareProjection);
     }
 
+    /// <summary>
+    /// Deleting a favorite must return false (not throw) both when a different user attempts to delete someone
+    /// else's favorite and when the given id doesn't exist at all, while the actual owner deleting their own
+    /// favorite must succeed and return true.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldReturnFalse_WhenNotOwnedOrMissing()
     {
@@ -149,6 +183,11 @@ public sealed class ReportFavoriteServiceTests
         Assert.True(await svc.DeleteAsync(fav.Id, user1.Id, CancellationToken.None));
     }
 
+    /// <summary>
+    /// Listing favorites must return only the calling user's own favorites, ordered alphabetically by name (not
+    /// creation order), and <c>GetAsync</c> must return null when the requesting user does not own the favorite
+    /// even if the id itself is valid for another user.
+    /// </summary>
     [Fact]
     public async Task ListAndGet_ShouldRespectOwnershipAndOrdering()
     {

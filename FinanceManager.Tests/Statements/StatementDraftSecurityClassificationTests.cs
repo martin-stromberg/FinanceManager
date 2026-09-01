@@ -13,6 +13,12 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers auto-assignment of a <see cref="Security"/> to a statement entry during classification: matching by
+/// identifier or by name (including umlaut-normalized name matching), and the ambiguous-match fallback when
+/// several securities could apply. Auto-assignment only ever triggers for a detected account that has security
+/// processing enabled.
+/// </summary>
 public sealed class StatementDraftSecurityClassificationTests
 {
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()

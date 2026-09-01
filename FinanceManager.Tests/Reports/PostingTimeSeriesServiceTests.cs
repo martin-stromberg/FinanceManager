@@ -9,6 +9,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="PostingTimeSeriesService.GetAsync"/>, which reads a chronological series of precomputed
+/// <see cref="PostingAggregate"/> rows for one entity (account/contact/savings plan/security): ownership
+/// enforcement, chronological ordering, the <c>take</c> limit, and correct filtering to only the requested
+/// posting kind and entity id (excluding aggregates for other entities of the same kind).
+/// </summary>
 public sealed class PostingTimeSeriesServiceTests
 {
     private static AppDbContext CreateDb()
@@ -21,6 +27,10 @@ public sealed class PostingTimeSeriesServiceTests
         return db;
     }
 
+    /// <summary>
+    /// Requesting the time series for an account owned by a different user must return null rather than the
+    /// other user's data - the ownership check is enforced at the entity level, not just at the query's caller.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ReturnsNull_WhenNotOwned()
     {
@@ -36,6 +46,11 @@ public sealed class PostingTimeSeriesServiceTests
         Assert.Null(res);
     }
 
+    /// <summary>
+    /// Aggregates are persisted in insertion order (February added before January here); the service must still
+    /// return the resulting series in chronological ascending order by period start, so callers never need to
+    /// re-sort it themselves.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ReturnsOrderedAscending()
     {
@@ -59,6 +74,10 @@ public sealed class PostingTimeSeriesServiceTests
         Assert.Equal(new[] { new DateTime(2024, 1, 1), new DateTime(2024, 2, 1) }, starts);
     }
 
+    /// <summary>
+    /// With 40 months of aggregates available but a <c>take</c> of 12, the service must return exactly 12
+    /// entries rather than the full history - the time series is meant for recent-trend charts, not a full dump.
+    /// </summary>
     [Fact]
     public async Task GetAsync_RespectsTake_Defaults()
     {
@@ -83,6 +102,12 @@ public sealed class PostingTimeSeriesServiceTests
         Assert.Equal(12, res!.Count);
     }
 
+    /// <summary>
+    /// For every supported posting kind (Bank, Contact, SavingsPlan, Security), the series for one specific
+    /// entity must include only that entity's own aggregate rows and exclude "noise" aggregates that share the
+    /// same kind and period but belong to a different entity - verifying the query filters by kind AND entity id
+    /// together, not by kind alone.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ShouldReturnOnlyAggregatesOfRequestedKindAndEntity()
     {

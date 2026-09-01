@@ -11,6 +11,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers core behavior of <see cref="ReportAggregationService.QueryAsync"/>: category grouping and previous/
+/// year-ago comparisons across many months, Ytd aggregation with a correctly cut-off comparison window,
+/// multi-entity filtering across two posting kinds queried simultaneously, edge cases in security-dividend
+/// category rows when comparison data is sparse or absent, and (via the seeded helper below) full-kind coverage
+/// for month/quarter/half-year/year/YTD/all-history intervals.
+/// </summary>
 public sealed class ReportAggregationServiceTests
 {
     private static AppDbContext CreateDb()
@@ -23,6 +30,13 @@ public sealed class ReportAggregationServiceTests
         return db;
     }
 
+    /// <summary>
+    /// Across nearly 3 years of monthly data for three categories holding 1/2/3 contacts respectively, verifies
+    /// that category-level rows correctly sum their member contacts' monthly amounts, that previous-month and
+    /// year-ago comparisons are populated correctly given a constant monthly amount, that a child contact row
+    /// correctly references its category via <c>ParentGroupKey</c>, and that the earliest available month has no
+    /// <c>PreviousAmount</c>/<c>YearAgoAmount</c> since there is no earlier data to compare against.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldAggregateCategoriesAndComparisons_ForContactsAcrossMonths()
     {
@@ -130,6 +144,12 @@ public sealed class ReportAggregationServiceTests
         Assert.Null(firstCatA.YearAgoAmount);
     }
 
+    /// <summary>
+    /// For the <see cref="ReportInterval.Ytd"/> interval spanning multiple years, verifies category-level
+    /// year-to-date sums are correctly cut off at the current calendar month for every year in range (not just
+    /// the latest), and that the previous-year and year-ago comparisons for YTD rows correctly use the
+    /// equivalent same-cutoff prior year rather than that year's full total.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldAggregateYtdCategoriesAndComparisons_ForContacts()
     {
@@ -223,6 +243,13 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(CatKey(catC), c3_2025.ParentGroupKey);
     }
 
+    /// <summary>
+    /// When a query spans two posting kinds (Bank and Contact) simultaneously with an account-id filter and a
+    /// contact-id filter each selecting two specific entities, only those selected entities' rows must appear
+    /// (the "noise" entity of each kind must be excluded), each entity row's <c>ParentGroupKey</c> must point to
+    /// its kind's "Type:{Kind}" row, and each Type row's amount must equal the sum of only its selected/filtered
+    /// entities - not all entities of that kind.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldApplyEntityFilters_ForTwoKinds_WithTwoSelectedValuesEach()
     {
@@ -325,6 +352,12 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(20m + 30m, typeContactM2.Amount);
     }
 
+    /// <summary>
+    /// For a security-category dividend query with comparisons enabled, when only the previous month has an
+    /// actual dividend and the current (analysis) month has none, the service must still produce a zero-amount
+    /// row for the current month carrying the previous month's amount as <c>PreviousAmount</c> - so the UI can
+    /// show "0 this month, was X last month" instead of the current period being missing entirely.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendCategory_ShouldInjectCurrentMonthZero_AndCarryPrevious_WhenCurrentHasNoData()
     {
@@ -395,6 +428,12 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(1.4m, currRow.PreviousAmount);
     }
 
+    /// <summary>
+    /// Same scenario as above (a dividend only in the previous month) but with comparisons disabled: the current
+    /// month's row still appears with a zero amount (it falls within the query window), but it must NOT carry a
+    /// <c>PreviousAmount</c> - the carried-forward comparison value is only populated when comparisons are
+    /// actually requested.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendCategory_ShouldNotInjectCurrentMonth_WhenNoComparisons()
     {
@@ -464,6 +503,12 @@ public sealed class ReportAggregationServiceTests
         Assert.Null(currRow.PreviousAmount);
     }
 
+    /// <summary>
+    /// Documents current behavior when the only historical dividend data point for a security category falls six
+    /// months before the analysis date rather than in the immediately preceding month: with comparisons enabled,
+    /// the query returns no points at all for this category, rather than showing the six-month-old data as its
+    /// own row or injecting a zero current-month row carrying it forward as <c>PreviousAmount</c>.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendCategory_SixMonthsAgo_ShouldInjectCurrentZero_AndCarryPrev()
     {

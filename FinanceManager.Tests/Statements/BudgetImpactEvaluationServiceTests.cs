@@ -16,8 +16,18 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers <see cref="BudgetImpactEvaluationService"/>, which previews how booking a statement draft entry would
+/// affect a matching budget's actual-vs-target figures - including budget-purpose matching by contact and by
+/// regex on the posting text, and defensive behavior when no budget applies or a configured pattern is malformed.
+/// </summary>
 public sealed class BudgetImpactEvaluationServiceTests
 {
+    /// <summary>
+    /// A booking that pushes the period's actual amount past the budget's target must be reported as an
+    /// "Exceeded" hint, carrying the target, the actual amount before the booking, and the projected actual
+    /// after it - the core signal the UI uses to warn the user before they confirm the booking.
+    /// </summary>
     [Fact]
     public async Task EvaluateEntryImpactAsync_ShouldReturnExceededHint_WhenBookingExceedsTarget()
     {
@@ -66,6 +76,10 @@ public sealed class BudgetImpactEvaluationServiceTests
         Assert.Equal(120m, hint.ActualAfter);
     }
 
+    /// <summary>
+    /// When a draft entry does not correspond to any configured budget purpose, the draft-level impact evaluation
+    /// must not fabricate a hint for it - the aggregate result stays at "Neutral" severity with an empty item list.
+    /// </summary>
     [Fact]
     public async Task EvaluateDraftImpactAsync_ShouldReturnNeutralItem_WhenNoBudgetPurposeMatches()
     {

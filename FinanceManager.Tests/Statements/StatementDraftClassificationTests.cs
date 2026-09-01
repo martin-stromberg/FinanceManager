@@ -10,6 +10,12 @@ using FinanceManager.Application.Accounts;
 using Microsoft.Extensions.Logging.Abstractions;
 using FinanceManager.Tests.TestHelpers;
 
+/// <summary>
+/// Covers <see cref="StatementDraftService.ClassifyAsync"/>, the heuristic engine that, for freshly imported
+/// statement entries, detects which bank account a draft belongs to, recognizes duplicate/already-booked entries,
+/// and assigns a counterparty contact via bank-contact matching, self-contact fallback for internal transfers,
+/// payment-intermediary resolution by posting subject, and auto-creation from a known-contact catalog.
+/// </summary>
 public sealed class StatementDraftClassificationTests
 {
     private sealed class StubKnownContactCatalog : FinanceManager.Application.Contacts.IKnownContactCatalog
@@ -90,6 +96,10 @@ public sealed class StatementDraftClassificationTests
     }
 
 
+    /// <summary>
+    /// When the owner has multiple bank accounts, the draft's stated account identifier must be matched to the
+    /// correct one among several candidates rather than left undetected or assigned arbitrarily.
+    /// </summary>
     [Fact]
     public async Task BankAccount_IsRecognized()
     {
@@ -107,6 +117,11 @@ public sealed class StatementDraftClassificationTests
     }
 
 
+    /// <summary>
+    /// When the owner has exactly one bank account and the draft's account-name field is empty, classification
+    /// must still resolve it unambiguously to that sole account rather than leaving it undetected for lack of an
+    /// explicit identifier to match against.
+    /// </summary>
     [Fact]
     public async Task BankAccount_IsRecognized_ForSingleAccount()
     {
@@ -126,6 +141,11 @@ public sealed class StatementDraftClassificationTests
 
 
 
+    /// <summary>
+    /// When multiple accounts share the same bank contact but none of their account identifiers match the
+    /// draft's stated account name, classification must leave <c>DetectedAccountId</c> null rather than guessing
+    /// among the ambiguous candidates.
+    /// </summary>
     [Fact]
     public async Task BankAccount_IsNotRecognized()
     {
@@ -145,6 +165,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Even with only one account configured for the owner, a draft's account name that does not match it must
+    /// not be force-matched by the single-account fallback - classification must leave the account undetected
+    /// rather than assuming the sole account is always correct.
+    /// </summary>
     [Fact]
     public async Task BankAccount_IsNotRecognized_ForSingleAccount()
     {
@@ -162,6 +187,10 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// An entry flagged as a preview/announced movement (not yet finally booked by the bank) must be classified
+    /// with <see cref="StatementDraftEntryStatus.Announced"/> so the UI can distinguish it from fully settled entries.
+    /// </summary>
     [Fact]
     public async Task Entry_IsAnnounced_StatusSet()
     {
@@ -179,6 +208,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// If a <see cref="StatementEntry"/> with the same de-duplication hash already exists (the movement was
+    /// already imported and booked previously), classification must detect the duplicate and mark the draft entry
+    /// <see cref="StatementDraftEntryStatus.AlreadyBooked"/> so it is never booked a second time.
+    /// </summary>
     [Fact]
     public async Task Entry_AlreadyBooked_IsIgnored()
     {
@@ -198,6 +232,10 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// An entry whose recipient name matches an ordinary existing contact must be linked directly to that
+    /// contact, without being misclassified as a bank posting or a self/internal transfer.
+    /// </summary>
     [Fact]
     public async Task Entry_ContactAssigned_NotBankOrSelf()
     {
@@ -216,6 +254,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When the recipient name in an entry matches the account's own bank contact, classification must assign
+    /// that bank contact - recognizing the movement as a bank-fee/bank-related posting rather than a normal
+    /// counterparty payment.
+    /// </summary>
     [Fact]
     public async Task Entry_BankContact_MatchesAccountBankContact()
     {
@@ -234,6 +277,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When an entry carries no recipient name at all, classification should still fall back to the account's own
+    /// bank contact if the movement can otherwise be recognized as bank-originated, rather than leaving the entry
+    /// entirely unclassified for lack of a name to match on.
+    /// </summary>
     [Fact]
     public async Task Entry_NoRecipientName_BankContactAssigned_IfRecognized()
     {
@@ -252,6 +300,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When the recipient name matches a different bank's contact (typical of a transfer between the user's own
+    /// accounts at different banks), classification must assign the self contact and mark the entry cost-neutral,
+    /// recognizing it as an internal transfer rather than a real expense or income.
+    /// </summary>
     [Fact]
     public async Task Entry_BankContact_NotMatchingAccountBankContact_SelfContactAssigned()
     {
@@ -273,6 +326,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// For an entry routed through a payment intermediary (e.g. PayPal), classification must try to resolve the
+    /// real recipient by matching the posting subject text against a known contact's alias pattern, and assign
+    /// that resolved recipient instead of the intermediary itself.
+    /// </summary>
     [Fact]
     public async Task Entry_PaymentIntermediary_ContactFoundBySubject()
     {
@@ -293,6 +351,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When a payment intermediary's posting subject cannot be matched against any known recipient alias,
+    /// classification must fall back to assigning the intermediary contact itself, since the real recipient could
+    /// not be resolved automatically.
+    /// </summary>
     [Fact]
     public async Task Entry_PaymentIntermediary_ContactNotFoundBySubject()
     {
@@ -313,6 +376,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When no existing contact matches the recipient name but the injected known-contact catalog recognizes it
+    /// (e.g. "Amazon"), classification must auto-create a new contact with the catalog's suggested alias patterns
+    /// and assign it to the entry - reducing manual contact setup for common recurring merchants.
+    /// </summary>
     [Fact]
     public async Task Entry_KnownContact_IsCreatedAndAssigned_WhenNoExistingContactMatches()
     {
@@ -335,6 +403,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Auto-creation from the known-contact catalog must respect the user's opt-out setting - when the user has
+    /// disabled known-contact auto-create, classification must neither create the contact nor assign one, leaving
+    /// the entry unassigned for manual handling.
+    /// </summary>
     [Fact]
     public async Task Entry_KnownContact_IsIgnored_WhenUserSettingDisabled()
     {
@@ -356,6 +429,11 @@ public sealed class StatementDraftClassificationTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When an existing contact already matches via its own alias pattern, classification must prefer that
+    /// existing contact over creating a new one from the known-contact catalog, avoiding duplicate contact
+    /// records for the same merchant.
+    /// </summary>
     [Fact]
     public async Task Entry_ExistingContact_HasPriorityOverKnownContactCatalog()
     {

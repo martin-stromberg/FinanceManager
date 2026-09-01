@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers domain-level invariants of the <see cref="HomeKpi"/> entity: the constructor's requirement that a
+/// favorite-backed KPI always references a <see cref="ReportFavorite"/> id, and the database-level cascade delete
+/// that removes home KPI tiles when their underlying report favorite is deleted.
+/// </summary>
 public sealed class HomeKpiTests
 {
     private static AppDbContext CreateDb()
@@ -17,6 +22,11 @@ public sealed class HomeKpiTests
         return db;
     }
 
+    /// <summary>
+    /// A <see cref="HomeKpi"/> of kind <see cref="HomeKpiKind.ReportFavorite"/> must carry a
+    /// <c>reportFavoriteId</c>; constructing one with a null favorite id must throw <see cref="ArgumentException"/>
+    /// immediately, preventing a dangling favorite-backed KPI tile with nothing to render.
+    /// </summary>
     [Fact]
     public async Task Create_HomeKpi_ForFavorite_ShouldRequireFavoriteId()
     {
@@ -37,6 +47,11 @@ public sealed class HomeKpiTests
         Assert.Throws<ArgumentException>(act);
     }
 
+    /// <summary>
+    /// Deleting a <see cref="ReportFavorite"/> that has home KPI tiles referencing it must cascade-delete those
+    /// <see cref="HomeKpi"/> rows at the database level, so the dashboard never ends up with orphaned KPI tiles
+    /// pointing at a report favorite that no longer exists.
+    /// </summary>
     [Fact]
     public async Task CascadeDelete_Favorite_ShouldRemoveRelatedHomeKpis()
     {

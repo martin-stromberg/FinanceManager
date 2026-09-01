@@ -17,6 +17,12 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers general <see cref="StatementDraftService"/> operations beyond booking and classification: import-time
+/// account auto-detection, empty-draft creation plus batch entry updates/creates/deletes (including atomicity and
+/// status-transition edge cases for announced/already-booked entries), commit result reporting, and storing the
+/// original uploaded file as an attachment on the draft.
+/// </summary>
 public sealed class StatementDraftServiceTests
 {
     private sealed class TestCurrentUserService : FinanceManager.Application.ICurrentUserService
@@ -111,6 +117,10 @@ public sealed class StatementDraftServiceTests
         return (sut, db, owner.Id);
     }
 
+    /// <summary>
+    /// Importing a file when the owner has exactly one account must auto-detect and assign that account to the
+    /// resulting draft, and preserve the original uploaded file name on the draft DTO.
+    /// </summary>
     [Fact]
     public async Task CreateDraftAsync_ShouldReturnEntries_AndAutoDetectAccount_WhenSingleAccount()
     {
@@ -130,6 +140,11 @@ public sealed class StatementDraftServiceTests
         Assert.Equal(1, counter);
     }
 
+    /// <summary>
+    /// A batch update request with a valid field-value payload (subject, amount, valuta date, booking
+    /// description) must be applied to the targeted entry and be visible when the draft is re-fetched - the core
+    /// "edit several fields of one entry at once" path.
+    /// </summary>
     [Fact]
     public async Task ApplyBatchEntryUpdatesAsync_ShouldApplyChanges_WhenValid()
     {
@@ -163,6 +178,11 @@ public sealed class StatementDraftServiceTests
         Assert.Contains(updated.Entries, e => e.Id == entry.Id && e.Subject == "Updated" && e.Amount == 15.5m && e.ValutaDate == newValuta && e.BookingDescription == "Updated description");
     }
 
+    /// <summary>
+    /// A batch update that sets an invalid value (a zero amount) must be rejected with a field-level error
+    /// attached to the specific entry/field, letting the UI highlight exactly what is wrong rather than failing
+    /// generically.
+    /// </summary>
     [Fact]
     public async Task ApplyBatchEntryUpdatesAsync_ShouldReturnErrors_WhenInvalid()
     {
@@ -192,6 +212,11 @@ public sealed class StatementDraftServiceTests
         Assert.Contains(result.ErrorResponse.Errors, e => e.EntryId == entry.Id && e.FieldErrors.Any(fe => fe.Field == "Amount"));
     }
 
+    /// <summary>
+    /// A single batch request combining an update, a delete, and a create must apply all three operations
+    /// together: the updated entry keeps its id with the new values, the deleted entry disappears, and the newly
+    /// created entry appears with its given fields.
+    /// </summary>
     [Fact]
     public async Task ApplyBatchEntryUpdatesAsync_ShouldApplyUpdatesDeletesAndCreates_WhenValid()
     {
@@ -234,6 +259,11 @@ public sealed class StatementDraftServiceTests
         Assert.Contains(updated.Entries, e => e.Subject == "Created" && e.Amount == 30m && e.ValutaDate == DateTime.Today.AddDays(3));
     }
 
+    /// <summary>
+    /// If any one operation in a combined batch request is invalid (here, a create with a zero amount), the
+    /// entire batch must be rejected atomically - none of the otherwise-valid update/delete/create operations may
+    /// be partially persisted.
+    /// </summary>
     [Fact]
     public async Task ApplyBatchEntryUpdatesAsync_ShouldNotPersistAnyChanges_WhenCreateIsInvalid()
     {
@@ -273,6 +303,10 @@ public sealed class StatementDraftServiceTests
         Assert.DoesNotContain(unchanged.Entries, e => e.Subject == "Should not persist");
     }
 
+    /// <summary>
+    /// An entry that is only "announced" (a bank preview, not yet a final settled movement) must still be
+    /// deletable through the batch delete operation just like any other entry.
+    /// </summary>
     [Fact]
     public async Task ApplyBatchEntryUpdatesAsync_ShouldDeleteAnnouncedEntries()
     {
@@ -293,6 +327,11 @@ public sealed class StatementDraftServiceTests
         Assert.DoesNotContain(updated!.Entries, e => e.Id == entry.Id);
     }
 
+    /// <summary>
+    /// When a batch update touches only unrelated fields (e.g. Subject) and does not explicitly include "Status"
+    /// in the update payload, the entry's existing status (Announced) and cost-neutral flag must remain
+    /// untouched - status must never be reset implicitly as a side effect of updating other fields.
+    /// </summary>
     [Fact]
     public async Task ApplyBatchEntryUpdatesAsync_ShouldNotApplyStatusLogic_WhenStatusFieldIsNotProvided()
     {
@@ -327,6 +366,11 @@ public sealed class StatementDraftServiceTests
         Assert.Equal("Updated announced", unchangedStatusEntry.Subject);
     }
 
+    /// <summary>
+    /// An entry previously marked <c>AlreadyBooked</c> (flagged as a probable duplicate) can be explicitly reset
+    /// back to <c>Open</c> via a batch update that includes the Status field alongside other corrected values -
+    /// letting the user override a false-positive duplicate detection.
+    /// </summary>
     [Fact]
     public async Task ApplyBatchEntryUpdatesAsync_ShouldAllowAlreadyBookedResetWithFieldUpdates()
     {
@@ -366,6 +410,10 @@ public sealed class StatementDraftServiceTests
         Assert.Equal(12.5m, updatedEntry.Amount);
     }
 
+    /// <summary>
+    /// When the owner has no accounts configured at all, importing a file must leave <c>DetectedAccountId</c>
+    /// null rather than throwing or guessing, so the UI can prompt the user to pick an account manually.
+    /// </summary>
     [Fact]
     public async Task CreateDraftAsync_ShouldHaveNullDetectedAccount_WhenNoAccounts()
     {
@@ -381,6 +429,10 @@ public sealed class StatementDraftServiceTests
         Assert.Equal(1, counter);
     }
 
+    /// <summary>
+    /// Committing a draft with multiple entries must return a non-null commit result whose
+    /// <c>TotalEntries</c> count matches the number of entries that were actually committed.
+    /// </summary>
     [Fact]
     public async Task CommitAsync_ShouldReturnResult()
     {
@@ -405,6 +457,12 @@ public sealed class StatementDraftServiceTests
         Assert.Equal(2, result!.TotalEntries);
     }
 
+    /// <summary>
+    /// Importing a statement file must store the original uploaded bytes as an <c>Attachment</c> linked to the
+    /// created draft (by <c>AttachmentEntityKind.StatementDraft</c> and the draft's id), with the correct file
+    /// name, a generic binary content type, and non-empty content - preserving the source file for later
+    /// reference or audit.
+    /// </summary>
     [Fact]
     public async Task CreateDraftAsync_ShouldCreateAttachment_ForOriginalFile()
     {

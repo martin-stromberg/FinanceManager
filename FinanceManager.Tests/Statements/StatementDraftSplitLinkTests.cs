@@ -14,6 +14,12 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers split-draft linking edge cases: how postings from a parent (intermediary) entry and its linked child
+/// draft get their booking/valuta dates on booking, duplicate/already-booked detection when the parent's
+/// intermediary posting is re-imported, and the upload-group constraint governing which drafts may legitimately
+/// be linked as parent and child via <c>SetEntrySplitDraftAsync</c>.
+/// </summary>
 public sealed class StatementDraftSplitLinkTests
 {
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
@@ -263,6 +269,11 @@ public sealed class StatementDraftSplitLinkTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Linking a parent entry to a child draft must succeed when the two drafts originate from different upload
+    /// groups (imported as separate files/batches) - the normal case for pairing an intermediary statement with a
+    /// separately imported detail statement.
+    /// </summary>
     [Fact]
     public async Task SetEntrySplitDraftAsync_ShouldLink_WhenUploadGroupIdDiffers()
     {
@@ -296,6 +307,11 @@ public sealed class StatementDraftSplitLinkTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Linking must be rejected with an <see cref="InvalidOperationException"/> when the parent and child drafts
+    /// share the same upload group id, since a draft from the very same upload batch cannot legitimately be its
+    /// own split detail - guards against accidentally linking two entries produced by the same import run.
+    /// </summary>
     [Fact]
     public async Task SetEntrySplitDraftAsync_ShouldThrow_WhenUploadGroupIdSame()
     {

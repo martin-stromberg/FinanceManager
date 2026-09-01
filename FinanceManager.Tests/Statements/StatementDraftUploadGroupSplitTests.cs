@@ -73,6 +73,12 @@ public sealed class StatementDraftUploadGroupSplitTests
         return d;
     }
 
+    /// <summary>
+    /// Linking just one representative child draft from a multi-file upload group must cause booking to treat
+    /// ALL drafts sharing that upload group as children of the split - summing their entries against the
+    /// parent's intermediary amount, committing all of them together with the parent, while an unrelated draft
+    /// outside the group is left untouched in <see cref="StatementDraftStatus.Draft"/>.
+    /// </summary>
     [Fact]
     public async Task Booking_GroupedSplitDrafts_AllChildrenBooked_IndependentsRemain()
     {
@@ -145,6 +151,11 @@ public sealed class StatementDraftUploadGroupSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When the combined entry total across all grouped child drafts falls short of the parent intermediary
+    /// entry's amount, booking must fail with "SPLIT_AMOUNT_MISMATCH" - the sum check spans the whole upload
+    /// group, not just the explicitly linked representative draft.
+    /// </summary>
     [Fact]
     public async Task Booking_GroupedSplitDrafts_Fails_WhenSumLessThanParent()
     {
@@ -176,6 +187,11 @@ public sealed class StatementDraftUploadGroupSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Conversely, when the grouped children's combined total exceeds the parent amount, booking must also fail
+    /// with "SPLIT_AMOUNT_MISMATCH", confirming the group-wide sum check catches over-allocation just as it
+    /// catches under-allocation.
+    /// </summary>
     [Fact]
     public async Task Booking_GroupedSplitDrafts_Fails_WhenSumGreaterThanParent()
     {

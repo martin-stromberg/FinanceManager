@@ -8,6 +8,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers additional edge cases of <see cref="ReportAggregationService.QueryAsync"/> beyond the core suite:
+/// entity-only output when <c>IncludeCategory</c> is off, auto-injecting a zero-amount row for a group missing
+/// data in the latest period when comparisons are enabled, pruning groups with no meaningful (non-zero,
+/// no-comparison) data, the <c>Take</c> period-window limit, aggregation across Quarter/HalfYear/Year intervals
+/// with previous- and year-over-year comparisons, and grouping contacts without a category under an "_none"
+/// pseudo-category.
+/// </summary>
 public sealed class ReportAggregationServiceAdditionalTests
 {
     private static AppDbContext CreateDb()
@@ -27,6 +35,11 @@ public sealed class ReportAggregationServiceAdditionalTests
         return c;
     }
 
+    /// <summary>
+    /// With <c>IncludeCategory = false</c>, the result must contain only entity-level rows (<c>GroupKey</c>
+    /// starting "Contact:") and no synthetic category rows; and a group whose only data point is the latest
+    /// period (no earlier period to compare against) must report a null <c>PreviousAmount</c> rather than zero.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldReturnOnlyEntityRows_WhenIncludeCategoryFalse()
     {
@@ -54,6 +67,12 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Null(febPoint.PreviousAmount);
     }
 
+    /// <summary>
+    /// When comparisons are enabled and one contact has no aggregate for the latest period while another does,
+    /// the query must synthesize a zero-amount row for the latest period for the missing contact, so its
+    /// <c>PreviousAmount</c> (carried from its last available period) can still be surfaced - rather than simply
+    /// omitting that contact from the latest period entirely.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldCreateZeroRowForMissingLatestPeriod_WhenComparisonsEnabled()
     {
@@ -82,6 +101,11 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Equal(30m, c2Feb.PreviousAmount);
     }
 
+    /// <summary>
+    /// A group whose only aggregate is a zero-amount historic period, with no current-period activity and
+    /// nothing meaningful to compare, must be pruned from the result entirely - keeping the report free of noise
+    /// rows for contacts with no real financial activity in the requested window.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldRemoveEmptyGroupWithoutComparisonData()
     {
@@ -105,6 +129,10 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Contains(result.Points, p => p.GroupKey == $"Contact:{c2.Id}");
     }
 
+    /// <summary>
+    /// With 15 months of history available but <c>Take = 5</c>, the query must return exactly the most recent 5
+    /// periods relative to the analysis date (November 2024 through March 2025), not the full history.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldRespectTake_PeriodLimitation()
     {
@@ -133,6 +161,11 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Equal(new DateTime(2024, 11, 1), periods.First()); // last 5 of 15 months (2024-11 .. 2025-03)
     }
 
+    /// <summary>
+    /// Confirms the aggregation service correctly reads precomputed Quarter/HalfYear/Year
+    /// <see cref="PostingAggregate"/> rows (not just Month) and wires up previous-period and year-over-year
+    /// comparisons correctly at each of these coarser granularities.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldAggregateQuarterHalfYearYear()
     {
@@ -171,6 +204,12 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Equal(550m, y2025Point.YearAgoAmount);
     }
 
+    /// <summary>
+    /// With <c>IncludeCategory = true</c>, a contact that has no assigned category must be grouped under a
+    /// synthetic "_none" pseudo-category row (<c>GroupKey = "Category:{kind}:_none"</c>) rather than being
+    /// dropped or grouped incorrectly, and the contact's own row must reference that pseudo-category via
+    /// <c>ParentGroupKey</c>.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldGroupUncategorizedContacts()
     {

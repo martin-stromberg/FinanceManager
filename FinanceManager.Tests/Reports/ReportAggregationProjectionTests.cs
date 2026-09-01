@@ -7,6 +7,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="ReportAggregationService"/>'s dividend projection feature (<c>CompareProjection = true</c>)
+/// for Security postings: recognizing recurring dividend patterns (monthly, quarterly, irregular) from
+/// prior-year payment history, projecting an expected amount and date for periods with no booked payment yet,
+/// treating an already-booked current-period dividend as "confirmed" rather than projected, filtering out
+/// same-date correction/reversal pairs from the pattern, and respecting the current holding (buy/sell/reversal
+/// quantities, valuta-vs-booking date) so a fully-sold position stops generating projections.
+/// </summary>
 public sealed class ReportAggregationProjectionTests
 {
     private static AppDbContext CreateDb()
@@ -88,6 +96,13 @@ public sealed class ReportAggregationProjectionTests
         return posting;
     }
 
+    /// <summary>
+    /// For a security with no dividend booked yet in the analysis period but one in the prior year, the
+    /// projection must add the prior year's net dividend (after fee/tax) as the expected amount for the current
+    /// period, exposing it via <c>ProjectionExpectedDividends</c> with the security id/name and both the
+    /// expected and prior-year dates - while a security whose current-period dividend is already booked reports
+    /// <c>ProjectionAmount</c> equal to its actual (confirmed) amount with no expected-dividend entries.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_AddsUnconfirmedPriorYearNetDividend()
     {
@@ -134,6 +149,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(confirmed.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// When a security paid dividends twice in the prior year on distinct dates, matching against the current
+    /// year's already-booked payment must resolve to the correct individual prior-year event rather than summing
+    /// or conflating both prior-year payments; here the current dividend is already booked, so the result reports
+    /// it as confirmed (actual = projection) with no expected-dividend entries.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_MatchesPriorYearEventsIndividually()
     {
@@ -166,6 +187,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(point.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// When the current year's dividend was already paid earlier than the analysis month (rather than exactly in
+    /// the analysis period), that already-booked payment must be recognized as satisfying the year's expectation
+    /// - the analysis-month point must show zero actual and zero projection rather than still expecting another
+    /// payment for a month that was never going to pay one.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_TreatsEarlierCurrentYearDividendAsConfirmed()
     {
@@ -197,6 +224,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(mayPoint.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// For a security with an established monthly dividend pattern, a month in the recent past that unexpectedly
+    /// received no payment (April) must not retroactively get a projected/expected dividend injected - only the
+    /// still-open current month (July) should carry a projection, derived from the pattern's expected
+    /// day-of-month.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_MonthlyPatternDoesNotExpectMissedPastMonth()
     {
@@ -243,6 +276,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(new DateTime(2026, 7, 10), Assert.Single(julyPoint.ProjectionExpectedDividends!).ExpectedDate);
     }
 
+    /// <summary>
+    /// Same-date offsetting correction pairs (a negative dividend immediately followed by an equal positive one,
+    /// or vice versa) appearing in the payment history must be excluded when deriving the monthly pattern's
+    /// future expected dates - they must not distort the projected schedule for the remaining months of the year.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_MonthlyPatternIgnoresCorrectionPairsForFutureExpectations()
     {
@@ -297,6 +335,12 @@ public sealed class ReportAggregationProjectionTests
             expectedDates);
     }
 
+    /// <summary>
+    /// Regression test using a real-world-shaped history full of many same-date correction/reversal row pairs (a
+    /// "Gladstone Commercial Corp"-style dataset): the monthly pattern detection and the resulting future
+    /// expected-dividend amounts and dates must remain correct despite this noise, verifying the
+    /// correction-filtering logic scales to messy real data rather than only the small hand-crafted cases.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_MonthlyPatternIgnoresManyPriorYearCorrectionRows()
     {
@@ -379,6 +423,12 @@ public sealed class ReportAggregationProjectionTests
             expected);
     }
 
+    /// <summary>
+    /// For a security paying quarterly, a payment that already occurred within the current quarter must be
+    /// treated as satisfying that quarter's expectation (reported as confirmed with no projected dividends),
+    /// while a quarter that has already fully elapsed without a corresponding prior-year event must not carry
+    /// forward a stale expectation into the result.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_QuarterlyPatternMatchesWithinQuarterAndDropsElapsedQuarter()
     {
@@ -417,6 +467,10 @@ public sealed class ReportAggregationProjectionTests
         }
     }
 
+    /// <summary>
+    /// For a still-open (not yet elapsed) quarter that has no payment booked yet, the quarterly pattern must
+    /// project the expected amount and date based on the matching prior-year quarterly payment.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_QuarterlyPatternExpectsCurrentOpenQuarter()
     {
@@ -448,6 +502,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(new DateTime(2026, 6, 12), Assert.Single(junePoint.ProjectionExpectedDividends!).ExpectedDate);
     }
 
+    /// <summary>
+    /// For a security with an irregular (non-monthly, non-quarterly) payment history, once the current year has
+    /// already received at least one dividend payment, the projection must not add a further speculative
+    /// expectation for the analysis period - irregular payers are only cautiously projected when nothing has been
+    /// paid yet this year.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_IrregularPatternDoesNotExpectMoreWhenCurrentYearHasPayment()
     {
@@ -480,6 +540,10 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(junePoint.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// Conversely, for an irregular payer that has received nothing at all in the current year, the projection
+    /// cautiously expects a dividend based on the most recent prior-year irregular payment's amount and date.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_IrregularPatternCautiouslyExpectsWhenCurrentYearHasNoPayment()
     {
@@ -512,6 +576,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(new DateTime(2026, 6, 15), Assert.Single(junePoint.ProjectionExpectedDividends!).ExpectedDate);
     }
 
+    /// <summary>
+    /// With <c>UseValutaDate = true</c>, the projection must key its prior-year-vs-current-period matching off
+    /// each dividend's valuta date, falling back to the booking date only for postings that never had a distinct
+    /// valuta date recorded - confirmed here with two securities, one exercising the valuta-date path and one the
+    /// booking-date fallback.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_UsesValutaDateAndBookingFallback()
     {
@@ -545,6 +615,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(70m, result.Points.Single(p => p.GroupKey == $"Security:{bookingSecurity.Id}" && p.PeriodStart == analysis).ProjectionAmount);
     }
 
+    /// <summary>
+    /// The dividend projection feature is exclusive to Security postings; a query for <see cref="PostingKind.Bank"/>
+    /// with <c>CompareProjection = true</c> must return <c>ComparedProjection = false</c> and leave every point's
+    /// <c>ProjectionAmount</c> null rather than attempting (and failing) to project bank postings.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ProjectionIsIgnored_ForNonSecurityKind()
     {
@@ -569,6 +644,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.All(result.Points, p => Assert.Null(p.ProjectionAmount));
     }
 
+    /// <summary>
+    /// Projection must also be silently skipped (<c>ComparedProjection = false</c>, all <c>ProjectionAmount</c>
+    /// null) when the query spans multiple posting kinds at once, or when the security-subtype filter is
+    /// restricted to a subtype (e.g. Buy) that excludes dividends entirely - projection only makes sense for a
+    /// single-kind, dividend-inclusive Security query.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ProjectionIsIgnored_ForMultiKindAndInvalidSecuritySubtype()
     {
@@ -610,6 +691,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.All(invalidSubtype.Points, p => Assert.Null(p.ProjectionAmount));
     }
 
+    /// <summary>
+    /// When <c>IncludeCategory</c> is enabled, the projected expected-dividend amount for an individually held
+    /// security must roll up correctly into its category-level aggregate row (<c>GroupKey = "Category:Security:{categoryId}"</c>),
+    /// so category summaries reflect projected income the same way per-security rows do.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_AggregatesCategoryAndTypeRows_WhenIncludeCategory()
     {
@@ -642,6 +728,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(80m, Assert.Single(categoryPoint.ProjectionExpectedDividends!).Amount);
     }
 
+    /// <summary>
+    /// If the entire holding of a security was sold before the analysis date, the projection must not expect a
+    /// future dividend for it even though its prior-year payment history would otherwise suggest one - a position
+    /// no longer owned cannot receive a future dividend.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_DoesNotExpectDividend_WhenHoldingIsFullySold()
     {
@@ -674,6 +765,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(point.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// For a Year-interval report, the holding check must correctly load and consider trades dated later within
+    /// the year (a sale that happens after the year starts but before the expected dividend date) rather than
+    /// only trades known at the start of the year - here a mid-year full sale correctly suppresses the
+    /// projection for the whole year.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_YearIntervalLoadsTradesUntilExpectedDividendDate()
     {
@@ -705,6 +802,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(point.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// A Sell posting with a positive quantity value (rather than the usual negative) must still be treated as
+    /// reducing the holding - a disposition - as long as it is not flagged as a reversal of an earlier sell, so a
+    /// fully-sold position correctly stops projecting dividends even when the sell's quantity sign looks unusual.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_TreatsPositiveSellQuantityAsDisposition_WhenNotReversal()
     {
@@ -736,6 +838,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(point.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// When a Sell posting is later reversed (a second Sell posting explicitly marked via
+    /// <c>SetReversalFor</c> as reversing the first), the net effect must restore the original holding, so the
+    /// projection resumes expecting a dividend as if the sell/reversal pair had never happened.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_ExpectsDividend_WhenSellWasReversed()
     {
@@ -769,6 +876,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
     }
 
+    /// <summary>
+    /// A partial sell that reduces but does not eliminate the holding (selling 4 of 10 units) must still leave
+    /// the projection active, since some quantity of the security remains owned and could still receive a
+    /// dividend.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_ExpectsDividend_WhenHoldingRemainsAfterPartialSell()
     {
@@ -800,6 +912,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
     }
 
+    /// <summary>
+    /// If a security was fully sold partway through the year after several months of an established monthly
+    /// dividend pattern, the year-to-date actual (already-booked) dividend total must be preserved in the
+    /// result, while no further projected amount is added for the months after the sale - already-earned income
+    /// is never erased just because the position was later closed.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_KeepsBookedDividend_WhenFutureExpectationHasNoHolding()
     {
@@ -840,6 +958,12 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(point.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// Within a category aggregate combining a still-held security and a fully-sold one (both with qualifying
+    /// prior-year dividend history), the category-level <c>ProjectionExpectedDividends</c> list must include only
+    /// the still-held security's expectation and exclude the sold one's, even though both belong to the same
+    /// category and both individually paid dividends last year.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_CategoryExcludesSoldSecurityExpectations()
     {
@@ -879,6 +1003,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(80m, expectedDividend.Amount);
     }
 
+    /// <summary>
+    /// Projections must be computed strictly per owner: another user's security trade must never be used to
+    /// determine whether the querying user's own security counts as "held" (or otherwise influence its
+    /// projection) - a straightforward multi-tenant isolation guard for the holding check.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_IgnoresOtherUsersHoldings()
     {
@@ -911,6 +1040,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(point.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// With <c>UseValutaDate = true</c>, the holding check that decides whether a projection should fire must
+    /// also key off valuta dates - a sell whose booking date is before the expected dividend date but whose
+    /// valuta date falls after it must still count as "held" as of the expected dividend date.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_UsesValutaDateForHoldingCheck()
     {
@@ -943,6 +1077,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
     }
 
+    /// <summary>
+    /// A Buy trade recorded without a quantity value must not be treated as establishing a holding for
+    /// projection purposes, since the actual position size is unknown - the projection conservatively skips this
+    /// security rather than guessing that it is held.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_DoesNotUseTradeWithoutQuantityAsHolding()
     {
@@ -973,6 +1112,11 @@ public sealed class ReportAggregationProjectionTests
         Assert.Null(point.ProjectionExpectedDividends);
     }
 
+    /// <summary>
+    /// The projection logic must correctly restrict its prior-year comparison window for both a Ytd
+    /// (year-to-date, cut off at the analysis date's month) and a Quarter interval, matching only the prior-year
+    /// dividend that falls within the equivalent cutoff/period rather than the security's full prior-year total.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendProjection_HandlesYtdCutoffAndQuarterInterval()
     {

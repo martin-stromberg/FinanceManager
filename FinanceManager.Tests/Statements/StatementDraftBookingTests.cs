@@ -20,6 +20,12 @@ using Moq;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers <see cref="StatementDraftService.BookAsync"/>, the core commit logic that turns statement draft entries
+/// into postings: bank/contact postings, self-contact savings-plan handling with target-date advancement, security
+/// trade/fee/tax splitting for buy/sell/dividend, payment-intermediary splitting across parent and child drafts,
+/// validation failures for each precondition, cache invalidation, and concurrency guards against double-booking.
+/// </summary>
 public sealed class StatementDraftBookingTests
 {
 
@@ -136,6 +142,11 @@ public sealed class StatementDraftBookingTests
         return draft;
     }
 
+    /// <summary>
+    /// Booking a single entry out of a multi-entry draft must only remove and post that entry - the draft must
+    /// stay in <see cref="StatementDraftStatus.Draft"/> with the untouched entry still present, rather than being
+    /// committed as a whole just because one of its entries was booked.
+    /// </summary>
     [Fact]
     public async Task Booking_SingleEntry_ShouldNotCommitWholeDraft_And_RemoveOnlyThatEntry()
     {
@@ -181,6 +192,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Even a partial booking (only one of several entries in a draft) must still run the budget impact
+    /// evaluation for that specific entry and attach the resulting summary to the booking result, so the UI can
+    /// show the budget effect regardless of whether the whole draft or just one entry was booked.
+    /// </summary>
     [Fact]
     public async Task Booking_SingleEntry_ShouldAttachBudgetImpactSummary_WhenBookingIsPartial()
     {
@@ -238,6 +254,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking must fail with the "NO_ACCOUNT" validation code when the draft has no account assigned, since a
+    /// bank posting cannot be created without knowing which account it belongs to.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldFail_WhenNoAccountAssigned()
     {
@@ -254,6 +274,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking must fail with the "ENTRY_NO_CONTACT" validation code when an entry has not yet been assigned a
+    /// counterparty contact, since the contact posting needs a target contact to attribute the money to.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldFail_WhenEntryHasNoContact()
     {
@@ -271,6 +295,13 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A booking accounted to the "self" contact without an assigned savings plan is treated as suspicious (it
+    /// usually means the user forgot to link a savings plan) and must be rejected with a "SAVINGSPLAN_MISSING_FOR_SELF"
+    /// warning that requires explicit confirmation. Once confirmed, the booking must proceed and attach the
+    /// budget impact summary evaluated at the draft level (entry id null) as well as create exactly one bank and
+    /// one contact posting.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContact_ShouldRequireConfirmation_AndCreateBankAndContactPostings()
     {
@@ -331,6 +362,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When a self-contact entry is explicitly linked to a savings plan, booking must succeed without requiring
+    /// confirmation and must create bank, contact, and savings-plan postings, with the savings-plan posting
+    /// carrying the negated entry amount (money leaving the regular flow into the plan).
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithSavingsPlan_ShouldCreateBankContactAndSavingsPostings()
     {
@@ -361,6 +397,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// An entry accounted to a payment intermediary contact (e.g. PayPal) that stands in for the real recipient
+    /// must not be booked as-is - without a linked split draft breaking the amount down to the actual
+    /// counterparties, booking must fail with "INTERMEDIARY_NO_SPLIT".
+    /// </summary>
     [Fact]
     public async Task Booking_PaymentIntermediaryWithoutSplit_ShouldFail()
     {
@@ -381,6 +422,13 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A child draft linked as an intermediary's split cannot be booked on its own; only booking the parent entry
+    /// is valid, and doing so must create zero-amount bank/contact postings on the parent (the intermediary is a
+    /// pass-through, not a real economic movement) plus the real, correctly-dated bank/contact postings on each
+    /// child entry, each referencing its corresponding parent posting via <c>ParentId</c>. Child postings keep the
+    /// parent's booking date but their own valuta date, and both the parent and child drafts end up committed.
+    /// </summary>
     [Fact]
     public async Task Booking_SplitDrafts_ParentCreatesZeroAndChildPostings_AndBothCommitted()
     {
@@ -491,6 +539,12 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// If the child entries of a linked split draft have not been assigned contacts, booking the parent must fail
+    /// with an "ENTRY_NO_CONTACT" message prefixed by "[Split]" (so the user can tell the failure originates in
+    /// the split, not the parent entry itself) - and must not be misreported as a missing split
+    /// ("INTERMEDIARY_NO_SPLIT" must not fire, since a split is in fact present, just incomplete).
+    /// </summary>
     [Fact]
     public async Task Booking_ParentFails_WhenSplitDraftHasMissingContacts()
     {
@@ -522,6 +576,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// The sum of a split's child entry amounts must equal the parent intermediary entry's amount; otherwise
+    /// booking must fail with "SPLIT_AMOUNT_MISMATCH" - guarding against a split that would silently lose or
+    /// double-count money relative to what the intermediary actually moved.
+    /// </summary>
     [Fact]
     public async Task Booking_ParentFails_WhenSplitTotalsDoNotMatch()
     {
@@ -552,6 +611,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A split child entry accounted to the self contact must go through the same "missing savings plan"
+    /// confirmation guard as a direct self-booking, with the resulting warning message prefixed "[Split]" so it
+    /// is traceable back to the specific child entry inside the split rather than the parent.
+    /// </summary>
     [Fact]
     public async Task Booking_Warns_WhenSplitContainsSelfContact()
     {
@@ -583,6 +647,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Intermediary chaining is not supported implicitly: if a split's child entry is itself accounted to another
+    /// payment intermediary without its own further split, booking the parent must fail with
+    /// "INTERMEDIARY_NO_SPLIT" (prefixed "[Split]"), the same rule that applies at the top level.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_WhenSplitContainsIntermediaryWithoutFurtherSplit()
     {
@@ -611,6 +680,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// An entry with a security assigned but no <see cref="SecurityTransactionType"/> chosen cannot be booked -
+    /// booking must fail with "SECURITY_MISSING_TXTYPE" since the transaction type drives which security
+    /// sub-postings (buy/sell/dividend) get created.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_ForSecurityMissingTransactionType()
     {
@@ -635,6 +709,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A Buy transaction requires a quantity; booking must fail with "SECURITY_MISSING_QUANTITY" when the
+    /// quantity was never set, since the resulting holding size would otherwise be undefined.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_ForSecurityMissingQuantity()
     {
@@ -659,6 +737,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Even with an otherwise valid security assignment, booking must fail with "SECURITY_ACCOUNT_NOT_ALLOWED"
+    /// when the target account has security processing disabled - preventing security trades from landing on
+    /// accounts that were never configured to hold them.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_WhenSecurityProcessingDisabledForAccount()
     {
@@ -686,6 +769,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Fee plus tax must not exceed the entry's total amount; otherwise booking must fail with
+    /// "SECURITY_FEE_TAX_EXCEEDS_AMOUNT" rather than silently creating a main trade posting with a nonsensical
+    /// negative or inverted amount from bad data entry.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_WhenSecurityFeePlusTaxExceedsAmount()
     {
@@ -713,6 +801,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A Buy trade must split into separate main/fee/tax security postings whose amounts sum exactly back to the
+    /// entry amount, and must preserve a high-precision (six decimal place) quantity on the main posting only -
+    /// fee and tax postings carry no quantity of their own.
+    /// </summary>
     [Fact]
     public async Task Booking_CreatesSecurityTradeFeeTaxPostings_WithSixDecimalQuantity_AndSumsToEntryAmount_ForBuy()
     {
@@ -755,6 +848,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// For a Sell, the sign convention is opposite to Buy: the main posting equals amount + fee + tax while fee
+    /// and tax postings themselves are negative, and the quantity on the main posting is negative (reducing the
+    /// holding). The three postings must still sum back to the original entry amount.
+    /// </summary>
     [Fact]
     public async Task Booking_CreatesSecurityPostings_ForSell_WithExpectedSigns_AndSumsToEntryAmount()
     {
@@ -797,6 +895,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Dividends do not require a quantity (it may remain null, unlike Buy) but must still split into main/fee/tax
+    /// postings that follow the Sell-style sign convention (fee/tax negative) and sum back to the entry amount.
+    /// </summary>
     [Fact]
     public async Task Booking_CreatesSecurityPostings_ForDividend_QuantityOptional_AndSumsToEntryAmount()
     {
@@ -839,6 +941,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Regression case for a foreign-currency (USD security, EUR entry) dividend booked net-of-tax with no fee:
+    /// given an 11.88 EUR net entry and 1.68 EUR tax, the main dividend posting must gross back up to 13.56 EUR
+    /// so that main + tax reproduces the original net entry amount exactly.
+    /// </summary>
     [Fact]
     public async Task Booking_Dividend_WithTaxOnly_Net1188_ShouldCreateMain1356_AndTax168()
     {
@@ -877,6 +984,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A dividend correction/storno (negative entry amount, negative tax) must produce a negative main posting and
+    /// a positive tax reversal that still sum back to the entry amount - verifying the sign handling introduced
+    /// for the positive case is not accidentally inverted for reversals.
+    /// </summary>
     [Fact]
     public async Task Booking_Dividend_Storno_NegativeValues_ShouldCreateMainMinus184_TaxPlus022()
     {
@@ -916,6 +1028,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Mirror of the storno case: a normal positive-amount dividend with positive tax must produce a positive
+    /// main posting and a negative tax posting summing back to the entry amount, confirming the sign convention
+    /// holds in the non-reversal direction too.
+    /// </summary>
     [Fact]
     public async Task Booking_Dividend_PositiveValues_ShouldCreateMainPlus184_TaxMinus022()
     {
@@ -955,6 +1072,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking a security-related posting must invalidate the cached portfolio analysis report for the owner, so
+    /// that a subsequent report request recomputes performance figures instead of serving stale cached data.
+    /// </summary>
     [Fact]
     public async Task BookAsync_SecurityPosting_InvalidatesPortfolioAnalysisReportCache()
     {
@@ -992,6 +1113,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking an ordinary posting on an account with security processing disabled must not trigger portfolio
+    /// analysis report cache invalidation, since it has no bearing on security holdings - avoids unnecessary
+    /// cache churn for postings unrelated to securities.
+    /// </summary>
     [Fact]
     public async Task BookAsync_NormalPostingOnNonSecurityAccount_DoesNotInvalidatePortfolioAnalysisReportCache()
     {
@@ -1031,6 +1157,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking a recurring savings-plan contribution whose current target date sits on a month-end (Jan 31) must
+    /// advance the plan's next target date by one calendar month using end-of-month clamping (landing on Feb 29
+    /// in a leap year) rather than naive date arithmetic that would overflow into an invalid day.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithRecurringSavingsPlan_MonthEnd_31Jan_To_29Feb()
     {
@@ -1058,6 +1189,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Even when the plan's current target date is not itself a month-end (Jan 30), advancing it one month must
+    /// still clamp to the shorter month's last valid day (Feb 29) rather than overflowing - the clamping behavior
+    /// applies regardless of whether the starting date happened to be a month-end.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithRecurringSavingsPlan_NonMonthEnd_30Jan_To_29Feb_Capped()
     {
@@ -1085,6 +1221,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When the booking date lies well beyond the plan's current target date, the target must be advanced
+    /// repeatedly, one month at a time, until it reaches or passes the booking date (Jan 31 -> Feb 29 -> Mar 31),
+    /// rather than jumping straight to the booking date or only advancing a single step.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithRecurringSavingsPlan_MultipleAdvance_To_MarchEnd()
     {
@@ -1113,6 +1254,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking a savings-plan contribution that would push the plan's total past its configured target amount
+    /// must be blocked with a "SAVINGSPLAN_GOAL_EXCEEDS" warning referencing the specific plan, requiring the
+    /// caller to explicitly confirm before the booking (and its bank/contact/savings-plan postings) is created.
+    /// </summary>
     [Fact]
     public async Task Booking_Prevented_When_SavingsPlan_Target_WouldBeExceeded()
     {
@@ -1165,6 +1311,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Re-booking a draft that has already been committed must be rejected with "BOOKING_ALREADY_PROCESSED" and
+    /// marked as non-retryable, preventing a duplicate/repeated booking request from creating duplicate postings.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldRejectAsAlreadyProcessed_WhenDraftWasAlreadyBooked()
     {
@@ -1191,6 +1341,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// If a <see cref="StatementDraftBookingGuard"/> row already marks the draft as currently being booked, a new
+    /// booking attempt must be rejected with "BOOKING_IN_PROGRESS" and marked retryable - protecting against
+    /// overlapping concurrent booking attempts for the same draft racing each other into duplicate postings.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldRejectWithInProgress_WhenDraftGuardIsAlreadyActive()
     {

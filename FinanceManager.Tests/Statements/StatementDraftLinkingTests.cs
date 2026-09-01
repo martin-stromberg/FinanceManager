@@ -12,6 +12,12 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers automatic linking of self-transfer postings: when the same self contact is booked on both sides of an
+/// internal transfer between two owned accounts (e.g. Giro debit and Savings credit), the service must recognize
+/// the matching counter-posting and link the two <see cref="Domain.Postings.Posting"/> records to each other via
+/// <c>LinkedPostingId</c>, so they display as a matched pair rather than two independent bookings.
+/// </summary>
 public sealed class StatementDraftLinkingTests
 {
     private static (StatementDraftService sut, AppDbContext db, Guid ownerId) Create()
@@ -36,6 +42,11 @@ public sealed class StatementDraftLinkingTests
     }
 
 
+    /// <summary>
+    /// Two self-contact postings booked on different accounts (a Giro debit and a Savings credit) with matching
+    /// amount and date must be automatically linked to each other via <c>LinkedPostingId</c> in both directions -
+    /// the basic case of recognizing an internal transfer between two owned accounts.
+    /// </summary>
     [Fact]
     public async Task Book_TwoMatchingSelfTransfers_ShouldLinkContactPostings()
     {
@@ -84,6 +95,11 @@ public sealed class StatementDraftLinkingTests
         Assert.Equal(contactP_B.LinkedPostingId, contactP_A.Id);
     }
 
+    /// <summary>
+    /// When the debit and credit amounts of two self-contact postings do not match exactly, they must not be
+    /// linked - guards against false-positive matching of unrelated postings that merely happen to fall on the
+    /// same date.
+    /// </summary>
     [Fact]
     public async Task Book_AmountsMismatch_ShouldNotLink()
     {
@@ -124,6 +140,10 @@ public sealed class StatementDraftLinkingTests
         Assert.Null(contactP_B.LinkedPostingId);
     }
 
+    /// <summary>
+    /// Two self-contact postings on the same account must never be linked to each other, since a genuine internal
+    /// transfer always involves two different accounts by definition.
+    /// </summary>
     [Fact]
     public async Task Book_SameAccount_ShouldNotLink()
     {
@@ -163,6 +183,11 @@ public sealed class StatementDraftLinkingTests
         Assert.Null(contactP_B.LinkedPostingId);
     }
 
+    /// <summary>
+    /// A self-transfer where one side (the giro debit) is additionally tagged with a savings plan must still be
+    /// linked to its matching counter-posting on the savings account - the savings-plan tag on one side must not
+    /// prevent the linking logic from finding the counterpart.
+    /// </summary>
     [Fact]
     public async Task Book_WithSavingsPlan_ShouldLink()
     {
@@ -211,6 +236,11 @@ public sealed class StatementDraftLinkingTests
         Assert.Equal(contactP_B.LinkedPostingId, contactP_A.Id);
     }
 
+    /// <summary>
+    /// Simulates a year of recurring monthly transfers, imported and booked side-by-side (Giro then Savings each
+    /// month); every one of the twelve pairs must be linked to its own month's counterpart, verifying the
+    /// matching logic does not accidentally cross-link entries belonging to different months.
+    /// </summary>
     [Fact]
     public async Task Book_TwelveMonthlyMatchingSelfTransfers_MonthlyBothSides_ShouldLinkAll()
     {
@@ -267,6 +297,11 @@ public sealed class StatementDraftLinkingTests
         Assert.Equal(24, contactPostings.Count);
     }
 
+    /// <summary>
+    /// When two Giro debits with the identical amount and subject exist (December and January) before the
+    /// matching Savings credit for December is booked, the linking logic must pick the correct December
+    /// counterpart by date rather than an arbitrary or wrong-month candidate, leaving the January posting unlinked.
+    /// </summary>
     [Fact]
     public async Task Book_DecemberGiro_ThenJanuaryGiro_ThenSavings_ForDecember_ShouldLink_DecemberPostings()
     {
@@ -331,6 +366,11 @@ public sealed class StatementDraftLinkingTests
         Assert.Null(contactJan!.LinkedPostingId);
     }
 
+    /// <summary>
+    /// Same ambiguous-candidate scenario as the previous test but with a different booking order (Savings booked
+    /// before the January Giro entry even exists) - the December pair must still link correctly and the
+    /// later-booked January entry must remain unlinked, showing the matching is not sensitive to booking order.
+    /// </summary>
     [Fact]
     public async Task Book_DecemberGiro_ThenSavings_ThenJanuaryGiro_ShouldLink_DecemberPostings()
     {
@@ -395,6 +435,11 @@ public sealed class StatementDraftLinkingTests
         Assert.Null(contactJan!.LinkedPostingId);
     }
 
+    /// <summary>
+    /// When twelve Giro debits are booked individually first and only afterward a single Savings draft containing
+    /// all twelve matching credits is booked at once, every Giro/Savings pair must still end up correctly linked
+    /// one-to-one, without cross-matching or leftover unlinked postings on either side.
+    /// </summary>
     [Fact]
     public async Task Book_TwelveGiroThenOneSavingsWithAllTransfers_ShouldLinkAll()
     {
@@ -467,6 +512,13 @@ public sealed class StatementDraftLinkingTests
         Assert.Equal(24, contactPostings.Count);
     }
 
+    /// <summary>
+    /// With two same-day, same-amount transfers per month distinguished only by subject/purpose text, linking
+    /// should route each Giro posting to its subject-matching Savings counterpart rather than an arbitrary
+    /// same-amount candidate. The trailing assertion documents a known gap noted in-line: the service currently
+    /// ignores Subject when selecting a match, so this test records the desired (not yet fully implemented)
+    /// purpose-aware matching behavior.
+    /// </summary>
     [Fact]
     public async Task Book_TwelveGiro_TwoTransfersPerMonth_ThenOneSavings_AllTransfers_ShouldLinkByPurpose()
     {

@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="HomeKpiService"/>'s CRUD operations for a user's home-dashboard KPI tiles - both predefined
+/// KPIs and KPIs backed by a saved <see cref="ReportFavorite"/> - including the ownership check that prevents one
+/// user from wiring a KPI to another user's report favorite.
+/// </summary>
 public sealed class HomeKpiServiceTests
 {
     private static AppDbContext CreateDb()
@@ -18,6 +23,12 @@ public sealed class HomeKpiServiceTests
         return db;
     }
 
+    /// <summary>
+    /// Exercises the full lifecycle of a home KPI: creating a predefined KPI and a favorite-backed KPI, listing
+    /// both for the owner, updating a KPI's display mode and sort order, rejecting creation of a favorite-backed
+    /// KPI that points at another user's <see cref="ReportFavorite"/> with an <see cref="InvalidOperationException"/>,
+    /// and deleting a KPI (returning false for a non-existent id rather than throwing).
+    /// </summary>
     [Fact]
     public async Task Create_List_Update_Delete_ShouldWork_WithOwnershipChecks()
     {
