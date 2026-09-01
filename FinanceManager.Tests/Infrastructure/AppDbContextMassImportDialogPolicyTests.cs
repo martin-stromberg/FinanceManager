@@ -7,8 +7,20 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace FinanceManager.Tests.Infrastructure;
 
+/// <summary>
+/// Verifies the EF Core model configuration for <see cref="User.MassImportDialogPolicy"/>: the enum is stored as a
+/// non-nullable short with an explicit sentinel/default value, and existing rows without an explicit policy resolve
+/// to that default without EF raising a "possible unintended value" warning (which would fail the build because
+/// warnings are configured to throw during these tests).
+/// </summary>
 public sealed class AppDbContextMassImportDialogPolicyTests
 {
+    /// <summary>
+    /// Verifies that the property is configured with <see cref="MassImportDialogPolicy.OnMissingInformation"/> as
+    /// both the CLR sentinel and the database default, is non-nullable, and that the value converter maps the
+    /// sentinel to the expected short value in the provider representation - the mapping EF relies on to decide
+    /// whether an unset property should trigger a value-generation warning.
+    /// </summary>
     [Fact]
     public void MassImportDialogPolicy_ModelConfiguresSentinelAndDefaultWithoutWarning()
     {
@@ -36,6 +48,12 @@ public sealed class AppDbContextMassImportDialogPolicyTests
         Assert.Equal((short)MassImportDialogPolicy.OnMissingInformation, converter.ConvertToProvider(property.GetDefaultValue()));
     }
 
+    /// <summary>
+    /// Verifies that an explicitly set <see cref="MassImportDialogPolicy.AlwaysConfirm"/> survives a round trip
+    /// through SQLite, while a user left without an explicit policy still resolves to the
+    /// <see cref="MassImportDialogPolicy.OnMissingInformation"/> default - guarding against the sentinel/default
+    /// configuration silently overwriting an explicitly chosen non-default value on insert.
+    /// </summary>
     [Fact]
     public async Task MassImportDialogPolicy_PersistsExplicitAlwaysConfirmOnInsert()
     {

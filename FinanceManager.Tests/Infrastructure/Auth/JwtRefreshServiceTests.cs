@@ -8,8 +8,18 @@ using Moq;
 
 namespace FinanceManager.Tests.Infrastructure.Auth;
 
+/// <summary>
+/// Verifies <see cref="JwtRefreshService.RefreshAsync"/> re-validates a refresh request against the user's
+/// <em>current</em> database state (active flag, security stamp, admin role) instead of trusting the claims baked
+/// into the presented principal - the mechanism that makes a revoked account or a revoked admin role take effect
+/// immediately on refresh instead of only after the original token expires.
+/// </summary>
 public sealed class JwtRefreshServiceTests
 {
+    /// <summary>
+    /// Verifies that a refresh request for a deactivated user is rejected even though the presented principal still
+    /// carries a matching security stamp - deactivation must block further token issuance, not just new logins.
+    /// </summary>
     [Fact]
     public async Task RefreshAsync_ShouldRejectInactiveUser()
     {
@@ -22,6 +32,11 @@ public sealed class JwtRefreshServiceTests
         Assert.False(result.Succeeded);
     }
 
+    /// <summary>
+    /// Verifies that a refresh request is rejected when the security stamp on the principal no longer matches the
+    /// user's current stamp - the stamp changes whenever credentials or security-relevant properties change, so a
+    /// mismatch means the token was issued before that change and must not be silently renewed.
+    /// </summary>
     [Fact]
     public async Task RefreshAsync_ShouldRejectSecurityStampMismatch()
     {
@@ -33,6 +48,11 @@ public sealed class JwtRefreshServiceTests
         Assert.False(result.Succeeded);
     }
 
+    /// <summary>
+    /// Verifies that a principal minted while the user still held the Admin role is rejected once that role
+    /// revocation has changed the user's security stamp - and that the role check and token creation are never even
+    /// attempted, so a de-admin'd user cannot use a stale refresh token to keep renewing elevated access.
+    /// </summary>
     [Fact]
     public async Task RefreshAsync_ShouldRejectOldAdminPrincipal_AfterRoleRevocationChangedSecurityStamp()
     {
@@ -46,6 +66,11 @@ public sealed class JwtRefreshServiceTests
         jwt.Verify(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies the happy path: a valid, current principal yields a new token created with the user's live admin
+    /// status and security stamp (not values copied from the old principal) - confirming the role/stamp are looked
+    /// up fresh rather than propagated from the presented claims.
+    /// </summary>
     [Fact]
     public async Task RefreshAsync_ShouldCreateTokenWithCurrentAdminRoleAndSecurityStamp()
     {

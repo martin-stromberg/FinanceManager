@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Infrastructure;
 
+/// <summary>
+/// Covers <see cref="ContactService.MergeAsync"/>: reassigning all references from a duplicate ("source") contact to
+/// the surviving ("target") contact and then deleting the source, including the aggregate-table bookkeeping where a
+/// naive reassignment would create duplicate rows or lose the source's accumulated amounts.
+/// </summary>
 public sealed class ContactServiceMergeTests
 {
     private static AppDbContext CreateSqliteContext()
@@ -19,6 +24,12 @@ public sealed class ContactServiceMergeTests
         return db;
     }
 
+    /// <summary>
+    /// Verifies that merging repoints both <see cref="FinanceManager.Domain.Postings.Posting"/> and
+    /// <see cref="FinanceManager.Domain.Statements.StatementEntry"/> records from the source contact to the target
+    /// contact, and that the now-orphaned source contact is deleted - a merge must not leave any transaction history
+    /// dangling on a contact the user believed was consolidated away.
+    /// </summary>
     [Fact]
     public async Task Merge_ShouldReassign_Postings_And_StatementEntries_ToTarget()
     {
@@ -57,6 +68,13 @@ public sealed class ContactServiceMergeTests
         Assert.Null(await db.Contacts.FindAsync(new object?[] { src.Id }, TestContext.Current.CancellationToken));
     }
 
+    /// <summary>
+    /// Verifies the aggregate-table merge logic: when both the source and target contact already have a
+    /// <see cref="FinanceManager.Domain.Postings.PostingAggregate"/> for the same kind/period, the amounts are
+    /// summed into the target row and the source row is removed (rather than left as a duplicate key), while a
+    /// source aggregate for a period the target does not yet have is simply reassigned - the unique-key constraint
+    /// on (kind, dimension, period) would otherwise be violated by a naive contact-id rewrite.
+    /// </summary>
     [Fact]
     public async Task Merge_ShouldMergeAndReassign_PostingAggregates_WithoutDuplicates()
     {

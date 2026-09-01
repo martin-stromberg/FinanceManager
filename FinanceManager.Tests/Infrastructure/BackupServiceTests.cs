@@ -19,6 +19,12 @@ using Xunit;
 
 namespace FinanceManager.Tests.Infrastructure
 {
+    /// <summary>
+    /// Covers <see cref="BackupService"/> end to end: creating a backup zip and its database record, restoring an
+    /// uploaded backup only after it passes format/version/size validation (the guard against malformed or
+    /// maliciously crafted archives, including zip-bomb style uncompressed-size limits), and the plain CRUD
+    /// operations (list, download, delete) that manage previously created backups.
+    /// </summary>
     public class BackupServiceTests
     {
         private sealed class TestHostEnvironment : IHostEnvironment
@@ -29,6 +35,11 @@ namespace FinanceManager.Tests.Infrastructure
             public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; }
         }
 
+        /// <summary>
+        /// Verifies that creating a backup writes a zip file to disk containing an NDJSON entry whose first line is
+        /// the expected "Backup" header, and that a matching <see cref="BackupRecord"/> is persisted pointing at
+        /// that file - the baseline contract every restore test below depends on being correct.
+        /// </summary>
         [Fact]
         public async Task CreateAsync_CreatesZipAndPersistRecord()
         {
@@ -72,6 +83,12 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that uploading a raw NDJSON payload (not wrapped in a zip) is rejected with
+        /// "Err_Backup_UnsupportedFormat" - restore only ever accepts the zip container format produced by
+        /// <see cref="BackupService.CreateAsync"/>, so a bare data file must fail fast with a clear error rather than
+        /// being partially parsed.
+        /// </summary>
         [Fact]
         public async Task UploadAsync_NonZip_IsRejected()
         {
@@ -100,6 +117,10 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that a well-formed backup zip is accepted, stored under the caller-supplied file name, and
+        /// written to the backups directory - the positive counterpart to the validation-rejection tests below.
+        /// </summary>
         [Fact]
         public async Task UploadAsync_ValidZip_Persists()
         {
@@ -127,6 +148,14 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that a zip whose single entry does not use the expected "*.ndjson" naming is rejected with
+        /// "Err_Backup_UnexpectedEntryName" - restore trusts the entry it reads, so an unexpected name is treated as
+        /// a sign the archive was not produced by this application (or was tampered with) rather than being read
+        /// speculatively.
+        /// </summary>
+        /// <param name="entryName">The non-conforming zip entry name to test.</param>
+        /// <param name="expectedCode">The <c>BackupValidationException.Code</c> expected for that entry name.</param>
         [Theory]
         [InlineData("notes.txt", "Err_Backup_UnexpectedEntryName")]
         [InlineData("backup.txt", "Err_Backup_UnexpectedEntryName")]
@@ -144,6 +173,11 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that a zip containing more than one entry is rejected with "Err_Backup_TooManyEntries" - a
+        /// genuine backup always contains exactly one NDJSON entry, so multiple entries indicate either a corrupted
+        /// export or a crafted archive trying to smuggle extra content past restore.
+        /// </summary>
         [Fact]
         public async Task UploadAsync_MultipleEntries_IsRejected()
         {
@@ -159,6 +193,11 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that a backup written with a newer/unsupported format version is rejected with
+        /// "Err_Backup_UnsupportedVersion" rather than being partially imported - restoring data written by a
+        /// format version the current code does not understand would silently drop or misinterpret fields.
+        /// </summary>
         [Fact]
         public async Task UploadAsync_UnsupportedVersion_IsRejected()
         {
@@ -174,6 +213,11 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that restore enforces <see cref="BackupSecurityOptions.MaxUncompressedNdjsonBytes"/> and rejects
+        /// an entry that decompresses beyond the configured limit with "Err_Backup_UncompressedTooLarge" - the
+        /// zip-bomb guard that stops a small, highly compressible upload from exhausting memory/disk when expanded.
+        /// </summary>
         [Fact]
         public async Task UploadAsync_UncompressedLimit_IsRejected()
         {
@@ -192,6 +236,11 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that <see cref="BackupService.ListAsync"/> surfaces a backup record even when its file was
+        /// placed on disk out of band from a normal <see cref="BackupService.CreateAsync"/> call - i.e. listing
+        /// reflects the database record, not a directory scan.
+        /// </summary>
         [Fact]
         public async Task ListAsync_ReturnsPersistedBackups()
         {
@@ -224,6 +273,10 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that deleting a backup removes both the file on disk and its database record - leaving either
+        /// one behind would either waste disk space or expose a listing entry whose download would 404.
+        /// </summary>
         [Fact]
         public async Task DeleteAsync_RemovesFileAndRecord()
         {
@@ -258,6 +311,10 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that downloading a backup returns a stream whose bytes match the file on disk exactly -
+        /// guarding against accidental corruption (e.g. wrong encoding or partial reads) in the download path.
+        /// </summary>
         [Fact]
         public async Task OpenDownloadAsync_ReturnsStream_WhenFileExists()
         {
@@ -292,6 +349,11 @@ namespace FinanceManager.Tests.Infrastructure
             try { Directory.Delete(temp, true); } catch { }
         }
 
+        /// <summary>
+        /// Verifies that a created backup's NDJSON payload includes budget rules keyed by both a category and by a
+        /// purpose - budget rules can target either dimension, so an export that only walked one association would
+        /// silently drop half of a user's budget configuration on restore.
+        /// </summary>
         [Fact]
         public async Task CreateAsync_IncludesBudgetRulesForCategoryAndPurpose()
         {

@@ -16,6 +16,10 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
 {
     private static BudgetReportEntry[] BuildEntries(Budgetbericht budgetbericht) => budgetbericht.GetCurrentResult();
 
+    /// <summary>
+    /// Verifies the baseline case: a posting that exactly matches its budgeted purpose's rule is reflected
+    /// consistently in planned income, budgeted-realized income, actual income, and the actual result.
+    /// </summary>
     [Fact]
     public void MapToMonthlyKpiDto_ComputesPlannedAndActualIncome_FromMatchingPurpose()
     {
@@ -36,6 +40,12 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         kpi.ActualResult.Should().Be(3000m);
     }
 
+    /// <summary>
+    /// Verifies that cost-neutral self-contact mirror transfers (postings whose <c>GroupId</c> marks them as offsetting
+    /// pairs, not real income/expense) are still counted in <c>ActualIncome</c>/<c>ActualExpenseAbs</c>, matching the
+    /// "Endsumme" total row produced by <c>Budgetbericht.GetCurrentResult()</c> - the KPI mapper must not silently
+    /// diverge from that total.
+    /// </summary>
     [Fact]
     public void MapToMonthlyKpiDto_IncludesCostNeutralPostings_InActualIncomeAndExpense()
     {
@@ -55,6 +65,11 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         kpi.ActualResult.Should().Be(0m);
     }
 
+    /// <summary>
+    /// Verifies the flip side of the cost-neutral handling: while cost-neutral postings count toward
+    /// <c>Actual*</c>, they must be excluded from <c>Unbudgeted*</c> - otherwise a self-transfer would be
+    /// misreported to the user as an unplanned expense or income.
+    /// </summary>
     [Fact]
     public void MapToMonthlyKpiDto_ExcludesCostNeutralPostings_FromUnbudgetedAmounts()
     {
@@ -72,6 +87,11 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         kpi.ActualIncome.Should().Be(3m);
     }
 
+    /// <summary>
+    /// Verifies that when actual spending is below the planned amount for an expense purpose, the mapper computes
+    /// the remaining planned budget, the expected end-of-period expense (which projects the still-unspent portion),
+    /// and the expected target result consistently from the same rule.
+    /// </summary>
     [Fact]
     public void MapToMonthlyKpiDto_ComputesRemainingAndExpectedAmounts_WhenActualBelowPlanned()
     {
@@ -91,6 +111,12 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         kpi.ExpectedTargetResult.Should().Be(-500m);
     }
 
+    /// <summary>
+    /// Verifies that when actual spending overruns a purpose's planned budget, <c>RemainingPlannedExpenseAbs</c>
+    /// clamps to zero instead of going negative, and that the overrun stays attributed to the specific purpose
+    /// rather than leaking into <c>UnbudgetedExpenseAbs</c> - a negative "remaining" figure would be misleading in
+    /// the UI, and misattributing the overrun would make the unbudgeted total wrong.
+    /// </summary>
     [Fact]
     public void MapToMonthlyKpiDto_RemainingPlannedExpenseAbs_ClampsToZero_WhenActualExceedsPlanned()
     {
@@ -138,6 +164,10 @@ public sealed class BudgetberichtMapperTests_MonthlyKpi
         kpi.ExpectedTargetResult.Should().Be(2000m);
     }
 
+    /// <summary>
+    /// Verifies that passing a null entries array fails fast with <see cref="ArgumentNullException"/> instead of a
+    /// later <see cref="NullReferenceException"/> deep inside the aggregation logic.
+    /// </summary>
     [Fact]
     public void MapToMonthlyKpiDto_ThrowsArgumentNullException_WhenEntriesIsNull()
     {

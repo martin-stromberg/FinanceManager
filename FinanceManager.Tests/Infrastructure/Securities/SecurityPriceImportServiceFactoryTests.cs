@@ -7,6 +7,12 @@ using System.Text;
 
 namespace FinanceManager.Tests.Infrastructure.Securities;
 
+/// <summary>
+/// Covers <see cref="SecurityPriceImportServiceFactory"/>: resolving the right <see cref="ISecurityPriceImportService"/>
+/// either by an explicit context key (bank/format hint) or, when that is unavailable, by content sniffing via
+/// <see cref="ISecurityPriceImportInspector"/> - the fallback path that lets an import work even when the caller
+/// cannot state up front which bank's export format a file is in.
+/// </summary>
 public sealed class SecurityPriceImportServiceFactoryTests
 {
     /// <summary>
@@ -41,6 +47,12 @@ public sealed class SecurityPriceImportServiceFactoryTests
         Assert.Throws<InvalidOperationException>(() => sut.Resolve(context));
     }
 
+    /// <summary>
+    /// Verifies that when the context carries no explicit format key, the factory falls back to sniffing the raw
+    /// file bytes via <see cref="ISecurityPriceImportInspector.TryInspect"/> and resolves to the service whose
+    /// inspector recognizes the content, returning the inspection result (service key, security symbol, etc.)
+    /// alongside the resolved service.
+    /// </summary>
     [Fact]
     public void TryResolveByContent_ShouldReturnService_WhenInspectorMatches()
     {
@@ -56,6 +68,11 @@ public sealed class SecurityPriceImportServiceFactoryTests
         Assert.Equal("ing", inspection!.ServiceKey);
     }
 
+    /// <summary>
+    /// Verifies that content-based resolution fails gracefully (returns false with null outputs) when no
+    /// registered inspector recognizes the file - unrecognized content must not throw or silently pick an
+    /// arbitrary importer.
+    /// </summary>
     [Fact]
     public void TryResolveByContent_ShouldReturnFalse_WhenNoInspectorMatches()
     {
