@@ -19,6 +19,10 @@ public sealed class BudgetberichtTests_PostingAssignment
         return budgetbericht;
     }
 
+    /// <summary>
+    /// Verifies the baseline case: a posting attributed to the exact contact a purpose targets
+    /// (<see cref="BudgetSourceType.Contact"/>) is matched and counted toward that purpose's actual amount.
+    /// </summary>
     [Fact]
     public void AddPosting_AssignsPosting_ToMatchingContactPurpose()
     {
@@ -34,6 +38,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         expectation.SumActualAmount.Should().Be(-500m);
     }
 
+    /// <summary>
+    /// Verifies that a purpose sourced from a <see cref="BudgetSourceType.ContactGroup"/> matches postings
+    /// by the posting's <c>ContactGroupId</c> rather than requiring a specific contact - any member of the
+    /// group should route to the purpose.
+    /// </summary>
     [Fact]
     public void AddPosting_AssignsPosting_ToMatchingContactGroupPurpose()
     {
@@ -49,6 +58,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         expectation.SumActualAmount.Should().Be(-12.50m);
     }
 
+    /// <summary>
+    /// Verifies that a purpose sourced from a <see cref="BudgetSourceType.SavingsPlan"/> matches postings
+    /// by <c>SavingsPlanId</c> - the third of the three source-matching strategies (contact, contact
+    /// group, savings plan) that <c>AddPosting</c> supports.
+    /// </summary>
     [Fact]
     public void AddPosting_AssignsPosting_ToMatchingSavingsPlanPurpose()
     {
@@ -64,6 +78,12 @@ public sealed class BudgetberichtTests_PostingAssignment
         expectation.SumActualAmount.Should().Be(-5m);
     }
 
+    /// <summary>
+    /// Verifies that a rule with a plain-text purpose pattern (matched as a substring of the posting's
+    /// purpose/subject text) accepts a posting whose text contains it and routes a same-source posting
+    /// with unrelated text to Unbudgeted instead - source matching alone is not sufficient once a pattern
+    /// is configured on the rule.
+    /// </summary>
     [Fact]
     public void AddPosting_AppliesSubstringPurposePattern()
     {
@@ -82,6 +102,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         monthResult.UnbudgetedPostings.Should().ContainSingle(p => p.Amount == -49.90m);
     }
 
+    /// <summary>
+    /// Verifies the regex counterpart of the substring pattern match: when <c>UseRegex</c> is set, the
+    /// purpose pattern is evaluated as a regular expression against the posting text (matching a
+    /// variable-length contract number here) rather than as a literal substring.
+    /// </summary>
     [Fact]
     public void AddPosting_AppliesRegexPurposePattern()
     {
@@ -100,6 +125,13 @@ public sealed class BudgetberichtTests_PostingAssignment
         monthResult.UnbudgetedPostings.Should().ContainSingle(p => p.Amount == -40m);
     }
 
+    /// <summary>
+    /// Verifies that a purpose valued as <see cref="BudgetValuationType.ExactPostings"/> only counts
+    /// postings whose sign matches the expectation's sign (an expense purpose only counts outgoing
+    /// postings) - a same-source, same-pattern refund with the opposite sign is excluded from the actual
+    /// amount, even though it is still visible on the occurrence as an unvalued match rather than
+    /// disappearing into the report's generic Unbudgeted bucket.
+    /// </summary>
     [Fact]
     public void AddPosting_ExactPostings_RequiresMatchingSign()
     {
@@ -123,6 +155,12 @@ public sealed class BudgetberichtTests_PostingAssignment
         monthResult.UnbudgetedPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Drills into the sign-mismatch case in isolation: a sign-mismatched posting is recorded on the
+    /// matching occurrence's <c>UnvaluedMatchedPostings</c> (not its <c>AssignedPostings</c>, which stays
+    /// empty), and it must not also leak into the month's top-level Unbudgeted or CostNeutral buckets -
+    /// a posting that matched a purpose belongs to that purpose's view, valued or not.
+    /// </summary>
     [Fact]
     public void AddPosting_ExactPostings_SignMismatch_RecordsPostingAsUnvaluedMatchOnTheOccurrence()
     {
@@ -144,6 +182,12 @@ public sealed class BudgetberichtTests_PostingAssignment
         monthResult.CostNeutralPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that, unlike <see cref="BudgetValuationType.ExactPostings"/>, a
+    /// <see cref="BudgetValuationType.TotalBudget"/> purpose nets postings of either sign into the actual
+    /// amount (e.g. a cashback account with both spending and refunds) - the sign-matching restriction is
+    /// specific to the ExactPostings valuation, not a rule shared by all purposes.
+    /// </summary>
     [Fact]
     public void AddPosting_TotalBudget_AcceptsAnySign()
     {
@@ -161,6 +205,13 @@ public sealed class BudgetberichtTests_PostingAssignment
         expectation.SumActualAmount.Should().Be(-25m);
     }
 
+    /// <summary>
+    /// Verifies the priority order used to reconcile a posting against multiple eligible occurrences of
+    /// the same purpose: the occurrence with the earliest rule <c>StartDate</c> absorbs the posting first,
+    /// up to its own capacity, and only the remainder overflows to the next occurrence in priority order -
+    /// the same overflow mechanism <c>BudgetberichtTests_Finish</c> exercises at the purpose-total level,
+    /// observed here at the individual-occurrence level via <c>SumAssignedAmount</c>.
+    /// </summary>
     [Fact]
     public void AddPosting_MultipleTotalBudgets_AssignsToEarliestStartDateFirst()
     {
@@ -184,6 +235,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         lateOccurrence.SumAssignedAmount.Should().Be(-3m, "the remaining amount overflows to the next occurrence");
     }
 
+    /// <summary>
+    /// Verifies that a posting matching no purpose or category by any of the source strategies falls
+    /// back to the month's Unbudgeted bucket and not CostNeutral - the default outcome for genuinely
+    /// unclassified spending/income.
+    /// </summary>
     [Fact]
     public void AddPosting_NoMatch_RoutesToUnbudgeted()
     {
@@ -196,6 +252,12 @@ public sealed class BudgetberichtTests_PostingAssignment
         budgetbericht.MonthlyResults.Single().CostNeutralPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that an unmatched posting is only routed to CostNeutral (rather than Unbudgeted) when it
+    /// is both grouped (<c>GroupId</c> set, linking it to its paired ledger leg) and attributed to the
+    /// owner's own "Self" contact - the specific combination that identifies a cost-neutral internal
+    /// transfer mirror leg.
+    /// </summary>
     [Fact]
     public void AddPosting_NoMatchWithGroupIdAndSelfContact_RoutesToCostNeutral()
     {
@@ -208,6 +270,12 @@ public sealed class BudgetberichtTests_PostingAssignment
         budgetbericht.MonthlyResults.Single().UnbudgetedPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that <c>GroupId</c> alone is not sufficient to classify a posting as cost-neutral - since
+    /// nearly every booked posting carries a <c>GroupId</c> linking it to its paired ledger leg, a grouped
+    /// posting NOT attributed to the Self contact (e.g. an ordinary external payment) must still fall back
+    /// to Unbudgeted, guarding against over-broadly treating grouped postings as internal transfers.
+    /// </summary>
     [Fact]
     public void AddPosting_NoMatchWithGroupId_ButNotSelfContact_RoutesToUnbudgeted()
     {
@@ -224,6 +292,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         budgetbericht.MonthlyResults.Single().CostNeutralPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that a posting whose date falls entirely outside the report's month range is silently
+    /// dropped rather than being force-fit into the nearest bucket or throwing - the report only reflects
+    /// activity within its own configured period.
+    /// </summary>
     [Fact]
     public void AddPosting_OutsideReportPeriod_IsIgnored()
     {
@@ -235,6 +308,12 @@ public sealed class BudgetberichtTests_PostingAssignment
         budgetbericht.MonthlyResults.Single().UnbudgetedPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that when the report is configured with <see cref="BudgetReportDateBasis.ValutaDate"/>,
+    /// a posting is bucketed by its value date rather than its booking date - a posting booked in
+    /// December but valued in January must land in the January <c>MonthlyResult</c>, matching how banks
+    /// often settle transactions a few days after the booking date.
+    /// </summary>
     [Fact]
     public void AddPosting_UsesValutaDate_WhenDateBasisIsValutaDate()
     {
@@ -253,6 +332,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         januaryResult.ExpectationGroups.Single().Purposes.Single().SumActualAmount.Should().Be(10m);
     }
 
+    /// <summary>
+    /// Verifies that <c>AddPosting</c> guards against a null posting argument with
+    /// <see cref="ArgumentNullException"/> rather than throwing a less diagnostic
+    /// <see cref="NullReferenceException"/> once it starts reading the posting's properties.
+    /// </summary>
     [Fact]
     public void AddPosting_Throws_WhenPostingIsNull()
     {
@@ -263,6 +347,11 @@ public sealed class BudgetberichtTests_PostingAssignment
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Verifies that once <c>Finish()</c> has finalized the report, <c>AddPosting</c> is rejected with
+    /// <see cref="BudgetReportCalculationException"/> - postings can no longer be added after
+    /// reconciliation has already run, which would silently invalidate the finalized totals.
+    /// </summary>
     [Fact]
     public void AddPosting_Throws_AfterFinishHasBeenCalled()
     {

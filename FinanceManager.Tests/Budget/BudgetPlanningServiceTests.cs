@@ -9,8 +9,18 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Budget;
 
+/// <summary>
+/// Covers <see cref="BudgetPlanningService.CalculatePlannedValuesAsync"/>, which projects a purpose's
+/// <see cref="BudgetRule"/> into per-month planned amounts over a period - verifying that monthly and
+/// yearly recurrence intervals expand correctly and that a <see cref="BudgetOverride"/> takes precedence
+/// over the rule for the specific month it targets.
+/// </summary>
 public sealed class BudgetPlanningServiceTests
 {
+    /// <summary>
+    /// Verifies that a monthly-interval rule produces its amount in the single requested month -
+    /// the base case for recurrence expansion before any interval-skipping logic is involved.
+    /// </summary>
     [Fact]
     public async Task CalculatePlannedValuesAsync_ShouldReturnMonthlyRuleAmount_WhenMonthlyRuleExists()
     {
@@ -45,6 +55,11 @@ public sealed class BudgetPlanningServiceTests
         Assert.Single(res.Values, v => v.BudgetPurposeId == purpose.Id && v.Period == new BudgetPeriodKey(2026, 1) && v.Amount == 50m);
     }
 
+    /// <summary>
+    /// Verifies that a yearly-interval rule with a start date in May only produces its planned amount
+    /// in May, and zero in the neighboring months - a yearly rule must not repeat every month like a
+    /// monthly one, and its "home month" is anchored to the rule's start date, not to January.
+    /// </summary>
     [Fact]
     public async Task CalculatePlannedValuesAsync_ShouldReturnYearlyRuleAmountOnlyInStartMonth_WhenYearlyRuleExists()
     {
@@ -81,6 +96,11 @@ public sealed class BudgetPlanningServiceTests
         Assert.Equal(0m, res.GetPlanned(purpose.Id, new BudgetPeriodKey(2026, 6)));
     }
 
+    /// <summary>
+    /// Verifies that a <see cref="BudgetOverride"/> for a specific month replaces the rule's regular
+    /// planned amount for that month only, while the surrounding months keep falling back to the rule -
+    /// confirming overrides are applied per-period rather than shifting the rule's baseline permanently.
+    /// </summary>
     [Fact]
     public async Task CalculatePlannedValuesAsync_ShouldApplyOverride_WhenOverrideExistsForMonth()
     {

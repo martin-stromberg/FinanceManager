@@ -11,6 +11,11 @@ namespace FinanceManager.Tests.Budget.Domain;
 /// </summary>
 public sealed class BudgetberichtTests_CumulativeResult
 {
+    /// <summary>
+    /// Verifies that with a monthly reporting interval, each month of the report gets its own bucket
+    /// labeled "MM/yyyy" and carries the monthly rule's amount unchanged - the baseline case before
+    /// any cross-month aggregation is involved.
+    /// </summary>
     [Fact]
     public void GetCumulativeResult_AggregatesByMonth()
     {
@@ -28,6 +33,11 @@ public sealed class BudgetberichtTests_CumulativeResult
         buckets.Should().OnlyContain(b => b.BudgetedAmount == -500m);
     }
 
+    /// <summary>
+    /// Verifies that with a quarterly reporting interval, a monthly rule's amount is summed across the
+    /// three months belonging to each quarter into a single "QN/yyyy" bucket, rather than being reported
+    /// per month or averaged.
+    /// </summary>
     [Fact]
     public void GetCumulativeResult_AggregatesByQuarter()
     {
@@ -45,6 +55,11 @@ public sealed class BudgetberichtTests_CumulativeResult
         buckets.Should().OnlyContain(b => b.BudgetedAmount == -1500m, "each quarter bucket sums 3 monthly occurrences of -500");
     }
 
+    /// <summary>
+    /// Verifies that with a yearly reporting interval, a report period spanning a calendar-year boundary
+    /// (Nov 2025 - Feb 2026) is split into buckets keyed by actual calendar year - each getting only the
+    /// months that fall within it (two months each) - rather than one bucket per report-relative year.
+    /// </summary>
     [Fact]
     public void GetCumulativeResult_AggregatesByYear()
     {
@@ -64,6 +79,11 @@ public sealed class BudgetberichtTests_CumulativeResult
         bucket2026.BudgetedAmount.Should().Be(-1000m, "Jan + Feb 2026");
     }
 
+    /// <summary>
+    /// Verifies that a bucket's <c>Deviation</c> and <c>DeviationPercentage</c> reflect the gap between
+    /// budgeted and actual amount for that specific bucket (here: 50 of 500, i.e. 10%), confirming the
+    /// deviation is computed per bucket rather than only on the overall report total.
+    /// </summary>
     [Fact]
     public void GetCumulativeResult_CalculatesDeviationAndPercentagePerBucket()
     {
@@ -82,6 +102,11 @@ public sealed class BudgetberichtTests_CumulativeResult
         bucket.DeviationPercentage.Should().Be(10m);
     }
 
+    /// <summary>
+    /// Verifies that a posting which matches no purpose or category (routed as unbudgeted) still counts
+    /// toward the bucket's <c>ActualAmount</c> - the cumulative view must reflect all real money movement,
+    /// not only the postings that were successfully matched to a budget expectation.
+    /// </summary>
     [Fact]
     public void GetCumulativeResult_IncludesUnbudgetedPostings_InActualAmount()
     {
