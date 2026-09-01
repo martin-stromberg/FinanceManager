@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
 const NEXT_RELEASE_PATTERN = /The next release version is\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)/i;
-const AUTOMATIC_RELEASE_BRANCHES = ["master", "staging"];
+// Only "main" triggers an automatic release here - staging pushes are handled entirely by
+// staging-ci.yml ("Pre-Release") and never reach this script (ci-target-schema.md section 4.8).
+const AUTOMATIC_RELEASE_BRANCHES = ["main"];
 
 export function parseManualTag(tagName) {
   if (!tagName?.startsWith("v")) {

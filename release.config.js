@@ -57,8 +57,15 @@ const dryRunPlugins = [
   ]
 ];
 
+// "staging" is deliberately NOT listed as a semantic-release prerelease branch here (it used
+// to be, via { name: "staging", prerelease: "RC" }): RC version determination for staging now
+// lives in staging-ci.yml's own "version" job, which invokes semantic-release with a
+// --branches override against this same config instead of a second branch entry in this file
+// (see ci-target-schema.md section 4.8). Dropping that entry also resolves the previous
+// uppercase "RC" prerelease identifier, which conflicted with the project-wide lowercase
+// vX.Y.Z-rc.N tag format (decision 1).
 module.exports = {
-  branches: ["master", { name: "staging", prerelease: "RC" }],
+  branches: ["main"],
   tagFormat: "v${version}",
   plugins: process.env.RESOLVE_DRY_RUN === "true" ? dryRunPlugins : releasePlugins
 };
