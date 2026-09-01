@@ -9,6 +9,13 @@ using Moq;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Covers <see cref="SecurityPriceImportPanel"/>'s import workflow, which reads a broker-specific
+/// CSV file and asks the API to parse and persist the price rows. The panel is exercised directly
+/// via reflection (bypassing Blazor rendering and DI injection points) so these tests focus purely
+/// on how the panel's internal state (result counters, error state) reacts to a successful import,
+/// an import that returns per-line errors, and an import that throws.
+/// </summary>
 public sealed class SecurityPriceImportPanelTests
 {
     /// <summary>
@@ -117,6 +124,16 @@ public sealed class SecurityPriceImportPanelTests
         Assert.Equal("Import failed", error);
     }
 
+    /// <summary>
+    /// Builds a <see cref="SecurityPriceImportPanel"/> for the given security with its normally
+    /// injected <c>Api</c> and <c>Localizer</c> properties set directly via reflection, since the
+    /// panel is constructed here without going through Blazor's dependency injection or component
+    /// activation pipeline. Callers can then use <see cref="InvokePrivateAsync"/> and the private
+    /// field helpers to drive the panel's import logic and inspect its resulting state.
+    /// </summary>
+    /// <param name="api">The (mocked) API client the panel should call during import.</param>
+    /// <param name="securityId">The security the import is scoped to.</param>
+    /// <returns>A panel instance ready for <see cref="InvokePrivateAsync"/> to invoke <c>ImportAsync</c> on.</returns>
     private static SecurityPriceImportPanel CreatePanel(IApiClient api, Guid securityId)
     {
         var panel = new SecurityPriceImportPanel
@@ -133,6 +150,14 @@ public sealed class SecurityPriceImportPanelTests
         return panel;
     }
 
+    /// <summary>
+    /// Locates a non-public instance method by name via reflection, invokes it, and awaits the
+    /// resulting <see cref="Task"/>. Used to call <see cref="SecurityPriceImportPanel"/>'s private
+    /// <c>ImportAsync</c> method directly since these tests exercise the panel's logic without
+    /// going through Blazor's component lifecycle or UI event dispatch.
+    /// </summary>
+    /// <param name="instance">The object to invoke the method on.</param>
+    /// <param name="methodName">The name of the non-public instance method to invoke.</param>
     private static async Task InvokePrivateAsync(object instance, string methodName)
     {
         var method = instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -141,6 +166,15 @@ public sealed class SecurityPriceImportPanelTests
         await task;
     }
 
+    /// <summary>
+    /// Reads a non-public instance field's value via reflection, used to inspect
+    /// <see cref="SecurityPriceImportPanel"/>'s private result/error state after driving its import
+    /// logic, without exposing that state through public members just for testing.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the field's value.</typeparam>
+    /// <param name="instance">The object to read the field from.</param>
+    /// <param name="fieldName">The name of the non-public instance field.</param>
+    /// <returns>The field's current value, cast to <typeparamref name="T"/>.</returns>
     private static T GetPrivateField<T>(object instance, string fieldName)
     {
         var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -148,6 +182,14 @@ public sealed class SecurityPriceImportPanelTests
         return (T)field!.GetValue(instance)!;
     }
 
+    /// <summary>
+    /// Writes a non-public instance field's value via reflection, used to seed
+    /// <see cref="SecurityPriceImportPanel"/>'s private selected-file and result state before
+    /// invoking its import logic, simulating what the file picker and a prior import would set.
+    /// </summary>
+    /// <param name="instance">The object to write the field on.</param>
+    /// <param name="fieldName">The name of the non-public instance field.</param>
+    /// <param name="value">The value to assign to the field.</param>
     private static void SetPrivateField(object instance, string fieldName, object? value)
     {
         var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
@@ -155,6 +197,11 @@ public sealed class SecurityPriceImportPanelTests
         field!.SetValue(instance, value);
     }
 
+    /// <summary>
+    /// In-memory <see cref="IBrowserFile"/> stand-in that wraps a string's UTF-8 bytes as the file
+    /// content, letting tests simulate a user-selected CSV upload without a real browser file input
+    /// or file system access.
+    /// </summary>
     private sealed class TestBrowserFile : IBrowserFile
     {
         private readonly byte[] _content;
@@ -176,6 +223,11 @@ public sealed class SecurityPriceImportPanelTests
             => new MemoryStream(_content);
     }
 
+    /// <summary>
+    /// Fake <see cref="IStringLocalizer{T}"/> that echoes each resource key back as its own value,
+    /// so the panel's <c>Localizer</c> dependency can be satisfied without loading real localization
+    /// resources.
+    /// </summary>
     private sealed class PassthroughLocalizer<T> : IStringLocalizer<T>
     {
         public LocalizedString this[string name] => new(name, name, resourceNotFound: false);

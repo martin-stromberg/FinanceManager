@@ -10,6 +10,13 @@ using Moq;
 
 namespace FinanceManager.Tests.Infrastructure.Securities;
 
+/// <summary>
+/// Verifies the upsert semantics of <see cref="SecurityPriceService.UpsertDailyPricesAsync"/> for daily security
+/// prices: inserting rows for missing dates, updating rows whose close price changed while leaving unchanged rows
+/// untouched, resolving duplicate dates within a single import batch by keeping the last supplied value,
+/// enforcing security ownership and non-negative price constraints, and invalidating the portfolio analysis
+/// report cache only when the stored data actually changed.
+/// </summary>
 public sealed class SecurityPriceServiceUpsertTests
 {
     /// <summary>

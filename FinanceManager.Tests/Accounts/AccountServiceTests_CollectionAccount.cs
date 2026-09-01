@@ -7,6 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Accounts;
 
+/// <summary>
+/// Covers the collection-account feature of <see cref="AccountService"/>: creating and toggling the
+/// <c>IsCollectionAccount</c> flag, and managing the set of linked IBANs (add, remove, list, and their
+/// inclusion in the account DTO) that a collection account aggregates.
+/// </summary>
 public sealed class AccountServiceTests_CollectionAccount
 {
     private static (AccountService sut, AppDbContext db) Create()
@@ -32,6 +37,10 @@ public sealed class AccountServiceTests_CollectionAccount
         return (sut, db, contact.Id);
     }
 
+    /// <summary>
+    /// Verifies that passing <c>isCollectionAccount: true</c> to <see cref="AccountService.CreateAsync"/>
+    /// is persisted on the created account, both in the returned DTO and in the database.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldSetIsCollectionAccount_WhenFlagIsTrue()
     {
@@ -44,6 +53,10 @@ public sealed class AccountServiceTests_CollectionAccount
         Assert.True(db.Accounts.Single().IsCollectionAccount);
     }
 
+    /// <summary>
+    /// Ensures an existing, non-collection account can be converted into a collection account through
+    /// <see cref="AccountService.UpdateAsync"/>, i.e. the flag is not fixed at creation time.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldToggleIsCollectionAccount()
     {
@@ -60,6 +73,10 @@ public sealed class AccountServiceTests_CollectionAccount
         Assert.True(db.Accounts.Single().IsCollectionAccount);
     }
 
+    /// <summary>
+    /// Verifies that a new, unique IBAN can be linked to a collection account and is stored as an
+    /// <c>AccountLinkedIbans</c> entry.
+    /// </summary>
     [Fact]
     public async Task AddLinkedIbanAsync_ShouldAddIban_WhenValidAndUnique()
     {
@@ -73,6 +90,11 @@ public sealed class AccountServiceTests_CollectionAccount
         Assert.Equal("DE12345678901234567890", db.AccountLinkedIbans.Single().Iban);
     }
 
+    /// <summary>
+    /// Ensures the same IBAN cannot be linked twice to the same collection account: a second attempt
+    /// throws <see cref="InvalidOperationException"/> naming the IBAN, preventing duplicate entries in
+    /// the linked-IBAN list.
+    /// </summary>
     [Fact]
     public async Task AddLinkedIbanAsync_ShouldFail_WhenDuplicateIbanForSameAccount()
     {
@@ -87,6 +109,10 @@ public sealed class AccountServiceTests_CollectionAccount
         Assert.Contains("IBAN", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that a previously linked IBAN can be removed from a collection account again, and that
+    /// the removal is reflected in the database.
+    /// </summary>
     [Fact]
     public async Task RemoveLinkedIbanAsync_ShouldRemoveIban_WhenExists()
     {
@@ -101,6 +127,10 @@ public sealed class AccountServiceTests_CollectionAccount
         Assert.Equal(0, db.AccountLinkedIbans.Count());
     }
 
+    /// <summary>
+    /// Confirms that all IBANs linked to a collection account are returned together, and none are
+    /// dropped when more than one is present.
+    /// </summary>
     [Fact]
     public async Task GetLinkedIbansAsync_ShouldReturnIbans_ForCollectionAccount()
     {
@@ -117,6 +147,10 @@ public sealed class AccountServiceTests_CollectionAccount
         Assert.Contains("DE22222222222222222222", ibans);
     }
 
+    /// <summary>
+    /// Ensures the linked IBANs of a collection account are projected into the account DTO returned by
+    /// <see cref="AccountService.GetAsync"/>, so callers do not need a separate round-trip to see them.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ShouldIncludeLinkedIbans_InAccountDto()
     {

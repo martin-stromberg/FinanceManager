@@ -11,6 +11,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Attachments;
 
+/// <summary>
+/// Verifies that attachments follow the lifecycle of the entity they are attached to: deleting a
+/// contact, account, savings plan, or security must also delete every attachment stored against it, so
+/// no orphaned attachment rows are left behind when the owning entity disappears. For bank contacts
+/// specifically (which are indirectly owned through an account), also confirms the cascade only fires
+/// once the last referencing account is gone.
+/// </summary>
 public sealed class AttachmentCleanupTests
 {
     private static (AppDbContext db, SqliteConnection conn, Guid owner) CreateDb()
@@ -29,6 +36,10 @@ public sealed class AttachmentCleanupTests
         return (db, conn, owner.Id);
     }
 
+    /// <summary>
+    /// Verifies that deleting a contact removes only its own attachments and leaves attachments belonging
+    /// to a different contact untouched.
+    /// </summary>
     [Fact]
     public async Task DeleteContact_ShouldRemoveContactAttachments()
     {
@@ -56,6 +67,12 @@ public sealed class AttachmentCleanupTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that deleting the last account of a bank contact removes both the account's own
+    /// attachments and, because the bank contact itself is cascade-deleted, the bank contact's
+    /// attachments as well - the attachment cleanup must follow the contact cascade, not stop at the
+    /// account.
+    /// </summary>
     [Fact]
     public async Task DeleteAccount_ShouldRemoveAccountAttachments_AndBankContactAttachments_WhenLastAccount()
     {
@@ -85,6 +102,11 @@ public sealed class AttachmentCleanupTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Guards against over-eager cleanup: deleting one of two accounts sharing a bank contact must leave
+    /// the bank contact and its attachments intact, and only deleting the remaining account should then
+    /// trigger removal of the bank contact and its attachments.
+    /// </summary>
     [Fact]
     public async Task DeleteAccount_ShouldNotRemoveBankContactAttachments_WhenAnotherAccountExists()
     {
@@ -118,6 +140,9 @@ public sealed class AttachmentCleanupTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that deleting an archived savings plan removes the attachments stored against it.
+    /// </summary>
     [Fact]
     public async Task DeleteSavingsPlan_ShouldRemovePlanAttachments()
     {
@@ -137,6 +162,9 @@ public sealed class AttachmentCleanupTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that deleting an archived security removes the attachments stored against it.
+    /// </summary>
     [Fact]
     public async Task DeleteSecurity_ShouldRemoveSecurityAttachments()
     {

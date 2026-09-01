@@ -72,6 +72,7 @@ artifacts/
 /FinanceManager.Domain/FinanceManager.Domain.xml
 /FinanceManager.Infrastructure/FinanceManager.Infrastructure.xml
 /FinanceManager.Shared/FinanceManager.Shared.xml
+/FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.xml
 /FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.xml
 /FinanceManager.Tests/FinanceManager.Tests.xml
 /FinanceManager.Web/FinanceManager.Web.xml

@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace FinanceManager.Tests.Infrastructure;
 
+/// <summary>
+/// Guards the alias-name behavior of <see cref="ContactService"/>: preventing case-insensitive duplicate
+/// aliases on a single contact, enforcing per-owner isolation when listing aliases, and confirming that
+/// alias data is deduplicated and reassigned correctly when two contacts are merged.
+/// </summary>
 public sealed class ContactServiceAliasTests
 {
     private static AppDbContext CreateDb()
@@ -26,6 +31,12 @@ public sealed class ContactServiceAliasTests
         return (new ContactService(db), db, userId, c.Id);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="ContactService.AddAliasAsync"/> rejects a new alias pattern that only differs
+    /// in casing from an alias the contact already has (e.g. "Foo" vs "foo"). Alias matching is used to
+    /// auto-attribute imported statement entries to contacts, so two case-variant aliases for the same
+    /// contact would be redundant and could mask genuinely new alias patterns from being noticed.
+    /// </summary>
     [Fact]
     public async Task AddAliasAsync_ShouldPreventDuplicate_ForSameContact_CaseInsensitive()
     {
@@ -35,6 +46,12 @@ public sealed class ContactServiceAliasTests
         await Assert.ThrowsAsync<ArgumentException>(async () => await svc.AddAliasAsync(contact, user, "foo", CancellationToken.None));
     }
 
+    /// <summary>
+    /// Verifies that <see cref="ContactService.ListAliases"/> refuses to return aliases for a contact that
+    /// belongs to a different owner, even though the caller supplies a valid contact id. This is a
+    /// tenant-isolation guard: without it, one user could enumerate another user's alias configuration by
+    /// guessing or observing contact identifiers.
+    /// </summary>
     [Fact]
     public async Task ListAliases_ShouldReject_WhenContactDoesNotBelongToOwner()
     {
@@ -51,6 +68,12 @@ public sealed class ContactServiceAliasTests
         await Assert.ThrowsAsync<ArgumentException>(async () => await svc.ListAliases(contact.Id, otherOwner, CancellationToken.None));
     }
 
+    /// <summary>
+    /// Verifies that merging two contacts whose alias lists collide case-insensitively (target has "x",
+    /// source has "X") does not leave duplicate alias rows behind: the merged target ends up with exactly
+    /// one alias equal to "x" ignoring case, all remaining aliases are pairwise distinct, and the source
+    /// contact itself is deleted once its data has been folded into the target.
+    /// </summary>
     [Fact]
     public async Task MergeAsync_ShouldNotCreateDuplicateAliases_AndReassign()
     {

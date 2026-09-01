@@ -4,6 +4,14 @@ using FinanceManager.Shared.Dtos.Securities;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for the home page's mass statement import flow: uploads a bank statement CSV as an
+/// authenticated browser user and verifies the app navigates to the resulting draft, and that a full booking
+/// workflow - including a validation error, a forced-warning booking, and a successful booking that assigns a
+/// savings plan and a security transaction - produces the expected account/savings-plan/security postings.
+/// Runs through a real browser session so it exercises the actual upload/redirect/routing behavior together
+/// with the backend booking logic, rather than the backend logic in isolation.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class HomeMassImportPlaywrightTests
 {
@@ -27,6 +35,10 @@ public sealed class HomeMassImportPlaywrightTests
             "statement.csv");
     }
 
+    /// <summary>
+    /// Same as <see cref="UploadStatementFile_ShouldShowSuccess_WhenImportCompletes"/> but on a mobile viewport,
+    /// to catch responsive-layout regressions in the mass-import success flow that only show up at mobile widths.
+    /// </summary>
     [Fact]
     public async Task UploadStatementFile_ShouldShowSuccess_WhenImportCompletes_OnMobileViewport()
     {
@@ -84,6 +96,13 @@ public sealed class HomeMassImportPlaywrightTests
         page.Url.Should().Contain($"/card/statement-drafts/{draftId}");
     }
 
+    /// <summary>
+    /// Drives a single statement draft through the full booking lifecycle - a failing validation (missing
+    /// contact), a forced-warning booking, then a successful booking that also assigns a savings plan and a
+    /// security transaction to a second entry - and verifies the resulting postings are correctly linked to
+    /// the account, the savings plan and the security. Exercises the multi-step, multi-status booking API
+    /// end-to-end within one authenticated browser session.
+    /// </summary>
     [Fact]
     public async Task Booking_WithErrorsWarnings_AndWithOrWithoutSavingsSecurity_ShouldCreateExpectedPostings()
     {

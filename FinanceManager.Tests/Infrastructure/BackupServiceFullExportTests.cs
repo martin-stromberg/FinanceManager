@@ -28,16 +28,47 @@ using Xunit;
 
 namespace FinanceManager.Tests.Infrastructure
 {
+    /// <summary>
+    /// Round-trip integrity guard for the full backup export produced by <c>BackupService.CreateAsync</c>.
+    /// Seeds exactly one row of every domain entity type that a full backup is expected to contain, exports it,
+    /// and compares the resulting NDJSON payload against each entity's own <c>ToBackupDto()</c> projection. This
+    /// class exists to catch the case where a newly added entity type, or a change to an existing one, is not
+    /// (or is incorrectly) wired into the export path - a defect that would only otherwise surface when a user
+    /// tries to restore a backup and discovers data silently missing.
+    /// </summary>
     public class BackupServiceFullExportTests
     {
+        /// <summary>
+        /// Minimal stand-in for <see cref="IHostEnvironment"/> that redirects the backup service's file storage
+        /// to an isolated temporary directory instead of the real application content root, so backup ZIP files
+        /// created during the test never touch (or depend on) the actual application data directory.
+        /// </summary>
         private sealed class TestHostEnvironment : IHostEnvironment
         {
+            /// <summary>Fixed to "Development" for tests; not exercised by the assertions in this file.</summary>
             public string EnvironmentName { get; set; } = "Development";
+            /// <summary>Fixed application name identifying the test host.</summary>
             public string ApplicationName { get; set; } = "FinanceManager.Tests";
+            /// <summary>The isolated temporary directory the backup service should treat as its content root.</summary>
             public string ContentRootPath { get; set; }
+            /// <summary>Not used by these tests; present only to satisfy the <see cref="IHostEnvironment"/> contract.</summary>
             public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; }
         }
 
+        /// <summary>
+        /// Seeds one deterministic row (fixed ids and timestamps) for every entity collection a full backup is
+        /// expected to export - accounts, contacts, contact categories, alias names, attachment categories,
+        /// attachments, savings plans and their categories, securities and their prices, statement imports,
+        /// statement entries, postings, statement drafts and draft entries, report favorites, home KPIs,
+        /// notifications, and account shares - then runs <c>BackupService.CreateAsync</c> and unpacks the
+        /// resulting ZIP/NDJSON backup. For every entity type it asserts the exported JSON array is non-empty and
+        /// that its serialized element is byte-for-byte identical to the entity's own <c>ToBackupDto()</c> output
+        /// (statement drafts are compared with their nested <c>Entries</c> excluded, since draft entries are
+        /// exported as their own top-level collection instead). This is the safety net against a backup silently
+        /// dropping an entity type, or its export mapping drifting from the live domain model, which would only
+        /// be discovered when a user later tries to restore and finds data missing.
+        /// </summary>
+        /// <returns>A task that completes once every seeded entity type has been verified against the export.</returns>
         [Fact]
         public async Task CreateAsync_FullBackup_IncludesAllSeededData()
         {

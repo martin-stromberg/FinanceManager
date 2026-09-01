@@ -13,8 +13,19 @@ using BudgetReportDateBasis = FinanceManager.Shared.Dtos.Budget.BudgetReportDate
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Verifies the loading, rendering, error-handling and auto-refresh behavior of the
+/// <see cref="MonthlyBudgetKpi"/> dashboard tile: that it shows a skeleton while its data is in flight, renders
+/// the fetched values once loaded, surfaces HTTP and unexpected errors without leaving stale loading UI, avoids
+/// issuing duplicate requests on re-render, and periodically re-fetches (recovering from errors and reflecting
+/// month changes) based on an injected <see cref="TimeProvider"/> rather than wall-clock time.
+/// </summary>
 public sealed class MonthlyBudgetKpiTests : BunitContext
 {
+    /// <summary>
+    /// Registers the DI services (logging, localization, string localizer, system time provider) that
+    /// <see cref="MonthlyBudgetKpi"/> needs in order to render inside the bUnit test context.
+    /// </summary>
     public MonthlyBudgetKpiTests()
     {
         Services.AddLogging();
@@ -23,6 +34,11 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         Services.AddSingleton(TimeProvider.System);
     }
 
+    /// <summary>
+    /// Verifies that while the KPI's API call is still pending, the component shows the loading overlay and
+    /// spinner and does not yet render the fill bar or result text - i.e. no stale or default values flash
+    /// on screen before real data arrives.
+    /// </summary>
     [Fact]
     public void SlowRequest_RendersSkeletonBeforeValues()
     {
@@ -43,6 +59,11 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         Assert.Empty(cut.FindAll(".budget-result"));
     }
 
+    /// <summary>
+    /// Verifies that once the pending KPI request completes, the loading overlay is removed, the budget fill
+    /// bar appears, and the result text reflects the fetched value - confirming the component transitions
+    /// cleanly from loading state to populated state.
+    /// </summary>
     [Fact]
     public void CompletedRequest_RendersValuesAndRemovesSkeleton()
     {
@@ -63,6 +84,11 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that calling <c>cut.Render()</c> again on a component bound to the same, unchanged view model
+    /// does not trigger a second call to <c>Budgets_GetMonthlyKpiAsync</c>. Guards against the component
+    /// re-fetching on every Blazor re-render instead of only when the underlying view model actually needs data.
+    /// </summary>
     [Fact]
     public void RepeatedRender_StartsOnlyOneRequestForSameViewModel()
     {
@@ -82,6 +108,11 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that when the API call fails with an <see cref="HttpRequestException"/> and the client already
+    /// carries a last-error message, the component renders the error state and clears the loading overlay
+    /// instead of leaving the tile stuck showing a spinner indefinitely.
+    /// </summary>
     [Fact]
     public void HttpError_RendersExistingErrorState()
     {
@@ -101,6 +132,12 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         Assert.Empty(cut.FindAll(".budget-loading-overlay"));
     }
 
+    /// <summary>
+    /// Verifies that an unexpected exception type (<see cref="InvalidOperationException"/>, not just the
+    /// HTTP-specific failure path) thrown by the API call is still caught and surfaced as the error state,
+    /// with no loading overlay or partial result left rendered - i.e. error handling is not narrowly typed
+    /// to HTTP failures only.
+    /// </summary>
     [Fact]
     public void UnexpectedError_RendersErrorState()
     {
@@ -123,6 +160,12 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that after an initial request fails, the component automatically retries once its refresh
+    /// interval elapses (simulated via the injected <see cref="ManualTimeProvider"/> rather than a real timer),
+    /// and that a subsequent successful response clears the error state and renders the recovered value -
+    /// confirming the tile self-heals from a transient failure without requiring a page reload.
+    /// </summary>
     [Fact]
     public void ErrorRefreshIntervalElapsed_StartsFreshRequestAndRendersRecoveredValues()
     {
@@ -164,6 +207,12 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that when the component is mounted with a view model that already finished loading data
+    /// (<c>LoadAsync</c> was awaited before <c>Render</c>), it still starts its periodic refresh observer -
+    /// so a KPI pre-populated by a parent component (e.g. for instant first paint) keeps refreshing on its
+    /// normal schedule rather than only refreshing when it performs the initial load itself.
+    /// </summary>
     [Fact]
     public async Task PreloadedViewModel_StartsRefreshObserverAfterMount()
     {
@@ -189,6 +238,12 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that when the component is mounted with a view model that was already marked as failed
+    /// (<c>MarkLoadFailed</c> called before <c>Render</c>), it still starts its retry observer and recovers
+    /// once the refresh interval elapses - mirroring <see cref="PreloadedViewModel_StartsRefreshObserverAfterMount"/>
+    /// but for the pre-failed case, so a tile that failed to load before being mounted is not stuck forever.
+    /// </summary>
     [Fact]
     public void PreFailedViewModel_StartsRetryObserverAfterMount()
     {
@@ -215,6 +270,12 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that the component decides whether the KPI covers the "current" month by asking the injected
+    /// <see cref="TimeProvider"/> (here set a month ahead of the real system clock) rather than reading
+    /// <see cref="DateTime.UtcNow"/> directly, so the "current month" styling (<c>budget-text-current</c> CSS
+    /// class) stays testable and correct independent of when the test actually runs.
+    /// </summary>
     [Fact]
     public void CurrentMonthDisplay_UsesInjectedTimeProvider()
     {
@@ -233,6 +294,12 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that explicitly invalidating the view model (<c>viewModel.Invalidate()</c>) followed by a
+    /// re-render causes the component to issue a brand-new API request rather than reusing the previously
+    /// loaded data - the mechanism callers rely on to force a KPI to reload on demand (e.g. after a related
+    /// edit elsewhere in the app), independent of the periodic auto-refresh interval.
+    /// </summary>
     [Fact]
     public void InvalidatedViewModel_StartsFreshRequest()
     {
@@ -266,6 +333,11 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies the "happy path" of periodic auto-refresh: once the refresh interval elapses (simulated via
+    /// <see cref="ManualTimeProvider.Advance"/>), the component issues a second request and re-renders with
+    /// the newly returned values, replacing the stale result already shown from the first load.
+    /// </summary>
     [Fact]
     public void RefreshIntervalElapsed_StartsFreshRequestAndRendersUpdatedValues()
     {
@@ -298,6 +370,12 @@ public sealed class MonthlyBudgetKpiTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies auto-refresh behavior specifically across a month boundary: starting just before local
+    /// midnight on the last day of the month, advancing time past the refresh interval crosses into the next
+    /// month, and the component still issues a fresh request and renders the updated values - guarding
+    /// against the refresh logic being tied to a fixed "current month" it computed once at mount time.
+    /// </summary>
     [Fact]
     public void MonthChanged_StartsFreshRequestAndRendersUpdatedValues()
     {

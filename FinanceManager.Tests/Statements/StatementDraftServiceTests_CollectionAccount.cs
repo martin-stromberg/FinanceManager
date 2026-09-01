@@ -17,6 +17,12 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers how <see cref="StatementDraftService.CreateDraftAsync"/> handles collection accounts (Sammelkonten):
+/// a single uploaded statement file can contain movements for several distinct underlying IBANs, and the service
+/// must split those into one draft per IBAN, plus auto-detect the target account when a movement's IBAN is linked
+/// to a known collection account.
+/// </summary>
 public sealed class StatementDraftServiceTests_CollectionAccount
 {
 
@@ -88,6 +94,10 @@ public sealed class StatementDraftServiceTests_CollectionAccount
         return new StatementParseResult(header, movements);
     }
 
+    /// <summary>
+    /// Baseline case: a statement file that only contains movements for a single IBAN must produce exactly one
+    /// draft holding all of its entries, i.e. collection-account splitting must not trigger for ordinary files.
+    /// </summary>
     [Fact]
     public async Task CreateDraftAsync_ShouldProduceSingleDraft_ForNormalFile()
     {
@@ -102,6 +112,11 @@ public sealed class StatementDraftServiceTests_CollectionAccount
         Assert.Equal(2, drafts[0].Entries.Count);
     }
 
+    /// <summary>
+    /// When the parser returns separate <see cref="StatementParseResult"/> entries for different IBANs (as happens
+    /// with a collection-account / "Sammelkonto" export bundling several accounts into one file), the service must
+    /// produce one distinct draft per IBAN rather than merging everything into a single draft.
+    /// </summary>
     [Fact]
     public async Task CreateDraftAsync_ShouldProduceMultipleDrafts_ForCollectionAccountFile()
     {
@@ -116,6 +131,11 @@ public sealed class StatementDraftServiceTests_CollectionAccount
         Assert.Equal(2, drafts.Count);
     }
 
+    /// <summary>
+    /// When a movement's IBAN matches an <see cref="AccountLinkedIban"/> registered against a collection account,
+    /// the resulting draft should have its <c>DetectedAccountId</c> auto-populated with that account so the user
+    /// does not have to manually pick the target account for statements known to belong to it.
+    /// </summary>
     [Fact]
     public async Task CreateDraftAsync_ShouldSetDetectedAccountId_WhenIbanMatchesLinkedIban()
     {

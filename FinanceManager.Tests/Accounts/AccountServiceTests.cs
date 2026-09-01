@@ -7,6 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FinanceManager.Tests.Accounts;
 
+/// <summary>
+/// Covers <see cref="AccountService"/>'s core account lifecycle: creating accounts with per-user IBAN
+/// uniqueness enforcement, and deleting accounts while correctly cascading the ownership of their
+/// associated bank contact (removing the bank contact only when no other account still references it).
+/// </summary>
 public sealed class AccountServiceTests
 {
     private static (AccountService sut, AppDbContext db) Create()
@@ -19,6 +24,10 @@ public sealed class AccountServiceTests
         return (sut, db);
     }
 
+    /// <summary>
+    /// Verifies that a valid account with a unique IBAN is persisted and the returned DTO reflects the
+    /// values passed to <see cref="AccountService.CreateAsync"/>.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldCreate_WhenValidAndUniqueIbanPerUser()
     {
@@ -35,6 +44,11 @@ public sealed class AccountServiceTests
         Assert.Equal(1, db.Accounts.Count());
     }
 
+    /// <summary>
+    /// Ensures IBAN uniqueness is enforced per user: creating a second account with an IBAN already used
+    /// by the same owner is rejected with an <see cref="ArgumentException"/> that names the IBAN as the
+    /// cause, preventing silent duplicate-account creation for the same bank account.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldFail_WhenDuplicateIbanForSameUser()
     {
@@ -51,6 +65,10 @@ public sealed class AccountServiceTests
         Assert.Contains("IBAN", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Confirms that deleting the only account linked to a bank contact also removes that bank contact,
+    /// so orphaned bank contacts do not accumulate once their last referencing account is gone.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldDeleteBankContact_WhenLastAccountOfContact()
     {
@@ -68,6 +86,10 @@ public sealed class AccountServiceTests
         Assert.False(db.Contacts.Any(c => c.Id == bankContact.Id));
     }
 
+    /// <summary>
+    /// Guards against over-eager cleanup: deleting one account must not delete a bank contact that is
+    /// still referenced by another account of the same owner.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldNotDeleteBankContact_WhenOtherAccountsExist()
     {

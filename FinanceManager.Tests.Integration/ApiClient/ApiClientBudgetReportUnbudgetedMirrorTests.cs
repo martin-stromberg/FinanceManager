@@ -10,7 +10,10 @@ using Xunit;
 namespace FinanceManager.Tests.Integration.ApiClient;
 
 /// <summary>
-/// Integration tests for the Budget Report Unbudgeted Mirror functionality.
+/// End-to-end integration tests for the budget report and unbudgeted-postings endpoints
+/// (<c>Budgets_GetReportAsync</c>/<c>Budgets_GetReportRawAsync</c>/<c>Budgets_GetUnbudgetedPostingsAsync</c>),
+/// covering the full stack from HTTP through statement-draft booking, budget purpose/rule matching (both
+/// literal and regex purpose patterns), and self-contact "mirror" transfer handling, down to the database.
 /// </summary>
 public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<TestWebApplicationFactory>
 {
@@ -26,6 +29,12 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         _factory = factory;
     }
 
+    /// <summary>
+    /// Creates a fresh, unauthenticated <see cref="FinanceManager.Shared.ApiClient"/> bound to the in-memory
+    /// test server, with automatic redirect-following disabled so auth/redirect responses can be inspected
+    /// directly by the calling test.
+    /// </summary>
+    /// <returns>A new API client ready to be authenticated via <see cref="EnsureAuthenticatedAsync"/>.</returns>
     private FinanceManager.Shared.ApiClient CreateClient()
     {
         var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -35,15 +44,26 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    /// <summary>
+    /// Registers a new, randomly named user on the given API client, leaving the resulting authentication
+    /// cookie attached to it. Gives each test its own isolated, already-authenticated user so tests do not
+    /// interfere with each other's accounts, contacts, and postings.
+    /// </summary>
+    /// <param name="api">The API client to authenticate; mutated in place via the registration response's auth cookie.</param>
     private async Task EnsureAuthenticatedAsync(FinanceManager.Shared.ApiClient api)
     {
         var username = $"user_{Guid.NewGuid():N}";
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
+
     /// <summary>
-    /// Integrationstest: Wenn Sparplan-Buchungen auf das Self-Konto gespiegelt werden,
-    /// m�ssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
-    /// und nur tats�chlich ungeplante Self-Postings zur�ckgeben (hier: +12,34 �).
+    /// Verifies that when a savings-plan posting is mirrored onto the user's own "self" contact (as happens
+    /// for internal transfers, e.g. money set aside for an insurance savings plan), the unbudgeted-postings
+    /// endpoint filters those mirrored self postings out instead of reporting them as unbudgeted, while a
+    /// genuine self-contact posting that matches no budget purpose at all (here: "Extra", +12.34) still
+    /// shows up. Also confirms the budget report classifies such mirrored/unmatched self-contact postings
+    /// under the dedicated UnbudgetedSelfCostNeutral category rather than the generic Unbudgeted category,
+    /// since they represent transfers between the user's own money pools, not real income or expenses.
     /// </summary>
     [Fact]
     public async Task BudgetReport_UnbudgetedPostings_ShouldOnlyContainNonMirroredSelfContactPostings_WhenSavingsPlanPostingsMirrorSelfContact()

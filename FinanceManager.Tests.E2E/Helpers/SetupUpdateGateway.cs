@@ -2,17 +2,32 @@ using System.Text.RegularExpressions;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// Drives the "Update" section of the setup page: opening its (possibly collapsed) accordion section,
+/// triggering a manual update check, toggling whether automatic checks are enabled, configuring the
+/// allowed check time window, and saving. This section has update-specific asynchronous quirks (see the
+/// remarks on <see cref="CheckNowAsync"/> and <see cref="WaitUntilSaveCompletedAsync"/>) that make naive
+/// "click and continue" tests flaky, so this gateway centralizes the correct wait strategy for each action.
+/// </summary>
 public sealed class SetupUpdateGateway
 {
     private static readonly Regex UpdateSectionToggleText = new("Update|Aktualisierung", RegexOptions.IgnoreCase);
 
     private readonly IPage _page;
 
+    /// <summary>Creates the gateway for the given page.</summary>
+    /// <param name="page">The Playwright page to drive.</param>
     public SetupUpdateGateway(IPage page)
     {
         _page = page;
     }
 
+    /// <summary>
+    /// Navigates to the setup page and ensures the update section's content is visible: if the accordion
+    /// section is currently collapsed, this finds the toggle whose text matches "Update"/"Aktualisierung"
+    /// (localization-agnostic) and clicks it, then waits for the section's content and its definition list
+    /// to finish rendering before returning.
+    /// </summary>
     public async Task OpenAsync()
     {
         await _page.GotoAsync("/card/setup");

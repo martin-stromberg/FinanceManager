@@ -10,6 +10,13 @@ using System.Text.Json;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>StatementDraftsListViewModel</c> (paging, delete-all, classify and booking
+/// background operations for the statement-draft inbox) and, via the
+/// <see cref="LoadEntryRecordsAsync"/> helper, the mobile-row rendering produced by
+/// <c>StatementDraftCardViewModel</c> for a draft's entries - in particular which fields are
+/// hidden for the account's own bank/self contact versus shown for external contacts.
+/// </summary>
 public sealed class StatementDraftsViewModelTests
 {
     private static HttpClient CreateHttpClient(Func<HttpRequestMessage, HttpResponseMessage> responder)
@@ -156,6 +163,10 @@ public sealed class StatementDraftsViewModelTests
     private static ListRecord RecordForEntry(IReadOnlyList<ListRecord> records, Guid entryId)
         => records.Single(r => r.Item?.GetType().GetProperty("Id")?.GetValue(r.Item) is Guid id && id == entryId);
 
+    /// <summary>
+    /// Verifies that <c>InitializeAsync</c> loads the first page of statement drafts from the
+    /// list endpoint into <c>Items</c>.
+    /// </summary>
     [Fact]
     public async Task Initialize_Loads_First_Page()
     {
@@ -185,6 +196,11 @@ public sealed class StatementDraftsViewModelTests
         Assert.True(vm.CanLoadMore == false ? true : true); // not asserting stop here (unknown until next page)
     }
 
+    /// <summary>
+    /// Verifies that <c>LoadMoreAsync</c> appends the next page to the existing items and that
+    /// <c>CanLoadMore</c> flips to <see langword="false"/> once a page comes back shorter than
+    /// the page size, so the UI knows to stop offering "load more".
+    /// </summary>
     [Fact]
     public async Task LoadMore_Accumulates_And_Stops_When_Less_Than_PageSize()
     {
@@ -224,6 +240,11 @@ public sealed class StatementDraftsViewModelTests
         Assert.False(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that <c>DeleteAllAsync</c> empties <c>Items</c> after a successful bulk delete
+    /// and resets paging state (<c>CanLoadMore</c> back to <see langword="true"/>) so a
+    /// subsequent load starts cleanly rather than being stuck on a stale "no more pages" flag.
+    /// </summary>
     [Fact]
     public async Task DeleteAll_Clears_And_Resets()
     {
@@ -254,6 +275,11 @@ public sealed class StatementDraftsViewModelTests
         Assert.True(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that uploading a file through the <see cref="IUploadFilesViewModel"/> facade
+    /// returns the ID of the first draft created by the server, which callers use to navigate
+    /// straight to the newly created draft.
+    /// </summary>
     [Fact]
     public async Task Upload_Returns_FirstDraftId()
     {
@@ -280,6 +306,11 @@ public sealed class StatementDraftsViewModelTests
         Assert.Equal(firstId, id);
     }
 
+    /// <summary>
+    /// Verifies the classify background-job lifecycle: starting it flips <c>IsClassifying</c>
+    /// on, and polling status until it reports completion flips it back off and triggers a
+    /// reload of the drafts list so newly classified data is reflected in <c>Items</c>.
+    /// </summary>
     [Fact]
     public async Task Classify_Starts_And_Completes_Reloads()
     {
@@ -330,6 +361,11 @@ public sealed class StatementDraftsViewModelTests
         Assert.Empty(vm.Items);
     }
 
+    /// <summary>
+    /// Verifies the book-all background-job lifecycle end to end: starting it flips
+    /// <c>IsBooking</c> on, polling status until completion flips it back off and reloads the
+    /// list, and cancelling the (already finished) job does not throw.
+    /// </summary>
     [Fact]
     public async Task Booking_Starts_Status_Updates_And_Completes()
     {
@@ -384,6 +420,13 @@ public sealed class StatementDraftsViewModelTests
         // no exception means ok
     }
 
+    /// <summary>
+    /// Verifies the privacy/relevance rules used when rendering a draft's entries as mobile
+    /// rows: already-booked entries are muted and don't repeat their status text, the account's
+    /// own bank/self contact names are suppressed entirely (would be redundant/confusing on the
+    /// statement), while external contact, savings-plan, and security names are shown - and a
+    /// security entry additionally shows its transaction type alongside the security name.
+    /// </summary>
     [Fact]
     public async Task EntriesList_BuildsMobileRows_ForStatementDraftInformation()
     {
@@ -438,6 +481,11 @@ public sealed class StatementDraftsViewModelTests
         Assert.Contains("ACME ETF (Buy)", MobileTexts(RecordForEntry(records, entries[6].Id)));
     }
 
+    /// <summary>
+    /// Verifies that the mobile row layout groups an entry's date and amount into a single
+    /// two-column block (with the expected CSS class and cell kinds) rather than two separate
+    /// rows, matching the compact mobile card layout.
+    /// </summary>
     [Fact]
     public async Task EntriesList_MobileRows_PutDateAndAmountIntoTwoColumnBlock()
     {
@@ -455,9 +503,15 @@ public sealed class StatementDraftsViewModelTests
 }
 
 
-// Minimal IStringLocalizer<T> implementation for tests that returns the key as value.
+/// <summary>
+/// Minimal <see cref="IStringLocalizer{T}"/> stand-in for DI in view-model tests: it echoes the
+/// resource key back as the value (with one hard-coded translation used by the mobile-row
+/// assertions in <see cref="StatementDraftsViewModelTests"/>) so tests don't need real resource
+/// files or a localization pipeline to construct a view model.
+/// </summary>
 public sealed class TestStringLocalizer<T> : Microsoft.Extensions.Localization.IStringLocalizer<T>
 {
+    /// <summary>Returns the localized value for <paramref name="name"/>, falling back to the key itself when no test translation is registered.</summary>
     public LocalizedString this[string name]
     {
         get
@@ -471,6 +525,7 @@ public sealed class TestStringLocalizer<T> : Microsoft.Extensions.Localization.I
         }
     }
 
+    /// <summary>Returns the key formatted with <paramref name="arguments"/> via <see cref="string.Format(string, object[])"/>, mimicking a formatted resource string.</summary>
     public LocalizedString this[string name, params object[] arguments]
     {
         get
@@ -480,11 +535,13 @@ public sealed class TestStringLocalizer<T> : Microsoft.Extensions.Localization.I
         }
     }
 
+    /// <summary>Always returns an empty sequence; this fake does not enumerate a resource set.</summary>
     public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures)
     {
         return Array.Empty<LocalizedString>();
     }
 
+    /// <summary>Returns this same instance; culture switching is not simulated by this fake.</summary>
     public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture)
     {
         return this;

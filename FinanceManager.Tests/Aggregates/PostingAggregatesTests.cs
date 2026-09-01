@@ -12,6 +12,14 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Aggregates;
 
+/// <summary>
+/// Covers the posting-aggregate upsert and rebuild machinery used by <see cref="StatementDraftService"/>
+/// and <see cref="PostingAggregateService"/>: that repeated upserts for postings sharing an aggregate key
+/// (account/period/date-kind) accumulate into a single row per key instead of creating duplicates - both
+/// within one DbContext session and across separate save operations - and that a full rebuild correctly
+/// produces distinct Booking- and Valuta-dated aggregates when booking and value date fall in different
+/// periods.
+/// </summary>
 public sealed class PostingAggregatesTests
 {
     private static AppDbContext CreateSqliteContext()
@@ -35,6 +43,12 @@ public sealed class PostingAggregatesTests
     }
 
 
+    /// <summary>
+    /// Invokes the private <c>UpsertAggregatesAsync</c> method twice within the same DbContext session
+    /// for two postings that share the same account/month key, and verifies the two postings are summed
+    /// into a single Booking aggregate and a single Valuta aggregate rather than creating duplicate rows
+    /// for the same key.
+    /// </summary>
     [Fact]
     public async Task UpsertAggregates_ShouldNotCreateDuplicates_ForSameKey_InSingleContextSession()
     {
@@ -69,6 +83,12 @@ public sealed class PostingAggregatesTests
         Assert.Equal(150m, valutaAgg!.Amount);
     }
 
+    /// <summary>
+    /// Same guarantee as <see cref="UpsertAggregates_ShouldNotCreateDuplicates_ForSameKey_InSingleContextSession"/>,
+    /// but with an explicit <c>SaveChangesAsync</c> between the two upserts - ensuring the aggregate's
+    /// unique index (account/period/date-kind) is honored on a re-attach/update across separate save
+    /// operations rather than only within a single unit of work.
+    /// </summary>
     [Fact]
     public async Task UpsertAggregates_ShouldHonorUniqueIndex_AcrossSaves()
     {
@@ -105,6 +125,12 @@ public sealed class PostingAggregatesTests
         Assert.Equal(150m, valutaSum);
     }
 
+    /// <summary>
+    /// Verifies <see cref="PostingAggregateService.RebuildForUserAsync"/> against postings whose booking
+    /// and value dates fall in different months: the Booking-dated aggregate for January must sum both
+    /// postings, while the Valuta-dated aggregates must be split across January and February - i.e. a
+    /// rebuild must not conflate booking date and value date when assigning postings to periods.
+    /// </summary>
     [Fact]
     public async Task Rebuild_ShouldCreateBookingAndValutaAggregates_AndSeparateValutaPeriods()
     {

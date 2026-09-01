@@ -6,8 +6,20 @@ using BudgetReportDateBasis = FinanceManager.Shared.Dtos.Budget.BudgetReportDate
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="MonthlyBudgetKpiViewModel"/>'s loading behavior, in particular how it
+/// distinguishes recoverable API failures (surfaced via <c>ErrorMessage</c>) from unexpected
+/// exceptions (which must propagate), and how it normalizes a null API response into
+/// well-defined "loaded but empty" defaults instead of leaving stale values in place.
+/// </summary>
 public sealed class MonthlyBudgetKpiViewModelTests
 {
+    /// <summary>
+    /// Verifies that an <see cref="HttpRequestException"/> from the API call is caught and
+    /// surfaced as <c>ErrorMessage</c> (taken from <c>IApiClient.LastError</c>) with
+    /// <c>DataLoaded</c> left <see langword="false"/>, so the KPI tile can show a failure state
+    /// instead of throwing out of the load pipeline.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_SetsErrorMessage_OnApiFailure()
     {
