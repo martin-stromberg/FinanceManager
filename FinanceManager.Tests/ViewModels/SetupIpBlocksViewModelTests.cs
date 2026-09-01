@@ -6,6 +6,10 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>SetupSecurityViewModel</c>'s admin IP block list: loading blocked IPs and creating a new
+/// block, including that the create form is cleared and the "block on create" flag stays set after success.
+/// </summary>
 public sealed class SetupIpBlocksViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -27,6 +31,9 @@ public sealed class SetupIpBlocksViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that reloading as an admin user populates the items list with blocked IP addresses from the API.
+    /// </summary>
     [Fact]
     public async Task Initialize_Loads_List_When_Admin()
     {
@@ -45,6 +52,11 @@ public sealed class SetupIpBlocksViewModelTests
         Assert.Equal("1.2.3.4", vm.Items[0].IpAddress);
     }
 
+    /// <summary>
+    /// Verifies that creating an IP block sends the entered IP address to the API and, on success, clears
+    /// the IP and reason input fields while leaving the "block on create" toggle in its set state, so the
+    /// form is ready for the next entry.
+    /// </summary>
     [Fact]
     public async Task Create_Clears_Form_On_Success()
     {

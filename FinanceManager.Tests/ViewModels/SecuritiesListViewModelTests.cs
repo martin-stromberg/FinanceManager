@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="SecuritiesListViewModel"/>'s loading behavior, the active/inactive filter toggle
+/// triggering a reload, and authentication gating.
+/// </summary>
 public sealed class SecuritiesListViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -50,6 +54,9 @@ public sealed class SecuritiesListViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that initialization loads active securities and their categories into the items collection.
+    /// </summary>
     [Fact]
     public async Task Initialize_Loads_List()
     {
@@ -70,6 +77,10 @@ public sealed class SecuritiesListViewModelTests
         Assert.Equal(2, vm.Items.Count);
     }
 
+    /// <summary>
+    /// Verifies that toggling the active/inactive filter triggers exactly one additional call to the list
+    /// API beyond the initial load, so switching filters always shows current data for the new state.
+    /// </summary>
     [Fact]
     public async Task ToggleActive_Reloads()
     {
@@ -92,6 +103,10 @@ public sealed class SecuritiesListViewModelTests
         Assert.Equal(2, calls);
     }
 
+    /// <summary>
+    /// Verifies that an unauthenticated user never reaches the securities API: initialization raises
+    /// <c>AuthenticationRequired</c> and leaves the view model unloaded instead of calling the list endpoint.
+    /// </summary>
     [Fact]
     public async Task Initialize_RequiresAuth_When_NotAuthenticated()
     {

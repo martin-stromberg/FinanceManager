@@ -6,6 +6,11 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>SecurityPostingsListViewModel</c>'s paging behavior and, in particular, the security-specific
+/// "quantity" grid column: its position between the kind and amount columns, and how the quantity cell is
+/// rendered for null, zero, and positive values (empty vs. a formatted number without spurious trailing zeros).
+/// </summary>
 public sealed class PostingsSecurityViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -59,6 +64,10 @@ public sealed class PostingsSecurityViewModelTests
             .ToList();
     }
 
+    /// <summary>
+    /// Verifies that initialization loads a full page (50) of security postings and correctly infers
+    /// there is a further page to load since the page came back exactly at the page-size limit.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsFirstPage_SetsItemsAndFlags()
     {
@@ -75,6 +84,10 @@ public sealed class PostingsSecurityViewModelTests
         Assert.True(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that loading more pages appends to the existing collection and that "can load more" flips
+    /// off once a page comes back shorter than the fixed page size (50).
+    /// </summary>
     [Fact]
     public async Task LoadMore_AppendsItems_StopsWhenBelowPageSize()
     {
@@ -100,6 +113,11 @@ public sealed class PostingsSecurityViewModelTests
 
     // ── Column layout and Quantity rendering ────────────────────────────────
 
+    /// <summary>
+    /// Verifies that the security postings grid defines a "quantity" column and that it is positioned
+    /// between "kind" and "amount" - a layout guarantee for the security-specific grid so the quantity
+    /// figure reads naturally alongside the transaction kind and its monetary amount.
+    /// </summary>
     [Fact]
     public void Columns_ContainsQuantityBetweenKindAndAmount()
     {
@@ -124,6 +142,10 @@ public sealed class PostingsSecurityViewModelTests
         Assert.True(quantityIdx < amountIdx, "Quantity must come before Amount");
     }
 
+    /// <summary>
+    /// Verifies that a posting with no quantity (e.g. a fee or cash posting on a security account) renders
+    /// an empty quantity cell rather than "0" or a null-reference placeholder, avoiding a misleading "zero units" reading.
+    /// </summary>
     [Fact]
     public async Task BuildRecords_NullQuantity_QuantityCellIsEmpty()
     {
@@ -141,6 +163,10 @@ public sealed class PostingsSecurityViewModelTests
         Assert.Equal(string.Empty, qtyCell.Text);
     }
 
+    /// <summary>
+    /// Verifies that an explicit quantity of zero also renders an empty cell, the same as a null quantity,
+    /// so the UI does not distinguish "not applicable" from "literally zero units" in this column.
+    /// </summary>
     [Fact]
     public async Task BuildRecords_ZeroQuantity_QuantityCellIsEmpty()
     {
@@ -158,6 +184,11 @@ public sealed class PostingsSecurityViewModelTests
         Assert.Equal(string.Empty, qtyCell.Text);
     }
 
+    /// <summary>
+    /// Verifies that a real quantity value (12.5) is rendered as a formatted, non-empty string that does
+    /// not carry excessive trailing zeros from the underlying decimal's storage precision (e.g. not "12,500000"),
+    /// guarding against a naive ToString() leaking implementation detail into the UI.
+    /// </summary>
     [Fact]
     public async Task BuildRecords_PositiveQuantity_QuantityCellShowsFormattedValue()
     {
@@ -178,6 +209,10 @@ public sealed class PostingsSecurityViewModelTests
         Assert.DoesNotContain("500000", qtyCell.Text); // "12,500000" would fail
     }
 
+    /// <summary>
+    /// Verifies that every built record has exactly as many cells as the grid has columns, a structural
+    /// invariant the rendering layer relies on to zip columns and cells by index without going out of bounds.
+    /// </summary>
     [Fact]
     public async Task BuildRecords_RecordHasSameCellCountAsColumns()
     {
@@ -228,6 +263,9 @@ public sealed class PostingsSecurityViewModelTests
             ReversalForPostingId: null);
 
     /// <summary>Returns the Quantity cell from a record by looking up the column index.</summary>
+    /// <param name="vm">The view model whose column layout determines the quantity column's index.</param>
+    /// <param name="record">The record to pull the quantity cell from.</param>
+    /// <returns>The <see cref="ListCell"/> at the "quantity" column's position.</returns>
     private static ListCell GetQuantityCell(
         FinanceManager.Web.ViewModels.Postings.SecurityPostingsListViewModel vm,
         ListRecord record)

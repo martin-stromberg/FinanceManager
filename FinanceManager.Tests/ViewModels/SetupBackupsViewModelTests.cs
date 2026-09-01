@@ -7,6 +7,13 @@ using System.Text.Json;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="SetupBackupsViewModel"/>'s backup list/create/delete lifecycle and starting a
+/// restore-from-backup ("apply") operation. Unlike most view model tests in this project, these exercise
+/// the real <see cref="FinanceManager.Shared.ApiClient"/> against a fake <see cref="HttpMessageHandler"/>
+/// that asserts on the actual HTTP method/route/body, verifying the wire contract rather than just an
+/// interface mock.
+/// </summary>
 public sealed class SetupBackupsViewModelTests
 {
     private static HttpClient CreateHttpClient(Func<HttpRequestMessage, HttpResponseMessage> responder)
@@ -44,6 +51,10 @@ public sealed class SetupBackupsViewModelTests
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    /// <summary>
+    /// Verifies that loading backups issues a GET to <c>/api/setup/backups</c> and deserializes the
+    /// returned list into the view model's <c>Backups</c> collection.
+    /// </summary>
     [Fact]
     public async Task Initialize_Loads_List()
     {
@@ -65,6 +76,11 @@ public sealed class SetupBackupsViewModelTests
         Assert.Equal("b1.zip", vm.Backups![0].FileName);
     }
 
+    /// <summary>
+    /// Verifies the create/delete round-trip against the real HTTP routes: creating a backup POSTs to
+    /// <c>/api/setup/backups</c> and inserts the returned item into the list, and deleting it DELETEs the
+    /// specific <c>/api/setup/backups/{id}</c> route and removes it from the list.
+    /// </summary>
     [Fact]
     public async Task Create_Inserts_Item_And_Delete_Removes()
     {
@@ -97,6 +113,11 @@ public sealed class SetupBackupsViewModelTests
         Assert.Empty(vm.Backups!);
     }
 
+    /// <summary>
+    /// Verifies that starting a restore ("apply") for a backup POSTs the file name in the request body to
+    /// <c>/api/setup/backups/{id}/apply/start</c> and, on success, marks the view model as having an active
+    /// restore in progress so the UI can switch to a progress display.
+    /// </summary>
     [Fact]
     public async Task StartApply_Sets_Flag_On_Success()
     {

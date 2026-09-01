@@ -36,6 +36,12 @@ public sealed class MonthlyBudgetKpiViewModelTests
         Assert.Equal("HTTP 500", vm.ErrorMessage);
     }
 
+    /// <summary>
+    /// Verifies that an exception type other than <see cref="HttpRequestException"/> (e.g. a coding-error
+    /// signal like <see cref="InvalidOperationException"/>) is not swallowed into <c>ErrorMessage</c> but
+    /// propagates out of <c>LoadAsync</c>, so genuine bugs are not silently hidden behind the KPI tile's
+    /// "failed to load" state.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_Rethrows_UnexpectedExceptions()
     {
@@ -48,6 +54,12 @@ public sealed class MonthlyBudgetKpiViewModelTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.LoadAsync(api.Object, CancellationToken.None));
     }
 
+    /// <summary>
+    /// Verifies that a <see langword="null"/> API response (e.g. no budget data exists yet for the period)
+    /// is normalized into a successfully "loaded" state with zeroed income figures and a load timestamp/month
+    /// derived from the injected <see cref="TimeProvider"/>, rather than leaving previously bound stale values
+    /// on the view model or treating the absence of data as an error.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_TreatsNullResponseAsLoadedDefaults()
     {

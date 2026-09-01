@@ -5,6 +5,10 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>PostingsCardViewModel</c>'s initialization: loading a posting by id and resolving the
+/// group links (e.g. linked account) that belong to it, via a mocked <see cref="IApiClient"/>.
+/// </summary>
 public sealed class PostingDetailViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -26,6 +30,10 @@ public sealed class PostingDetailViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that initializing with a posting id fetches the posting and its group's linked-entity
+    /// data, leaving the view model in a non-loading state with the posting bound once both calls complete.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsDetail_ResolvesLinks()
     {

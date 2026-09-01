@@ -6,6 +6,11 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>SecurityCategoryCardViewModel</c>'s full CRUD lifecycle (load, create, update, delete,
+/// including their respective failure paths surfacing <c>LastError</c>) and the ribbon's Save action being
+/// disabled until the name field is actually edited.
+/// </summary>
 public sealed class SecurityCategoryDetailViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -27,6 +32,9 @@ public sealed class SecurityCategoryDetailViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that loading an existing category by id populates the model's name and leaves no error set.
+    /// </summary>
     [Fact]
     public async Task Initialize_Edit_Loads_Model()
     {
@@ -43,6 +51,10 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.Null(vm.LastError);
     }
 
+    /// <summary>
+    /// Verifies that loading a category id the API cannot find (returns <see langword="null"/>) sets a
+    /// "Not found" error, so the user gets feedback instead of a silently empty card.
+    /// </summary>
     [Fact]
     public async Task Initialize_Edit_NotFound_Sets_Error()
     {
@@ -57,6 +69,10 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.Equal("Not found", vm.LastError);
     }
 
+    /// <summary>
+    /// Verifies that saving a new category (via a pending field edit applied to the card record) calls
+    /// the create API with the entered name and reports success with no error.
+    /// </summary>
     [Fact]
     public async Task Save_New_Success()
     {
@@ -83,6 +99,10 @@ public sealed class SecurityCategoryDetailViewModelTests
         apiMock.Verify(a => a.SecurityCategories_CreateAsync(It.Is<SecurityCategoryRequest>(r => r.Name == "NewCat"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that a failed create call (API returns <see langword="null"/>) reports failure and copies
+    /// the API's <c>LastError</c> onto the view model so the failure reason reaches the user.
+    /// </summary>
     [Fact]
     public async Task Save_New_Fail()
     {
@@ -99,6 +119,9 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.Equal("bad", vm.LastError);
     }
 
+    /// <summary>
+    /// Verifies that saving an edited existing category succeeds and clears any prior error.
+    /// </summary>
     [Fact]
     public async Task Save_Edit_Success()
     {
@@ -120,6 +143,9 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.Null(vm.LastError);
     }
 
+    /// <summary>
+    /// Verifies that deleting a loaded category returns success when the API confirms the deletion.
+    /// </summary>
     [Fact]
     public async Task Delete_Success()
     {
@@ -138,6 +164,10 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.True(ok);
     }
 
+    /// <summary>
+    /// Verifies that a failed deletion (API returns <see langword="false"/>) reports failure and copies
+    /// the API's <c>LastError</c> onto the view model.
+    /// </summary>
     [Fact]
     public async Task Delete_Fail()
     {
@@ -158,6 +188,11 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.Equal("oops", vm.LastError);
     }
 
+    /// <summary>
+    /// Verifies the ribbon's dirty-state gating for Save: a freshly initialized new-category card starts
+    /// with Save disabled (no pending edits yet), and entering a name into the pending field flips Save to
+    /// enabled - guarding against the user saving an unedited, effectively empty category.
+    /// </summary>
     [Fact]
     public async Task Ribbon_Disables_Save_When_Name_Short()
     {

@@ -10,6 +10,10 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="SavingsPlanCategoryListViewModel"/>'s loading behavior, authentication gating, and
+/// ribbon action set (Back/New) for the savings plan category list screen.
+/// </summary>
 public sealed class SavingsPlanCategoriesViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -33,6 +37,9 @@ public sealed class SavingsPlanCategoriesViewModelTests
         return (vm, apiMock, sp);
     }
 
+    /// <summary>
+    /// Verifies that initialization loads all savings plan categories from the API into the items collection.
+    /// </summary>
     [Fact]
     public async Task Initialize_Loads_Categories()
     {
@@ -52,6 +59,10 @@ public sealed class SavingsPlanCategoriesViewModelTests
         Assert.Equal(new[] { "A", "B" }, vm.Items.Select(x => x.Name).OrderBy(x => x).ToArray());
     }
 
+    /// <summary>
+    /// Verifies that an unauthenticated user never reaches the categories API: initialization raises
+    /// <c>AuthenticationRequired</c> and leaves the view model unloaded instead of calling the list endpoint.
+    /// </summary>
     [Fact]
     public async Task Initialize_RequiresAuth_When_NotAuthenticated()
     {
@@ -66,6 +77,10 @@ public sealed class SavingsPlanCategoriesViewModelTests
         apiMock.Verify(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that the ribbon exposes both "Back" and "New" actions somewhere across its groups,
+    /// checked in a flattened way so the test does not depend on a specific grouping structure.
+    /// </summary>
     [Fact]
     public void Ribbon_Has_Actions()
     {

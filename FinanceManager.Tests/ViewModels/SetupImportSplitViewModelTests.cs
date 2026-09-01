@@ -5,6 +5,11 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>SetupStatementsViewModel</c>'s import-split settings: loading, the field-combination
+/// validation rules governing when a split is well-formed, the save/dirty-reset cycle, and that the
+/// mass-import confirmation dialog policy is included in the persisted save request.
+/// </summary>
 public sealed class SetupImportSplitViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -23,6 +28,9 @@ public sealed class SetupImportSplitViewModelTests
         return services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that loading populates the model from the API's import-split settings.
+    /// </summary>
     [Fact]
     public async Task Initialize_Loads_Settings()
     {
@@ -38,6 +46,12 @@ public sealed class SetupImportSplitViewModelTests
         Assert.Equal(ImportSplitMode.Monthly, vm.Model!.Mode);
     }
 
+    /// <summary>
+    /// Verifies three distinct import-split validation rules in sequence: a max-entries value below the
+    /// allowed minimum is rejected; a monthly-mode split with a zero minimum-entries is rejected; and for
+    /// the "monthly or fixed" mode, a split threshold below the max-entries value is rejected while an
+    /// equal threshold is accepted - covering the field-interdependency rules the UI must enforce before saving.
+    /// </summary>
     [Fact]
     public async Task Validate_Disallows_Invalid_Combinations()
     {
@@ -67,6 +81,11 @@ public sealed class SetupImportSplitViewModelTests
         Assert.True(vm.HasValidationError);
     }
 
+    /// <summary>
+    /// Verifies that editing a setting marks the view model dirty, and that a successful save persists
+    /// the change via the update API, sets <c>SavedOk</c>, and clears the dirty flag - the standard
+    /// save-confirmation cycle the settings screen's Save button depends on.
+    /// </summary>
     [Fact]
     public async Task Save_Sets_SavedOk_And_Resets_Dirty()
     {
@@ -88,6 +107,11 @@ public sealed class SetupImportSplitViewModelTests
         Assert.False(vm.Dirty);
     }
 
+    /// <summary>
+    /// Verifies that changing the mass-import dialog confirmation policy is actually included in the
+    /// persisted update request, guarding against the field being dropped or overwritten with a stale
+    /// value if it were forgotten when the request DTO was built.
+    /// </summary>
     [Fact]
     public async Task Save_ShouldPersistMassImportDialogPolicy()
     {
