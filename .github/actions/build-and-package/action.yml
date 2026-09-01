@@ -128,6 +128,7 @@ runs:
       env:
         RELEASE_VERSION: ${{ inputs.release-version }}
         RELEASE_NOTES: ${{ inputs.release-notes }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
       run: |
         if ([string]::IsNullOrWhiteSpace($env:RELEASE_NOTES)) {
           $env:RELEASE_NOTES = "Release ${{ inputs.release-tag }}"

@@ -197,6 +197,7 @@ jobs:
       changed: ${{ steps.semver.outputs.changed }}
       version: ${{ steps.semver.outputs.version }}
       rc_tag: ${{ steps.rc.outputs.rc_tag }}
+      rc_version: ${{ steps.rc.outputs.rc_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -256,6 +257,12 @@ jobs:
           $rcNumber = $existing.Count + 1
           "rc_number=$rcNumber" | Add-Content -Path $env:GITHUB_OUTPUT
           "rc_tag=v$version-rc.$rcNumber" | Add-Content -Path $env:GITHUB_OUTPUT
+          # RC-suffixed version without the leading "v" (e.g. "1.2.3-rc.1"), distinct from
+          # rc_tag ("v1.2.3-rc.1"). Passed as build-and-package's release-version input so
+          # both the packaged asset file names and update.json's own "version" field carry
+          # the RC suffix - matching FinanceManager's previous behavior where a staging push's
+          # resolved semantic-release version already included the (then-uppercase) RC suffix.
+          "rc_version=$version-rc.$rcNumber" | Add-Content -Path $env:GITHUB_OUTPUT
 
   prerelease:
     name: prerelease
@@ -288,7 +295,7 @@ jobs:
         id: build
         uses: ./.github/actions/build-and-package
         with:
-          release-version: ${{ needs.version.outputs.version }}
+          release-version: ${{ needs.version.outputs.rc_version }}
           release-tag: ${{ needs.version.outputs.rc_tag }}
           release-notes: ${{ steps.notes.outputs.notes }}
 
