@@ -1,0 +1,308 @@
+name: Pre-Release
+
+# Filename stays staging-ci.yml (only the display name changes to "Pre-Release") - see
+# ci-target-schema.md section 3. staging-to-main-promotion.yml's workflow_run trigger
+# references this display name, not the filename; both were updated together in this
+# same commit so the promotion chain never briefly points at a name that no longer exists.
+
+on:
+  push:
+    branches:
+      - staging
+
+concurrency:
+  group: staging-ci
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  checks: write
+
+jobs:
+  detect-backmerge:
+    # Same thorough check as pr-staging-ci.yml's detect-backmerge (decision 20): checks both
+    # merge-parent and tree-diff against main. On a push event HEAD is the pushed commit
+    # itself (not a synthetic merge), so this mainly catches the case where the automated
+    # back-merge PR (main -> staging) was merged with "Create a merge commit", making
+    # main's tip a direct parent of the new staging HEAD.
+    runs-on: ubuntu-latest
+    outputs:
+      is_backmerge: ${{ steps.check.outputs.is_backmerge }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check whether this push is a pure back-merge from main
+        id: check
+        run: |
+          git fetch origin main:refs/remotes/origin/main --no-tags
+
+          main_sha="$(git rev-parse origin/main)"
+          is_main_merge_parent=false
+          for parent in $(git show -s --format=%P HEAD); do
+            if [[ "$parent" == "$main_sha" ]]; then
+              is_main_merge_parent=true
+              break
+            fi
+          done
+
+          if [[ "$is_main_merge_parent" == "true" ]]; then
+            echo "is_backmerge=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Back-merge from main detected - CI checks will be skipped."
+          elif git diff --quiet origin/main HEAD; then
+            echo "is_backmerge=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Pure back-merge from main detected (tree identical) - CI checks will be skipped."
+          else
+            echo "is_backmerge=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  static-checks:
+    name: static checks
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore FinanceManager.sln
+        shell: pwsh
+
+      - name: Format check
+        run: dotnet format FinanceManager.sln --verify-no-changes --no-restore
+        shell: pwsh
+
+      - name: Security scan
+        uses: ./.github/actions/security-scan
+        with:
+          solution-path: FinanceManager.sln
+          artifact-name: vulnerable-packages-staging
+
+      - name: Static analysis
+        run: dotnet build FinanceManager.sln -c Debug --no-restore -p:TreatWarningsAsErrors=true
+        shell: pwsh
+
+  build-and-test:
+    name: build & test
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Restore dependencies
+        run: dotnet restore
+        shell: pwsh
+
+      - name: Build
+        run: |
+          dotnet build FinanceManager.Tests/FinanceManager.Tests.csproj --no-restore -c Debug
+          dotnet build FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-restore -c Debug
+          dotnet build FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-restore -c Debug
+        shell: pwsh
+
+      - name: Test regular tests
+        run: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --filter "Category!=OsInterface" --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results-regular-tests.trx" --logger "console;verbosity=normal"
+        shell: pwsh
+
+      - name: Test regular integration
+        run: dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-build -c Debug --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results-regular-integration.trx" --logger "console;verbosity=normal"
+        shell: pwsh
+
+      - name: Test E2E tests
+        continue-on-error: true
+        run: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-e2e-tests.trx" --logger "console;verbosity=normal"
+        shell: pwsh
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.5.11
+        shell: pwsh
+
+      - name: Generate coverage report
+        run: reportgenerator "-reports:FinanceManager.Tests/TestResults/**/coverage.cobertura.xml;FinanceManager.Tests.Integration/TestResults/**/coverage.cobertura.xml" "-targetdir:coverage-report" "-reporttypes:TextSummary"
+        shell: pwsh
+
+      - name: Enforce coverage threshold
+        env:
+          COVERAGE_THRESHOLD: '70'
+        run: |
+          $summary = Get-Content coverage-report/Summary.txt -Raw
+          if ($summary -notmatch "Line coverage:\s*([\d.,]+)%") {
+            throw "Could not determine line coverage from the generated report."
+          }
+          $lineCoverage = [double]($matches[1] -replace ',', '.')
+          $threshold = [double]$env:COVERAGE_THRESHOLD
+          Write-Host "Line coverage: $lineCoverage% (threshold: $threshold%)"
+          if ($lineCoverage -lt $threshold) {
+            throw "Code coverage $lineCoverage% is below the required threshold of $threshold%."
+          }
+        shell: pwsh
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report-staging
+          path: coverage-report/
+          retention-days: 14
+
+      - name: Upload regular test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-regular-staging
+          path: |
+            FinanceManager.Tests/TestResults/*regular*.trx
+            FinanceManager.Tests.Integration/TestResults/*regular*.trx
+          retention-days: 14
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-e2e-staging
+          path: |
+            FinanceManager.Tests.E2E/TestResults/*e2e*.trx
+          retention-days: 14
+
+  version:
+    name: version
+    needs: [detect-backmerge, static-checks, build-and-test]
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.semver.outputs.changed }}
+      version: ${{ steps.semver.outputs.version }}
+      rc_tag: ${{ steps.rc.outputs.rc_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        shell: pwsh
+
+      - name: Determine next version
+        # release.config.js only lists "main" as a release branch (see that file's own
+        # comment); staging is deliberately not a configured prerelease branch there. The
+        # --branches override below treats "staging" as a plain release branch for this one
+        # dry-run only, so the resulting X.Y.Z carries no prerelease identifier - the RC
+        # suffix is appended manually in the next step instead. Automatic RC releases
+        # previously ran through the same release.yml as the final release (driven by
+        # release.config.js's now-removed staging prerelease branch entry); this "version" +
+        # "prerelease" job pair replaces that with a dedicated pre-release path, matching
+        # Softwareschmiede's proven pattern.
+        id: semver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $output = & npx semantic-release --dry-run --no-ci --branches staging 2>&1 | Out-String
+          Write-Host "semantic-release output:"
+          Write-Host $output
+
+          $version = $null
+          $changed = $false
+          if ($output -match 'The next release version is ([0-9]+\.[0-9]+\.[0-9]+(?:[-+][^\s]+)?)') {
+            $version = $Matches[1]
+            $changed = $true
+            Write-Host "Next release version: $version"
+          } else {
+            Write-Host "No new release version determined."
+          }
+
+          "version=$version" | Add-Content -Path $env:GITHUB_OUTPUT
+          "changed=$($changed.ToString().ToLowerInvariant())" | Add-Content -Path $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Determine RC number
+        if: steps.semver.outputs.changed == 'true'
+        id: rc
+        shell: pwsh
+        run: |
+          $version = "${{ steps.semver.outputs.version }}"
+          $existing = @(git tag --list "v$version-rc.*")
+          $rcNumber = $existing.Count + 1
+          "rc_number=$rcNumber" | Add-Content -Path $env:GITHUB_OUTPUT
+          "rc_tag=v$version-rc.$rcNumber" | Add-Content -Path $env:GITHUB_OUTPUT
+
+  prerelease:
+    name: prerelease
+    needs: [detect-backmerge, version]
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true' && needs.version.outputs.changed == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Generate release notes for update manifest
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $json = gh api repos/${{ github.repository }}/releases/generate-notes -f tag_name="${{ needs.version.outputs.rc_tag }}"
+          $notes = ($json | ConvertFrom-Json).body
+          $notesPath = Join-Path $PWD "release-notes.md"
+          Set-Content -LiteralPath $notesPath -Value $notes -Encoding UTF8
+          "notes_path=release-notes.md" | Add-Content -Path $env:GITHUB_OUTPUT
+
+          $delimiter = "NOTES_EOF_$([guid]::NewGuid().ToString('N'))"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "notes<<$delimiter"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value $notes
+          Add-Content -Path $env:GITHUB_OUTPUT -Value $delimiter
+        shell: pwsh
+
+      - name: Build and package release candidate
+        id: build
+        uses: ./.github/actions/build-and-package
+        with:
+          release-version: ${{ needs.version.outputs.version }}
+          release-tag: ${{ needs.version.outputs.rc_tag }}
+          release-notes: ${{ steps.notes.outputs.notes }}
+
+      - name: Create GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ASSET_PATHS: ${{ steps.build.outputs.asset-paths }}
+          RELEASE_MANIFEST_PATH: ${{ steps.build.outputs.manifest-path }}
+        run: |
+          $tag = "${{ needs.version.outputs.rc_tag }}"
+          $assets = @($env:RELEASE_ASSET_PATHS -split ';') + @($env:RELEASE_MANIFEST_PATH)
+          gh release create $tag @assets `
+            --target $env:GITHUB_SHA `
+            --title $tag `
+            --prerelease `
+            --notes-file "${{ steps.notes.outputs.notes_path }}"
+        shell: pwsh
