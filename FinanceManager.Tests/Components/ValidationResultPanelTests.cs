@@ -9,6 +9,12 @@ using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Tests for the <see cref="ValidationResultPanel"/> component, which renders draft-validation
+/// messages and turns a message's related-record reference into a navigable card link - but only
+/// for general (non-entry-specific) messages, since entry-specific hints are shown inline next to
+/// the entry itself rather than as a standalone linkable card.
+/// </summary>
 public sealed class ValidationResultPanelTests : BunitContext
 {
     /// <summary>

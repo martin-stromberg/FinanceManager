@@ -14,6 +14,13 @@ using Moq;
 
 namespace FinanceManager.Tests.Auth;
 
+/// <summary>
+/// Tests for <see cref="UserAuthService"/> covering self-service registration and login: the
+/// first-user-becomes-admin bootstrap rule, username/password validation, the Identity lockout
+/// progression across repeated failed attempts, JWT issuance on success, rejection of deactivated
+/// accounts, and the rule that a browser-reported language hint must never overwrite a user's
+/// existing preference.
+/// </summary>
 public sealed class UserAuthServiceTests
 {
     private static (UserAuthService sut, AppDbContext db, Mock<UserManager<User>> userManager, Mock<SignInManager<User>> signInManager, Mock<IJwtTokenService> jwt, TimeProvider timeProvider) Create()
@@ -139,6 +146,11 @@ public sealed class UserAuthServiceTests
         return (sut, db, userManagerMock, signInManagerMock, jwt, timeProvider);
     }
 
+    /// <summary>
+    /// Verifies that when no users exist yet, the very first registered account is automatically
+    /// granted the admin role - the bootstrap mechanism that guarantees a fresh installation always
+    /// has at least one administrator without requiring a separate seeding step.
+    /// </summary>
     [Fact]
     public async Task RegisterAsync_ShouldCreateFirstUserAsAdmin_WhenNoUsersExist()
     {
@@ -152,6 +164,10 @@ public sealed class UserAuthServiceTests
         Assert.True(db.Users.Single().IsAdmin);
     }
 
+    /// <summary>
+    /// Verifies that self-registration with a username that already exists fails with an
+    /// error mentioning the conflict, rather than silently creating a duplicate account.
+    /// </summary>
     [Fact]
     public async Task RegisterAsync_ShouldFail_WhenDuplicateUsername()
     {
@@ -164,6 +180,10 @@ public sealed class UserAuthServiceTests
         Assert.Contains("exists", result.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that an explicit preferred-language value supplied at registration is persisted on
+    /// the new user, so the account starts in that language rather than the default "Automatic" mode.
+    /// </summary>
     [Fact]
     public async Task RegisterAsync_ShouldSetPreferredLanguage_WhenProvided()
     {
@@ -176,6 +196,11 @@ public sealed class UserAuthServiceTests
         Assert.Equal("en", user.PreferredLanguage);
     }
 
+    /// <summary>
+    /// Verifies that registration rejects a missing username and, separately, a missing password,
+    /// each with an error explaining the field is required, rather than proceeding with an
+    /// incomplete account.
+    /// </summary>
     [Fact]
     public async Task RegisterAsync_ShouldFail_WhenUsernameOrPasswordMissing()
     {
@@ -190,6 +215,10 @@ public sealed class UserAuthServiceTests
         Assert.Contains("required", res2.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that the first two consecutive failed login attempts are simply rejected without
+    /// triggering a lockout, confirming the lockout threshold is not tripped prematurely.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_FirstAndSecondInvalid_NoLock()
     {
@@ -208,6 +237,11 @@ public sealed class UserAuthServiceTests
         Assert.False(r2.Success);
     }
 
+    /// <summary>
+    /// Verifies that a third consecutive failed attempt escalates to Identity's lockout state and
+    /// the login result surfaces a "locked" error, confirming brute-force protection actually
+    /// engages after the configured number of failures.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_ThirdInvalid_LeadsToIdentityLockout()
     {
@@ -229,6 +263,10 @@ public sealed class UserAuthServiceTests
         Assert.Contains("locked", res.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that a successful login with correct credentials simply succeeds, exercising the
+    /// happy path that implicitly resets Identity's internal failure counter for the account.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_Success_ResetsIdentityLockout()
     {
@@ -242,6 +280,11 @@ public sealed class UserAuthServiceTests
         Assert.True(success.Success);
     }
 
+    /// <summary>
+    /// Verifies that a successful login returns the JWT produced by <c>IJwtTokenService</c> and
+    /// that the token is requested with the user's id, username, security stamp, language, and
+    /// time zone - confirming the token creation call is wired with the correct claims source.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_ShouldReturnToken_OnValidCredentials()
     {
@@ -256,6 +299,12 @@ public sealed class UserAuthServiceTests
         jwt.Verify(j => j.CreateToken(user.Id, user.UserName, false, user.SecurityStamp!, out It.Ref<DateTime>.IsAny, user.PreferredLanguage, user.TimeZoneId), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that logging in as a deactivated user fails with a generic "invalid credentials"
+    /// error and, importantly, never reaches password sign-in or token creation at all - so a
+    /// disabled account cannot be distinguished from a wrong password (avoiding user enumeration)
+    /// and never receives a valid session token.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_ShouldRejectInactiveUser_WithoutPasswordSignInOrToken()
     {
@@ -273,6 +322,11 @@ public sealed class UserAuthServiceTests
         jwt.Verify(j => j.CreateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), out It.Ref<DateTime>.IsAny, It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that after a lockout result, a subsequent login attempt with correct credentials
+    /// can still succeed once the underlying lock has effectively expired, confirming lockouts are
+    /// temporary rather than permanently barring the account.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_ShouldSucceed_AfterIdentityLockExpired_AndValidCredentials()
     {
@@ -294,6 +348,12 @@ public sealed class UserAuthServiceTests
         Assert.Equal("token", r2.Value!.Token);
     }
 
+    /// <summary>
+    /// Verifies that when a user's preferred language is null (meaning "Automatic", follow the
+    /// browser), a login-time browser language hint does NOT get written to the user's stored
+    /// preference - "Automatic" must remain automatic rather than being silently pinned to
+    /// whatever the browser happened to send on a particular login.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_ShouldNotOverwritePreferredLanguage_WhenAlreadyNull()
     {
@@ -314,6 +374,11 @@ public sealed class UserAuthServiceTests
         Assert.Null(saved.PreferredLanguage);
     }
 
+    /// <summary>
+    /// Verifies that when a user has already chosen an explicit preferred language, a differing
+    /// browser language hint sent during login does not overwrite that explicit choice - a user's
+    /// deliberate language setting must take precedence over incidental browser locale data.
+    /// </summary>
     [Fact]
     public async Task LoginAsync_ShouldNotOverwritePreferredLanguage_WhenExplicitLanguageIsSet()
     {

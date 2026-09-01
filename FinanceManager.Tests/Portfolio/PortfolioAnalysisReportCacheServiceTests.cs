@@ -18,6 +18,11 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
     private readonly Mock<IPortfolioAnalysisReportService> _serviceMock = new();
     private readonly PortfolioAnalysisReportCacheService _sut;
 
+    /// <summary>
+    /// Sets up an in-memory database and a mocked <see cref="IPortfolioAnalysisReportService"/> so
+    /// each test can control exactly when the underlying report is (re)computed and observe how
+    /// often that computation actually happens.
+    /// </summary>
     public PortfolioAnalysisReportCacheServiceTests()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -27,6 +32,7 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
         _sut = new PortfolioAnalysisReportCacheService(_db, _serviceMock.Object);
     }
 
+    /// <summary>Releases the in-memory <see cref="AppDbContext"/> used by each test.</summary>
     public void Dispose() => _db.Dispose();
 
     private static PortfolioAnalysisReportDto CreateReport(decimal marketValue, DateTime generatedUtc, DateTime validUntilUtc)
@@ -38,6 +44,11 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
             generatedUtc,
             validUntilUtc);
 
+    /// <summary>
+    /// Verifies that a second request within the same cache validity window returns the previously
+    /// computed report and does not call the underlying report service again, confirming the cache
+    /// actually avoids recomputation rather than just storing data unused.
+    /// </summary>
     [Fact]
     public async Task CacheHit_WithinMonth_ReturnsCachedData()
     {
@@ -55,6 +66,11 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
         _serviceMock.Verify(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that a cache entry whose validity ended with the previous month is treated as
+    /// expired: the service recomputes the report and returns the fresh values rather than the
+    /// stale cached ones - the cache's month-boundary expiry policy actually kicks in.
+    /// </summary>
     [Fact]
     public async Task CacheMiss_EndOfMonth_RecalculatesReport()
     {
@@ -82,6 +98,13 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
         _serviceMock.Verify(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Regression guard for a cache entry that was serialized before <c>PortfolioStructureDto</c>
+    /// gained the <c>AllPositions</c>/<c>InvestedCapitalBreakdown</c> properties: deserializing that
+    /// older JSON directly would produce null for those now-non-nullable record members. Verifies
+    /// the cache service instead recomputes the report rather than returning a partially-null DTO
+    /// that would blow up downstream.
+    /// </summary>
     [Fact]
     public async Task CacheHit_EntryFromOlderDtoSchema_TreatedAsMissAndRecalculated()
     {
@@ -112,6 +135,11 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
         _serviceMock.Verify(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that explicitly invalidating the cache deletes the stored entry and forces the next
+    /// request to recompute the report - the mechanism relied on after data changes (e.g. a posting
+    /// update) that would otherwise make the cached figures stale until month-end.
+    /// </summary>
     [Fact]
     public async Task InvalidateCache_AfterPostingUpdate_DeletesCacheEntry()
     {

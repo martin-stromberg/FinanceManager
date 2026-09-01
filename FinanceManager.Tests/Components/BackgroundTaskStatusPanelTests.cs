@@ -10,8 +10,20 @@ using Moq;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Tests for <see cref="BackgroundTaskStatusPanel"/>: it must only poll for active background
+/// tasks while the current user is actually authenticated (via either the server-side
+/// <see cref="ICurrentUserService"/> or the client-side circuit auth fallback), keep polling
+/// through transient request failures, and stop polling once the API starts returning
+/// Unauthorized - so a signed-out session doesn't keep hammering a protected endpoint.
+/// </summary>
 public sealed class BackgroundTaskStatusPanelTests : BunitContext
 {
+    /// <summary>
+    /// Verifies that when neither the server-side auth service nor the client-side circuit auth
+    /// fallback report the user as authenticated, the panel never calls the active-tasks endpoint
+    /// at all, avoiding an unauthenticated request that would just fail.
+    /// </summary>
     [Fact]
     public void DoesNotLoadTasks_WhenUserIsNotAuthenticated()
     {
@@ -23,6 +35,12 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
         apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that even when <see cref="ICurrentUserService"/> reports the user as not
+    /// authenticated, the panel still loads and renders tasks if the client-side circuit auth
+    /// fallback ("fmAuthIsAuthenticated" JS check) says the user is authenticated - covering the
+    /// case where server-side auth state hasn't caught up yet after a Blazor Server reconnect.
+    /// </summary>
     [Fact]
     public void LoadsTasks_WhenCircuitAuthFallbackIsAuthenticated()
     {
@@ -40,6 +58,10 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies the straightforward happy path: an authenticated user causes the panel to call the
+    /// active-tasks endpoint and render the panel container once tasks are returned.
+    /// </summary>
     [Fact]
     public void LoadsAndRendersTasks_WhenUserIsAuthenticated()
     {
@@ -57,6 +79,12 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that once the active-tasks request fails with an HTTP 401 Unauthorized, the panel
+    /// stops scheduling further poll requests entirely (verified by waiting past several poll
+    /// intervals and confirming the call count stays at one) - a session that has been signed out
+    /// server-side must not keep retrying a call it can never succeed at.
+    /// </summary>
     [Fact]
     public void StopsPolling_WhenActiveTasksRequestReturnsUnauthorized()
     {
@@ -75,6 +103,12 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
         apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that a non-401 failure (e.g. a transient network error) on one poll does not stop
+    /// the polling loop: the panel retries on the next interval and successfully renders once the
+    /// call starts succeeding again - distinguishing a temporary glitch from the "give up" signal
+    /// covered by <see cref="StopsPolling_WhenActiveTasksRequestReturnsUnauthorized"/>.
+    /// </summary>
     [Fact]
     public void KeepsPolling_WhenActiveTasksRequestFailsTransiently()
     {

@@ -21,6 +21,11 @@ public class RibbonTests : Bunit.BunitContext
     /// <summary>Placeholder tab-id type, needed only to satisfy the generic <see cref="Ribbon{TTabId}"/> type parameter; its values are never used by the tests.</summary>
     private enum TabId { One, Two }
 
+    /// <summary>
+    /// Registers the loading-bar service and stubs the loading-bar JS interop calls that
+    /// <see cref="Ribbon{TTabId}"/> invokes during render, so tests don't fail on unconfigured
+    /// JSInterop calls unrelated to what each test actually verifies.
+    /// </summary>
     public RibbonTests()
     {
         Services.AddScoped<LoadingBarService>();
@@ -508,6 +513,8 @@ public class RibbonTests : Bunit.BunitContext
     /// the given registers, and a no-op localizer. Used by the mobile-shortcut tests to avoid repeating
     /// the provider/localizer wiring for every scenario.
     /// </summary>
+    /// <param name="registers">The ribbon registers the mocked provider should return.</param>
+    /// <returns>The rendered <see cref="Ribbon{TabId}"/> component under test.</returns>
     private IRenderedComponent<Ribbon<TabId>> RenderRibbon(List<UiRibbonRegister> registers)
     {
         var provMock = new Mock<IRibbonProvider>();
@@ -524,6 +531,8 @@ public class RibbonTests : Bunit.BunitContext
     /// which is the minimal register/tab structure the <see cref="Ribbon{TabId}"/> component needs to
     /// render a mobile group panel.
     /// </summary>
+    /// <param name="actions">The actions to place in the single generated tab.</param>
+    /// <returns>A single-element register list wrapping <paramref name="actions"/> in one tab.</returns>
     private static List<UiRibbonRegister> CreateRegisters(List<UiRibbonAction> actions) =>
         new()
         {

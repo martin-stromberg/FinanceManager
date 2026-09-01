@@ -14,6 +14,10 @@ using Moq;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Tests for the <see cref="SetupSections"/> component and its interaction with the setup ribbon,
+/// covering the "backup" section's upload-backup workflow.
+/// </summary>
 public sealed class SetupSectionsTests : BunitContext
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -24,6 +28,12 @@ public sealed class SetupSectionsTests : BunitContext
         public bool IsAdmin { get; set; }
     }
 
+    /// <summary>
+    /// Verifies that clicking the "UploadBackup" ribbon button raises the backup section
+    /// view-model's <c>UploadRequested</c> event, confirming the ribbon action set up for the
+    /// backup section is actually wired through to the view-model that owns the upload workflow,
+    /// rather than the button being present but disconnected.
+    /// </summary>
     [Fact]
     public async Task UploadBackup_RaisesUploadRequested_AfterSectionExpand()
     {

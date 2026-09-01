@@ -18,8 +18,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Components
 {
+    /// <summary>
+    /// Tests for the generic <see cref="FinanceManager.Web.Components.Pages.CardPage"/>, exercised
+    /// through its "contacts" kind: editing a field and saving forwards the change to the update
+    /// API and reflects it back in the input, opening the Attachments ribbon action renders the
+    /// attachments overlay, and a contact loaded with non-default values (category, description,
+    /// payment-intermediary flag, symbol image) is fully reflected in the rendered card fields.
+    /// </summary>
     public sealed class CardPageTests : BunitContext
     {
+        /// <summary>
+        /// Fixes the thread culture to en-US (so formatted values are deterministic across machines)
+        /// and stubs the loading-bar JS interop calls the card page invokes during render.
+        /// </summary>
         public CardPageTests()
         {
             CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
@@ -30,6 +41,12 @@ namespace FinanceManager.Tests.Components
             JSInterop.SetupVoid("financeManager.loadingBar.stop").SetVoidResult();
         }
 
+        /// <summary>
+        /// Verifies the core edit-and-save flow: typing into the Name input and clicking the ribbon
+        /// Save button calls <c>Contacts_UpdateAsync</c> with the edited value and the input reflects
+        /// the saved name afterward - confirming the card's two-way binding actually reaches the API
+        /// rather than only updating local view-model state.
+        /// </summary>
         [Fact]
         public async Task ContactCard_EditFields_And_Save_CallsApiUpdate()
         {
@@ -80,6 +97,11 @@ namespace FinanceManager.Tests.Components
             Assert.Equal("New Name", updatedDto!.Name);
         }
 
+        /// <summary>
+        /// Verifies that clicking the ribbon's Attachments button opens the attachments overlay
+        /// (indicated by the presence of the drag-and-drop upload area), confirming the ribbon action
+        /// is wired to actually toggle the attachments panel rather than being a dead button.
+        /// </summary>
         [Fact]
         public async Task ContactCard_OpenAttachments_RendersAttachmentsPanelOverlay()
         {
@@ -115,6 +137,12 @@ namespace FinanceManager.Tests.Components
             cut.WaitForAssertion(() => Assert.True(cut.FindAll(".drop-upload").Count > 0));
         }
 
+        /// <summary>
+        /// Verifies that a contact loaded with a full set of non-default values - name, category,
+        /// description, the "payment intermediary" flag, and a symbol image - is rendered completely
+        /// and in the expected field order, including resolving the category id to its display name
+        /// and rendering the symbol as an image pointing at the attachment download endpoint.
+        /// </summary>
         [Fact]
         public async Task ContactCard_DisplaysAllFields_WhenContactHasNonDefaultValues()
         {

@@ -8,6 +8,12 @@ using Xunit;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Tests for the <see cref="NumericKpi"/> component's local-storage caching behavior: a stale
+/// cached value should be shown immediately while the fresh value loads in the background (so the
+/// KPI never shows a blank/loading state when a cached number is available), and caching can be
+/// disabled entirely, in which case only the freshly loaded value is ever displayed.
+/// </summary>
 public sealed class NumericKpiCacheTests : BunitContext
 {
     private sealed class FakeJSRuntime : IJSRuntime
@@ -61,6 +67,11 @@ public sealed class NumericKpiCacheTests : BunitContext
         }
     }
 
+    /// <summary>
+    /// Verifies that with a value already present in local-storage cache, the component first
+    /// renders that cached value (42) immediately, then updates to the freshly loaded value (99)
+    /// once the async load completes - the stale-while-revalidate pattern this cache implements.
+    /// </summary>
     [Fact]
     public void Renders_CachedValue_Before_Loading_FreshValue()
     {
@@ -84,6 +95,10 @@ public sealed class NumericKpiCacheTests : BunitContext
         cut.WaitForAssertion(() => cut.Markup.Contains("99"), timeout: TimeSpan.FromSeconds(5));
     }
 
+    /// <summary>
+    /// Verifies that when the local-storage cache context reports caching as disabled, the
+    /// component simply renders the freshly loaded value with no cached value ever shown first.
+    /// </summary>
     [Fact]
     public void Renders_LoadedValue_WhenCacheDisabled()
     {

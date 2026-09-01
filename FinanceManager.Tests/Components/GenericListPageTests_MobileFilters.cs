@@ -6,8 +6,19 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Tests for <see cref="GenericListPage{T}"/> covering its filter bar (search input and date-range
+/// filter, rendered only when the provider opts in) and its mobile-specific row rendering, which
+/// lets a provider supply specialized compact card layouts instead of falling back to the generic
+/// mobile card presentation.
+/// </summary>
 public sealed class GenericListPageTests_MobileFilters : BunitContext
 {
+    /// <summary>
+    /// Verifies that with a provider allowing both search and range filtering, the list renders a
+    /// search input and a date-range filter with exactly two date inputs and their two labels -
+    /// the filter bar's markup actually reflects what the provider says it supports.
+    /// </summary>
     [Fact]
     public void Filters_RenderResponsiveSearchAndRangeClasses()
     {
@@ -31,6 +42,12 @@ public sealed class GenericListPageTests_MobileFilters : BunitContext
         Assert.Equal(2, cut.FindAll(".list-filter-range .list-filter-range-label").Count);
     }
 
+    /// <summary>
+    /// Verifies that when a record's <c>MobileRows</c> supplies a specialized two-column layout
+    /// (as used for statement-draft date/amount rows), the mobile card renders that layout - with
+    /// its muted styling and column labels - instead of the generic column-by-column mobile card,
+    /// confirming providers can override the default mobile presentation per record.
+    /// </summary>
     [Fact]
     public void MobileCards_RenderSpecializedRows_WhenProvided()
     {
