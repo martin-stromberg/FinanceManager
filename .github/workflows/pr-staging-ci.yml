@@ -94,11 +94,11 @@ jobs:
 
       - name: Static analysis
         # Gate 3. WarningsNotAsErrors excludes pre-existing xUnit-analyzer/test-style warnings
-        # (confirmed via a real CI run on this branch: 1287x xUnit1051, plus xUnit2000/2009/
-        # 2012/2013/2029/2031, xUnit1031, NU1510, BL0005 - all confined to the test projects)
-        # that predate this migration and are out of safe scope to bulk-fix here. Anything
-        # else still fails the build.
-        run: dotnet build FinanceManager.sln -c Debug --no-restore "-p:TreatWarningsAsErrors=true" "-p:WarningsNotAsErrors=xUnit1051%3BxUnit2000%3BxUnit2009%3BxUnit2012%3BxUnit2013%3BxUnit2029%3BxUnit2031%3BxUnit1031%3BNU1510%3BBL0005"
+        # (confirmed via a real CI run on this branch: xUnit2000/2009/2012/2013/2029/2031,
+        # xUnit1031, NU1510, BL0005 - all confined to the test projects) that predate this
+        # migration and are out of safe scope to bulk-fix here. xUnit1051 (1287 occurrences)
+        # has been fixed and removed from this list. Anything else still fails the build.
+        run: dotnet build FinanceManager.sln -c Debug --no-restore "-p:TreatWarningsAsErrors=true" "-p:WarningsNotAsErrors=xUnit2000%3BxUnit2009%3BxUnit2012%3BxUnit2013%3BxUnit2029%3BxUnit2031%3BxUnit1031%3BNU1510%3BBL0005"
         shell: pwsh
 
   build-and-test:

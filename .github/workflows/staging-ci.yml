@@ -90,7 +90,7 @@ jobs:
       - name: Static analysis
         # Gate 3. See pr-staging-ci.yml's identical step for why these pre-existing
         # test-project warnings are excluded from TreatWarningsAsErrors.
-        run: dotnet build FinanceManager.sln -c Debug --no-restore "-p:TreatWarningsAsErrors=true" "-p:WarningsNotAsErrors=xUnit1051%3BxUnit2000%3BxUnit2009%3BxUnit2012%3BxUnit2013%3BxUnit2029%3BxUnit2031%3BxUnit1031%3BNU1510%3BBL0005"
+        run: dotnet build FinanceManager.sln -c Debug --no-restore "-p:TreatWarningsAsErrors=true" "-p:WarningsNotAsErrors=xUnit2000%3BxUnit2009%3BxUnit2012%3BxUnit2013%3BxUnit2029%3BxUnit2031%3BxUnit1031%3BNU1510%3BBL0005"
         shell: pwsh
 
   build-and-test:
