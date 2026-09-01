@@ -87,7 +87,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        await cache.SetAsync("my-key", 42);
+        await cache.SetAsync("my-key", 42, TestContext.Current.CancellationToken);
 
         Assert.Single(js.Store);
         Assert.True(js.Store.ContainsKey("fm.kpi.my-key"));
@@ -102,7 +102,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        var result = await cache.GetAsync<int?>("missing");
+        var result = await cache.GetAsync<int?>("missing", TestContext.Current.CancellationToken);
 
         Assert.Null(result);
     }
@@ -115,7 +115,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        var result = await cache.GetAsync<int>("my-key");
+        var result = await cache.GetAsync<int>("my-key", TestContext.Current.CancellationToken);
 
         Assert.Equal(42, result);
     }
@@ -127,7 +127,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(false, null));
 
-        await cache.SetAsync("my-key", 42);
+        await cache.SetAsync("my-key", 42, TestContext.Current.CancellationToken);
 
         Assert.Empty(js.Store);
     }
@@ -142,7 +142,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        await cache.RemoveAllAsync();
+        await cache.RemoveAllAsync(TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain("fm.kpi.my-key", js.Store.Keys);
         Assert.DoesNotContain("fm.kpi.other-key", js.Store.Keys);
@@ -158,7 +158,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, "user-a"));
 
-        await cache.RemoveAllAsync();
+        await cache.RemoveAllAsync(TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain("fm.kpi.user-a.my-key", js.Store.Keys);
         Assert.Contains("fm.kpi.user-b.my-key", js.Store.Keys);
@@ -172,7 +172,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, "the-user"));
 
-        var result = await cache.GetAsync<int>("test");
+        var result = await cache.GetAsync<int>("test", TestContext.Current.CancellationToken);
 
         Assert.Equal(99, result);
     }
@@ -185,7 +185,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        var result = await cache.GetAsync<int?>("my-key");
+        var result = await cache.GetAsync<int?>("my-key", TestContext.Current.CancellationToken);
 
         Assert.Null(result);
     }

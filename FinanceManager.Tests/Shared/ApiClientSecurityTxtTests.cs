@@ -27,7 +27,7 @@ public sealed class ApiClientSecurityTxtTests
             };
         });
 
-        var result = await api.GetSecurityTxtSettingsAsync();
+        var result = await api.GetSecurityTxtSettingsAsync(TestContext.Current.CancellationToken);
 
         result.Should().BeEquivalentTo(expected);
         capturedRequest.Should().NotBeNull();
@@ -46,7 +46,7 @@ public sealed class ApiClientSecurityTxtTests
         });
         var request = SecurityTxtSettingsTestData.ValidRequest();
 
-        await api.UpdateSecurityTxtSettingsAsync(request);
+        await api.UpdateSecurityTxtSettingsAsync(request, TestContext.Current.CancellationToken);
 
         capturedRequest.Should().NotBeNull();
         capturedRequest!.Method.Should().Be(HttpMethod.Put);

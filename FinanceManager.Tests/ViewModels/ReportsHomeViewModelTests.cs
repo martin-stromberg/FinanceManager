@@ -52,7 +52,7 @@ public sealed class ReportsHomeViewModelTests
         apiMock.Setup(a => a.Reports_ListFavoritesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(favorites);
 
-        await vm.InitializeAsync();
+        await vm.InitializeAsync(TestContext.Current.CancellationToken);
 
         Assert.False(vm.Loading);
         Assert.Equal(3, vm.Favorites.Count);
@@ -69,8 +69,8 @@ public sealed class ReportsHomeViewModelTests
         apiMock.Setup(a => a.Reports_ListFavoritesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Error"));
 
-        await vm.InitializeAsync();
-        await vm.ReloadAsync();
+        await vm.InitializeAsync(TestContext.Current.CancellationToken);
+        await vm.ReloadAsync(TestContext.Current.CancellationToken);
 
         Assert.False(vm.Loading);
     }

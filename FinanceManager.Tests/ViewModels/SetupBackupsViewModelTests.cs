@@ -58,7 +58,7 @@ public sealed class SetupBackupsViewModelTests
         });
 
         var vm = new SetupBackupsViewModel(CreateSp(api));
-        await vm.LoadBackupsAsync();
+        await vm.LoadBackupsAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(vm.Backups);
         Assert.Single(vm.Backups);
@@ -87,13 +87,13 @@ public sealed class SetupBackupsViewModelTests
         });
 
         var vm = new SetupBackupsViewModel(CreateSp(api));
-        await vm.LoadBackupsAsync();
+        await vm.LoadBackupsAsync(TestContext.Current.CancellationToken);
 
-        await vm.CreateAsync();
+        await vm.CreateAsync(TestContext.Current.CancellationToken);
         Assert.Single(vm.Backups!);
         Assert.Equal("b2.zip", vm.Backups![0].FileName);
 
-        await vm.DeleteAsync(created.Id);
+        await vm.DeleteAsync(created.Id, TestContext.Current.CancellationToken);
         Assert.Empty(vm.Backups!);
     }
 
@@ -118,9 +118,9 @@ public sealed class SetupBackupsViewModelTests
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
         var vm = new SetupBackupsViewModel(CreateSp(api));
-        await vm.LoadBackupsAsync();
+        await vm.LoadBackupsAsync(TestContext.Current.CancellationToken);
 
-        await vm.StartApplyAsync(id, fileName, fileName);
+        await vm.StartApplyAsync(id, fileName, fileName, TestContext.Current.CancellationToken);
         Assert.True(vm.HasActiveRestore);
         Assert.Contains(fileName, requestBody);
     }

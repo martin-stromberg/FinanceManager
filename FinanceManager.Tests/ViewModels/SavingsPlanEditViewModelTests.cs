@@ -111,7 +111,7 @@ public sealed class SavingsPlanEditViewModelTests
         apiMock.Setup(a => a.SavingsPlans_UpdateAsync(id, It.Is<SavingsPlanCreateRequest>(r => r.Name == "Updated"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SavingsPlanDto(id, "Updated", SavingsPlanType.OneTime, 100m, DateTime.UtcNow.Date.AddMonths(6), null, true, DateTime.UtcNow, null, null, null));
 
-        var ok = await vm.SaveAsync();
+        var ok = await vm.SaveAsync(TestContext.Current.CancellationToken);
         Assert.True(ok);
         Assert.Null(vm.Error);
     }
@@ -128,7 +128,7 @@ public sealed class SavingsPlanEditViewModelTests
         apiMock.Setup(a => a.SavingsPlans_CreateAsync(It.IsAny<SavingsPlanCreateRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SavingsPlanDto(createdId, "Created", SavingsPlanType.OneTime, null, null, null, true, DateTime.UtcNow, null, null, null));
 
-        var ok = await vm.SaveAsync();
+        var ok = await vm.SaveAsync(TestContext.Current.CancellationToken);
         Assert.True(ok);
     }
 

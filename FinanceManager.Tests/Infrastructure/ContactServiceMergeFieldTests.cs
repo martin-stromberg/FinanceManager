@@ -32,18 +32,18 @@ public sealed class ContactServiceMergeFieldTests
         var srcCatEntity = new ContactCategory(owner, "SrcCat");
         var tgtCatEntity = new ContactCategory(owner, "TgtCat");
         db.ContactCategories.AddRange(srcCatEntity, tgtCatEntity);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "SourceName", ContactType.Person, srcCatEntity.Id, "SourceDesc", true);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "TargetName", ContactType.Person, tgtCatEntity.Id, "TargetDesc", true);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // set different symbol attachments
         var srcSym = Guid.NewGuid();
         var tgtSym = Guid.NewGuid();
         src.SetSymbolAttachment(srcSym);
         tgt.SetSymbolAttachment(tgtSym);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
         var res = await svc.MergeAsync(owner, src.Id, tgt.Id, CancellationToken.None, MergePreference.DestinationFirst);
@@ -64,11 +64,11 @@ public sealed class ContactServiceMergeFieldTests
 
         var srcCatEntity = new ContactCategory(owner, "SrcCat");
         db.ContactCategories.Add(srcCatEntity);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "SourceName", ContactType.Person, srcCatEntity.Id, "SourceDesc", true);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "TargetName", ContactType.Person, null, null, false);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
         var res = await svc.MergeAsync(owner, src.Id, tgt.Id, CancellationToken.None, MergePreference.DestinationFirst);
@@ -92,12 +92,12 @@ public sealed class ContactServiceMergeFieldTests
         var srcCatEntity = new ContactCategory(owner, "SrcCat");
         var tgtCatEntity = new ContactCategory(owner, "TgtCat");
         db.ContactCategories.AddRange(srcCatEntity, tgtCatEntity);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "SourceName", ContactType.Person, srcCatEntity.Id, "SourceDesc", false);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "TargetName", ContactType.Person, tgtCatEntity.Id, "TargetDesc", true);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
         var res = await svc.MergeAsync(owner, src.Id, tgt.Id, CancellationToken.None, MergePreference.SourceFirst);
@@ -120,13 +120,13 @@ public sealed class ContactServiceMergeFieldTests
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "S", ContactType.Person, null, null, false);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "T", ContactType.Person, null, null, false);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var srcSym = Guid.NewGuid();
         var tgtSym = Guid.NewGuid();
         src.SetSymbolAttachment(srcSym);
         tgt.SetSymbolAttachment(tgtSym);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
 
@@ -140,10 +140,10 @@ public sealed class ContactServiceMergeFieldTests
         var s2 = new FinanceManager.Domain.Contacts.Contact(owner2, "S2", ContactType.Person, null, null, false);
         var t2 = new FinanceManager.Domain.Contacts.Contact(owner2, "T2", ContactType.Person, null, null, false);
         db2.Contacts.AddRange(s2, t2);
-        await db2.SaveChangesAsync();
+        await db2.SaveChangesAsync(TestContext.Current.CancellationToken);
         s2.SetSymbolAttachment(srcSym);
         t2.SetSymbolAttachment(tgtSym);
-        await db2.SaveChangesAsync();
+        await db2.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc2 = new ContactService(db2);
         var res2 = await svc2.MergeAsync(owner2, s2.Id, t2.Id, CancellationToken.None, MergePreference.DestinationFirst);
         Assert.Equal(tgtSym, res2.SymbolAttachmentId);

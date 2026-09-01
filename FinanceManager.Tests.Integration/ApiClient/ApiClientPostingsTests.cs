@@ -33,7 +33,7 @@ public class ApiClientPostingsTests : IClassFixture<TestWebApplicationFactory>
     {
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
-        var links = await api.Postings_GetGroupLinksAsync(Guid.Empty);
+        var links = await api.Postings_GetGroupLinksAsync(Guid.Empty, TestContext.Current.CancellationToken);
         links.Should().BeNull();
     }
 
@@ -44,16 +44,16 @@ public class ApiClientPostingsTests : IClassFixture<TestWebApplicationFactory>
         await EnsureAuthenticatedAsync(api);
 
         // These will likely return empty due to no owned entities, but should succeed.
-        var accList = await api.Postings_GetAccountAsync(Guid.NewGuid());
+        var accList = await api.Postings_GetAccountAsync(Guid.NewGuid(), ct: TestContext.Current.CancellationToken);
         accList.Should().NotBeNull();
 
-        var conList = await api.Postings_GetContactAsync(Guid.NewGuid());
+        var conList = await api.Postings_GetContactAsync(Guid.NewGuid(), ct: TestContext.Current.CancellationToken);
         conList.Should().NotBeNull();
 
-        var spList = await api.Postings_GetSavingsPlanAsync(Guid.NewGuid());
+        var spList = await api.Postings_GetSavingsPlanAsync(Guid.NewGuid(), ct: TestContext.Current.CancellationToken);
         spList.Should().NotBeNull();
 
-        var secList = await api.Postings_GetSecurityAsync(Guid.NewGuid());
+        var secList = await api.Postings_GetSecurityAsync(Guid.NewGuid(), ct: TestContext.Current.CancellationToken);
         secList.Should().NotBeNull();
     }
 }

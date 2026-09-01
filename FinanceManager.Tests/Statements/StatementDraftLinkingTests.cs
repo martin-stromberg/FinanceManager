@@ -1,4 +1,4 @@
-﻿using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
@@ -45,7 +45,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // drafts
         var draftA = new StatementDraft(owner, "a.csv", "", null);
@@ -63,7 +63,7 @@ public sealed class StatementDraftLinkingTests
         entryA.MarkAccounted(selfContactId);
         entryB.MarkAccounted(selfContactId);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Book draft A then B
         var resA = await sut.BookAsync(draftA.Id, null, owner, forceWarnings: true, CancellationToken.None);
@@ -92,7 +92,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draftA = new StatementDraft(owner, "a.csv", "", null);
         var entryA = draftA.AddEntry(DateTime.UtcNow.Date, -90m, "Transfer");
@@ -108,7 +108,7 @@ public sealed class StatementDraftLinkingTests
         entryA.MarkAccounted(selfContactId);
         entryB.MarkAccounted(selfContactId);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var resA = await sut.BookAsync(draftA.Id, null, owner, forceWarnings: true, CancellationToken.None);
         Assert.True(resA.Success);
@@ -131,7 +131,7 @@ public sealed class StatementDraftLinkingTests
 
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         db.Accounts.Add(giro);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draftA = new StatementDraft(owner, "a.csv", "", null);
         var entryA = draftA.AddEntry(DateTime.UtcNow.Date, -100m, "Xfer");
@@ -147,7 +147,7 @@ public sealed class StatementDraftLinkingTests
         entryA.MarkAccounted(selfContactId);
         entryB.MarkAccounted(selfContactId);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var resA = await sut.BookAsync(draftA.Id, null, owner, forceWarnings: true, CancellationToken.None);
         Assert.True(resA.Success);
@@ -171,7 +171,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // create a savings plan
         var plan = new FinanceManager.Domain.Savings.SavingsPlan(owner, "Plan", SavingsPlanType.Recurring, 1000m, DateTime.UtcNow.AddMonths(1), SavingsPlanInterval.Monthly);
@@ -193,7 +193,7 @@ public sealed class StatementDraftLinkingTests
         entryA.MarkAccounted(selfContactId);
         eB.MarkAccounted(selfContactId);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var resA = await sut.BookAsync(draftA.Id, null, owner, forceWarnings: true, CancellationToken.None);
         Assert.True(resA.Success);
@@ -220,7 +220,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
 
@@ -244,7 +244,7 @@ public sealed class StatementDraftLinkingTests
             eS.MarkAccounted(selfContactId);
             db.StatementDrafts.Add(draftS);
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var resG = await sut.BookAsync(draftG.Id, null, owner, forceWarnings: true, CancellationToken.None);
             Assert.True(resG.Success);
@@ -276,7 +276,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
 
@@ -301,7 +301,7 @@ public sealed class StatementDraftLinkingTests
         entryDecSavings.MarkAccounted(selfContactId);
         db.StatementDrafts.Add(draftDecSavings);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Book Giro December
         var res1 = await sut.BookAsync(draftDecGiro.Id, null, owner, forceWarnings: true, CancellationToken.None);
@@ -340,7 +340,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
 
@@ -365,7 +365,7 @@ public sealed class StatementDraftLinkingTests
         entryDecSavings.MarkAccounted(selfContactId);
         db.StatementDrafts.Add(draftDecSavings);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Book Giro December
         var res1 = await sut.BookAsync(draftDecGiro.Id, null, owner, forceWarnings: true, CancellationToken.None);
@@ -404,7 +404,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
 
@@ -421,7 +421,7 @@ public sealed class StatementDraftLinkingTests
             draftG.SetDetectedAccount(giro.Id);
             eG.MarkAccounted(selfContactId);
             db.StatementDrafts.Add(draftG);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var resG = await sut.BookAsync(draftG.Id, null, owner, forceWarnings: true, CancellationToken.None);
             Assert.True(resG.Success);
@@ -441,7 +441,7 @@ public sealed class StatementDraftLinkingTests
         }
         savingsDraft.SetDetectedAccount(savings.Id);
         db.StatementDrafts.Add(savingsDraft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var resSAll = await sut.BookAsync(savingsDraft.Id, null, owner, forceWarnings: true, CancellationToken.None);
         Assert.True(resSAll.Success);
@@ -476,7 +476,7 @@ public sealed class StatementDraftLinkingTests
         var giro = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         var savings = new Account(owner, AccountType.Savings, "Spark", null, Guid.NewGuid());
         db.Accounts.AddRange(giro, savings);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
 
@@ -495,7 +495,7 @@ public sealed class StatementDraftLinkingTests
             eG1.MarkAccounted(selfContactId);
             eG2.MarkAccounted(selfContactId);
             db.StatementDrafts.Add(draftG);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var resG = await sut.BookAsync(draftG.Id, null, owner, forceWarnings: true, CancellationToken.None);
             Assert.True(resG.Success);
@@ -519,7 +519,7 @@ public sealed class StatementDraftLinkingTests
         }
         savingsDraft.SetDetectedAccount(savings.Id);
         db.StatementDrafts.Add(savingsDraft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var resSAll = await sut.BookAsync(savingsDraft.Id, null, owner, forceWarnings: true, CancellationToken.None);
         Assert.True(resSAll.Success);

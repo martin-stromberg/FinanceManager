@@ -35,30 +35,30 @@ public class ApiClientHomeKpisTests : IClassFixture<TestWebApplicationFactory>
         await EnsureAuthenticatedAsync(api);
 
         // list initially empty
-        var list = await api.HomeKpis_ListAsync();
+        var list = await api.HomeKpis_ListAsync(TestContext.Current.CancellationToken);
         list.Should().NotBeNull();
         list.Should().BeEmpty();
 
         // create predefined
-        var created = await api.HomeKpis_CreateAsync(new HomeKpiCreateRequest(HomeKpiKind.Predefined, null, HomeKpiPredefined.AccountsAggregates, null, HomeKpiDisplayMode.TotalOnly, 0));
+        var created = await api.HomeKpis_CreateAsync(new HomeKpiCreateRequest(HomeKpiKind.Predefined, null, HomeKpiPredefined.AccountsAggregates, null, HomeKpiDisplayMode.TotalOnly, 0), TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
         created.Kind.Should().Be(HomeKpiKind.Predefined);
 
         // get by id
-        var got = await api.HomeKpis_GetAsync(created.Id);
+        var got = await api.HomeKpis_GetAsync(created.Id, TestContext.Current.CancellationToken);
         got.Should().NotBeNull();
         got!.Id.Should().Be(created.Id);
 
         // update sort (title optional may remain null)
-        var updated = await api.HomeKpis_UpdateAsync(created.Id, new HomeKpiUpdateRequest(created.Kind, created.ReportFavoriteId, created.PredefinedType, "New Title", created.DisplayMode, 1));
+        var updated = await api.HomeKpis_UpdateAsync(created.Id, new HomeKpiUpdateRequest(created.Kind, created.ReportFavoriteId, created.PredefinedType, "New Title", created.DisplayMode, 1), TestContext.Current.CancellationToken);
         updated.Should().NotBeNull();
         updated!.Title.Should().Be("New Title");
         updated!.SortOrder.Should().Be(1);
 
         // delete
-        var delOk = await api.HomeKpis_DeleteAsync(created.Id);
+        var delOk = await api.HomeKpis_DeleteAsync(created.Id, TestContext.Current.CancellationToken);
         delOk.Should().BeTrue();
-        var gone = await api.HomeKpis_GetAsync(created.Id);
+        var gone = await api.HomeKpis_GetAsync(created.Id, TestContext.Current.CancellationToken);
         gone.Should().BeNull();
     }
 }

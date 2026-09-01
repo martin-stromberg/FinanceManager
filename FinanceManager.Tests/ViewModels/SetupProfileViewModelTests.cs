@@ -35,7 +35,7 @@ public sealed class SetupProfileViewModelTests
         apiMock.Setup(a => a.UserSettings_GetProfileAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dto);
 
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.False(vm.Loading);
         Assert.Equal("de", vm.Model.PreferredLanguage);
@@ -53,7 +53,7 @@ public sealed class SetupProfileViewModelTests
         apiMock.Setup(a => a.UserSettings_UpdateProfileAsync(It.IsAny<UserProfileSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.Model.PreferredLanguage = "en";
         vm.KeyInput = "abc";
@@ -61,7 +61,7 @@ public sealed class SetupProfileViewModelTests
         vm.OnChanged();
         Assert.True(vm.Dirty);
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
         apiMock.Verify(a => a.UserSettings_UpdateProfileAsync(It.IsAny<UserProfileSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
         Assert.True(vm.SavedOk);
         Assert.False(vm.Dirty);
@@ -77,12 +77,12 @@ public sealed class SetupProfileViewModelTests
         apiMock.Setup(a => a.UserSettings_UpdateProfileAsync(It.IsAny<UserProfileSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.ClearKey();
         Assert.True(vm.Dirty);
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
         apiMock.Verify(a => a.UserSettings_UpdateProfileAsync(
             It.Is<UserProfileSettingsUpdateRequest>(r => r.ClearAlphaVantageApiKey == true),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -119,12 +119,12 @@ public sealed class SetupProfileViewModelTests
 
         var kpiCacheMock = new Mock<IKpiLocalStorageCache>();
         var vm = new SetupProfileViewModel(CreateSp(apiMock.Object, kpiCacheMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.Model.CacheKpisInLocalStorage = false;
         vm.OnChanged();
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         Assert.True(vm.SavedOk);
         kpiCacheMock.Verify(k => k.RemoveAllAsync(It.IsAny<CancellationToken>()), Times.Once);

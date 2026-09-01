@@ -29,8 +29,8 @@ public sealed class BudgetImpactEvaluationServiceTests
             .Options;
 
         await using var db = new AppDbContext(options);
-        await db.Database.OpenConnectionAsync();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var user = new User("impact-user", "hash");
         TestEntityHelper.SetEntityId(user, ownerId);
@@ -50,7 +50,7 @@ public sealed class BudgetImpactEvaluationServiceTests
         db.StatementDrafts.Add(draft);
 
         db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Contact, null, contactId, null, null, new DateTime(2026, 5, 5), 80m));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var planningRepo = new BudgetPlanningRepository(db);
         var planning = new BudgetPlanningService(NullLogger<BudgetPlanningService>.Instance, planningRepo);
@@ -76,8 +76,8 @@ public sealed class BudgetImpactEvaluationServiceTests
             .Options;
 
         await using var db = new AppDbContext(options);
-        await db.Database.OpenConnectionAsync();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var user = new User("impact-user-2", "hash");
         TestEntityHelper.SetEntityId(user, ownerId);
@@ -86,7 +86,7 @@ public sealed class BudgetImpactEvaluationServiceTests
         var draft = new StatementDraft(ownerId, "draft.csv", null, null);
         draft.AddEntry(new DateTime(2026, 6, 2), 55m, "Unassigned booking");
         db.StatementDrafts.Add(draft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var planningRepo = new BudgetPlanningRepository(db);
         var planning = new BudgetPlanningService(NullLogger<BudgetPlanningService>.Instance, planningRepo);
@@ -113,8 +113,8 @@ public sealed class BudgetImpactEvaluationServiceTests
             .Options;
 
         await using var db = new AppDbContext(options);
-        await db.Database.OpenConnectionAsync();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var user = new User("impact-user-regex", "hash");
         TestEntityHelper.SetEntityId(user, ownerId);
@@ -133,7 +133,7 @@ public sealed class BudgetImpactEvaluationServiceTests
         entry.MarkAccounted(contactId);
         db.StatementDrafts.Add(draft);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var planningRepo = new BudgetPlanningRepository(db);
         var planning = new BudgetPlanningService(NullLogger<BudgetPlanningService>.Instance, planningRepo);
@@ -159,8 +159,8 @@ public sealed class BudgetImpactEvaluationServiceTests
             .Options;
 
         await using var db = new AppDbContext(options);
-        await db.Database.OpenConnectionAsync();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var user = new User("impact-user-empty", "hash");
         TestEntityHelper.SetEntityId(user, ownerId);
@@ -179,7 +179,7 @@ public sealed class BudgetImpactEvaluationServiceTests
         entry.MarkAccounted(contactId);
         db.StatementDrafts.Add(draft);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var planningRepo = new BudgetPlanningRepository(db);
         var planning = new BudgetPlanningService(NullLogger<BudgetPlanningService>.Instance, planningRepo);
@@ -206,8 +206,8 @@ public sealed class BudgetImpactEvaluationServiceTests
             .Options;
 
         await using var db = new AppDbContext(options);
-        await db.Database.OpenConnectionAsync();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.OpenConnectionAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var user = new User("impact-user-timeout", "hash");
         TestEntityHelper.SetEntityId(user, ownerId);
@@ -226,7 +226,7 @@ public sealed class BudgetImpactEvaluationServiceTests
         entry.MarkAccounted(contactId);
         db.StatementDrafts.Add(draft);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var planningRepo = new BudgetPlanningRepository(db);
         var planning = new BudgetPlanningService(NullLogger<BudgetPlanningService>.Instance, planningRepo);

@@ -35,37 +35,37 @@ public class ApiClientSecurityCategoriesTests : IClassFixture<TestWebApplication
         await EnsureAuthenticatedAsync(api);
 
         // initial list
-        var list = await api.SecurityCategories_ListAsync();
+        var list = await api.SecurityCategories_ListAsync(TestContext.Current.CancellationToken);
         list.Should().NotBeNull();
         list.Should().BeEmpty();
 
         // create
-        var created = await api.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = "Tech" });
+        var created = await api.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = "Tech" }, TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
         created.Name.Should().Be("Tech");
 
         // get by id
-        var got = await api.SecurityCategories_GetAsync(created.Id);
+        var got = await api.SecurityCategories_GetAsync(created.Id, TestContext.Current.CancellationToken);
         got.Should().NotBeNull();
         got!.Id.Should().Be(created.Id);
         got!.Name.Should().Be("Tech");
 
         // update name
-        var updated = await api.SecurityCategories_UpdateAsync(created.Id, new SecurityCategoryRequest { Name = "Technology" });
+        var updated = await api.SecurityCategories_UpdateAsync(created.Id, new SecurityCategoryRequest { Name = "Technology" }, TestContext.Current.CancellationToken);
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Technology");
 
         // set symbol with non-existent attachment -> should be false (NotFound)
-        var setOk = await api.SecurityCategories_SetSymbolAsync(created.Id, Guid.NewGuid());
+        var setOk = await api.SecurityCategories_SetSymbolAsync(created.Id, Guid.NewGuid(), TestContext.Current.CancellationToken);
         setOk.Should().BeFalse();
         // clear symbol -> should be true even if none set
-        var clearOk = await api.SecurityCategories_ClearSymbolAsync(created.Id);
+        var clearOk = await api.SecurityCategories_ClearSymbolAsync(created.Id, TestContext.Current.CancellationToken);
         clearOk.Should().BeTrue();
 
         // delete
-        var delOk = await api.SecurityCategories_DeleteAsync(created.Id);
+        var delOk = await api.SecurityCategories_DeleteAsync(created.Id, TestContext.Current.CancellationToken);
         delOk.Should().BeTrue();
-        var gone = await api.SecurityCategories_GetAsync(created.Id);
+        var gone = await api.SecurityCategories_GetAsync(created.Id, TestContext.Current.CancellationToken);
         gone.Should().BeNull();
     }
 }

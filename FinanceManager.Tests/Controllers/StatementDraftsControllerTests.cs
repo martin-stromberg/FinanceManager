@@ -1,4 +1,4 @@
-﻿using FinanceManager.Application;
+using FinanceManager.Application;
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Application.Statements;
@@ -109,7 +109,7 @@ public sealed class StatementDraftsControllerTests
         var (controller, db, user) = Create();
         var account = new Account(user, AccountType.Giro, "A", null, Guid.NewGuid());
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var bytes = Encoding.UTF8.GetBytes($"{{\"Type\":\"Backup\",\"Version\":2}}\n{{ \"BankAccounts\": [{{ \"IBAN\": \"{account.Iban}\"}}], \"BankAccountLedgerEntries\": [], \"BankAccountJournalLines\": [{{\"Id\": 1,\"PostingDate\": \"2017-07-15T00:00:00\",\"ValutaDate\": \"2017-07-15T00:00:00\",\"PostingDescription\": \"Lastschrift\",\"SourceName\": \"GEZ\",\"Description\": \"GEZ Gebuehr\",\"CurrencyCode\": \"EUR\",\"Amount\": -97.95,\"CreatedAt\": \"2017-07-16T12:33:42.000041\"}}] }}");
         var formFile = new FormFile(new MemoryStream(bytes), 0, bytes.Length, "file", "file.csv")
@@ -118,7 +118,7 @@ public sealed class StatementDraftsControllerTests
             ContentType = "text/csv"
         };
 
-        var result = await controller.UploadAsync(formFile, default);
+        var result = await controller.UploadAsync(formFile, TestContext.Current.CancellationToken);
         Assert.IsType<OkObjectResult>(result);
     }
 
@@ -126,7 +126,7 @@ public sealed class StatementDraftsControllerTests
     public async Task AddEntry_ShouldReturnNotFound_ForUnknownDraft()
     {
         var (controller, _, _) = Create();
-        var response = await controller.AddEntryAsync(Guid.NewGuid(), new StatementDraftAddEntryRequest(DateTime.UtcNow.Date, 10m, "X"), default);
+        var response = await controller.AddEntryAsync(Guid.NewGuid(), new StatementDraftAddEntryRequest(DateTime.UtcNow.Date, 10m, "X"), TestContext.Current.CancellationToken);
         Assert.IsType<NotFoundResult>(response);
     }
 
@@ -134,7 +134,7 @@ public sealed class StatementDraftsControllerTests
     public async Task Commit_ShouldReturnNotFound_WhenDraftMissing()
     {
         var (controller, _, _) = Create();
-        var response = await controller.CommitAsync(Guid.NewGuid(), new StatementDraftCommitRequest(Guid.NewGuid(), ImportFormat.Csv), default);
+        var response = await controller.CommitAsync(Guid.NewGuid(), new StatementDraftCommitRequest(Guid.NewGuid(), ImportFormat.Csv), TestContext.Current.CancellationToken);
         Assert.IsType<NotFoundResult>(response);
     }
 
@@ -145,37 +145,37 @@ public sealed class StatementDraftsControllerTests
         // Parent draft (no upload group, no account required for this test)
         var parent = new FinanceManager.Domain.Statements.StatementDraft(user, "parent.pdf", null, null);
         db.StatementDrafts.Add(parent);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Intermediary contact for parent entry
         var intermediary = new Contact(user, "PayService", ContactType.Organization, null, null, isPaymentIntermediary: true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var parentEntry = parent.AddEntry(DateTime.Today, 300m, "Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         parentEntry.MarkAccounted(intermediary.Id);
         db.Entry(parentEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Child drafts in SAME upload group (group of split parts)
         var groupId = Guid.NewGuid();
         var child1 = new FinanceManager.Domain.Statements.StatementDraft(user, "c1.pdf", null, null); child1.SetUploadGroup(groupId); db.StatementDrafts.Add(child1);
         var child2 = new FinanceManager.Domain.Statements.StatementDraft(user, "c2.pdf", null, null); child2.SetUploadGroup(groupId); db.StatementDrafts.Add(child2);
         var child3 = new FinanceManager.Domain.Statements.StatementDraft(user, "c3.pdf", null, null); child3.SetUploadGroup(groupId); db.StatementDrafts.Add(child3);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Recipient contacts
         var cA = new Contact(user, "Alice", ContactType.Person, null, null);
         var cB = new Contact(user, "Bob", ContactType.Person, null, null);
         var cC = new Contact(user, "Carol", ContactType.Person, null, null);
         db.Contacts.AddRange(cA, cB, cC);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Entries in child drafts: 120 + 80 + 100 = 300
         var e1 = child1.AddEntry(DateTime.Today, 120m, "A", cA.Name, DateTime.Today, "EUR", null, false); e1.MarkAccounted(cA.Id); db.Entry(e1).State = EntityState.Added;
         var e2 = child2.AddEntry(DateTime.Today, 80m, "B", cB.Name, DateTime.Today, "EUR", null, false); e2.MarkAccounted(cB.Id); db.Entry(e2).State = EntityState.Added;
         var e3 = child3.AddEntry(DateTime.Today, 100m, "C", cC.Name, DateTime.Today, "EUR", null, false); e3.MarkAccounted(cC.Id); db.Entry(e3).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Link only ONE child draft (child2) via controller endpoint
         var linkResult = await controller.SetEntrySplitDraftAsync(parent.Id, parentEntry.Id, new StatementDraftSetSplitDraftRequest(child2.Id), CancellationToken.None);
@@ -213,14 +213,14 @@ public sealed class StatementDraftsControllerTests
 
         var bank = new Contact(user, "Bank", ContactType.Bank, null, null);
         db.Contacts.Add(bank);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var account = new Account(user, AccountType.Giro, "A", "DE00", bank.Id);
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var draft = new FinanceManager.Domain.Statements.StatementDraft(user, "in-progress.csv", null, null);
         draft.SetDetectedAccount(account.Id);
         db.StatementDrafts.Add(draft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         db.StatementDraftBookingGuards.Add(new StatementDraftBookingGuard(
             user,
@@ -228,7 +228,7 @@ public sealed class StatementDraftsControllerTests
             Guid.NewGuid(),
             DateTime.UtcNow,
             DateTime.UtcNow.AddMinutes(2)));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var actionResult = await controller.BookAsync(draft.Id, false, CancellationToken.None);
 
@@ -258,19 +258,19 @@ public sealed class StatementDraftsControllerTests
 
         var bank = new Contact(user, "Bank", ContactType.Bank, null, null);
         db.Contacts.Add(bank);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var account = new Account(user, AccountType.Giro, "A", "DE01", bank.Id);
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draft = new FinanceManager.Domain.Statements.StatementDraft(user, "entry-booking.csv", null, null);
         draft.SetDetectedAccount(account.Id);
         db.StatementDrafts.Add(draft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var recipient = new Contact(user, "Recipient", ContactType.Organization, null, null, false);
         db.Contacts.Add(recipient);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var entryToBook = draft.AddEntry(DateTime.Today, 15m, "Entry A", recipient.Name, DateTime.Today, "EUR", null, false);
         var remainingEntry = draft.AddEntry(DateTime.Today, 5m, "Entry B", recipient.Name, DateTime.Today, "EUR", null, false);
@@ -278,7 +278,7 @@ public sealed class StatementDraftsControllerTests
         remainingEntry.MarkAccounted(recipient.Id);
         db.Entry(entryToBook).State = EntityState.Added;
         db.Entry(remainingEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var firstResult = await controller.BookEntryAsync(draft.Id, entryToBook.Id, false, CancellationToken.None);
         Assert.IsType<OkObjectResult>(firstResult);

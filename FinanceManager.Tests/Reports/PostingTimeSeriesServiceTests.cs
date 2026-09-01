@@ -30,7 +30,7 @@ public sealed class PostingTimeSeriesServiceTests
         db.Users.AddRange(userA, userB);
         var acc = new Account(userB.Id, AccountType.Giro, "Fremd", null, Guid.NewGuid());
         db.Accounts.Add(acc);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new PostingTimeSeriesService(db);
         var res = await svc.GetAsync(userA.Id, PostingKind.Bank, acc.Id, AggregatePeriod.Month, 12, null, CancellationToken.None);
         Assert.Null(res);
@@ -51,7 +51,7 @@ public sealed class PostingTimeSeriesServiceTests
         var a1 = new PostingAggregate(PostingKind.Bank, acc.Id, null, null, null, new DateTime(2024, 1, 1), AggregatePeriod.Month);
         a1.Add(20m);
         db.PostingAggregates.AddRange(a2, a1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new PostingTimeSeriesService(db);
         var res = await svc.GetAsync(user.Id, PostingKind.Bank, acc.Id, AggregatePeriod.Month, 10, null, CancellationToken.None);
         Assert.NotNull(res);
@@ -76,7 +76,7 @@ public sealed class PostingTimeSeriesServiceTests
             agg.Add(m + 1);
             db.PostingAggregates.Add(agg);
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new PostingTimeSeriesService(db);
         var res = await svc.GetAsync(user.Id, PostingKind.Bank, acc.Id, AggregatePeriod.Month, 12, null, CancellationToken.None);
         Assert.NotNull(res);
@@ -106,7 +106,7 @@ public sealed class PostingTimeSeriesServiceTests
         var sec1 = new Security(user.Id, "SecA", "IDA", null, null, "EUR", null);
         var sec2 = new Security(user.Id, "SecB", "IDB", null, null, "EUR", null);
         db.Securities.AddRange(sec1, sec2);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Helper to create two months + one noise aggregate for each kind/entity
         void AddAgg(PostingKind kind, Guid? accountId, Guid? contactId, Guid? savingsPlanId, Guid? securityId, decimal baseAmount)
@@ -126,7 +126,7 @@ public sealed class PostingTimeSeriesServiceTests
         AddAgg(PostingKind.Contact, null, personA.Id, null, null, 200m);
         AddAgg(PostingKind.SavingsPlan, null, null, plan1.Id, null, 300m);
         AddAgg(PostingKind.Security, null, null, null, sec1.Id, 400m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new PostingTimeSeriesService(db);
         var bankSeries = await svc.GetAsync(user.Id, PostingKind.Bank, acc1.Id, AggregatePeriod.Month, 10, null, CancellationToken.None);

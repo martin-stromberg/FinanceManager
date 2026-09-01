@@ -33,19 +33,19 @@ public class ApiClientMetaHolidaysTests : IClassFixture<TestWebApplicationFactor
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
         // Providers
-        var providers = await api.Meta_GetHolidayProvidersAsync();
+        var providers = await api.Meta_GetHolidayProvidersAsync(TestContext.Current.CancellationToken);
         providers.Should().NotBeNull();
         providers.Should().Contain(p => !string.IsNullOrWhiteSpace(p));
 
         // Countries
-        var countries = await api.Meta_GetHolidayCountriesAsync();
+        var countries = await api.Meta_GetHolidayCountriesAsync(TestContext.Current.CancellationToken);
         countries.Should().NotBeNull();
         countries.Should().Contain("DE");
 
         // Subdivisions for valid provider + country
         // Use any provider returned, assume lowercase/uppercase tolerated by API
         var provider = providers.First();
-        var subs = await api.Meta_GetHolidaySubdivisionsAsync(provider, "DE");
+        var subs = await api.Meta_GetHolidaySubdivisionsAsync(provider, "DE", TestContext.Current.CancellationToken);
         subs.Should().NotBeNull();
         // may be empty depending on provider implementation, but call should succeed
     }

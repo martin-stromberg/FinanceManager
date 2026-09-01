@@ -184,7 +184,7 @@ public sealed class ParentAssignmentServiceTests
         var result = await sut.TryAssignAsync(owner.Id, parent, "contacts", contact.Id, CancellationToken.None);
 
         Assert.True(result);
-        var reloaded = await db.StatementDraftEntries.AsNoTracking().SingleAsync(e => e.Id == entry.Id);
+        var reloaded = await db.StatementDraftEntries.AsNoTracking().SingleAsync(e => e.Id == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(contact.Id, reloaded.ContactId);
         Assert.Equal(modifiedUtcBefore, reloaded.ModifiedUtc);
     }

@@ -31,7 +31,7 @@ public sealed class SetupImportSplitViewModelTests
         apiMock.Setup(a => a.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(dto);
 
         var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.False(vm.Loading);
         Assert.NotNull(vm.Model);
@@ -45,7 +45,7 @@ public sealed class SetupImportSplitViewModelTests
         apiMock.Setup(a => a.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new ImportSplitSettingsDto());
 
         var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.Model!.MaxEntriesPerDraft = 10;
         vm.Validate();
@@ -76,13 +76,13 @@ public sealed class SetupImportSplitViewModelTests
         apiMock.Setup(a => a.UserSettings_UpdateImportSplitAsync(It.IsAny<ImportSplitSettingsUpdateRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.Model!.MaxEntriesPerDraft = 300;
         vm.OnModeChanged();
         Assert.True(vm.Dirty);
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
         apiMock.Verify(a => a.UserSettings_UpdateImportSplitAsync(It.IsAny<ImportSplitSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
         Assert.True(vm.SavedOk);
         Assert.False(vm.Dirty);
@@ -101,10 +101,10 @@ public sealed class SetupImportSplitViewModelTests
             .ReturnsAsync(true);
 
         var vm = new SetupStatementsViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.Model!.MassImportDialogPolicy = MassImportDialogPolicy.AlwaysConfirm;
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(captured);
         Assert.Equal(MassImportDialogPolicy.AlwaysConfirm, captured!.MassImportDialogPolicy);

@@ -23,18 +23,18 @@ public class ApiClientIpBlocksTests : IClassFixture<TestWebApplicationFactory>
     public async Task IpBlocks_List_Create_Block_Unblock_Delete()
     {
         var api = CreateClient();
-        await api.Auth_LoginAsync(new LoginRequest(TestWebApplicationFactory.BootstrapAdminUsername, TestWebApplicationFactory.BootstrapAdminPassword, null, null));
+        await api.Auth_LoginAsync(new LoginRequest(TestWebApplicationFactory.BootstrapAdminUsername, TestWebApplicationFactory.BootstrapAdminPassword, null, null), TestContext.Current.CancellationToken);
 
-        var list = await api.Admin_ListIpBlocksAsync();
+        var list = await api.Admin_ListIpBlocksAsync(ct: TestContext.Current.CancellationToken);
         list.Should().NotBeNull();
 
         // Create
-        var created = await api.Admin_CreateIpBlockAsync(new IpBlockCreateRequest("1.2.3.4", "test", IsBlocked: false));
+        var created = await api.Admin_CreateIpBlockAsync(new IpBlockCreateRequest("1.2.3.4", "test", IsBlocked: false), TestContext.Current.CancellationToken);
         created.IpAddress.Should().Be("1.2.3.4");
         created.IsBlocked.Should().BeFalse();
 
         // Update (block)
-        var updated = await api.Admin_UpdateIpBlockAsync(created.Id, new IpBlockUpdateRequest("changed", IsBlocked: true));
+        var updated = await api.Admin_UpdateIpBlockAsync(created.Id, new IpBlockUpdateRequest("changed", IsBlocked: true), TestContext.Current.CancellationToken);
         updated!.IsBlocked.Should().BeTrue();
 
         // Block explicitly
@@ -42,15 +42,15 @@ public class ApiClientIpBlocksTests : IClassFixture<TestWebApplicationFactory>
         okBlock.Should().BeTrue();
 
         // Unblock
-        var okUnblock = await api.Admin_UnblockIpAsync(created.Id);
+        var okUnblock = await api.Admin_UnblockIpAsync(created.Id, TestContext.Current.CancellationToken);
         okUnblock.Should().BeTrue();
 
         // Reset counters
-        var okReset = await api.Admin_ResetCountersAsync(created.Id);
+        var okReset = await api.Admin_ResetCountersAsync(created.Id, TestContext.Current.CancellationToken);
         okReset.Should().BeTrue();
 
         // Delete
-        var okDel = await api.Admin_DeleteIpBlockAsync(created.Id);
+        var okDel = await api.Admin_DeleteIpBlockAsync(created.Id, TestContext.Current.CancellationToken);
         okDel.Should().BeTrue();
     }
 }

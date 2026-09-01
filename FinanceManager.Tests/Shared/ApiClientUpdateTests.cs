@@ -63,11 +63,11 @@ public sealed class ApiClientUpdateTests
             };
         });
 
-        var services = await api.Updates_GetServiceNamesAsync("finance manager", 10);
-        var check = await api.Updates_CheckAsync();
-        var schedule = await api.Updates_ScheduleAsync(new UpdateScheduleRequest(new TimeOnly(3, 15)));
-        var install = await api.Updates_StartInstallAsync(new UpdateStartRequest(true));
-        var reset = await api.Updates_ResetLockAsync(new UpdateLockResetRequest("stale"));
+        var services = await api.Updates_GetServiceNamesAsync("finance manager", 10, TestContext.Current.CancellationToken);
+        var check = await api.Updates_CheckAsync(TestContext.Current.CancellationToken);
+        var schedule = await api.Updates_ScheduleAsync(new UpdateScheduleRequest(new TimeOnly(3, 15)), TestContext.Current.CancellationToken);
+        var install = await api.Updates_StartInstallAsync(new UpdateStartRequest(true), TestContext.Current.CancellationToken);
+        var reset = await api.Updates_ResetLockAsync(new UpdateLockResetRequest("stale"), TestContext.Current.CancellationToken);
 
         services.Should().ContainSingle().Which.Should().Be("financemanager.service");
         serviceQuery.Should().Contain("take=10");

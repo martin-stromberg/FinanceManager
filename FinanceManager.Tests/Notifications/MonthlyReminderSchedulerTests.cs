@@ -28,7 +28,7 @@ public sealed class MonthlyReminderSchedulerTests
         TestEntityHelper.SetEntityId(u, userId);
         u.SetNotificationSettings(monthlyReminderEnabled: true);
         db.Users.Add(u);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var start = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         var end = new DateTime(2024, 12, 31, 12, 0, 0, DateTimeKind.Utc);
@@ -56,7 +56,7 @@ public sealed class MonthlyReminderSchedulerTests
         }
 
         // Assert: exactly 12 notifications (one per month)
-        var notes = await db.Notifications.AsNoTracking().Where(n => n.OwnerUserId == userId).OrderBy(n => n.ScheduledDateUtc).ToListAsync();
+        var notes = await db.Notifications.AsNoTracking().Where(n => n.OwnerUserId == userId).OrderBy(n => n.ScheduledDateUtc).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(12, notes.Count);
 
         // Check dates equal last business day of each month in 2024

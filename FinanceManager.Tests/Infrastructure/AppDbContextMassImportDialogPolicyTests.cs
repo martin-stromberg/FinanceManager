@@ -51,7 +51,7 @@ public sealed class AppDbContextMassImportDialogPolicyTests
 
         await using (var db = new AppDbContext(options))
         {
-            await db.Database.EnsureCreatedAsync();
+            await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
             var alwaysConfirmUser = new User("always-confirm", "hash");
             alwaysConfirmUser.Id = alwaysConfirmUserId;
@@ -61,7 +61,7 @@ public sealed class AppDbContextMassImportDialogPolicyTests
             defaultPolicyUser.Id = defaultPolicyUserId;
 
             db.Users.AddRange(alwaysConfirmUser, defaultPolicyUser);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var db = new AppDbContext(options))
@@ -69,7 +69,7 @@ public sealed class AppDbContextMassImportDialogPolicyTests
             var policies = await db.Users
                 .OrderBy(user => user.UserName)
                 .Select(user => user.MassImportDialogPolicy)
-                .ToListAsync();
+                .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(
                 new[]

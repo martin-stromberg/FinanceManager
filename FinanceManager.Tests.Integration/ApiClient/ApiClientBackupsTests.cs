@@ -37,15 +37,15 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var list1 = await api.Backups_ListAsync();
+        var list1 = await api.Backups_ListAsync(TestContext.Current.CancellationToken);
         list1.Should().NotBeNull();
         list1.Should().BeEmpty();
 
-        var created = await api.Backups_CreateAsync();
+        var created = await api.Backups_CreateAsync(TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
         created.FileName.Should().NotBeNullOrEmpty();
 
-        var list2 = await api.Backups_ListAsync();
+        var list2 = await api.Backups_ListAsync(TestContext.Current.CancellationToken);
         list2.Should().NotBeNull();
         list2.Should().NotBeEmpty();
         list2.Any(b => b.Id == created.Id).Should().BeTrue();
@@ -63,11 +63,11 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
 
         // upload zip content
         await using var zipStream = CreateZip("backup.ndjson", CreateValidNdjson());
-        var up2 = await api.Backups_UploadAsync(zipStream, "custom.zip");
+        var up2 = await api.Backups_UploadAsync(zipStream, "custom.zip", TestContext.Current.CancellationToken);
         up2.Should().NotBeNull();
         up2.FileName.Should().Be("custom.zip");
 
-        var list = await api.Backups_ListAsync();
+        var list = await api.Backups_ListAsync(TestContext.Current.CancellationToken);
         list.Should().ContainSingle(b => b.Id == up2.Id);
     }
 
@@ -89,15 +89,15 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
     {
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
-        var created = await api.Backups_CreateAsync();
-        var stream = await api.Backups_DownloadAsync(created.Id);
+        var created = await api.Backups_CreateAsync(TestContext.Current.CancellationToken);
+        var stream = await api.Backups_DownloadAsync(created.Id, TestContext.Current.CancellationToken);
         stream.Should().NotBeNull();
         stream!.Length.Should().BeGreaterThan(0);
 
-        var deleted = await api.Backups_DeleteAsync(created.Id);
+        var deleted = await api.Backups_DeleteAsync(created.Id, TestContext.Current.CancellationToken);
         deleted.Should().BeTrue();
 
-        var streamMissing = await api.Backups_DownloadAsync(created.Id);
+        var streamMissing = await api.Backups_DownloadAsync(created.Id, TestContext.Current.CancellationToken);
         streamMissing.Should().BeNull();
     }
 
@@ -106,19 +106,19 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
     {
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
-        var created = await api.Backups_CreateAsync();
+        var created = await api.Backups_CreateAsync(TestContext.Current.CancellationToken);
 
         var missingConfirmation = () => api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(null, created.FileName));
         await missingConfirmation.Should().ThrowAsync<HttpRequestException>();
         api.LastErrorCode.Should().Be("Err_Backup_ConfirmationRequired");
 
-        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName));
+        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName), TestContext.Current.CancellationToken);
         status.Running.Should().BeTrue();
 
-        var polled = await api.Backups_GetStatusAsync();
+        var polled = await api.Backups_GetStatusAsync(TestContext.Current.CancellationToken);
         polled.Should().NotBeNull();
 
-        var canceled = await api.Backups_CancelAsync();
+        var canceled = await api.Backups_CancelAsync(TestContext.Current.CancellationToken);
         canceled.Should().BeTrue();
     }
 

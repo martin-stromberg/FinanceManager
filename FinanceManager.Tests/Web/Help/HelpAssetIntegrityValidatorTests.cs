@@ -24,7 +24,7 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
     {
         var assetPath = Path.Combine(_contentRoot, "wwwroot", "help", "js", "help-search.js");
         Directory.CreateDirectory(Path.GetDirectoryName(assetPath)!);
-        await File.WriteAllTextAsync(assetPath, "console.log('help');");
+        await File.WriteAllTextAsync(assetPath, "console.log('help');", TestContext.Current.CancellationToken);
 
         var validator = CreateValidator();
 
@@ -37,8 +37,8 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         var listedPath = Path.Combine(_contentRoot, "wwwroot", "help", "js", "help-search.js");
         var unlistedPath = Path.Combine(_contentRoot, "wwwroot", "help", "payload.svg");
         Directory.CreateDirectory(Path.GetDirectoryName(listedPath)!);
-        await File.WriteAllTextAsync(listedPath, "console.log('help');");
-        await File.WriteAllTextAsync(unlistedPath, "<svg />");
+        await File.WriteAllTextAsync(listedPath, "console.log('help');", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(unlistedPath, "<svg />", TestContext.Current.CancellationToken);
         await WriteManifestAsync(("wwwroot/help/js/help-search.js", listedPath));
 
         var validator = CreateValidator();
@@ -51,7 +51,7 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
     {
         var assetPath = Path.Combine(_contentRoot, "wwwroot", "help", "css", "help-page.css");
         Directory.CreateDirectory(Path.GetDirectoryName(assetPath)!);
-        await File.WriteAllTextAsync(assetPath, "body{}");
+        await File.WriteAllTextAsync(assetPath, "body{}", TestContext.Current.CancellationToken);
         await WriteManifestLineAsync("wwwroot/help/css/help-page.css|000000");
 
         var validator = CreateValidator();
@@ -64,14 +64,14 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
     {
         var assetPath = Path.Combine(_contentRoot, "wwwroot", "help", "css", "help-page.css");
         Directory.CreateDirectory(Path.GetDirectoryName(assetPath)!);
-        await File.WriteAllTextAsync(assetPath, "body{}");
+        await File.WriteAllTextAsync(assetPath, "body{}", TestContext.Current.CancellationToken);
         await WriteManifestAsync(("wwwroot/help/css/help-page.css", assetPath));
 
         var validator = CreateValidator();
 
         Assert.True(validator.IsTrustedHelpFile(assetPath));
 
-        await File.WriteAllTextAsync(assetPath, "body{color:red}");
+        await File.WriteAllTextAsync(assetPath, "body{color:red}", TestContext.Current.CancellationToken);
 
         Assert.False(validator.IsTrustedHelpFile(assetPath));
     }
@@ -81,7 +81,7 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
     {
         var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "index.md");
         Directory.CreateDirectory(Path.GetDirectoryName(markdownPath)!);
-        await File.WriteAllTextAsync(markdownPath, "# Budgetplanung");
+        await File.WriteAllTextAsync(markdownPath, "# Budgetplanung", TestContext.Current.CancellationToken);
         await WriteManifestAsync(("../Docs/help/budgetplanung/index.md", markdownPath));
 
         var validator = CreateValidator();

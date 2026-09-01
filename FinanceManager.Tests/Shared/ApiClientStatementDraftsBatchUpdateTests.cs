@@ -35,7 +35,7 @@ public sealed class ApiClientStatementDraftsBatchUpdateTests
             RecipientName = "Recipient"
         });
 
-        await api.StatementDrafts_BatchUpdateDetailedAsync(Guid.NewGuid(), request);
+        await api.StatementDrafts_BatchUpdateDetailedAsync(Guid.NewGuid(), request, TestContext.Current.CancellationToken);
 
         Assert.NotNull(capturedBody);
         using var document = JsonDocument.Parse(capturedBody!);

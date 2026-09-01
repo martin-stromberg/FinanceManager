@@ -25,11 +25,11 @@ public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new FinanceManager.Domain.Securities.Security(user.Id, "ACME CORP", "ACME-ISIN", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Target month (analysis)
         var analysis = new DateTime(2025, 8, 1);
@@ -47,7 +47,7 @@ public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
         Add(SecurityPostingSubType.Fee, -4.50m);
         Add(SecurityPostingSubType.Dividend, 25.75m);
         Add(SecurityPostingSubType.Tax, -3.90m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(

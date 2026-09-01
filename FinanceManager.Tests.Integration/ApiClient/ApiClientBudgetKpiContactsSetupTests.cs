@@ -646,10 +646,10 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var initialContacts = (await api.Contacts_ListAsync(all: true)).ToList();
-        var initialAccounts = (await api.GetAccountsAsync()).ToList();
-        var initialCategories = (await api.ContactCategories_ListAsync()).ToList();
-        var initialSavingsCategories = (await api.SavingsPlanCategories_ListAsync()).ToList();
+        var initialContacts = (await api.Contacts_ListAsync(all: true, ct: TestContext.Current.CancellationToken)).ToList();
+        var initialAccounts = (await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken)).ToList();
+        var initialCategories = (await api.ContactCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
+        var initialSavingsCategories = (await api.SavingsPlanCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
 
         var contacts = new (string Name, ContactType Type)[]
         {
@@ -837,10 +837,10 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // create contact groups (categories) derived from contact names without trailing counters
         var createdCategories = await CreateContactGroupsAsync(api, createdContacts);
 
-        var finalContacts = (await api.Contacts_ListAsync(all: true)).ToList();
-        var finalAccounts = (await api.GetAccountsAsync()).ToList();
-        var finalCategories = (await api.ContactCategories_ListAsync()).ToList();
-        var initialSavingsCount = await api.SavingsPlans_CountAsync(false);
+        var finalContacts = (await api.Contacts_ListAsync(all: true, ct: TestContext.Current.CancellationToken)).ToList();
+        var finalAccounts = (await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken)).ToList();
+        var finalCategories = (await api.ContactCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
+        var initialSavingsCount = await api.SavingsPlans_CountAsync(false, TestContext.Current.CancellationToken);
 
         finalContacts.Count.Should().Be(initialContacts.Count + createdContacts.Count);
         finalAccounts.Count.Should().Be(initialAccounts.Count + createdAccounts.Count);
@@ -861,10 +861,10 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // create savings plans (assign categories by base name) and verify counts
         var createdSavings = await CreateSavingsPlansAsync(api);
         createdSavings.Should().HaveCountGreaterThanOrEqualTo(1);
-        var finalSavingsCount = await api.SavingsPlans_CountAsync(false);
+        var finalSavingsCount = await api.SavingsPlans_CountAsync(false, TestContext.Current.CancellationToken);
         finalSavingsCount.Should().Be(initialSavingsCount + createdSavings.Count);
 
-        var finalSavingsCategories = (await api.SavingsPlanCategories_ListAsync()).ToList();
+        var finalSavingsCategories = (await api.SavingsPlanCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
         // new savings plan categories should equal unique base names not already existing
         var uniqueSavingsBaseNames = GetUniqueBaseNames(createdSavings.Select(s => s.Name));
         // count how many of those were new (not present in initialSavingsCategories)
@@ -875,14 +875,14 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         await CreateBudgetsAsync(api, createdContacts, createdCategories, createdSavings);
 
         // validate sums: category "Einkaufen & Verpflegung" should have three purposes with total monthly budget -1500 for Jan 2026
-        var catOverviews = (await api.Budgets_ListCategoriesAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31))).ToList();
+        var catOverviews = (await api.Budgets_ListCategoriesAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31), TestContext.Current.CancellationToken)).ToList();
         var buyOverview = catOverviews.SingleOrDefault(c => string.Equals(c.Name, "Einkaufen & Verpflegung", StringComparison.OrdinalIgnoreCase));
         buyOverview.Should().NotBeNull();
         buyOverview!.Budget.Should().Be(-1500m);
         buyOverview.PurposeCount.Should().Be(3);
 
         // create and book statement entries on the first account
-        var accounts = await api.GetAccountsAsync();
+        var accounts = await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken);
         accounts.Should().NotBeNull();
         accounts.Should().NotBeEmpty();
         var accountId = accounts[0].Id;
@@ -901,7 +901,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             IncludePurposeRows: true,
             DateBasis: BudgetReportDateBasis.BookingDate);
 
-        var report = await api.Budgets_GetReportAsync(reportReq);
+        var report = await api.Budgets_GetReportAsync(reportReq, TestContext.Current.CancellationToken);
         report.Should().NotBeNull();
 
         report.RangeFrom.Should().Be(new DateOnly(2026, 1, 1));
@@ -914,7 +914,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
 
         // Also request the XLSX export for the same report range and verify response
         var exportReq = new BudgetReportExportRequest(new DateOnly(2026, 1, 1), 1, BudgetReportDateBasis.BookingDate);
-        var (contentType, fileName, contentBytes) = await api.Budgets_ExportAsync(exportReq);
+        var (contentType, fileName, contentBytes) = await api.Budgets_ExportAsync(exportReq, TestContext.Current.CancellationToken);
         contentType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         fileName.Should().NotBeNullOrWhiteSpace();
         fileName.ToLowerInvariant().Should().EndWith(".xlsx");
@@ -927,7 +927,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         File.WriteAllBytes("D:\\BudgetReport_Jan2026.xlsx", contentBytes);
 
         // Additionally fetch the Home Monthly Budget KPI and perform basic consistency checks
-        var kpi = await api.Budgets_GetMonthlyKpiAsync(new DateOnly(2026, 1, 1), BudgetReportDateBasis.BookingDate);
+        var kpi = await api.Budgets_GetMonthlyKpiAsync(new DateOnly(2026, 1, 1), BudgetReportDateBasis.BookingDate, TestContext.Current.CancellationToken);
         kpi.Should().NotBeNull();
 
         // Exact expected KPI values (precomputed from the test data in this file).

@@ -216,7 +216,7 @@ namespace FinanceManager.Tests.Infrastructure
             using (var fs = File.Create(filepath)) { }
             var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = filename, SizeBytes = new FileInfo(filepath).Length, Source = "Test", StoragePath = filename };
             db.Backups.Add(rec);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var list = await svc.ListAsync(userId, CancellationToken.None);
             Assert.Contains(list, x => x.Id == rec.Id);
@@ -247,12 +247,12 @@ namespace FinanceManager.Tests.Infrastructure
             await using (var fs = File.Create(filepath)) { }
             var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = filename, SizeBytes = new FileInfo(filepath).Length, Source = "Test", StoragePath = filename };
             db.Backups.Add(rec);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var ok = await svc.DeleteAsync(userId, rec.Id, CancellationToken.None);
             Assert.True(ok);
             Assert.False(File.Exists(filepath));
-            var found = await db.Backups.FindAsync(rec.Id);
+            var found = await db.Backups.FindAsync(new object?[] { rec.Id }, TestContext.Current.CancellationToken);
             Assert.Null(found);
 
             try { Directory.Delete(temp, true); } catch { }
@@ -278,15 +278,15 @@ namespace FinanceManager.Tests.Infrastructure
 
             var filename = "todownload.zip";
             var filepath = Path.Combine(temp, "backups", filename);
-            await using (var fs = File.Create(filepath)) { var b = new byte[] { 1, 2, 3 }; await fs.WriteAsync(b); }
+            await using (var fs = File.Create(filepath)) { var b = new byte[] { 1, 2, 3 }; await fs.WriteAsync(b, TestContext.Current.CancellationToken); }
             var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = filename, SizeBytes = new FileInfo(filepath).Length, Source = "Test", StoragePath = filename };
             db.Backups.Add(rec);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var stream = await svc.OpenDownloadAsync(userId, rec.Id, CancellationToken.None);
             Assert.NotNull(stream);
             using var sr = new MemoryStream();
-            await stream!.CopyToAsync(sr);
+            await stream!.CopyToAsync(sr, TestContext.Current.CancellationToken);
             Assert.Equal(new byte[] { 1, 2, 3 }, sr.ToArray());
 
             try { Directory.Delete(temp, true); } catch { }
@@ -307,7 +307,7 @@ namespace FinanceManager.Tests.Infrastructure
             db.BudgetPurposes.Add(purpose);
             db.BudgetRules.Add(categoryRule);
             db.BudgetRules.Add(purposeRule);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var dto = await svc.CreateAsync(userId, CancellationToken.None);
             Assert.NotNull(dto);
@@ -323,8 +323,8 @@ namespace FinanceManager.Tests.Infrastructure
             Assert.NotNull(entry);
             using var es = entry.Open();
             using var sr = new StreamReader(es, Encoding.UTF8);
-            _ = await sr.ReadLineAsync();
-            var data = await sr.ReadToEndAsync();
+            _ = await sr.ReadLineAsync(TestContext.Current.CancellationToken);
+            var data = await sr.ReadToEndAsync(TestContext.Current.CancellationToken);
 
             using var doc = JsonDocument.Parse(data);
             var rules = doc.RootElement.GetProperty("BudgetRules");

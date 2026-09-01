@@ -17,7 +17,7 @@ public sealed class JwtRefreshServiceTests
         user.Deactivate();
         var (sut, _, _) = Create(user);
 
-        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "stamp"));
+        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "stamp"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Succeeded);
     }
@@ -28,7 +28,7 @@ public sealed class JwtRefreshServiceTests
         var user = new User("user", "HASH::pw", false) { SecurityStamp = "current" };
         var (sut, _, _) = Create(user);
 
-        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "old"));
+        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "old"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Succeeded);
     }
@@ -39,7 +39,7 @@ public sealed class JwtRefreshServiceTests
         var user = new User("admin", "HASH::pw", true) { SecurityStamp = "current" };
         var (sut, userManager, jwt) = Create(user, isAdmin: false);
 
-        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "old-admin-stamp", includeAdminRole: true));
+        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "old-admin-stamp", includeAdminRole: true), TestContext.Current.CancellationToken);
 
         Assert.False(result.Succeeded);
         userManager.Verify(um => um.IsInRoleAsync(user, "Admin"), Times.Never);
@@ -52,7 +52,7 @@ public sealed class JwtRefreshServiceTests
         var user = new User("admin", "HASH::pw", true) { SecurityStamp = "current" };
         var (sut, userManager, jwt) = Create(user, isAdmin: true);
 
-        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "current"));
+        var result = await sut.RefreshAsync(CreatePrincipal(user.Id, "current"), TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Equal("token", result.Token);

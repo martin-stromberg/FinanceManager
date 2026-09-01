@@ -189,7 +189,7 @@ namespace FinanceManager.Tests.Infrastructure
             SetDateProps(accountShare, fixedDate);
             db.AccountShares.Add(accountShare);
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var temp = Path.Combine(Path.GetTempPath(), "fmtests", Guid.NewGuid().ToString());
             Directory.CreateDirectory(temp);
@@ -215,7 +215,7 @@ namespace FinanceManager.Tests.Infrastructure
             Assert.NotNull(entry);
             using var es = entry.Open();
             using var ms = new MemoryStream();
-            await es.CopyToAsync(ms);
+            await es.CopyToAsync(ms, TestContext.Current.CancellationToken);
             ms.Position = 0;
             var text = Encoding.UTF8.GetString(ms.ToArray());
 

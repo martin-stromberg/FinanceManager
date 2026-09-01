@@ -40,13 +40,13 @@ namespace FinanceManager.Tests.Web
             bankContact1.SetSymbolAttachment(sym1);
             bankContact2.SetSymbolAttachment(sym2);
             db.Contacts.AddRange(bankContact1, bankContact2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // create accounts referencing bank contacts (no account symbol set -> fallback to contact symbol)
             var acc1 = new Account(owner, AccountType.Giro, "G1", null, bankContact1.Id);
             var acc2 = new Account(owner, AccountType.Savings, "S1", null, bankContact2.Id);
             db.Accounts.AddRange(acc1, acc2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var contact = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
 
@@ -67,9 +67,9 @@ namespace FinanceManager.Tests.Web
             contact2.SetLinkedPosting(contact1.Id);
 
             db.Postings.AddRange(bank1, contact1, bank2, contact2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner, default);
+            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner, TestContext.Current.CancellationToken);
             Assert.NotNull(res);
             Assert.Equal(2, res.Count);
 

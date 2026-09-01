@@ -70,7 +70,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
         cut.WaitForAssertion(() =>
             apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once));
 
-        Task.Delay(75).GetAwaiter().GetResult();
+        Task.Delay(75, Xunit.TestContext.Current.CancellationToken).GetAwaiter().GetResult();
 
         apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

@@ -155,7 +155,7 @@ namespace FinanceManager.Tests.ViewModels
             var vm = new SetupCardViewModel(sp);
             await vm.LoadAsync(Guid.Empty);
             var updateVm = (SetupUpdateViewModel)vm.CreateSectionViewModel("update", sp)!;
-            await updateVm.LoadAsync();
+            await updateVm.LoadAsync(TestContext.Current.CancellationToken);
 
             var allActionIds = GetAllActionIds(vm);
 
@@ -258,27 +258,27 @@ namespace FinanceManager.Tests.ViewModels
             await vm.LoadAsync(Guid.Empty);
 
             var profileVm = (SetupProfileViewModel)vm.CreateSectionViewModel("profile", sp)!;
-            await profileVm.LoadAsync();
+            await profileVm.LoadAsync(TestContext.Current.CancellationToken);
             profileVm.Model.PreferredLanguage = "en";
             profileVm.OnChanged();
 
             var notificationsVm = (SetupNotificationsViewModel)vm.CreateSectionViewModel("notifications", sp)!;
-            await notificationsVm.LoadAsync();
+            await notificationsVm.LoadAsync(TestContext.Current.CancellationToken);
             notificationsVm.Model.MonthlyReminderEnabled = true;
             notificationsVm.OnChanged();
 
             var statementsVm = (SetupStatementsViewModel)vm.CreateSectionViewModel("statements", sp)!;
-            await statementsVm.LoadAsync();
+            await statementsVm.LoadAsync(TestContext.Current.CancellationToken);
             statementsVm.Model!.MaxEntriesPerDraft = 25;
             statementsVm.Validate();
 
             var returnAnalysisVm = (SetupReturnAnalysisViewModel)vm.CreateSectionViewModel("returnanalysis", sp)!;
-            await returnAnalysisVm.LoadAsync();
+            await returnAnalysisVm.LoadAsync(TestContext.Current.CancellationToken);
             returnAnalysisVm.ShowSharpeRatio = true;
             returnAnalysisVm.OnChanged();
 
             var updateVm = (SetupUpdateViewModel)vm.CreateSectionViewModel("update", sp)!;
-            await updateVm.LoadAsync();
+            await updateVm.LoadAsync(TestContext.Current.CancellationToken);
             updateVm.UpdateSettings(updateSettings with { Enabled = true });
 
             var localizerMock = new Mock<IStringLocalizer>();

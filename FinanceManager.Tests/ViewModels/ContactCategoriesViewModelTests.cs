@@ -86,7 +86,7 @@ public sealed class ContactCategoriesViewModelTests
         // emulate user creating via list VM: call API directly through ViewModel action (New event triggers navigation in UI)
         await vm.LoadAsync();
         // verify API called when Create executed via service is not part of list VM; just ensure create path works via API mock
-        var created = await apiMock.Object.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("New"));
+        var created = await apiMock.Object.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("New"), TestContext.Current.CancellationToken);
         apiMock.Verify(a => a.ContactCategories_CreateAsync(It.Is<ContactCategoryCreateRequest>(r => r.Name == "New"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -101,7 +101,7 @@ public sealed class ContactCategoriesViewModelTests
 
         await vm.InitializeAsync();
         // invoking API directly to simulate create failure
-        await Assert.ThrowsAsync<Exception>(() => apiMock.Object.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("New")));
+        await Assert.ThrowsAsync<Exception>(() => apiMock.Object.ContactCategories_CreateAsync(new ContactCategoryCreateRequest("New"), TestContext.Current.CancellationToken));
     }
 
     [Fact]

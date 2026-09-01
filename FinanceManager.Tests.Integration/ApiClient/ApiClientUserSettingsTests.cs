@@ -39,7 +39,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var profile = await api.UserSettings_GetProfileAsync();
+        var profile = await api.UserSettings_GetProfileAsync(TestContext.Current.CancellationToken);
         profile.Should().NotBeNull();
         // defaults: no language, no timezone, no API key, KPI caching disabled
         profile!.HasAlphaVantageApiKey.Should().BeFalse();
@@ -59,10 +59,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             AlphaVantageApiKey: null,
             ClearAlphaVantageApiKey: null,
             ShareAlphaVantageApiKey: null,
-            CacheKpisInLocalStorage: false));
+            CacheKpisInLocalStorage: false), TestContext.Current.CancellationToken);
         ok.Should().BeTrue();
 
-        var profile = await api.UserSettings_GetProfileAsync();
+        var profile = await api.UserSettings_GetProfileAsync(TestContext.Current.CancellationToken);
         profile.Should().NotBeNull();
         profile!.PreferredLanguage.Should().Be("de");
         profile.TimeZoneId.Should().Be("Europe/Berlin");
@@ -80,10 +80,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             AlphaVantageApiKey: null,
             ClearAlphaVantageApiKey: null,
             ShareAlphaVantageApiKey: null,
-            CacheKpisInLocalStorage: true));
+            CacheKpisInLocalStorage: true), TestContext.Current.CancellationToken);
         ok.Should().BeTrue();
 
-        var profile = await api.UserSettings_GetProfileAsync();
+        var profile = await api.UserSettings_GetProfileAsync(TestContext.Current.CancellationToken);
         profile.Should().NotBeNull();
         profile!.CacheKpisInLocalStorage.Should().BeTrue();
     }
@@ -101,7 +101,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             AlphaVantageApiKey: plaintext,
             ClearAlphaVantageApiKey: null,
             ShareAlphaVantageApiKey: null,
-            CacheKpisInLocalStorage: false));
+            CacheKpisInLocalStorage: false), TestContext.Current.CancellationToken);
 
         ok.Should().BeTrue();
         using var scope = _factory.Services.CreateScope();
@@ -110,13 +110,13 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         var stored = await db.Users
             .Where(u => u.UserName == username)
             .Select(u => u.AlphaVantageApiKey)
-            .SingleAsync();
+            .SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         stored.Should().NotBeNull();
         stored.Should().NotBe(plaintext);
         stored.Should().StartWith(DataProtectionAlphaVantageSecretProtector.ProtectedPrefix);
         protector.Unprotect(stored).Should().Be(plaintext);
 
-        var profile = await api.UserSettings_GetProfileAsync();
+        var profile = await api.UserSettings_GetProfileAsync(TestContext.Current.CancellationToken);
         profile!.HasAlphaVantageApiKey.Should().BeTrue();
     }
 
@@ -131,7 +131,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             AlphaVantageApiKey: "ALPHAVANTAGE-SECRET",
             ClearAlphaVantageApiKey: null,
             ShareAlphaVantageApiKey: null,
-            CacheKpisInLocalStorage: false));
+            CacheKpisInLocalStorage: false), TestContext.Current.CancellationToken);
 
         var ok = await api.UserSettings_UpdateProfileAsync(new UserProfileSettingsUpdateRequest(
             PreferredLanguage: null,
@@ -139,7 +139,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             AlphaVantageApiKey: null,
             ClearAlphaVantageApiKey: true,
             ShareAlphaVantageApiKey: null,
-            CacheKpisInLocalStorage: false));
+            CacheKpisInLocalStorage: false), TestContext.Current.CancellationToken);
 
         ok.Should().BeTrue();
         using var scope = _factory.Services.CreateScope();
@@ -147,7 +147,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         var stored = await db.Users
             .Where(u => u.UserName == username)
             .Select(u => u.AlphaVantageApiKey)
-            .SingleAsync();
+            .SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         stored.Should().BeNull();
     }
 
@@ -157,7 +157,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var notifications = await api.User_GetNotificationSettingsAsync();
+        var notifications = await api.User_GetNotificationSettingsAsync(TestContext.Current.CancellationToken);
         notifications.Should().NotBeNull();
         notifications!.MonthlyReminderEnabled.Should().BeFalse();
     }
@@ -168,16 +168,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var ok = await api.User_UpdateNotificationSettingsAsync(
-            monthlyEnabled: true,
-            hour: 10,
-            minute: 30,
-            provider: "Memory",
-            country: null,
-            subdivision: null);
+        var ok = await api.User_UpdateNotificationSettingsAsync(monthlyEnabled: true, hour: 10, minute: 30, provider: "Memory", country: null, subdivision: null, ct: TestContext.Current.CancellationToken);
         ok.Should().BeTrue();
 
-        var notifications = await api.User_GetNotificationSettingsAsync();
+        var notifications = await api.User_GetNotificationSettingsAsync(TestContext.Current.CancellationToken);
         notifications.Should().NotBeNull();
         notifications!.MonthlyReminderEnabled.Should().BeTrue();
         notifications.MonthlyReminderHour.Should().Be(10);
@@ -190,7 +184,7 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var split = await api.UserSettings_GetImportSplitAsync();
+        var split = await api.UserSettings_GetImportSplitAsync(TestContext.Current.CancellationToken);
         split.Should().NotBeNull();
         split!.Mode.Should().Be(ImportSplitMode.MonthlyOrFixed);
         split.MaxEntriesPerDraft.Should().Be(250);
@@ -208,10 +202,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
             MaxEntriesPerDraft: 100,
             MonthlySplitThreshold: null,
             MinEntriesPerDraft: 5,
-            MassImportDialogPolicy: MassImportDialogPolicy.AlwaysConfirm));
+            MassImportDialogPolicy: MassImportDialogPolicy.AlwaysConfirm), TestContext.Current.CancellationToken);
         ok.Should().BeTrue();
 
-        var split = await api.UserSettings_GetImportSplitAsync();
+        var split = await api.UserSettings_GetImportSplitAsync(TestContext.Current.CancellationToken);
         split.Should().NotBeNull();
         split!.Mode.Should().Be(ImportSplitMode.FixedSize);
         split.MaxEntriesPerDraft.Should().Be(100);

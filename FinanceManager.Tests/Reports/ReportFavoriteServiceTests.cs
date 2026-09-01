@@ -22,7 +22,7 @@ public sealed class ReportFavoriteServiceTests
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("user", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new ReportFavoriteService(db);
 
         var dto = await svc.CreateAsync(user.Id, new ReportFavoriteCreateRequest("MyFav", PostingKind.Contact, true, ReportInterval.Month, true, false, true, true), CancellationToken.None);
@@ -31,7 +31,7 @@ public sealed class ReportFavoriteServiceTests
         Assert.True(dto.IncludeCategory);
         Assert.Equal(ReportInterval.Month, dto.Interval);
 
-        var entity = await db.ReportFavorites.FirstAsync();
+        var entity = await db.ReportFavorites.FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("MyFav", entity.Name);
     }
 
@@ -40,7 +40,7 @@ public sealed class ReportFavoriteServiceTests
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("user", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new ReportFavoriteService(db);
         await svc.CreateAsync(user.Id, new ReportFavoriteCreateRequest("Dup", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);
         await Assert.ThrowsAsync<InvalidOperationException>(() => svc.CreateAsync(user.Id, new ReportFavoriteCreateRequest("Dup", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None));
@@ -52,11 +52,11 @@ public sealed class ReportFavoriteServiceTests
         using var db = CreateDb();
         var user1 = new FinanceManager.Domain.Users.User("u1", "pw", false);
         var user2 = new FinanceManager.Domain.Users.User("u2", "pw", false);
-        db.Users.AddRange(user1, user2); await db.SaveChangesAsync();
+        db.Users.AddRange(user1, user2); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new ReportFavoriteService(db);
         await svc.CreateAsync(user1.Id, new ReportFavoriteCreateRequest("Same", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);
         await svc.CreateAsync(user2.Id, new ReportFavoriteCreateRequest("Same", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);
-        Assert.Equal(2, await db.ReportFavorites.CountAsync());
+        Assert.Equal(2, await db.ReportFavorites.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class ReportFavoriteServiceTests
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("u", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new ReportFavoriteService(db);
         var a = await svc.CreateAsync(user.Id, new ReportFavoriteCreateRequest("A", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);
         var b = await svc.CreateAsync(user.Id, new ReportFavoriteCreateRequest("B", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);
@@ -90,7 +90,7 @@ public sealed class ReportFavoriteServiceTests
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("projection-user", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new ReportFavoriteService(db);
 
         var created = await svc.CreateAsync(
@@ -108,7 +108,7 @@ public sealed class ReportFavoriteServiceTests
             CancellationToken.None);
 
         Assert.True(created.CompareProjection);
-        Assert.True((await db.ReportFavorites.SingleAsync()).CompareProjection);
+        Assert.True((await db.ReportFavorites.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).CompareProjection);
 
         var listed = await svc.ListAsync(user.Id, CancellationToken.None);
         Assert.True(listed.Single().CompareProjection);
@@ -132,7 +132,7 @@ public sealed class ReportFavoriteServiceTests
             CancellationToken.None);
 
         Assert.False(updated!.CompareProjection);
-        Assert.False((await db.ReportFavorites.SingleAsync()).CompareProjection);
+        Assert.False((await db.ReportFavorites.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).CompareProjection);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public sealed class ReportFavoriteServiceTests
         using var db = CreateDb();
         var user1 = new FinanceManager.Domain.Users.User("u1", "pw", false);
         var user2 = new FinanceManager.Domain.Users.User("u2", "pw", false);
-        db.Users.AddRange(user1, user2); await db.SaveChangesAsync();
+        db.Users.AddRange(user1, user2); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new ReportFavoriteService(db);
         var fav = await svc.CreateAsync(user1.Id, new ReportFavoriteCreateRequest("Fav", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);
         Assert.False(await svc.DeleteAsync(fav.Id, user2.Id, CancellationToken.None));
@@ -155,7 +155,7 @@ public sealed class ReportFavoriteServiceTests
         using var db = CreateDb();
         var user1 = new FinanceManager.Domain.Users.User("u1", "pw", false);
         var user2 = new FinanceManager.Domain.Users.User("u2", "pw", false);
-        db.Users.AddRange(user1, user2); await db.SaveChangesAsync();
+        db.Users.AddRange(user1, user2); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new ReportFavoriteService(db);
         await svc.CreateAsync(user1.Id, new ReportFavoriteCreateRequest("Zeta", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);
         await svc.CreateAsync(user1.Id, new ReportFavoriteCreateRequest("Alpha", PostingKind.Contact, false, ReportInterval.Month, false, false, false, false), CancellationToken.None);

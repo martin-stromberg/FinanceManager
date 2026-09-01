@@ -1,4 +1,4 @@
-﻿using Bunit; // added for Self contact
+using Bunit; // added for Self contact
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Contacts;
@@ -105,9 +105,9 @@ public sealed class StatementDraftImportSplitTests
         var (sut, db, conn, user) = Create();
         var lines = Enumerable.Range(0, 7).Select(i => (new DateTime(2024, 3, 10).AddDays(i), 10m + i, $"L{i}"));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.FixedSize, 3, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(3, drafts.Count);
         var counts = drafts.Select(d => d.EntryCount).ToArray();
@@ -129,9 +129,9 @@ public sealed class StatementDraftImportSplitTests
             (new DateTime(2024,2,2), 13m, "D")
         };
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.Monthly, 100, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(2, drafts.Count);
         Assert.True(drafts.All(d => d.Description!.EndsWith("2024-01") || d.Description!.EndsWith("2024-02")));
@@ -145,9 +145,9 @@ public sealed class StatementDraftImportSplitTests
         var (sut, db, conn, user) = Create();
         var lines = Enumerable.Range(0, 5).Select(i => (new DateTime(2024, 4, 1).AddDays(i), 1m + i, $"X{i}"));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.Monthly, 2, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(3, drafts.Count);
         var counts = drafts.Select(d => d.EntryCount).ToArray();
@@ -164,9 +164,9 @@ public sealed class StatementDraftImportSplitTests
         var lines = Enumerable.Range(0, 6).Select(i => (new DateTime(2024, 1, 1).AddDays(i), 1m, $"J{i}"))
             .Concat(Enumerable.Range(0, 6).Select(i => (new DateTime(2024, 2, 1).AddDays(i), 1m, $"K{i}")));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.MonthlyOrFixed, 8, 8, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(2, drafts.Count);
         Assert.True(sut.LastImportSplitInfo!.EffectiveMonthly);
@@ -179,9 +179,9 @@ public sealed class StatementDraftImportSplitTests
         var (sut, db, conn, user) = Create();
         var lines = Enumerable.Range(0, 6).Select(i => (new DateTime(2024, 3, 1).AddDays(i), 1m, $"H{i}"));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.MonthlyOrFixed, 10, 10, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(1, drafts.Count);
         Assert.Equal(6, drafts[0].EntryCount);
@@ -197,9 +197,9 @@ public sealed class StatementDraftImportSplitTests
         lines.Add((new DateTime(2024, 5, 15), 5m, "Solo"));
         lines.AddRange(Enumerable.Range(0, 9).Select(i => (new DateTime(2024, 6, 1).AddDays(i), 1m + i, $"M{i}")));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.Monthly, 50, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(2, drafts.Count);
         var ordered = drafts.Select(d => d.EntryCount).OrderBy(x => x).ToArray();
@@ -238,11 +238,11 @@ public sealed class StatementDraftImportSplitTests
         }
 
         var payload = BuildBackupPayload(all);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
         // Max gro� genug w�hlen, damit kein Split wegen Max greift
         u.SetImportSplitSettings(ImportSplitMode.Monthly, maxEntriesPerDraft: 500, monthlySplitThreshold: null, minEntriesPerDraft: minEntriesPerDraft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
 
         // Act
         var drafts = await ImportAsync(sut, db, user, payload);

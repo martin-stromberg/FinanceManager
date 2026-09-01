@@ -70,7 +70,7 @@ public sealed class SetupUpdateTabTests : BunitContext
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
         apiMock.Setup(a => a.Updates_StartInstallAsync(It.IsAny<UpdateStartRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(installing);
         var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
-        await vm.StartInstallAsync(confirmDowntime: true);
+        await vm.StartInstallAsync(confirmDowntime: true, ct: Xunit.TestContext.Current.CancellationToken);
         vm.SetInstallPhase("Msg_Update_WaitingForRestart");
 
         var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
@@ -165,13 +165,13 @@ public sealed class SetupUpdateTabTests : BunitContext
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
         apiMock.Setup(a => a.Updates_CheckAsync(It.IsAny<CancellationToken>())).Returns(checkTask.Task);
         var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(Xunit.TestContext.Current.CancellationToken);
 
-        var busyTask = vm.CheckAsync();
+        var busyTask = vm.CheckAsync(Xunit.TestContext.Current.CancellationToken);
         var deadline = DateTime.UtcNow.AddSeconds(3);
         while (!vm.Busy && DateTime.UtcNow < deadline)
         {
-            await Task.Delay(10);
+            await Task.Delay(10, Xunit.TestContext.Current.CancellationToken);
         }
 
         vm.Busy.Should().BeTrue();
@@ -218,12 +218,12 @@ public sealed class SetupUpdateTabTests : BunitContext
         JSInterop.Setup<bool>("confirm", _ => true).SetResult(true);
 
         var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
-        await vm.StartInstallWithConfirmationAsync();
+        await vm.StartInstallWithConfirmationAsync(Xunit.TestContext.Current.CancellationToken);
 
         var deadline = DateTime.UtcNow.AddSeconds(8);
         while (vm.LastErrorCode is null && DateTime.UtcNow < deadline)
         {
-            await Task.Delay(100);
+            await Task.Delay(100, Xunit.TestContext.Current.CancellationToken);
         }
 
         vm.LastErrorCode.Should().Be("Err_Update_HealthTimeout");

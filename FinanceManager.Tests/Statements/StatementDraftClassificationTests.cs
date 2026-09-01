@@ -1,4 +1,4 @@
-﻿using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
@@ -131,7 +131,7 @@ public sealed class StatementDraftClassificationTests
     {
         var (sut, db, conn, owner) = Create();
         var account = await AddBankAccountAsync(db);
-        var contact = await db.Contacts.FirstAsync(c => c.Id == account.BankContactId);
+        var contact = await db.Contacts.FirstAsync(c => c.Id == account.BankContactId, cancellationToken: TestContext.Current.CancellationToken);
         account = await AddBankAccountAsync(db, contact);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
@@ -189,7 +189,7 @@ public sealed class StatementDraftClassificationTests
             draft.AddEntry(DateTime.Today, 100, "Test", "Empf�nger", DateTime.Today, "EUR", "Buchung", false);
         });
         db.StatementEntries.Add(new StatementEntry(Guid.NewGuid(), DateTime.Today, 100, "Test", "hash", "Empf�nger", DateTime.Today, "EUR", "Buchung", false, false));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
 
@@ -326,8 +326,8 @@ public sealed class StatementDraftClassificationTests
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
 
-        var created = await db.Contacts.SingleAsync(c => c.OwnerUserId == owner && c.Name == "Amazon");
-        var aliases = await db.AliasNames.Where(a => a.ContactId == created.Id).Select(a => a.Pattern).ToListAsync();
+        var created = await db.Contacts.SingleAsync(c => c.OwnerUserId == owner && c.Name == "Amazon", cancellationToken: TestContext.Current.CancellationToken);
+        var aliases = await db.AliasNames.Where(a => a.ContactId == created.Id).Select(a => a.Pattern).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.Entries.First();
         Assert.Equal(created.Id, entry.ContactId);
         Assert.Contains("AMAZON*", aliases);
@@ -340,9 +340,9 @@ public sealed class StatementDraftClassificationTests
     {
         var knownContact = new FinanceManager.Application.Contacts.KnownContactMatch("Amazon", ContactType.Organization, new[] { "AMAZON*" });
         var (sut, db, conn, owner) = Create(new StubKnownContactCatalog(knownContact));
-        var user = await db.Users.SingleAsync(u => u.Id == owner);
+        var user = await db.Users.SingleAsync(u => u.Id == owner, cancellationToken: TestContext.Current.CancellationToken);
         user.SetKnownContactAutoCreateEnabled(false);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var account = await AddBankAccountAsync(db);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {

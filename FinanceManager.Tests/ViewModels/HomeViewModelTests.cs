@@ -137,7 +137,7 @@ public sealed class HomeViewModelTests
         vm.SetPendingFileSecurity(fileId, securityId);
         vm.SetPendingFileExcluded(fileId, false);
 
-        await vm.ConfirmMassImportAsync();
+        await vm.ConfirmMassImportAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(confirmRequest);
         Assert.True(confirmRequest!.ConfirmExecution);

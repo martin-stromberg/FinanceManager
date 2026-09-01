@@ -28,7 +28,7 @@ public sealed class UpdateSettingsStoreTests
                 "C:\\app\\FinanceManager.exe",
                 "custom-updates",
                 30,
-                false));
+                false), TestContext.Current.CancellationToken);
 
             File.Exists(Path.Combine(packageStore.RootDirectory, "settings.json")).Should().BeTrue();
         }
@@ -45,10 +45,10 @@ public sealed class UpdateSettingsStoreTests
         try
         {
             var (firstStore, _) = CreateStore(root.FullName);
-            await firstStore.SaveAsync(new UpdateSettingsUpdateRequest(false, "martin-stromberg", "FinanceManager", "update.json", new TimeOnly(21, 0), new TimeOnly(5, 0), null, null, null, "updates", 120, true));
+            await firstStore.SaveAsync(new UpdateSettingsUpdateRequest(false, "martin-stromberg", "FinanceManager", "update.json", new TimeOnly(21, 0), new TimeOnly(5, 0), null, null, null, "updates", 120, true), TestContext.Current.CancellationToken);
 
             var (restartedStore, _) = CreateStore(root.FullName);
-            var settings = await restartedStore.GetAsync();
+            var settings = await restartedStore.GetAsync(TestContext.Current.CancellationToken);
 
             settings.Enabled.Should().BeFalse();
             settings.SourceCheckStartTime.Should().Be(new TimeOnly(21, 0));
@@ -68,10 +68,8 @@ public sealed class UpdateSettingsStoreTests
         try
         {
             var (store, packageStore) = CreateStore(root.FullName);
-            await packageStore.EnsureAsync();
-            await File.WriteAllTextAsync(
-                Path.Combine(packageStore.RootDirectory, "settings.json"),
-                """
+            await packageStore.EnsureAsync(TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(packageStore.RootDirectory, "settings.json"), """
                 {
                   "enabled": true,
                   "checkIntervalMinutes": 60,
@@ -85,9 +83,9 @@ public sealed class UpdateSettingsStoreTests
                   "workingDirectory": "updates",
                   "healthTimeoutSeconds": 120
                 }
-                """);
+                """, TestContext.Current.CancellationToken);
 
-            var settings = await store.GetAsync();
+            var settings = await store.GetAsync(TestContext.Current.CancellationToken);
 
             settings.ServiceName.Should().Be("FinanceManagerService");
             settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
@@ -108,7 +106,7 @@ public sealed class UpdateSettingsStoreTests
         {
             var (store, _) = CreateStore(root.FullName);
 
-            var settings = await store.GetAsync();
+            var settings = await store.GetAsync(TestContext.Current.CancellationToken);
 
             settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
             settings.SourceCheckEndTime.Should().Be(new TimeOnly(6, 0));
@@ -127,10 +125,8 @@ public sealed class UpdateSettingsStoreTests
         try
         {
             var (store, packageStore) = CreateStore(root.FullName);
-            await packageStore.EnsureAsync();
-            await File.WriteAllTextAsync(
-                Path.Combine(packageStore.RootDirectory, "settings.json"),
-                """
+            await packageStore.EnsureAsync(TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(packageStore.RootDirectory, "settings.json"), """
                 {
                   "enabled": true,
                   "checkIntervalMinutes": 60,
@@ -143,9 +139,9 @@ public sealed class UpdateSettingsStoreTests
                   "workingDirectory": "updates",
                   "healthTimeoutSeconds": 120
                 }
-                """);
+                """, TestContext.Current.CancellationToken);
 
-            var settings = await store.GetAsync();
+            var settings = await store.GetAsync(TestContext.Current.CancellationToken);
 
             settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
             settings.SourceCheckEndTime.Should().Be(new TimeOnly(6, 0));
@@ -176,7 +172,7 @@ public sealed class UpdateSettingsStoreTests
                 null,
                 "custom-updates",
                 200,
-                true));
+                true), TestContext.Current.CancellationToken);
 
             store.ApplyToOptions(settings);
 

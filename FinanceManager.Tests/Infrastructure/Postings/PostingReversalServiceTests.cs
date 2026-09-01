@@ -79,22 +79,22 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 250m, "Salary");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         result.ReversedPostingIds.Should().Contain(posting.Id);
         result.CreatedReversalIds.Should().HaveCount(1);
         var reversalId = result.CreatedReversalIds.Single();
-        var reversal = await context.Postings.FindAsync(reversalId);
+        var reversal = await context.Postings.FindAsync(new object?[] { reversalId }, TestContext.Current.CancellationToken);
         reversal.Should().NotBeNull();
         reversal!.Amount.Should().Be(-250m);
         reversal.Subject.Should().StartWith("REVERSAL:");
         reversal.ReversalForPostingId.Should().Be(posting.Id);
 
-        var updated = await context.Postings.FindAsync(posting.Id);
+        var updated = await context.Postings.FindAsync(new object?[] { posting.Id }, TestContext.Current.CancellationToken);
         updated!.ReversedByPostingId.Should().Be(reversalId);
         updated.ReversedByUserId.Should().Be(OwnerId);
     }
@@ -116,17 +116,17 @@ public sealed class PostingReversalServiceTests
         var posting2 = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, new DateTime(2025, 2, 1), -100m, "GroupB", null, null, null);
         posting2.SetGroup(groupId);
         context.Postings.AddRange(posting1, posting2);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 
-        var result = await service.ReversePostingAsync(posting1.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting1.Id, OwnerId, TestContext.Current.CancellationToken);
 
         result.ReversedPostingIds.Should().HaveCount(2);
         result.CreatedReversalIds.Should().HaveCount(2);
 
-        var updated1 = await context.Postings.FindAsync(posting1.Id);
-        var updated2 = await context.Postings.FindAsync(posting2.Id);
+        var updated1 = await context.Postings.FindAsync(new object?[] { posting1.Id }, TestContext.Current.CancellationToken);
+        var updated2 = await context.Postings.FindAsync(new object?[] { posting2.Id }, TestContext.Current.CancellationToken);
         updated1!.IsReversed.Should().BeTrue();
         updated2!.IsReversed.Should().BeTrue();
     }
@@ -143,10 +143,10 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 50m);
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
-        await service.ReversePostingAsync(posting.Id, OwnerId);
+        await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         var act = async () => await service.ReversePostingAsync(posting.Id, OwnerId);
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -163,7 +163,7 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 75m);
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 
@@ -186,7 +186,7 @@ public sealed class PostingReversalServiceTests
         var reversal = CreatePosting(account.Id, -100m, "REVERSAL: Original");
         reversal.SetReversalFor(original);
         context.Postings.AddRange(original, reversal);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 
@@ -216,7 +216,7 @@ public sealed class PostingReversalServiceTests
         posting2.SetReversedBy(dummyReversal, OwnerId);
 
         context.Postings.AddRange(posting1, posting2, dummyReversal);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 
@@ -251,11 +251,11 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 200m);
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 
-        var validation = await service.CanReverseAsync(posting.Id, OwnerId);
+        var validation = await service.CanReverseAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         validation.IsValid.Should().BeTrue();
         validation.Errors.Should().BeEmpty();
@@ -280,11 +280,11 @@ public sealed class PostingReversalServiceTests
         var posting3 = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, new DateTime(2025, 4, 1), 50m, "Other", null, null, null);
         posting3.SetGroup(Guid.NewGuid()); // different group
         context.Postings.AddRange(posting1, posting2, posting3);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 
-        var related = await service.GetRelatedPostingsAsync(posting1.Id);
+        var related = await service.GetRelatedPostingsAsync(posting1.Id, TestContext.Current.CancellationToken);
 
         related.Should().HaveCount(1);
         related.Single().Id.Should().Be(posting2.Id);
@@ -304,7 +304,7 @@ public sealed class PostingReversalServiceTests
         var nonExistentId = new Guid("99999999-0000-0000-0000-000000000001");
 
         // Act
-        var result = await service.CanReverseAsync(nonExistentId, OwnerId);
+        var result = await service.CanReverseAsync(nonExistentId, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -323,11 +323,11 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 100m, "Owned by OwnerId");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.CanReverseAsync(posting.Id, OtherId);
+        var result = await service.CanReverseAsync(posting.Id, OtherId, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -346,14 +346,14 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 100m, "Original");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
         // Reverse once to mark it as already reversed
-        await service.ReversePostingAsync(posting.Id, OwnerId);
+        await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.CanReverseAsync(posting.Id, OwnerId);
+        var result = await service.CanReverseAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -374,11 +374,11 @@ public sealed class PostingReversalServiceTests
         var reversalPosting = CreatePosting(account.Id, -100m, "REVERSAL: Original");
         reversalPosting.SetReversalFor(original);
         context.Postings.AddRange(original, reversalPosting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.CanReverseAsync(reversalPosting.Id, OwnerId);
+        var result = await service.CanReverseAsync(reversalPosting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -407,11 +407,11 @@ public sealed class PostingReversalServiceTests
         p2.SetReversedBy(dummyReversal, OwnerId);
 
         context.Postings.AddRange(p1, p2, dummyReversal);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.CanReverseAsync(p1.Id, OwnerId);
+        var result = await service.CanReverseAsync(p1.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -430,15 +430,15 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 500m, "Salary Payment");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         var reversalId = result.CreatedReversalIds.Single();
-        var reversal = await context.Postings.FindAsync(reversalId);
+        var reversal = await context.Postings.FindAsync(new object?[] { reversalId }, TestContext.Current.CancellationToken);
         reversal.Should().NotBeNull();
         reversal!.Amount.Should().Be(-500m);
         reversal.Subject.Should().StartWith("REVERSAL:");
@@ -456,14 +456,14 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 300m, "Test");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
-        var updated = await context.Postings.FindAsync(posting.Id);
+        var updated = await context.Postings.FindAsync(new object?[] { posting.Id }, TestContext.Current.CancellationToken);
         updated!.IsReversed.Should().BeTrue();
         updated.ReversedByPostingId.Should().Be(result.CreatedReversalIds.Single());
         updated.ReversedByUserId.Should().Be(OwnerId);
@@ -481,15 +481,15 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 200m, "Original");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         var reversalId = result.CreatedReversalIds.Single();
-        var reversal = await context.Postings.FindAsync(reversalId);
+        var reversal = await context.Postings.FindAsync(new object?[] { reversalId }, TestContext.Current.CancellationToken);
         reversal!.IsReversal.Should().BeTrue();
         reversal.ReversalForPostingId.Should().Be(posting.Id);
     }
@@ -506,15 +506,15 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 100m, "Test");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.StatementDraftId.Should().NotBe(Guid.Empty);
-        var draft = await context.StatementDrafts.FindAsync(result.StatementDraftId);
+        var draft = await context.StatementDrafts.FindAsync(new object?[] { result.StatementDraftId }, TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
     }
 
@@ -531,16 +531,16 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 100m, "Gehalt Januar");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert – StatementDraftEntry must mirror the original, not the counter-booking
         var draft = await context.StatementDrafts
             .Include(d => d.Entries)
-            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId, cancellationToken: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         var entry = draft!.Entries.Single();
         entry.Amount.Should().Be(100m, "the entry amount must equal the original posting amount");
@@ -559,11 +559,11 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 150m, "ToReverse");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.ReversedPostingIds.Should().ContainSingle().Which.Should().Be(posting.Id);
@@ -594,7 +594,7 @@ public sealed class PostingReversalServiceTests
             description: null,
             securitySubType: null);
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
@@ -622,17 +622,17 @@ public sealed class PostingReversalServiceTests
         var p2 = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, new DateTime(2025, 7, 1), -100m, "G2", null, null, null);
         p2.SetGroup(groupId);
         context.Postings.AddRange(p1, p2);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(p1.Id, OwnerId);
+        var result = await service.ReversePostingAsync(p1.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.CreatedReversalIds.Should().HaveCount(2);
         var reversals = await context.Postings
             .Where(p => result.CreatedReversalIds.Contains(p.Id))
-            .ToListAsync();
+            .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         reversals.Should().AllSatisfy(r => r.GroupId.Should().NotBe(Guid.Empty));
         reversals.Select(r => r.GroupId).Distinct().Should().ContainSingle("all reversals share one GroupId");
     }
@@ -650,15 +650,15 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 250m, "AccountCheck");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         var reversalId = result.CreatedReversalIds.Single();
-        var reversal = await context.Postings.FindAsync(reversalId);
+        var reversal = await context.Postings.FindAsync(new object?[] { reversalId }, TestContext.Current.CancellationToken);
         reversal!.AccountId.Should().Be(account.Id);
     }
 
@@ -689,11 +689,11 @@ public sealed class PostingReversalServiceTests
             description: null,
             securitySubType: null);
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(posting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         result.ReversedPostingIds.Should().ContainSingle();
@@ -717,11 +717,11 @@ public sealed class PostingReversalServiceTests
         // A second ungrouped posting – the bug causes it to be returned as a "related" posting
         var unrelated = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, new DateTime(2025, 9, 1), 60m, "Unrelated", null, null, null);
         context.Postings.AddRange(posting, unrelated);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var related = await service.GetRelatedPostingsAsync(posting.Id);
+        var related = await service.GetRelatedPostingsAsync(posting.Id, TestContext.Current.CancellationToken);
 
         // Assert – currently fails because the query returns `unrelated`
         related.Should().BeEmpty("a posting with no GroupId should have no related postings");
@@ -751,16 +751,16 @@ public sealed class PostingReversalServiceTests
         contactPosting.SetGroup(groupId);
 
         context.Postings.AddRange(bankPosting, contactPosting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert – draft entry must carry the contact assignment
         var draft = await context.StatementDrafts
             .Include(d => d.Entries)
-            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId, cancellationToken: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         var entry = draft!.Entries.Single();
         entry.ContactId.Should().Be(contactId, "contact must be derived from the related contact posting");
@@ -790,16 +790,16 @@ public sealed class PostingReversalServiceTests
         spPosting.SetGroup(groupId);
 
         context.Postings.AddRange(bankPosting, spPosting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         var draft = await context.StatementDrafts
             .Include(d => d.Entries)
-            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId, cancellationToken: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         var entry = draft!.Entries.Single();
         entry.SavingsPlanId.Should().Be(savingsPlanId, "savings plan must be derived from the related savings plan posting");
@@ -837,16 +837,16 @@ public sealed class PostingReversalServiceTests
         taxPosting.SetGroup(groupId);
 
         context.Postings.AddRange(bankPosting, securityPosting, feePosting, taxPosting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         var service = CreateService(context);
 
         // Act
-        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+        var result = await service.ReversePostingAsync(bankPosting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         var draft = await context.StatementDrafts
             .Include(d => d.Entries)
-            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId);
+            .FirstOrDefaultAsync(d => d.Id == result.StatementDraftId, cancellationToken: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         var entry = draft!.Entries.Single();
         entry.SecurityId.Should().Be(securityId, "security must be derived from the security posting");
@@ -880,13 +880,13 @@ public sealed class PostingReversalServiceTests
         securityPosting.SetGroup(groupId);
 
         context.Postings.AddRange(bankPosting, securityPosting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
         var service = CreateService(context, portfolioCache: portfolioCache.Object);
 
         // Act
-        await service.ReversePostingAsync(bankPosting.Id, OwnerId);
+        await service.ReversePostingAsync(bankPosting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         portfolioCache.Verify(c => c.InvalidateCacheAsync(OwnerId, It.IsAny<CancellationToken>()), Times.Once);
@@ -905,13 +905,13 @@ public sealed class PostingReversalServiceTests
         context.Accounts.Add(account);
         var posting = CreatePosting(account.Id, 100m, "NoSecurity");
         context.Postings.Add(posting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
         var service = CreateService(context, portfolioCache: portfolioCache.Object);
 
         // Act
-        await service.ReversePostingAsync(posting.Id, OwnerId);
+        await service.ReversePostingAsync(posting.Id, OwnerId, TestContext.Current.CancellationToken);
 
         // Assert
         portfolioCache.Verify(c => c.InvalidateCacheAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -941,7 +941,7 @@ public sealed class PostingReversalServiceTests
         securityPosting.SetGroup(groupId);
 
         context.Postings.AddRange(bankPosting, securityPosting);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = CreateService(context);
 

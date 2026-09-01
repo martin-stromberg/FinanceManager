@@ -47,7 +47,7 @@ public sealed class PortfolioKpiConfigurationRepositoryTests : IDisposable
         var updated = await _sut.UpsertAsync(userId, "[0,1,2]", "[0,1,2]", CancellationToken.None);
 
         updated.ActiveTileIds.Should().Be("[0,1,2]");
-        (await _db.PortfolioKpiConfigurations.CountAsync(c => c.OwnerUserId == userId)).Should().Be(1);
+        (await _db.PortfolioKpiConfigurations.CountAsync(c => c.OwnerUserId == userId, cancellationToken: TestContext.Current.CancellationToken)).Should().Be(1);
     }
 
     [Fact]

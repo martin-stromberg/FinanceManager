@@ -37,21 +37,21 @@ public sealed class AttachmentCleanupTests
         var c1 = new Contact(owner, "Alpha", ContactType.Person, null, null);
         var c2 = new Contact(owner, "Beta", ContactType.Person, null, null);
         db.Contacts.AddRange(c1, c2);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // add attachments for both contacts
         db.Attachments.Add(new Attachment(owner, AttachmentEntityKind.Contact, c1.Id, "a.txt", "text/plain", 1, null, null, new byte[] { 1 }, null));
         db.Attachments.Add(new Attachment(owner, AttachmentEntityKind.Contact, c2.Id, "b.txt", "text/plain", 1, null, null, new byte[] { 2 }, null));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(2, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact));
+        Assert.Equal(2, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact, cancellationToken: TestContext.Current.CancellationToken));
 
         var ok = await svc.DeleteAsync(c1.Id, owner, CancellationToken.None);
         Assert.True(ok);
 
         // c1 attachments removed, c2 remains
-        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == c1.Id));
-        Assert.Equal(1, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == c2.Id));
+        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == c1.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(1, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == c2.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         conn.Dispose();
     }
@@ -62,25 +62,25 @@ public sealed class AttachmentCleanupTests
         var (db, conn, owner) = CreateDb();
         var bank = new Contact(owner, "Bank X", ContactType.Bank, null, null);
         db.Contacts.Add(bank);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var acc = new Account(owner, AccountType.Giro, "Konto A", "DE00", bank.Id);
         db.Accounts.Add(acc);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // add attachments to account and bank contact
         db.Attachments.Add(new Attachment(owner, AttachmentEntityKind.Account, acc.Id, "acc.txt", "text/plain", 1, null, null, new byte[] { 1 }, null));
         db.Attachments.Add(new Attachment(owner, AttachmentEntityKind.Contact, bank.Id, "bank.txt", "text/plain", 1, null, null, new byte[] { 1 }, null));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new AccountService(db);
         var ok = await svc.DeleteAsync(acc.Id, owner, CancellationToken.None);
         Assert.True(ok);
 
         // account attachments removed
-        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Account && a.EntityId == acc.Id));
+        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Account && a.EntityId == acc.Id, cancellationToken: TestContext.Current.CancellationToken));
         // bank contact removed -> its attachments removed too
-        Assert.False(await db.Contacts.AnyAsync(c => c.Id == bank.Id));
-        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == bank.Id));
+        Assert.False(await db.Contacts.AnyAsync(c => c.Id == bank.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == bank.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         conn.Dispose();
     }
@@ -91,29 +91,29 @@ public sealed class AttachmentCleanupTests
         var (db, conn, owner) = CreateDb();
         var bank = new Contact(owner, "Bank Y", ContactType.Bank, null, null);
         db.Contacts.Add(bank);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var acc1 = new Account(owner, AccountType.Giro, "Konto A", "DE00", bank.Id);
         var acc2 = new Account(owner, AccountType.Savings, "Konto B", "DE01", bank.Id);
         db.Accounts.AddRange(acc1, acc2);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // bank contact attachment
         db.Attachments.Add(new Attachment(owner, AttachmentEntityKind.Contact, bank.Id, "bankY.txt", "text/plain", 1, null, null, new byte[] { 1 }, null));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new AccountService(db);
         var ok = await svc.DeleteAsync(acc1.Id, owner, CancellationToken.None);
         Assert.True(ok);
 
         // bank contact still exists, its attachment remains
-        Assert.True(await db.Contacts.AnyAsync(c => c.Id == bank.Id));
-        Assert.Equal(1, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == bank.Id));
+        Assert.True(await db.Contacts.AnyAsync(c => c.Id == bank.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(1, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == bank.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         // cleanup: delete second account, then bank contact attachment should be removed
         ok = await svc.DeleteAsync(acc2.Id, owner, CancellationToken.None);
         Assert.True(ok);
-        Assert.False(await db.Contacts.AnyAsync(c => c.Id == bank.Id));
-        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == bank.Id));
+        Assert.False(await db.Contacts.AnyAsync(c => c.Id == bank.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Contact && a.EntityId == bank.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         conn.Dispose();
     }
@@ -129,11 +129,11 @@ public sealed class AttachmentCleanupTests
         Assert.True(archived);
 
         db.Attachments.Add(new Attachment(owner, AttachmentEntityKind.SavingsPlan, dto.Id, "sp.txt", "text/plain", 1, null, null, new byte[] { 1 }, null));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var ok = await svc.DeleteAsync(dto.Id, owner, CancellationToken.None);
         Assert.True(ok);
-        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.SavingsPlan && a.EntityId == dto.Id));
+        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.SavingsPlan && a.EntityId == dto.Id, cancellationToken: TestContext.Current.CancellationToken));
         conn.Dispose();
     }
 
@@ -148,11 +148,11 @@ public sealed class AttachmentCleanupTests
         Assert.True(archived);
 
         db.Attachments.Add(new Attachment(owner, AttachmentEntityKind.Security, created.Id, "sec.txt", "text/plain", 1, null, null, new byte[] { 1 }, null));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var ok = await svc.DeleteAsync(created.Id, owner, CancellationToken.None);
         Assert.True(ok);
-        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Security && a.EntityId == created.Id));
+        Assert.Equal(0, await db.Attachments.CountAsync(a => a.EntityKind == AttachmentEntityKind.Security && a.EntityId == created.Id, cancellationToken: TestContext.Current.CancellationToken));
         conn.Dispose();
     }
 }

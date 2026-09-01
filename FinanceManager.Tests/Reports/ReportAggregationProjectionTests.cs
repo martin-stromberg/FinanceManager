@@ -95,14 +95,14 @@ public sealed class ReportAggregationProjectionTests
         var user = await AddUserAsync(db, "projection-owner");
         var missingCurrent = AddSecurity(db, user.Id, "Missing Current");
         var confirmedCurrent = AddSecurity(db, user.Id, "Confirmed Current");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, missingCurrent, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, missingCurrent, new DateTime(2025, 5, 10), 100m, -5m, -25m);
         AddDividendGroup(db, confirmedCurrent, new DateTime(2025, 5, 12), 40m);
         AddDividendGroup(db, confirmedCurrent, new DateTime(2026, 5, 20), 50m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(
@@ -140,13 +140,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-events");
         var security = AddSecurity(db, user.Id, "Quarterly Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 40m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 25), 60m);
         AddDividendGroup(db, security, new DateTime(2026, 5, 10), 45m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -172,12 +172,12 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-shifted");
         var security = AddSecurity(db, user.Id, "Shifted Annual Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddDividendGroup(db, security, new DateTime(2025, 5, 12), 86m, tax: -22.68m);
         AddDividendGroup(db, security, new DateTime(2026, 4, 21), 70m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -203,7 +203,7 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-monthly");
         var security = AddSecurity(db, user.Id, "Monthly Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         for (var month = 1; month <= 7; month++)
@@ -216,7 +216,7 @@ public sealed class ReportAggregationProjectionTests
             AddDividendGroup(db, security, new DateTime(2026, month, 10), 10m);
         }
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -249,7 +249,7 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-monthly-corrections");
         var security = AddSecurity(db, user.Id, "Monthly Corrections Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         for (var month = 1; month <= 12; month++)
@@ -266,7 +266,7 @@ public sealed class ReportAggregationProjectionTests
         AddDividendGroup(db, security, new DateTime(2026, 4, 20), 10m);
         AddDividendGroup(db, security, new DateTime(2026, 4, 25), -10m);
         AddDividendGroup(db, security, new DateTime(2026, 4, 25), 10m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -303,7 +303,7 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-gladstone-corrections");
         var security = AddSecurity(db, user.Id, "Gladstone Commercial Corp");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2026, 5, 4), 9.41m);
@@ -348,7 +348,7 @@ public sealed class ReportAggregationProjectionTests
         AddDividendGroup(db, security, new DateTime(2025, 3, 3), 10.52m);
         AddDividendGroup(db, security, new DateTime(2025, 2, 4), 10.75m);
         AddDividendGroup(db, security, new DateTime(2025, 1, 2), 10.65m, tax: -1.31m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -385,12 +385,12 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-quarterly");
         var security = AddSecurity(db, user.Id, "Quarterly Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddDividendGroup(db, security, new DateTime(2025, 3, 10), 30m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 12), 40m);
         AddDividendGroup(db, security, new DateTime(2026, 3, 25), 35m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -423,12 +423,12 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-quarter-open");
         var security = AddSecurity(db, user.Id, "Open Quarter Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 3, 10), 30m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 12), 40m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -454,13 +454,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-irregular-paid");
         var security = AddSecurity(db, user.Id, "Irregular Paid Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddDividendGroup(db, security, new DateTime(2025, 1, 10), 10m);
         AddDividendGroup(db, security, new DateTime(2025, 2, 20), 20m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 15), 30m);
         AddDividendGroup(db, security, new DateTime(2026, 4, 30), 25m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -486,13 +486,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-irregular-open");
         var security = AddSecurity(db, user.Id, "Irregular Open Dividend");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 1, 10), 10m);
         AddDividendGroup(db, security, new DateTime(2025, 2, 20), 20m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 15), 30m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -519,14 +519,14 @@ public sealed class ReportAggregationProjectionTests
         var user = await AddUserAsync(db, "projection-valuta");
         var valutaSecurity = AddSecurity(db, user.Id, "Valuta Security");
         var bookingSecurity = AddSecurity(db, user.Id, "Booking Fallback Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, valutaSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddTrade(db, bookingSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, valutaSecurity, new DateTime(2025, 4, 30), 30m, valutaDate: new DateTime(2025, 5, 2));
         AddDividendGroup(db, bookingSecurity, new DateTime(2025, 5, 4), 70m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -551,7 +551,7 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("projection-bank", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -575,9 +575,9 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-invalid");
         var security = AddSecurity(db, user.Id, "Invalid Selection Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         AddDividendGroup(db, security, new DateTime(2026, 5, 10), 20m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var multiKind = await sut.QueryAsync(new ReportAggregationQuery(
@@ -617,13 +617,13 @@ public sealed class ReportAggregationProjectionTests
         var user = await AddUserAsync(db, "projection-category");
         var category = new FinanceManager.Domain.Securities.SecurityCategory(user.Id, "Income");
         db.SecurityCategories.Add(category);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var security = AddSecurity(db, user.Id, "Categorized Security", category.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 80m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -648,13 +648,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-sold");
         var security = AddSecurity(db, user.Id, "Sold Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddTrade(db, security, new DateTime(2026, 5, 10), SecurityPostingSubType.Sell, -10m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -680,12 +680,12 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-year-sold-after-start");
         var security = AddSecurity(db, user.Id, "Year Sold Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddTrade(db, security, new DateTime(2026, 5, 10), SecurityPostingSubType.Sell, -10m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -711,13 +711,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-positive-sell");
         var security = AddSecurity(db, user.Id, "Positive Sell Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddTrade(db, security, new DateTime(2026, 5, 1), SecurityPostingSubType.Sell, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -742,7 +742,7 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-sell-reversal");
         var security = AddSecurity(db, user.Id, "Reversed Sell Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
@@ -750,7 +750,7 @@ public sealed class ReportAggregationProjectionTests
         var reversal = AddTrade(db, security, new DateTime(2026, 5, 2), SecurityPostingSubType.Sell, 10m);
         reversal.SetReversalFor(sell);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -775,13 +775,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-partial-sell");
         var security = AddSecurity(db, user.Id, "Partially Sold Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddTrade(db, security, new DateTime(2026, 5, 1), SecurityPostingSubType.Sell, -4m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -806,7 +806,7 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-booked-closed");
         var security = AddSecurity(db, user.Id, "Closed Monthly Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddTrade(db, security, new DateTime(2026, 7, 10), SecurityPostingSubType.Sell, -10m);
@@ -820,7 +820,7 @@ public sealed class ReportAggregationProjectionTests
             AddDividendGroup(db, security, new DateTime(2026, month, 10), 10m);
         }
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -847,10 +847,10 @@ public sealed class ReportAggregationProjectionTests
         var user = await AddUserAsync(db, "projection-category-holding");
         var category = new FinanceManager.Domain.Securities.SecurityCategory(user.Id, "Income");
         db.SecurityCategories.Add(category);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var heldSecurity = AddSecurity(db, user.Id, "Held Security", category.Id);
         var soldSecurity = AddSecurity(db, user.Id, "Sold Security", category.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, heldSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
@@ -858,7 +858,7 @@ public sealed class ReportAggregationProjectionTests
         AddTrade(db, soldSecurity, new DateTime(2026, 5, 10), SecurityPostingSubType.Sell, -10m);
         AddDividendGroup(db, heldSecurity, new DateTime(2025, 5, 10), 80m);
         AddDividendGroup(db, soldSecurity, new DateTime(2025, 5, 10), 40m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -887,12 +887,12 @@ public sealed class ReportAggregationProjectionTests
         var otherUser = await AddUserAsync(db, "projection-other-isolation");
         var ownSecurity = AddSecurity(db, owner.Id, "Own Security");
         var otherSecurity = AddSecurity(db, otherUser.Id, "Other Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, otherSecurity, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, ownSecurity, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -917,13 +917,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-holding-valuta");
         var security = AddSecurity(db, user.Id, "Valuta Holding Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddTrade(db, security, new DateTime(2026, 5, 1), SecurityPostingSubType.Sell, -10m, new DateTime(2026, 5, 20));
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -949,12 +949,12 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-no-quantity");
         var security = AddSecurity(db, user.Id, "No Quantity Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(2026, 5, 1);
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, null);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 100m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -979,13 +979,13 @@ public sealed class ReportAggregationProjectionTests
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-intervals");
         var security = AddSecurity(db, user.Id, "Interval Security");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         AddTrade(db, security, new DateTime(2024, 1, 1), SecurityPostingSubType.Buy, 10m);
         AddDividendGroup(db, security, new DateTime(2025, 1, 10), 10m);
         AddDividendGroup(db, security, new DateTime(2025, 5, 10), 20m);
         AddDividendGroup(db, security, new DateTime(2025, 6, 10), 40m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var ytd = await sut.QueryAsync(new ReportAggregationQuery(

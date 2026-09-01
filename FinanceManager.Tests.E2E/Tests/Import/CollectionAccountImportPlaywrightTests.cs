@@ -1,4 +1,4 @@
-﻿using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Postings;
 
 namespace FinanceManager.Tests.E2E;
 
@@ -35,7 +35,7 @@ public sealed class CollectionAccountImportPlaywrightTests
         // Write the multi-IBAN CSV to a temp file and upload via the home-page file widget
         var csv = BuildMultiIbanCsv(iban1, iban2);
         var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-collection.csv");
-        await File.WriteAllTextAsync(tempFile, csv);
+        await File.WriteAllTextAsync(tempFile, csv, TestContext.Current.CancellationToken);
         try
         {
             await page.GotoAsync("/");
@@ -122,7 +122,7 @@ public sealed class CollectionAccountImportPlaywrightTests
         // Upload the single-IBAN CSV (sub-IBAN) via the home-page import widget
         var csv = BuildSingleIbanCsv(subIban);
         var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-sub-iban.csv");
-        await File.WriteAllTextAsync(tempFile, csv);
+        await File.WriteAllTextAsync(tempFile, csv, TestContext.Current.CancellationToken);
         StatementDraftUploadResult? uploadResult = null;
         try
         {

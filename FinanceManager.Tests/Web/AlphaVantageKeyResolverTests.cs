@@ -18,7 +18,7 @@ public sealed class AlphaVantageKeyResolverTests
         var user = new User("user", "hash", isAdmin: false);
         user.SetAlphaVantageKey(protector.Protect("personal-key"));
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var resolver = CreateResolver(db, protector);
 
         var key = await resolver.GetForUserAsync(user.Id, CancellationToken.None);
@@ -35,7 +35,7 @@ public sealed class AlphaVantageKeyResolverTests
         var user = new User("user", "hash", isAdmin: false);
         user.SetAlphaVantageKey("legacy-key");
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var resolver = CreateResolver(db, protector);
 
         var key = await resolver.GetForUserAsync(user.Id, CancellationToken.None);
@@ -57,7 +57,7 @@ public sealed class AlphaVantageKeyResolverTests
         admin.SetShareAlphaVantageKey(true);
         admin.SetAlphaVantageKey(protector.Protect("shared-key"));
         db.Users.AddRange(user, admin);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var resolver = CreateResolver(db, protector);
 
         var key = await resolver.GetForUserAsync(user.Id, CancellationToken.None);
@@ -74,7 +74,7 @@ public sealed class AlphaVantageKeyResolverTests
         var user = new User("user", "hash", isAdmin: false);
         user.SetAlphaVantageKey(DataProtectionAlphaVantageSecretProtector.ProtectedPrefix + secretPayload);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var resolver = CreateResolver(db, protector);
 
         var act = () => resolver.GetForUserAsync(user.Id, CancellationToken.None);

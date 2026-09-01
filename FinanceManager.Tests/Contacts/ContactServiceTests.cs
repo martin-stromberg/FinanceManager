@@ -62,7 +62,7 @@ public sealed class ContactServiceTests
         var owner = Guid.NewGuid();
         var self = new Contact(owner, "Me", ContactType.Self, null);
         db.Contacts.Add(self);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         Func<Task> act = () => sut.UpdateAsync(self.Id, owner, "Me2", ContactType.Person, null, null, null, CancellationToken.None);
         var ex = await Assert.ThrowsAsync<ArgumentException>(act);
@@ -101,7 +101,7 @@ public sealed class ContactServiceTests
         var owner = Guid.NewGuid();
         var self = new Contact(owner, "Me", ContactType.Self, null);
         db.Contacts.Add(self);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         Func<Task> act = () => sut.DeleteAsync(self.Id, owner, CancellationToken.None);
         var ex = await Assert.ThrowsAsync<ArgumentException>(act);
@@ -118,7 +118,7 @@ public sealed class ContactServiceTests
             new Contact(owner1, "A", ContactType.Person, null),
             new Contact(owner2, "B", ContactType.Person, null),
             new Contact(owner1, "C", ContactType.Person, null));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var list = await sut.ListAsync(owner1, 0, 50, null, null, CancellationToken.None);
 
@@ -134,7 +134,7 @@ public sealed class ContactServiceTests
         var owner2 = Guid.NewGuid();
         var c = new Contact(owner1, "A", ContactType.Person, null);
         db.Contacts.Add(c);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var dto = await sut.GetAsync(c.Id, owner2, CancellationToken.None);
         Assert.Null(dto);

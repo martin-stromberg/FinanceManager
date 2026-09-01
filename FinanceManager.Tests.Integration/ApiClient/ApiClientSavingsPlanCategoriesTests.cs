@@ -35,34 +35,34 @@ public class ApiClientSavingsPlanCategoriesTests : IClassFixture<TestWebApplicat
         await EnsureAuthenticatedAsync(api);
 
         // initial list
-        var list = await api.SavingsPlanCategories_ListAsync();
+        var list = await api.SavingsPlanCategories_ListAsync(TestContext.Current.CancellationToken);
         list.Should().NotBeNull();
 
         // create
-        var created = await api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = "CatA" });
+        var created = await api.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = "CatA" }, TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
         created!.Name.Should().Be("CatA");
 
         // get
-        var got = await api.SavingsPlanCategories_GetAsync(created.Id);
+        var got = await api.SavingsPlanCategories_GetAsync(created.Id, TestContext.Current.CancellationToken);
         got.Should().NotBeNull();
         got!.Id.Should().Be(created.Id);
 
         // update
-        var updated = await api.SavingsPlanCategories_UpdateAsync(created.Id, new SavingsPlanCategoryDto { Name = "CatB" });
+        var updated = await api.SavingsPlanCategories_UpdateAsync(created.Id, new SavingsPlanCategoryDto { Name = "CatB" }, TestContext.Current.CancellationToken);
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("CatB");
 
         // set/clear symbol (no actual attachment, just expect not found=false semantics)
-        var setOk = await api.SavingsPlanCategories_SetSymbolAsync(created.Id, Guid.NewGuid());
+        var setOk = await api.SavingsPlanCategories_SetSymbolAsync(created.Id, Guid.NewGuid(), TestContext.Current.CancellationToken);
         setOk.Should().BeTrue();
-        var clearOk = await api.SavingsPlanCategories_ClearSymbolAsync(created.Id);
+        var clearOk = await api.SavingsPlanCategories_ClearSymbolAsync(created.Id, TestContext.Current.CancellationToken);
         clearOk.Should().BeTrue();
 
         // delete
-        var del = await api.SavingsPlanCategories_DeleteAsync(created.Id);
+        var del = await api.SavingsPlanCategories_DeleteAsync(created.Id, TestContext.Current.CancellationToken);
         del.Should().BeTrue();
-        var gone = await api.SavingsPlanCategories_GetAsync(created.Id);
+        var gone = await api.SavingsPlanCategories_GetAsync(created.Id, TestContext.Current.CancellationToken);
         gone.Should().BeNull();
     }
 }

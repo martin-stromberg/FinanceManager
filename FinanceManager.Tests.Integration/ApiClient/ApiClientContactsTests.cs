@@ -35,41 +35,41 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
         await EnsureAuthenticatedAsync(api);
 
         // list initially contains auto-created Self contact
-        var list = await api.Contacts_ListAsync(skip: 0, take: 10);
+        var list = await api.Contacts_ListAsync(skip: 0, take: 10, ct: TestContext.Current.CancellationToken);
         list.Should().NotBeNull();
         list.Should().NotBeEmpty();
         list.Should().ContainSingle(c => c.Type == ContactType.Self);
         var initialCount = list.Count;
 
         // create
-        var created = await api.Contacts_CreateAsync(new ContactCreateRequest("Test", ContactType.Bank, null, null, false));
+        var created = await api.Contacts_CreateAsync(new ContactCreateRequest("Test", ContactType.Bank, null, null, false), TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
         created.Name.Should().Be("Test");
 
         // get by id
-        var got = await api.Contacts_GetAsync(created.Id);
+        var got = await api.Contacts_GetAsync(created.Id, TestContext.Current.CancellationToken);
         got.Should().NotBeNull();
         got!.Id.Should().Be(created.Id);
 
         // update
-        var updated = await api.Contacts_UpdateAsync(created.Id, new ContactUpdateRequest("Test2", ContactType.Bank, null, null, false));
+        var updated = await api.Contacts_UpdateAsync(created.Id, new ContactUpdateRequest("Test2", ContactType.Bank, null, null, false), TestContext.Current.CancellationToken);
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Test2");
 
         // aliases
-        var addOk = await api.Contacts_AddAliasAsync(created.Id, new AliasCreateRequest("PATTERN"));
+        var addOk = await api.Contacts_AddAliasAsync(created.Id, new AliasCreateRequest("PATTERN"), TestContext.Current.CancellationToken);
         addOk.Should().BeTrue();
-        var aliases = await api.Contacts_GetAliasesAsync(created.Id);
+        var aliases = await api.Contacts_GetAliasesAsync(created.Id, TestContext.Current.CancellationToken);
         aliases.Should().NotBeNull();
         aliases.Should().ContainSingle(a => a.Pattern == "PATTERN");
 
         // count should be at least initialCount
-        var count = await api.Contacts_CountAsync();
+        var count = await api.Contacts_CountAsync(TestContext.Current.CancellationToken);
         count.Should().BeGreaterThanOrEqualTo(initialCount);
         // delete
-        var delOk = await api.Contacts_DeleteAsync(created.Id);
+        var delOk = await api.Contacts_DeleteAsync(created.Id, TestContext.Current.CancellationToken);
         delOk.Should().BeTrue();
-        var gone = await api.Contacts_GetAsync(created.Id);
+        var gone = await api.Contacts_GetAsync(created.Id, TestContext.Current.CancellationToken);
         gone.Should().BeNull();
     }
 
@@ -88,10 +88,10 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
             IsPaymentIntermediary: false,
             Parent: new FinanceManager.Shared.Dtos.Common.ParentLinkRequest("statement-drafts/entries", entryId, "ContactId"));
 
-        var created = await api.Contacts_CreateAsync(request);
+        var created = await api.Contacts_CreateAsync(request, TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
 
-        var draft = await api.StatementDrafts_GetAsync(draftId);
+        var draft = await api.StatementDrafts_GetAsync(draftId, ct: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         draft!.Entries.Should().ContainSingle(e => e.Id == entryId && e.ContactId == created.Id);
     }
@@ -101,7 +101,7 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
     {
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
-        var countBefore = (await api.Contacts_ListAsync(all: true)).Count;
+        var countBefore = (await api.Contacts_ListAsync(all: true, ct: TestContext.Current.CancellationToken)).Count;
 
         Func<Task> act = async () => await api.Contacts_CreateAsync(new ContactCreateRequest(
             Name: $"Inline Contact Invalid Parent {Guid.NewGuid():N}",
@@ -120,7 +120,7 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
          lastError.Contains("Zuordnung zum ausgewählten Kontoauszugseintrag fehlgeschlagen", StringComparison.OrdinalIgnoreCase))
             .Should().BeTrue();
 
-        var countAfter = (await api.Contacts_ListAsync(all: true)).Count;
+        var countAfter = (await api.Contacts_ListAsync(all: true, ct: TestContext.Current.CancellationToken)).Count;
         countAfter.Should().Be(countBefore);
     }
 

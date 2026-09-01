@@ -135,7 +135,7 @@ public sealed class PreliminaryStatementDraftE2ETests
         var realEntry = realDraft.AddEntry(DateTime.Today, 50m, "Real", "E2E Shop", DateTime.Today, null, null, false, false);
         db.StatementDrafts.Add(realDraft);
         db.StatementDraftEntries.Add(realEntry);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await BrowserApiHelper.PostJsonAsync(page, $"/api/statement-drafts/{realDraft.Id}/entries/{realEntry.Id}/contact", new StatementDraftSetContactRequest(contact.Id));
 

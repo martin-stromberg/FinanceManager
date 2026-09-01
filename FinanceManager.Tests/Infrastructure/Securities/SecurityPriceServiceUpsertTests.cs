@@ -29,7 +29,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Securities.Add(security);
         db.SecurityPrices.Add(new SecurityPrice(security.Id, new DateTime(2026, 7, 1), 10.10m));
         db.SecurityPrices.Add(new SecurityPrice(security.Id, new DateTime(2026, 7, 2), 10.20m));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
         var items = new List<SecurityPriceImportItem>
@@ -48,7 +48,7 @@ public sealed class SecurityPriceServiceUpsertTests
         var stored = await db.SecurityPrices
             .Where(x => x.SecurityId == security.Id)
             .OrderBy(x => x.Date)
-            .ToListAsync();
+            .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(3, stored.Count);
         Assert.Equal(11.10m, stored[0].Close);
@@ -71,7 +71,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(owner);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
         var items = new List<SecurityPriceImportItem>
@@ -81,7 +81,7 @@ public sealed class SecurityPriceServiceUpsertTests
         };
 
         var result = await sut.UpsertDailyPricesAsync(owner.Id, security.Id, items, CancellationToken.None);
-        var stored = await db.SecurityPrices.SingleAsync(x => x.SecurityId == security.Id && x.Date == new DateTime(2026, 7, 1));
+        var stored = await db.SecurityPrices.SingleAsync(x => x.SecurityId == security.Id && x.Date == new DateTime(2026, 7, 1), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(1, result.Inserted);
         Assert.Equal(12.00m, stored.Close);
@@ -104,7 +104,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(foreignUser);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
         var items = new List<SecurityPriceImportItem> { new(new DateTime(2026, 7, 1), 10.00m, 3) };
@@ -129,7 +129,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(owner);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
 
@@ -140,7 +140,7 @@ public sealed class SecurityPriceServiceUpsertTests
         Assert.Equal(0, result.Unchanged);
         Assert.Equal(0, result.Skipped);
         Assert.Empty(result.Errors);
-        Assert.Empty(await db.SecurityPrices.ToListAsync());
+        Assert.Empty(await db.SecurityPrices.ToListAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(owner);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
         var items = new List<SecurityPriceImportItem>
@@ -170,7 +170,7 @@ public sealed class SecurityPriceServiceUpsertTests
         var act = async () => await sut.UpsertDailyPricesAsync(owner.Id, security.Id, items, CancellationToken.None);
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(act);
-        Assert.Empty(await db.SecurityPrices.ToListAsync());
+        Assert.Empty(await db.SecurityPrices.ToListAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -189,7 +189,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(owner);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>(), portfolioCache.Object);
@@ -217,7 +217,7 @@ public sealed class SecurityPriceServiceUpsertTests
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
         db.SecurityPrices.Add(new SecurityPrice(security.Id, new DateTime(2026, 7, 1), 10.10m));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>(), portfolioCache.Object);
@@ -245,7 +245,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(owner);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
         var items = new List<SecurityPriceImportItem> { new(new DateTime(2026, 7, 1), 10.00m, 3) };
@@ -271,7 +271,7 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(owner);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>(), portfolioCache.Object);
@@ -297,12 +297,12 @@ public sealed class SecurityPriceServiceUpsertTests
         db.Users.Add(owner);
         var security = new Security(owner.Id, "ETF", "ISIN123", null, "ETF", "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new SecurityPriceService(db, Mock.Of<ILogger<SecurityPriceService>>());
 
         await sut.CreateAsync(owner.Id, security.Id, new DateTime(2026, 7, 1), 10.00m, CancellationToken.None);
 
-        Assert.Single(await db.SecurityPrices.ToListAsync());
+        Assert.Single(await db.SecurityPrices.ToListAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 }

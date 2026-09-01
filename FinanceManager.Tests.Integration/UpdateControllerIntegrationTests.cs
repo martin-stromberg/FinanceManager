@@ -30,7 +30,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
     {
         var client = _factory.CreateClient();
 
-        var response = await client.GetAsync("/health");
+        var response = await client.GetAsync("/health", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -40,7 +40,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
     {
         var client = _factory.CreateClient();
 
-        var response = await client.GetAsync("/api/setup/update/status");
+        var response = await client.GetAsync("/api/setup/update/status", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -65,9 +65,9 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             120,
             true);
 
-        var put = await client.PutAsJsonAsync("/api/setup/update/settings", update);
+        var put = await client.PutAsJsonAsync("/api/setup/update/settings", update, cancellationToken: TestContext.Current.CancellationToken);
         put.EnsureSuccessStatusCode();
-        var settings = await put.Content.ReadFromJsonAsync<UpdateSettingsDto>();
+        var settings = await put.Content.ReadFromJsonAsync<UpdateSettingsDto>(cancellationToken: TestContext.Current.CancellationToken);
 
         settings!.Enabled.Should().BeTrue();
         settings.SourceCheckStartTime.Should().Be(new TimeOnly(20, 0));
@@ -90,10 +90,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var client = factory.CreateClient();
         await AuthenticateAdminAsync(client);
 
-        var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true));
+        var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true), cancellationToken: TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(cancellationToken: TestContext.Current.CancellationToken);
         error!.code.Should().Be("Err_Update_Locked");
     }
 
@@ -111,10 +111,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var client = factory.CreateClient();
         await AuthenticateAdminAsync(client);
 
-        var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true));
+        var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true), cancellationToken: TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(cancellationToken: TestContext.Current.CancellationToken);
         error!.code.Should().Be("Err_Update_NotReady");
     }
 
@@ -132,9 +132,9 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             await AuthenticateAdminAsync(client);
 
             var lockPath = Path.Combine(tempDir.FullName, "update.lock");
-            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.AddMinutes(-10).ToString("O"));
+            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.AddMinutes(-10).ToString("O"), TestContext.Current.CancellationToken);
 
-            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"), cancellationToken: TestContext.Current.CancellationToken);
 
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
             File.Exists(lockPath).Should().BeFalse();
@@ -168,10 +168,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var client = factory.CreateClient();
         await AuthenticateAdminAsync(client);
 
-        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"), cancellationToken: TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(statusCode);
-        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(cancellationToken: TestContext.Current.CancellationToken);
         error!.code.Should().Be(errorCode);
         error.code.Should().NotBe("Err_Update_InstallRunning");
     }
@@ -192,10 +192,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var client = factory.CreateClient();
         await AuthenticateAdminAsync(client);
 
-        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+        var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"), cancellationToken: TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
-        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+        var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(cancellationToken: TestContext.Current.CancellationToken);
         error!.code.Should().Be("Err_Update_Reset_Failed");
     }
 
@@ -212,10 +212,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             var client = factory.CreateClient();
             await AuthenticateAdminAsync(client);
 
-            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"), cancellationToken: TestContext.Current.CancellationToken);
 
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(cancellationToken: TestContext.Current.CancellationToken);
             error!.code.Should().Be("Err_Update_Reset_NoLock");
         }
         finally
@@ -238,12 +238,12 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             await AuthenticateAdminAsync(client);
 
             var lockPath = Path.Combine(tempDir.FullName, "update.lock");
-            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.ToString("O"));
+            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.ToString("O"), TestContext.Current.CancellationToken);
 
-            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"));
+            var response = await client.PostAsJsonAsync("/api/setup/update/lock/reset", new UpdateLockResetRequest("integration test"), cancellationToken: TestContext.Current.CancellationToken);
 
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>(cancellationToken: TestContext.Current.CancellationToken);
             error!.code.Should().Be("Err_Update_Reset_LockNotStale");
             File.Exists(lockPath).Should().BeTrue();
         }
@@ -272,9 +272,9 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             await AuthenticateAdminAsync(client);
 
             var lockPath = Path.Combine(tempDir.FullName, "update.lock");
-            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.ToString("O"));
+            await File.WriteAllTextAsync(lockPath, DateTimeOffset.UtcNow.ToString("O"), TestContext.Current.CancellationToken);
 
-            var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true));
+            var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(true), cancellationToken: TestContext.Current.CancellationToken);
 
             response.EnsureSuccessStatusCode();
             File.Exists(lockPath).Should().BeTrue();
@@ -307,7 +307,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
                 250,
                 true);
             var json = JsonSerializer.Serialize(persisted, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-            await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, "settings.json"), json);
+            await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, "settings.json"), json, TestContext.Current.CancellationToken);
 
             using var factory = _factory.WithWebHostBuilder(builder =>
             {
@@ -350,10 +350,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             await AuthenticateAdminAsync(client);
             await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingSnapshot("1.2.3"));
 
-            var response = await client.GetAsync("/api/setup/update/status");
+            var response = await client.GetAsync("/api/setup/update/status", TestContext.Current.CancellationToken);
 
             response.EnsureSuccessStatusCode();
-            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>();
+            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>(cancellationToken: TestContext.Current.CancellationToken);
             status!.Status.Should().Be(UpdateStatusKind.NoUpdate);
         }
         finally
@@ -383,10 +383,10 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             await AuthenticateAdminAsync(client);
             await WriteStatusAsync(tempDir.FullName, UpdateStatusTestData.InstallingSnapshot("9.9.9"));
 
-            var response = await client.GetAsync("/api/setup/update/status");
+            var response = await client.GetAsync("/api/setup/update/status", TestContext.Current.CancellationToken);
 
             response.EnsureSuccessStatusCode();
-            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>();
+            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>(cancellationToken: TestContext.Current.CancellationToken);
             status!.Status.Should().Be(UpdateStatusKind.Failed);
             status.LastError.Should().Be("Installed version '1.2.3' does not match the expected version '9.9.9' after the update process finished.");
         }
@@ -410,7 +410,7 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
         var client = factory.CreateClient();
         await AuthenticateAdminAsync(client);
 
-        var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(false));
+        var response = await client.PostAsJsonAsync("/api/setup/update/install/start", new UpdateStartRequest(false), cancellationToken: TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

@@ -40,7 +40,7 @@ public sealed class SecurityServiceRegionSectorTests
         dto.Region.Should().Be("Nordamerika");
         dto.Sector.Should().Be("Technologie");
 
-        var stored = await db.Securities.AsNoTracking().SingleAsync(s => s.Id == dto.Id);
+        var stored = await db.Securities.AsNoTracking().SingleAsync(s => s.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken);
         stored.Region.Should().Be("Nordamerika");
         stored.Sector.Should().Be("Technologie");
     }
@@ -74,7 +74,7 @@ public sealed class SecurityServiceRegionSectorTests
         updated!.Region.Should().Be("Europa");
         updated.Sector.Should().Be("Pharma");
 
-        var stored = await db.Securities.AsNoTracking().SingleAsync(s => s.Id == created.Id);
+        var stored = await db.Securities.AsNoTracking().SingleAsync(s => s.Id == created.Id, cancellationToken: TestContext.Current.CancellationToken);
         stored.Region.Should().Be("Europa");
         stored.Sector.Should().Be("Pharma");
     }

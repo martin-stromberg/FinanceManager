@@ -31,7 +31,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.LastError).Returns("No ready update package is available.");
         var vm = CreateVm(apiMock.Object);
 
-        await vm.StartInstallAsync(confirmDowntime: true);
+        await vm.StartInstallAsync(confirmDowntime: true, ct: TestContext.Current.CancellationToken);
 
         vm.Installing.Should().BeFalse();
         vm.Busy.Should().BeFalse();
@@ -50,7 +50,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.LastError).Returns("No active update lock exists.");
         var vm = CreateVm(apiMock.Object);
 
-        await vm.ResetLockAsync();
+        await vm.ResetLockAsync(TestContext.Current.CancellationToken);
 
         vm.Busy.Should().BeFalse();
         vm.LastErrorCode.Should().Be("Err_Update_Reset_NoLock");
@@ -71,7 +71,7 @@ public sealed class SetupUpdateViewModelTests
             .ReturnsAsync(unlocked);
         var vm = CreateVm(apiMock.Object);
 
-        await vm.ResetLockAsync();
+        await vm.ResetLockAsync(TestContext.Current.CancellationToken);
 
         vm.Status.Should().Be(unlocked);
         vm.Status!.IsLocked.Should().BeFalse();
@@ -85,7 +85,7 @@ public sealed class SetupUpdateViewModelTests
         var apiMock = new Mock<IApiClient>();
         var vm = CreateVm(apiMock.Object);
 
-        await vm.StartInstallWithConfirmationAsync();
+        await vm.StartInstallWithConfirmationAsync(TestContext.Current.CancellationToken);
 
         apiMock.Verify(
             a => a.Updates_StartInstallAsync(It.IsAny<UpdateStartRequest>(), It.IsAny<CancellationToken>()),
@@ -103,7 +103,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.Ready));
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         GetAction(vm, "UpdateInstall").Disabled.Should().BeTrue();
 
@@ -122,7 +122,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(ready);
         var vm = CreateVm(apiMock.Object);
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.Settings.Should().BeEquivalentTo(settings);
         vm.Status!.Status.Should().Be(UpdateStatusKind.Ready);
@@ -141,10 +141,10 @@ public sealed class SetupUpdateViewModelTests
             .Callback<UpdateSettingsUpdateRequest, CancellationToken>((request, _) => sentRequest = request)
             .ReturnsAsync(settings with { Enabled = true, IncludePrereleases = true });
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.UpdateSettings(settings with { Enabled = true, IncludePrereleases = true });
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         vm.Settings!.Enabled.Should().BeTrue();
         vm.Settings.IncludePrereleases.Should().BeTrue();
@@ -176,10 +176,10 @@ public sealed class SetupUpdateViewModelTests
             .Callback(() => calls.Add("check"))
             .ReturnsAsync(new UpdateCheckResultDto(true, ready, "Update package is ready to install."));
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.UpdateSettings(settings with { IncludePrereleases = true });
 
-        await vm.CheckAsync();
+        await vm.CheckAsync(TestContext.Current.CancellationToken);
 
         calls.Should().Equal("save", "check");
         sentRequest!.IncludePrereleases.Should().BeTrue();
@@ -196,7 +196,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.UpdateSettings(settings with { ServiceName = "FinanceManagerService" });
 
@@ -211,7 +211,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.UpdateSettings(settings with { IncludePrereleases = true });
 
@@ -226,7 +226,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.UpdateSettings(settings with { SourceCheckStartTime = new TimeOnly(21, 0) });
 
@@ -241,7 +241,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.UpdateSettings(settings with { RepositoryOwner = "other", WorkingDirectory = "custom-updates", HealthTimeoutSeconds = 30 });
 
@@ -256,7 +256,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(settings);
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
         var vm = CreateVm(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.UpdateSettings(settings with { IncludePrereleases = true });
 
         vm.Reset();
@@ -273,7 +273,7 @@ public sealed class SetupUpdateViewModelTests
             .ReturnsAsync(new[] { "financemanager.service" });
         var vm = CreateVm(apiMock.Object);
 
-        await vm.LoadServiceSuggestionsAsync("fin");
+        await vm.LoadServiceSuggestionsAsync("fin", TestContext.Current.CancellationToken);
 
         vm.ServiceSuggestions.Should().ContainSingle().Which.Should().Be("financemanager.service");
     }
@@ -287,7 +287,7 @@ public sealed class SetupUpdateViewModelTests
         apiMock.Setup(a => a.Updates_StartInstallAsync(It.IsAny<UpdateStartRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(installing);
         var vm = CreateVm(apiMock.Object);
 
-        await vm.StartInstallAsync(confirmDowntime: true);
+        await vm.StartInstallAsync(confirmDowntime: true, ct: TestContext.Current.CancellationToken);
 
         vm.Status!.Status.Should().Be(UpdateStatusKind.Installing);
         vm.Installing.Should().BeTrue();

@@ -104,7 +104,7 @@ public sealed class SavingsPlanServiceTests
         Assert.True(analysis.TargetReachable);
 
         // Sanity: postings sum in DB
-        var sum = await db.Postings.AsNoTracking().Where(p => p.SavingsPlanId == dto.Id).SumAsync(p => p.Amount);
+        var sum = await db.Postings.AsNoTracking().Where(p => p.SavingsPlanId == dto.Id).SumAsync(p => p.Amount, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(150m, sum);
 
         conn.Dispose();

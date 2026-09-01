@@ -20,7 +20,7 @@ public sealed class KnownContactCatalogTests
             }
           ]
         }
-        """);
+        """, TestContext.Current.CancellationToken);
 
         try
         {
@@ -50,7 +50,7 @@ public sealed class KnownContactCatalogTests
             { "name": "Amazon Payments", "aliases": [ "AMAZON*" ] }
           ]
         }
-        """);
+        """, TestContext.Current.CancellationToken);
 
         try
         {

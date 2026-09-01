@@ -36,20 +36,20 @@ namespace FinanceManager.Tests.Web
 
             var bankContact = new Contact(owner, "Bank", ContactType.Bank, null, null);
             db.Contacts.Add(bankContact);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var acc = new Account(owner, AccountType.Giro, "A1", null, bankContact.Id);
             var sym = Guid.NewGuid();
             acc.SetSymbolAttachment(sym);
             db.Accounts.Add(acc);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var date = DateTime.UtcNow.Date;
             var bankPost = new Posting(Guid.NewGuid(), PostingKind.Bank, acc.Id, null, null, null, date, date, 42m, "", null, null, null, null).SetGroup(Guid.NewGuid());
             db.Postings.Add(bankPost);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetAccountPostingsAsync(acc.Id, 0, 50, null, null, null, owner);
+            var res = await svc.GetAccountPostingsAsync(acc.Id, 0, 50, null, null, null, owner, TestContext.Current.CancellationToken);
             Assert.NotNull(res);
             Assert.Single(res);
             var dto = res[0];
@@ -65,14 +65,14 @@ namespace FinanceManager.Tests.Web
 
             var plan = new SavingsPlan(owner, "PlanX", SavingsPlanType.OneTime, null, null, null);
             db.SavingsPlans.Add(plan);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var date = DateTime.UtcNow.Date;
             var p = new Posting(Guid.NewGuid(), PostingKind.SavingsPlan, null, null, plan.Id, null, date, date, 10m, "S", null, null, null, null).SetGroup(Guid.NewGuid());
             db.Postings.Add(p);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetSavingsPlanPostingsAsync(plan.Id, 0, 50, null, null, null, owner);
+            var res = await svc.GetSavingsPlanPostingsAsync(plan.Id, 0, 50, null, null, null, owner, TestContext.Current.CancellationToken);
             Assert.NotNull(res);
             Assert.Single(res);
             Assert.Equal(PostingKind.SavingsPlan, res[0].Kind);
@@ -86,14 +86,14 @@ namespace FinanceManager.Tests.Web
 
             var sec = new Security(owner, "SEC", "ID", null, null, "EUR", null);
             db.Securities.Add(sec);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var date = DateTime.UtcNow.Date;
             var p = new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, sec.Id, date, date, 5m, "X", null, null, null, 1m).SetGroup(Guid.NewGuid());
             db.Postings.Add(p);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetSecurityPostingsAsync(sec.Id, 0, 50, null, null, owner);
+            var res = await svc.GetSecurityPostingsAsync(sec.Id, 0, 50, null, null, owner, TestContext.Current.CancellationToken);
             Assert.NotNull(res);
             Assert.Single(res);
             Assert.Equal(PostingKind.Security, res[0].Kind);
@@ -109,19 +109,19 @@ namespace FinanceManager.Tests.Web
             var bankSym = Guid.NewGuid();
             bankContact.SetSymbolAttachment(bankSym);
             db.Contacts.Add(bankContact);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var acc = new Account(owner, AccountType.Giro, "A-NoSym", null, bankContact.Id);
             // no account symbol set
             db.Accounts.Add(acc);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var date = DateTime.UtcNow.Date;
             var bankPost = new Posting(Guid.NewGuid(), PostingKind.Bank, acc.Id, null, null, null, date, date, 1m, "", null, null, null, null).SetGroup(Guid.NewGuid());
             db.Postings.Add(bankPost);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetAccountPostingsAsync(acc.Id, 0, 50, null, null, null, owner);
+            var res = await svc.GetAccountPostingsAsync(acc.Id, 0, 50, null, null, null, owner, TestContext.Current.CancellationToken);
             Assert.Single(res);
             Assert.Equal(bankSym, res[0].BankPostingAccountSymbolAttachmentId);
         }
@@ -139,13 +139,13 @@ namespace FinanceManager.Tests.Web
             bankContact1.SetSymbolAttachment(sym1);
             bankContact2.SetSymbolAttachment(sym2);
             db.Contacts.AddRange(bankContact1, bankContact2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // create accounts referencing bank contacts (no account symbol set -> fallback to contact symbol)
             var acc1 = new Account(owner, AccountType.Giro, "G1", null, bankContact1.Id);
             var acc2 = new Account(owner, AccountType.Savings, "S1", null, bankContact2.Id);
             db.Accounts.AddRange(acc1, acc2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var contact = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
 
@@ -166,9 +166,9 @@ namespace FinanceManager.Tests.Web
             contact2.SetLinkedPosting(contact1.Id);
 
             db.Postings.AddRange(bank1, contact1, bank2, contact2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner);
+            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner, TestContext.Current.CancellationToken);
             Assert.NotNull(res);
             Assert.Equal(2, res.Count);
 
@@ -201,9 +201,9 @@ namespace FinanceManager.Tests.Web
             contactA.SetLinkedPosting(contactB.Id);
             contactB.SetLinkedPosting(contactA.Id);
             db.Postings.AddRange(contactA, contactB);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner);
+            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner, TestContext.Current.CancellationToken);
             Assert.NotNull(res);
             Assert.Equal(2, res.Count);
 

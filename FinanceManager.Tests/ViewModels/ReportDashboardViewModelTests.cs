@@ -43,7 +43,7 @@ public sealed class ReportDashboardViewModelTests
         apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
-        var resp = await vm.LoadAsync(PostingKind.Bank, 0, 24, false, false, false, false, new[] { PostingKind.Bank }, DateTime.UtcNow, null);
+        var resp = await vm.LoadAsync(PostingKind.Bank, 0, 24, false, false, false, false, new[] { PostingKind.Bank }, DateTime.UtcNow, null, ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(3, resp.Points.Count);
         apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
@@ -65,20 +65,20 @@ public sealed class ReportDashboardViewModelTests
         apiMock.Setup(a => a.Reports_DeleteFavoriteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null);
+        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null, ct: TestContext.Current.CancellationToken);
         Assert.NotNull(saved);
         apiMock.Verify(a => a.Reports_CreateFavoriteAsync(
             It.Is<ReportFavoriteCreateApiRequest>(r => r.CompareProjection),
             It.IsAny<CancellationToken>()), Times.Once);
 
-        var updated = await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null);
+        var updated = await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null, ct: TestContext.Current.CancellationToken);
         Assert.NotNull(updated);
         apiMock.Verify(a => a.Reports_UpdateFavoriteAsync(
             It.IsAny<Guid>(),
             It.Is<ReportFavoriteUpdateApiRequest>(r => r.CompareProjection),
             It.IsAny<CancellationToken>()), Times.Once);
 
-        var deleted = await vm.DeleteFavoriteAsync(Guid.NewGuid());
+        var deleted = await vm.DeleteFavoriteAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
         Assert.True(deleted);
     }
 
@@ -103,7 +103,7 @@ public sealed class ReportDashboardViewModelTests
         vm.IncludeCategory = false;
         vm.Take = 24;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
         var byPeriod = vm.GetChartByPeriod();
 
         Assert.Equal(2, byPeriod.Count);
@@ -132,7 +132,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareYear = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
 
         Assert.True(vm.ShowCategoryColumn);
         Assert.True(vm.ShowPreviousColumns);
@@ -161,7 +161,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
 
         Assert.True(vm.CanCompareProjection);
         Assert.True(vm.ShowProjectionColumn);
@@ -185,7 +185,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(DateTime.UtcNow);
+        await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
         Assert.False(vm.CanCompareProjection);
         Assert.False(vm.CompareProjection);
@@ -208,7 +208,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(DateTime.UtcNow);
+        await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
         Assert.False(vm.CanCompareProjection);
         Assert.False(vm.CompareProjection);
@@ -231,7 +231,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.AllHistory;
 
-        await vm.ReloadAsync(DateTime.UtcNow);
+        await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
         Assert.False(vm.CanCompareProjection);
         Assert.False(vm.CompareProjection);
@@ -268,7 +268,7 @@ public sealed class ReportDashboardViewModelTests
         vm.SelectedKinds = new List<PostingKind> { PostingKind.Bank, PostingKind.Contact };
         vm.IncludeCategory = true;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
 
         Assert.True(vm.HasChildren("Type:Bank"));
         Assert.True(vm.HasChildren("Type:Contact"));

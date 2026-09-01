@@ -70,7 +70,7 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
             needsRefresh: false,
             cacheValidUntilUtc: expiredValidUntil);
         _db.ReportCacheEntries.Add(entry);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var freshReport = CreateReport(999m, DateTime.UtcNow, PortfolioAnalysisReportService.EndOfMonthUtc(DateTime.UtcNow));
         _serviceMock.Setup(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()))
@@ -100,7 +100,7 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
             needsRefresh: false,
             cacheValidUntilUtc: validUntil);
         _db.ReportCacheEntries.Add(entry);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var freshReport = CreateReport(999m, now, validUntil);
         _serviceMock.Setup(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()))
@@ -122,11 +122,11 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
             .ReturnsAsync(CreateReport(1000m, now, validUntil));
 
         await _sut.GetPortfolioReportAsync(userId, CancellationToken.None);
-        (await _db.ReportCacheEntries.CountAsync(e => e.OwnerUserId == userId)).Should().Be(1);
+        (await _db.ReportCacheEntries.CountAsync(e => e.OwnerUserId == userId, cancellationToken: TestContext.Current.CancellationToken)).Should().Be(1);
 
         await _sut.InvalidateCacheAsync(userId, CancellationToken.None);
 
-        (await _db.ReportCacheEntries.CountAsync(e => e.OwnerUserId == userId)).Should().Be(0);
+        (await _db.ReportCacheEntries.CountAsync(e => e.OwnerUserId == userId, cancellationToken: TestContext.Current.CancellationToken)).Should().Be(0);
 
         await _sut.GetPortfolioReportAsync(userId, CancellationToken.None);
         _serviceMock.Verify(s => s.GetPortfolioAnalysisReportAsync(userId, It.IsAny<CancellationToken>()), Times.Exactly(2));

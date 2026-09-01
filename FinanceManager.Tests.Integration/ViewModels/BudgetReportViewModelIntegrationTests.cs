@@ -50,28 +50,28 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             Type: ContactType.Organization,
             CategoryId: null,
             Description: null,
-            IsPaymentIntermediary: null));
+            IsPaymentIntermediary: null), TestContext.Current.CancellationToken);
         var stromContact = await api.Contacts_CreateAsync(new ContactCreateRequest(
             Name: "Strom",
             Type: ContactType.Organization,
             CategoryId: null,
             Description: null,
-            IsPaymentIntermediary: null));
+            IsPaymentIntermediary: null), TestContext.Current.CancellationToken);
 
-        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Wohnen"));
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Wohnen"), TestContext.Current.CancellationToken);
 
         var rentPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Miete",
             SourceType: BudgetSourceType.Contact,
             SourceId: rentContact.Id,
             Description: null,
-            BudgetCategoryId: category.Id));
+            BudgetCategoryId: category.Id), TestContext.Current.CancellationToken);
         var stromPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Strom",
             SourceType: BudgetSourceType.Contact,
             SourceId: stromContact.Id,
             Description: null,
-            BudgetCategoryId: category.Id));
+            BudgetCategoryId: category.Id), TestContext.Current.CancellationToken);
 
         var ruleStart = new DateOnly(today.Year, today.Month, 1).AddMonths(-23);
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
@@ -81,7 +81,7 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: ruleStart,
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: stromPurpose.Id,
             BudgetCategoryId: null,
@@ -91,11 +91,11 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             StartDate: ruleStart,
             EndDate: null,
             PurposePattern: "KNR-4711",
-            UseRegex: false));
+            UseRegex: false), TestContext.Current.CancellationToken);
 
-        var draft = await api.StatementDrafts_CreateAsync();
+        var draft = await api.StatementDrafts_CreateAsync(ct: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
-        await api.StatementDrafts_SetAccountAsync(draft!.DraftId, account.Id);
+        await api.StatementDrafts_SetAccountAsync(draft!.DraftId, account.Id, TestContext.Current.CancellationToken);
 
         var seedMonth = new DateOnly(today.Year, today.Month, 2);
         for (var offset = 23; offset >= 0; offset--)
@@ -109,7 +109,7 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
         await AddEntryAsync(api, draft.DraftId, new DateOnly(today.Year, today.Month, 20).AddMonths(-3), -120.00m, "Abrechnung KNR-4711 Nachzahlung", stromContact.Id);
         await AddEntryAsync(api, draft.DraftId, new DateOnly(today.Year, today.Month, 15), -49.90m, "Verkehrsabo VABO-9000", stromContact.Id);
 
-        var booking = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var booking = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
         booking.Should().NotBeNull();
         booking!.Success.Should().BeTrue();
 
@@ -164,28 +164,28 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             Type: ContactType.Organization,
             CategoryId: null,
             Description: null,
-            IsPaymentIntermediary: null));
+            IsPaymentIntermediary: null), TestContext.Current.CancellationToken);
         var stromContact = await api.Contacts_CreateAsync(new ContactCreateRequest(
             Name: "Strom",
             Type: ContactType.Organization,
             CategoryId: null,
             Description: null,
-            IsPaymentIntermediary: null));
+            IsPaymentIntermediary: null), TestContext.Current.CancellationToken);
 
-        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Wohnen"));
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Wohnen"), TestContext.Current.CancellationToken);
 
         var rentPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Miete",
             SourceType: BudgetSourceType.Contact,
             SourceId: rentContact.Id,
             Description: null,
-            BudgetCategoryId: category.Id));
+            BudgetCategoryId: category.Id), TestContext.Current.CancellationToken);
         var stromPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Strom",
             SourceType: BudgetSourceType.Contact,
             SourceId: stromContact.Id,
             Description: null,
-            BudgetCategoryId: category.Id));
+            BudgetCategoryId: category.Id), TestContext.Current.CancellationToken);
 
         var ruleStart = new DateOnly(today.Year, today.Month, 1).AddMonths(-23);
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
@@ -195,7 +195,7 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: ruleStart,
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: stromPurpose.Id,
             BudgetCategoryId: null,
@@ -205,11 +205,11 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             StartDate: ruleStart,
             EndDate: null,
             PurposePattern: "KNR-4711",
-            UseRegex: false));
+            UseRegex: false), TestContext.Current.CancellationToken);
 
-        var draft = await api.StatementDrafts_CreateAsync();
+        var draft = await api.StatementDrafts_CreateAsync(ct: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
-        await api.StatementDrafts_SetAccountAsync(draft!.DraftId, account.Id);
+        await api.StatementDrafts_SetAccountAsync(draft!.DraftId, account.Id, TestContext.Current.CancellationToken);
 
         var seedMonth = new DateOnly(today.Year, today.Month, 2);
         for (var offset = 23; offset >= 0; offset--)
@@ -223,7 +223,7 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
         await AddEntryAsync(api, draft.DraftId, new DateOnly(today.Year, today.Month, 20).AddMonths(-3), -120.00m, "Abrechnung KNR-4711 Nachzahlung", stromContact.Id);
         await AddEntryAsync(api, draft.DraftId, new DateOnly(today.Year, today.Month, 15), -49.90m, "Verkehrsabo VABO-9000", stromContact.Id);
 
-        var booking = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var booking = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
         booking.Should().NotBeNull();
         booking!.Success.Should().BeTrue();
 
@@ -294,15 +294,15 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             Type: ContactType.Organization,
             CategoryId: null,
             Description: null,
-            IsPaymentIntermediary: null));
-        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Freizeit"));
+            IsPaymentIntermediary: null), TestContext.Current.CancellationToken);
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Freizeit"), TestContext.Current.CancellationToken);
         var purpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Verein",
             SourceType: BudgetSourceType.Contact,
             SourceId: contact.Id,
             Description: null,
             BudgetCategoryId: category.Id,
-            ValuationType: BudgetValuationType.ExactPostings));
+            ValuationType: BudgetValuationType.ExactPostings), TestContext.Current.CancellationToken);
 
         var ruleStart = new DateOnly(today.Year, today.Month, 1);
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
@@ -314,15 +314,15 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
             StartDate: ruleStart,
             EndDate: null,
             PurposePattern: "VEREIN",
-            UseRegex: false));
+            UseRegex: false), TestContext.Current.CancellationToken);
 
-        var draft = await api.StatementDrafts_CreateAsync();
+        var draft = await api.StatementDrafts_CreateAsync(ct: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
-        await api.StatementDrafts_SetAccountAsync(draft!.DraftId, account.Id);
+        await api.StatementDrafts_SetAccountAsync(draft!.DraftId, account.Id, TestContext.Current.CancellationToken);
         await AddEntryAsync(api, draft.DraftId, ruleStart.AddDays(3), -12.50m, "VEREIN Beitrag", contact.Id);
         await AddEntryAsync(api, draft.DraftId, ruleStart.AddDays(4), 9.40m, "VEREIN Erstattung", contact.Id, "Gutschrift");
 
-        var booking = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var booking = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
         booking.Should().NotBeNull();
         booking!.Success.Should().BeTrue();
 
@@ -411,7 +411,7 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
         var asOfDate = await SeedEntertainmentBudgetAsync(api, today);
 
         var request = new BudgetReportExportRequest(asOfDate, 1, FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate);
-        var (_, _, contentBytes) = await api.Budgets_ExportAsync(request);
+        var (_, _, contentBytes) = await api.Budgets_ExportAsync(request, TestContext.Current.CancellationToken);
 
         var sheets = ReadXlsxSheets(contentBytes);
         var rows = sheets.Values.Should().ContainSingle(sheetRows => sheetRows.Any(r =>

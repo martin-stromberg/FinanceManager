@@ -32,7 +32,7 @@ public sealed class UpdateOrchestratorAdapterTests
             installedProvider: installedProvider.Object,
             platformResolver: platformResolver.Object);
 
-        var status = await adapter.GetStatusAsync();
+        var status = await adapter.GetStatusAsync(TestContext.Current.CancellationToken);
 
         status.Status.Should().Be(UpdateStatusKind.Ready);
         status.InstalledVersion.Should().Be("1.0.0");
@@ -85,7 +85,7 @@ public sealed class UpdateOrchestratorAdapterTests
             settingsStore: settingsStore.Object,
             installedProvider: installedProvider.Object);
 
-        var result = await adapter.CheckAsync();
+        var result = await adapter.CheckAsync(TestContext.Current.CancellationToken);
 
         result.UpdateAvailable.Should().BeTrue();
         result.Message.Should().Be("ready to install");
@@ -111,7 +111,7 @@ public sealed class UpdateOrchestratorAdapterTests
             settingsStore: settingsStore.Object,
             installedProvider: installedProvider.Object);
 
-        var result = await adapter.CheckAsync();
+        var result = await adapter.CheckAsync(TestContext.Current.CancellationToken);
 
         result.UpdateAvailable.Should().BeFalse();
         result.Message.Should().Be("no update");
@@ -130,7 +130,7 @@ public sealed class UpdateOrchestratorAdapterTests
             .Callback(() => applied = true);
         var adapter = UpdateOrchestratorAdapterTestFactory.Create(settingsStore: settingsStore.Object);
 
-        var result = await adapter.SaveSettingsAsync(new UpdateSettingsUpdateRequest(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "custom", 200, true));
+        var result = await adapter.SaveSettingsAsync(new UpdateSettingsUpdateRequest(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "custom", 200, true), TestContext.Current.CancellationToken);
 
         result.Should().Be(savedSettings);
         applied.Should().BeTrue();
@@ -154,7 +154,7 @@ public sealed class UpdateOrchestratorAdapterTests
             settingsStore: settingsStore.Object,
             installedProvider: installedProvider.Object);
 
-        var result = await adapter.CheckAsync();
+        var result = await adapter.CheckAsync(TestContext.Current.CancellationToken);
 
         result.UpdateAvailable.Should().BeFalse();
         result.Message.Should().Be(UpdateErrorMessageMapper.GithubRateLimitMessage);
@@ -172,7 +172,7 @@ public sealed class UpdateOrchestratorAdapterTests
         var logger = new CapturingLogger<UpdateOrchestratorAdapter>();
         var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, logger);
 
-        await adapter.StartInstallAsync(true);
+        await adapter.StartInstallAsync(true, TestContext.Current.CancellationToken);
 
         logger.Entries.Should().BeEmpty();
     }
@@ -182,7 +182,7 @@ public sealed class UpdateOrchestratorAdapterTests
     {
         var package = CreatePackage("2.0.0");
         var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
-        await statusService.UpdateAsync(_ => UpdateStatusTestData.UpdateAvailableSnapshot("2.0.0", package));
+        await statusService.UpdateAsync(_ => UpdateStatusTestData.UpdateAvailableSnapshot("2.0.0", package), TestContext.Current.CancellationToken);
         var orchestrator = new Mock<IAutoUpdateOrchestrator>();
         orchestrator.Setup(o => o.DownloadAsync(It.IsAny<CancellationToken>()))
             .Callback(() => statusService.UpdateAsync(_ => UpdateStatusTestData.ReadyToInstallSnapshot("2.0.0", package)).GetAwaiter().GetResult())
@@ -193,7 +193,7 @@ public sealed class UpdateOrchestratorAdapterTests
         packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
         var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, new CapturingLogger<UpdateOrchestratorAdapter>(), statusService);
 
-        await adapter.StartInstallAsync(true);
+        await adapter.StartInstallAsync(true, TestContext.Current.CancellationToken);
 
         orchestrator.Verify(o => o.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
         orchestrator.Verify(o => o.InstallAsync(true, false, It.IsAny<CancellationToken>()), Times.Once);
@@ -209,7 +209,7 @@ public sealed class UpdateOrchestratorAdapterTests
         packageStore.Setup(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>())).ReturnsAsync((DateTimeOffset?)null);
         var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, new CapturingLogger<UpdateOrchestratorAdapter>());
 
-        await adapter.StartInstallAsync(true);
+        await adapter.StartInstallAsync(true, TestContext.Current.CancellationToken);
 
         packageStore.Verify(s => s.GetLockCreatedAtAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -225,7 +225,7 @@ public sealed class UpdateOrchestratorAdapterTests
         var logger = new CapturingLogger<UpdateOrchestratorAdapter>();
         var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, logger);
 
-        await adapter.StartInstallAsync(true);
+        await adapter.StartInstallAsync(true, TestContext.Current.CancellationToken);
 
         logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
     }
@@ -241,7 +241,7 @@ public sealed class UpdateOrchestratorAdapterTests
         var logger = new CapturingLogger<UpdateOrchestratorAdapter>();
         var adapter = CreateAdapterForInstall(orchestrator.Object, packageStore.Object, logger);
 
-        var status = await adapter.StartInstallAsync(true);
+        var status = await adapter.StartInstallAsync(true, TestContext.Current.CancellationToken);
 
         status.Should().NotBeNull();
         logger.Entries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning);

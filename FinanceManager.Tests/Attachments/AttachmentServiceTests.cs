@@ -43,7 +43,7 @@ public sealed class AttachmentServiceTests
         Assert.Equal("text/plain", dto.ContentType);
         Assert.Equal(bytes.Length, dto.SizeBytes);
 
-        var stored = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == dto.Id);
+        var stored = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(stored);
         Assert.Equal(owner, stored!.OwnerUserId);
         Assert.Equal(AttachmentEntityKind.StatementDraft, stored.EntityKind);
@@ -62,7 +62,7 @@ public sealed class AttachmentServiceTests
         var dto = await svc.CreateUrlAsync(owner, AttachmentEntityKind.Contact, Guid.NewGuid(), "https://example.com/a.pdf", null, null, CancellationToken.None);
 
         Assert.True(dto.IsUrl);
-        var stored = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id);
+        var stored = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("https://example.com/a.pdf", stored.Url);
         Assert.Null(stored.Content);
 
@@ -111,26 +111,26 @@ public sealed class AttachmentServiceTests
         Assert.NotNull(dl);
         using (var reader = new StreamReader(dl!.Value.Content, Encoding.UTF8))
         {
-            var txt = await reader.ReadToEndAsync();
+            var txt = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
             Assert.Equal("content", txt);
         }
 
         // category
         var cat = new AttachmentCategory(owner, "Docs");
         db.AttachmentCategories.Add(cat);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         Assert.True(await svc.UpdateCategoryAsync(owner, dto.Id, cat.Id, CancellationToken.None));
-        Assert.Equal(cat.Id, (await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id)).CategoryId);
+        Assert.Equal(cat.Id, (await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken)).CategoryId);
 
         // reassign
         await svc.ReassignAsync(AttachmentEntityKind.StatementDraft, entityId, AttachmentEntityKind.StatementEntry, otherEntity, owner, CancellationToken.None);
-        var moved = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id);
+        var moved = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AttachmentEntityKind.StatementEntry, moved.EntityKind);
         Assert.Equal(otherEntity, moved.EntityId);
 
         // delete
         Assert.True(await svc.DeleteAsync(owner, dto.Id, CancellationToken.None));
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == dto.Id));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         conn.Dispose();
     }
@@ -150,7 +150,7 @@ public sealed class AttachmentServiceTests
         Assert.NotNull(dl);
         Assert.Equal("m.txt", dl!.Value.FileName);
         using var reader = new StreamReader(dl.Value.Content, Encoding.UTF8);
-        var txt = await reader.ReadToEndAsync();
+        var txt = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
         Assert.Equal("master-content", txt);
 
         conn.Dispose();
@@ -171,9 +171,9 @@ public sealed class AttachmentServiceTests
         var ok = await svc.DeleteAsync(owner, ref1.Id, CancellationToken.None);
         Assert.True(ok);
 
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == master.Id));
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref1.Id));
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref2.Id));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == master.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref1.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref2.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         conn.Dispose();
     }
@@ -182,17 +182,17 @@ public sealed class AttachmentServiceTests
     public async Task DownloadAsync_ShouldUseDbContextFactory_WhenFactoryIsProvided()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite(conn)
             .Options;
 
         await using var seedDb = new AppDbContext(options);
-        await seedDb.Database.EnsureCreatedAsync();
+        await seedDb.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
         var owner = new FinanceManager.Domain.Users.User("owner", "hash", true);
         seedDb.Users.Add(owner);
-        await seedDb.SaveChangesAsync();
+        await seedDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var factoryMock = new Mock<IDbContextFactory<AppDbContext>>();
         factoryMock
@@ -209,7 +209,7 @@ public sealed class AttachmentServiceTests
 
         Assert.NotNull(payload);
         using var reader = new StreamReader(payload!.Value.Content, Encoding.UTF8);
-        Assert.Equal("factory-download", await reader.ReadToEndAsync());
+        Assert.Equal("factory-download", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
         factoryMock.Verify(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         await conn.DisposeAsync();
@@ -219,17 +219,17 @@ public sealed class AttachmentServiceTests
     public async Task DownloadAsync_ShouldResolveReference_WhenFactoryIsProvided()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite(conn)
             .Options;
 
         await using var seedDb = new AppDbContext(options);
-        await seedDb.Database.EnsureCreatedAsync();
+        await seedDb.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
         var owner = new FinanceManager.Domain.Users.User("owner", "hash", true);
         seedDb.Users.Add(owner);
-        await seedDb.SaveChangesAsync();
+        await seedDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var factoryMock = new Mock<IDbContextFactory<AppDbContext>>();
         factoryMock
@@ -248,7 +248,7 @@ public sealed class AttachmentServiceTests
         Assert.NotNull(payload);
         Assert.Equal("master.txt", payload!.Value.FileName);
         using var reader = new StreamReader(payload.Value.Content, Encoding.UTF8);
-        Assert.Equal("master-factory-content", await reader.ReadToEndAsync());
+        Assert.Equal("master-factory-content", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
         factoryMock.Verify(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         await conn.DisposeAsync();

@@ -43,11 +43,11 @@ public sealed class ReportAggregationServiceMultiKindTests
         db.Users.Add(user);
         var contactCat = new ContactCategory(user.Id, "Friends");
         db.ContactCategories.Add(contactCat);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var c = NewContact(db, user.Id, "Alice", contactCat);
         var sp = NewSavingsPlan(db, user.Id, "ETF Plan");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var jan = new DateTime(2025, 1, 1);
         var feb = new DateTime(2025, 2, 1);
@@ -57,7 +57,7 @@ public sealed class ReportAggregationServiceMultiKindTests
             new PostingAggregate(PostingKind.SavingsPlan, null, null, sp.Id, null, jan, AggregatePeriod.Month).WithAdd(15).WithAdd(15),
             new PostingAggregate(PostingKind.SavingsPlan, null, null, sp.Id, null, feb, AggregatePeriod.Month).WithAdd(15).WithAdd(15)
         );
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 12, IncludeCategory: true, ComparePrevious: false, CompareYear: false, PostingKinds: new[] { PostingKind.Contact, PostingKind.SavingsPlan });
@@ -90,18 +90,18 @@ public sealed class ReportAggregationServiceMultiKindTests
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var c = NewContact(db, user.Id, "Bob");
         var sp = NewSavingsPlan(db, user.Id, "Depot Plan");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var feb = new DateTime(2025, 2, 1);
         db.PostingAggregates.AddRange(
             new PostingAggregate(PostingKind.Contact, null, c.Id, null, null, feb, AggregatePeriod.Month).WithAdd(12).WithAdd(8), // 20
             new PostingAggregate(PostingKind.SavingsPlan, null, null, sp.Id, null, feb, AggregatePeriod.Month).WithAdd(5).WithAdd(7) // 12
         );
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 6, IncludeCategory: false, ComparePrevious: false, CompareYear: false, PostingKinds: new[] { PostingKind.Contact, PostingKind.SavingsPlan });

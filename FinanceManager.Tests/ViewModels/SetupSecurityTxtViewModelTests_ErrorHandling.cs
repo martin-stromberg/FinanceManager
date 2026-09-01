@@ -25,7 +25,7 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         apiMock.Setup(a => a.LastError).Returns("Security.txt settings are unavailable.");
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.Busy.Should().BeFalse();
         vm.Error.Should().Be("Security.txt settings are unavailable.");
@@ -45,11 +45,11 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
             .ThrowsAsync(new HttpRequestException("save failed"));
         apiMock.Setup(a => a.LastError).Returns("Security.txt settings could not be saved.");
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.Model.Contact = "mailto:updated@example.com";
         vm.OnChanged();
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         vm.Busy.Should().BeFalse();
         vm.SaveError.Should().Be("Security.txt settings could not be saved.");
@@ -81,7 +81,7 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         apiMock.Setup(a => a.UpdateSecurityTxtSettingsAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("broken state"));
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.Model.Contact = "mailto:updated@example.com";
         vm.OnChanged();
 
@@ -101,11 +101,11 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
                 Expires = DateTimeOffset.UtcNow.AddYears(1)
             });
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.Model.Contact = "mailto:updated@example.com";
         vm.ExpiresText = "not-a-date";
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         vm.SaveError.Should().NotBeNullOrWhiteSpace();
         vm.SavedOk.Should().BeFalse();

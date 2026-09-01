@@ -31,7 +31,7 @@ public class ApiClientUsersTests : IClassFixture<TestWebApplicationFactory>
         // Before any registration, there should be no users
         // Note: The test factory may already have users from other tests,
         // so we just verify the endpoint works correctly and returns a boolean
-        var hasAny = await api.Users_HasAnyAsync();
+        var hasAny = await api.Users_HasAnyAsync(TestContext.Current.CancellationToken);
         // The result depends on whether other tests have run; just ensure it returns valid bool
         (hasAny == true || hasAny == false).Should().BeTrue();
     }
@@ -43,10 +43,10 @@ public class ApiClientUsersTests : IClassFixture<TestWebApplicationFactory>
 
         // Register a user first
         var username = $"user_{Guid.NewGuid():N}";
-        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
+        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null), TestContext.Current.CancellationToken);
 
         // Now there should be at least one user
-        var hasAny = await api.Users_HasAnyAsync();
+        var hasAny = await api.Users_HasAnyAsync(TestContext.Current.CancellationToken);
         hasAny.Should().BeTrue();
     }
 }

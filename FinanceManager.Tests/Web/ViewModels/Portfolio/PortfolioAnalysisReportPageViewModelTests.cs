@@ -49,7 +49,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetKpiConfigurationAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateConfig());
 
-        await vm.LoadReportAsync();
+        await vm.LoadReportAsync(TestContext.Current.CancellationToken);
 
         vm.PortfolioReportData.Should().NotBeNull();
         vm.PortfolioReportData!.Structure.TotalMarketValue.Should().Be(1234m);
@@ -68,7 +68,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateReport(500m));
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
         vm.IsEditMode.Should().BeTrue();
 
         var request = new PortfolioKpiConfigurationRequest
@@ -76,7 +76,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
             ActiveTileIds = [PortfolioTileId.Structure],
             TileOrder = [PortfolioTileId.Structure]
         };
-        await vm.SaveConfigurationAsync(request);
+        await vm.SaveConfigurationAsync(request, TestContext.Current.CancellationToken);
 
         vm.IsEditMode.Should().BeFalse();
         apiMock.Verify(a => a.Portfolio_SaveKpiConfigurationAsync(request, It.IsAny<CancellationToken>()), Times.Once);
@@ -89,7 +89,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetKpiConfigurationAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateConfig());
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
 
         vm.EditOrder.Should().Equal(PortfolioTileId.Structure);
         vm.EditActive.Should().Contain(PortfolioTileId.Structure);
@@ -106,10 +106,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateReport(500m));
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
         vm.ToggleTileActive(PortfolioTileId.Structure, false);
 
-        await vm.SaveEditConfigurationAsync();
+        await vm.SaveEditConfigurationAsync(TestContext.Current.CancellationToken);
 
         vm.IsEditMode.Should().BeFalse();
         vm.EditOrder.Should().BeEmpty();
@@ -129,7 +129,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         var actionsBeforeEdit = GetActions(vm);
         Assert.DoesNotContain(actionsBeforeEdit, a => a.Action == "SaveEdit");
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
 
         var actionsInEdit = GetActions(vm);
         Assert.Contains(actionsInEdit, a => a.Action == "SaveEdit");
@@ -150,7 +150,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateReport(777m));
 
-        await vm.RefreshReportAsync();
+        await vm.RefreshReportAsync(TestContext.Current.CancellationToken);
 
         apiMock.Verify(a => a.Portfolio_ResetCacheAsync(It.IsAny<CancellationToken>()), Times.Once);
         vm.PortfolioReportData!.Structure.TotalMarketValue.Should().Be(777m);

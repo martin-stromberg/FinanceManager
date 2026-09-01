@@ -22,15 +22,15 @@ public sealed class HomeKpiTests
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var fav = new ReportFavorite(user.Id, "Fav", PostingKind.Contact, false, ReportInterval.Month, false, false, false, true);
-        db.ReportFavorites.Add(fav); await db.SaveChangesAsync();
+        db.ReportFavorites.Add(fav); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // valid
         var kpi = new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalOnly, sortOrder: 0, reportFavoriteId: fav.Id);
         db.HomeKpis.Add(kpi);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // invalid: missing favorite id
         var act = () => { var invalid = new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalOnly, sortOrder: 1, reportFavoriteId: null); };
@@ -42,19 +42,19 @@ public sealed class HomeKpiTests
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var fav = new ReportFavorite(user.Id, "Fav", PostingKind.Contact, false, ReportInterval.Month, false, false, false, true);
-        db.ReportFavorites.Add(fav); await db.SaveChangesAsync();
+        db.ReportFavorites.Add(fav); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         db.HomeKpis.Add(new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalOnly, 0, fav.Id));
         db.HomeKpis.Add(new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalWithComparisons, 1, fav.Id));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(2, await db.HomeKpis.CountAsync());
+        Assert.Equal(2, await db.HomeKpis.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         db.ReportFavorites.Remove(fav);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(0, await db.HomeKpis.CountAsync());
+        Assert.Equal(0, await db.HomeKpis.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 }

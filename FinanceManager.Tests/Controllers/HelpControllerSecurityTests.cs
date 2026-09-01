@@ -35,7 +35,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
 
             <script>alert(1)</script>
             [bad](javascript:alert(1))
-            """);
+            """, TestContext.Current.CancellationToken);
 
         var result = await CreateController().GetMarkdown("de", "konten-und-buchungen");
         var content = Assert.IsType<ContentResult>(result);
@@ -52,7 +52,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
     {
         var docsPath = Path.Combine(_root, "Docs", "help", "budgetplanung");
         Directory.CreateDirectory(docsPath);
-        await File.WriteAllTextAsync(Path.Combine(docsPath, "beschreibung.md"), "# Beschreibung");
+        await File.WriteAllTextAsync(Path.Combine(docsPath, "beschreibung.md"), "# Beschreibung", TestContext.Current.CancellationToken);
 
         var result = await CreateController().GetMarkdown("de", "budgetplanung/beschreibung");
         var content = Assert.IsType<ContentResult>(result);
@@ -65,7 +65,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
     {
         var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "beschreibung.md");
         Directory.CreateDirectory(Path.GetDirectoryName(markdownPath)!);
-        await File.WriteAllTextAsync(markdownPath, "# Budgetplanung");
+        await File.WriteAllTextAsync(markdownPath, "# Budgetplanung", TestContext.Current.CancellationToken);
         await WriteManifestAsync(("../Docs/help/budgetplanung/beschreibung.md", markdownPath));
 
         var controller = CreateControllerWithRealValidator();
@@ -73,7 +73,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
 
         Assert.IsType<ContentResult>(initialResult);
 
-        await File.WriteAllTextAsync(markdownPath, "# Manipuliert");
+        await File.WriteAllTextAsync(markdownPath, "# Manipuliert", TestContext.Current.CancellationToken);
 
         var manipulatedResult = await controller.GetMarkdown("de", "budgetplanung");
 
@@ -85,7 +85,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
     {
         var markdownPath = Path.Combine(_root, "Docs", "help", "budgetplanung", "beschreibung.md");
         Directory.CreateDirectory(Path.GetDirectoryName(markdownPath)!);
-        await File.WriteAllTextAsync(markdownPath, "# Budgetplanung");
+        await File.WriteAllTextAsync(markdownPath, "# Budgetplanung", TestContext.Current.CancellationToken);
 
         var result = await CreateControllerWithRealValidator().GetMarkdown("de", "budgetplanung");
 
@@ -108,7 +108,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
             ```html
             <script>alert(1)</script>
             ```
-            """);
+            """, TestContext.Current.CancellationToken);
         await WriteManifestAsync(("../Docs/help/budgetplanung/beschreibung.md", markdownPath));
 
         var result = await CreateControllerWithRealValidator().GetMarkdown("de", "budgetplanung");
@@ -127,8 +127,8 @@ public sealed class HelpControllerSecurityTests : IDisposable
     {
         var docsPath = Path.Combine(_root, "Docs", "help", "budgetplanung");
         Directory.CreateDirectory(docsPath);
-        await File.WriteAllTextAsync(Path.Combine(docsPath, "beschreibung.md"), "# Budgetplanung");
-        await File.WriteAllTextAsync(Path.Combine(docsPath, "api.md"), "# API");
+        await File.WriteAllTextAsync(Path.Combine(docsPath, "beschreibung.md"), "# Budgetplanung", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(docsPath, "api.md"), "# API", TestContext.Current.CancellationToken);
 
         var result = await CreateController().GetMarkdown("de", "budgetplanung/api");
 
@@ -153,7 +153,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(helpPath, "f001.html"), """
             <h1 onclick="alert(1)">Hilfe</h1>
             <script>alert(1)</script>
-            """);
+            """, TestContext.Current.CancellationToken);
 
         var result = await CreateController().GetHelpPage("de", "f001");
         var content = Assert.IsType<ContentResult>(result);
@@ -169,7 +169,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
     {
         var helpPagePath = Path.Combine(_webRoot, "help", "de", "f001.html");
         Directory.CreateDirectory(Path.GetDirectoryName(helpPagePath)!);
-        await File.WriteAllTextAsync(helpPagePath, "<h1>Hilfe</h1>");
+        await File.WriteAllTextAsync(helpPagePath, "<h1>Hilfe</h1>", TestContext.Current.CancellationToken);
         await WriteManifestAsync(("wwwroot/help/de/f001.html", helpPagePath));
 
         var controller = CreateControllerWithRealValidator();
@@ -177,7 +177,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
 
         Assert.IsType<ContentResult>(initialResult);
 
-        await File.WriteAllTextAsync(helpPagePath, "<h1>Manipuliert</h1>");
+        await File.WriteAllTextAsync(helpPagePath, "<h1>Manipuliert</h1>", TestContext.Current.CancellationToken);
 
         var manipulatedResult = await controller.GetHelpPage("de", "f001");
 
@@ -197,7 +197,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
                 { "id": "f002", "title": "<img src=x>", "excerpt": "Text", "keywords": ["x"] }
               ]
             }
-            """);
+            """, TestContext.Current.CancellationToken);
 
         var result = await CreateController().GetSearchIndex("de");
         var ok = Assert.IsType<OkObjectResult>(result);
@@ -223,7 +223,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
                 { "id": "berichte", "title": "Berichte", "excerpt": "Text", "keywords": "bericht" }
               ]
             }
-            """);
+            """, TestContext.Current.CancellationToken);
 
         var result = await CreateController().GetSearchIndex("de");
         var ok = Assert.IsType<OkObjectResult>(result);
@@ -244,7 +244,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
                 { "id": "budgetplanung", "title": "Budgetplanung", "excerpt": "Sicher", "keywords": ["budget"] }
               ]
             }
-            """);
+            """, TestContext.Current.CancellationToken);
         await WriteManifestAsync(("wwwroot/help/de/search-index.json", indexPath));
 
         var controller = CreateControllerWithRealValidator();
@@ -258,7 +258,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
                 { "id": "budgetplanung", "title": "Manipuliert", "excerpt": "Sicher", "keywords": ["budget"] }
               ]
             }
-            """);
+            """, TestContext.Current.CancellationToken);
 
         var manipulatedResult = await controller.GetSearchIndex("de");
 
@@ -272,7 +272,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
         Directory.CreateDirectory(helpPath);
         await File.WriteAllTextAsync(Path.Combine(helpPath, "search-index.json"), """
             { "items": [] }
-            """);
+            """, TestContext.Current.CancellationToken);
 
         var result = await CreateController().GetSearchIndex("de");
 

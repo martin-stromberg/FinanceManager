@@ -1,4 +1,4 @@
-﻿using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
@@ -321,7 +321,7 @@ public sealed class StatementDraftServiceTests
         var result = await sut.ApplyBatchEntryUpdatesAsync(draft.Id, owner, req, CancellationToken.None);
 
         Assert.True(result.Success);
-        var unchangedStatusEntry = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id);
+        var unchangedStatusEntry = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.Announced, unchangedStatusEntry.Status);
         Assert.True(unchangedStatusEntry.IsCostNeutral);
         Assert.Equal("Updated announced", unchangedStatusEntry.Subject);
@@ -360,7 +360,7 @@ public sealed class StatementDraftServiceTests
         var result = await sut.ApplyBatchEntryUpdatesAsync(draft.Id, owner, req, CancellationToken.None);
 
         Assert.True(result.Success);
-        var updatedEntry = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id);
+        var updatedEntry = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(FinanceManager.Shared.Dtos.Statements.StatementDraftEntryStatus.Open, updatedEntry.Status);
         Assert.Equal("Corrected duplicate", updatedEntry.Subject);
         Assert.Equal(12.5m, updatedEntry.Amount);
@@ -422,7 +422,7 @@ public sealed class StatementDraftServiceTests
         Assert.NotEqual(Guid.Empty, createdDraftId);
 
         // Verify attachment stored
-        var att = await db.Attachments.FirstOrDefaultAsync(a => a.OwnerUserId == owner && a.EntityKind == FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementDraft && a.EntityId == createdDraftId);
+        var att = await db.Attachments.FirstOrDefaultAsync(a => a.OwnerUserId == owner && a.EntityKind == FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementDraft && a.EntityId == createdDraftId, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(att);
         Assert.Equal("original.ndjson", att!.FileName);
         Assert.Equal("application/octet-stream", att.ContentType);

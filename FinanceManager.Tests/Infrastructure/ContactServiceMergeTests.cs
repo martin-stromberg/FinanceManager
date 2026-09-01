@@ -27,7 +27,7 @@ public sealed class ContactServiceMergeTests
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "Source", ContactType.Person, null, null, false);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "Target", ContactType.Person, null, null, false);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Seed a posting that references the source contact
         var posting = new FinanceManager.Domain.Postings.Posting(Guid.NewGuid(), PostingKind.Contact,
@@ -38,23 +38,23 @@ public sealed class ContactServiceMergeTests
         // Seed a statement entry that references the source contact (via EF entry since private setter)
         var se = new FinanceManager.Domain.Statements.StatementEntry(Guid.NewGuid(), DateTime.UtcNow.Date, 10m, "Subj", Guid.NewGuid().ToString(), null, null, "EUR", null, false, false);
         db.StatementEntries.Add(se);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         db.Entry(se).Property<Guid?>("ContactId").CurrentValue = src.Id;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
         await svc.MergeAsync(owner, src.Id, tgt.Id, CancellationToken.None);
 
         // Posting now references target
-        var reloadedPosting = await db.Postings.AsNoTracking().FirstAsync(p => p.Id == posting.Id);
+        var reloadedPosting = await db.Postings.AsNoTracking().FirstAsync(p => p.Id == posting.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(tgt.Id, reloadedPosting.ContactId);
 
         // StatementEntry now references target
-        var reloadedSe = await db.StatementEntries.AsNoTracking().FirstAsync(x => x.Id == se.Id);
+        var reloadedSe = await db.StatementEntries.AsNoTracking().FirstAsync(x => x.Id == se.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(tgt.Id, reloadedSe.ContactId);
 
         // Source removed
-        Assert.Null(await db.Contacts.FindAsync(src.Id));
+        Assert.Null(await db.Contacts.FindAsync(new object?[] { src.Id }, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class ContactServiceMergeTests
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "Source", ContactType.Person, null, null, false);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "Target", ContactType.Person, null, null, false);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var keyPeriodStart = new DateTime(2024, 1, 1);
         var period = FinanceManager.Domain.Postings.AggregatePeriod.Month;
@@ -107,12 +107,12 @@ public sealed class ContactServiceMergeTests
         srcAggOther.Add(30m);
         db.PostingAggregates.Add(srcAggOther);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
         await svc.MergeAsync(owner, src.Id, tgt.Id, CancellationToken.None);
 
-        var aggs = await db.PostingAggregates.AsNoTracking().Where(a => a.Kind == PostingKind.Contact).ToListAsync();
+        var aggs = await db.PostingAggregates.AsNoTracking().Where(a => a.Kind == PostingKind.Contact).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         // Source aggregate with same key should be removed, target amount summed (100 + 50)
         var merged = aggs.Single(a => a.ContactId == tgt.Id && a.PeriodStart == keyPeriodStart && a.Period == period);
         Assert.Equal(150m, merged.Amount);

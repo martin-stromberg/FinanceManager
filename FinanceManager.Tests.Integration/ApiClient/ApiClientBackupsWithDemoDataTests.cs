@@ -68,10 +68,10 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
             // create demo data for this user (including postings)
             var demo = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Demo.IDemoDataService>();
-            await demo.CreateDemoDataAsync(userId, true, default);
+            await demo.CreateDemoDataAsync(userId, true, TestContext.Current.CancellationToken);
 
             var contactService = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Contacts.IContactService>();
-            await contactService.CreateAsync(userId, "FixContact", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "fix", false, default);
+            await contactService.CreateAsync(userId, "FixContact", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "fix", false, TestContext.Current.CancellationToken);
         }
 
         // capture full snapshot before backup (ID-agnostic projections)
@@ -84,14 +84,14 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
 
         // create backup via API
-        var created = await api.Backups_CreateAsync();
+        var created = await api.Backups_CreateAsync(TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
 
-        var allBackups = await api.Backups_ListAsync();
+        var allBackups = await api.Backups_ListAsync(TestContext.Current.CancellationToken);
         allBackups.Should().ContainSingle(b => b.Id == created.Id);
 
         // download backup stream
-        var stream = await api.Backups_DownloadAsync(created.Id);
+        var stream = await api.Backups_DownloadAsync(created.Id, TestContext.Current.CancellationToken);
         stream.Should().NotBeNull();
         stream!.Length.Should().BeGreaterThan(0);
 
@@ -99,11 +99,11 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         using (var scope = _factory.Services.CreateScope())
         {
             var contactService = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Contacts.IContactService>();
-            await contactService.CreateAsync(userId, "TempContactToRemove", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "temp", false, default);
+            await contactService.CreateAsync(userId, "TempContactToRemove", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "temp", false, TestContext.Current.CancellationToken);
         }
 
         // start apply backup
-        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName));
+        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName), TestContext.Current.CancellationToken);
         status.Running.Should().BeTrue();
 
         // run background task runner to process the restore
@@ -118,13 +118,13 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             var processedChanged = false;
             for (int i = 0; i < 60; i = processedChanged ? 0 : i + 1)
             {
-                var polled = await api.Backups_GetStatusAsync();
+                var polled = await api.Backups_GetStatusAsync(TestContext.Current.CancellationToken);
                 if (!string.IsNullOrWhiteSpace(polled.Error))
                     throw new InvalidOperationException($"Backup restore failed: {polled.Error}");
                 if (!polled.Running) break;
                 processedChanged = lastProcessed != polled.Processed;
                 lastProcessed = polled.Processed;
-                await Task.Delay(200, default);
+                await Task.Delay(200, TestContext.Current.CancellationToken);
             }
             cts.Cancel();
             scope.Dispose();

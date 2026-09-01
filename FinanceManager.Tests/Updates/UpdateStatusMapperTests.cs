@@ -34,7 +34,7 @@ public sealed class UpdateStatusMapperTests
             false,
             null);
 
-        var result = await mapper.MapAsync(snapshot);
+        var result = await mapper.MapAsync(snapshot, TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(UpdateStatusKind.NoUpdate);
         result.AvailableVersion.Should().BeNull();
@@ -67,7 +67,7 @@ public sealed class UpdateStatusMapperTests
             false,
             null);
 
-        var result = await mapper.MapAsync(snapshot);
+        var result = await mapper.MapAsync(snapshot, TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(UpdateStatusKind.Available);
         result.AvailableVersion.Should().Be("1.21.0-RC.2");

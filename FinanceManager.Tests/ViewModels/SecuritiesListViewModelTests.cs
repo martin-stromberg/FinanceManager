@@ -88,7 +88,7 @@ public sealed class SecuritiesListViewModelTests
         Assert.Equal(1, calls);
 
         vm.ToggleActive();
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.Equal(2, calls);
     }
 

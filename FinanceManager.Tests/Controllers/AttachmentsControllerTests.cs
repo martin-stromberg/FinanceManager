@@ -263,7 +263,7 @@ public sealed class AttachmentsControllerTests
 
         using var content = new MultipartFormDataContent();
         content.Add(new ByteArrayContent(new byte[16]), "file", "a.pdf");
-        var body = await content.ReadAsByteArrayAsync();
+        var body = await content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         httpContext.Request.Method = HttpMethods.Post;
         httpContext.Request.ContentType = content.Headers.ContentType!.ToString();
         httpContext.Request.ContentLength = body.Length;
@@ -280,7 +280,7 @@ public sealed class AttachmentsControllerTests
             new List<IValueProviderFactory>());
 
         filter.OnResourceExecuting(context);
-        var form = await httpContext.Request.ReadFormAsync();
+        var form = await httpContext.Request.ReadFormAsync(TestContext.Current.CancellationToken);
 
         Assert.True(maxRequestBodySizeFeature.MaxRequestBodySize > configuredLimit);
         Assert.Single(form.Files);
@@ -305,7 +305,7 @@ public sealed class AttachmentsControllerTests
 
         using var content = new MultipartFormDataContent();
         content.Add(new ByteArrayContent("%PDF-1.7 test"u8.ToArray()), "file", "a.pdf");
-        var body = await content.ReadAsByteArrayAsync();
+        var body = await content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         httpContext.Request.Method = HttpMethods.Post;
         httpContext.Request.ContentType = content.Headers.ContentType!.ToString();
         httpContext.Request.ContentLength = body.Length;
@@ -319,7 +319,7 @@ public sealed class AttachmentsControllerTests
             new List<IValueProviderFactory>());
 
         filter.OnResourceExecuting(context);
-        var form = await httpContext.Request.ReadFormAsync();
+        var form = await httpContext.Request.ReadFormAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(AttachmentUploadOptions.DefaultMaxSizeBytes + 1024L * 1024L, maxRequestBodySizeFeature.MaxRequestBodySize);
         Assert.Single(form.Files);

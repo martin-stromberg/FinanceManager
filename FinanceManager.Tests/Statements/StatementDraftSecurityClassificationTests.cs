@@ -1,4 +1,4 @@
-﻿using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Statements;
@@ -85,7 +85,7 @@ public sealed class StatementDraftSecurityClassificationTests
         // Arrange securities
         var sec = new Security(owner, name: "ETF World", identifier: "DE000A0XYZ", description: null, alphaVantageCode: "WLD.F", currencyCode: "EUR", categoryId: null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Create draft linked to the account
         var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
@@ -116,7 +116,7 @@ public sealed class StatementDraftSecurityClassificationTests
         // Arrange: security name with umlauts; classification normalizes to plain ASCII (ue/oe/ae/ss)
         var sec = new Security(owner, name: "Münchener Rückversicherung", identifier: "DE000MNRK", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
 
@@ -146,7 +146,7 @@ public sealed class StatementDraftSecurityClassificationTests
         var first = new Security(owner, name: "AAA Corp", identifier: "DE111111", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
         var second = new Security(owner, name: "ZZZ Corp", identifier: "DE222222", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
         db.Securities.AddRange(first, second);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
 

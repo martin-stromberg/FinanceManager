@@ -1,4 +1,4 @@
-﻿using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Accounts;
@@ -26,7 +26,7 @@ public sealed class AccountServiceTests
         var owner = Guid.NewGuid();
         var bankContact = new Contact(owner, "Bank A", ContactType.Bank, null);
         db.Contacts.Add(bankContact);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var dto = await sut.CreateAsync(owner, "Konto 1", AccountType.Giro, "DE123", bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
 
@@ -42,7 +42,7 @@ public sealed class AccountServiceTests
         var owner = Guid.NewGuid();
         var bankContact = new Contact(owner, "Bank A", ContactType.Bank, null);
         db.Contacts.Add(bankContact);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.CreateAsync(owner, "A", AccountType.Giro, "DE999", bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
         Func<Task> act = () => sut.CreateAsync(owner, "B", AccountType.Giro, "DE999", bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
@@ -58,7 +58,7 @@ public sealed class AccountServiceTests
         var owner = Guid.NewGuid();
         var bankContact = new Contact(owner, "Bank B", ContactType.Bank, null);
         db.Contacts.Add(bankContact);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var acc = await sut.CreateAsync(owner, "Main", AccountType.Giro, null, bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
 
         var ok = await sut.DeleteAsync(acc.Id, owner, CancellationToken.None);
@@ -75,7 +75,7 @@ public sealed class AccountServiceTests
         var owner = Guid.NewGuid();
         var bankContact = new Contact(owner, "Bank C", ContactType.Bank, null);
         db.Contacts.Add(bankContact);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var a1 = await sut.CreateAsync(owner, "A1", AccountType.Giro, null, bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
         var a2 = await sut.CreateAsync(owner, "A2", AccountType.Giro, null, bankContact.Id, SavingsPlanExpectation.Optional, true, false, CancellationToken.None);
 

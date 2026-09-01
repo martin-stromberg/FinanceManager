@@ -177,7 +177,7 @@ public sealed class ReturnAnalysisCacheTests : IDisposable
         await _sut.GetOrCreateAsync(key, () => Task.FromResult<string?>("v1"), TimeSpan.FromMilliseconds(1));
 
         // Wait for expiry
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         int callCount = 0;
 

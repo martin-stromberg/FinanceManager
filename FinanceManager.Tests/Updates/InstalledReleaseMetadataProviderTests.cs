@@ -12,7 +12,7 @@ public sealed class InstalledReleaseMetadataProviderTests
         var installed = new InstalledReleaseInfo("2.3.4", DateTimeOffset.Parse("2026-07-19T10:15:00+00:00"), "abc123", "FinanceManager", "win-x64");
         var provider = new InstalledReleaseMetadataProvider(new FixedInstalledVersionProvider(installed));
 
-        var metadata = await provider.GetAsync();
+        var metadata = await provider.GetAsync(TestContext.Current.CancellationToken);
 
         metadata.Version.Should().Be("2.3.4");
         metadata.CommitSha.Should().Be("abc123");

@@ -54,7 +54,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
     {
         var api = CreateClient();
         var req = new RegisterRequest($"user_{Guid.NewGuid():N}", "Secret123", PreferredLanguage: "de", TimeZoneId: "Europe/Berlin");
-        var resp = await api.Auth_RegisterAsync(req);
+        var resp = await api.Auth_RegisterAsync(req, TestContext.Current.CancellationToken);
         resp.Should().NotBeNull();
         resp.isAdmin.Should().BeFalse();
         resp.user.Should().Be(req.Username);
@@ -67,9 +67,9 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         var api = CreateClient();
         var username = $"user_{Guid.NewGuid():N}";
         // register first
-        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", null, null));
+        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", null, null), TestContext.Current.CancellationToken);
 
-        var ok = await api.Auth_LoginAsync(new LoginRequest(username, "Secret123", null, null));
+        var ok = await api.Auth_LoginAsync(new LoginRequest(username, "Secret123", null, null), TestContext.Current.CancellationToken);
         ok.Should().NotBeNull();
         ok.user.Should().Be(username);
 
@@ -83,9 +83,9 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
     {
         var api = CreateClient();
         var username = $"user_{Guid.NewGuid():N}";
-        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", null, null));
+        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", null, null), TestContext.Current.CancellationToken);
 
-        var ok = await api.Auth_LogoutAsync();
+        var ok = await api.Auth_LogoutAsync(TestContext.Current.CancellationToken);
         ok.Should().BeTrue();
         // Further validation: subsequent authenticated-only endpoints would fail; basic check is enough here.
     }
@@ -99,7 +99,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         });
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await CreateBearerTokenAsync(issuer: "wrong-issuer"));
 
-        var response = await http.GetAsync("/api/user/settings/profile");
+        var response = await http.GetAsync("/api/user/settings/profile", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -113,7 +113,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         });
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await CreateBearerTokenAsync(audience: "wrong-audience"));
 
-        var response = await http.GetAsync("/api/user/settings/profile");
+        var response = await http.GetAsync("/api/user/settings/profile", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -127,7 +127,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         });
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await CreateBearerTokenAsync(includeAdminRole: true));
 
-        var response = await http.GetAsync("/api/user/settings/profile");
+        var response = await http.GetAsync("/api/user/settings/profile", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -142,7 +142,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         var token = await CreateBearerTokenAsync(includeAdminRole: true, expiresUtc: DateTime.UtcNow.AddMinutes(10));
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await http.GetAsync("/api/auth/keepalive");
+        var response = await http.GetAsync("/api/auth/keepalive", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         response.Headers.TryGetValues("X-Auth-Token", out var refreshedTokens).Should().BeTrue();
@@ -172,7 +172,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         });
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await http.GetAsync("/api/auth/keepalive");
+        var response = await http.GetAsync("/api/auth/keepalive", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         response.Headers.TryGetValues("X-Auth-Token", out _).Should().BeFalse();
@@ -195,7 +195,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         });
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await http.GetAsync("/api/user/settings/profile");
+        var response = await http.GetAsync("/api/user/settings/profile", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -244,7 +244,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         });
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await http.GetAsync("/api/admin/users");
+        var response = await http.GetAsync("/api/admin/users", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -282,7 +282,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         });
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await http.GetAsync("/api/user/settings/profile");
+        var response = await http.GetAsync("/api/user/settings/profile", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

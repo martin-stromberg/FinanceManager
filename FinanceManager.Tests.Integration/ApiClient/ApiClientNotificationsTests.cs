@@ -34,14 +34,14 @@ public class ApiClientNotificationsTests : IClassFixture<TestWebApplicationFacto
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var items = await api.Notifications_ListAsync();
+        var items = await api.Notifications_ListAsync(TestContext.Current.CancellationToken);
         items.Should().NotBeNull();
         // Initially might be empty; we just validate the call.
 
         if (items.Count > 0)
         {
             var first = items.First();
-            var ok = await api.Notifications_DismissAsync(first.Id);
+            var ok = await api.Notifications_DismissAsync(first.Id, TestContext.Current.CancellationToken);
             ok.Should().BeTrue();
         }
     }

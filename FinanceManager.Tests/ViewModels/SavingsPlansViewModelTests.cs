@@ -70,7 +70,7 @@ public sealed class SavingsPlansViewModelTests
         Assert.Equal(1, calls);
 
         vm.ToggleActive();
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.True(calls >= 2);
     }
 

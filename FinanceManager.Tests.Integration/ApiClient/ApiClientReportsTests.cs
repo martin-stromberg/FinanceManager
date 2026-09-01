@@ -36,11 +36,11 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
 
         // Aggregates query minimal
         var aggReq = new ReportAggregatesQueryRequest(PostingKind: 0, Interval: 0, Take: 6, IncludeCategory: false, ComparePrevious: false, CompareYear: false, CompareProjection: false, AnalysisDate: null, PostingKinds: null, Filters: null, UseValutaDate: false);
-        var agg = await api.Reports_QueryAggregatesAsync(aggReq);
+        var agg = await api.Reports_QueryAggregatesAsync(aggReq, TestContext.Current.CancellationToken);
         agg.Should().NotBeNull();
 
         // List favorites initially empty
-        var favs = await api.Reports_ListFavoritesAsync();
+        var favs = await api.Reports_ListFavoritesAsync(TestContext.Current.CancellationToken);
         favs.Should().NotBeNull();
 
         // Create favorite
@@ -58,12 +58,12 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
             Expandable = false,
             UseValutaDate = false
         };
-        var created = await api.Reports_CreateFavoriteAsync(createReq);
+        var created = await api.Reports_CreateFavoriteAsync(createReq, TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
         created.CompareProjection.Should().BeTrue();
 
         // Get by id
-        var got = await api.Reports_GetFavoriteAsync(created.Id);
+        var got = await api.Reports_GetFavoriteAsync(created.Id, TestContext.Current.CancellationToken);
         got.Should().NotBeNull();
         got!.Id.Should().Be(created.Id);
         got.CompareProjection.Should().BeTrue();
@@ -85,15 +85,15 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
             PostingKinds = created.PostingKinds,
             Filters = created.Filters
         };
-        var updated = await api.Reports_UpdateFavoriteAsync(created.Id, updateReq);
+        var updated = await api.Reports_UpdateFavoriteAsync(created.Id, updateReq, TestContext.Current.CancellationToken);
         updated.Should().NotBeNull();
         updated!.Name.Should().Be(createReq.Name + "_X");
         updated.CompareProjection.Should().BeFalse();
 
         // Delete
-        var del = await api.Reports_DeleteFavoriteAsync(created.Id);
+        var del = await api.Reports_DeleteFavoriteAsync(created.Id, TestContext.Current.CancellationToken);
         del.Should().BeTrue();
-        var gone = await api.Reports_GetFavoriteAsync(created.Id);
+        var gone = await api.Reports_GetFavoriteAsync(created.Id, TestContext.Current.CancellationToken);
         gone.Should().BeNull();
     }
 }

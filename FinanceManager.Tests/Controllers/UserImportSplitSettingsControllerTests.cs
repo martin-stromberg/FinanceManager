@@ -94,7 +94,7 @@ public sealed class UserImportSplitSettingsControllerTests
         var resp = await controller.UpdateImportSplitAsync(req, CancellationToken.None);
         Assert.IsType<NoContentResult>(resp);
 
-        var user = await db.Users.SingleAsync();
+        var user = await db.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(ImportSplitMode.MonthlyOrFixed, user.ImportSplitMode);
         Assert.Equal(300, user.ImportMaxEntriesPerDraft);
         Assert.Equal(5, user.ImportMinEntriesPerDraft);
@@ -116,7 +116,7 @@ public sealed class UserImportSplitSettingsControllerTests
         var details = Assert.IsType<ValidationProblemDetails>(obj.Value);
         Assert.True(details.Errors.ContainsKey(nameof(req.MonthlySplitThreshold)));
 
-        var user = await db.Users.SingleAsync();
+        var user = await db.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(250, user.ImportMaxEntriesPerDraft); // unchanged
         Assert.Equal(8, user.ImportMinEntriesPerDraft);   // unchanged default
     }
@@ -134,7 +134,7 @@ public sealed class UserImportSplitSettingsControllerTests
         var resp = await controller.UpdateImportSplitAsync(req, CancellationToken.None);
         Assert.IsType<NoContentResult>(resp);
 
-        var user = await db.Users.SingleAsync();
+        var user = await db.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(ImportSplitMode.FixedSize, user.ImportSplitMode);
         Assert.Equal(400, user.ImportMaxEntriesPerDraft);
         Assert.Equal(3, user.ImportMinEntriesPerDraft);
@@ -156,7 +156,7 @@ public sealed class UserImportSplitSettingsControllerTests
         var details = Assert.IsType<ValidationProblemDetails>(obj.Value);
         Assert.True(details.Errors.ContainsKey(nameof(req.MinEntriesPerDraft)));
 
-        var user = await db.Users.SingleAsync();
+        var user = await db.Users.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(250, user.ImportMaxEntriesPerDraft); // unchanged
         Assert.Equal(8, user.ImportMinEntriesPerDraft);   // unchanged
     }

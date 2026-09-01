@@ -97,7 +97,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var security = CreateSecurity(user.Id, "Apple");
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m);
         AddPrice(security.Id, DateTime.Today, 120m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -121,7 +121,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddPrice(s1.Id, DateTime.Today, 100m);
         AddBuyPosting(s2.Id, DateTime.Today.AddYears(-1), 500m, 5m);
         AddPrice(s2.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -140,7 +140,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m);
         AddDividendPosting(security.Id, DateTime.Today, 42m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -158,7 +158,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, groupId);
         AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -182,7 +182,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBankPosting(account.Id, groupA, DateTime.Today.AddYears(-2), -500m);
         AddBankPosting(account.Id, groupB, DateTime.Today.AddYears(-1), -500m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -211,7 +211,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBankPosting(foreignAccount.Id, foreignGroup, DateTime.Today.AddYears(-1), -500m);
         AddPrice(security.Id, DateTime.Today, 100m);
         AddPrice(otherSecurity.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -228,7 +228,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var security = CreateSecurity(user.Id, "Apple");
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, Guid.NewGuid());
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -248,7 +248,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, groupId);
         AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -270,7 +270,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
         AddSellPosting(security.Id, DateTime.Today, 1000m, 10m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -285,7 +285,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
     {
         var user = CreateUser();
         CreateSecurity(user.Id, "Apple");
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -309,7 +309,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(securityB.Id, DateTime.Today.AddYears(-1), 5000m, 50m);
         AddPrice(securityB.Id, DateTime.Today, 200m);
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var reportA = await _sut.GetPortfolioAnalysisReportAsync(userA.Id, CancellationToken.None);
 
@@ -335,7 +335,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(s3.Id, DateTime.Today.AddYears(-1), 200m, 2m);
         AddPrice(s3.Id, DateTime.Today, 100m); // market value 200
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -361,7 +361,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
             AddPrice(security.Id, DateTime.Today, price);
         }
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -390,7 +390,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 500m, 5m); // newer lot, no fee
         AddPrice(security.Id, DateTime.Today, 100m);
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -407,7 +407,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var security = CreateSecurity(user.Id, "Apple");
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-2), 1000m, 10m);
         AddSellPosting(security.Id, DateTime.Today.AddYears(-1), 1200m, 10m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 

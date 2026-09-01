@@ -38,7 +38,7 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_ListCategoriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(categories);
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, vm.Items.Count);
         Assert.Equal(new[] { "A", "B" }, vm.Items.Select(x => x.Name).ToArray());
@@ -56,9 +56,9 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_CreateCategoryAsync("Zeta", It.IsAny<CancellationToken>()))
             .ReturnsAsync(created);
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.NewName = "Zeta";
-        await vm.AddAsync();
+        await vm.AddAsync(TestContext.Current.CancellationToken);
 
         Assert.True(vm.ActionOk);
         Assert.Equal(string.Empty, vm.NewName);
@@ -79,12 +79,12 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_UpdateCategoryNameAsync(id, "New", It.IsAny<CancellationToken>()))
             .ReturnsAsync(updated);
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.BeginEdit(id, "Old");
         Assert.Equal(id, vm.EditId);
         vm.EditName = "New";
-        await vm.SaveEditAsync();
+        await vm.SaveEditAsync(TestContext.Current.CancellationToken);
 
         Assert.True(vm.ActionOk);
         Assert.Equal(Guid.Empty, vm.EditId);
@@ -104,10 +104,10 @@ public sealed class SetupAttachmentCategoriesViewModelTests
         apiMock.Setup(a => a.Attachments_DeleteCategoryAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(vm.Items);
-        await vm.DeleteAsync(id);
+        await vm.DeleteAsync(id, TestContext.Current.CancellationToken);
         Assert.True(vm.ActionOk);
         Assert.Empty(vm.Items);
     }

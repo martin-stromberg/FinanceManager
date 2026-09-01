@@ -40,18 +40,18 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var user = await db.Users.FirstAsync(u => u.UserName == username);
+            var user = await db.Users.FirstAsync(u => u.UserName == username, cancellationToken: TestContext.Current.CancellationToken);
             userId = user.Id;
         }
 
         // request demo data creation
-        await api.Users_CreateDemoDataAsync(userId, true);
+        await api.Users_CreateDemoDataAsync(userId, true, TestContext.Current.CancellationToken);
 
         // Verify that accounts were created for user
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var accounts = await db.Accounts.Where(a => a.OwnerUserId == userId).ToListAsync();
+            var accounts = await db.Accounts.Where(a => a.OwnerUserId == userId).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.True(accounts.Count >= 3); // one giro + two savings
         }
     }

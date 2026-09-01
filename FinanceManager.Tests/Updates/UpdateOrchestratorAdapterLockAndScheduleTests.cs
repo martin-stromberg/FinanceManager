@@ -108,7 +108,7 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
         var statusService = UpdateOrchestratorAdapterTestFactory.CreateStatusService();
         var adapter = UpdateOrchestratorAdapterTestFactory.Create(packageStore: packageStore.Object, statusService: statusService);
 
-        await adapter.ResetLockAsync("stale lock cleared");
+        await adapter.ResetLockAsync("stale lock cleared", TestContext.Current.CancellationToken);
 
         packageStore.Verify(s => s.DeleteLockAsync(It.IsAny<CancellationToken>()), Times.Once);
         var snapshot = statusService.GetSnapshot();
@@ -129,7 +129,7 @@ public sealed class UpdateOrchestratorAdapterLockAndScheduleTests
             .Callback(() => applied = true);
         var adapter = UpdateOrchestratorAdapterTestFactory.Create(settingsStore: settingsStore.Object);
 
-        var result = await adapter.ScheduleAsync(scheduledTime);
+        var result = await adapter.ScheduleAsync(scheduledTime, TestContext.Current.CancellationToken);
 
         result.Should().Be(savedSettings);
         applied.Should().BeTrue();

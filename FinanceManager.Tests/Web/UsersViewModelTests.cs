@@ -53,7 +53,7 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(users);
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(vm.Items);
         Assert.Equal("u1", vm.Items[0].Username);
@@ -86,13 +86,13 @@ public sealed class UsersViewModelTests
             .ReturnsAsync(new List<UserAdminDto>())
             .ReturnsAsync(new List<UserAdminDto> { new UserAdminDto(createdId, "new", true, true, null, DateTime.UtcNow, null) });
 
-        await cardVm.LoadAsync(Guid.Empty);
+        await cardVm.LoadAsync(Guid.Empty, TestContext.Current.CancellationToken);
         // set values on the User fallback so SaveAsync uses them
         var userProp = cardVm.GetType().GetProperty("User")!;
         var newUser = new UserAdminDto(Guid.Empty, "new", true, true, null, DateTime.UtcNow, null);
         userProp.SetValue(cardVm, newUser);
 
-        var created = await cardVm.SaveAsync();
+        var created = await cardVm.SaveAsync(TestContext.Current.CancellationToken);
         Assert.True(created);
     }
 
@@ -108,13 +108,13 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_UpdateUserAsync(userId, It.IsAny<UpdateUserRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserAdminDto(userId, "updated", false, false, null, DateTime.UtcNow, null));
 
-        await cardVm.LoadAsync(userId);
+        await cardVm.LoadAsync(userId, TestContext.Current.CancellationToken);
         // change username via reflection on User property
         var userProp = cardVm.GetType().GetProperty("User")!;
         var edited = new UserAdminDto(userId, "updated", false, false, null, DateTime.UtcNow, null);
         userProp.SetValue(cardVm, edited);
 
-        var ok = await cardVm.SaveAsync();
+        var ok = await cardVm.SaveAsync(TestContext.Current.CancellationToken);
         Assert.True(ok);
     }
 
@@ -133,7 +133,7 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_DeleteUserAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await listVm.LoadAsync();
+        await listVm.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Single(listVm.Items);
 
         // perform delete via card vm
@@ -141,10 +141,10 @@ public sealed class UsersViewModelTests
         // set user on card and call delete
         var userProp = cardVm.GetType().GetProperty("User")!;
         userProp.SetValue(cardVm, users[0]);
-        await cardVm.DeleteAsync();
+        await cardVm.DeleteAsync(TestContext.Current.CancellationToken);
 
         // reload list
-        await listVm.LoadAsync();
+        await listVm.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Empty(listVm.Items);
     }
 
@@ -160,10 +160,10 @@ public sealed class UsersViewModelTests
         var userProp = cardVm.GetType().GetProperty("User")!;
         userProp.SetValue(cardVm, new UserAdminDto(id, "u", false, true, null, DateTime.UtcNow, null));
 
-        var ok = await cardVm.UnblockAsync(); // reuse Unblock/Reset path isn't identical, so call Reset via API directly
+        var ok = await cardVm.UnblockAsync(TestContext.Current.CancellationToken); // reuse Unblock/Reset path isn't identical, so call Reset via API directly
         // instead call API directly for reset simulation
         var api = apiMock.Object;
-        var called = await api.Admin_ResetPasswordAsync(id, new ResetPasswordRequest("secret"));
+        var called = await api.Admin_ResetPasswordAsync(id, new ResetPasswordRequest("secret"), TestContext.Current.CancellationToken);
 
         Assert.True(called);
     }
@@ -178,10 +178,10 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_UnlockUserAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await cardVm.LoadAsync(id);
+        await cardVm.LoadAsync(id, TestContext.Current.CancellationToken);
         Assert.NotNull(cardVm.GetType().GetProperty("User")!.GetValue(cardVm));
 
-        var ok = await cardVm.UnblockAsync();
+        var ok = await cardVm.UnblockAsync(TestContext.Current.CancellationToken);
         Assert.True(ok);
     }
 
