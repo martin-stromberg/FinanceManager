@@ -16,6 +16,8 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>Initializes the test with the shared in-memory web application factory.</summary>
+    /// <param name="factory">The shared in-memory test host used to spin up API clients.</param>
     public ApiClientPostingsReversalTests(TestWebApplicationFactory factory)
     {
         _factory = factory;

@@ -4,10 +4,16 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end coverage for the savings plan categories API, verifying the full CRUD lifecycle plus the
+/// symbol-attachment set/clear operations through the real HTTP pipeline.
+/// </summary>
 public class ApiClientSavingsPlanCategoriesTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>Initializes the test with the shared in-memory web application factory.</summary>
+    /// <param name="factory">The shared in-memory test host used to spin up API clients.</param>
     public ApiClientSavingsPlanCategoriesTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +34,11 @@ public class ApiClientSavingsPlanCategoriesTests : IClassFixture<TestWebApplicat
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Drives the complete savings plan category lifecycle - list, create, get, update, set/clear the symbol
+    /// attachment, and delete - and confirms each step's effect is visible on the next read, including that a
+    /// deleted category resolves to null afterwards.
+    /// </summary>
     [Fact]
     public async Task SavingsPlanCategories_Flow_CRUD_And_Symbol()
     {

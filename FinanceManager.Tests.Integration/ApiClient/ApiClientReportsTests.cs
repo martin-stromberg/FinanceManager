@@ -4,10 +4,17 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end coverage for the reports API: aggregate queries and the full CRUD lifecycle of report favorites
+/// (create, read, update, delete), verifying that persisted favorite settings (such as
+/// <c>CompareProjection</c>) round-trip correctly through the ApiClient.
+/// </summary>
 public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>Initializes the test with the shared in-memory web application factory.</summary>
+    /// <param name="factory">The shared in-memory test host used to spin up API clients.</param>
     public ApiClientReportsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +35,12 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Verifies the aggregates query endpoint responds successfully for a minimal request, then drives the
+    /// complete favorite lifecycle (create, get, update, delete) and confirms that a toggled flag such as
+    /// <c>CompareProjection</c> is actually persisted and reflected on subsequent reads/updates, and that a
+    /// deleted favorite is no longer retrievable.
+    /// </summary>
     [Fact]
     public async Task Reports_Aggregates_And_Favorites_Flow()
     {

@@ -7,10 +7,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end coverage for the backup API: creating, listing, uploading, downloading and deleting backup
+/// files, plus the multi-step apply/status/cancel flow used to restore a backup onto the current data.
+/// </summary>
 public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes the test with the shared <see cref="TestWebApplicationFactory"/>, which hosts the
+    /// application in-memory for the duration of the test class.
+    /// </summary>
+    /// <param name="factory">The shared in-memory application host injected by xUnit's class fixture.</param>
     public ApiClientBackupsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -31,6 +40,10 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Verifies that a fresh user has no backups listed, and that creating one immediately makes it show
+    /// up in the list - the basic create/list round trip the rest of the backup flow builds on.
+    /// </summary>
     [Fact]
     public async Task List_InitiallyEmpty_Create_AddsEntry()
     {
@@ -51,6 +64,11 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         list2.Any(b => b.Id == created.Id).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that the upload endpoint enforces the zip container format - a raw .ndjson payload is
+    /// rejected even though it is the same content that lives inside a valid backup zip - and that a
+    /// correctly zipped backup is accepted and appears in the backup list under its uploaded file name.
+    /// </summary>
     [Fact]
     public async Task Upload_AllowsValidZip_AndRejectsNdjson()
     {
@@ -71,6 +89,11 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         list.Should().ContainSingle(b => b.Id == up2.Id);
     }
 
+    /// <summary>
+    /// Verifies that uploading bytes with a valid zip file signature but corrupt/truncated content is
+    /// rejected with the specific "Err_Backup_InvalidZip" error code, so the caller can distinguish a
+    /// malformed archive from other upload failures rather than getting a generic error.
+    /// </summary>
     [Fact]
     public async Task Upload_InvalidZip_ReturnsBadRequest()
     {
@@ -84,6 +107,11 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         api.LastErrorCode.Should().Be("Err_Backup_InvalidZip");
     }
 
+    /// <summary>
+    /// Verifies that a created backup can be downloaded as a non-empty stream, and that after deleting it
+    /// the same download call returns null instead of a stale or empty stream - confirming delete actually
+    /// removes the backend file rather than only the list entry.
+    /// </summary>
     [Fact]
     public async Task Download_ReturnsStream_AndDelete_Removes()
     {
@@ -101,6 +129,12 @@ public class ApiClientBackupsTests : IClassFixture<TestWebApplicationFactory>
         streamMissing.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies the guarded restore workflow: applying a backup without repeating its file name as an
+    /// explicit confirmation is rejected with "Err_Backup_ConfirmationRequired" (protecting against an
+    /// accidental, destructive data overwrite), while a correctly confirmed request starts an apply
+    /// operation that can be polled via the status endpoint and aborted via cancel.
+    /// </summary>
     [Fact]
     public async Task StartApply_Status_Cancel_Flow()
     {

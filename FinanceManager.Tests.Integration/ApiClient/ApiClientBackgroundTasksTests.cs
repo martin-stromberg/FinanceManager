@@ -4,10 +4,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end coverage for the background task API: enqueueing work (including the specialized aggregate
+/// rebuild endpoint), polling active/detail status, and cancelling or removing a queued task.
+/// </summary>
 public class ApiClientBackgroundTasksTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes the test with the shared <see cref="TestWebApplicationFactory"/>, which hosts the
+    /// application in-memory for the duration of the test class.
+    /// </summary>
+    /// <param name="factory">The shared in-memory application host injected by xUnit's class fixture.</param>
     public ApiClientBackgroundTasksTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -22,6 +31,11 @@ public class ApiClientBackgroundTasksTests : IClassFixture<TestWebApplicationFac
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    /// <summary>
+    /// Verifies that enqueueing an aggregate-rebuild task through the generic background-task endpoint
+    /// returns a task info that is then visible via the active-list and detail endpoints, and that the
+    /// aggregates-specific convenience endpoints (which wrap the same underlying task) agree with it.
+    /// </summary>
     [Fact]
     public async Task Enqueue_RebuildAggregates_ShouldReturnTaskInfo_AndStatusEndpointsWork()
     {
@@ -55,6 +69,11 @@ public class ApiClientBackgroundTasksTests : IClassFixture<TestWebApplicationFac
         status.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that cancelling/removing a freshly enqueued task succeeds and that the task's detail
+    /// endpoint no longer returns it afterwards, confirming the cancel operation actually clears the task
+    /// rather than just changing its status while leaving it queryable.
+    /// </summary>
     [Fact]
     public async Task CancelOrRemove_ShouldReturnNoContentOrFalse()
     {
