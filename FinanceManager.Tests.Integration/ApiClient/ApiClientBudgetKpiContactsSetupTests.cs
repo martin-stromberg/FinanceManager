@@ -19,10 +19,21 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end regression test that recreates a realistic, large demo-data-sized household of contacts,
+/// bank accounts, statement bookings and budget rules via the public API, then cross-checks that the
+/// resulting posting sums (by bank/contact/savings-plan destination) and the generated budget-report
+/// XLSX export agree with hand-computed expectations - a broad sanity net for the whole
+/// import-to-report-export pipeline rather than a single unit of behavior.
+/// </summary>
 public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientBudgetKpiContactsSetupTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientBudgetKpiContactsSetupTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -640,6 +651,13 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Creates ~170 contacts across every contact type (banks, organizations, a person), derives bank
+    /// accounts from the bank contacts, and groups the remaining contacts into categories by their
+    /// common base name (stripping trailing numeric suffixes like "Cafe 3" -&gt; "Cafe") - verifying that
+    /// this large, varied contact population round-trips correctly through creation, account derivation
+    /// and category grouping before the rest of the KPI/budget scenario builds on top of it.
+    /// </summary>
     [Fact]
     public async Task BudgetKpi_ContactsSetup_ShouldCreateAllContactsAndAccounts()
     {

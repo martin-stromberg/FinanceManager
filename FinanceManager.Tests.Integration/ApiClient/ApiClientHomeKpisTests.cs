@@ -4,10 +4,18 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the home-dashboard KPI tiles API, covering the full list/create/get/update/delete
+/// lifecycle for a predefined KPI tile.
+/// </summary>
 public class ApiClientHomeKpisTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientHomeKpisTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientHomeKpisTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +36,11 @@ public class ApiClientHomeKpisTests : IClassFixture<TestWebApplicationFactory>
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Walks a home KPI tile through its full lifecycle (starts empty, create a predefined tile, get by
+    /// id, update its title/sort order, delete) - the baseline regression guard for the dashboard
+    /// configuration API's CRUD contract.
+    /// </summary>
     [Fact]
     public async Task HomeKpis_List_Create_Update_Delete_Flow()
     {

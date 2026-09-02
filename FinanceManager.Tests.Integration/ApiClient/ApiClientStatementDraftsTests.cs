@@ -6,10 +6,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end tests for the statement-draft API surface: mass-import analysis/confirmation, the full
+/// upload-to-booking lifecycle of a single draft, bulk deletion, and how booking computes and returns
+/// budget-impact information to the client.
+/// </summary>
 public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientStatementDraftsTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientStatementDraftsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -30,6 +39,12 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Verifies the two-phase mass-import contract: an initial analysis-only call (no confirmation) flags
+    /// an unrecognized file as requiring a user decision without executing anything, and a follow-up call
+    /// carrying that decision and confirmation then actually executes (here, skipping) the file - so a
+    /// caller can never accidentally execute an import without first reviewing what would happen.
+    /// </summary>
     [Fact]
     public async Task StatementDrafts_ProcessMassImport_ShouldSupportAnalysisAndConfirmationFlow()
     {
@@ -87,6 +102,13 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         execution.Files[0].DecisionSource.Should().Be(MassImportDecisionSource.UserConfirmed);
     }
 
+    /// <summary>
+    /// Exercises the full lifecycle of a single statement draft end to end - upload, listing, detail
+    /// retrieval, reassigning the detected account, adding a manual entry, validation, a booking attempt
+    /// that correctly fails for a missing contact, assigning that contact, and a successful re-booking
+    /// that removes the draft from the open list - guarding the entire pipeline against a regression in
+    /// any one step breaking the whole workflow.
+    /// </summary>
     [Fact]
     public async Task StatementDrafts_Flow_Upload_List_Get_SetAccount_AddEntry_Validate_Book_DeleteAll()
     {
@@ -207,6 +229,10 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         open.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that bulk-deleting all open statement drafts actually removes an uploaded draft from the
+    /// open list, so users can clear out unwanted or duplicate uploads in one call instead of one at a time.
+    /// </summary>
     [Fact]
     public async Task StatementDrafts_Upload_And_DeleteAll_Works()
     {

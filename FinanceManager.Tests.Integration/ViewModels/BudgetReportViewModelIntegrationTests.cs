@@ -26,6 +26,10 @@ public sealed class BudgetReportViewModelIntegrationTests : IClassFixture<TestWe
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BudgetReportViewModelIntegrationTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public BudgetReportViewModelIntegrationTests(TestWebApplicationFactory factory)
     {
         _factory = factory;

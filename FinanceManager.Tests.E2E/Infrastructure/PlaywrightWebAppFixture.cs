@@ -8,13 +8,31 @@ using Microsoft.Playwright;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// xUnit fixture that, once per test collection, builds and starts a real instance of FinanceManager.Web
+/// against a throwaway SQLite database and a seeded local-folder update source, launches a Playwright
+/// browser against it, and tears everything down afterwards - so E2E tests exercise the actual application
+/// end to end instead of a simulated host.
+/// </summary>
 public sealed class PlaywrightWebAppFixture : IAsyncLifetime
 {
+    /// <summary>
+    /// Optional per-session browser context overrides (viewport, mobile emulation, locale) passed to
+    /// <see cref="CreateSessionAsync"/>, so individual tests can opt into e.g. a mobile viewport without
+    /// needing a separate fixture or server.
+    /// </summary>
     public sealed class PlaywrightSessionOptions
     {
+        /// <summary>The viewport size to use for the session's browser context, or <see langword="null"/> to use Playwright's default.</summary>
         public ViewportSize? ViewportSize { get; init; }
+
+        /// <summary>Whether to emulate a mobile device for the session's browser context, or <see langword="null"/> to use Playwright's default.</summary>
         public bool? IsMobile { get; init; }
+
+        /// <summary>Whether to emulate touch input for the session's browser context, or <see langword="null"/> to use Playwright's default.</summary>
         public bool? HasTouch { get; init; }
+
+        /// <summary>The locale to emulate for the session's browser context, or <see langword="null"/> to use Playwright's default.</summary>
         public string? Locale { get; init; }
     }
 
@@ -50,9 +68,23 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
     private readonly StringBuilder _serverOutput = new();
     private readonly StringBuilder _serverError = new();
 
+    /// <summary>
+    /// The base URL of the running test server (e.g. <c>https://127.0.0.1:{port}</c>), for navigating to
+    /// pages under test.
+    /// </summary>
     public string BaseUrl => _baseUrl ?? throw new InvalidOperationException("The Playwright server is not initialized.");
+
+    /// <summary>
+    /// Filesystem path to the SQLite database backing the running test server, for seeding data directly
+    /// (see <see cref="TestUserSeeder"/>) without going through the UI.
+    /// </summary>
     public string DatabasePath => _dbPath ?? throw new InvalidOperationException("The Playwright database is not initialized.");
 
+    /// <summary>
+    /// Starts the test server - against a fresh temporary SQLite database and a seeded local-folder update
+    /// source - and launches the Playwright browser used to create sessions against it. Invoked once by
+    /// xUnit before any test in the collection runs.
+    /// </summary>
     public async ValueTask InitializeAsync()
     {
         var port = GetFreePort();
@@ -73,6 +105,11 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         _browser = await LaunchBrowserAsync(_playwright);
     }
 
+    /// <summary>
+    /// Shuts down the browser and the test server, deletes the temporary database, and restores any
+    /// <c>release-metadata.json</c> content that was overwritten for the test run. Invoked once by xUnit
+    /// after all tests in the collection have run.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         if (_browser != null)
@@ -143,6 +180,13 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         DeleteDirectoryBestEffort(_updatesWorkingDir);
     }
 
+    /// <summary>
+    /// Creates a new, isolated browser context and page against the running test server, applying the
+    /// configured action/navigation timeouts and, if enabled, trace recording - so each test gets its own
+    /// cookies and storage without needing a separate browser instance per test.
+    /// </summary>
+    /// <param name="options">Optional per-session context overrides such as viewport size or mobile emulation, or <see langword="null"/> to use Playwright's defaults.</param>
+    /// <returns>A task that resolves to the new <see cref="PlaywrightBrowserSession"/>.</returns>
     public async Task<PlaywrightBrowserSession> CreateSessionAsync(PlaywrightSessionOptions? options = null)
     {
         if (_browser == null)
@@ -181,6 +225,11 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         return new PlaywrightBrowserSession(context, page, artifactPrefix, _options.ArtifactCaptureEnabled, _options.TraceEnabled);
     }
 
+    /// <summary>
+    /// Creates a new session pre-configured to emulate a typical mobile phone viewport with touch support,
+    /// for tests that need to verify mobile-specific layout or behavior.
+    /// </summary>
+    /// <returns>A task that resolves to the new <see cref="PlaywrightBrowserSession"/>.</returns>
     public Task<PlaywrightBrowserSession> CreateMobileSessionAsync()
         => CreateSessionAsync(MobileSessionOptions);
 

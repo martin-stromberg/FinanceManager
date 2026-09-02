@@ -54,6 +54,14 @@ public sealed class SetupUpdateGateway
         await WaitUntilLoadedAsync();
     }
 
+    /// <summary>
+    /// Triggers a manual update check by clicking the "Jetzt prüfen" (check now) button in the update section.
+    /// </summary>
+    /// <remarks>
+    /// This method returns as soon as the click has been dispatched; it does not itself wait for the check to
+    /// complete (see the inline comment in this method for why the button's disabled state cannot be used to
+    /// detect completion here). Callers must instead await the outcome via <see cref="WaitForAvailableVersionAsync"/>.
+    /// </remarks>
     public async Task CheckNowAsync()
     {
         await CheckNowButton.ClickAsync();
@@ -66,6 +74,12 @@ public sealed class SetupUpdateGateway
         // outcome to actually be rendered, regardless of the button's (unreliable) transient disabled state.
     }
 
+    /// <summary>
+    /// Ensures the "enable automatic checks" checkbox ends up in the requested state, clicking it only if its
+    /// current state differs, so tests can set the setting deterministically without needing to know or care
+    /// about its current value beforehand.
+    /// </summary>
+    /// <param name="enabled">Whether automatic update checks should end up enabled.</param>
     public async Task SetEnabledAsync(bool enabled)
     {
         var isChecked = await EnabledCheckbox.IsCheckedAsync();
@@ -75,22 +89,45 @@ public sealed class SetupUpdateGateway
         }
     }
 
+    /// <summary>
+    /// Reads whether the "enable automatic checks" checkbox is currently checked, for asserting on the
+    /// persisted setting without assuming a particular prior state.
+    /// </summary>
+    /// <returns>A task that resolves to <see langword="true"/> if the checkbox is checked; otherwise <see langword="false"/>.</returns>
     public Task<bool> IsEnabledCheckedAsync() => EnabledCheckbox.IsCheckedAsync();
 
+    /// <summary>
+    /// Widens the allowed update-check time window to the full day (00:00-23:59), so tests that exercise
+    /// update checks don't have to account for the check-time restriction as a separate variable.
+    /// </summary>
     public async Task AllowChecksAnyTimeAsync()
     {
         await SourceCheckStartTimeInput.FillAsync("00:00");
         await SourceCheckEndTimeInput.FillAsync("23:59");
     }
 
+    /// <summary>
+    /// Clicks the shared "Speichern" ribbon button to persist the update section's pending settings changes
+    /// and waits for the save to actually complete before returning (see <see cref="WaitUntilSaveCompletedAsync"/>).
+    /// </summary>
     public async Task SaveSettingsAsync()
     {
         await SaveSettingsButton.ClickAsync();
         await WaitUntilSaveCompletedAsync();
     }
 
+    /// <summary>
+    /// Reads the rendered value of the update section's "status" definition, reflecting the outcome of the
+    /// most recently completed update check or save.
+    /// </summary>
+    /// <returns>A task that resolves to the trimmed status text currently displayed.</returns>
     public Task<string> GetStatusValueAsync() => ReadTextAsync(StatusValue);
 
+    /// <summary>
+    /// Reads the rendered value of the update section's "available version" definition, reflecting the
+    /// outcome of the most recent manual update check.
+    /// </summary>
+    /// <returns>A task that resolves to the trimmed available-version text currently displayed.</returns>
     public Task<string> GetAvailableVersionValueAsync() => ReadTextAsync(AvailableVersionValue);
 
     /// <summary>

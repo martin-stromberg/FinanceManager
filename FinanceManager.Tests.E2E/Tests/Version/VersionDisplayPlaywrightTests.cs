@@ -1,10 +1,19 @@
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end test for the application menu footer's version display: verifies that after login
+/// the footer shows the build version (or an "unknown version" fallback) rather than leaking the
+/// logged-in user's internal id.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class VersionDisplayPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VersionDisplayPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public VersionDisplayPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;

@@ -1,10 +1,19 @@
 ﻿namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for collection accounts: creating a collection account through the account
+/// creation form, and adding or removing linked IBANs through the account detail page's
+/// LinkedIbansPanel.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class CollectionAccountPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CollectionAccountPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public CollectionAccountPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;

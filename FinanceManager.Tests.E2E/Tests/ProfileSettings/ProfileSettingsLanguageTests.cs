@@ -10,6 +10,10 @@ public sealed class ProfileSettingsLanguageTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProfileSettingsLanguageTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public ProfileSettingsLanguageTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
@@ -249,6 +253,9 @@ public sealed class ProfileSettingsLanguageTests
     /// JWT format: header.payload.signature
     /// Payload is base64-url encoded JSON with claims.
     /// </summary>
+    /// <param name="token">The JWT token to decode.</param>
+    /// <param name="claimName">The name of the claim to extract from the token's payload.</param>
+    /// <returns>The claim value if present; otherwise <see langword="null"/>.</returns>
     private static string? ExtractJwtClaim(string token, string claimName)
     {
         try
@@ -390,6 +397,7 @@ internal sealed class SetupProfileTabPageObject
     /// <summary>
     /// Gets the currently selected language value from the language select element.
     /// </summary>
+    /// <returns>The current value of the language select element.</returns>
     public async Task<string> GetSelectedLanguageAsync()
     {
         var languageSelect = _page.Locator("select#lang, select[name*='Language'], select[name*='language']").First;

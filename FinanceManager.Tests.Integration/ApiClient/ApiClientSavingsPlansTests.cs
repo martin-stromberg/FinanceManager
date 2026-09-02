@@ -4,10 +4,18 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the savings plans API, covering create/get/update, the reachability analysis
+/// endpoint, and the archive-then-delete lifecycle.
+/// </summary>
 public class ApiClientSavingsPlansTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientSavingsPlansTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientSavingsPlansTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +36,11 @@ public class ApiClientSavingsPlansTests : IClassFixture<TestWebApplicationFactor
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Walks a savings plan through create, get, update (switching type, amount, target date and
+    /// interval in one step), the reachability-analysis endpoint, and archive-then-delete - the
+    /// baseline regression guard for the savings-plan CRUD contract and its analysis integration.
+    /// </summary>
     [Fact]
     public async Task SavingsPlans_Flow_CRUD_Analysis_Symbols()
     {

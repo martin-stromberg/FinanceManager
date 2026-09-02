@@ -1,10 +1,20 @@
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for the admin-only setup "security.txt" tab: editing contact/canonical/policy
+/// fields and persisting them, and verifying the publicly served <c>/.well-known/security.txt</c>
+/// document reflects the configured canonical URL, falling back to an API-base-address-derived
+/// canonical when none is configured.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class SecurityTxtSetupPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SecurityTxtSetupPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public SecurityTxtSetupPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
@@ -52,6 +62,10 @@ public sealed class SecurityTxtSetupPlaywrightTests
         (await page.Locator("#securitytxt-policy").InputValueAsync()).Should().Be("https://example.org/security");
     }
 
+    /// <summary>
+    /// Verifies that editing only the canonical URL field (with the contact field also filled)
+    /// enables the save button, and that the new canonical value persists across a page reload.
+    /// </summary>
     [Fact]
     public async Task Admin_EditsCanonical_EnableSaveAndPersist()
     {
@@ -81,6 +95,11 @@ public sealed class SecurityTxtSetupPlaywrightTests
         (await page.Locator("#securitytxt-canonical").InputValueAsync()).Should().Be("https://security-canonical.example.org/.well-known/security.txt");
     }
 
+    /// <summary>
+    /// Verifies that after saving a configured canonical URL, the publicly served
+    /// <c>/.well-known/security.txt</c> document contains exactly one "Canonical:" line and that
+    /// it matches the configured value.
+    /// </summary>
     [Fact]
     public async Task PublicSecurityTxt_ContainsConfiguredCanonical()
     {
@@ -106,6 +125,11 @@ public sealed class SecurityTxtSetupPlaywrightTests
         content.Split('\n').Count(line => line.StartsWith("Canonical: ")).Should().Be(1);
     }
 
+    /// <summary>
+    /// Verifies that when the canonical field is saved empty, the publicly served
+    /// <c>/.well-known/security.txt</c> document falls back to a canonical URL derived from the
+    /// API's own base address instead of leaking a previously configured value.
+    /// </summary>
     [Fact]
     public async Task PublicSecurityTxt_UsesApiBaseAddressFallback_WhenCanonicalEmpty()
     {

@@ -8,10 +8,18 @@ using FinanceManager.Infrastructure;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the demo-data seeding endpoint used to give new users a realistic starting
+/// dataset (accounts, postings, etc.) instead of an empty account.
+/// </summary>
 public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientDemoDataTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientDemoDataTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +36,12 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
         await api.Auth_RegisterAsync(new FinanceManager.Shared.Dtos.Users.RegisterRequest(userName, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Verifies that requesting demo-data creation for a freshly registered user actually populates the
+    /// database with the expected accounts (a giro account plus at least two savings accounts), not just
+    /// that the request is accepted - the endpoint is fire-and-forget from the caller's perspective, so
+    /// this checks the background side effect directly via the DbContext.
+    /// </summary>
     [Fact]
     public async Task Users_CreateDemoData_Should_ReturnAccepted()
     {

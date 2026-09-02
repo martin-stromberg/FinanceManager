@@ -4,10 +4,18 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the admin IP-block management API, covering create, explicit block/unblock,
+/// counter reset and delete for a blocked address.
+/// </summary>
 public class ApiClientIpBlocksTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientIpBlocksTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientIpBlocksTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -19,6 +27,11 @@ public class ApiClientIpBlocksTests : IClassFixture<TestWebApplicationFactory>
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    /// <summary>
+    /// Verifies the admin IP-block workflow end to end as an authenticated admin: list, create an
+    /// unblocked entry, update it to blocked, explicitly block/unblock, reset abuse counters, and
+    /// delete - guards the security-relevant admin surface that controls IP-based access restriction.
+    /// </summary>
     [Fact]
     public async Task IpBlocks_List_Create_Block_Unblock_Delete()
     {

@@ -4,10 +4,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end tests for the Contacts API: the full create/read/update/alias/delete lifecycle, and the
+/// "inline contact creation from a statement entry" flow that lets users create a new contact directly
+/// while classifying a booking, including its rollback behavior when the parent link is invalid.
+/// </summary>
 public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientContactsTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientContactsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +37,11 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
         await api.Auth_RegisterAsync(new FinanceManager.Shared.Dtos.Users.RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Walks a contact through its full lifecycle (list, create, get, update, add an alias, count,
+    /// delete) and confirms the auto-created "Self" contact is present from the start - the baseline
+    /// regression guard for the Contacts API's basic CRUD contract.
+    /// </summary>
     [Fact]
     public async Task Contacts_List_Create_Get_Update_Delete_Flow()
     {
@@ -73,6 +87,11 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
         gone.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that creating a contact with a <c>Parent</c> link pointing at a statement-draft entry
+    /// automatically assigns the new contact back onto that entry - the "create contact on the fly while
+    /// classifying a booking" workflow, so users don't have to leave the classification screen.
+    /// </summary>
     [Fact]
     public async Task Contacts_Create_WithStatementEntryParent_ShouldAssignCreatedContactToEntry()
     {
@@ -96,6 +115,12 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
         draft!.Entries.Should().ContainSingle(e => e.Id == entryId && e.ContactId == created.Id);
     }
 
+    /// <summary>
+    /// Verifies that creating an inline contact with a <c>Parent</c> link pointing at a non-existent
+    /// statement entry fails with a conflict and does NOT leave behind an orphaned contact - the
+    /// creation must be transactional with the parent-assignment step, not just the assignment failing
+    /// silently after the contact already exists.
+    /// </summary>
     [Fact]
     public async Task Contacts_Create_WithInvalidParent_ShouldReturnConflictAndRollbackContactCreate()
     {

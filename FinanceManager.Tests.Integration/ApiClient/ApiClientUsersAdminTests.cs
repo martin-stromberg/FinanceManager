@@ -6,10 +6,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the admin user-management API, covering both the happy path for an admin
+/// (create/get/list/update/reset-password/unlock/delete) and the authorization boundary: non-admin and
+/// anonymous callers must be rejected and must never be able to mutate user records.
+/// </summary>
 public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientUsersAdminTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientUsersAdminTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -21,6 +30,11 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    /// <summary>
+    /// Walks a user account through the full admin lifecycle as an authenticated admin: create, get by
+    /// id, appear in the list, rename and activate via update, reset password, unlock, and delete - the
+    /// baseline regression guard for the admin user-management CRUD contract.
+    /// </summary>
     [Fact]
     public async Task Admin_CreateListUpdateDelete_User()
     {
@@ -59,6 +73,11 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
         okDel.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that every admin user-management endpoint (list, get, create, update, reset-password,
+    /// unlock, delete) rejects an authenticated but non-admin caller with Forbidden - guards the
+    /// authorization boundary around the admin surface.
+    /// </summary>
     [Fact]
     public async Task NonAdmin_UserAdminEndpoints_ReturnForbidden()
     {
@@ -81,6 +100,12 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
         responses.Should().AllSatisfy(response => response.StatusCode.Should().Be(HttpStatusCode.Forbidden));
     }
 
+    /// <summary>
+    /// Verifies that a rejected non-admin create/update attempt has no side effects at all: the attempted
+    /// new user never appears in the admin list, and a protected existing user's data remains unchanged -
+    /// a stronger guarantee than a Forbidden status code alone, since it rules out partial writes slipping
+    /// through before the authorization check.
+    /// </summary>
     [Fact]
     public async Task NonAdmin_CreateAndUpdate_DoNotPersistChanges()
     {
@@ -106,6 +131,10 @@ public class ApiClientUsersAdminTests : IClassFixture<TestWebApplicationFactory>
             .Which.Username.Should().Be(protectedUser.Username);
     }
 
+    /// <summary>
+    /// Verifies that an unauthenticated caller gets Unauthorized (not Forbidden) from the admin user list
+    /// endpoint - distinguishes "not logged in" from "logged in but lacking permission".
+    /// </summary>
     [Fact]
     public async Task Anonymous_UserAdminEndpoint_ReturnsUnauthorized()
     {

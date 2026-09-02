@@ -5,10 +5,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end tests for the securities API surface: full CRUD plus symbol attachment, price/dividend
+/// history, aggregates, backfill enqueueing, archive/delete, and CSV price-import validation and
+/// authorization behavior.
+/// </summary>
 public class ApiClientSecuritiesTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientSecuritiesTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientSecuritiesTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -29,6 +38,11 @@ public class ApiClientSecuritiesTests : IClassFixture<TestWebApplicationFactory>
         await api.Auth_RegisterAsync(new Shared.Dtos.Users.RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Exercises the full securities lifecycle end to end - create, read, update, symbol attachment
+    /// set/clear, aggregates, prices, dividends, backfill enqueueing, archive, and delete - to guard
+    /// against a regression in any single step breaking the overall workflow that the securities UI relies on.
+    /// </summary>
     [Fact]
     public async Task Securities_Flow_CRUD_Symbol_Prices_Aggregates_Dividends_Backfill()
     {

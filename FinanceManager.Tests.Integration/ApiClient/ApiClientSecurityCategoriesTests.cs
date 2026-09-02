@@ -4,10 +4,18 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the security-category API, covering create/get/update, symbol assignment
+/// (including the not-found case for a missing attachment) and delete.
+/// </summary>
 public class ApiClientSecurityCategoriesTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientSecurityCategoriesTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientSecurityCategoriesTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +36,11 @@ public class ApiClientSecurityCategoriesTests : IClassFixture<TestWebApplication
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Exercises the full security-category lifecycle end to end - list, create, get, update, symbol
+    /// assignment against a nonexistent attachment (expected not-found), symbol clearing, and delete - to
+    /// guard against a regression in any single step breaking the overall workflow.
+    /// </summary>
     [Fact]
     public async Task SecurityCategories_List_Create_Update_Symbol_Delete_Flow()
     {

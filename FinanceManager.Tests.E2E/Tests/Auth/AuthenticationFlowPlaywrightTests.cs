@@ -1,10 +1,21 @@
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for the authentication flow: registering/logging in/logging out through the
+/// browser UI, redirecting to login with a preserved return URL when a session expires (and
+/// returning to that route after re-login), rejecting invalid or externally-hosted return URLs,
+/// deduplicating concurrent login redirects, and the keepalive-driven session refresh behavior
+/// for near-expiry and already-invalidated sessions.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class AuthenticationFlowPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthenticationFlowPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public AuthenticationFlowPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
@@ -21,6 +32,11 @@ public sealed class AuthenticationFlowPlaywrightTests
             "ui-user");
     }
 
+    /// <summary>
+    /// Same as <see cref="Register_Login_Logout_Flow_ShouldWork"/> but on a mobile viewport, to
+    /// catch responsive-layout regressions in the register/login/logout flow that only show up
+    /// at mobile widths.
+    /// </summary>
     [Fact]
     public async Task Register_Login_Logout_Flow_ShouldWork_OnMobileViewport()
     {
@@ -29,6 +45,12 @@ public sealed class AuthenticationFlowPlaywrightTests
             "ui-mobile-user");
     }
 
+    /// <summary>
+    /// Verifies that navigating to a protected route with an expired security stamp redirects to
+    /// the login page with a <c>returnUrl</c> query parameter preserving the original route
+    /// (including query string and fragment), and that logging back in returns the browser to
+    /// that exact route.
+    /// </summary>
     [Fact]
     public async Task ExpiredSession_OnProtectedRoute_ShouldRedirectToLoginWithReturnUrl_AndReturnAfterLogin()
     {
@@ -56,6 +78,10 @@ public sealed class AuthenticationFlowPlaywrightTests
         CurrentRelativeUrl(page.Url).Should().Be(protectedRoute);
     }
 
+    /// <summary>
+    /// Verifies that logging in directly through the login page without a <c>returnUrl</c>
+    /// query parameter lands the browser on the home page.
+    /// </summary>
     [Fact]
     public async Task LoginWithoutReturnUrl_ShouldNavigateToHome()
     {
@@ -73,6 +99,13 @@ public sealed class AuthenticationFlowPlaywrightTests
         CurrentRelativeUrl(page.Url).Should().Be("/");
     }
 
+    /// <summary>
+    /// Verifies that login rejects unsafe <c>returnUrl</c> values - an absolute external URL, a
+    /// protocol-relative URL, a redirect back to the login page itself, and a double-encoded
+    /// path - and falls back to navigating to the home page on the app's own host instead of
+    /// following the supplied URL.
+    /// </summary>
+    /// <param name="returnUrl">The unsafe or invalid return URL to submit through the login form.</param>
     [Theory]
     [InlineData("https://example.invalid/reports/dashboard")]
     [InlineData("//example.invalid/reports/dashboard")]
@@ -97,6 +130,12 @@ public sealed class AuthenticationFlowPlaywrightTests
         CurrentRelativeUrl(page.Url).Should().Be("/");
     }
 
+    /// <summary>
+    /// Verifies that when a page fires several near-simultaneous requests that all fail
+    /// authentication (e.g. two reload clicks against an invalidated session), the client-side
+    /// handler still navigates to the login page exactly once instead of issuing a document
+    /// navigation to <c>/login</c> for every failed request.
+    /// </summary>
     [Fact]
     public async Task MultipleAuthenticationFailures_ShouldNavigateToLoginOnlyOnce()
     {
@@ -137,6 +176,12 @@ public sealed class AuthenticationFlowPlaywrightTests
         loginDocumentNavigations.Should().Be(1);
     }
 
+    /// <summary>
+    /// Verifies that when a session's auth cookie is close to expiry, ordinary user activity
+    /// (navigating to a page and clicking on it) triggers a successful keepalive request that
+    /// refreshes the session, so the user stays authenticated without ever being redirected to
+    /// the login page.
+    /// </summary>
     [Fact]
     public async Task ActiveNavigationAndInteraction_ShouldRefreshNearExpirySessionWithoutLoginRedirect()
     {
@@ -165,6 +210,13 @@ public sealed class AuthenticationFlowPlaywrightTests
         profile.Status.Should().Be(200);
     }
 
+    /// <summary>
+    /// Verifies that when the security stamp is invalidated while a keepalive ping is forced, the
+    /// failing keepalive response (401) does not by itself redirect the browser away from the
+    /// current protected route, but a subsequent explicit protected action (reload) then performs
+    /// exactly one redirect to the login page with the original route preserved as
+    /// <c>returnUrl</c>.
+    /// </summary>
     [Fact]
     public async Task InvalidatedSession_KeepaliveFailure_ShouldNotRedirectUntilProtectedActionRedirectsOnce()
     {

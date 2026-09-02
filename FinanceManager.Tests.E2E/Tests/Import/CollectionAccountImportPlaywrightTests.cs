@@ -2,11 +2,21 @@ using FinanceManager.Shared.Dtos.Postings;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for importing bank statement CSVs into collection accounts: uploading a
+/// multi-IBAN CSV that fans out into several drafts, auto-assigning a draft to a collection
+/// account via a pre-linked or newly-discovered sub-IBAN, and verifying the sub-IBAN ends up
+/// (or remains) in the account's LinkedIbansPanel after the draft is booked.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class CollectionAccountImportPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CollectionAccountImportPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public CollectionAccountImportPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;

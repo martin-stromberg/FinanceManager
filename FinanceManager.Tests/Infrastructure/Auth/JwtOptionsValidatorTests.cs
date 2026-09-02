@@ -58,7 +58,7 @@ public sealed class JwtOptionsValidatorTests
 
     /// <summary>
     /// Verifies that a missing issuer is rejected in every environment, including development, since the issuer
-    /// is one of the values <see cref="JwtCookieAuthTokenProvider"/> checks when validating incoming tokens; an
+    /// is one of the values <see cref="FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider"/> checks when validating incoming tokens; an
     /// unset issuer would make that validation meaningless.
     /// </summary>
     [Fact]

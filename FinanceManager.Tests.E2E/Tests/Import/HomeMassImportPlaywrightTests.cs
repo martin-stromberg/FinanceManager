@@ -17,6 +17,10 @@ public sealed class HomeMassImportPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HomeMassImportPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public HomeMassImportPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;

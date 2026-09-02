@@ -8,10 +8,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the per-user settings API: profile defaults and updates (language, timezone,
+/// protected Alpha Vantage API key storage), notification preferences, and CSV import-splitting
+/// preferences.
+/// </summary>
 public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientUserSettingsTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientUserSettingsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -33,6 +42,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         return username;
     }
 
+    /// <summary>
+    /// Verifies that a freshly registered user's profile starts with no language/timezone preference, no
+    /// stored Alpha Vantage API key, and KPI caching disabled.
+    /// </summary>
     [Fact]
     public async Task UserSettings_GetProfile_Returns_Defaults()
     {
@@ -47,6 +60,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         profile.CacheKpisInLocalStorage.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that updating the profile's preferred language and timezone persists and is reflected
+    /// back on the next read.
+    /// </summary>
     [Fact]
     public async Task UserSettings_UpdateProfile_Sets_Language_And_Timezone()
     {
@@ -68,6 +85,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         profile.TimeZoneId.Should().Be("Europe/Berlin");
     }
 
+    /// <summary>
+    /// Verifies that toggling the "cache KPIs in local storage" preference persists across a subsequent
+    /// profile read.
+    /// </summary>
     [Fact]
     public async Task UserSettings_UpdateProfile_Persists_CacheKpis()
     {
@@ -88,6 +109,12 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         profile!.CacheKpisInLocalStorage.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that a submitted Alpha Vantage API key is never stored in plaintext: the persisted value
+    /// in the database must be protected (prefixed accordingly) and only decrypt back to the original
+    /// plaintext via the registered <see cref="IAlphaVantageSecretProtector"/> - guards against accidental
+    /// storage of a sensitive third-party API key in the clear.
+    /// </summary>
     [Fact]
     public async Task UserSettings_UpdateProfile_Stores_Protected_AlphaVantageApiKey()
     {
@@ -120,6 +147,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         profile!.HasAlphaVantageApiKey.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that explicitly clearing the Alpha Vantage API key removes the stored (protected) value
+    /// entirely rather than leaving a stale encrypted remnant behind.
+    /// </summary>
     [Fact]
     public async Task UserSettings_UpdateProfile_ClearAlphaVantageApiKey_RemovesStoredValue()
     {
@@ -151,6 +182,9 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         stored.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that a new user's notification settings start with the monthly reminder disabled.
+    /// </summary>
     [Fact]
     public async Task UserSettings_GetNotifications_Returns_Defaults()
     {
@@ -162,6 +196,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         notifications!.MonthlyReminderEnabled.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that enabling the monthly reminder with a specific time and provider persists and is
+    /// reflected back on the next read.
+    /// </summary>
     [Fact]
     public async Task UserSettings_UpdateNotifications_Works()
     {
@@ -178,6 +216,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         notifications.MonthlyReminderMinute.Should().Be(30);
     }
 
+    /// <summary>
+    /// Verifies the default CSV import-splitting configuration a new user starts with: monthly-or-fixed
+    /// splitting mode, a 250-entry cap per draft, and confirmation only when information is missing.
+    /// </summary>
     [Fact]
     public async Task UserSettings_GetImportSplit_Returns_Defaults()
     {
@@ -191,6 +233,10 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         split.MassImportDialogPolicy.Should().Be(MassImportDialogPolicy.OnMissingInformation);
     }
 
+    /// <summary>
+    /// Verifies that switching the import-splitting mode to a fixed size with custom min/max entry counts
+    /// and a stricter confirmation policy persists and is reflected back on the next read.
+    /// </summary>
     [Fact]
     public async Task UserSettings_UpdateImportSplit_Works()
     {

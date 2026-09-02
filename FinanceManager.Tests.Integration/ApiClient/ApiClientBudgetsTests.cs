@@ -5,11 +5,20 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the budget-planning API: purposes, their rules and per-period overrides, and how
+/// the purposes overview aggregates rule occurrences (yearly, monthly, and time-bounded) into per-range
+/// budget sums.
+/// </summary>
 [Collection("IntegrationTests")]
 public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientBudgetsTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientBudgetsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -30,6 +39,13 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Walks a budget purpose through create/get/update, three rules with different intervals and end
+    /// dates (yearly, open-ended monthly, monthly ending in February), a per-period override, and delete -
+    /// verifying along the way that the purposes overview correctly aggregates each rule's occurrences
+    /// into the budget sum for a given month range (January includes all three, February excludes the
+    /// yearly one, March only the still-open monthly rule).
+    /// </summary>
     [Fact]
     public async Task Budgets_Purposes_Rules_Overrides_Flow()
     {
@@ -211,6 +227,10 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         (await api.Budgets_GetPurposeAsync(createdPurpose.Id, TestContext.Current.CancellationToken)).Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that deleting a budget purpose cascades to its rules, so no orphaned rules remain
+    /// referencing a purpose that no longer exists.
+    /// </summary>
     [Fact]
     public async Task Budgets_DeletePurpose_ShouldAlsoDeleteRules()
     {
