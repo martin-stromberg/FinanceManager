@@ -75,7 +75,11 @@ public sealed class UserAuthServiceTests
         // backed by this mocked IRoleStore. This avoids Moq trying to proxy RoleManager's constructor.
         var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        lookupNormalizerMock.Setup(n => n.NormalizeName(It.IsAny<string>())).Returns((string s) => s.ToUpperInvariant());
+        // Mirrors the real ASP.NET Core Identity default normalizer, which tolerates a null input (returns
+        // null) - Identity's internal machinery (e.g. role/user store operations during first-user admin
+        // bootstrap) can call this with null, and RegisterAsync's role-assignment try/catch would silently
+        // swallow a resulting NullReferenceException here, masking the failure as "first user just isn't admin".
+        lookupNormalizerMock.Setup(n => n.NormalizeName(It.IsAny<string>())).Returns((string s) => (s?.ToUpperInvariant())!);
 
         roleStoreMock
             .Setup(s => s.FindByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

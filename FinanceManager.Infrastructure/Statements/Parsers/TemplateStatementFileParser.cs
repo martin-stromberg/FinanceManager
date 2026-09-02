@@ -673,7 +673,11 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         }
         private int ParseField(string[] Values, int FieldIdx, XmlNode Field)
         {
-            string VariableName = GetRequiredAttribute(Field, "variable");
+            // An empty (but present) variable attribute is a deliberate template convention meaning
+            // "this column exists in the source data but maps to no target field" - ParseVariable's
+            // switch has no case for an empty name, so it's a safe no-op. GetRequiredAttribute must not
+            // be used here, since it would wrongly reject that intentional empty value.
+            string VariableName = Field.Attributes?["variable"]?.Value ?? string.Empty;
             int.TryParse(Field.Attributes?["length"]?.Value, out int fieldLength);
             if (!int.TryParse(Field.Attributes?["multiplier"]?.Value, out int multiplier))
                 multiplier = 1;
