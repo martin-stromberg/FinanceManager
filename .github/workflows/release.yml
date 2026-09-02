@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [master, staging]
+    branches: [main, staging]
     tags: ["v*"]
 
 permissions:
@@ -81,7 +81,7 @@ jobs:
         run: dotnet restore FinanceManager.sln
 
       - name: Test release gate
-        # Nur fuer master: Tests laufen bereits separat in test.yml (push-Event), ein erneuter Lauf hier
+        # Nur fuer main: Tests laufen bereits separat in test.yml (push-Event), ein erneuter Lauf hier
         # waere redundant. Fuer staging-Releases entfaellt das Gate komplett - fehlschlagende Tests duerfen
         # den Release-Build fuer staging nicht blockieren.
         if: steps.version.outputs.released == 'true' && github.ref != 'refs/heads/staging'
