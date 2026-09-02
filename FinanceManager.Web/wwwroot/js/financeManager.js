@@ -297,6 +297,11 @@ window.financeManager = window.financeManager || {};
       if (el && typeof el.focus === "function") {
         el.focus();
       }
+    },
+    isFocusInsideRow: function (rowId) {
+      var row = document.getElementById(rowId);
+      var active = document.activeElement;
+      return !!(row && active && (row === active || row.contains(active)));
     }
   };
 

@@ -2787,4 +2787,31 @@
   <data name="Users_Title" xml:space="preserve">
     <value>Benutzer</value>
   </data>
+  <data name="SetupProfile_Label_CacheKpis" xml:space="preserve">
+    <value>Startseiten-KPIs zwischenspeichern</value>
+  </data>
+  <data name="SetupProfile_Help_CacheKpis" xml:space="preserve">
+    <value>KPI-Daten der Startseite im Browser zwischenspeichern, um sie schneller zu laden.</value>
+  </data>
+  <data name="QuickEdit_Validation_BookingDateRequired" xml:space="preserve">
+    <value>Buchungsdatum ist erforderlich</value>
+  </data>
+  <data name="QuickEdit_Validation_ValutaDateRequired" xml:space="preserve">
+    <value>Valutadatum ist erforderlich</value>
+  </data>
+  <data name="QuickEdit_Validation_AmountRequired" xml:space="preserve">
+    <value>Betrag ist erforderlich</value>
+  </data>
+  <data name="QuickEdit_Validation_SubjectOrDescriptionRequired" xml:space="preserve">
+    <value>Verwendungszweck oder Buchungstext ist erforderlich</value>
+  </data>
+  <data name="QuickEdit_Validation_SubjectTooLong" xml:space="preserve">
+    <value>Verwendungszweck ist zu lang</value>
+  </data>
+  <data name="QuickEdit_Validation_BookingDescriptionTooLong" xml:space="preserve">
+    <value>Buchungstext ist zu lang</value>
+  </data>
+  <data name="QuickEdit_Validation_RecipientTooLong" xml:space="preserve">
+    <value>Empfänger ist zu lang</value>
+  </data>
 </root>

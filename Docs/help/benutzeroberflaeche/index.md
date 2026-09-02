@@ -5,6 +5,7 @@ Dieser Bereich beschreibt die responsive Bedienung der Web-Oberfläche auf klein
 ## Inhalt
 
 - [Beschreibung](beschreibung.md)
+- [Startseite und KPI-Kacheln](startseite.md)
 - [Technischer Ablauf](ablauf-technisch.md)
 - [Ablauf für Anwender](ablauf-anwender.md)
 - [Installation & Konfiguration](installation.md)
