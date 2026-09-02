@@ -188,7 +188,7 @@ public sealed class AccountDetailViewModelTests
         var loc = new DummyLocalizer();
 
         // New account (empty id)
-        var groupsNew = vm.GetRibbon(loc);
+        var groupsNew = vm.GetRibbon(loc)!;
         Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Navigation"));
         Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Manage"));
         Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Linked"));
@@ -197,7 +197,7 @@ public sealed class AccountDetailViewModelTests
         // simulate by initializing
         var accountId = Guid.NewGuid();
         // We don't need to load account for ribbon shape
-        var groupsExisting = vm.GetRibbon(loc);
+        var groupsExisting = vm.GetRibbon(loc)!;
         Assert.Contains(groupsExisting, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Linked"));
     }
 }

@@ -108,7 +108,7 @@ public sealed class SecurityCategoryDetailViewModelTests
     {
         var (vm, apiMock) = CreateVm();
         apiMock.Setup(a => a.SecurityCategories_CreateAsync(It.IsAny<SecurityCategoryRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((SecurityCategoryDto?)null);
+            .ReturnsAsync((SecurityCategoryDto)null!);
         apiMock.SetupGet(a => a.LastError).Returns("bad");
 
         await vm.InitializeAsync(Guid.Empty);
@@ -202,10 +202,10 @@ public sealed class SecurityCategoryDetailViewModelTests
         // initialize to ensure CardRecord is available
         await vm.InitializeAsync(Guid.Empty);
 
-        var registers = vm.GetRibbon(loc);
+        var registers = vm.GetRibbon(loc)!;
         Assert.True(registers.Count == 1);
 
-        var groups = registers.SelectMany(r => r.Tabs).ToList();
+        var groups = registers.SelectMany(r => r.Tabs ?? new List<FinanceManager.Web.ViewModels.Common.UiRibbonTab>()).ToList();
         Assert.True(groups.Count == 2);
 
         var manage = groups.First(g => g.Title == "Ribbon_Group_Manage");
@@ -218,8 +218,8 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.NotNull(nameField);
         vm.ValidateFieldValue(nameField!, "OK");
 
-        registers = vm.GetRibbon(loc);
-        groups = registers.SelectMany(r => r.Tabs).ToList();
+        registers = vm.GetRibbon(loc)!;
+        groups = registers.SelectMany(r => r.Tabs ?? new List<FinanceManager.Web.ViewModels.Common.UiRibbonTab>()).ToList();
         manage = groups.First(g => g.Title == "Ribbon_Group_Manage");
         manageActions = manage.Items;
         save = manageActions.First(i => i.Action == "Save");

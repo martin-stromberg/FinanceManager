@@ -73,7 +73,7 @@ public sealed class StatementDraftServiceTests
         var sp = services.BuildServiceProvider();
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetRequiredService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
 
@@ -113,7 +113,7 @@ public sealed class StatementDraftServiceTests
         var agg = new PostingAggregateService(db);
         var attachments = new AttachmentService(db, NullLogger<AttachmentService>.Instance);
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, agg, accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, attachments);
+        var sut = new StatementDraftService(db, agg, accountService, sp.GetRequiredService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, attachments);
         return (sut, db, owner.Id);
     }
 
@@ -175,6 +175,7 @@ public sealed class StatementDraftServiceTests
         Assert.True(result.Success);
         Assert.NotNull(result.SuccessResponse);
         var updated = await sut.GetDraftAsync(draft.DraftId, owner, CancellationToken.None);
+        Assert.NotNull(updated);
         Assert.Contains(updated.Entries, e => e.Id == entry.Id && e.Subject == "Updated" && e.Amount == 15.5m && e.ValutaDate == newValuta && e.BookingDescription == "Updated description");
     }
 

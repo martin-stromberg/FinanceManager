@@ -31,8 +31,8 @@ namespace FinanceManager.Tests.Infrastructure
         {
             public string EnvironmentName { get; set; } = "Development";
             public string ApplicationName { get; set; } = "FinanceManager.Tests";
-            public string ContentRootPath { get; set; }
-            public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; }
+            public string ContentRootPath { get; set; } = string.Empty;
+            public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
         }
 
         /// <summary>

@@ -81,7 +81,9 @@ public sealed class GenericListPageTests_MobileFilters : BunitContext
         public IReadOnlyList<ListRecord> Records { get; } = new[] { new ListRecord(new[] { new ListCell(ListCellKind.Text, "Item") }, new object()) };
         public bool AllowRangeFiltering => true;
         public bool AllowSearchFiltering => true;
+#pragma warning disable CS0067 // test double never raises this event; declared only to satisfy IListProvider
         public event EventHandler? StateChanged;
+#pragma warning restore CS0067
 
         public Task InitializeAsync() => Task.CompletedTask;
         public Task LoadAsync() => Task.CompletedTask;
@@ -126,7 +128,9 @@ public sealed class GenericListPageTests_MobileFilters : BunitContext
         };
         public bool AllowRangeFiltering => true;
         public bool AllowSearchFiltering => true;
+#pragma warning disable CS0067 // test double never raises this event; declared only to satisfy IListProvider
         public event EventHandler? StateChanged;
+#pragma warning restore CS0067
 
         public Task InitializeAsync() => Task.CompletedTask;
         public Task LoadAsync() => Task.CompletedTask;

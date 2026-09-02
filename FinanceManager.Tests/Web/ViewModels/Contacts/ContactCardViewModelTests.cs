@@ -5,7 +5,6 @@ using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
-using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Tests.Web.ViewModels.Contacts;
 

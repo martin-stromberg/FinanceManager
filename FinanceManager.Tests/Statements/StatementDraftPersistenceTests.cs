@@ -72,7 +72,7 @@ public sealed class StatementDraftPersistenceTests
         };
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetRequiredService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
 

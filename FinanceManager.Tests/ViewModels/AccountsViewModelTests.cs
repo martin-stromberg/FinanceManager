@@ -108,7 +108,7 @@ public sealed class AccountsViewModelTests
         apiMock.Verify(a => a.GetAccountsAsync(0, 50, null, It.IsAny<CancellationToken>()), Times.Once);
 
         var loc = new DummyLocalizer();
-        var groups = vm.GetRibbon(loc);
+        var groups = vm.GetRibbon(loc)!;
         Assert.Contains(groups, g => g.Items.Any(i => i.Action == "ClearSearch"));
     }
 
@@ -121,7 +121,7 @@ public sealed class AccountsViewModelTests
     {
         var (vm, _) = CreateVm();
         var loc = new DummyLocalizer();
-        var groups = vm.GetRibbon(loc);
+        var groups = vm.GetRibbon(loc)!;
         Assert.Contains(groups, g => g.Items.Any(i => i.Action == "New"));
     }
 

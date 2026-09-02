@@ -490,7 +490,8 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var securityCategoryAktien = await api.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = "Aktien" }, ct);
 
         var statementDraft = await api.StatementDrafts_CreateAsync(null, ct);
-        (await api.StatementDrafts_SetAccountAsync(statementDraft.DraftId, account.Id, ct)).Should().NotBeNull();
+        statementDraft.Should().NotBeNull();
+        (await api.StatementDrafts_SetAccountAsync(statementDraft!.DraftId, account.Id, ct)).Should().NotBeNull();
 
         async Task<Guid> AddFullEntryAsync(DateTime bookingDate, DateTime valutaDate, decimal amount, string subject, string recipientName, string description)
         {
@@ -851,7 +852,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             return postings.Should().ContainSingle(p => p.Amount == amount && p.Subject == subject).Subject;
         }
 
-        void AssertCore(PostingServiceDto posting, PostingKind kind, DateTime bookingDate, DateTime valutaDate, string recipientName, string description)
+        void AssertCore(PostingServiceDto posting, PostingKind kind, DateTime bookingDate, DateTime valutaDate, string? recipientName, string description)
         {
             posting.Kind.Should().Be(kind);
             posting.BookingDate.Should().Be(bookingDate);

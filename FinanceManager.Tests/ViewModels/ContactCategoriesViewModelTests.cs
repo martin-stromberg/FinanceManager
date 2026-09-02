@@ -5,6 +5,7 @@ using Microsoft.Extensions.Localization;
 using Moq;
 using Microsoft.AspNetCore.Components;
 using FinanceManager.Web.ViewModels.Contacts.Groups;
+using FinanceManager.Web.ViewModels.Common;
 using FinanceManager.Web;
 using FinanceManager.Web.Localization;
 using FinanceManager.Web.Services;
@@ -131,10 +132,10 @@ public sealed class ContactCategoriesViewModelTests
         var (vm, _, sp) = CreateVm();
         var loc = sp.GetRequiredService<IStringLocalizer<Pages>>();
 
-        var groups = vm.GetRibbon(loc);
+        var groups = vm.GetRibbon(loc)!;
         var navTitle = loc["Ribbon_Group_Navigation"].Value;
         Assert.Contains(groups, g => g.Tabs != null && g.Tabs.Any(t => t.Title == navTitle));
-        Assert.Contains(groups.SelectMany(r => r.Tabs.SelectMany(t => t.Items)), i => i.Action == "Back");
-        Assert.Contains(groups.SelectMany(r => r.Tabs.SelectMany(t => t.Items)), i => i.Action == "New");
+        Assert.Contains(groups.SelectMany(r => (r.Tabs ?? new List<UiRibbonTab>()).SelectMany(t => t.Items)), i => i.Action == "Back");
+        Assert.Contains(groups.SelectMany(r => (r.Tabs ?? new List<UiRibbonTab>()).SelectMany(t => t.Items)), i => i.Action == "New");
     }
 }

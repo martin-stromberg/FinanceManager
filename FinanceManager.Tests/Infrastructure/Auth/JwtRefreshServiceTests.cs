@@ -82,13 +82,13 @@ public sealed class JwtRefreshServiceTests
         Assert.True(result.Succeeded);
         Assert.Equal("token", result.Token);
         userManager.Verify(um => um.IsInRoleAsync(user, "Admin"), Times.Once);
-        jwt.Verify(j => j.CreateToken(user.Id, user.UserName, true, "current", out It.Ref<DateTime>.IsAny, user.PreferredLanguage, user.TimeZoneId), Times.Once);
+        jwt.Verify(j => j.CreateToken(user.Id, user.UserName!, true, "current", out It.Ref<DateTime>.IsAny, user.PreferredLanguage, user.TimeZoneId), Times.Once);
     }
 
     private static (JwtRefreshService sut, Mock<UserManager<User>> userManager, Mock<IJwtTokenService> jwt) Create(User user, bool isAdmin = false)
     {
         var store = new Mock<IUserStore<User>>();
-        var userManager = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+        var userManager = new Mock<UserManager<User>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
         userManager.Setup(um => um.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         userManager.Setup(um => um.GetSecurityStampAsync(user)).ReturnsAsync(user.SecurityStamp!);
         userManager.Setup(um => um.IsInRoleAsync(user, "Admin")).ReturnsAsync(isAdmin);

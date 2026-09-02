@@ -31,7 +31,7 @@ namespace FinanceManager.Tests.Auth
 
             // create a minimal UserManager mock to satisfy constructor
             var store = new Mock<IUserStore<User>>();
-            var userManagerMock = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+            var userManagerMock = new Mock<UserManager<User>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
             userManagerMock.Setup(u => u.SetLockoutEndDateAsync(It.IsAny<User>(), It.IsAny<DateTimeOffset?>())).ReturnsAsync(IdentityResult.Success);
             userManagerMock.Setup(u => u.ResetAccessFailedCountAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
             userManagerMock.Setup(u => u.UpdateSecurityStampAsync(It.IsAny<User>()))

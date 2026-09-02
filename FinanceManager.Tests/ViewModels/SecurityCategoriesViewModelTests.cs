@@ -92,7 +92,7 @@ public sealed class SecurityCategoriesViewModelTests
     {
         var (vm, _) = CreateVm();
         var loc = new TestLocalizer<SecurityCategoriesViewModelTests>();
-        var regs = vm.GetRibbon(loc);
+        var regs = vm.GetRibbon(loc)!;
 
         // collect actions from explicit tabs (modern shape)
         var actionsFromTabs = regs.SelectMany(r => r.Tabs ?? new List<UiRibbonTab>()).SelectMany(t => t.Items ?? new List<UiRibbonAction>()).ToList();

@@ -85,7 +85,7 @@ public sealed class SavingsPlanCategoriesViewModelTests
     public void Ribbon_Has_Actions()
     {
         var (vm, _, sp) = CreateVm();
-        var loc = sp.GetService<IStringLocalizer<Pages>>();
+        var loc = sp.GetRequiredService<IStringLocalizer<Pages>>();
         var regs = vm.GetRibbonRegisters(loc);
         var groups = regs.ToUiRibbonGroups(loc);
         var actions = groups.First();

@@ -142,6 +142,7 @@ public sealed class AccountServiceTests_CollectionAccount
 
         var ibans = await sut.GetLinkedIbansAsync(acc.Id, owner, CancellationToken.None);
 
+        Assert.NotNull(ibans);
         Assert.Equal(2, ibans.Count);
         Assert.Contains("DE11111111111111111111", ibans);
         Assert.Contains("DE22222222222222222222", ibans);

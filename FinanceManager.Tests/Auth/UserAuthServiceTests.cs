@@ -32,7 +32,7 @@ public sealed class UserAuthServiceTests
         var db = sp.GetRequiredService<AppDbContext>();
 
         var store = new Mock<IUserStore<User>>();
-        var userManagerMock = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+        var userManagerMock = new Mock<UserManager<User>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
         var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         var claimsFactoryMock = new Mock<IUserClaimsPrincipalFactory<User>>();
@@ -75,7 +75,7 @@ public sealed class UserAuthServiceTests
         // backed by this mocked IRoleStore. This avoids Moq trying to proxy RoleManager's constructor.
         var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        lookupNormalizerMock.Setup(n => n.NormalizeName(It.IsAny<string>())).Returns((string s) => s?.ToUpperInvariant());
+        lookupNormalizerMock.Setup(n => n.NormalizeName(It.IsAny<string>())).Returns((string s) => s.ToUpperInvariant());
 
         roleStoreMock
             .Setup(s => s.FindByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -296,7 +296,7 @@ public sealed class UserAuthServiceTests
         var res = await sut.LoginAsync(new LoginCommand("bob", "pw"), CancellationToken.None);
         Assert.True(res.Success);
         Assert.Equal("token", res.Value!.Token);
-        jwt.Verify(j => j.CreateToken(user.Id, user.UserName, false, user.SecurityStamp!, out It.Ref<DateTime>.IsAny, user.PreferredLanguage, user.TimeZoneId), Times.Once);
+        jwt.Verify(j => j.CreateToken(user.Id, user.UserName!, false, user.SecurityStamp!, out It.Ref<DateTime>.IsAny, user.PreferredLanguage, user.TimeZoneId), Times.Once);
     }
 
     /// <summary>

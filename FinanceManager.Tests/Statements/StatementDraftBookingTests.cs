@@ -6,6 +6,7 @@ using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Application.Statements;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Attachments;
@@ -98,6 +99,13 @@ public sealed class StatementDraftBookingTests
             => throw new NotImplementedException();
     }
 
+    // Booking never needs to load statement files (that happens during upload/create-draft), but the
+    // constructor parameter is non-nullable, so a trivial stub stands in for the real factory.
+    private sealed class StubStatementFileFactory : IStatementFileFactory
+    {
+        public IStatementFile? Load(string fileName, byte[] fileBytes) => null;
+    }
+
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -115,7 +123,7 @@ public sealed class StatementDraftBookingTests
         db.Contacts.Add(self);
         db.SaveChanges();
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, ownerUser.Id);
     }
 
@@ -170,7 +178,7 @@ public sealed class StatementDraftBookingTests
         // IMPORTANT: simulate production by using a fresh DbContext (new scope)
         var freshOptions = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
         using var freshDb = new AppDbContext(freshOptions);
-        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null);
+        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
 
         // Act: book only first entry on fresh context
         var res = await freshSut.BookAsync(draft.Id, e1.Id, owner, false, CancellationToken.None);
@@ -237,7 +245,7 @@ public sealed class StatementDraftBookingTests
                     "Changed")
             ]);
         var budgetImpact = new TestBudgetImpactEvaluationService(summary);
-        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
+        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
 
         var res = await bookingSut.BookAsync(draft.Id, e1.Id, owner, false, CancellationToken.None);
 
@@ -335,7 +343,7 @@ public sealed class StatementDraftBookingTests
                     "Almost exhausted")
             ]);
         var budgetImpact = new TestBudgetImpactEvaluationService(summary);
-        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
+        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
 
         var res1 = await bookingSut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.False(res1.Success);
@@ -694,7 +702,7 @@ public sealed class StatementDraftBookingTests
         var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 200m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
+        entry.MarkAccounted(account!.BankContactId);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
@@ -722,7 +730,7 @@ public sealed class StatementDraftBookingTests
         var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 200m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
+        entry.MarkAccounted(account!.BankContactId);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
@@ -816,7 +824,7 @@ public sealed class StatementDraftBookingTests
         var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 1000m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
+        entry.MarkAccounted(account!.BankContactId);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
@@ -863,7 +871,7 @@ public sealed class StatementDraftBookingTests
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 800m, "Sell", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
+        entry.MarkAccounted(account!.BankContactId);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF Y", "DE000B1", null, null, "EUR", null);
@@ -909,7 +917,7 @@ public sealed class StatementDraftBookingTests
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 123.45m, "Dividend", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
+        entry.MarkAccounted(account!.BankContactId);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF Z", "DE000C1", null, null, "EUR", null);
@@ -1095,7 +1103,7 @@ public sealed class StatementDraftBookingTests
             db,
             new PostingAggregateService(db),
             new StubAccountService(),
-            null,
+            new StubStatementFileFactory(),
             null,
             NullLogger<StatementDraftService>.Instance,
             null,
@@ -1141,7 +1149,7 @@ public sealed class StatementDraftBookingTests
             db,
             new PostingAggregateService(db),
             new StubAccountService(),
-            null,
+            new StubStatementFileFactory(),
             null,
             NullLogger<StatementDraftService>.Instance,
             null,
@@ -1388,7 +1396,7 @@ public sealed class StatementDraftBookingTests
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var attachments = new ControlledAttachmentService(_ => throw new InvalidOperationException("reassign failed"));
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, attachments);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, attachments);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None));
 
@@ -1476,8 +1484,8 @@ public sealed class StatementDraftBookingTests
             gateEntered.TrySetResult(true);
             await gateRelease.Task.WaitAsync(ct);
         });
-        var sut1 = new StatementDraftService(db1, new PostingAggregateService(db1), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, blockingAttachments);
-        var sut2 = new StatementDraftService(db2, new PostingAggregateService(db2), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut1 = new StatementDraftService(db1, new PostingAggregateService(db1), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, blockingAttachments);
+        var sut2 = new StatementDraftService(db2, new PostingAggregateService(db2), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
 
         var firstTask = sut1.BookAsync(draftId, null, ownerId, false, CancellationToken.None);
         await Task.WhenAny(gateEntered.Task, Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));

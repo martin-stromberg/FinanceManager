@@ -60,7 +60,7 @@ public sealed class UserImportSplitSettingsControllerTests
         var tokenProviderMock = new Mock<IAuthTokenProvider>();
 
         var store = new Mock<IUserStore<User>>();
-        var userManagerMock = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+        var userManagerMock = new Mock<UserManager<User>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
         userManagerMock.Setup(um => um.IsInRoleAsync(It.IsAny<User>(), "Admin")).ReturnsAsync(false);
         userManagerMock.Setup(um => um.GetSecurityStampAsync(It.IsAny<User>())).ReturnsAsync((User u) => u.SecurityStamp ?? "stamp");
         var alphaVantageSecretProtectorMock = new Mock<IAlphaVantageSecretProtector>();

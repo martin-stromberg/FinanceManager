@@ -50,9 +50,9 @@ namespace FinanceManager.Tests.Infrastructure
             /// <summary>Fixed application name identifying the test host.</summary>
             public string ApplicationName { get; set; } = "FinanceManager.Tests";
             /// <summary>The isolated temporary directory the backup service should treat as its content root.</summary>
-            public string ContentRootPath { get; set; }
+            public string ContentRootPath { get; set; } = string.Empty;
             /// <summary>Not used by these tests; present only to satisfy the <see cref="IHostEnvironment"/> contract.</summary>
-            public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; }
+            public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
         }
 
         /// <summary>
@@ -286,7 +286,7 @@ namespace FinanceManager.Tests.Infrastructure
                 Assert.True(arr.GetArrayLength() > 0, $"Expected {kv.Key} to have at least one element");
                 var element = arr[0];
 
-                Type dtoType = null;
+                Type? dtoType = null;
                 if (kv.Value == typeof(object))
                 {
                     // account share: try to find backup dto type by name convention
@@ -306,7 +306,7 @@ namespace FinanceManager.Tests.Infrastructure
                 Assert.NotNull(deserializedDto);
 
                 // get original domain object and its ToBackupDto
-                object originalObj = null;
+                object? originalObj = null;
                 switch (kv.Key)
                 {
                     case "Accounts": originalObj = account; break;

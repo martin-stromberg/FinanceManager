@@ -39,7 +39,7 @@ public sealed class PostingAggregatesTests
         IPostingAggregateService agg = new PostingAggregateService(db);
         // Provide a minimal account service stub required by StatementDraftService constructor.
         IAccountService accountService = new StubAccountService();
-        return new StatementDraftService(db, agg, accountService, null, null, null);
+        return new StatementDraftService(db, agg, accountService, null!, null, null);
     }
 
 

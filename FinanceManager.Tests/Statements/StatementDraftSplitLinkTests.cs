@@ -7,6 +7,7 @@ using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,6 +23,13 @@ namespace FinanceManager.Tests.Statements;
 /// </summary>
 public sealed class StatementDraftSplitLinkTests
 {
+    // Split-linking never needs to load statement files (that happens during upload/create-draft), but the
+    // constructor parameter is non-nullable, so a trivial stub stands in for the real factory.
+    private sealed class StubStatementFileFactory : IStatementFileFactory
+    {
+        public IStatementFile? Load(string fileName, byte[] fileBytes) => null;
+    }
+
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -39,7 +47,7 @@ public sealed class StatementDraftSplitLinkTests
         db.SaveChanges();
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, owner.Id);
     }
 

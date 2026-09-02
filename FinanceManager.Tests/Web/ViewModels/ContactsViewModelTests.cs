@@ -191,7 +191,7 @@ public sealed class ContactsViewModelTests
         Assert.Equal(2, vm.Items.Count);
         Assert.False(vm.CanLoadMore);
 
-        var ribbonRegs = vm.GetRibbon(new PassthroughLocalizer());
+        var ribbonRegs = vm.GetRibbon(new PassthroughLocalizer())!;
         Assert.Equal(1, ribbonRegs.Count);
         var items = ribbonRegs.SelectMany(r => r.Tabs ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonTab>())
                               .SelectMany(t => t.Items ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonAction>())

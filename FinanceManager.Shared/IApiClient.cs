@@ -314,7 +314,7 @@ public interface IApiClient
     /// <summary>Gets a single security category by id or null if not found.</summary>
     Task<SecurityCategoryDto?> SecurityCategories_GetAsync(Guid id, CancellationToken ct = default);
     /// <summary>Creates a new security category.</summary>
-    Task<SecurityCategoryDto> SecurityCategories_CreateAsync(SecurityCategoryRequest request, CancellationToken ct = default);
+    Task<SecurityCategoryDto?> SecurityCategories_CreateAsync(SecurityCategoryRequest request, CancellationToken ct = default);
     /// <summary>Updates the name of a security category. Returns null when not found.</summary>
     Task<SecurityCategoryDto?> SecurityCategories_UpdateAsync(Guid id, SecurityCategoryRequest request, CancellationToken ct = default);
     /// <summary>Deletes a security category. Returns false when not found.</summary>

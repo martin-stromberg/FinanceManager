@@ -131,9 +131,9 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 SavingsPlanExpectation: SavingsPlanExpectation.Optional,
                 SecurityProcessingEnabled: true), TestContext.Current.CancellationToken);
             accountId = acc.Id;
-            accountIban = acc.Iban;
+            accountIban = acc.Iban ?? string.Empty;
         }
-        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban; }
+        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban ?? string.Empty; }
 
         // Initially no drafts
         var open = await api.StatementDrafts_ListOpenAsync(0, 3, TestContext.Current.CancellationToken);
@@ -255,9 +255,9 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 SavingsPlanExpectation: SavingsPlanExpectation.Optional,
                 SecurityProcessingEnabled: true), TestContext.Current.CancellationToken);
             accountId = acc.Id;
-            accountIban = acc.Iban;
+            accountIban = acc.Iban ?? string.Empty;
         }
-        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban; }
+        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban ?? string.Empty; }
 
         var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
                   $"IBAN;{accountIban}\r\n" +

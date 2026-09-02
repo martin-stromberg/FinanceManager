@@ -285,7 +285,7 @@ public sealed class StatementDraftCardViewModelTests
         vm.RequestFocusFirstInvalid();
 
         var item = Assert.Single(vm.VisibleQuickEditItems.Where(i => i.Id == entryId));
-        var record = Assert.Single(vm.Records.Where(r => ((StatementDraftEntryItem)r.Item).Id == entryId));
+        var record = Assert.Single(vm.Records.Where(r => ((StatementDraftEntryItem)r.Item!).Id == entryId));
         Assert.Contains("Entry cannot be deleted in quick edit", record.Hint);
         Assert.Equal(entryId, vm.CollectPendingDeleteIds().Single());
         Assert.Equal(entryId, vm.ConsumeFocusFirstInvalid());
@@ -574,7 +574,7 @@ public sealed class StatementDraftCardViewModelTests
 
         entriesVm.ValidateQuickEditRow(placeholder.Id);
 
-        var record = Assert.Single(entriesVm.Records.Where(r => ((StatementDraftEntryItem)r.Item).Id == placeholder.Id));
+        var record = Assert.Single(entriesVm.Records.Where(r => ((StatementDraftEntryItem)r.Item!).Id == placeholder.Id));
         Assert.False(string.IsNullOrWhiteSpace(record.Hint));
     }
 }

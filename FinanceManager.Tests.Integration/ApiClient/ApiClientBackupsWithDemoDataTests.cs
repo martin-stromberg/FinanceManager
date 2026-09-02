@@ -143,7 +143,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         using (var cts = new CancellationTokenSource())
         {
             var scope = _factory.Services.CreateScope();
-            var runner = new BackgroundTaskRunner(scope.ServiceProvider.GetService<IBackgroundTaskManager>(), scope.ServiceProvider.GetService<ILogger<BackgroundTaskRunner>>(), scope.ServiceProvider.GetServices<IBackgroundTaskExecutor>());
+            var runner = new BackgroundTaskRunner(scope.ServiceProvider.GetRequiredService<IBackgroundTaskManager>(), scope.ServiceProvider.GetRequiredService<ILogger<BackgroundTaskRunner>>(), scope.ServiceProvider.GetServices<IBackgroundTaskExecutor>());
             await runner.StartAsync(cts.Token);
 
             // poll until finished
@@ -259,7 +259,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var contactCategories = db.ContactCategories.AsNoTracking().Where(c => c.OwnerUserId == userId).Select(c => c.ToBackupDto()).ToList();
         var contacts = db.Contacts.AsNoTracking().Where(c => c.OwnerUserId == userId).Select(c => c.ToBackupDto()).ToList();
         var contactIds = contacts.Select(c => c.Id).ToList();
-        var aliasNames = db.AliasNames.AsNoTracking().Where(a => a.ContactId != null && contactIds.Contains(a.ContactId)).Select(a => a.ToBackupDto()).ToList();
+        var aliasNames = db.AliasNames.AsNoTracking().Where(a => contactIds.Contains(a.ContactId)).Select(a => a.ToBackupDto()).ToList();
 
         var securityCategories = db.SecurityCategories.AsNoTracking().Where(s => s.OwnerUserId == userId).Select(s => s.ToBackupDto()).ToList();
         var securities = db.Securities.AsNoTracking().Where(s => s.OwnerUserId == userId).Select(s => s.ToBackupDto()).ToList();
@@ -661,7 +661,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         // Remap postings references
         // Build lookup for after postings by composite key to remap posting Ids deterministically
         string PostingKey(FinanceManager.Domain.Postings.Posting.PostingBackupDto p, Snapshot snap)
-            => $"{p.BookingDate.Ticks}|{(p is { } && ((dynamic)p).ValutaDate is DateTime vd ? vd.Ticks : 0)}|{p.Kind}|{p.SourceId}|{p.AccountId}|{p.RecipientName}|{p.Subject}|{p.Amount}";
+            => $"{p.BookingDate.Ticks}|{p.ValutaDate.Ticks}|{p.Kind}|{p.SourceId}|{p.AccountId}|{p.RecipientName}|{p.Subject}|{p.Amount}";
 
         var afterPostingMap = new Dictionary<string, Guid>();
         foreach (var ap in after.Postings)
@@ -686,7 +686,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             var adjusted = p with { AccountId = accountId, ContactId = contactId, SavingsPlanId = savingsPlanId, SecurityId = securityId };
 
             // build key using adjusted values (use account id as string)
-            string key = $"{adjusted.BookingDate.Ticks}|{(adjusted is { } && ((dynamic)adjusted).ValutaDate is DateTime vdt ? vdt.Ticks : 0)}|{adjusted.Kind}|{adjusted.SourceId}|{adjusted.AccountId?.ToString() ?? string.Empty}|{adjusted.RecipientName ?? string.Empty}|{adjusted.Subject ?? string.Empty}|{adjusted.Amount}";
+            string key = $"{adjusted.BookingDate.Ticks}|{adjusted.ValutaDate.Ticks}|{adjusted.Kind}|{adjusted.SourceId}|{adjusted.AccountId?.ToString() ?? string.Empty}|{adjusted.RecipientName ?? string.Empty}|{adjusted.Subject ?? string.Empty}|{adjusted.Amount}";
             if (afterPostingMap.TryGetValue(key, out var mappedPid))
             {
                 adjusted = adjusted with { Id = mappedPid };
