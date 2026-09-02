@@ -6,7 +6,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 {
     /// <summary>
     /// PDF statement file reader implementation for Barclays statement exports.
-    /// Uses template-based parsing (regular expressions and table definitions) inherited from <see cref="PDFStatementFilereader"/>.
+    /// Uses template-based parsing (regular expressions and table definitions) inherited from <see cref="TemplateStatementFileParser"/>.
     /// The templates contained in this class target various Barclays PDF layouts and provide section and field mappings
     /// to build <see cref="StatementMovement"/> instances.
     /// </summary>

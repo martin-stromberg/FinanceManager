@@ -156,7 +156,7 @@ public sealed class SetupImportService : ISetupImportService
     /// <summary>
     /// Event raised when import progress changes. Subscribers receive an <see cref="ImportProgress"/> instance.
     /// </summary>
-    public event EventHandler<ImportProgress> ProgressChanged;
+    public event EventHandler<ImportProgress>? ProgressChanged;
 
     /// <summary>
     /// Imports a backup stream for the specified user.
@@ -180,7 +180,7 @@ public sealed class SetupImportService : ISetupImportService
 
         var meta = JsonSerializer.Deserialize<BackupMeta>(metaLine);
         if (meta == null || meta.Type != "Backup" || meta.Version < 2)
-            throw new InvalidOperationException("Ungültiges Backup-Format.");
+            throw new InvalidOperationException("Ungï¿½ltiges Backup-Format.");
         var jsonData = await reader.ReadToEndAsync();
         switch (meta.Version)
         {
@@ -1038,6 +1038,12 @@ public sealed class SetupImportService : ISetupImportService
                 else
                 {
                     var bank = _db.Contacts.FirstOrDefault(c => c.Type == ContactType.Bank && c.Name == dto.Name);
+                    if (bank is null)
+                    {
+                        _logger.LogWarning("Failed to import account {AccountId}: no matching bank contact found for name {Name}", dto.Id, dto.Name);
+                        ProgressChanged?.Invoke(this, progress.IncSub());
+                        continue;
+                    }
                     adjusted = adjusted with { BankContactId = bank.Id };
                 }
                 if (accountMap.TryGetValue(dto.Id, out var mappedId))

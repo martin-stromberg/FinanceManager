@@ -37,8 +37,6 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <param name="options">The options to configure the context (provider, connection string, etc.).</param>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    /// <summary>Users (Identity + application user extensions).</summary>
-    public DbSet<User> Users => Set<User>();
     /// <summary>Bank accounts.</summary>
     public DbSet<Account> Accounts => Set<Account>();
     /// <summary>Linked sub-IBANs for collection accounts.</summary>
@@ -614,7 +612,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
         // Security prices
         await SecurityPrices
-            .Where(p => p.SecurityId != null && Securities.Any(s => s.OwnerUserId == userId && s.Id == p.SecurityId))
+            .Where(p => Securities.Any(s => s.OwnerUserId == userId && s.Id == p.SecurityId))
             .ExecuteDeleteAsync(ct);
 
         // Statement drafts

@@ -21,6 +21,7 @@ public sealed class ReportCacheService : IReportCacheService
     /// Creates a new instance of the <see cref="ReportCacheService"/>.
     /// </summary>
     /// <param name="db">Database context.</param>
+    /// <param name="taskManager">Background task manager used to schedule cache-refresh work.</param>
     public ReportCacheService(AppDbContext db, IBackgroundTaskManager taskManager)
     {
         _db = db;

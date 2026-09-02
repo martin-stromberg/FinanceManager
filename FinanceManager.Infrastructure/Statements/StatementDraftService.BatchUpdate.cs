@@ -27,7 +27,7 @@ public sealed partial class StatementDraftService
     /// Returns per-entry field errors when validation fails; in that case no changes are committed.
     /// </summary>
     /// <inheritdoc />
-    public async Task<(bool Success, FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto? SuccessResponse, FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto? ErrorResponse)> ApplyBatchEntryUpdatesAsync(Guid draftId, Guid ownerUserId, FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto request, CancellationToken ct)
+    public async Task<(bool Success, FinanceManager.Shared.Dtos.Statements.BatchUpdateSuccessResponseDto SuccessResponse, FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto? ErrorResponse)> ApplyBatchEntryUpdatesAsync(Guid draftId, Guid ownerUserId, FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto request, CancellationToken ct)
     {
         static string Loc(string key, string fallback)
         {
@@ -56,7 +56,10 @@ public sealed partial class StatementDraftService
         }
         if (draft.Status != StatementDraftStatus.Draft)
         {
-            return (false, null, new FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto
+            // SuccessResponse is only meaningful when Success is true (see interface contract and the
+            // controller, which only reads SuccessResponse after checking Success); null! here matches
+            // that established convention since the tuple type does not support conditional nullability.
+            return (false, null!, new FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto
             {
                 Errors =
                 {
@@ -399,7 +402,7 @@ public sealed partial class StatementDraftService
         if (errors.Count > 0)
         {
             var errResp = new FinanceManager.Shared.Dtos.Statements.BatchUpdateErrorResponseDto { Errors = errors };
-            return (false, null, errResp);
+            return (false, null!, errResp);
         }
 
         // All validations passed -> apply changes in transaction

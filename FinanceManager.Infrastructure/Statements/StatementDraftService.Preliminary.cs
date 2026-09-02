@@ -14,6 +14,7 @@ public sealed partial class StatementDraftService
     /// <param name="ownerUserId">Owner user identifier.</param>
     /// <param name="accountId">Identifier of the bank account for which the preliminary draft is created.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="description">Optional description text stored on the preliminary draft.</param>
     /// <returns>The created <see cref="StatementDraftDto"/>; otherwise <c>null</c> when the account does not exist or is not owned.</returns>
     public async Task<StatementDraftDto?> CreatePreliminaryDraftAsync(Guid ownerUserId, Guid accountId, CancellationToken ct, string? description = null)
     {

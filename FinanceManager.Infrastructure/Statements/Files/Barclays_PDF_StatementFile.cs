@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Infrastructure.Statements.Files
 {
@@ -13,7 +14,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
         /// <summary>
         /// Initializes a new instance of the <see cref="Barclays_PDF_StatementFile"/> class with default settings.
         /// </summary>
-        public Barclays_PDF_StatementFile() : this(null)
+        public Barclays_PDF_StatementFile() : this(NullLogger<Barclays_PDF_StatementFile>.Instance)
         {
         }
         /// <summary>

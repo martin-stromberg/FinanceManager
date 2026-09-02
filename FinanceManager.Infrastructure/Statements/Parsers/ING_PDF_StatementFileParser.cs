@@ -92,8 +92,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Attempts to parse supplemental statement details (security taxes, fees, quantities) from an ING PDF export.
         /// Returns <c>null</c> when parsing fails or no meaningful details were found.
         /// </summary>
-        /// <param name="originalFileName">Original file name of the uploaded document (used for header description).</param>
-        /// <param name="fileBytes">Raw file bytes to parse.</param>
+        /// <param name="statementFile">The statement file to parse for supplemental detail information.</param>
         /// <returns>
         /// A <see cref="StatementParseResult"/> containing a header and a single movement with parsed details when successful;
         /// otherwise <c>null</c> when parsing could not extract a valid amount or the format is not recognized.
@@ -325,7 +324,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                 var header = new StatementHeader()
                 {
                     IBAN = iban,
-                    AccountNumber = iban,
+                    AccountNumber = iban ?? string.Empty,
                     Description = $"ING PDF Import {statementFile.FileName}"
                 };
 
@@ -423,22 +422,26 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         {
             if (!string.IsNullOrWhiteSpace(rec.PostingDescription))
                 return;
+            var subject = rec.Subject ?? string.Empty;
+            var counterparty = rec.Counterparty ?? string.Empty;
             foreach (var description in PostingDescriptions)
             {
-                if (rec.Subject.StartsWith(description))
+                if (subject.StartsWith(description))
                 {
                     rec.PostingDescription = description;
-                    rec.Subject = rec.Subject.Remove(0, description.Length).TrimStart();
+                    subject = subject.Remove(0, description.Length).TrimStart();
                 }
-                if (rec.Counterparty.StartsWith(description))
+                if (counterparty.StartsWith(description))
                 {
                     rec.PostingDescription = description;
-                    rec.Counterparty = rec.Counterparty.Remove(0, description.Length).TrimStart();
+                    counterparty = counterparty.Remove(0, description.Length).TrimStart();
                 }
             }
+            rec.Subject = subject;
+            rec.Counterparty = counterparty;
         }
 
-        private string ClearPDFTableValue(string value)
+        private string ClearPDFTableValue(string? value)
         {
             return value?.Replace("|", " ") ?? string.Empty;
         }

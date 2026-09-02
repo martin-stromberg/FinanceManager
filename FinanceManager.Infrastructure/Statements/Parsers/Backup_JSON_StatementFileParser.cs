@@ -12,9 +12,6 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
     /// </summary>
     public class Backup_JSON_StatementFileParser : IStatementFileParser
     {
-        private BackupData _BackupData = null;
-        private StatementHeader _GlobalHeader = null;
-
         /// <summary>
         /// Represents the deserialized minimal backup payload used by this reader.
         /// Only the fields required for parsing statements are present.
@@ -29,20 +26,37 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             public JsonElement BankAccountJournalLines { get; set; }
         }
         /// <summary>
-        /// 
+        /// Holds the outcome of <see cref="Load"/>: the statement header derived from the backup and the raw
+        /// deserialized backup payload used to enumerate movements.
+        /// </summary>
+        private sealed class LoadResult
+        {
+            /// <summary>Gets the statement header derived from the backup payload.</summary>
+            public required StatementHeader Header { get; init; }
+            /// <summary>Gets the deserialized backup payload.</summary>
+            public required BackupData Data { get; init; }
+        }
+
+        /// <summary>
+        /// Reads and deserializes the backup payload from the given statement file.
         /// </summary>
         /// <param name="statementFile"></param>
-        private void Load(IStatementFile statementFile)
+        /// <returns>The parsed statement header together with the deserialized backup data payload.</returns>
+        /// <exception cref="FormatException">Thrown when the file content is not a valid backup JSON payload
+        /// (e.g. it deserializes to <see langword="null"/>).</exception>
+        private LoadResult Load(IStatementFile statementFile)
         {
             var fileContent = string.Join("\r\n", statementFile.ReadContent()).Replace("\r\n", "\n").Replace("\r", "\n");
             var offset = fileContent.IndexOf('\n');
             fileContent = fileContent.Remove(0, offset);
-            _BackupData = JsonSerializer.Deserialize<BackupData>(fileContent);
-            _GlobalHeader = new StatementHeader()
+            var data = JsonSerializer.Deserialize<BackupData>(fileContent)
+                ?? throw new FormatException("Backup JSON payload could not be deserialized into the expected structure.");
+            var header = new StatementHeader()
             {
-                IBAN = _BackupData.BankAccounts[0].GetProperty("IBAN").GetString() ?? "",
+                IBAN = data.BankAccounts[0].GetProperty("IBAN").GetString() ?? "",
                 Description = $"Backup eingelesen am {DateTime.Today.ToShortDateString()}"
             };
+            return new LoadResult { Header = header, Data = data };
         }
 
         /// <summary>
@@ -50,10 +64,11 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// The method yields <see cref="StatementMovement"/> instances for ledger entries and journal lines
         /// and filters out zero-amount movements.
         /// </summary>
+        /// <param name="data">The deserialized backup payload to read movements from.</param>
         /// <returns>An enumerable sequence of parsed <see cref="StatementMovement"/> objects.</returns>
-        private IEnumerable<StatementMovement> ReadData()
+        private IEnumerable<StatementMovement> ReadData(BackupData data)
         {
-            foreach (var entry in _BackupData.BankAccountLedgerEntries.EnumerateArray())
+            foreach (var entry in data.BankAccountLedgerEntries.EnumerateArray())
             {
                 var contact = entry.GetProperty("SourceContact");
                 var contactUId = (contact.ValueKind == JsonValueKind.Object) ? contact.GetProperty("UID") : new JsonElement();
@@ -75,7 +90,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     yield return movement;
             }
 
-            foreach (var entry in _BackupData.BankAccountJournalLines.EnumerateArray())
+            foreach (var entry in data.BankAccountJournalLines.EnumerateArray())
             {
                 var movement = new StatementMovement()
                 {
@@ -104,8 +119,8 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         {
             try
             {
-                Load(statementFile);
-                return new List<StatementParseResult> { new StatementParseResult(_GlobalHeader, ReadData().ToList()) };
+                var loaded = Load(statementFile);
+                return new List<StatementParseResult> { new StatementParseResult(loaded.Header, ReadData(loaded.Data).ToList()) };
             }
             catch
             {

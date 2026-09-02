@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Infrastructure.Statements.Files
 {
@@ -15,7 +16,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
         /// <summary>
         /// Initializes a new instance of the <see cref="ING_PDF_StatementFile"/> class with default settings.
         /// </summary>
-        public ING_PDF_StatementFile() : base(null)
+        public ING_PDF_StatementFile() : base(NullLogger<ING_PDF_StatementFile>.Instance)
         {
         }
         /// <summary>

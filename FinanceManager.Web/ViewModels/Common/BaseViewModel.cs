@@ -59,8 +59,8 @@ namespace FinanceManager.Web.ViewModels.Common
 
         private readonly List<IAsyncDisposable> _children = new();
         private readonly List<BaseViewModel> _childViewModels = new();
-        private IApiClient _ApiClient = null;
-        private NavigationManager _Navigation = null;
+        private IApiClient? _ApiClient;
+        private NavigationManager? _Navigation;
 
         /// <summary>
         /// Human-readable title for a view. Derived classes may override.
@@ -87,7 +87,7 @@ namespace FinanceManager.Web.ViewModels.Common
         /// </summary>
         /// <param name="errorCode">Machine readable error code or <c>null</c>.</param>
         /// <param name="errorMessage">Fallback human readable message or <c>null</c>.</param>
-        protected void SetError(string errorCode, string errorMessage)
+        protected void SetError(string? errorCode, string? errorMessage)
         {
             LastErrorCode = errorCode;
             LastError = errorMessage;

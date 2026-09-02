@@ -44,6 +44,8 @@ public sealed class AccountService : IAccountService
     /// <param name="iban">Optional IBAN; when provided it must be unique for the user.</param>
     /// <param name="bankContactId">Contact id of the bank (must exist and be of type <see cref="ContactType.Bank"/>).</param>
     /// <param name="expectation">Savings plan expectation for the account.</param>
+    /// <param name="securityProcessingEnabled">Whether postings on this account are eligible for automatic security detection/processing.</param>
+    /// <param name="isCollectionAccount">Whether this account acts as a collection account (aggregating postings from linked IBANs).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="AccountDto"/> representing the persisted account.</returns>
     /// <exception cref="ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
@@ -95,6 +97,8 @@ public sealed class AccountService : IAccountService
     /// <param name="iban">Optional new IBAN; when provided it must be unique for the user (excluding this account).</param>
     /// <param name="bankContactId">Contact id of the bank (must exist and be of type <see cref="ContactType.Bank"/>).</param>
     /// <param name="expectation">Savings plan expectation.</param>
+    /// <param name="securityProcessingEnabled">Whether postings on this account are eligible for automatic security detection/processing.</param>
+    /// <param name="isCollectionAccount">Whether this account acts as a collection account (aggregating postings from linked IBANs).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated <see cref="AccountDto"/>, or <c>null</c> when the account was not found.</returns>
     /// <exception cref="ArgumentException">Thrown when the bank contact is invalid, the name is missing or already exists, or the IBAN already exists for the user.</exception>
@@ -224,7 +228,7 @@ public sealed class AccountService : IAccountService
                         a.CurrentBalance,
                         a.BankContactId,
                         // Treat Guid.Empty as not present and fall back to contact then category
-                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
+                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId!.Value != Guid.Empty) ? a.SymbolAttachmentId
                             : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
                             : cat.SymbolAttachmentId,
                         a.SavingsPlanExpectation,
@@ -281,7 +285,7 @@ public sealed class AccountService : IAccountService
                         a.Iban,
                         a.CurrentBalance,
                         a.BankContactId,
-                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
+                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId!.Value != Guid.Empty) ? a.SymbolAttachmentId
                             : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
                             : cat.SymbolAttachmentId,
                         a.SavingsPlanExpectation,
@@ -325,7 +329,7 @@ public sealed class AccountService : IAccountService
                         a.Iban,
                         a.CurrentBalance,
                         a.BankContactId,
-                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId.Value != Guid.Empty) ? a.SymbolAttachmentId
+                        (a.SymbolAttachmentId.HasValue && a.SymbolAttachmentId!.Value != Guid.Empty) ? a.SymbolAttachmentId
                             : (c != null && c.SymbolAttachmentId.HasValue && c.SymbolAttachmentId.Value != Guid.Empty) ? c.SymbolAttachmentId
                             : cat.SymbolAttachmentId,
                         a.SavingsPlanExpectation,

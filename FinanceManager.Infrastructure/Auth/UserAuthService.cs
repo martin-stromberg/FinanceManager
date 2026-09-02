@@ -176,16 +176,16 @@ public sealed class UserAuthService : IUserAuthService
         bool hasSelfContact = await _db.Contacts.AsNoTracking().AnyAsync(c => c.OwnerUserId == user.Id && c.Type == ContactType.Self, ct);
         if (!hasSelfContact)
         {
-            _db.Contacts.Add(new Contact(user.Id, user.UserName, ContactType.Self, null));
+            _db.Contacts.Add(new Contact(user.Id, user.UserName!, ContactType.Self, null));
             await _db.SaveChangesAsync(ct);
         }
 
         //await new DemoDataService(_db).CreateDemoDataForUserAsync(user.Id, ct);
 
         var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-        var token = _jwt.CreateToken(user.Id, user.UserName, isAdmin, user.SecurityStamp!, out var expires, user.PreferredLanguage, user.TimeZoneId);
+        var token = _jwt.CreateToken(user.Id, user.UserName!, isAdmin, user.SecurityStamp!, out var expires, user.PreferredLanguage, user.TimeZoneId);
         _logger.LogInformation("User {UserId} ({Username}) registered (IsAdmin={IsAdmin})", user.Id, user.UserName, isAdmin);
-        return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName, isAdmin, token, expires));
+        return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName!, isAdmin, token, expires));
     }
 
     /// <summary>
@@ -248,10 +248,10 @@ public sealed class UserAuthService : IUserAuthService
         await _db.SaveChangesAsync(ct);
 
         var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-        var token = _jwt.CreateToken(user.Id, user.UserName, isAdmin, user.SecurityStamp!, out var expires, user.PreferredLanguage, user.TimeZoneId);
+        var token = _jwt.CreateToken(user.Id, user.UserName!, isAdmin, user.SecurityStamp!, out var expires, user.PreferredLanguage, user.TimeZoneId);
 
         _logger.LogInformation("Login success for {UserId} ({Username}) from {Ip}", user.Id, user.UserName, command.IpAddress);
-        return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName, isAdmin, token, expires));
+        return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName!, isAdmin, token, expires));
     }
 
     // wrapper to keep calls test-friendly / readable
