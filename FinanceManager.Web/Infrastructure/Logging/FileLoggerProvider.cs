@@ -27,6 +27,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// Initializes a new instance of the <see cref="FileLoggerProvider"/> class.
     /// </summary>
     /// <param name="optionsMonitor">Options monitor used to observe changes to <see cref="FileLoggerOptions"/>.</param>
+    /// <param name="filterOptionsMonitor">Options monitor used to observe changes to the logger filter configuration.</param>
     public FileLoggerProvider(IOptionsMonitor<FileLoggerOptions> optionsMonitor, IOptionsMonitor<LoggerFilterOptions> filterOptionsMonitor)
     {
         _optionsMonitor = optionsMonitor;

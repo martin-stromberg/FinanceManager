@@ -65,7 +65,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
     private const int PageSize = 3;
 
     /// <summary>
-    /// Loads a page of drafts. This implementation requests open drafts from the API and appends them to <see cref="Items"/>.
+    /// Loads a page of drafts. This implementation requests open drafts from the API and appends them to <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/>.
     /// </summary>
     /// <param name="resetPaging">When true the paging state is reset and items cleared.</param>
     protected override async Task LoadPageAsync(bool resetPaging)

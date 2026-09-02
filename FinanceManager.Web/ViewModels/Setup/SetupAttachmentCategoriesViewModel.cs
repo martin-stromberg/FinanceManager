@@ -101,7 +101,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// <summary>
     /// Creates a new attachment category with the name in <see cref="NewName"/> and adds it to <see cref="Items"/> on success.
     /// If creation succeeds the <see cref="ActionOk"/> flag is set to true and <see cref="NewName"/> is cleared.
-    /// Errors are captured in the view model via <see cref="SetError(string?, string?)"/>.
+    /// Errors are captured in the view model via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/>.
     /// </summary>
     /// <param name="ct">Cancellation token used for the API call.</param>
     /// <returns>A task representing the asynchronous add operation.</returns>
@@ -152,7 +152,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// <summary>
     /// Saves the current edit (<see cref="EditId"/> / <see cref="EditName"/>) by calling the API
     /// and updates the corresponding item in <see cref="Items"/> if the update succeeds.
-    /// Errors are captured in the view model via <see cref="SetError(string?, string?)"/>.
+    /// Errors are captured in the view model via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/>.
     /// </summary>
     /// <param name="ct">Cancellation token used for the API call.</param>
     /// <returns>A task representing the asynchronous save operation.</returns>
@@ -185,7 +185,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
 
     /// <summary>
     /// Deletes the category with the specified id by calling the API and removes it from <see cref="Items"/> on success.
-    /// Errors are captured in the view model via <see cref="SetError(string?, string?)"/>.
+    /// Errors are captured in the view model via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/>.
     /// </summary>
     /// <param name="id">The id of the category to delete.</param>
     /// <param name="ct">Cancellation token used for the API call.</param>

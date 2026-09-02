@@ -98,7 +98,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
         protected abstract Task<IReadOnlyList<PostingServiceDto>?> QueryPageAsync(IApiClient api, int skip, int take, string search, DateTime? from, DateTime? to);
 
         /// <summary>
-        /// Builds <see cref="Records"/> from the current <see cref="Items"/>. The default implementation maps the Posting fields
+        /// Builds <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Records"/> from the current <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/>. The default implementation maps the Posting fields
         /// into table cells and constructs navigation wrapper items that implement <see cref="IListItemNavigation"/>.
         /// </summary>
         protected override void BuildRecords()

@@ -26,6 +26,7 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     /// <param name="auth">Service handling user authentication operations (login/register).</param>
     /// <param name="localizer">Localizer for providing localized error messages.</param>
+    /// <param name="tokenProvider">Provider used to issue and validate authentication tokens.</param>
     public AuthController(IUserAuthService auth, IStringLocalizer<Controller> localizer, IAuthTokenProvider tokenProvider)
     {
         _auth = auth;

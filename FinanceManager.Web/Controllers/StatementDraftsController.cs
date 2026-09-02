@@ -51,6 +51,8 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="localizer">Localizer for i18n support.</param>
     /// <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
     /// <param name="attachments">Attachment service used to list and download attachments.</param>
+    /// <param name="budgetImpact">Optional service used to evaluate the budget impact of bookings; may be null when the feature is disabled.</param>
+    /// <param name="massImportOrchestrator">Optional orchestrator used to coordinate mass import of statement drafts; may be null when the feature is disabled.</param>
     public StatementDraftsController(
         IStatementDraftService drafts,
         ICurrentUserService current,

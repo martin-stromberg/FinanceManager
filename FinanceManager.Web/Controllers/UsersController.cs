@@ -85,7 +85,7 @@ public sealed class UsersController : ControllerBase
     /// The method will schedule or execute creation of various domain entities under the provided user account.
     /// </summary>
     /// <param name="userId">Identifier of the user for whom demo data should be created.</param>
-    /// <param name="createPostings">When true, statement imports and entries (postings) will also be created as part of the demo data.</param>
+    /// <param name="req">Request payload; when its <c>createPostings</c> flag is true, statement imports and entries (postings) will also be created as part of the demo data.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 202 Accepted when the request was accepted for processing.

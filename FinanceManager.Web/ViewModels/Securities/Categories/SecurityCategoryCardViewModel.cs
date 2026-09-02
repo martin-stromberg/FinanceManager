@@ -97,7 +97,7 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
     /// <summary>
     /// Saves the current category by creating or updating it via the API.
     /// </summary>
-    /// <returns><c>true</c> when save succeeded; otherwise <c>false</c> and <see cref="CardViewModelBase.SetError(string?, string?)"/> provides details.</returns>
+    /// <returns><c>true</c> when save succeeded; otherwise <c>false</c> and <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/> provides details.</returns>
     public override async Task<bool> SaveAsync()
     {
         if (CardRecord != null)

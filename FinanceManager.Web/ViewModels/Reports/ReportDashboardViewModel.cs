@@ -477,6 +477,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="includeCategory">Whether to include category grouping.</param>
     /// <param name="comparePrevious">Whether to compute previous period comparisons.</param>
     /// <param name="compareYear">Whether to compute year-ago comparisons.</param>
+    /// <param name="compareProjection">Whether to compute projected-period comparisons.</param>
     /// <param name="postingKinds">Optional set of posting kinds when multi-kind selection is used.</param>
     /// <param name="analysisDate">Optional analysis date used by the server.</param>
     /// <param name="filters">Optional filters payload.</param>
@@ -500,6 +501,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="take">Number of periods to take.</param>
     /// <param name="comparePrevious">Whether previous comparison is enabled.</param>
     /// <param name="compareYear">Whether year comparison is enabled.</param>
+    /// <param name="compareProjection">Whether projected-period comparison is enabled.</param>
     /// <param name="showChart">Whether chart is shown for this favorite.</param>
     /// <param name="expandable">Whether table rows are expandable.</param>
     /// <param name="postingKinds">Optional posting kinds when multi-kind selection is used.</param>
@@ -549,6 +551,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="take">Number of periods to take.</param>
     /// <param name="comparePrevious">Whether previous comparison is enabled.</param>
     /// <param name="compareYear">Whether year comparison is enabled.</param>
+    /// <param name="compareProjection">Whether projected-period comparison is enabled.</param>
     /// <param name="showChart">Whether chart is shown for this favorite.</param>
     /// <param name="expandable">Whether table rows are expandable.</param>
     /// <param name="postingKinds">Optional posting kinds when multi-kind selection is used.</param>
@@ -1057,6 +1060,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="take">Number of periods to take.</param>
     /// <param name="comparePrevious">Whether previous comparison is enabled.</param>
     /// <param name="compareYear">Whether year comparison is enabled.</param>
+    /// <param name="compareProjection">Whether projected-period comparison is enabled.</param>
     /// <param name="showChart">Whether chart is shown for this favorite.</param>
     /// <param name="expandable">Whether table rows are expandable.</param>
     /// <param name="postingKinds">Optional posting kinds when multi-kind selection is used.</param>

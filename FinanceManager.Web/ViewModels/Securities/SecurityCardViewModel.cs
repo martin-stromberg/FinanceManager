@@ -431,7 +431,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     /// <param name="q">Optional search query to filter results.</param>
     /// <param name="skip">Number of items to skip for paging.</param>
     /// <param name="take">Maximum number of items to return (server clamps to safe maximum).</param>
-    /// <returns>List of matching <see cref="LookupItem"/> values.</returns>
+    /// <returns>List of matching <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem"/> values.</returns>
     public override async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
     {
         if (!string.IsNullOrWhiteSpace(field.LookupType) && string.Equals(field.LookupType, "SecurityCategory", StringComparison.OrdinalIgnoreCase))

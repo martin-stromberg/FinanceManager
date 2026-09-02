@@ -35,7 +35,7 @@ public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
     /// Loads a page of contacts from the API and appends them to the internal item collection.
     /// </summary>
     /// <param name="resetPaging">When <c>true</c> the paging offset will be reset and the first page will be loaded.</param>
-    /// <returns>A task that completes when the page load has finished. Errors are captured via <see cref="SetError(string,string)"/> and do not propagate.</returns>
+    /// <returns>A task that completes when the page load has finished. Errors are captured via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/> and do not propagate.</returns>
     protected override async Task LoadPageAsync(bool resetPaging)
     {
         if (resetPaging) { _skip = 0; }
