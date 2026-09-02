@@ -78,7 +78,12 @@ jobs:
         shell: pwsh
 
       - name: Format check
-        run: dotnet format FinanceManager.sln --verify-no-changes --no-restore
+        # --severity error restricts this to whitespace/style plus genuine analyzer errors -
+        # analyzer-level WARNINGS (e.g. the xUnit-analyzer/test-style codes) are the Static
+        # analysis step's concern via its curated WarningsNotAsErrors list; without this flag,
+        # plain `dotnet format --verify-no-changes` also fails on any warning-level analyzer
+        # diagnostic, duplicating (and fighting) that list.
+        run: dotnet format FinanceManager.sln --verify-no-changes --no-restore --severity error
         shell: pwsh
 
       - name: Security scan
