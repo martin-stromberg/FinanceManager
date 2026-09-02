@@ -9,6 +9,7 @@ using Moq;
 using Xunit;
 using FinanceManager.Web.ViewModels.Setup;
 using FinanceManager.Web.ViewModels.Common;
+using FinanceManager.Web.Services;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Shared.Dtos.Statements;
@@ -39,6 +40,7 @@ namespace FinanceManager.Tests.ViewModels
             var sc = new ServiceCollection();
             sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid(), isAdmin: isAdmin));
             sc.AddLogging();
+            sc.AddSingleton<IKpiLocalStorageCache>(Mock.Of<IKpiLocalStorageCache>());
             sc.AddSingleton<IApiClient>(new Mock<IApiClient>().Object);
             return sc.BuildServiceProvider();
         }
@@ -48,6 +50,7 @@ namespace FinanceManager.Tests.ViewModels
             var sc = new ServiceCollection();
             sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid(), isAdmin: isAdmin));
             sc.AddLogging();
+            sc.AddSingleton<IKpiLocalStorageCache>(Mock.Of<IKpiLocalStorageCache>());
             sc.AddSingleton(apiClient);
             return sc.BuildServiceProvider();
         }

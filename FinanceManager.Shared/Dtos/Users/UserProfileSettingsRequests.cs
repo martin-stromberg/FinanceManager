@@ -10,10 +10,12 @@ namespace FinanceManager.Shared.Dtos.Users;
 /// <param name="AlphaVantageApiKey">Optional AlphaVantage API key to set or replace.</param>
 /// <param name="ClearAlphaVantageApiKey">When true, clears the stored AlphaVantage API key.</param>
 /// <param name="ShareAlphaVantageApiKey">When true, enables sharing of the admin API key (admin only).</param>
+/// <param name="CacheKpisInLocalStorage">When true, enables caching of home page KPI data in the browser's local storage.</param>
 public sealed record UserProfileSettingsUpdateRequest(
     [param: MaxLength(10)] string? PreferredLanguage,
     [param: MaxLength(100)] string? TimeZoneId,
     [param: MaxLength(120)] string? AlphaVantageApiKey,
     bool? ClearAlphaVantageApiKey,
-    bool? ShareAlphaVantageApiKey
+    bool? ShareAlphaVantageApiKey,
+    bool CacheKpisInLocalStorage
 );
