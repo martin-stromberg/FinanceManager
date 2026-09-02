@@ -61,7 +61,7 @@ else
                                 var cell = rec.Cells[ci];
                                 var col = (Provider.Columns?.Count > ci) ? Provider.Columns[ci] : null;
                                 var alignStyle = col != null && col.Align == ListColumnAlign.Right ? "text-align:right;vertical-align:middle;" : null;
-                                var cellStyle = alignStyle + $"width:{col.Width}";
+                                var cellStyle = alignStyle + $"width:{col?.Width}";
                                 if (cell.Muted)
                                 {
                                     // emphasize muted cells slightly by using less contrast
@@ -307,7 +307,7 @@ else
 @code {
     public enum TabId { List }
     [Parameter] public IListProvider? Provider { get; set; }
-    [Parameter] public EventCallback<object> ItemClick { get; set; }
+    [Parameter] public EventCallback<object?> ItemClick { get; set; }
 
     [Parameter] public bool ShowSearch { get; set; } = true;
     [Parameter] public bool ShowRange { get; set; } = true;
@@ -397,7 +397,7 @@ else
         await Provider.LoadAsync();
     }
 
-    private async Task OnItemClicked(object item)
+    private async Task OnItemClicked(object? item)
     {
         if (ItemClick.HasDelegate)
             await ItemClick.InvokeAsync(item);
