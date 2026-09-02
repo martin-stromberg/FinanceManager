@@ -305,7 +305,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             // inner parameters for the SetupSections component
             var innerParms = new Dictionary<string, object> { ["Provider"] = this } as IDictionary<string, object>;
             // outer parameters for the SetupPanel wrapper
-            var outerParms = new Dictionary<string, object>
+            var outerParms = new Dictionary<string, object?>
             {
                 ["InnerComponentType"] = typeof(FinanceManager.Web.Components.Pages.SetupSections),
                 ["InnerParameters"] = innerParms

@@ -207,7 +207,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed");
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed");
         }

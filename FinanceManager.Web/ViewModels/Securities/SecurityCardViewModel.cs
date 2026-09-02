@@ -442,7 +442,11 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 await LoadCategoriesAsync();
             }
 
-            var list = Categories
+            // LoadCategoriesAsync always leaves Categories non-null (success or its catch fallback both
+            // assign it), but the compiler cannot see that guarantee across the await above, so fall back
+            // to an empty list defensively rather than risk a null dereference.
+            var categories = Categories ?? new List<SecurityCategoryDto>();
+            var list = categories
                 .Where(c => string.IsNullOrWhiteSpace(q) || c.Name.Contains(q ?? string.Empty, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(c => c.Name)
                 .Skip(Math.Max(0, skip))

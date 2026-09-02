@@ -156,7 +156,7 @@
         }
 
         // Support generic list routes, e.g., /list/accounts
-        string kind = null;
+        string? kind = null;
         if (path.StartsWith("/list/"))
         {
             var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);

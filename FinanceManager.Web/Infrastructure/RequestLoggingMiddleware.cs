@@ -100,6 +100,11 @@ public sealed class RequestLoggingMiddleware
 
             foreach (var value in parameter.Value)
             {
+                if (value is null)
+                {
+                    continue;
+                }
+
                 builder.Add(parameter.Key, value);
             }
         }

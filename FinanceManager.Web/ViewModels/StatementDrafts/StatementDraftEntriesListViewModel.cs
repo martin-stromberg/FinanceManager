@@ -500,11 +500,11 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 }
                 // capture symbol/name maps from draft so list can show icons and names similar to StatementDraftDetail page
                 _contactSymbols = draft?.ContactSymbols != null ? new Dictionary<Guid, Guid?>(draft.ContactSymbols) : new Dictionary<Guid, Guid?>();
-                _contactNames = draft?.ContactNames != null ? new Dictionary<Guid, string?>(draft.ContactNames) : new Dictionary<Guid, string?>();
+                _contactNames = draft?.ContactNames != null ? draft.ContactNames.ToDictionary(kv => kv.Key, kv => (string?)kv.Value) : new Dictionary<Guid, string?>();
                 _savingsPlanSymbols = draft?.SavingsPlanSymbols != null ? new Dictionary<Guid, Guid?>(draft.SavingsPlanSymbols) : new Dictionary<Guid, Guid?>();
-                _savingsPlanNames = draft?.SavingsPlanNames != null ? new Dictionary<Guid, string?>(draft.SavingsPlanNames) : new Dictionary<Guid, string?>();
+                _savingsPlanNames = draft?.SavingsPlanNames != null ? draft.SavingsPlanNames.ToDictionary(kv => kv.Key, kv => (string?)kv.Value) : new Dictionary<Guid, string?>();
                 _securitySymbols = draft?.SecuritySymbols != null ? new Dictionary<Guid, Guid?>(draft.SecuritySymbols) : new Dictionary<Guid, Guid?>();
-                _securityNames = draft?.SecurityNames != null ? new Dictionary<Guid, string?>(draft.SecurityNames) : new Dictionary<Guid, string?>();
+                _securityNames = draft?.SecurityNames != null ? draft.SecurityNames.ToDictionary(kv => kv.Key, kv => (string?)kv.Value) : new Dictionary<Guid, string?>();
                 _accountBankContactId = draft?.AccountBankContactId;
                 _selfContactId = draft?.SelfContactId;
                 _bankContactName = null;
@@ -738,7 +738,10 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 {
                     // translate severity (e.g. Error -> Fehler)
                     string severityKey = $"Validation_Severity_{m.Severity}";
-                    var severityLocalized = L[severityKey].Value;
+                    // L comes from ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>() (throws if
+                    // unavailable, so L is never actually null); the null-forgiving operator below just works
+                    // around the compiler losing that guarantee across the loops above.
+                    var severityLocalized = L![severityKey].Value;
                     if (string.IsNullOrWhiteSpace(severityLocalized) || severityLocalized == severityKey)
                     {
                         severityLocalized = m.Severity ?? string.Empty;

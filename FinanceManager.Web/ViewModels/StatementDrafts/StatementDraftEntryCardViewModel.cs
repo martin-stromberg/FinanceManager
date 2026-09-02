@@ -227,14 +227,18 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             {
                 // New entry mode for a given draft: show editable fields to create an entry
                 Entry = null;
+                // Reset any previously loaded entry detail so a stale, non-null _entryDetail
+                // (from a prior LoadAsync(existingId) call on this same view model instance)
+                // doesn't make SaveAsync() incorrectly treat this as an "update existing entry"
+                // flow, which would dereference the now-null Entry property.
+                _entryDetail = null;
                 _isEditMode = true;
 
                 // Suggested defaults
                 var suggestedDate = DateTime.Now.Date;
-                var suggestedValuta = (DateTime?)null;
                 var suggestedAmount = 0m;
                 var suggestedSubject = string.Empty;
-                var suggestedBookingDescription = Localizer["StatementDraftEntry_SuggestedBookingDescription"];
+                var suggestedBookingDescription = Localizer?["StatementDraftEntry_SuggestedBookingDescription"].Value;
 
                 var createFieldsNew = new List<CardField>
                 {
@@ -471,6 +475,15 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 return true;
             }
 
+            // Existing-entry update flow from here on. The guard clause at the top of this
+            // method only rejects EntryId != Guid.Empty combined with a null Entry; it cannot
+            // guarantee Entry is still non-null here (Entry is a property, not a local, so the
+            // compiler cannot track it across the branching above). Re-check defensively.
+            if (Entry == null)
+            {
+                return false;
+            }
+
             // Use the field label keys used when building CardField instances
             const string kDate = "Card_Caption_StatementDrafts_Date";
             const string kValuta = "Card_Caption_StatementDrafts_Valuta";
@@ -636,11 +649,14 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     // If it's a LookupItem-like object, try to read Name property
                     try
                     {
-                        var t = ptt.GetType();
-                        var nameProp = t.GetProperty("Name");
-                        if (nameProp != null)
+                        if (ptt != null)
                         {
-                            candidate = nameProp.GetValue(ptt)?.ToString();
+                            var t = ptt.GetType();
+                            var nameProp = t.GetProperty("Name");
+                            if (nameProp != null)
+                            {
+                                candidate = nameProp.GetValue(ptt)?.ToString();
+                            }
                         }
                     }
                     catch { /* ignore */ }

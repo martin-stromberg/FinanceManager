@@ -390,7 +390,7 @@ public sealed class StatementDraftsController : ControllerBase
         var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
         if (draft is null && draftId == Guid.Empty)
             draft = await _drafts.FindDraftHeaderAsync(entryId, _current.UserId, ct);
-        if (draft is null) return null;
+        if (draft is null) return NotFound();
 
         var ordered = (await _drafts.GetDraftEntriesAsync(draft.DraftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
         var entry = await _drafts.GetDraftEntryAsync(draft.DraftId, entryId, ct);

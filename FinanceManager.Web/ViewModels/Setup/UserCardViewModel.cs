@@ -75,7 +75,7 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
                 if (ctor != null)
                 {
                     var parms = ctor.GetParameters();
-                    var args = new object[parms.Length];
+                    var args = new object?[parms.Length];
                     for (int i = 0; i < parms.Length; i++)
                     {
                         var p = parms[i];
@@ -379,8 +379,9 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
                 }
             }
 
-            // Unblock if locked
-            if (User.LockoutEnd != null && User.LockoutEnd > DateTime.UtcNow)
+            // Unblock if locked (User is non-null here, guarded by the enclosing "if (User != null)" above;
+            // the compiler cannot track that narrowing across the nested if/else block for a property)
+            if (User!.LockoutEnd != null && User.LockoutEnd > DateTime.UtcNow)
             {
                 manage.Add(new UiRibbonAction("Unblock", localizer["Ribbon_Unblock"].Value, "<svg><use href='/icons/sprite.svg#unlock'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await UnblockAsync(); }));
             }

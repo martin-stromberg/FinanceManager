@@ -14,7 +14,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
     private readonly IOptionsMonitor<FileLoggerOptions> _optionsMonitor;
     private readonly IOptionsMonitor<LoggerFilterOptions> _filterOptionsMonitor;
-    private readonly IDisposable _onChange;
+    private readonly IDisposable? _onChange;
     private readonly object _writerLock = new();
     private FileLoggerOptions _options;
     private IExternalScopeProvider? _scopeProvider;
@@ -49,7 +49,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// </summary>
     public void Dispose()
     {
-        _onChange.Dispose();
+        _onChange?.Dispose();
         lock (_writerLock)
         {
             _writer?.Flush();

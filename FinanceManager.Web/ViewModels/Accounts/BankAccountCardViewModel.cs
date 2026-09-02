@@ -166,7 +166,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             return ApplyPendingValues(record);
         }
 
-        private AccountDto BuildDto(CardRecord record)
+        private AccountDto BuildDto(CardRecord? record)
         {
             var name = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Name")?.Text ?? Account?.Name ?? string.Empty;
             var iban = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Iban")?.Text ?? Account?.Iban ?? string.Empty;
@@ -186,7 +186,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 {
                     var key = $"EnumType_{enumType.Name}_{v}";
                     var val = Localizer?[key];
-                    if (!string.IsNullOrWhiteSpace(val) && string.Equals(val.Value, spText, StringComparison.OrdinalIgnoreCase))
+                    if (val != null && !string.IsNullOrWhiteSpace(val.Value) && string.Equals(val.Value, spText, StringComparison.OrdinalIgnoreCase))
                     {
                         spExpectation = v;
                         break;

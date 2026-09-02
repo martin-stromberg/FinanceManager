@@ -100,7 +100,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         }
         catch
         {
-            // swallow — UI shows empty state
+            // swallow ï¿½ UI shows empty state
             Items.Clear();
             CanLoadMore = false;
         }
@@ -328,7 +328,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
     }
 
     /// <summary>
-    /// Implementation of <see cref="IUploadFilesViewModel.UploadFilesAsync(string, IEnumerable{(Stream, string)}, CancellationToken)"/> for statement-draft imports.
+    /// Implementation of <see cref="IUploadFilesViewModel.UploadFilesAsync"/> for statement-draft imports.
     /// </summary>
     /// <param name="payload">Payload identifier (must be "statementdraft").</param>
     /// <param name="files">Enumerable of streams and filenames to upload.</param>
