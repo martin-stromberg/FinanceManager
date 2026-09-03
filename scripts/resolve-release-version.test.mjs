@@ -13,7 +13,7 @@ import {
 
 const repository = "owner/repository";
 
-function environment({ refType = "branch", refName = "master" } = {}) {
+function environment({ refType = "branch", refName = "main" } = {}) {
   return {
     GITHUB_OUTPUT: "test-output",
     GITHUB_REPOSITORY: repository,
@@ -63,8 +63,8 @@ test("rejects non-semantic manual tags", () => {
   assert.throws(() => parseManualTag("v02.3.4"), /valid vX\.Y\.Z/);
 });
 
-test("accepts only master and staging for automatic releases", () => {
-  assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "master" }), {
+test("accepts only main and staging for automatic releases", () => {
+  assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "main" }), {
     kind: "automatic"
   });
   assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "staging" }), {

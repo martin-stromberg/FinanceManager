@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
 const NEXT_RELEASE_PATTERN = /The next release version is\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)/i;
-const AUTOMATIC_RELEASE_BRANCHES = ["master", "staging"];
+const AUTOMATIC_RELEASE_BRANCHES = ["main", "staging"];
 
 export function parseManualTag(tagName) {
   if (!tagName?.startsWith("v")) {
