@@ -132,7 +132,7 @@ namespace FinanceManager.Infrastructure.Setup
         private async Task ExecuteActions(Domain.Users.User admin, string initDir, CancellationToken ct)
         {
             var drafts = new List<StatementDraftDto>();
-            drafts.AddRange((await _statementDraftService.GetOpenDraftsAsync(admin.Id, ct)).Select(d => _statementDraftService.GetDraftAsync(d.DraftId, admin.Id, ct).Result));
+            drafts.AddRange((await _statementDraftService.GetOpenDraftsAsync(admin.Id, ct)).Select(d => _statementDraftService.GetDraftAsync(d.DraftId, admin.Id, ct).Result).OfType<StatementDraftDto>());
             var actionFiles = Directory.EnumerateFiles(initDir, "action-*.txt", SearchOption.TopDirectoryOnly);
             foreach (var file in actionFiles)
             {
@@ -169,7 +169,7 @@ namespace FinanceManager.Infrastructure.Setup
                                         }
                                     }
                                     drafts.Clear();
-                                    drafts.AddRange((await _statementDraftService.GetOpenDraftsAsync(admin.Id, ct)).Select(d => _statementDraftService.GetDraftAsync(d.DraftId, admin.Id, ct).Result));
+                                    drafts.AddRange((await _statementDraftService.GetOpenDraftsAsync(admin.Id, ct)).Select(d => _statementDraftService.GetDraftAsync(d.DraftId, admin.Id, ct).Result).OfType<StatementDraftDto>());
                                 }
                                 break;
                             case "statement-import":
@@ -237,10 +237,10 @@ namespace FinanceManager.Infrastructure.Setup
                                     var savingsPlan = await _db.SavingsPlans.FirstOrDefaultAsync(p => p.Name == action[2], ct);
                                     if (savingsPlan is not null)
                                     {
-                                        var offset = 0;
                                         foreach (var draft in drafts)
                                         {
                                             var draft2 = await _statementDraftService.GetDraftAsync(draft.DraftId, admin.Id, ct);
+                                            if (draft2 is null) continue;
                                             foreach (var entry in draft2.Entries)
                                                 if (entry.Subject == action[1])
                                                 {
@@ -259,10 +259,10 @@ namespace FinanceManager.Infrastructure.Setup
                                     var contact = await _db.Contacts.FirstOrDefaultAsync(c => c.Name == action[2], ct);
                                     if (contact is not null)
                                     {
-                                        var offset = 0;
                                         foreach (var draft in drafts)
                                         {
                                             var draft2 = await _statementDraftService.GetDraftAsync(draft.DraftId, admin.Id, ct);
+                                            if (draft2 is null) continue;
                                             foreach (var entry in draft2.Entries)
                                                 if (entry.Subject.Contains(action[1]))
                                                 {
@@ -311,26 +311,30 @@ namespace FinanceManager.Infrastructure.Setup
                                     var quantity = decimal.Parse(action[4]);
                                     var fee = decimal.Parse(action[5]);
                                     var tax = decimal.Parse(action[6]);
-                                    foreach (var draft in drafts)
+                                    if (security is not null)
                                     {
-                                        var draft2 = await _statementDraftService.GetDraftAsync(draft.DraftId, admin.Id, ct);
-                                        foreach (var entry in draft2.Entries)
-                                            if (entry.Subject.Contains(action[1]))
-                                            {
-                                                var dbEntry = await _db.StatementDraftEntries.FirstAsync(e => e.Id == entry.Id, ct);
-                                                var entryType = transType;
-                                                if (entryType == (SecurityTransactionType)(-1))
+                                        foreach (var draft in drafts)
+                                        {
+                                            var draft2 = await _statementDraftService.GetDraftAsync(draft.DraftId, admin.Id, ct);
+                                            if (draft2 is null) continue;
+                                            foreach (var entry in draft2.Entries)
+                                                if (entry.Subject.Contains(action[1]))
                                                 {
-                                                    if (dbEntry.Amount > 0)
-                                                        entryType = SecurityTransactionType.Sell;
-                                                    else
-                                                        entryType = SecurityTransactionType.Buy;
+                                                    var dbEntry = await _db.StatementDraftEntries.FirstAsync(e => e.Id == entry.Id, ct);
+                                                    var entryType = transType;
+                                                    if (entryType == (SecurityTransactionType)(-1))
+                                                    {
+                                                        if (dbEntry.Amount > 0)
+                                                            entryType = SecurityTransactionType.Sell;
+                                                        else
+                                                            entryType = SecurityTransactionType.Buy;
+                                                    }
+                                                    dbEntry.SetSecurity(security.Id, transType, quantity, fee, tax);
+                                                    if (dbEntry.ContactId.HasValue)
+                                                        dbEntry.MarkAccounted(dbEntry.ContactId.Value);
+                                                    await _db.SaveChangesAsync(ct);
                                                 }
-                                                dbEntry.SetSecurity(security.Id, transType, quantity, fee, tax);
-                                                if (dbEntry.ContactId.HasValue)
-                                                    dbEntry.MarkAccounted(dbEntry.ContactId.Value);
-                                                await _db.SaveChangesAsync(ct);
-                                            }
+                                        }
                                     }
                                 }
                                 break;
@@ -340,6 +344,7 @@ namespace FinanceManager.Infrastructure.Setup
                                     foreach (var draft in drafts)
                                     {
                                         var draft2 = await _statementDraftService.GetDraftAsync(draft.DraftId, admin.Id, ct);
+                                        if (draft2 is null) continue;
                                         foreach (var entry in draft2.Entries)
                                             if (entry.BookingDescription == action[1] || entry.Subject.StartsWith(action[1]))
                                             {
@@ -396,12 +401,13 @@ namespace FinanceManager.Infrastructure.Setup
 
                                         foreach (var entry in draft.Entries
                                             .Where(e => e.SecurityId is not null && e.SecurityId != Guid.Empty)
-                                            .Where(e => !e.BookingDescription.Contains("Zins"))
+                                            .Where(e => e.BookingDescription?.Contains("Zins") != true)
                                             .Where(e => !e.Subject.Contains("Zins"))
                                             .Where(e => e.Subject.StartsWith("WP-ABRECHNUNG ")))
                                         {
                                             var name = entry.Subject.Replace("WP-ABRECHNUNG ", "").Trim().Split(' ').First();
                                             var security = await _db.Securities.FirstOrDefaultAsync(s => s.Id == entry.SecurityId, ct);
+                                            if (security is null) continue;
                                             var line = $"\"statement-set-security\":\"{name}\":\"{security.Name}\":\"\":\"\":\"\"";
                                             value += line + Environment.NewLine;
                                         }
@@ -499,7 +505,7 @@ namespace FinanceManager.Infrastructure.Setup
         {
             foreach (var currDraft in drafts)
             {
-                foreach (var entry in currDraft.Entries.Where(e => !string.IsNullOrWhiteSpace(e.RecipientName)).Where(e => e.RecipientName.Contains(text)))
+                foreach (var entry in currDraft.Entries.Where(e => !string.IsNullOrWhiteSpace(e.RecipientName) && e.RecipientName.Contains(text)))
                     await _statementDraftService.UpdateEntryCoreAsync(currDraft.DraftId, entry.Id, ownerId, entry.BookingDate, entry.ValutaDate, 0, entry.Subject, entry.RecipientName, entry.CurrencyCode, entry.BookingDescription, ct);
             }
         }
@@ -513,8 +519,9 @@ namespace FinanceManager.Infrastructure.Setup
         /// <param name="contact">Contact to match; when null no assignments will be performed.</param>
         /// <param name="ownerId">Owner user id under which assignments are performed.</param>
         /// <param name="ct">Cancellation token.</param>
-        private async Task AssignDraftAsync(List<StatementDraftDto> drafts, StatementDraftDto draft, StatementDraftDto destDraft, ContactDto? contact, Guid ownerId, CancellationToken ct)
+        private async Task AssignDraftAsync(List<StatementDraftDto> drafts, StatementDraftDto draft, StatementDraftDto? destDraft, ContactDto? contact, Guid ownerId, CancellationToken ct)
         {
+            if (contact is null) return;
             foreach (var currDraft in drafts.Where(d => d.DraftId != draft.DraftId).Where(d => destDraft is null || d.DraftId == destDraft.DraftId))
             {
                 foreach (var entry in currDraft.Entries.Where(e => e.ContactId == contact.Id))

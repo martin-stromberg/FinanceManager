@@ -8,6 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Web
 {
+    /// <summary>
+    /// Tests for <see cref="PostingsQueryService"/> covering a transfer between two accounts represented as
+    /// two linked contact postings, verifying both postings correctly reference each other as their
+    /// <c>LinkedPostingId</c> and correctly resolve their respective bank account symbols (falling back to
+    /// the bank contact's symbol) for both sides of the transfer.
+    /// </summary>
     public sealed class PostingsQueryServiceTests
     {
         private static (PostingsQueryService svc, AppDbContext db, Guid owner) Create()
@@ -27,6 +33,12 @@ namespace FinanceManager.Tests.Web
             return (svc, db, owner.Id);
         }
 
+        /// <summary>
+        /// Verifies that a transfer between two different accounts (each represented as a linked contact
+        /// posting) is returned as two entries that correctly point to each other via
+        /// <c>LinkedPostingId</c>, each carrying its own bank account symbol and the other side's symbol via
+        /// <c>LinkedPostingAccountSymbolAttachmentId</c>.
+        /// </summary>
         [Fact]
         public async Task GetContactPostings_TwoLinkedPostingsOnDifferentAccounts_ReturnsBothWithLinkedInfo()
         {
@@ -40,13 +52,13 @@ namespace FinanceManager.Tests.Web
             bankContact1.SetSymbolAttachment(sym1);
             bankContact2.SetSymbolAttachment(sym2);
             db.Contacts.AddRange(bankContact1, bankContact2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // create accounts referencing bank contacts (no account symbol set -> fallback to contact symbol)
             var acc1 = new Account(owner, AccountType.Giro, "G1", null, bankContact1.Id);
             var acc2 = new Account(owner, AccountType.Savings, "S1", null, bankContact2.Id);
             db.Accounts.AddRange(acc1, acc2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var contact = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
 
@@ -67,9 +79,9 @@ namespace FinanceManager.Tests.Web
             contact2.SetLinkedPosting(contact1.Id);
 
             db.Postings.AddRange(bank1, contact1, bank2, contact2);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner, default);
+            var res = await svc.GetContactPostingsAsync(contact.Id, 0, 50, null, null, null, owner, TestContext.Current.CancellationToken);
             Assert.NotNull(res);
             Assert.Equal(2, res.Count);
 

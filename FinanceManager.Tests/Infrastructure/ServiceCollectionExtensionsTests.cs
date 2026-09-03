@@ -7,6 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FinanceManager.Tests.Infrastructure;
 
+/// <summary>
+/// Verifies that the <c>AddInfrastructure</c> DI registration extension wires up the infrastructure layer's
+/// services correctly - a smoke test that catches a forgotten or misregistered service (e.g. a missing keyed
+/// import service) at test time rather than as a runtime resolution failure in the running application.
+/// </summary>
 public sealed class ServiceCollectionExtensionsTests
 {
     /// <summary>

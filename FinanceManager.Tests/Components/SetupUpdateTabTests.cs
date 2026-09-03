@@ -14,6 +14,14 @@ using Moq;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Tests for <see cref="SetupUpdateTab"/> and the update workflow it drives via
+/// <see cref="SetupUpdateViewModel"/>: loading/localized status messages, hiding settings fields
+/// and action buttons that don't apply to the current deployment mode, editing settings through the
+/// form, the ribbon's reset-lock action staying enabled while a check is in progress, the
+/// post-install health-check reload decision, and distinguishing a health-check timeout from a real
+/// service outage.
+/// </summary>
 public sealed class SetupUpdateTabTests : BunitContext
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -38,6 +46,12 @@ public sealed class SetupUpdateTabTests : BunitContext
         public HttpClient CreateClient(string name) => new(new HangingHandler());
     }
 
+    /// <summary>
+    /// Verifies the pure decision rule <c>ShouldReloadAfterHealth</c>: a reload is only triggered
+    /// when an outage was actually observed AND the subsequent health check succeeded - neither
+    /// condition alone is sufficient, since reloading without a real outage is unnecessary and
+    /// reloading despite a still-failing health check would just reload into a broken app.
+    /// </summary>
     [Fact]
     public void ShouldReloadAfterHealth_RequiresObservedOutage()
     {
@@ -46,6 +60,10 @@ public sealed class SetupUpdateTabTests : BunitContext
         SetupUpdateTab.ShouldReloadAfterHealth(outageObserved: true, healthSuccessful: true).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that while the settings and status API calls are still pending (never-completing
+    /// tasks), the tab shows the localized "loading" message rather than an empty or broken view.
+    /// </summary>
     [Fact]
     public void Render_WhileLoading_ShowsLocalizedLoadingMessage()
     {
@@ -59,6 +77,12 @@ public sealed class SetupUpdateTabTests : BunitContext
         render.Markup.Should().Contain(localizer["Msg_Loading"].Value);
     }
 
+    /// <summary>
+    /// Verifies that once an install has started and the view-model has advanced to the
+    /// "WaitingForRestart" install phase, the tab shows that phase's localized message - confirming
+    /// the component's rendering tracks the view-model's fine-grained install phase, not just a
+    /// coarse installing/not-installing flag.
+    /// </summary>
     [Fact]
     public async Task Render_WhileInstallingAndWaitingPhase_ShowsLocalizedWaitingMessage()
     {
@@ -70,7 +94,7 @@ public sealed class SetupUpdateTabTests : BunitContext
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
         apiMock.Setup(a => a.Updates_StartInstallAsync(It.IsAny<UpdateStartRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(installing);
         var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
-        await vm.StartInstallAsync(confirmDowntime: true);
+        await vm.StartInstallAsync(confirmDowntime: true, ct: Xunit.TestContext.Current.CancellationToken);
         vm.SetInstallPhase("Msg_Update_WaitingForRestart");
 
         var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
@@ -78,6 +102,13 @@ public sealed class SetupUpdateTabTests : BunitContext
         render.Markup.Should().Contain(localizer["Msg_Update_WaitingForRestart"].Value);
     }
 
+    /// <summary>
+    /// Regression guard verifying that a set of settings fields and action buttons that were
+    /// removed from this tab's UI (executable path, repository owner/name, manifest asset name,
+    /// working directory, health timeout, and the save/check-now/install/reset-lock buttons) never
+    /// render again, even though the loaded settings DTO still carries values for them - the DTO
+    /// keeping the fields for compatibility must not cause the deprecated UI to reappear.
+    /// </summary>
     [Fact]
     public void Render_WithLoadedSettings_HidesRemovedFieldsAndTabButtons()
     {
@@ -106,6 +137,13 @@ public sealed class SetupUpdateTabTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that the still-supported settings fields (include-prereleases checkbox and the
+    /// source-check start/end time inputs) render, and that editing them through the DOM (toggling
+    /// the checkbox, changing a time input) actually updates the bound view-model's
+    /// <c>Settings</c> and flips <c>Dirty</c> to true - confirming two-way binding for the fields
+    /// that remain editable on this tab.
+    /// </summary>
     [Fact]
     public void Render_WithLoadedSettings_ShowsIncludePrereleasesCheckboxAndUpdatesViewModel()
     {
@@ -135,6 +173,11 @@ public sealed class SetupUpdateTabTests : BunitContext
         vm.Dirty.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that the update status enum value is rendered through its localized resource string
+    /// (e.g. "UpdateStatusKind_Ready") rather than the raw enum name appearing in the markup, so
+    /// users never see an untranslated technical status value.
+    /// </summary>
     [Fact]
     public void Render_WithLoadedStatus_ShowsLocalizedStatus()
     {
@@ -154,6 +197,13 @@ public sealed class SetupUpdateTabTests : BunitContext
         });
     }
 
+    /// <summary>
+    /// Verifies that while the view-model is busy running a check (an update lock is held from two
+    /// hours ago), the ribbon's "UpdateResetLock" action remains enabled rather than being disabled
+    /// along with the other busy-gated actions - an admin must always be able to reset a stuck lock
+    /// even while a check is in flight, otherwise a genuinely stuck lock could become unrecoverable
+    /// through the UI.
+    /// </summary>
     [Fact]
     public async Task Ribbon_WhenBusyAndUpdateLockActive_DoesNotDisableResetLockAction()
     {
@@ -165,13 +215,13 @@ public sealed class SetupUpdateTabTests : BunitContext
         apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
         apiMock.Setup(a => a.Updates_CheckAsync(It.IsAny<CancellationToken>())).Returns(checkTask.Task);
         var (vm, localizer) = CreateVmAndLocalizer(apiMock.Object);
-        await vm.LoadAsync();
+        await vm.LoadAsync(Xunit.TestContext.Current.CancellationToken);
 
-        var busyTask = vm.CheckAsync();
+        var busyTask = vm.CheckAsync(Xunit.TestContext.Current.CancellationToken);
         var deadline = DateTime.UtcNow.AddSeconds(3);
         while (!vm.Busy && DateTime.UtcNow < deadline)
         {
-            await Task.Delay(10);
+            await Task.Delay(10, Xunit.TestContext.Current.CancellationToken);
         }
 
         vm.Busy.Should().BeTrue();
@@ -204,6 +254,13 @@ public sealed class SetupUpdateTabTests : BunitContext
         return (vm, sp.GetRequiredService<IStringLocalizer<Pages>>());
     }
 
+    /// <summary>
+    /// Verifies that when the post-install health check hangs and is cancelled by its own timeout
+    /// (simulated with an <see cref="HttpMessageHandler"/> that never completes), the view-model
+    /// reports the specific <c>Err_Update_HealthTimeout</c> error and stays in the
+    /// <c>Msg_Update_Installing</c> phase, rather than misclassifying a local timeout as a detected
+    /// service outage - the two failure modes need different handling and must not be conflated.
+    /// </summary>
     [Fact]
     public async Task PollHealthAsync_WhenHealthCheckIsCancelledByTimeout_DoesNotTreatCancellationAsOutage()
     {
@@ -218,12 +275,12 @@ public sealed class SetupUpdateTabTests : BunitContext
         JSInterop.Setup<bool>("confirm", _ => true).SetResult(true);
 
         var render = Render<SetupUpdateTab>(parameters => parameters.Add(p => p.ViewModel, vm));
-        await vm.StartInstallWithConfirmationAsync();
+        await vm.StartInstallWithConfirmationAsync(Xunit.TestContext.Current.CancellationToken);
 
         var deadline = DateTime.UtcNow.AddSeconds(8);
         while (vm.LastErrorCode is null && DateTime.UtcNow < deadline)
         {
-            await Task.Delay(100);
+            await Task.Delay(100, Xunit.TestContext.Current.CancellationToken);
         }
 
         vm.LastErrorCode.Should().Be("Err_Update_HealthTimeout");

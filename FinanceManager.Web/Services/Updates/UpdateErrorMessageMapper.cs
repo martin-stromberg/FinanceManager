@@ -21,7 +21,7 @@ internal static class UpdateErrorMessageMapper
         => IsGithubRateLimit(exception.ToString()) ? GithubRateLimitMessage : exception.Message;
 
     public static string Map(AutoUpdateError error)
-        => IsGithubRateLimit(error.ToString()) ? GithubRateLimitMessage : error.Message;
+        => IsGithubRateLimit(error.ToString()) ? GithubRateLimitMessage : (error.Message ?? error.ToString());
 
     public static bool IsGithubRateLimit(string value)
         => value.Contains("403", StringComparison.OrdinalIgnoreCase)

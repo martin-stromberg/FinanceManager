@@ -115,24 +115,24 @@ public sealed class ReturnAnalysisCacheTests : IDisposable
     public async Task InvalidateAsync_Should_NotRemoveEntries_WithDifferentPrefix()
     {
         // Arrange
-        const string keyTarget  = "ra:security:target:summary";
-        const string keyOther   = "ra:security:other:summary";
+        const string keyTarget = "ra:security:target:summary";
+        const string keyOther = "ra:security:other:summary";
         int callCountTarget = 0;
-        int callCountOther  = 0;
+        int callCountOther = 0;
 
         await _sut.GetOrCreateAsync(keyTarget, () => { callCountTarget++; return Task.FromResult<string?>("t"); }, TimeSpan.FromMinutes(5));
-        await _sut.GetOrCreateAsync(keyOther,  () => { callCountOther++;  return Task.FromResult<string?>("o"); }, TimeSpan.FromMinutes(5));
+        await _sut.GetOrCreateAsync(keyOther, () => { callCountOther++; return Task.FromResult<string?>("o"); }, TimeSpan.FromMinutes(5));
 
         // Act: invalidate only the "target" entries
         await _sut.InvalidateAsync("ra:security:target");
 
         // Re-request both
         await _sut.GetOrCreateAsync(keyTarget, () => { callCountTarget++; return Task.FromResult<string?>("t2"); }, TimeSpan.FromMinutes(5));
-        await _sut.GetOrCreateAsync(keyOther,  () => { callCountOther++;  return Task.FromResult<string?>("o2"); }, TimeSpan.FromMinutes(5));
+        await _sut.GetOrCreateAsync(keyOther, () => { callCountOther++; return Task.FromResult<string?>("o2"); }, TimeSpan.FromMinutes(5));
 
         // Assert
         callCountTarget.Should().Be(2, because: "target entry was invalidated and factory must be called again");
-        callCountOther.Should().Be(1,  because: "other entry was NOT invalidated and should still be cached");
+        callCountOther.Should().Be(1, because: "other entry was NOT invalidated and should still be cached");
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ public sealed class ReturnAnalysisCacheTests : IDisposable
         await _sut.GetOrCreateAsync(key, () => Task.FromResult<string?>("v1"), TimeSpan.FromMilliseconds(1));
 
         // Wait for expiry
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         int callCount = 0;
 

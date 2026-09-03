@@ -14,4 +14,6 @@ public sealed class UserProfileSettingsDto
     public bool HasAlphaVantageApiKey { get; set; }
     /// <summary>True when the user is allowed to share the admin API key.</summary>
     public bool ShareAlphaVantageApiKey { get; set; }
+    /// <summary>True when home page KPI data should be cached in the browser's local storage.</summary>
+    public bool CacheKpisInLocalStorage { get; set; }
 }

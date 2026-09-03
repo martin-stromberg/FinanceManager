@@ -356,7 +356,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         => string.IsNullOrWhiteSpace(csv) ? null : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Guid.Parse).ToArray();
     private static IReadOnlyCollection<int>? FromCsvInt(string? csv)
         => string.IsNullOrWhiteSpace(csv) ? null : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
-    
+
     // Backup DTO
     /// <summary>
     /// Backup data transfer object for ReportFavorite.

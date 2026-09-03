@@ -9,8 +9,19 @@ using Moq;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers <see cref="MassImportOrchestrator.ProcessAsync"/>, the entry point for batch-uploading security price
+/// files: resolving which security each file belongs to, deciding whether the user must confirm ambiguous or
+/// unrecognized files based on the configured <see cref="MassImportDialogPolicy"/>, and dispatching recognized
+/// files to the matching <see cref="ISecurityPriceImportService"/>.
+/// </summary>
 public sealed class MassImportOrchestratorTests
 {
+    /// <summary>
+    /// When the security can be resolved unambiguously from the file content and the policy only asks for
+    /// confirmation on missing information, the orchestrator should import the file straight away without
+    /// surfacing a confirmation dialog to the user.
+    /// </summary>
     [Fact]
     public async Task ProcessAsync_ShouldSkipDialogAndImport_WhenPolicyIsOnMissingAndFileIsComplete()
     {
@@ -43,6 +54,11 @@ public sealed class MassImportOrchestratorTests
         Assert.Equal(MassImportFileExecutionStatus.Imported, result.Files[0].ExecutionStatus);
     }
 
+    /// <summary>
+    /// When a file's header names a security that cannot be matched against any active security, the orchestrator
+    /// must require the confirmation dialog and mark the file as pending / not importable rather than guessing or
+    /// silently dropping it.
+    /// </summary>
     [Fact]
     public async Task ProcessAsync_ShouldRequireDialog_WhenSecurityAssignmentIsMissing()
     {
@@ -74,6 +90,13 @@ public sealed class MassImportOrchestratorTests
         Assert.False(result.Files[0].CanImport);
     }
 
+    /// <summary>
+    /// Guards against trusting a stale user decision: even after the user confirms a security selection in the
+    /// dialog, the orchestrator must re-resolve that security right before import rather than assuming the earlier
+    /// choice is still valid. Here re-resolution fails (the security service returns no match for the chosen id),
+    /// so the file must fail with the "not available or inactive" validation message and the underlying import
+    /// service must never be invoked.
+    /// </summary>
     [Fact]
     public async Task ProcessAsync_ShouldRevalidateSecurityBeforeImport_WhenUserConfirms()
     {
@@ -120,6 +143,11 @@ public sealed class MassImportOrchestratorTests
             It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Even when a file is fully recognizable and its security can be resolved without any ambiguity, the
+    /// <see cref="MassImportDialogPolicy.AlwaysConfirm"/> policy must still force the confirmation dialog and
+    /// leave the file in a pending, not-yet-imported state.
+    /// </summary>
     [Fact]
     public async Task ProcessAsync_ShouldRequireDialog_WhenPolicyIsAlwaysConfirm()
     {
@@ -152,6 +180,11 @@ public sealed class MassImportOrchestratorTests
         Assert.Equal(MassImportFileExecutionStatus.Pending, result.Files[0].ExecutionStatus);
     }
 
+    /// <summary>
+    /// When the user's confirmation decision explicitly excludes a file (rather than assigning it a security), the
+    /// orchestrator must honor that choice by skipping the file and recording the decision as user-confirmed,
+    /// without ever calling the import service for that file.
+    /// </summary>
     [Fact]
     public async Task ProcessAsync_ShouldSkipExcludedFile_WhenUserConfirmsExclusion()
     {
@@ -198,6 +231,12 @@ public sealed class MassImportOrchestratorTests
             It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// When no registered <see cref="ISecurityPriceImportService"/> recognizes the uploaded file's content, the
+    /// orchestrator must classify the file as <see cref="MassImportFileType.Unknown"/>, mark it as not importable,
+    /// require confirmation, and surface a "file type could not be recognized" message instead of throwing or
+    /// silently ignoring the file.
+    /// </summary>
     [Fact]
     public async Task ProcessAsync_ShouldMarkFileAsUnknown_WhenNoSecurityImportServiceIsRegistered()
     {

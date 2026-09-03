@@ -28,7 +28,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
         /// Loads a page of account items from the API and appends them to the internal item collection.
         /// </summary>
         /// <param name="resetPaging">When <c>true</c> the paging offset is reset and the list will be rebuilt from the first page.</param>
-        /// <returns>A task that completes when the page load has finished. Errors from the API are captured via <see cref="SetError"/> and do not propagate.</returns>
+        /// <returns>A task that completes when the page load has finished. Errors from the API are captured via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/> and do not propagate.</returns>
         protected override async Task LoadPageAsync(bool resetPaging)
         {
             var api = ServiceProvider.GetRequiredService<IApiClient>();

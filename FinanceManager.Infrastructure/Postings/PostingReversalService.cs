@@ -349,7 +349,7 @@ public sealed class PostingReversalService : IPostingReversalService
 
         // Fallback: try to find owner via contact (no direct UserId property, need to query differently)
         // For now, we require AccountId as the primary authorization source
-        
+
         throw new InvalidOperationException($"Cannot determine owner for posting {posting.Id}: no account reference found");
     }
 }

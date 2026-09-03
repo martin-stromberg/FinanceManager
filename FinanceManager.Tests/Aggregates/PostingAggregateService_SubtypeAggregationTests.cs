@@ -6,6 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Aggregates;
 
+/// <summary>
+/// A second, independent coverage of the same sub-type aggregation behavior as
+/// <see cref="PostingAggregateServiceSubtypeSplitTests"/>: confirms that security postings with distinct
+/// <see cref="SecurityPostingSubType"/> values on the same date produce separate aggregate rows per
+/// (sub-type x date kind) combination rather than being collapsed together.
+/// </summary>
 public sealed class PostingAggregateService_SubtypeAggregationTests
 {
     private static AppDbContext CreateDb()
@@ -18,6 +24,11 @@ public sealed class PostingAggregateService_SubtypeAggregationTests
         return db;
     }
 
+    /// <summary>
+    /// Verifies that a Dividend and a Tax posting on the same security and date each produce their own
+    /// aggregate row per period and date kind (Booking/Valuta), and that the resulting aggregate amounts
+    /// for the month contain the dividend and tax amounts exactly twice each (once per date kind).
+    /// </summary>
     [Fact]
     public async Task UpsertForPostingAsync_SecurityDividendAndTax_ShouldCreateTwoAggregatesPerInterval()
     {
@@ -74,7 +85,7 @@ public sealed class PostingAggregateService_SubtypeAggregationTests
         int Count(DateTime start, AggregatePeriod p)
             => db.PostingAggregates.Count(a => a.Kind == PostingKind.Security && a.SecurityId == securityId && a.Period == p && a.PeriodStart == start);
 
-        // Expect 4 aggregates now (Booking+Valuta × Dividend+Tax)
+        // Expect 4 aggregates now (Booking+Valuta ï¿½ Dividend+Tax)
         Assert.Equal(4, Count(monthStart, AggregatePeriod.Month));
         Assert.Equal(4, Count(quarterStart, AggregatePeriod.Quarter));
         Assert.Equal(4, Count(halfStart, AggregatePeriod.HalfYear));

@@ -69,7 +69,7 @@ namespace FinanceManager.Web.ViewModels
         /// <returns>
         /// A <see cref="ListFactoryResult"/> containing the created <see cref="IListProvider"/>, or <c>null</c> when no matching provider could be created.
         /// </returns>
-        public ListFactoryResult? Create(string kind, string subKind, string id)
+        public ListFactoryResult? Create(string kind, string subKind, string? id)
         {
             switch ((kind ?? string.Empty).Trim().ToLowerInvariant())
             {

@@ -17,6 +17,7 @@ public sealed class BudgetRuleService : IBudgetRuleService
     /// Creates a new instance.
     /// </summary>
     /// <param name="db">App database context.</param>
+    /// <param name="reportCacheService">Optional report cache service invalidated when a rule change affects cached reports.</param>
     public BudgetRuleService(AppDbContext db, IReportCacheService? reportCacheService = null)
     {
         _db = db;

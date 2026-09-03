@@ -11,6 +11,12 @@ namespace FinanceManager.Tests.Budget.Domain;
 /// </summary>
 public sealed class BudgetberichtTests_Finish
 {
+    /// <summary>
+    /// Verifies that when actual postings exceed a fixed ("TotalBudget") expectation, the expectation's
+    /// counted amount caps at the budgeted value (so <c>Variance</c> stays zero) while the overrun is
+    /// still attributed to the same purpose as an unvalued matched amount - not dumped into the generic
+    /// unbudgeted or cost-neutral buckets, which are reserved for postings matching no purpose at all.
+    /// </summary>
     [Fact]
     public void Finish_SplitsOverflowIntoUnvaluedAtPurpose_ForExactPostingExpectation()
     {
@@ -40,6 +46,12 @@ public sealed class BudgetberichtTests_Finish
         monthResult.CostNeutralPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that when a purpose has two overlapping monthly rules (two separate -5 budget occurrences),
+    /// their expected amounts are combined into a single -10 expectation for the month, actual postings
+    /// are reconciled against that combined total, and only the amount beyond the combined budget is
+    /// left unvalued at the purpose.
+    /// </summary>
     [Fact]
     public void Finish_CombinesMultipleBudgetsPerPurpose_AndMarksExcessUnvaluedAtPurpose()
     {
@@ -70,6 +82,11 @@ public sealed class BudgetberichtTests_Finish
         monthResult.CostNeutralPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that <c>Finish()</c> reconciles postings against rule occurrences in posting-date order,
+    /// not in the order <c>AddPosting</c> was called - the later posting is added first here, yet the
+    /// earliest-priority occurrence still ends up assigned the earliest-dated posting.
+    /// </summary>
     [Fact]
     public void Finish_ReassignsPostingsInPostingDateOrder_RegardlessOfAddPostingCallOrder()
     {
@@ -93,6 +110,11 @@ public sealed class BudgetberichtTests_Finish
             "the earliest posting-date posting must be assigned to the earliest-priority occurrence after reconciliation");
     }
 
+    /// <summary>
+    /// Verifies that overrun handling for an "ExactPostings" income expectation mirrors the expense case:
+    /// a salary posting that exceeds the expected 3000 still caps the counted actual amount at 3000, with
+    /// the surplus 200 left unvalued at the purpose rather than inflating the expectation's actual amount.
+    /// </summary>
     [Fact]
     public void Finish_IncomeExpectation_OverrunStaysUnvaluedAtPurpose()
     {
@@ -115,6 +137,11 @@ public sealed class BudgetberichtTests_Finish
         monthResult.CostNeutralPostings.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that <c>Finish()</c> is a one-shot finalization step - calling it a second time on an
+    /// already-finished report throws <see cref="BudgetReportCalculationException"/> instead of silently
+    /// re-running (and potentially double-counting) the reconciliation.
+    /// </summary>
     [Fact]
     public void Finish_Throws_WhenCalledTwice()
     {

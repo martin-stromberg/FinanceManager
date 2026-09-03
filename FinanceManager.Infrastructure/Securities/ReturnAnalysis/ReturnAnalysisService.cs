@@ -222,7 +222,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         var sells = transactions.Where(t => t.Type == SecurityPostingSubType.Sell).ToList();
         var fees = transactions.Where(t => t.Type == SecurityPostingSubType.Fee).ToList();
         var feesByGroupId = fees.ToLookup(f => f.GroupId);
-        
+
         decimal totalSalesProceeds = 0m;
         foreach (var sell in sells)
         {
@@ -382,7 +382,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
         var sells = transactions.Where(t => t.Type == SecurityPostingSubType.Sell).ToList();
         var fees = transactions.Where(t => t.Type == SecurityPostingSubType.Fee).ToList();
         var feesByGroupId = fees.ToLookup(f => f.GroupId);
-        
+
         decimal totalSalesProceeds = 0m;
         foreach (var sell in sells)
         {
@@ -494,7 +494,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
 
         // When the position is fully closed, only compute returns up to the last transaction year
         // to avoid showing empty years after the final sale.
-        decimal sharesHeldToday= ComputeSharesHeldOnDate(transactions, DateTime.Today);
+        decimal sharesHeldToday = ComputeSharesHeldOnDate(transactions, DateTime.Today);
         int lastYear = sharesHeldToday > 0m
             ? currentYear
             : transactions.Max(t => t.Date).Year;
@@ -1145,7 +1145,7 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
     /// <param name="cagrEndDate">
     /// End date of the investment period: last sell date if position is fully sold, otherwise today.
     /// </param>
-    /// <param name="buys">All buy transactions for the security.</param>
+    /// <param name="sharesHeld">Number of shares currently held.</param>
     /// <param name="currentPrice">Current price per share.</param>
     /// <param name="netDividendItems">Pre-built dividend + linked-tax item list (shared with TotalReturn).</param>
     /// <param name="netDividends">Net dividends amount (gross dividends − taxes).</param>
@@ -1476,6 +1476,8 @@ public sealed class ReturnAnalysisService : IReturnAnalysisService
     }
 
 
+    /// <summary>
+    /// Builds the time-weighted return periods from transactions and filled prices.
     /// Each period spans between consecutive cashflow events.
     /// </summary>
     private static IReadOnlyList<TwrPeriodInput> BuildTwrPeriods(

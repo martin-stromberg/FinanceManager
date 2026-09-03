@@ -5,8 +5,20 @@ using msTools.Updater;
 
 namespace FinanceManager.Tests.Updates;
 
+/// <summary>
+/// Covers <see cref="AutoUpdateOptionsMapper"/>, the translation layer between the user-facing
+/// <see cref="UpdateSettingsDto"/> saved via the settings UI and the msTools.Updater runtime's
+/// <see cref="AutoUpdateOptions"/>: field mapping in both directions, preserving a non-GitHub update source (used
+/// for local/dev testing) instead of overwriting it, and building the twice-daily source-check time windows
+/// including the midnight-crossing case.
+/// </summary>
 public sealed class AutoUpdateOptionsMapperTests
 {
+    /// <summary>
+    /// Verifies that applying a settings DTO copies every runtime-relevant field (service name, executable path,
+    /// download path, health timeout, scheduled install time, prerelease opt-in) onto the options object, and
+    /// derives the source-check interval/time-ranges from the configured start/end window.
+    /// </summary>
     [Fact]
     public void ApplySettings_CopiesRuntimeRelevantFieldsOntoOptions()
     {
@@ -26,6 +38,12 @@ public sealed class AutoUpdateOptionsMapperTests
         options.AllowPrereleaseUpdates.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies the inverse mapping: converting the current <see cref="AutoUpdateOptions"/> back into an
+    /// <see cref="UpdateSettingsDto"/> for display in the settings UI reflects every field, including the
+    /// repository identity that is not stored on the options object itself and must be threaded through by the
+    /// caller.
+    /// </summary>
     [Fact]
     public void ToSettingsDto_ReflectsCurrentOptionsState()
     {
@@ -58,6 +76,11 @@ public sealed class AutoUpdateOptionsMapperTests
         dto.IncludePrereleases.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that applying a settings DTO and immediately mapping the resulting options back to a DTO reproduces
+    /// the original values exactly - the round-trip guarantee that keeps the settings UI from silently drifting
+    /// from what was saved after a save/reload cycle.
+    /// </summary>
     [Fact]
     public void ApplySettings_ThenToSettingsDto_RoundTripsRuntimeRelevantFields()
     {
@@ -70,6 +93,12 @@ public sealed class AutoUpdateOptionsMapperTests
         roundTripped.Should().Be(original);
     }
 
+    /// <summary>
+    /// Verifies that when the current update source is already a GitHub source, saving new repository settings
+    /// replaces it with a freshly constructed <see cref="AutoUpdateGithubSource"/> for the new owner/repo/prerelease
+    /// combination - a GitHub source is immutable per repository, so changing the repository requires swapping the
+    /// instance rather than mutating it in place.
+    /// </summary>
     [Fact]
     public void ApplySettings_WhenSourceIsGithubSource_ReplacesSourceWithUpdatedRepository()
     {
@@ -85,6 +114,12 @@ public sealed class AutoUpdateOptionsMapperTests
         ReadGithubIncludePrereleases((AutoUpdateGithubSource)options.Source!).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that when the configured update source is not a GitHub source (e.g. a local-folder source used for
+    /// development/testing update packages), saving repository settings does not touch it - the settings UI only
+    /// edits GitHub-related fields, and must not accidentally clobber a deliberately configured local override
+    /// source with a GitHub source built from stale/default repository values.
+    /// </summary>
     [Fact]
     public void ApplySettings_WhenSourceIsNotGithubSource_LeavesSourceUnchanged()
     {
@@ -106,6 +141,12 @@ public sealed class AutoUpdateOptionsMapperTests
         }
     }
 
+    /// <summary>
+    /// Verifies that a source-check window spanning midnight (e.g. 20:00 to 06:00) is split into the two daily
+    /// segments needed so the evaluator treats both "before midnight" and "after midnight" times as within the
+    /// window, while a time clearly outside the window (midday) is correctly rejected - a naive single-range
+    /// comparison would incorrectly exclude one side of a midnight-crossing window.
+    /// </summary>
     [Fact]
     public void BuildSourceCheckTimeRanges_WhenWindowCrossesMidnight_AllowsBothPartsOnEachDay()
     {

@@ -83,7 +83,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// <summary>
     /// Indicates whether any setup section currently has unsaved changes.
     /// </summary>
-    public bool HasPendingChanges
+    /// <remarks>
+    /// Intentionally hides <see cref="BaseCardViewModel{TKeyValue}.HasPendingChanges"/> (which is not virtual and
+    /// tracks a single field-level pending-changes dictionary): this card aggregates several independent setup
+    /// sections, so "pending changes" here means "any section is dirty", not "any field on this card changed".
+    /// </remarks>
+    public new bool HasPendingChanges
     {
         get
         {
@@ -300,7 +305,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             // inner parameters for the SetupSections component
             var innerParms = new Dictionary<string, object> { ["Provider"] = this } as IDictionary<string, object>;
             // outer parameters for the SetupPanel wrapper
-            var outerParms = new Dictionary<string, object>
+            var outerParms = new Dictionary<string, object?>
             {
                 ["InnerComponentType"] = typeof(FinanceManager.Web.Components.Pages.SetupSections),
                 ["InnerParameters"] = innerParms

@@ -10,7 +10,10 @@ using Xunit;
 namespace FinanceManager.Tests.Integration.ApiClient;
 
 /// <summary>
-/// Integration tests for the Budget Report Unbudgeted Mirror functionality.
+/// End-to-end integration tests for the budget report and unbudgeted-postings endpoints
+/// (<c>Budgets_GetReportAsync</c>/<c>Budgets_GetReportRawAsync</c>/<c>Budgets_GetUnbudgetedPostingsAsync</c>),
+/// covering the full stack from HTTP through statement-draft booking, budget purpose/rule matching (both
+/// literal and regex purpose patterns), and self-contact "mirror" transfer handling, down to the database.
 /// </summary>
 public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<TestWebApplicationFactory>
 {
@@ -26,6 +29,12 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         _factory = factory;
     }
 
+    /// <summary>
+    /// Creates a fresh, unauthenticated <see cref="FinanceManager.Shared.ApiClient"/> bound to the in-memory
+    /// test server, with automatic redirect-following disabled so auth/redirect responses can be inspected
+    /// directly by the calling test.
+    /// </summary>
+    /// <returns>A new API client ready to be authenticated via <see cref="EnsureAuthenticatedAsync"/>.</returns>
     private FinanceManager.Shared.ApiClient CreateClient()
     {
         var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -35,15 +44,26 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    /// <summary>
+    /// Registers a new, randomly named user on the given API client, leaving the resulting authentication
+    /// cookie attached to it. Gives each test its own isolated, already-authenticated user so tests do not
+    /// interfere with each other's accounts, contacts, and postings.
+    /// </summary>
+    /// <param name="api">The API client to authenticate; mutated in place via the registration response's auth cookie.</param>
     private async Task EnsureAuthenticatedAsync(FinanceManager.Shared.ApiClient api)
     {
         var username = $"user_{Guid.NewGuid():N}";
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
+
     /// <summary>
-    /// Integrationstest: Wenn Sparplan-Buchungen auf das Self-Konto gespiegelt werden,
-    /// m�ssen die Unbudgeted-Endpunkte die gespiegelten Self-Buchungen herausfiltern
-    /// und nur tats�chlich ungeplante Self-Postings zur�ckgeben (hier: +12,34 �).
+    /// Verifies that when a savings-plan posting is mirrored onto the user's own "self" contact (as happens
+    /// for internal transfers, e.g. money set aside for an insurance savings plan), the unbudgeted-postings
+    /// endpoint filters those mirrored self postings out instead of reporting them as unbudgeted, while a
+    /// genuine self-contact posting that matches no budget purpose at all (here: "Extra", +12.34) still
+    /// shows up. Also confirms the budget report classifies such mirrored/unmatched self-contact postings
+    /// under the dedicated UnbudgetedSelfCostNeutral category rather than the generic Unbudgeted category,
+    /// since they represent transfers between the user's own money pools, not real income or expenses.
     /// </summary>
     [Fact]
     public async Task BudgetReport_UnbudgetedPostings_ShouldOnlyContainNonMirroredSelfContactPostings_WhenSavingsPlanPostingsMirrorSelfContact()
@@ -52,7 +72,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         await EnsureAuthenticatedAsync(api);
 
         // Ensure account exists
-        var accounts = await api.GetAccountsAsync();
+        var accounts = await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken);
         var account = accounts.Count == 0
             ? await api.CreateAccountAsync(new AccountCreateRequest(
                 Name: "Test Account",
@@ -62,8 +82,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
                 SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-                SecurityProcessingEnabled: true))
-            : accounts[0];
+                SecurityProcessingEnabled: true), TestContext.Current.CancellationToken) : accounts[0];
 
         // Create entities via API
         var insuranceContact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
@@ -72,7 +91,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             CategoryId: null,
             Description: null,
             IsPaymentIntermediary: null,
-            Parent: null));
+            Parent: null), TestContext.Current.CancellationToken);
 
         var savingsPlan = await api.SavingsPlans_CreateAsync(new SavingsPlanCreateRequest
         {
@@ -84,18 +103,18 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             CategoryId = null,
             ContractNumber = null,
             Parent = null
-        });
+        }, TestContext.Current.CancellationToken);
 
         var spPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "R�ckstellung Versicherung",
             SourceType: BudgetSourceType.SavingsPlan,
             SourceId: savingsPlan.Id,
             Description: null,
-            BudgetCategoryId: null));
+            BudgetCategoryId: null), TestContext.Current.CancellationToken);
 
         // Self-contact exists by default for each user.
         // There must NOT be a budget purpose for the self-contact.
-        var selfContact = (await api.Contacts_ListAsync(type: ContactType.Self, all: true)).Single();
+        var selfContact = (await api.Contacts_ListAsync(type: ContactType.Self, all: true, ct: TestContext.Current.CancellationToken)).Single();
 
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: spPurpose.Id,
@@ -104,7 +123,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2025, 2, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: spPurpose.Id,
@@ -113,14 +132,14 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: new DateOnly(2026, 1, 1)));
+            EndDate: new DateOnly(2026, 1, 1)), TestContext.Current.CancellationToken);
 
         var contactPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Versicherung Jahresbeitrag",
             SourceType: BudgetSourceType.Contact,
             SourceId: insuranceContact.Id,
             Description: null,
-            BudgetCategoryId: null));
+            BudgetCategoryId: null), TestContext.Current.CancellationToken);
 
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: contactPurpose.Id,
@@ -129,7 +148,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             Interval: BudgetIntervalType.Yearly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         // Create postings via statement draft upload + booking.
         // We create 4 movements:
@@ -152,12 +171,12 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
                   "10.01.2026;10.01.2026;Self;�berweisung;Mirror -5;0,00;EUR;-5,00;EUR\r\n";
 
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_mirror.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_mirror.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         upload!.FirstDraft.Should().NotBeNull();
 
         var draftId = upload.FirstDraft!.DraftId;
-        var draft = await api.StatementDrafts_GetAsync(draftId);
+        var draft = await api.StatementDrafts_GetAsync(draftId, ct: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         draft!.Entries.Should().HaveCount(4);
 
@@ -173,16 +192,16 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var insurance = byPurpose["Jahresbeitrag"];
         var extra = byPurpose["Extra"];
 
-        (await api.StatementDrafts_SetEntryContactAsync(draftId, mirrorMinus5.Id, new StatementDraftSetContactRequest(selfContact.Id))).Should().NotBeNull();
-        (await api.StatementDrafts_SetEntrySavingsPlanAsync(draftId, mirrorMinus5.Id, new StatementDraftSetSavingsPlanRequest(savingsPlan.Id))).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntryContactAsync(draftId, mirrorMinus5.Id, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(draftId, mirrorMinus5.Id, new StatementDraftSetSavingsPlanRequest(savingsPlan.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
 
-        (await api.StatementDrafts_SetEntryContactAsync(draftId, mirrorPlus60.Id, new StatementDraftSetContactRequest(selfContact.Id))).Should().NotBeNull();
-        (await api.StatementDrafts_SetEntrySavingsPlanAsync(draftId, mirrorPlus60.Id, new StatementDraftSetSavingsPlanRequest(savingsPlan.Id))).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntryContactAsync(draftId, mirrorPlus60.Id, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntrySavingsPlanAsync(draftId, mirrorPlus60.Id, new StatementDraftSetSavingsPlanRequest(savingsPlan.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
 
-        (await api.StatementDrafts_SetEntryContactAsync(draftId, insurance.Id, new StatementDraftSetContactRequest(insuranceContact.Id))).Should().NotBeNull();
-        (await api.StatementDrafts_SetEntryContactAsync(draftId, extra.Id, new StatementDraftSetContactRequest(selfContact.Id))).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntryContactAsync(draftId, insurance.Id, new StatementDraftSetContactRequest(insuranceContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
+        (await api.StatementDrafts_SetEntryContactAsync(draftId, extra.Id, new StatementDraftSetContactRequest(selfContact.Id), TestContext.Current.CancellationToken)).Should().NotBeNull();
 
-        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true);
+        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
         book.Should().NotBeNull();
         book!.Success.Should().BeTrue();
 
@@ -198,7 +217,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             ShowDetailsTable: true,
             CategoryValueScope: BudgetReportValueScope.TotalRange,
             IncludePurposeRows: true,
-            DateBasis: BudgetReportDateBasis.BookingDate));
+            DateBasis: BudgetReportDateBasis.BookingDate), TestContext.Current.CancellationToken);
 
         // All postings that remain without a matching budget expectation in this scenario are self-contact
         // postings (mirrored savings-plan transfer "Mirror +60" and the extra self posting "Extra"), so per
@@ -210,7 +229,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
 
         var from = new DateTime(2025, 2, 1);
         var to = new DateTime(2026, 1, 31, 23, 59, 59);
-        var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(from, to, BudgetReportDateBasis.BookingDate);
+        var unbudgeted = await api.Budgets_GetUnbudgetedPostingsAsync(from, to, BudgetReportDateBasis.BookingDate, ct: TestContext.Current.CancellationToken);
 
         // The mirrored -5 self-contact posting is budgeted by the savings-plan purpose and therefore excluded.
         // "Mirror +60" matches the same purpose's source/period/pattern as the -5 rule, just with the wrong
@@ -241,7 +260,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         var contact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
             Name: "Utility Provider",
@@ -249,15 +268,15 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             CategoryId: null,
             Description: null,
             IsPaymentIntermediary: null,
-            Parent: null));
+            Parent: null), TestContext.Current.CancellationToken);
 
-        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Utilities Category"));
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Utilities Category"), TestContext.Current.CancellationToken);
         var purpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Utilities",
             SourceType: BudgetSourceType.Contact,
             SourceId: contact.Id,
             Description: null,
-            BudgetCategoryId: category.Id));
+            BudgetCategoryId: category.Id), TestContext.Current.CancellationToken);
 
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
@@ -268,7 +287,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             StartDate: new DateOnly(2026, 1, 1),
             EndDate: null,
             PurposePattern: "ST6464646464",
-            UseRegex: false));
+            UseRegex: false), TestContext.Current.CancellationToken);
 
         var csv = "Umsatzanzeige;Datei erstellt am: 31.01.2026 10:00\r\n\r\n" +
                   $"IBAN;{account.Iban}\r\n" +
@@ -283,18 +302,18 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
                   "20.01.2026;20.01.2026;Utility Provider;Überweisung;Service ohne Vertragsnummer;0,00;EUR;-40,00;EUR\r\n";
 
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_pattern.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_pattern.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draftId = upload!.FirstDraft!.DraftId;
 
-        var draft = await api.StatementDrafts_GetAsync(draftId);
+        var draft = await api.StatementDrafts_GetAsync(draftId, ct: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         foreach (var entry in draft!.Entries)
         {
-            await api.StatementDrafts_SetEntryContactAsync(draftId, entry.Id, new StatementDraftSetContactRequest(contact.Id));
+            await api.StatementDrafts_SetEntryContactAsync(draftId, entry.Id, new StatementDraftSetContactRequest(contact.Id), TestContext.Current.CancellationToken);
         }
 
-        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true);
+        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
         book.Should().NotBeNull();
         book!.Success.Should().BeTrue();
 
@@ -308,7 +327,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             ShowDetailsTable: true,
             CategoryValueScope: BudgetReportValueScope.TotalRange,
             IncludePurposeRows: true,
-            DateBasis: BudgetReportDateBasis.BookingDate));
+            DateBasis: BudgetReportDateBasis.BookingDate), TestContext.Current.CancellationToken);
         report.Should().NotBeNull();
         var categoryRow = report.Categories.Single(x => x.Id == category.Id);
         var purposeRow = categoryRow.Purposes.Single(x => x.Id == purpose.Id);
@@ -332,7 +351,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         var contact = await api.Contacts_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCreateRequest(
             Name: "Utility Provider Regex",
@@ -340,15 +359,15 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             CategoryId: null,
             Description: null,
             IsPaymentIntermediary: null,
-            Parent: null));
+            Parent: null), TestContext.Current.CancellationToken);
 
-        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Utilities Regex Category"));
+        var category = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Utilities Regex Category"), TestContext.Current.CancellationToken);
         var purpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
             Name: "Utilities Regex",
             SourceType: BudgetSourceType.Contact,
             SourceId: contact.Id,
             Description: null,
-            BudgetCategoryId: category.Id));
+            BudgetCategoryId: category.Id), TestContext.Current.CancellationToken);
 
         await api.BudgetRules_CreateAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
@@ -359,7 +378,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             StartDate: new DateOnly(2026, 1, 1),
             EndDate: null,
             PurposePattern: "ST\\d{10}",
-            UseRegex: true));
+            UseRegex: true), TestContext.Current.CancellationToken);
 
         var csv = "Umsatzanzeige;Datei erstellt am: 31.01.2026 10:00\r\n\r\n" +
                   $"IBAN;{account.Iban}\r\n" +
@@ -374,18 +393,18 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
                   "20.01.2026;20.01.2026;Utility Provider Regex;Überweisung;Service ohne Vertragsnummer;0,00;EUR;-40,00;EUR\r\n";
 
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_pattern_regex.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_pattern_regex.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draftId = upload!.FirstDraft!.DraftId;
 
-        var draft = await api.StatementDrafts_GetAsync(draftId);
+        var draft = await api.StatementDrafts_GetAsync(draftId, ct: TestContext.Current.CancellationToken);
         draft.Should().NotBeNull();
         foreach (var entry in draft!.Entries)
         {
-            await api.StatementDrafts_SetEntryContactAsync(draftId, entry.Id, new StatementDraftSetContactRequest(contact.Id));
+            await api.StatementDrafts_SetEntryContactAsync(draftId, entry.Id, new StatementDraftSetContactRequest(contact.Id), TestContext.Current.CancellationToken);
         }
 
-        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true);
+        var book = await api.StatementDrafts_BookAsync(draftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
         book.Should().NotBeNull();
         book!.Success.Should().BeTrue();
 
@@ -399,7 +418,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             ShowDetailsTable: true,
             CategoryValueScope: BudgetReportValueScope.TotalRange,
             IncludePurposeRows: true,
-            DateBasis: BudgetReportDateBasis.BookingDate));
+            DateBasis: BudgetReportDateBasis.BookingDate), TestContext.Current.CancellationToken);
         report.Should().NotBeNull();
         var categoryRow = report.Categories.Single(x => x.Id == category.Id);
         var purposeRow = categoryRow.Purposes.Single(x => x.Id == purpose.Id);
@@ -471,7 +490,8 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         var securityCategoryAktien = await api.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = "Aktien" }, ct);
 
         var statementDraft = await api.StatementDrafts_CreateAsync(null, ct);
-        (await api.StatementDrafts_SetAccountAsync(statementDraft.DraftId, account.Id, ct)).Should().NotBeNull();
+        statementDraft.Should().NotBeNull();
+        (await api.StatementDrafts_SetAccountAsync(statementDraft!.DraftId, account.Id, ct)).Should().NotBeNull();
 
         async Task<Guid> AddFullEntryAsync(DateTime bookingDate, DateTime valutaDate, decimal amount, string subject, string recipientName, string description)
         {
@@ -832,7 +852,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
             return postings.Should().ContainSingle(p => p.Amount == amount && p.Subject == subject).Subject;
         }
 
-        void AssertCore(PostingServiceDto posting, PostingKind kind, DateTime bookingDate, DateTime valutaDate, string recipientName, string description)
+        void AssertCore(PostingServiceDto posting, PostingKind kind, DateTime bookingDate, DateTime valutaDate, string? recipientName, string description)
         {
             posting.Kind.Should().Be(kind);
             posting.BookingDate.Should().Be(bookingDate);

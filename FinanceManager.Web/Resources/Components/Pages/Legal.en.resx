@@ -87,6 +87,8 @@
   <data name="Privacy_AntiforgeryCookie" xml:space="preserve"><value>An anti-forgery cookie (name starts with "FinanceManager.Antiforgery") is used to protect forms and interactive requests from CSRF attacks. This cookie does not contain user credentials and is used for request verification.</value></data>
   <data name="Privacy_ThirdParty" xml:space="preserve"><value>When using external services (e.g., price lookups), data (IP address, request timestamp) may be transmitted to those providers. Please refer to their privacy policies.</value></data>
 
+  <data name="Privacy_KpiCache" xml:space="preserve"><value>If the "Cache home KPIs" option is enabled in the profile settings, home page KPI data is cached in the browser's local storage to display it faster on the next visit. The data remains in the browser until the option is disabled in the profile settings or the browser's local storage is manually cleared.</value></data>
+
   <data name="Section_Other" xml:space="preserve"><value>Other information</value></data>
   <data name="Other_Disclaimer" xml:space="preserve"><value>No guarantee for correctness. Use at your own risk. No financial or investment advice.</value></data>
   <data name="Other_Contact" xml:space="preserve"><value>Contact/Feedback: Issues and discussions welcome in the GitHub repository.</value></data>

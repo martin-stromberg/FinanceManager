@@ -51,7 +51,7 @@ public sealed class PostingAggregateService : IPostingAggregateService
     {
         if (posting.Amount == 0m) { return; }
         if (posting.ValutaDate == DateTime.MinValue)
-            posting.SetValutaDate( posting.BookingDate);
+            posting.SetValutaDate(posting.BookingDate);
         var periods = new[] { AggregatePeriod.Month, AggregatePeriod.Quarter, AggregatePeriod.HalfYear, AggregatePeriod.Year };
         foreach (var p in periods)
         {

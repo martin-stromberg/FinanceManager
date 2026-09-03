@@ -4,16 +4,32 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration;
 
+/// <summary>
+/// End-to-end test for the security hardening around the static, pre-rendered help system: the
+/// restrictive Content-Security-Policy applied to every help route, that the help UI never relies on
+/// inline scripts under that policy, and that the file-integrity manifest (<c>help-assets.sha256</c>)
+/// blocks serving a help asset whenever it is missing or has been tampered with on disk.
+/// </summary>
 public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebApplicationFactory>
 {
     private static readonly SemaphoreSlim HelpAssetMutationLock = new(1, 1);
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HelpSecurityMiddlewareTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public HelpSecurityMiddlewareTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
     }
 
+    /// <summary>
+    /// Verifies that every kind of help route - page, static asset, and API endpoint alike - responds with
+    /// a restrictive Content-Security-Policy header that forbids inline scripts, so a single route added
+    /// without the middleware applied cannot silently reopen an XSS surface.
+    /// </summary>
+    /// <param name="path">The help route path under test.</param>
     [Theory]
     [InlineData("/help")]
     [InlineData("/help/view/konten-und-buchungen")]
@@ -35,6 +51,12 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         Assert.DoesNotContain("'unsafe-inline'", csp, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that the rendered help UI markup itself never relies on inline scripts or the Blazor Web
+    /// import map/script - both of which the restrictive CSP would block - so the help pages keep working
+    /// under that policy instead of silently failing to execute their scripts in a real browser.
+    /// </summary>
+    /// <param name="path">The help route path under test.</param>
     [Theory]
     [InlineData("/help")]
     [InlineData("/help/view/budgetplanung")]
@@ -57,6 +79,11 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         Assert.Empty(InlineScriptRegex().Matches(html).Where(match => !match.Value.Contains(" src=", StringComparison.OrdinalIgnoreCase)));
     }
 
+    /// <summary>
+    /// Verifies that catalog document links in a rendered help page point at internal <c>/help/view/...</c>
+    /// routes rather than raw <c>.md</c> filenames or the internal-only <c>/api</c> namespace, so readers
+    /// clicking a related-document link land on a working page instead of a 404 or an unrouted API path.
+    /// </summary>
     [Fact]
     public async Task HelpView_RendersCatalogDocumentLinksAsInternalRoutes()
     {
@@ -72,6 +99,11 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         Assert.DoesNotContain("href=\"/help/view/konten-und-buchungen/api\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that a file with an extension not on the help static-file allowlist (e.g. an uploaded
+    /// <c>.svg</c>) is rejected before ASP.NET Core's static file middleware would otherwise serve it, so
+    /// an attacker cannot smuggle an unexpected file type onto a help route and have it served verbatim.
+    /// </summary>
     [Fact]
     public async Task UnknownHelpFileExtension_IsBlockedBeforeStaticFiles()
     {
@@ -97,6 +129,11 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         }
     }
 
+    /// <summary>
+    /// Verifies that if the file-integrity manifest (<c>help-assets.sha256</c>) itself is missing from
+    /// disk, requests for help static assets fail closed with a 404 rather than falling back to serving
+    /// the asset unverified - the manifest's absence must never be treated as "nothing to check".
+    /// </summary>
     [Fact]
     public async Task StaticHelpAssetRequest_IsBlockedWhenManifestIsMissing()
     {
@@ -128,6 +165,15 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         }
     }
 
+    /// <summary>
+    /// Verifies that when an on-disk help asset's content no longer matches the hash recorded for it in
+    /// the integrity manifest - simulating tampering after deployment - the request is blocked with a 404
+    /// across CSS, JS, and both localized search-index asset kinds, rather than serving the manipulated
+    /// content to the client.
+    /// </summary>
+    /// <param name="relativeAssetPath">Path of the asset relative to the help web root, used to locate and mutate it on disk.</param>
+    /// <param name="requestPath">The HTTP request path that should be blocked once the asset is manipulated.</param>
+    /// <param name="manipulatedContent">The tampered content written to the asset file to make its hash mismatch the manifest.</param>
     [Theory]
     [InlineData("css/help-page.css", "/help/css/help-page.css", "body{outline:999px solid red}")]
     [InlineData("js/help-search.js", "/help/js/help-search.js", "console.log('manipulated');")]
@@ -192,6 +238,12 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         }
     }
 
+    /// <summary>
+    /// Verifies that requesting the search index for a language whose pre-built <c>search-index.json</c>
+    /// file is missing from disk returns a 404 (for both supported languages), rather than throwing an
+    /// unhandled exception or serving stale/empty content.
+    /// </summary>
+    /// <param name="language">The help UI language code whose search index file is removed for the test.</param>
     [Theory]
     [InlineData("de")]
     [InlineData("en")]

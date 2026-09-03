@@ -147,20 +147,21 @@ namespace FinanceManager.Infrastructure.Statements.Files
         /// will be empty if the file contains no lines.</returns>
         public override IEnumerable<string> ReadContent()
         {
+            var encoding = DetectedEncoding;
             string content;
             try
             {
-                Logger?.LogDebug("Decoding file content using encoding {Encoding}", DetectedEncoding?.WebName ?? "<null>");
-                content = DetectedEncoding.GetString(FileBytes);
+                Logger?.LogDebug("Decoding file content using encoding {Encoding}", encoding.WebName);
+                content = encoding.GetString(FileBytes);
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "Failed to decode file content using encoding {Encoding}", DetectedEncoding?.WebName ?? "<null>");
+                Logger?.LogError(ex, "Failed to decode file content using encoding {Encoding}", encoding.WebName);
                 throw;
             }
 
             var lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-            Logger?.LogInformation("Decoded content into {LineCount} lines using {Encoding}", lines.Length, DetectedEncoding?.WebName ?? "<null>");
+            Logger?.LogInformation("Decoded content into {LineCount} lines using {Encoding}", lines.Length, encoding.WebName);
             foreach (var line in lines)
             {
                 yield return line;

@@ -82,7 +82,8 @@ public sealed class UserSettingsController : ControllerBase
                 PreferredLanguage = u.PreferredLanguage,
                 TimeZoneId = u.TimeZoneId,
                 HasAlphaVantageApiKey = u.AlphaVantageApiKey != null,
-                ShareAlphaVantageApiKey = u.ShareAlphaVantageApiKey
+                ShareAlphaVantageApiKey = u.ShareAlphaVantageApiKey,
+                CacheKpisInLocalStorage = u.CacheKpisInLocalStorage
             })
             .SingleOrDefaultAsync(ct) ?? new UserProfileSettingsDto();
         return Ok(dto);
@@ -114,6 +115,7 @@ public sealed class UserSettingsController : ControllerBase
 
             user.SetPreferredLanguage(req.PreferredLanguage);
             user.SetTimeZoneId(req.TimeZoneId);
+            user.SetCacheKpisInLocalStorage(req.CacheKpisInLocalStorage);
 
             if (req.ClearAlphaVantageApiKey == true)
             {

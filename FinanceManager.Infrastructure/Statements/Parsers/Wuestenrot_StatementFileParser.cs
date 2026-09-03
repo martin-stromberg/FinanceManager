@@ -19,7 +19,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// </summary>
         /// <param name="logger">Logger instance for logging parser operations and errors.</param>
         public Wuestenrot_StatementFileParser(ILogger<Wuestenrot_StatementFileParser> logger)
-            :base(_Templates, logger)
+            : base(_Templates, logger)
         {
 
         }

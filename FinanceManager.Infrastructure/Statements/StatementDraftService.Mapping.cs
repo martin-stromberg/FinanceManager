@@ -27,7 +27,7 @@ public sealed partial class StatementDraftService
 
     private static StatementDraftEntryDto Map(StatementDraftEntry e)
     {
-        return new StatementDraftEntryDto(            
+        return new StatementDraftEntryDto(
             e.Id,
             e.EntryNumber,
             e.BookingDate,

@@ -18,6 +18,7 @@ public sealed class ReportAggregationService : IReportAggregationService
     /// Initializes a new instance of the <see cref="ReportAggregationService"/> class.
     /// </summary>
     /// <param name="db">The application's <see cref="AppDbContext"/> used to query aggregates and postings.</param>
+    /// <param name="logger">Logger used to report aggregation diagnostics.</param>
     public ReportAggregationService(AppDbContext db, ILogger<ReportAggregationService> logger)
     {
         _db = db;
@@ -594,7 +595,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             DateTime AlignToHalfYearStart(DateTime d)
             {
                 var hIndex = (d.Month - 1) / 6; // 0..1
-                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{hIndex*6+1}-1");
+                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{hIndex * 6 + 1}-1");
                 return new DateTime(d.Year, hIndex * 6 + 1, 1);
             }
 
@@ -1054,7 +1055,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         {
             ApplyProjectionAmounts(points, dividendEvents);
         }
-               
+
         // Compute comparisons
         if (query.ComparePrevious)
         {

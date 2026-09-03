@@ -6,6 +6,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers the <c>SecuritySubTypes</c> + <c>IncludeDividendRelated</c> filter combination on
+/// <see cref="ReportAggregationService.QueryAsync"/>: selecting the Dividend subtype with related postings
+/// included must also pull in that dividend's Fee/Tax postings (net income), and the Ytd interval must correctly
+/// cut off at the analysis date rather than including the whole calendar year.
+/// </summary>
 public sealed class SecurityDividendNetYtdSimpleTests
 {
     private static AppDbContext CreateDb()
@@ -18,6 +24,12 @@ public sealed class SecurityDividendNetYtdSimpleTests
         return db;
     }
 
+    /// <summary>
+    /// With the Dividend subtype selected and <c>IncludeDividendRelated = true</c>, a YTD query anchored to
+    /// June 1st must sum the January dividend (10) plus its tax (1) and fee (0.5) postings into a net 11.5 - and
+    /// must exclude a second dividend booked on December 31st of the same year, since that falls after the
+    /// analysis date's YTD cutoff even though it is in the same calendar year.
+    /// </summary>
     [Fact]
     public async Task Query_Ytd_WithIncludeDividendRelated_ShouldSumDividendFeeTax_ForCurrentYear()
     {

@@ -227,14 +227,18 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             {
                 // New entry mode for a given draft: show editable fields to create an entry
                 Entry = null;
+                // Reset any previously loaded entry detail so a stale, non-null _entryDetail
+                // (from a prior LoadAsync(existingId) call on this same view model instance)
+                // doesn't make SaveAsync() incorrectly treat this as an "update existing entry"
+                // flow, which would dereference the now-null Entry property.
+                _entryDetail = null;
                 _isEditMode = true;
 
                 // Suggested defaults
                 var suggestedDate = DateTime.Now.Date;
-                var suggestedValuta = (DateTime?)null;
                 var suggestedAmount = 0m;
                 var suggestedSubject = string.Empty;
-                var suggestedBookingDescription = Localizer["StatementDraftEntry_SuggestedBookingDescription"];
+                var suggestedBookingDescription = Localizer?["StatementDraftEntry_SuggestedBookingDescription"].Value;
 
                 var createFieldsNew = new List<CardField>
                 {
@@ -242,7 +246,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     new CardField("Card_Caption_StatementDrafts_Valuta", CardFieldKind.Date, text: suggestedDate.ToString("d", CultureInfo.CurrentCulture), editable: true),
                     new CardField("Card_Caption_StatementDrafts_Amount", CardFieldKind.Currency, text: suggestedAmount.ToString(CultureInfo.CurrentCulture), amount: suggestedAmount, editable: true),
                     new CardField("Card_Caption_StatementDrafts_Recipient", CardFieldKind.Text, text: string.Empty, editable: true),
-                    new CardField("Card_Caption_StatementDrafts_Subject", CardFieldKind.Text, text: suggestedSubject, editable: true),                    
+                    new CardField("Card_Caption_StatementDrafts_Subject", CardFieldKind.Text, text: suggestedSubject, editable: true),
                     new CardField("Card_Caption_StatementDrafts_BookingDescription", CardFieldKind.Text, text: suggestedBookingDescription, editable: true)
                 };
 
@@ -461,14 +465,23 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     // No extra core fields to update -> navigate to created entry using Saved event and correct URL
                     var entryUrl2 = $"{createdEntryId.Value}?draftId={DraftId}";
                     RaiseUiActionRequested("Saved", entryUrl2);
-                     return true;
-                 }
+                    return true;
+                }
 
-                 // Fallbacks: if created contains DraftId only, navigate back to draft card
-                 // Navigate back to parent draft card if we don't have entry id
+                // Fallbacks: if created contains DraftId only, navigate back to draft card
+                // Navigate back to parent draft card if we don't have entry id
                 var fallbackUrl = $"/card/statement-drafts/{DraftId}";
                 RaiseUiActionRequested("Saved", fallbackUrl);
-                 return true;
+                return true;
+            }
+
+            // Existing-entry update flow from here on. The guard clause at the top of this
+            // method only rejects EntryId != Guid.Empty combined with a null Entry; it cannot
+            // guarantee Entry is still non-null here (Entry is a property, not a local, so the
+            // compiler cannot track it across the branching above). Re-check defensively.
+            if (Entry == null)
+            {
+                return false;
             }
 
             // Use the field label keys used when building CardField instances
@@ -556,16 +569,16 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 Entry = updated;
             }
 
-             // Persist other editable fields in one atomic request where possible
-             Guid? contactId = null;
-             bool? isCostNeutral = null;
-             Guid? savingsPlanId = null;
-             bool? archiveOnBooking = null;
-             Guid? securityId = null;
-             SecurityTransactionType? txType = null;
-             decimal? quantity = null;
-             decimal? fee = null;
-             decimal? tax = null;
+            // Persist other editable fields in one atomic request where possible
+            Guid? contactId = null;
+            bool? isCostNeutral = null;
+            Guid? savingsPlanId = null;
+            bool? archiveOnBooking = null;
+            Guid? securityId = null;
+            SecurityTransactionType? txType = null;
+            decimal? quantity = null;
+            decimal? fee = null;
+            decimal? tax = null;
 
             // track whether user explicitly provided savings plan lookup (for clear vs preserve)
             var savingsPlanProvided = PendingFieldValues.ContainsKey(kSavingsPlan);
@@ -636,11 +649,14 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     // If it's a LookupItem-like object, try to read Name property
                     try
                     {
-                        var t = ptt.GetType();
-                        var nameProp = t.GetProperty("Name");
-                        if (nameProp != null)
+                        if (ptt != null)
                         {
-                            candidate = nameProp.GetValue(ptt)?.ToString();
+                            var t = ptt.GetType();
+                            var nameProp = t.GetProperty("Name");
+                            if (nameProp != null)
+                            {
+                                candidate = nameProp.GetValue(ptt)?.ToString();
+                            }
                         }
                     }
                     catch { /* ignore */ }
@@ -804,7 +820,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     if (draftHeader?.DetectedAccountId is Guid acctId)
                     {
                         var detectedAccount = await ApiClient.GetAccountAsync(acctId, CancellationToken.None);
-	                    if (detectedAccount != null)
+                        if (detectedAccount != null)
                         {
                             _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
                             _accountAllowsSecurity = detectedAccount.SecurityProcessingEnabled;
@@ -825,25 +841,25 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             }
             catch { /* ignore lookup refresh failures */ }
 
-             // Clear pending changes after persistence
-             ClearPendingChanges();
+            // Clear pending changes after persistence
+            ClearPendingChanges();
 
-             // refresh card
-             CardRecord = new CardRecord(BuildFields(), Entry);
+            // refresh card
+            CardRecord = new CardRecord(BuildFields(), Entry);
 
-             // If BudgetImpact is present after save, show a budget impact hint panel
-             if (Entry?.BudgetImpact != null && Entry.BudgetImpact.Hints != null && Entry.BudgetImpact.Hints.Count > 0)
-             {
-                 try
-                 {
-                     var parameters = new Dictionary<string, object?> { ["BudgetImpact"] = Entry.BudgetImpact };
-                     var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Statements.BudgetImpactSummaryPanel), parameters, EmbeddedPanelPosition.AfterRibbon, true);
-                     RaiseUiEmbeddedPanelRequested(spec);
-                 }
-                 catch { /* best-effort hint display */ }
-             }
+            // If BudgetImpact is present after save, show a budget impact hint panel
+            if (Entry?.BudgetImpact != null && Entry.BudgetImpact.Hints != null && Entry.BudgetImpact.Hints.Count > 0)
+            {
+                try
+                {
+                    var parameters = new Dictionary<string, object?> { ["BudgetImpact"] = Entry.BudgetImpact };
+                    var spec = new BaseViewModel.EmbeddedPanelSpec(typeof(FinanceManager.Web.Components.Statements.BudgetImpactSummaryPanel), parameters, EmbeddedPanelPosition.AfterRibbon, true);
+                    RaiseUiEmbeddedPanelRequested(spec);
+                }
+                catch { /* best-effort hint display */ }
+            }
 
-             return true;
+            return true;
         }
         catch (Exception ex)
         {
@@ -1032,11 +1048,12 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             // Offer assign/open statement actions when the assigned contact on the entry is a payment intermediary.
             if (_contactIsPaymentIntermediary)
             {
-                 // If there is already a SplitDraft assigned, allow opening it
-                 if (Entry?.SplitDraftId != null && Entry.SplitDraftId != Guid.Empty)
-                 {
+                // If there is already a SplitDraft assigned, allow opening it
+                if (Entry?.SplitDraftId != null && Entry.SplitDraftId != Guid.Empty)
+                {
                     var openLabel = localizer["Ribbon_OpenAssignedStatement"].Value;
-                    linkedActions.Add(new UiRibbonAction("OpenAssignedStatement", openLabel, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, false, null, () => {
+                    linkedActions.Add(new UiRibbonAction("OpenAssignedStatement", openLabel, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+                    {
                         var url = $"/card/statement-drafts/{Entry.SplitDraftId}";
                         RaiseUiActionRequested("OpenPostings", url);
                         return Task.CompletedTask;
@@ -1044,11 +1061,12 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                     // Allow unassigning the association
                     var unassignLabel = localizer["Ribbon_UnassignStatement"].Value;
                     actions.Add(new UiRibbonAction("UnassignStatement", unassignLabel, "<svg><use href='/icons/sprite.svg#unlink'/></svg>", UiRibbonItemSize.Small, false, null, async () => { await UnassignStatementAsync(); }));
-                 }
-                 else
-                 {
+                }
+                else
+                {
                     var assignLabel = localizer["Ribbon_AssignStatement"].Value;
-                    actions.Add(new UiRibbonAction("AssignStatement", assignLabel, "<svg><use href='/icons/sprite.svg#link'/></svg>", UiRibbonItemSize.Small, false, null, async () => {
+                    actions.Add(new UiRibbonAction("AssignStatement", assignLabel, "<svg><use href='/icons/sprite.svg#link'/></svg>", UiRibbonItemSize.Small, false, null, async () =>
+                    {
                         try
                         {
                             // Load open drafts and filter to those without detected account assignment and not the current draft
@@ -1085,7 +1103,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                         }
                         return;
                     }));
-                 }
+                }
             }
         }
         catch { }
@@ -1103,16 +1121,16 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             var delLabelLocked = localizer["Ribbon_Delete"].Value;
             var delActionLocked = new UiRibbonAction("Delete", delLabelLocked, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(async () => { await DeleteEntryAsync(); }));
             actions.Insert(0, delActionLocked);
-         }
-         else
-         {
-             var editAction = new UiRibbonAction("Edit", localizer[_isEditMode ? "Ribbon_ReadOnly" : "Ribbon_Edit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(() => ToggleEditModeAsync())) { MobileShortcut = true };
+        }
+        else
+        {
+            var editAction = new UiRibbonAction("Edit", localizer[_isEditMode ? "Ribbon_ReadOnly" : "Ribbon_Edit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(() => ToggleEditModeAsync())) { MobileShortcut = true };
             actions.Insert(0, editAction);
             // Delete action
             var delLabel = localizer["Ribbon_Delete"].Value;
             var delAction = new UiRibbonAction("Delete", delLabel, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Entry == null, null, new Func<Task>(async () => { await DeleteEntryAsync(); }));
             actions.Insert(0, delAction);
-         }
+        }
 
         var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
         var baseRegs = base.GetRibbonRegisterDefinition(localizer);

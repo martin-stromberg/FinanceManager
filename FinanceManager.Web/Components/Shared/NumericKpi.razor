@@ -1,9 +1,11 @@
 @using Microsoft.AspNetCore.Components
+@using FinanceManager.Web.Services
+@inject IServiceProvider Services
 
 <div class="num-kpi" role="status" aria-live="polite">
     @if (_loading)
     {
-        <span class="loading">…</span>
+        <span class="loading">?</span>
     }
     else
     {
@@ -13,12 +15,38 @@
 
 @code {
     [Parameter] public Func<Task<int>>? Load { get; set; }
+    [Parameter] public string? CacheKey { get; set; }
 
     private int _value;
     private bool _loading = true;
+    private bool _cacheLoaded;
+    private IKpiLocalStorageCache? _kpiCache;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender || _cacheLoaded)
+        {
+            return;
+        }
+
+        _cacheLoaded = true;
+        _kpiCache = Services.GetService<IKpiLocalStorageCache>();
+
+        if (_kpiCache?.Context.Enabled == true && !string.IsNullOrWhiteSpace(CacheKey))
+        {
+            try
+            {
+                var cached = await _kpiCache.GetAsync<int?>(CacheKey);
+                if (cached.HasValue)
+                {
+                    _value = cached.Value;
+                    _loading = false;
+                    StateHasChanged();
+                }
+            }
+            catch { /* ignored */ }
+        }
+
         await ReloadAsync();
     }
 
@@ -26,13 +54,21 @@
     {
         try
         {
-            _loading = true;
             if (Load != null)
             {
                 _value = await Load.Invoke();
             }
         }
         catch { _value = 0; }
-        finally { _loading = false; StateHasChanged(); }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+
+        if (_kpiCache?.Context.Enabled == true && !string.IsNullOrWhiteSpace(CacheKey))
+        {
+            try { await _kpiCache.SetAsync(CacheKey, _value); } catch { /* ignored */ }
+        }
     }
 }

@@ -239,10 +239,10 @@ public sealed class BudgetRulePurposePatternClearingTests
     private static async Task<BudgetPurpose> CreatePurposeAsync(AppDbContext db, Guid userId)
     {
         var purpose = new BudgetPurpose(
-            userId, 
-            "Test Purpose", 
-            BudgetSourceType.Contact, 
-            Guid.NewGuid(), 
+            userId,
+            "Test Purpose",
+            BudgetSourceType.Contact,
+            Guid.NewGuid(),
             null);
         db.BudgetPurposes.Add(purpose);
         await db.SaveChangesAsync();

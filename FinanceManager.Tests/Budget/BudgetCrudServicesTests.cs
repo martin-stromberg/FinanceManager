@@ -7,6 +7,11 @@ using Xunit;
 
 namespace FinanceManager.Tests.Budget;
 
+/// <summary>
+/// Covers the CRUD behavior of the three services that back a budget's core configuration -
+/// <see cref="BudgetPurposeService"/>, <see cref="BudgetRuleService"/> and <see cref="BudgetOverrideService"/> -
+/// including <see cref="BudgetRuleService"/>'s validation of the optional regex-based purpose pattern.
+/// </summary>
 public sealed class BudgetCrudServicesTests
 {
     private static async Task<AppDbContext> CreateDbAsync(Guid ownerId)
@@ -27,6 +32,10 @@ public sealed class BudgetCrudServicesTests
         return db;
     }
 
+    /// <summary>
+    /// Exercises the full create/read/update/list/delete lifecycle of a budget purpose, including the
+    /// list endpoint's name-substring filter, to confirm each step reflects the previous one's state.
+    /// </summary>
     [Fact]
     public async Task BudgetPurposeService_CRUD_ShouldWork()
     {
@@ -55,6 +64,10 @@ public sealed class BudgetCrudServicesTests
         Assert.Null(gone);
     }
 
+    /// <summary>
+    /// Exercises the full create/read/update/list-by-purpose/delete lifecycle of a monthly budget rule
+    /// attached to a purpose, confirming the amount change from an update is visible on subsequent reads.
+    /// </summary>
     [Fact]
     public async Task BudgetRuleService_CRUD_ShouldWork()
     {
@@ -86,6 +99,11 @@ public sealed class BudgetCrudServicesTests
         Assert.Null(gone);
     }
 
+    /// <summary>
+    /// Verifies that a syntactically valid regex purpose pattern is accepted as-is on creation - the service
+    /// only checks that the pattern compiles, it does not require the pattern to actually match anything,
+    /// since a rule may legitimately be created before any matching postings exist.
+    /// </summary>
     [Fact]
     public async Task BudgetRuleService_Create_ShouldAcceptCompilableRegexPattern_WithoutMatchingValidation()
     {
@@ -113,6 +131,11 @@ public sealed class BudgetCrudServicesTests
         Assert.True(created.UseRegex);
     }
 
+    /// <summary>
+    /// Verifies that creating a rule with a purpose pattern that fails to compile as a regex (e.g. an
+    /// unbalanced parenthesis) throws <see cref="ArgumentException"/> rather than persisting a broken
+    /// pattern that would fail later, at posting-matching time.
+    /// </summary>
     [Fact]
     public async Task BudgetRuleService_Create_ShouldRejectInvalidRegexPattern()
     {
@@ -138,6 +161,10 @@ public sealed class BudgetCrudServicesTests
                 CancellationToken.None));
     }
 
+    /// <summary>
+    /// Verifies that the same regex-compilability guard enforced on create also applies to update - an
+    /// existing rule with a valid pattern cannot be modified into one with a broken pattern.
+    /// </summary>
     [Fact]
     public async Task BudgetRuleService_Update_ShouldRejectInvalidRegexPattern()
     {
@@ -174,6 +201,11 @@ public sealed class BudgetCrudServicesTests
                 CancellationToken.None));
     }
 
+    /// <summary>
+    /// Exercises the full create/read/update/list-by-purpose/delete lifecycle of a per-period budget override
+    /// (identified by a <see cref="BudgetPeriodKey"/>), which lets a single month's expected amount deviate
+    /// from the purpose's regular rule without changing the rule itself.
+    /// </summary>
     [Fact]
     public async Task BudgetOverrideService_CRUD_ShouldWork()
     {

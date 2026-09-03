@@ -1,8 +1,8 @@
 name: Verify PR Source
 
-on:
+"on":
   pull_request:
-    branches: [master]
+    branches: [main]
 
 permissions: {}
 
@@ -10,9 +10,11 @@ jobs:
   verify-source:
     runs-on: ubuntu-latest
     steps:
-      - name: Nur PRs aus staging erlauben
+      - name: Only allow PRs from staging
         run: |
           if [ "${{ github.head_ref }}" != "staging" ]; then
-            echo "::error::PRs gegen master sind nur aus staging erlaubt (Quelle: ${{ github.head_ref }})."
+            echo "::error::PRs against main are only allowed from staging (source: ${{ github.head_ref }})."
+            echo "Please create your PR: feature branch -> staging -> main"
             exit 1
           fi
+          echo "PR source is staging - allowed"

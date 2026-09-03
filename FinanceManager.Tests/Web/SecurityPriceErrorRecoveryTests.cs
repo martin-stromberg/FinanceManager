@@ -26,37 +26,56 @@ namespace FinanceManager.Tests.Web;
 /// </summary>
 public sealed class SecurityPriceErrorRecoveryTests
 {
+    /// <summary>
+    /// Wraps a real or mocked <see cref="ISecurityPriceService"/> to count how many times
+    /// <see cref="CreateAsync"/> and <see cref="ClearPriceErrorAsync"/> are invoked, while still
+    /// delegating to the inner implementation for actual behavior. Lets tests assert that price
+    /// recovery flows call these specific operations exactly once, not just that the end state
+    /// looks correct.
+    /// </summary>
     private sealed class SpySecurityPriceService : ISecurityPriceService
     {
         private readonly ISecurityPriceService _inner;
 
+        /// <summary>
+        /// Creates the spy around an inner service whose calls should be counted and forwarded.
+        /// </summary>
+        /// <param name="inner">The real implementation to delegate to after recording the call.</param>
         public SpySecurityPriceService(ISecurityPriceService inner)
         {
             _inner = inner;
         }
 
+        /// <summary>Number of times <see cref="CreateAsync"/> has been invoked.</summary>
         public int CreateCallCount { get; private set; }
 
+        /// <summary>Number of times <see cref="ClearPriceErrorAsync"/> has been invoked.</summary>
         public int ClearPriceErrorCallCount { get; private set; }
 
+        /// <inheritdoc />
         public Task CreateAsync(Guid ownerUserId, Guid securityId, DateTime date, decimal close, CancellationToken ct)
         {
             CreateCallCount++;
             return _inner.CreateAsync(ownerUserId, securityId, date, close, ct);
         }
 
+        /// <inheritdoc />
         public Task<IReadOnlyList<SecurityPriceDto>> ListAsync(Guid ownerUserId, Guid securityId, int skip, int take, CancellationToken ct)
             => _inner.ListAsync(ownerUserId, securityId, skip, take, ct);
 
+        /// <inheritdoc />
         public Task<DateTime?> GetLatestDateAsync(Guid ownerUserId, Guid securityId, CancellationToken ct)
             => _inner.GetLatestDateAsync(ownerUserId, securityId, ct);
 
+        /// <inheritdoc />
         public Task<SecurityPriceImportResultDto> UpsertDailyPricesAsync(Guid ownerUserId, Guid securityId, IReadOnlyList<SecurityPriceImportItem> items, CancellationToken ct)
             => _inner.UpsertDailyPricesAsync(ownerUserId, securityId, items, ct);
 
+        /// <inheritdoc />
         public Task SetPriceErrorAsync(Guid ownerUserId, Guid securityId, string message, CancellationToken ct)
             => _inner.SetPriceErrorAsync(ownerUserId, securityId, message, ct);
 
+        /// <inheritdoc />
         public Task ClearPriceErrorAsync(Guid ownerUserId, Guid securityId, CancellationToken ct)
         {
             ClearPriceErrorCallCount++;
@@ -64,6 +83,12 @@ public sealed class SecurityPriceErrorRecoveryTests
         }
     }
 
+    /// <summary>
+    /// Verifies that the background price-retrieval worker still processes a security that
+    /// currently has a recorded price error: it must fetch a new price, clear the error flag, and
+    /// persist the new price entry. This guards against a security getting permanently "stuck"
+    /// with a stale error that would otherwise prevent it from ever being retried.
+    /// </summary>
     [Fact]
     public async Task SecurityPriceWorker_ShouldProcessSecurityWhenPriceErrorExists_WhenRunExecutes()
     {
@@ -97,6 +122,12 @@ public sealed class SecurityPriceErrorRecoveryTests
         Assert.Single(db.SecurityPrices.Where(x => x.SecurityId == securityId));
     }
 
+    /// <summary>
+    /// Verifies that the manual price-backfill background task also picks up securities that
+    /// currently have a price error, fetching and persisting a price and clearing the error - the
+    /// same guarantee as the scheduled worker, but exercised through the user-triggered backfill
+    /// execution path instead.
+    /// </summary>
     [Fact]
     public async Task SecurityPricesBackfillExecutor_ShouldIncludeSecurityWhenPriceErrorExists_WhenBackfillRuns()
     {
@@ -196,6 +227,15 @@ public sealed class SecurityPriceErrorRecoveryTests
         Assert.True(stored.IsDismissed);
     }
 
+    /// <summary>
+    /// Builds an in-memory SQLite-backed <see cref="AppDbContext"/> seeded with one owner user and
+    /// one security that already has a price error set, mirroring the starting state each test in
+    /// this class needs before it exercises the recovery paths.
+    /// </summary>
+    /// <param name="connection">The open in-memory SQLite connection to build the context on.</param>
+    /// <param name="ownerId">Receives the id of the seeded owner user.</param>
+    /// <param name="securityId">Receives the id of the seeded security with a price error.</param>
+    /// <returns>The seeded database context.</returns>
     private static AppDbContext CreateDatabase(SqliteConnection connection, out Guid ownerId, out Guid securityId)
     {
         var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).Options;
@@ -216,6 +256,19 @@ public sealed class SecurityPriceErrorRecoveryTests
         return db;
     }
 
+    /// <summary>
+    /// Assembles a DI container holding the shared database plus the given collaborator mocks, so
+    /// the worker/executor under test can resolve everything it needs via
+    /// <see cref="IServiceScopeFactory"/> just as it would in production.
+    /// </summary>
+    /// <param name="db">The shared database context all registered services should operate on.</param>
+    /// <param name="priceProvider">Mock price provider returning canned daily price data.</param>
+    /// <param name="notificationWriter">Mock notification writer, not asserted on in these tests but required for construction.</param>
+    /// <param name="keyResolver">Mock AlphaVantage key resolver returning a fixed shared key.</param>
+    /// <param name="securityService">Optional security service override; defaults to an unconfigured mock.</param>
+    /// <param name="priceService">Optional price service override; defaults to an unconfigured mock.</param>
+    /// <param name="localizer">Optional localizer override; defaults to <see cref="CreateLocalizer"/>.</param>
+    /// <returns>A built service provider suitable for constructing a test scope factory.</returns>
     private static IServiceProvider CreateServiceProvider(
         AppDbContext db,
         Mock<IPriceProvider> priceProvider,

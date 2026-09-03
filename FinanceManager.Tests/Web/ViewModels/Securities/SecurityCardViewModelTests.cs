@@ -9,6 +9,10 @@ using Moq;
 
 namespace FinanceManager.Tests.Web.ViewModels.Securities;
 
+/// <summary>
+/// Tests for the security detail card's <c>SecurityCardViewModel</c> ribbon wiring, covering the removal of
+/// the legacy import-prices action and the navigation action that opens the security's price history.
+/// </summary>
 public sealed class SecurityCardViewModelTests
 {
     /// <summary>

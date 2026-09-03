@@ -12,6 +12,11 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="SecurityPricesListViewModel"/>'s paging behavior, the "backfill"/"import" overlay
+/// requests it raises via <c>UiActionRequested</c>, and the ribbon's "ImportPrices" action - including that
+/// it is disabled when no concrete security id is bound (an empty-id list view).
+/// </summary>
 public sealed class SecurityPricesViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -44,6 +49,11 @@ public sealed class SecurityPricesViewModelTests
             .ToList();
     }
 
+    /// <summary>
+    /// Verifies that initialization loads the first page of prices, correctly infers there is no further
+    /// page (fewer items than the page size), and raises at least two <c>StateChanged</c> notifications
+    /// (loading start and completion) so bound UI components refresh.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsFirstPage_SetsItemsAndFlags()
     {
@@ -62,6 +72,10 @@ public sealed class SecurityPricesViewModelTests
         Assert.True(events >= 2);
     }
 
+    /// <summary>
+    /// Verifies that loading more pages of prices appends to the existing collection and that "can load
+    /// more" flips off once a page comes back shorter than the fixed page size (100).
+    /// </summary>
     [Fact]
     public async Task LoadMore_AppendsItems_StopsWhenBelowPageSize()
     {
@@ -84,6 +98,11 @@ public sealed class SecurityPricesViewModelTests
         Assert.False(vm.Loading);
     }
 
+    /// <summary>
+    /// Verifies that requesting the price backfill dialog raises an "OpenOverlay" UI action with a
+    /// payload object describing the overlay to show, rather than the view model opening it directly -
+    /// keeping overlay presentation as the host component's responsibility.
+    /// </summary>
     [Fact]
     public void RequestOpenBackfill_RaisesUiAction()
     {
@@ -99,6 +118,10 @@ public sealed class SecurityPricesViewModelTests
         Assert.NotNull(received.PayloadObject);
     }
 
+    /// <summary>
+    /// Verifies that invoking the ribbon's "ImportPrices" action raises a UI action whose payload
+    /// specifies the <see cref="SecurityPriceImportPanel"/> component as the overlay to open.
+    /// </summary>
     [Fact]
     public async Task RibbonImportPricesAction_ShouldOpenImportOverlay()
     {
@@ -120,6 +143,11 @@ public sealed class SecurityPricesViewModelTests
         Assert.Equal(typeof(SecurityPriceImportPanel), overlay.ComponentType);
     }
 
+    /// <summary>
+    /// Verifies that <c>RequestOpenImport</c> raises an overlay spec targeting the import panel with the
+    /// bound security id and an overlay title supplied as parameters, so the import dialog opens
+    /// pre-scoped to the correct security.
+    /// </summary>
     [Fact]
     public void RequestOpenImport_RaisesOverlayWithImportPanelAndSecurityId()
     {
@@ -138,6 +166,10 @@ public sealed class SecurityPricesViewModelTests
         Assert.True(overlay.Parameters.ContainsKey("OverlayTitle"));
     }
 
+    /// <summary>
+    /// Verifies that the ribbon's "ImportPrices" action is disabled when the view model is constructed
+    /// with an empty security id, preventing the user from importing prices into a not-yet-selected security.
+    /// </summary>
     [Fact]
     public async Task RibbonImportPricesAction_ShouldBeDisabled_WhenSecurityIdIsEmpty()
     {

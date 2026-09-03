@@ -1,12 +1,22 @@
-﻿using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Postings;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for importing bank statement CSVs into collection accounts: uploading a
+/// multi-IBAN CSV that fans out into several drafts, auto-assigning a draft to a collection
+/// account via a pre-linked or newly-discovered sub-IBAN, and verifying the sub-IBAN ends up
+/// (or remains) in the account's LinkedIbansPanel after the draft is booked.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class CollectionAccountImportPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CollectionAccountImportPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public CollectionAccountImportPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
@@ -35,7 +45,7 @@ public sealed class CollectionAccountImportPlaywrightTests
         // Write the multi-IBAN CSV to a temp file and upload via the home-page file widget
         var csv = BuildMultiIbanCsv(iban1, iban2);
         var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-collection.csv");
-        await File.WriteAllTextAsync(tempFile, csv);
+        await File.WriteAllTextAsync(tempFile, csv, TestContext.Current.CancellationToken);
         try
         {
             await page.GotoAsync("/");
@@ -122,7 +132,7 @@ public sealed class CollectionAccountImportPlaywrightTests
         // Upload the single-IBAN CSV (sub-IBAN) via the home-page import widget
         var csv = BuildSingleIbanCsv(subIban);
         var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-sub-iban.csv");
-        await File.WriteAllTextAsync(tempFile, csv);
+        await File.WriteAllTextAsync(tempFile, csv, TestContext.Current.CancellationToken);
         StatementDraftUploadResult? uploadResult = null;
         try
         {

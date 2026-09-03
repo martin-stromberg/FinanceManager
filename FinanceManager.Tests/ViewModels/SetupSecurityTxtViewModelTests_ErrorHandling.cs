@@ -6,6 +6,13 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="SetupSecurityTxtViewModel"/>'s error handling: recoverable API failures
+/// (<see cref="HttpRequestException"/>) are caught and surfaced via <c>Error</c>/<c>SaveError</c> using the
+/// API's <c>LastError</c> message, while unexpected exceptions (<see cref="InvalidOperationException"/>)
+/// propagate rather than being swallowed; also covers the client-side validation that rejects an
+/// unparsable "expires" date before it ever reaches the save API.
+/// </summary>
 public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -16,6 +23,10 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         public bool IsAdmin { get; set; } = true;
     }
 
+    /// <summary>
+    /// Verifies that a failing load call is caught and surfaced as <c>Error</c> (taken from the API's
+    /// <c>LastError</c>) with <c>Busy</c> reset to false, rather than throwing out of the load pipeline.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_WhenHttpRequestFails_SetsError()
     {
@@ -25,12 +36,16 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         apiMock.Setup(a => a.LastError).Returns("Security.txt settings are unavailable.");
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         vm.Busy.Should().BeFalse();
         vm.Error.Should().Be("Security.txt settings are unavailable.");
     }
 
+    /// <summary>
+    /// Verifies that a failing save call is caught and surfaced as <c>SaveError</c> (taken from the API's
+    /// <c>LastError</c>) with <c>Busy</c> reset to false, rather than throwing out of the save pipeline.
+    /// </summary>
     [Fact]
     public async Task SaveAsync_WhenHttpRequestFails_SetsSaveError()
     {
@@ -45,16 +60,21 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
             .ThrowsAsync(new HttpRequestException("save failed"));
         apiMock.Setup(a => a.LastError).Returns("Security.txt settings could not be saved.");
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.Model.Contact = "mailto:updated@example.com";
         vm.OnChanged();
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         vm.Busy.Should().BeFalse();
         vm.SaveError.Should().Be("Security.txt settings could not be saved.");
     }
 
+    /// <summary>
+    /// Verifies that an exception type other than <see cref="HttpRequestException"/> is not swallowed
+    /// into <c>Error</c> but propagates out of <c>LoadAsync</c>, so genuine coding bugs are not silently
+    /// hidden behind the "failed to load" state.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_WhenInvalidOperationOccurs_Rethrows()
     {
@@ -68,6 +88,11 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>
+    /// Verifies that an exception type other than <see cref="HttpRequestException"/> is not swallowed
+    /// into <c>SaveError</c> but propagates out of <c>SaveAsync</c>, so genuine coding bugs are not
+    /// silently hidden behind the "failed to save" state.
+    /// </summary>
     [Fact]
     public async Task SaveAsync_WhenInvalidOperationOccurs_Rethrows()
     {
@@ -81,7 +106,7 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         apiMock.Setup(a => a.UpdateSecurityTxtSettingsAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("broken state"));
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.Model.Contact = "mailto:updated@example.com";
         vm.OnChanged();
 
@@ -90,6 +115,12 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
+    /// <summary>
+    /// Verifies that an unparsable "expires" date entered by the user (e.g. "not-a-date") is caught by
+    /// client-side validation before saving: the update API is never called, <c>SavedOk</c> stays false,
+    /// and a non-empty <c>SaveError</c> is set, preventing an invalid security.txt file from being
+    /// generated on the server.
+    /// </summary>
     [Fact]
     public async Task SaveAsync_WhenExpiresTextInvalid_DoesNotPersistAndSetsSaveError()
     {
@@ -101,11 +132,11 @@ public sealed class SetupSecurityTxtViewModelTests_ErrorHandling
                 Expires = DateTimeOffset.UtcNow.AddYears(1)
             });
         var vm = new SetupSecurityTxtViewModel(CreateSp(apiMock.Object));
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
         vm.Model.Contact = "mailto:updated@example.com";
         vm.ExpiresText = "not-a-date";
 
-        await vm.SaveAsync();
+        await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         vm.SaveError.Should().NotBeNullOrWhiteSpace();
         vm.SavedOk.Should().BeFalse();

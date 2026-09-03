@@ -88,7 +88,7 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
     /// Applies a client-side date range filter to a chunk of prices.
     /// </summary>
     /// <param name="chunk">Chunk of prices returned from the API (unfiltered).</param>
-    /// <returns>Filtered enumerable that respects <see cref="RangeFrom"/> and <see cref="RangeTo"/> if provided.</returns>
+    /// <returns>Filtered enumerable that respects <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.RangeFrom"/> and <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.RangeTo"/> if provided.</returns>
     private IEnumerable<SecurityPriceDto> ApplyRangeFilter(IReadOnlyList<SecurityPriceDto> chunk)
     {
         if (!RangeFrom.HasValue && !RangeTo.HasValue) return chunk;

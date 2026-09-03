@@ -196,7 +196,7 @@ namespace FinanceManager.Web.Services
                     r.ReversedByPostingId,
                     r.ReversalForPostingId,
                     r.IsPreliminary)
-                {                    
+                {
                 };
             }).ToList();
 

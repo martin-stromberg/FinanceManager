@@ -5,6 +5,10 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>AccountPostingsListViewModel</c>'s paging behavior (first-page load, load-more with the
+/// standard stop-when-below-page-size heuristic) and export URL composition from the active search/date filters.
+/// </summary>
 public sealed class PostingsAccountViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -58,6 +62,10 @@ public sealed class PostingsAccountViewModelTests
             .ToList();
     }
 
+    /// <summary>
+    /// Verifies that initialization loads the first page of postings for the account and, since fewer
+    /// items than the page size were returned, correctly infers there is no further page to load.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsFirstPage_SetsItemsAndFlags()
     {
@@ -75,6 +83,11 @@ public sealed class PostingsAccountViewModelTests
         Assert.False(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that loading more pages appends items to the existing collection rather than replacing
+    /// it, and that the "can load more" flag flips off once a page comes back shorter than the fixed page
+    /// size (50) - the paging termination condition the infinite-scroll UI relies on.
+    /// </summary>
     [Fact]
     public async Task LoadMore_AppendsItems_StopsWhenBelowPageSize()
     {
@@ -98,6 +111,11 @@ public sealed class PostingsAccountViewModelTests
         Assert.False(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that the export URL embeds the account id in its path and the active search text and
+    /// date range as query parameters (URL-encoded), so the exported file matches exactly what the user
+    /// currently sees filtered on screen.
+    /// </summary>
     [Fact]
     public async Task GetExportUrl_ComposesQuery()
     {

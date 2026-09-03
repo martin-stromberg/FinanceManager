@@ -37,7 +37,9 @@
 - Der Entwurf gehört zum Benutzer.
 - Der Entwurf befindet sich im Entwurfsstatus.
 - Betroffene Bestandszeilen sind editierbar.
-- Neue Zeilen enthalten mindestens Buchungsdatum, Betrag und Verwendungszweck; der Betrag darf nicht `0` sein.
+- Jede bearbeitbare Zeile ist vollständig gültig: Buchungsdatum, Valutadatum, Betrag (ungleich `0`) sowie mindestens Buchungstext *oder* Verwendungszweck müssen vorhanden sein.
+- Empfänger ist optional; fehlt er, wird der Name des Bankkontakts als vorausgefüllter Platzhalter angeboten.
+- Das Valutadatum wird vom Buchungsdatum übernommen, solange es leer ist oder bisher mit dem Buchungsdatum übereingestimmt hat.
 
 **Verhalten:**
 - Zum Löschen vorgemerkte Zeilen verschwinden sofort aus der Tabelle, werden aber erst beim Speichern gelöscht.
@@ -45,6 +47,8 @@
 - Abbrechen verwirft lokale Bearbeitungen, Löschvormerkungen und neue noch nicht gespeicherte Zeilen.
 - Speichern übernimmt alle gültigen Änderungen gemeinsam; bei einem Validierungsfehler wird keine Teiländerung übernommen.
 - Bereits gebuchte Zeilen können im Massenänderungsmodus nicht gelöscht werden. Angekündigte Zeilen bleiben nicht editierbar, können aber zum Löschen vorgemerkt werden.
+- Unvollständige Zeilen werden beim Verlassen der Zeile validiert und durch ein Hinweissymbol vor dem Buchungsdatum markiert.
+- Der Speichern-Button im Ribbon wird nur dann aktiviert, wenn alle sichtbaren bearbeitbaren Zeilen gültig sind.
 
 **Umsetzung:** QuickEdit-Speicherung der Kontoauszugsentwurfszeilen über den erweiterten Batch-Speicherpfad.
 

@@ -6,6 +6,13 @@ using System.Text;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers the bank-specific <see cref="IStatementFileParser"/> implementations (ING CSV/PDF, backup JSON, and the
+/// template-based parsers for Barclays, Wüstenrot and Sparkasse): file-format recognition (returning null when a
+/// file doesn't match a parser's expected shape), correct extraction of IBAN/header/movement data, and splitting a
+/// single file into multiple <see cref="StatementParseResult"/> entries when it bundles several accounts
+/// (collection-account CSVs).
+/// </summary>
 public sealed class StatementParserAdapterTests
 {
     private sealed class FakeIngPdfStatementFile : ING_PDF_StatementFile
@@ -27,6 +34,10 @@ public sealed class StatementParserAdapterTests
     private static byte[] CreateIngCsvBytes(string content)
         => Encoding.UTF8.GetBytes(content);
 
+    /// <summary>
+    /// The ING CSV parser must return null (rather than throwing or returning an empty list) when the file content
+    /// does not match the expected ING CSV layout, so callers can fall back to trying other parsers.
+    /// </summary>
     [Fact]
     public void Parse_ShouldReturnNull_WhenFileNotRecognized()
     {
@@ -38,6 +49,11 @@ public sealed class StatementParserAdapterTests
         Assert.Null(result);
     }
 
+    /// <summary>
+    /// A well-formed backup NDJSON export (a "Backup" header line followed by a bank-account/ledger-entry/journal
+    /// line record) must parse into exactly one <see cref="StatementParseResult"/>, confirming the backup-restore
+    /// import path can round-trip a minimal valid backup file.
+    /// </summary>
     [Fact]
     public void Parse_BackupJson_ShouldReturnSingleElementList_WhenValid()
     {
@@ -55,6 +71,12 @@ public sealed class StatementParserAdapterTests
         Assert.Single(result);
     }
 
+    /// <summary>
+    /// Cross-checks every template-based parser (Barclays, Wüstenrot, Sparkasse, ING PDF, ING CSV) against files
+    /// whose content clearly doesn't match any of their expected templates, regardless of the file's extension.
+    /// Each parser must independently return null instead of misinterpreting foreign content as its own format.
+    /// </summary>
+    /// <param name="fileName">The (irrelevant to the outcome) file name under which the unmatched content is presented.</param>
     [Theory]
     [InlineData("test.pdf")]
     [InlineData("test.csv")]
@@ -79,6 +101,11 @@ public sealed class StatementParserAdapterTests
         }
     }
 
+    /// <summary>
+    /// An ordinary (single-account) ING CSV export must load successfully and parse into exactly one
+    /// <see cref="StatementParseResult"/>, establishing the baseline behavior that the collection-account
+    /// (multi-block) case is contrasted against.
+    /// </summary>
     [Fact]
     public void Parse_IngCsv_ShouldReturnSingleElementList_WhenValidSingleBlockContent()
     {
@@ -110,6 +137,11 @@ public sealed class StatementParserAdapterTests
         Assert.Single(result);
     }
 
+    /// <summary>
+    /// An ING CSV export that bundles multiple accounts' blocks into a single file (a collection-account /
+    /// "Sammelkonto" export) must be split by the parser into more than one <see cref="StatementParseResult"/>,
+    /// one per embedded account block, rather than merging all blocks' movements into a single result.
+    /// </summary>
     [Fact]
     public void Parse_ShouldReturnMultipleResults_ForCollectionAccountCSV()
     {
@@ -155,6 +187,12 @@ public sealed class StatementParserAdapterTests
         Assert.True(result!.Count > 1, "Collection account CSV should produce multiple StatementParseResult instances");
     }
 
+    /// <summary>
+    /// The ING PDF parser's "Sparbrief" (fixed-term deposit) template must extract the correct normalized IBAN
+    /// and correctly parse each movement's German-formatted date and amount - including a negative amount for
+    /// the account-closure line - even though the fixed-term deposit layout differs from a regular checking
+    /// account statement.
+    /// </summary>
     [Fact]
     public void Parse_IngPdfSparbriefTemplate_ShouldReturnExpectedIbanAndMovements()
     {
@@ -188,6 +226,11 @@ public sealed class StatementParserAdapterTests
         Assert.Equal(-12706.67m, kontoloeschung.Amount);
     }
 
+    /// <summary>
+    /// An older/legacy ING PDF statement layout (different header and column markers than the current template)
+    /// must still be recognized and parsed correctly, extracting the IBAN and the movement's counterparty/amount
+    /// - a regression guard ensuring backward compatibility with older exported statement formats.
+    /// </summary>
     [Fact]
     public void Parse_IngPdfLegacyTemplate_ShouldStillParse()
     {

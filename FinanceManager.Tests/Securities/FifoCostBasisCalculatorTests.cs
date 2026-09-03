@@ -261,11 +261,11 @@ public sealed class FifoCostBasisCalculatorTests
         var sameDate = new DateTime(2024, 3, 1);
 
         // Create Ids such that idFirst < idSecond lexicographically
-        var idFirst  = new Guid("00000000-0000-0000-0000-000000000001");
+        var idFirst = new Guid("00000000-0000-0000-0000-000000000001");
         var idSecond = new Guid("00000000-0000-0000-0000-000000000002");
 
-        var buy1 = new SecurityTransaction(idFirst,  sameDate, SecurityPostingSubType.Buy, -500m,  5m, Guid.NewGuid());
-        var buy2 = new SecurityTransaction(idSecond, sameDate, SecurityPostingSubType.Buy, -600m,  5m, Guid.NewGuid());
+        var buy1 = new SecurityTransaction(idFirst, sameDate, SecurityPostingSubType.Buy, -500m, 5m, Guid.NewGuid());
+        var buy2 = new SecurityTransaction(idSecond, sameDate, SecurityPostingSubType.Buy, -600m, 5m, Guid.NewGuid());
         var sell = Sell(sameDate.AddDays(1), 600m, 5m);
 
         var transactions = new[] { buy2, buy1, sell }; // deliberately misordered
@@ -386,7 +386,7 @@ public sealed class FifoCostBasisCalculatorTests
     public void Calculate_Should_SkipSell_When_SellQuantityIsNull()
     {
         // Arrange: buy 10 shares, then attempt to sell with null quantity
-        var buy  = Buy(DateTime.Today.AddDays(-1), 1_000m, 10m);
+        var buy = Buy(DateTime.Today.AddDays(-1), 1_000m, 10m);
         var sell = new SecurityTransaction(Guid.NewGuid(), DateTime.Today, SecurityPostingSubType.Sell, 1_000m, null, Guid.NewGuid());
 
         // Act
@@ -430,9 +430,9 @@ public sealed class FifoCostBasisCalculatorTests
     {
         // Arrange: Buy 10 → Sell 10 → Fee referencing same GroupId as Buy
         var groupId = Guid.NewGuid();
-        var buy  = Buy(DateTime.Today.AddDays(-2), 1_000m, 10m, groupId);
+        var buy = Buy(DateTime.Today.AddDays(-2), 1_000m, 10m, groupId);
         var sell = Sell(DateTime.Today.AddDays(-1), 1_000m, 10m);
-        var fee  = Fee(DateTime.Today, 5m, groupId);
+        var fee = Fee(DateTime.Today, 5m, groupId);
 
         // Act
         FifoCostBasisResult result = _sut.Calculate([buy, sell, fee]);
@@ -456,7 +456,7 @@ public sealed class FifoCostBasisCalculatorTests
     {
         // Arrange – buy on an earlier date so it is always sorted before the fees
         var groupId = Guid.NewGuid();
-        var buy  = Buy(DateTime.Today.AddDays(-1), 1_000m, 10m, groupId);
+        var buy = Buy(DateTime.Today.AddDays(-1), 1_000m, 10m, groupId);
         var fee1 = Fee(DateTime.Today, 5m, groupId);
         var fee2 = Fee(DateTime.Today, 3m, groupId);
 
@@ -493,10 +493,10 @@ public sealed class FifoCostBasisCalculatorTests
         var d2 = new DateTime(2024, 2, 1);
         var d3 = new DateTime(2024, 2, 2);
 
-        var buy1  = Buy(d1, 1_000m, 10m, groupA);
-        var fee1  = Fee(d1.AddDays(1), 20m, groupA);   // linked via groupA → added to lot1
-        var buy2  = Buy(d2, 600m, 5m);                  // separate buy with its own auto GroupId
-        var fee2  = Fee(d3, 15m, Guid.NewGuid());       // standalone: no matching Buy lot
+        var buy1 = Buy(d1, 1_000m, 10m, groupA);
+        var fee1 = Fee(d1.AddDays(1), 20m, groupA);   // linked via groupA → added to lot1
+        var buy2 = Buy(d2, 600m, 5m);                  // separate buy with its own auto GroupId
+        var fee2 = Fee(d3, 15m, Guid.NewGuid());       // standalone: no matching Buy lot
 
         // Act
         FifoCostBasisResult result = _sut.Calculate([buy1, fee1, buy2, fee2]);
@@ -529,7 +529,7 @@ public sealed class FifoCostBasisCalculatorTests
     {
         // Arrange: buy 10 + buy 5 = 15 total; sell 20 = oversell
         var buy1 = Buy(DateTime.Today.AddDays(-2), 1_000m, 10m);
-        var buy2 = Buy(DateTime.Today.AddDays(-1),   500m,  5m);
+        var buy2 = Buy(DateTime.Today.AddDays(-1), 500m, 5m);
         var sell = Sell(DateTime.Today, 2_000m, 20m);
 
         // Act
@@ -580,12 +580,12 @@ public sealed class FifoCostBasisCalculatorTests
     public void Calculate_Should_ProcessBuyBeforeSell_When_SameDateAndBuyIdIsSmaller()
     {
         // Arrange – deterministic GUIDs: buy Id < sell Id → buy sorts first
-        var buyId  = new Guid("00000000-0000-0000-0000-000000000001");
+        var buyId = new Guid("00000000-0000-0000-0000-000000000001");
         var sellId = new Guid("00000000-0000-0000-0000-000000000002");
-        var date   = new DateTime(2024, 6, 1);
+        var date = new DateTime(2024, 6, 1);
 
-        var buy  = new SecurityTransaction(buyId,  date, SecurityPostingSubType.Buy,  -1_000m, 10m, Guid.NewGuid());
-        var sell = new SecurityTransaction(sellId, date, SecurityPostingSubType.Sell,    900m,  8m, Guid.NewGuid());
+        var buy = new SecurityTransaction(buyId, date, SecurityPostingSubType.Buy, -1_000m, 10m, Guid.NewGuid());
+        var sell = new SecurityTransaction(sellId, date, SecurityPostingSubType.Sell, 900m, 8m, Guid.NewGuid());
 
         // Act – deliberately pass in reversed order; the sorter corrects it
         FifoCostBasisResult result = _sut.Calculate([sell, buy]);

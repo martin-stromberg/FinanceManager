@@ -124,7 +124,7 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<InMemoryHolidayProvider>();
             builder.Services.AddSingleton<NagerDateHolidayProvider>();
             builder.Services.AddSingleton<IHolidaySubdivisionService, NagerDateSubdivisionService>();
-            builder.Services.AddSingleton<IHolidayProviderResolver, HolidayProviderResolver>();            
+            builder.Services.AddSingleton<IHolidayProviderResolver, HolidayProviderResolver>();
 
             // Notifications
             builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -176,6 +176,7 @@ namespace FinanceManager.Web
             }).AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
             builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
+            builder.Services.AddScoped<IKpiLocalStorageCache, KpiLocalStorageCache>();
 
             // Self-update services: the auto-update subsystem is provided by the external msTools.Updater release
             // and activated through the single UseAutoUpdate() entry point. The Web project only keeps the adapter

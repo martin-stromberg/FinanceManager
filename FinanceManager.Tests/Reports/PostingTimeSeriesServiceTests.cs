@@ -9,6 +9,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="PostingTimeSeriesService.GetAsync"/>, which reads a chronological series of precomputed
+/// <see cref="PostingAggregate"/> rows for one entity (account/contact/savings plan/security): ownership
+/// enforcement, chronological ordering, the <c>take</c> limit, and correct filtering to only the requested
+/// posting kind and entity id (excluding aggregates for other entities of the same kind).
+/// </summary>
 public sealed class PostingTimeSeriesServiceTests
 {
     private static AppDbContext CreateDb()
@@ -21,6 +27,10 @@ public sealed class PostingTimeSeriesServiceTests
         return db;
     }
 
+    /// <summary>
+    /// Requesting the time series for an account owned by a different user must return null rather than the
+    /// other user's data - the ownership check is enforced at the entity level, not just at the query's caller.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ReturnsNull_WhenNotOwned()
     {
@@ -30,12 +40,17 @@ public sealed class PostingTimeSeriesServiceTests
         db.Users.AddRange(userA, userB);
         var acc = new Account(userB.Id, AccountType.Giro, "Fremd", null, Guid.NewGuid());
         db.Accounts.Add(acc);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new PostingTimeSeriesService(db);
         var res = await svc.GetAsync(userA.Id, PostingKind.Bank, acc.Id, AggregatePeriod.Month, 12, null, CancellationToken.None);
         Assert.Null(res);
     }
 
+    /// <summary>
+    /// Aggregates are persisted in insertion order (February added before January here); the service must still
+    /// return the resulting series in chronological ascending order by period start, so callers never need to
+    /// re-sort it themselves.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ReturnsOrderedAscending()
     {
@@ -51,7 +66,7 @@ public sealed class PostingTimeSeriesServiceTests
         var a1 = new PostingAggregate(PostingKind.Bank, acc.Id, null, null, null, new DateTime(2024, 1, 1), AggregatePeriod.Month);
         a1.Add(20m);
         db.PostingAggregates.AddRange(a2, a1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new PostingTimeSeriesService(db);
         var res = await svc.GetAsync(user.Id, PostingKind.Bank, acc.Id, AggregatePeriod.Month, 10, null, CancellationToken.None);
         Assert.NotNull(res);
@@ -59,6 +74,10 @@ public sealed class PostingTimeSeriesServiceTests
         Assert.Equal(new[] { new DateTime(2024, 1, 1), new DateTime(2024, 2, 1) }, starts);
     }
 
+    /// <summary>
+    /// With 40 months of aggregates available but a <c>take</c> of 12, the service must return exactly 12
+    /// entries rather than the full history - the time series is meant for recent-trend charts, not a full dump.
+    /// </summary>
     [Fact]
     public async Task GetAsync_RespectsTake_Defaults()
     {
@@ -76,13 +95,19 @@ public sealed class PostingTimeSeriesServiceTests
             agg.Add(m + 1);
             db.PostingAggregates.Add(agg);
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var svc = new PostingTimeSeriesService(db);
         var res = await svc.GetAsync(user.Id, PostingKind.Bank, acc.Id, AggregatePeriod.Month, 12, null, CancellationToken.None);
         Assert.NotNull(res);
         Assert.Equal(12, res!.Count);
     }
 
+    /// <summary>
+    /// For every supported posting kind (Bank, Contact, SavingsPlan, Security), the series for one specific
+    /// entity must include only that entity's own aggregate rows and exclude "noise" aggregates that share the
+    /// same kind and period but belong to a different entity - verifying the query filters by kind AND entity id
+    /// together, not by kind alone.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ShouldReturnOnlyAggregatesOfRequestedKindAndEntity()
     {
@@ -106,7 +131,7 @@ public sealed class PostingTimeSeriesServiceTests
         var sec1 = new Security(user.Id, "SecA", "IDA", null, null, "EUR", null);
         var sec2 = new Security(user.Id, "SecB", "IDB", null, null, "EUR", null);
         db.Securities.AddRange(sec1, sec2);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Helper to create two months + one noise aggregate for each kind/entity
         void AddAgg(PostingKind kind, Guid? accountId, Guid? contactId, Guid? savingsPlanId, Guid? securityId, decimal baseAmount)
@@ -126,7 +151,7 @@ public sealed class PostingTimeSeriesServiceTests
         AddAgg(PostingKind.Contact, null, personA.Id, null, null, 200m);
         AddAgg(PostingKind.SavingsPlan, null, null, plan1.Id, null, 300m);
         AddAgg(PostingKind.Security, null, null, null, sec1.Id, 400m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new PostingTimeSeriesService(db);
         var bankSeries = await svc.GetAsync(user.Id, PostingKind.Bank, acc1.Id, AggregatePeriod.Month, 10, null, CancellationToken.None);

@@ -1,5 +1,6 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using FinanceManager.Web.Services;
 using FinanceManager.Web.ViewModels.Common;
 
 namespace FinanceManager.Web.ViewModels.Setup;
@@ -10,12 +11,15 @@ namespace FinanceManager.Web.ViewModels.Setup;
 /// </summary>
 public sealed class SetupProfileViewModel : BaseViewModel
 {
+    private readonly IKpiLocalStorageCache _kpiCache;
+
     /// <summary>
     /// Initializes a new instance of <see cref="SetupProfileViewModel"/>.
     /// </summary>
     /// <param name="sp">Service provider used to resolve dependencies (API client, localizer, navigation, etc.).</param>
     public SetupProfileViewModel(IServiceProvider sp) : base(sp)
     {
+        _kpiCache = sp.GetRequiredService<IKpiLocalStorageCache>();
     }
 
     /// <summary>
@@ -24,10 +28,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
     public UserProfileSettingsDto Model { get; private set; } = new();
     private UserProfileSettingsDto _original = new();
 
-    /// <summary>
-    /// Indicates whether a load operation is in progress.
-    /// </summary>
-    public bool Loading { get; private set; }
+    // Loading is inherited from BaseViewModel (protected set) - no local redeclaration needed.
 
     /// <summary>
     /// Indicates whether a save operation is in progress.
@@ -69,7 +70,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
     /// </summary>
     public string KeyInput { get; set; } = string.Empty;
     private bool _clearRequested;
-    
+
     /// <summary>
     /// Loads the profile settings for the current user from the API and prepares the editable model.
     /// </summary>
@@ -125,7 +126,8 @@ public sealed class SetupProfileViewModel : BaseViewModel
                 TimeZoneId: Model.TimeZoneId,
                 AlphaVantageApiKey: string.IsNullOrWhiteSpace(KeyInput) ? null : KeyInput.Trim(),
                 ClearAlphaVantageApiKey: _clearRequested ? true : null,
-                ShareAlphaVantageApiKey: ShareKey
+                ShareAlphaVantageApiKey: ShareKey,
+                CacheKpisInLocalStorage: Model.CacheKpisInLocalStorage
             );
 
             var ok = await ApiClient.UserSettings_UpdateProfileAsync(request, ct);
@@ -138,6 +140,11 @@ public sealed class SetupProfileViewModel : BaseViewModel
                 _clearRequested = false;
                 SavedOk = true;
                 RecomputeDirty();
+
+                if (!Model.CacheKpisInLocalStorage)
+                {
+                    try { await _kpiCache.RemoveAllAsync(); } catch { /* ignored */ }
+                }
 
                 // A full page reload is required when the language changed: the server re-issues the auth
                 // cookie with an updated JWT (containing the new pref_lang claim), but the running Blazor
@@ -215,7 +222,8 @@ public sealed class SetupProfileViewModel : BaseViewModel
 
     private void RecomputeDirty()
     {
-        var baseDirty = Model.PreferredLanguage != _original.PreferredLanguage || Model.TimeZoneId != _original.TimeZoneId;
+        var baseDirty = Model.PreferredLanguage != _original.PreferredLanguage || Model.TimeZoneId != _original.TimeZoneId ||
+                        Model.CacheKpisInLocalStorage != _original.CacheKpisInLocalStorage;
         var keyDirty = !string.IsNullOrWhiteSpace(KeyInput) || _clearRequested || ShareKey != _original.ShareAlphaVantageApiKey;
         Dirty = baseDirty || keyDirty;
     }
@@ -225,7 +233,8 @@ public sealed class SetupProfileViewModel : BaseViewModel
         PreferredLanguage = src.PreferredLanguage,
         TimeZoneId = src.TimeZoneId,
         HasAlphaVantageApiKey = src.HasAlphaVantageApiKey,
-        ShareAlphaVantageApiKey = src.ShareAlphaVantageApiKey
+        ShareAlphaVantageApiKey = src.ShareAlphaVantageApiKey,
+        CacheKpisInLocalStorage = src.CacheKpisInLocalStorage
     };
 
     /// <summary>

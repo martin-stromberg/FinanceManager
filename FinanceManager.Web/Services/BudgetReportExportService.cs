@@ -224,7 +224,7 @@ namespace FinanceManager.Web.Services
 
                     var sheet = new DocumentFormat.OpenXml.Spreadsheet.Sheet()
                     {
-                        Id = doc.WorkbookPart.GetIdOfPart(worksheetPart),
+                        Id = workbookPart.GetIdOfPart(worksheetPart),
                         SheetId = sheetId++,
                         Name = name
                     };
@@ -276,20 +276,6 @@ namespace FinanceManager.Web.Services
 
             ms.Position = 0;
             return ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"budget-report-{request.AsOfDate:yyyy-MM-dd}.xlsx", (Stream)ms);
-
-            static string Escape(string? v)
-            {
-                if (string.IsNullOrEmpty(v))
-                {
-                    return string.Empty;
-                }
-
-                if (v.Contains(',') || v.Contains('"') || v.Contains('\n') || v.Contains('\r'))
-                {
-                    return '"' + v.Replace("\"", "\"\"") + '"';
-                }
-                return v;
-            }
         }
 
         private static IReadOnlyList<BudgetReportPeriodDto> BuildPeriods(

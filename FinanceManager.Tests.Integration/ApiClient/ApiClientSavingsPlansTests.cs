@@ -4,10 +4,18 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end test for the savings plans API, covering create/get/update, the reachability analysis
+/// endpoint, and the archive-then-delete lifecycle.
+/// </summary>
 public class ApiClientSavingsPlansTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientSavingsPlansTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientSavingsPlansTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -28,6 +36,11 @@ public class ApiClientSavingsPlansTests : IClassFixture<TestWebApplicationFactor
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Walks a savings plan through create, get, update (switching type, amount, target date and
+    /// interval in one step), the reachability-analysis endpoint, and archive-then-delete - the
+    /// baseline regression guard for the savings-plan CRUD contract and its analysis integration.
+    /// </summary>
     [Fact]
     public async Task SavingsPlans_Flow_CRUD_Analysis_Symbols()
     {
@@ -35,40 +48,40 @@ public class ApiClientSavingsPlansTests : IClassFixture<TestWebApplicationFactor
         await EnsureAuthenticatedAsync(api);
 
         // initial list and count
-        var list = await api.SavingsPlans_ListAsync();
+        var list = await api.SavingsPlans_ListAsync(ct: TestContext.Current.CancellationToken);
         list.Should().NotBeNull();
-        var cnt = await api.SavingsPlans_CountAsync();
+        var cnt = await api.SavingsPlans_CountAsync(ct: TestContext.Current.CancellationToken);
         cnt.Should().BeGreaterThanOrEqualTo(0);
 
         // create
         var createReq = new FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest("Plan A", FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType.OneTime, 100m, DateTime.UtcNow.Date.AddMonths(6), null, null, null);
-        var created = await api.SavingsPlans_CreateAsync(createReq);
+        var created = await api.SavingsPlans_CreateAsync(createReq, TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
         created!.Name.Should().Be("Plan A");
 
         // get
-        var got = await api.SavingsPlans_GetAsync(created.Id);
+        var got = await api.SavingsPlans_GetAsync(created.Id, TestContext.Current.CancellationToken);
         got.Should().NotBeNull();
         got!.Id.Should().Be(created.Id);
 
         // update
         var updateReq = new FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest("Plan B", FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType.Recurring, 200m, DateTime.UtcNow.Date.AddMonths(12), FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanInterval.Monthly, null, "CN-123");
-        var updated = await api.SavingsPlans_UpdateAsync(created.Id, updateReq);
+        var updated = await api.SavingsPlans_UpdateAsync(created.Id, updateReq, TestContext.Current.CancellationToken);
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Plan B");
         updated!.ContractNumber.Should().Be("CN-123");
 
         // analyze
-        var analysis = await api.SavingsPlans_AnalyzeAsync(created.Id);
+        var analysis = await api.SavingsPlans_AnalyzeAsync(created.Id, TestContext.Current.CancellationToken);
         analysis.Should().NotBeNull();
         analysis!.PlanId.Should().Be(created.Id);
 
         // archive then delete
-        var archived = await api.SavingsPlans_ArchiveAsync(created.Id);
+        var archived = await api.SavingsPlans_ArchiveAsync(created.Id, TestContext.Current.CancellationToken);
         archived.Should().BeTrue();
-        var deleted = await api.SavingsPlans_DeleteAsync(created.Id);
+        var deleted = await api.SavingsPlans_DeleteAsync(created.Id, TestContext.Current.CancellationToken);
         deleted.Should().BeTrue();
-        var gone = await api.SavingsPlans_GetAsync(created.Id);
+        var gone = await api.SavingsPlans_GetAsync(created.Id, TestContext.Current.CancellationToken);
         gone.Should().BeNull();
     }
 }

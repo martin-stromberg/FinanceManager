@@ -9,6 +9,13 @@ using System.Text;
 
 namespace FinanceManager.Tests.Attachments;
 
+/// <summary>
+/// Covers <see cref="AttachmentService"/>'s core operations: uploading binary content vs. registering a
+/// URL-based attachment, listing attachments for an entity, downloading content, updating category,
+/// reassigning an attachment to a different owning entity, and deleting attachments - including the
+/// reference/master model where multiple entities can point at one stored blob without duplicating it,
+/// and the optional <see cref="IDbContextFactory{TContext}"/>-based path used for out-of-scope downloads.
+/// </summary>
 public sealed class AttachmentServiceTests
 {
     private static (AttachmentService svc, AppDbContext db, SqliteConnection conn, Guid ownerId) Create()
@@ -27,6 +34,11 @@ public sealed class AttachmentServiceTests
         return (svc, db, conn, owner.Id);
     }
 
+    /// <summary>
+    /// Verifies that uploading a stream stores the content as an inline blob (not a URL) on the
+    /// attachment row, with file name, content type, and size correctly recorded on both the returned
+    /// DTO and the persisted entity.
+    /// </summary>
     [Fact]
     public async Task UploadAsync_StoresBlobAndSha()
     {
@@ -43,7 +55,7 @@ public sealed class AttachmentServiceTests
         Assert.Equal("text/plain", dto.ContentType);
         Assert.Equal(bytes.Length, dto.SizeBytes);
 
-        var stored = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == dto.Id);
+        var stored = await db.Attachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(stored);
         Assert.Equal(owner, stored!.OwnerUserId);
         Assert.Equal(AttachmentEntityKind.StatementDraft, stored.EntityKind);
@@ -55,6 +67,10 @@ public sealed class AttachmentServiceTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that a URL-based attachment is stored with its URL and marked <c>IsUrl</c>, with no
+    /// binary content persisted alongside it.
+    /// </summary>
     [Fact]
     public async Task CreateUrlAsync_StoresUrl()
     {
@@ -62,13 +78,18 @@ public sealed class AttachmentServiceTests
         var dto = await svc.CreateUrlAsync(owner, AttachmentEntityKind.Contact, Guid.NewGuid(), "https://example.com/a.pdf", null, null, CancellationToken.None);
 
         Assert.True(dto.IsUrl);
-        var stored = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id);
+        var stored = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("https://example.com/a.pdf", stored.Url);
         Assert.Null(stored.Content);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that listing attachments for an entity returns only attachments belonging to that exact
+    /// entity (excluding one uploaded against a different entity ID of the same kind), ordered
+    /// newest-first.
+    /// </summary>
     [Fact]
     public async Task ListAsync_FiltersAndSorts()
     {
@@ -97,6 +118,12 @@ public sealed class AttachmentServiceTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// End-to-end smoke test chaining the remaining single-attachment operations: downloading returns the
+    /// original content, updating the category persists the new category ID, reassigning moves the
+    /// attachment to a different entity kind/ID, and deleting removes it - exercised in sequence on the
+    /// same attachment to ensure the operations compose correctly.
+    /// </summary>
     [Fact]
     public async Task Download_UpdateCategory_Delete_Reassign_Work()
     {
@@ -111,30 +138,35 @@ public sealed class AttachmentServiceTests
         Assert.NotNull(dl);
         using (var reader = new StreamReader(dl!.Value.Content, Encoding.UTF8))
         {
-            var txt = await reader.ReadToEndAsync();
+            var txt = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
             Assert.Equal("content", txt);
         }
 
         // category
         var cat = new AttachmentCategory(owner, "Docs");
         db.AttachmentCategories.Add(cat);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         Assert.True(await svc.UpdateCategoryAsync(owner, dto.Id, cat.Id, CancellationToken.None));
-        Assert.Equal(cat.Id, (await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id)).CategoryId);
+        Assert.Equal(cat.Id, (await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken)).CategoryId);
 
         // reassign
         await svc.ReassignAsync(AttachmentEntityKind.StatementDraft, entityId, AttachmentEntityKind.StatementEntry, otherEntity, owner, CancellationToken.None);
-        var moved = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id);
+        var moved = await db.Attachments.AsNoTracking().FirstAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AttachmentEntityKind.StatementEntry, moved.EntityKind);
         Assert.Equal(otherEntity, moved.EntityId);
 
         // delete
         Assert.True(await svc.DeleteAsync(owner, dto.Id, CancellationToken.None));
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == dto.Id));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == dto.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that downloading a reference attachment (created via <c>CreateReferenceAsync</c> to avoid
+    /// duplicating a blob across multiple entities) transparently resolves to the master attachment's
+    /// file name and content, rather than requiring callers to know about the reference indirection.
+    /// </summary>
     [Fact]
     public async Task DownloadAsync_ShouldReturnMasterContent_WhenAttachmentIsReference()
     {
@@ -150,12 +182,17 @@ public sealed class AttachmentServiceTests
         Assert.NotNull(dl);
         Assert.Equal("m.txt", dl!.Value.FileName);
         using var reader = new StreamReader(dl.Value.Content, Encoding.UTF8);
-        var txt = await reader.ReadToEndAsync();
+        var txt = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
         Assert.Equal("master-content", txt);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that deleting any one reference to a shared master attachment deletes the master and
+    /// every other reference pointing at it, since references share a single underlying blob and cannot
+    /// be deleted independently without leaving dangling references.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldDeleteMasterAndAllReferences_WhenDeletingReference()
     {
@@ -171,28 +208,34 @@ public sealed class AttachmentServiceTests
         var ok = await svc.DeleteAsync(owner, ref1.Id, CancellationToken.None);
         Assert.True(ok);
 
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == master.Id));
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref1.Id));
-        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref2.Id));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == master.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref1.Id, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.False(await db.Attachments.AsNoTracking().AnyAsync(a => a.Id == ref2.Id, cancellationToken: TestContext.Current.CancellationToken));
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies that when an <see cref="IDbContextFactory{TContext}"/> is supplied to the service,
+    /// downloading uses a freshly created DbContext from that factory (rather than only the
+    /// constructor-injected, potentially scoped-and-disposed one) - important for download paths that
+    /// outlive the original request scope, e.g. streaming responses.
+    /// </summary>
     [Fact]
     public async Task DownloadAsync_ShouldUseDbContextFactory_WhenFactoryIsProvided()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite(conn)
             .Options;
 
         await using var seedDb = new AppDbContext(options);
-        await seedDb.Database.EnsureCreatedAsync();
+        await seedDb.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
         var owner = new FinanceManager.Domain.Users.User("owner", "hash", true);
         seedDb.Users.Add(owner);
-        await seedDb.SaveChangesAsync();
+        await seedDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var factoryMock = new Mock<IDbContextFactory<AppDbContext>>();
         factoryMock
@@ -209,27 +252,31 @@ public sealed class AttachmentServiceTests
 
         Assert.NotNull(payload);
         using var reader = new StreamReader(payload!.Value.Content, Encoding.UTF8);
-        Assert.Equal("factory-download", await reader.ReadToEndAsync());
+        Assert.Equal("factory-download", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
         factoryMock.Verify(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         await conn.DisposeAsync();
     }
 
+    /// <summary>
+    /// Combines the two preceding guarantees: with a factory-provided DbContext, downloading a reference
+    /// attachment still resolves through to the master's file name and content.
+    /// </summary>
     [Fact]
     public async Task DownloadAsync_ShouldResolveReference_WhenFactoryIsProvided()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite(conn)
             .Options;
 
         await using var seedDb = new AppDbContext(options);
-        await seedDb.Database.EnsureCreatedAsync();
+        await seedDb.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
         var owner = new FinanceManager.Domain.Users.User("owner", "hash", true);
         seedDb.Users.Add(owner);
-        await seedDb.SaveChangesAsync();
+        await seedDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var factoryMock = new Mock<IDbContextFactory<AppDbContext>>();
         factoryMock
@@ -248,7 +295,7 @@ public sealed class AttachmentServiceTests
         Assert.NotNull(payload);
         Assert.Equal("master.txt", payload!.Value.FileName);
         using var reader = new StreamReader(payload.Value.Content, Encoding.UTF8);
-        Assert.Equal("master-factory-content", await reader.ReadToEndAsync());
+        Assert.Equal("master-factory-content", await reader.ReadToEndAsync(TestContext.Current.CancellationToken));
         factoryMock.Verify(x => x.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         await conn.DisposeAsync();

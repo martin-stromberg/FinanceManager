@@ -30,7 +30,7 @@ public sealed class SavingsPlanCategoryListViewModel : BaseListViewModel<Savings
     public override bool AllowRangeFiltering => false;
 
     /// <summary>
-    /// Loads a page of category items from the API and populates the <see cref="Items"/> collection.
+    /// Loads a page of category items from the API and populates the <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/> collection.
     /// This implementation ignores paging and loads all categories.
     /// </summary>
     /// <param name="resetPaging">When true the paging state should be reset; ignored in this implementation.</param>
@@ -99,7 +99,7 @@ public sealed class SavingsPlanCategoryListViewModel : BaseListViewModel<Savings
             })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage}) };
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };
     }
 
     /// <summary>

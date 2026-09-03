@@ -61,7 +61,7 @@ else
             }
             else
             {
-                <GenericListPage TItem="object" Provider="@(emb as IListProvider)" Localizer="Localizer" SearchPlaceholder="" RangeFromLabel="" RangeToLabel="" LoadingText="@LoadingText" EmptyText="@Localizer?["List_Result_NoItems"]" EndOfListText="@Localizer?["List_Result_EndOfList"]" ItemClick="OnEmbeddedItemClick" />
+                <GenericListPage TItem="object" Provider="@(emb as IListProvider)" Localizer="Localizer" SearchPlaceholder="" RangeFromLabel="" RangeToLabel="" LoadingText="@LoadingText" EmptyText="@(Localizer?["List_Result_NoItems"].Value ?? "No items")" EndOfListText="@(Localizer?["List_Result_EndOfList"].Value ?? "End of list")" ItemClick="OnEmbeddedItemClick" />
             }
         </div>
     }
@@ -358,7 +358,7 @@ else
             if (Provider is ISymbolAssignableCard assignable)
             {
                 using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB
-                var newId = await assignable?.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
+                var newId = await assignable.ValidateSymbolAsync(stream, file.Name, file.ContentType ?? "application/octet-stream");
                 if (newId.HasValue)
                 {
                     f.SymbolId = newId.Value;
@@ -387,7 +387,7 @@ else
         {
             var enumLookupTypes = Provider.CardRecord.Fields
                 .Where(f => !string.IsNullOrWhiteSpace(f.LookupType) && f.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
-                .Select(f => f.LookupType)
+                .Select(f => f.LookupType!)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -648,7 +648,7 @@ else
         }
     }
 
-    private Task OnEmbeddedItemClick(object item)
+    private Task OnEmbeddedItemClick(object? item)
     {
         if (item is IListItemNavigation nav)
         {

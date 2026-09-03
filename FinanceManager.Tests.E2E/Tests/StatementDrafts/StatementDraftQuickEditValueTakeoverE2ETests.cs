@@ -8,16 +8,32 @@ using Microsoft.Playwright;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for the statement draft "quick edit" grid's keyboard-driven value takeover
+/// features: Ctrl+Arrow focus navigation between rows (including skipping hidden/deleted/locked
+/// rows and staying put at the grid's edges), automatic booking-to-valuta date copying, the save
+/// button's enabled/disabled state as rows become complete, F8/Ctrl+F8 field takeover from the row
+/// above (single field vs. all fields with overwrite), and the keepalive request sent (and
+/// coalesced across rapid blurs) when a field loses focus without a full save.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class StatementDraftQuickEditValueTakeoverE2ETests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StatementDraftQuickEditValueTakeoverE2ETests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public StatementDraftQuickEditValueTakeoverE2ETests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
     }
 
+    /// <summary>
+    /// Verifies that pressing Ctrl+ArrowUp in a quick-edit amount field moves focus to the same
+    /// field (amount) in the previous visible row.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_CtrlArrowUp_ShouldFocusSameFieldInPreviousVisibleRow()
     {
@@ -37,6 +53,10 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await WaitForActiveElementAsync(page, expectedId);
     }
 
+    /// <summary>
+    /// Verifies that pressing Ctrl+ArrowDown in a quick-edit subject field moves focus to the same
+    /// field (subject) in the next visible row.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_CtrlArrowDown_ShouldFocusSameFieldInNextVisibleRow()
     {
@@ -56,6 +76,10 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await WaitForActiveElementAsync(page, expectedId);
     }
 
+    /// <summary>
+    /// Verifies that pressing Ctrl+ArrowUp while focused in the first visible row keeps focus on
+    /// the same field instead of moving out of the grid.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_CtrlArrowUpAtFirstRow_ShouldKeepFocus()
     {
@@ -74,6 +98,10 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await WaitForActiveElementAsync(page, expectedId);
     }
 
+    /// <summary>
+    /// Verifies that pressing Ctrl+ArrowDown while focused in the last visible row keeps focus on
+    /// the same field instead of moving out of the grid.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_CtrlArrowDownAtLastRow_ShouldKeepFocus()
     {
@@ -93,6 +121,12 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await WaitForActiveElementAsync(page, expectedId);
     }
 
+    /// <summary>
+    /// Verifies that pressing Ctrl+ArrowUp/Down while focused in a booking-date or valuta-date
+    /// input moves focus to the same field in the adjacent row (row navigation) rather than being
+    /// intercepted by the date input's native up/down spin behavior, and that the field's own
+    /// value is left unchanged by the key press.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_CtrlArrowOnDateFields_ShouldMoveFocusWithoutChangingDate()
     {
@@ -127,8 +161,14 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         (await currentValutaDate.InputValueAsync()).Should().Be(valutaDate);
     }
 
+    /// <summary>
+    /// Verifies that changing a row's booking date automatically copies the new value into that
+    /// row's valuta date when the valuta date is currently empty, and also propagates a later
+    /// booking-date change to a row whose valuta date already matched the previous booking date -
+    /// but does not touch a valuta date that was set independently.
+    /// </summary>
     [Fact]
-    public async Task QuickEdit_BookingDateChange_ShouldCopyToEmptyValutaDateOnly()
+    public async Task QuickEdit_BookingDateChange_ShouldCopyToEmptyOrMatchedValutaDateOnly()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
@@ -147,19 +187,56 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
 
         await WaitForInputValueAsync(emptyValutaDate, copiedDate);
 
-        var bookingDateWithValuta = page.Locator("input[id^='qe_booking_']").Nth(1);
+        var bookingDateWithMatchedValuta = page.Locator("input[id^='qe_booking_']").Nth(1);
         var existingValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(1);
         var existingValutaValue = await existingValutaDate.InputValueAsync();
         const string changedBookingDate = "2026-09-15";
 
         existingValutaValue.Should().NotBeNullOrWhiteSpace();
 
-        await bookingDateWithValuta.FillAsync(changedBookingDate);
-        await bookingDateWithValuta.PressAsync("Tab");
+        await bookingDateWithMatchedValuta.FillAsync(changedBookingDate);
+        await bookingDateWithMatchedValuta.PressAsync("Tab");
 
-        await WaitForInputValueAsync(existingValutaDate, existingValutaValue);
+        await WaitForInputValueAsync(existingValutaDate, changedBookingDate);
     }
 
+    /// <summary>
+    /// Verifies that the quick-edit save button starts disabled when there are no pending
+    /// changes, and becomes enabled once a row is edited into a valid, complete state.
+    /// </summary>
+    [Fact]
+    public async Task QuickEdit_SaveButton_IsEnabledWhenAllRowsComplete()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var draft = await CreateQuickEditDraftWithPersistedRowsAsync(page, "save-state");
+
+        await OpenQuickEditAsync(page, draft.DraftId);
+
+        var saveButton = page.Locator("button#SaveQuickEdit");
+        await saveButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+
+        // No pending changes yet -> save should be disabled
+        (await saveButton.IsDisabledAsync()).Should().BeTrue();
+
+        var bookingDateWithoutValuta = page.Locator("input[id^='qe_booking_']").Nth(0);
+        var emptyValutaDate = page.Locator("input[id^='qe_valuta_']").Nth(0);
+        const string bookingDate = "2026-08-30";
+
+        await bookingDateWithoutValuta.FillAsync(bookingDate);
+        await bookingDateWithoutValuta.PressAsync("Tab");
+
+        await WaitForInputValueAsync(emptyValutaDate, bookingDate);
+
+        // With a valid changed row the save button must become enabled
+        await Assertions.Expect(saveButton).ToBeEnabledAsync(new() { Timeout = 15000 });
+    }
+
+    /// <summary>
+    /// Verifies that Ctrl+Arrow row navigation skips over a row whose status makes it
+    /// non-editable (e.g. already booked/locked), and continues to do so correctly after that
+    /// row's neighbor is deleted client-side, so focus always lands on an editable row.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_CtrlArrowDown_ShouldSkipHiddenDeletedAndLockedRows()
     {
@@ -191,6 +268,11 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await WaitForActiveElementAsync(page, subjectBeforeLockedId);
     }
 
+    /// <summary>
+    /// Verifies that the Ctrl+Arrow row-navigation shortcut is scoped to the quick-edit grid: on
+    /// a regular (non-quick-edit) draft card page, pressing Ctrl+ArrowDown in a plain input field
+    /// leaves focus unchanged.
+    /// </summary>
     [Fact]
     public async Task CtrlArrowNavigation_OutsideQuickEdit_ShouldNotChangeFocus()
     {
@@ -212,6 +294,11 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await WaitForActiveElementAsync(page, expectedId);
     }
 
+    /// <summary>
+    /// Verifies that typing directly into a quick-edit field is not clobbered by an unrelated F8
+    /// takeover on a different field, and that editing one field afterwards leaves the other
+    /// field's value from the earlier takeover unaffected.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_RegularInputAndF8_ShouldRemainUnaffected()
     {
@@ -240,6 +327,10 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         (await targetSubject.InputValueAsync()).Should().Be(expectedFromAbove);
     }
 
+    /// <summary>
+    /// Verifies that pressing F8 in a quick-edit field copies just that single field's value from
+    /// the row directly above, leaving the row's other fields untouched.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_PressesF8_ShouldCopySingleFieldFromRowAbove()
     {
@@ -299,6 +390,11 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         actual.Should().Be(expected);
     }
 
+    /// <summary>
+    /// Verifies that pressing Ctrl+F8 in a quick-edit row copies all take-over fields (booking
+    /// date, valuta date, amount, description, recipient, subject) from the row directly above,
+    /// overwriting whatever values were already present in the target row.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_PressesCtrlF8_ShouldCopyAllFieldsFromRowAboveAndOverwriteExisting()
     {
@@ -389,6 +485,12 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         }
     }
 
+    /// <summary>
+    /// Verifies that blurring a quick-edit field with an unsaved edit while the session is near
+    /// expiry sends a keepalive request that succeeds and refreshes the session, and that the
+    /// field's locally typed value is preserved (not reset by the reload-free keepalive) and the
+    /// user remains authenticated.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_Blur_ShouldSendKeepaliveAndKeepLocalInputValue()
     {
@@ -437,6 +539,10 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         page.Url.ToLowerInvariant().Should().NotContain("/login");
     }
 
+    /// <summary>
+    /// Verifies that triggering several quick-edit field blurs in rapid succession only sends a
+    /// single coalesced keepalive request instead of one request per blurred field.
+    /// </summary>
     [Fact]
     public async Task QuickEdit_MultipleFastBlurs_ShouldCoalesceKeepaliveRequests()
     {

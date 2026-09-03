@@ -13,7 +13,7 @@ import {
 
 const repository = "owner/repository";
 
-function environment({ refType = "branch", refName = "master" } = {}) {
+function environment({ refType = "branch", refName = "main" } = {}) {
   return {
     GITHUB_OUTPUT: "test-output",
     GITHUB_REPOSITORY: repository,
@@ -23,9 +23,10 @@ function environment({ refType = "branch", refName = "master" } = {}) {
   };
 }
 
-function release(tag, assets = []) {
+function release(tag, assets = [], { prerelease = false } = {}) {
   return {
     tag_name: tag,
+    prerelease,
     assets: assets.map((asset) => typeof asset === "string"
       ? { name: asset, state: "uploaded", size: 1 }
       : asset)
@@ -63,13 +64,18 @@ test("rejects non-semantic manual tags", () => {
   assert.throws(() => parseManualTag("v02.3.4"), /valid vX\.Y\.Z/);
 });
 
-test("accepts only master and staging for automatic releases", () => {
-  assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "master" }), {
+test("accepts only main for automatic releases", () => {
+  assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "main" }), {
     kind: "automatic"
   });
-  assert.deepEqual(classifyWorkflowRef({ refType: "branch", refName: "staging" }), {
-    kind: "automatic"
-  });
+  assert.throws(
+    () => classifyWorkflowRef({ refType: "branch", refName: "staging" }),
+    /Unsupported release ref/
+  );
+  assert.throws(
+    () => classifyWorkflowRef({ refType: "branch", refName: "master" }),
+    /Unsupported release ref/
+  );
   assert.throws(
     () => classifyWorkflowRef({ refType: "branch", refName: "develop" }),
     /Unsupported release ref/
@@ -84,21 +90,6 @@ test("extracts a version only when Semantic Release announces one", () => {
 test("extracts a prerelease version announced for the staging RC channel", () => {
   assert.equal(parseNextReleaseVersion("The next release version is 1.17.0-RC.1"), "1.17.0-RC.1");
   assert.equal(parseNextReleaseVersion("The next release version is 1.16.1-RC.12"), "1.16.1-RC.12");
-});
-
-test("creates an RC release when Semantic Release resolves a staging prerelease", async () => {
-  const testEffects = effects({ runSemanticReleaseDryRun: () => "The next release version is 1.17.0-RC.1" });
-
-  await resolveReleaseVersion(environment({ refName: "staging" }), testEffects.dependencies);
-
-  assert.deepEqual(testEffects.output[0], {
-    released: "true",
-    reason: "semantic-release",
-    version: "1.17.0-RC.1",
-    tag: "v1.17.0-RC.1",
-    release_kind: "automatic",
-    release_action: "create"
-  });
 });
 
 test("creates a release for a manual tag without an existing release", async () => {
@@ -225,6 +216,23 @@ test("repairs one automatic release whose expected asset is missing when no new 
   assert.equal(testEffects.output[0].released, "true");
   assert.equal(testEffects.output[0].release_action, "upload-existing");
   assert.equal(testEffects.output[0].tag, "v2.3.4");
+});
+
+test("never repairs a prerelease, even if it is missing its expected asset and no new release is pending", async () => {
+  // Regression test for a real production incident on msTools.Updater: an ancient
+  // v0.5.2-rc.5 prerelease that had genuinely never received an asset was picked up by this
+  // fallback on a routine main push and "repaired" - checking out its old commit broke the
+  // run, since current workflow files didn't exist there yet. release.yml only ever owns
+  // stable releases; RC/prerelease tags are staging-ci.yml's exclusive domain.
+  const testEffects = effects({
+    listGitHubReleases: async () => [release("v0.5.2-rc.5", [], { prerelease: true })],
+    runSemanticReleaseDryRun: () => "There are no relevant changes"
+  });
+
+  await resolveReleaseVersion(environment(), testEffects.dependencies);
+
+  assert.equal(testEffects.output[0].released, "false");
+  assert.equal(testEffects.output[0].reason, "no-release");
 });
 
 test("skips automatic releases without releasable commits", async () => {

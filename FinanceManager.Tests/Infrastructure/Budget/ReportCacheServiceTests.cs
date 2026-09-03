@@ -50,7 +50,7 @@ public sealed class ReportCacheServiceTests
             var keys = await db.ReportCacheEntries.AsNoTracking()
                 .OrderBy(e => e.CacheKey)
                 .Select(e => e.CacheKey)
-                .ToListAsync();
+                .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             keys.Should().BeEquivalentTo(
                 "budgetreportraw-20260101-20260131-BookingDate",
@@ -82,13 +82,13 @@ public sealed class ReportCacheServiceTests
         var entry = new ReportCacheEntry(ownerId, BuildKey(cacheFrom, cacheTo, dateBasis), "{}",
             JsonSerializer.Serialize(new BudgetReportCacheParameter(cacheFrom, cacheTo, dateBasis)), false);
         db.ReportCacheEntries.Add(entry);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         await service.MarkBudgetReportCacheEntriesForUpdateAsync(new DateOnly(2026, 1, 10), new DateOnly(2026, 1, 15), CancellationToken.None);
 
         // Assert
-        var updated = await db.ReportCacheEntries.AsNoTracking().FirstAsync();
+        var updated = await db.ReportCacheEntries.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         updated.NeedsRefresh.Should().BeTrue();
     }
 
@@ -112,13 +112,13 @@ public sealed class ReportCacheServiceTests
 
         db.ReportCacheEntries.Add(entry);
         db.ReportCacheEntries.Add(otherEntry);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         await service.MarkBudgetReportCacheEntriesForUpdateAsync(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 2), CancellationToken.None);
 
         // Assert
-        var entries = await db.ReportCacheEntries.AsNoTracking().OrderBy(e => e.CacheKey).ToListAsync();
+        var entries = await db.ReportCacheEntries.AsNoTracking().OrderBy(e => e.CacheKey).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         entries.Should().AllSatisfy(e => e.NeedsRefresh.Should().BeFalse());
     }
 
@@ -146,13 +146,13 @@ public sealed class ReportCacheServiceTests
             JsonSerializer.Serialize(new BudgetReportCacheParameter(febFrom, febTo, dateBasis)), false));
         db.ReportCacheEntries.Add(new ReportCacheEntry(ownerId, BuildKey(marFrom, marTo, dateBasis), "{}",
             JsonSerializer.Serialize(new BudgetReportCacheParameter(marFrom, marTo, dateBasis)), false));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         await service.MarkBudgetReportCacheEntriesForUpdateAsync(new DateOnly(2026, 1, 15), new DateOnly(2026, 2, 10), CancellationToken.None);
 
         // Assert
-        var entries = await db.ReportCacheEntries.AsNoTracking().OrderBy(e => e.CacheKey).ToListAsync();
+        var entries = await db.ReportCacheEntries.AsNoTracking().OrderBy(e => e.CacheKey).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         entries[0].NeedsRefresh.Should().BeTrue();
         entries[1].NeedsRefresh.Should().BeTrue();
         entries[2].NeedsRefresh.Should().BeFalse();

@@ -40,6 +40,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         return new PortfolioAnalysisReportPageViewModel(services.BuildServiceProvider());
     }
 
+    /// <summary>
+    /// Verifies that loading the report fetches both the analysis report and the KPI tile configuration from
+    /// the API and populates the view model's data.
+    /// </summary>
     [Fact]
     public async Task LoadReport_ViewModel_CallsServiceAndSetsData()
     {
@@ -49,7 +53,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetKpiConfigurationAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateConfig());
 
-        await vm.LoadReportAsync();
+        await vm.LoadReportAsync(TestContext.Current.CancellationToken);
 
         vm.PortfolioReportData.Should().NotBeNull();
         vm.PortfolioReportData!.Structure.TotalMarketValue.Should().Be(1234m);
@@ -57,6 +61,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Verify(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that saving a KPI configuration while in edit mode persists it via the API and exits edit
+    /// mode afterward.
+    /// </summary>
     [Fact]
     public async Task EditMode_SaveConfiguration_PersistsAndInvalidatesCache()
     {
@@ -68,7 +76,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateReport(500m));
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
         vm.IsEditMode.Should().BeTrue();
 
         var request = new PortfolioKpiConfigurationRequest
@@ -76,12 +84,17 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
             ActiveTileIds = [PortfolioTileId.Structure],
             TileOrder = [PortfolioTileId.Structure]
         };
-        await vm.SaveConfigurationAsync(request);
+        await vm.SaveConfigurationAsync(request, TestContext.Current.CancellationToken);
 
         vm.IsEditMode.Should().BeFalse();
         apiMock.Verify(a => a.Portfolio_SaveKpiConfigurationAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that entering edit mode seeds the editable <c>EditOrder</c>/<c>EditActive</c> working state
+    /// from the currently loaded KPI configuration, so the edit UI starts from the user's saved tile
+    /// selection rather than an empty state.
+    /// </summary>
     [Fact]
     public async Task EnterEditMode_ViewModel_PopulatesEditOrderAndActiveFromConfiguration()
     {
@@ -89,12 +102,17 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetKpiConfigurationAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateConfig());
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
 
         vm.EditOrder.Should().Equal(PortfolioTileId.Structure);
         vm.EditActive.Should().Contain(PortfolioTileId.Structure);
     }
 
+    /// <summary>
+    /// Verifies that toggling a tile off in edit mode and saving sends a request with that tile removed from
+    /// <c>ActiveTileIds</c> (while it remains in <c>TileOrder</c>), and that the edit working state is cleared
+    /// and edit mode exited afterward.
+    /// </summary>
     [Fact]
     public async Task SaveEditConfiguration_ViewModel_PersistsEditStateAndExitsEditMode()
     {
@@ -106,10 +124,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateReport(500m));
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
         vm.ToggleTileActive(PortfolioTileId.Structure, false);
 
-        await vm.SaveEditConfigurationAsync();
+        await vm.SaveEditConfigurationAsync(TestContext.Current.CancellationToken);
 
         vm.IsEditMode.Should().BeFalse();
         vm.EditOrder.Should().BeEmpty();
@@ -119,6 +137,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that the "SaveEdit" ribbon action is absent in normal view mode and only appears once edit
+    /// mode has been entered, so the save button can't be triggered outside of an active edit.
+    /// </summary>
     [Fact]
     public async Task GetRibbonRegisters_ViewModel_ExposesSaveActionOnlyInEditMode()
     {
@@ -129,7 +151,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         var actionsBeforeEdit = GetActions(vm);
         Assert.DoesNotContain(actionsBeforeEdit, a => a.Action == "SaveEdit");
 
-        await vm.EnterEditModeAsync();
+        await vm.EnterEditModeAsync(TestContext.Current.CancellationToken);
 
         var actionsInEdit = GetActions(vm);
         Assert.Contains(actionsInEdit, a => a.Action == "SaveEdit");
@@ -141,6 +163,10 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
             .SelectMany(x => x.Items ?? new List<FinanceManager.Web.ViewModels.Common.UiRibbonAction>())
             .ToList();
 
+    /// <summary>
+    /// Verifies that refreshing the report invalidates the server-side cache first and then reloads the
+    /// report, so a refresh always reflects the latest underlying data rather than a stale cached report.
+    /// </summary>
     [Fact]
     public async Task Refresh_ViewModel_ClearsAndReloadsReport()
     {
@@ -150,7 +176,7 @@ public sealed class PortfolioAnalysisReportPageViewModelTests
         apiMock.Setup(a => a.Portfolio_GetAnalysisReportAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateReport(777m));
 
-        await vm.RefreshReportAsync();
+        await vm.RefreshReportAsync(TestContext.Current.CancellationToken);
 
         apiMock.Verify(a => a.Portfolio_ResetCacheAsync(It.IsAny<CancellationToken>()), Times.Once);
         vm.PortfolioReportData!.Structure.TotalMarketValue.Should().Be(777m);

@@ -37,8 +37,6 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <param name="options">The options to configure the context (provider, connection string, etc.).</param>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    /// <summary>Users (Identity + application user extensions).</summary>
-    public DbSet<User> Users => Set<User>();
     /// <summary>Bank accounts.</summary>
     public DbSet<Account> Accounts => Set<Account>();
     /// <summary>Linked sub-IBANs for collection accounts.</summary>
@@ -132,6 +130,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.KnownContactAutoCreateEnabled).HasDefaultValue(true).IsRequired();
             b.Property(x => x.AlphaVantageApiKey).HasMaxLength(2048);
             b.Property(x => x.ShareAlphaVantageApiKey).HasDefaultValue(false);
+            b.Property(x => x.CacheKpisInLocalStorage).HasDefaultValue(false).IsRequired();
             // Return analysis settings
             b.Property(x => x.BenchmarkSecurityId);
             b.Property(x => x.ShowSharpeRatio).HasDefaultValue(false).IsRequired();
@@ -613,7 +612,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
         // Security prices
         await SecurityPrices
-            .Where(p => p.SecurityId != null && Securities.Any(s => s.OwnerUserId == userId && s.Id == p.SecurityId))
+            .Where(p => Securities.Any(s => s.OwnerUserId == userId && s.Id == p.SecurityId))
             .ExecuteDeleteAsync(ct);
 
         // Statement drafts
@@ -692,7 +691,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         await SecurityCategories
             .Where(c => c.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);        
+        progressCallback(++count, total);
 
         // Budgets
         var budgetPurposes = await BudgetPurposes.Where(x => x.OwnerUserId == userId).ToListAsync(ct);

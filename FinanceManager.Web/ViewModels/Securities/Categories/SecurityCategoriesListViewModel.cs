@@ -50,7 +50,7 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
     public override bool AllowRangeFiltering { get => false; protected set => base.AllowRangeFiltering = value; }
 
     /// <summary>
-    /// Loads all security categories from the API and populates the <see cref="Items"/> collection.
+    /// Loads all security categories from the API and populates the <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/> collection.
     /// </summary>
     /// <param name="ct">Cancellation token used to cancel the operation.</param>
     /// <returns>A task that completes when loading has finished.</returns>
@@ -87,7 +87,7 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
     }
 
     /// <summary>
-    /// Builds list columns and records used by the UI renderer from the current <see cref="Items"/> collection.
+    /// Builds list columns and records used by the UI renderer from the current <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/> collection.
     /// </summary>
     protected override void BuildRecords()
     {

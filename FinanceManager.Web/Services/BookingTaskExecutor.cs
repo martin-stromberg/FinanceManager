@@ -43,7 +43,7 @@ namespace FinanceManager.Web.Services
 
         /// <summary>
         /// Executes the mass booking background task using the provided <paramref name="context"/>.
-        /// Progress is continuously reported via <see cref="BackgroundTaskContext.ReportProgress(int,int,string,int,int)"/>.
+        /// Progress is continuously reported via <see cref="BackgroundTaskContext.ReportProgress"/>.
         /// </summary>
         /// <param name="context">Background task execution context containing TaskId, UserId and Payload.</param>
         /// <param name="ct">Cancellation token that may be used to cancel execution.</param>

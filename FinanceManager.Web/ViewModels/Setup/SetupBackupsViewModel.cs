@@ -77,7 +77,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
 
     /// <summary>
     /// Loads the list of backups from the API and populates the <see cref="Backups"/> collection.
-    /// Any errors are captured via <see cref="SetError(string?, string?)"/>.
+    /// Any errors are captured via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/>.
     /// </summary>
     /// <param name="ct">Cancellation token used to cancel the operation.</param>
     /// <returns>A task that completes when the operation finishes.</returns>
@@ -125,6 +125,8 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
     /// reflected via <see cref="HasActiveRestore"/>.
     /// </summary>
     /// <param name="id">Backup identifier to apply.</param>
+    /// <param name="confirmationText">Confirmation text the user typed, expected to match the backup's file name.</param>
+    /// <param name="expectedFileName">File name expected by the caller, used as an additional guard against applying the wrong backup.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the request finishes.</returns>
     public async Task StartApplyAsync(Guid id, string confirmationText, string expectedFileName, CancellationToken ct = default)

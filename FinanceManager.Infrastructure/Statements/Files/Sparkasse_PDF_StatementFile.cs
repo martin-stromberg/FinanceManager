@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Linq;
 
 namespace FinanceManager.Infrastructure.Statements.Files
@@ -11,7 +12,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
         /// <summary>
         /// Default constructor.
         /// </summary>
-        public Sparkasse_PDF_StatementFile() : base(null) { }
+        public Sparkasse_PDF_StatementFile() : base(NullLogger<Sparkasse_PDF_StatementFile>.Instance) { }
 
         /// <summary>
         /// Creates a new instance using the provided logger.

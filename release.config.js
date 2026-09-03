@@ -35,7 +35,16 @@ const releasePlugins = [
   [
     "@semantic-release/github",
     {
-      assets: releaseAssets
+      assets: releaseAssets,
+      // The default GITHUB_TOKEN only has `contents: write` - it cannot comment on the PR(s)
+      // associated with a released commit, which is what the plugin's "success"/"fail" steps
+      // otherwise attempt by default. Without this, any release whose commit has an associated
+      // PR (e.g. the routine staging->main promotion PR) fails at that final comment step with
+      // a GraphQL "Resource not accessible by integration" error, even though the release
+      // itself was already published successfully. Discovered via a real production incident
+      // on msTools.Updater.
+      successComment: false,
+      failComment: false
     }
   ]
 ];
@@ -57,8 +66,15 @@ const dryRunPlugins = [
   ]
 ];
 
+// "staging" is deliberately NOT listed as a semantic-release prerelease branch here (it used
+// to be, via { name: "staging", prerelease: "RC" }): RC version determination for staging now
+// lives in staging-ci.yml's own "version" job, which invokes semantic-release with a
+// --branches override against this same config instead of a second branch entry in this file
+// (see ci-target-schema.md section 4.8). Dropping that entry also resolves the previous
+// uppercase "RC" prerelease identifier, which conflicted with the project-wide lowercase
+// vX.Y.Z-rc.N tag format (decision 1).
 module.exports = {
-  branches: ["master", { name: "staging", prerelease: "RC" }],
+  branches: ["main"],
   tagFormat: "v${version}",
   plugins: process.env.RESOLVE_DRY_RUN === "true" ? dryRunPlugins : releasePlugins
 };

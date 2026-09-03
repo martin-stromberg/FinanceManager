@@ -4,8 +4,19 @@ using msTools.Web.Blazor;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Verifies that the <c>LoadingBar</c> component (from the shared <c>msTools.Web.Blazor</c> loading-bar
+/// infrastructure) renders using the appearance and identity options the hosting application configured via
+/// <c>AddLoadingBar</c>, rather than the library's built-in defaults.
+/// </summary>
 public sealed class LoadingBarComponentTests : BunitContext
 {
+    /// <summary>
+    /// Verifies that all host-configured loading bar options - element id, extra CSS class, color list, height,
+    /// top offset, mobile top offset and z-index - are actually applied to the rendered element's class list,
+    /// <c>data-loading-colors</c> attribute and inline style. Guards against options being silently dropped or
+    /// only partially wired through to the markup when the host customizes the bar's appearance.
+    /// </summary>
     [Fact]
     public void LoadingBar_UsesHostConfiguredAppearance()
     {

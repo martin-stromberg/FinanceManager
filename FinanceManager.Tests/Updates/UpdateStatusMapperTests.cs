@@ -6,8 +6,21 @@ using msTools.Updater;
 
 namespace FinanceManager.Tests.Updates;
 
+/// <summary>
+/// Covers <see cref="UpdateStatusMapper.MapAsync"/>: deriving the user-facing <c>UpdateStatusDto</c> from the
+/// orchestrator's raw status snapshot, in particular that the reported "update available" state is driven by the
+/// snapshot's actual state/available-version, not merely by a package descriptor being present on a stale last-check
+/// result.
+/// </summary>
 public sealed class UpdateStatusMapperTests
 {
+    /// <summary>
+    /// Verifies that when the snapshot is <see cref="AutoUpdateState.Idle"/> but its last check result still carries
+    /// a package descriptor whose check did not confirm an available version (the check's own <c>AvailableVersion</c>
+    /// is null), the mapper reports <see cref="UpdateStatusKind.NoUpdate"/> with no available update - a leftover
+    /// package reference on an old check result must not be mistaken for a currently available update once the
+    /// snapshot has settled back into idle.
+    /// </summary>
     [Fact]
     public async Task MapAsync_WhenIdleSnapshotContainsLastCheckPackageWithoutAvailableVersion_DoesNotReportAvailableUpdate()
     {
@@ -34,13 +47,18 @@ public sealed class UpdateStatusMapperTests
             false,
             null);
 
-        var result = await mapper.MapAsync(snapshot);
+        var result = await mapper.MapAsync(snapshot, TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(UpdateStatusKind.NoUpdate);
         result.AvailableVersion.Should().BeNull();
         result.AvailableUpdate.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies the positive counterpart: when the snapshot's state is genuinely
+    /// <see cref="AutoUpdateState.UpdateAvailable"/>, the mapper reports <see cref="UpdateStatusKind.Available"/>
+    /// with the available version and package details populated from the snapshot.
+    /// </summary>
     [Fact]
     public async Task MapAsync_WhenSnapshotStateIsUpdateAvailable_ReportsAvailableUpdate()
     {
@@ -67,7 +85,7 @@ public sealed class UpdateStatusMapperTests
             false,
             null);
 
-        var result = await mapper.MapAsync(snapshot);
+        var result = await mapper.MapAsync(snapshot, TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(UpdateStatusKind.Available);
         result.AvailableVersion.Should().Be("1.21.0-RC.2");

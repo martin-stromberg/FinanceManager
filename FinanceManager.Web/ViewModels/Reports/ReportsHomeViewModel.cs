@@ -30,7 +30,7 @@ public sealed class ReportsHomeViewModel : ViewModelBase
 
     /// <summary>
     /// Optional asynchronous initialization entry point called by consumers. When the user is not authenticated
-    /// the method requests authentication via <see cref="RequireAuthentication(string?)"/>. Otherwise it loads favorites.
+    /// the method requests authentication via <see cref="FinanceManager.Web.ViewModels.ViewModelBase.RequireAuthentication(string?)"/>. Otherwise it loads favorites.
     /// </summary>
     /// <param name="ct">Cancellation token used to cancel initialization.</param>
     /// <returns>A ValueTask that completes when initialization is finished.</returns>

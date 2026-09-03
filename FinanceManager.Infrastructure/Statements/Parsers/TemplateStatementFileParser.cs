@@ -14,7 +14,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
     /// Implementations provide a set of XML templates and a mechanism to read text content from a file bytes array.
     /// The template controls how lines are parsed into statement header data and individual movements.
     /// </summary>
-    public abstract class TemplateStatementFileParser: BaseStatementFileParser
+    public abstract class TemplateStatementFileParser : BaseStatementFileParser
     {
         /// <summary>
         /// Initializes a new instance of the TemplateStatementFileReader class with the specified templates.
@@ -22,7 +22,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <param name="templates">An array of template strings to be used by the file reader. Cannot be null.</param>
         /// <param name="logger">Logger instance for logging parsing activities and errors.</param>
         protected TemplateStatementFileParser(string[] templates, ILogger logger)
-            :base(logger)
+            : base(logger)
         {
             Templates = templates;
         }
@@ -51,7 +51,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             var DraftId = Guid.NewGuid();
             XmlDoc = new XmlDocument();
             var fileContent = statementFile.ReadContent().ToList();
-            if (!fileContent.Any() ) 
+            if (!fileContent.Any())
             {
                 LogWarning("Statement file content is empty.");
                 return null;
@@ -72,7 +72,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     foreach (var line in fileContent)
                     {
                         LogDebug($"Parsing line: {line}");
-                        foreach (var record in ParseNextLine(line).Where(rec => rec is not null).SelectMany(rec => ProcessFoundRecord(rec)))
+                        foreach (var record in ParseNextLine(line).OfType<StatementMovement>().SelectMany(rec => ProcessFoundRecord(rec)))
                         {
                             EntryNo++;
                             record.EntryNumber = EntryNo;
@@ -202,32 +202,59 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Gets the current parsing mode used by the parser.
         /// </summary>
         protected ParseMode CurrentMode { get; private set; } = ParseMode.None;
-        private string[] EndKeywords = null;
+        private string[]? EndKeywords;
         private string TableFieldSeparator = ";";
         private bool RemoveDuplicates = false;
         private int TableRecordLength = 0;
-        private string[] IgnoreRecordKeywords = null;
+        private string[]? IgnoreRecordKeywords;
         private bool StopOnError = true;
         /// <summary>
         /// The currently active XML section node from the loaded template used to control parsing behaviour.
         /// Implementations may inspect this node when extending parsing logic.
         /// </summary>
-        protected XmlNode CurrentSection = null;
-        private StatementHeader GlobalDraftData;
-        private StatementMovement GlobalLineData;
-        private StatementMovement RecordLineData = null;
-        private XmlDocument XmlDoc;
+        protected XmlNode? CurrentSection;
+        /// <summary>
+        /// Returns <see cref="CurrentSection"/>, guaranteed non-null. By construction this is only ever called
+        /// while a table/keyvalue/dynTable section is active, which implies <see cref="InitSection"/> already
+        /// verified that <see cref="CurrentSection"/> is non-null. Throws if that invariant is ever violated.
+        /// </summary>
+        /// <returns>The non-null current template section node.</returns>
+        private XmlNode CurrentSectionOrThrow => CurrentSection ?? throw new InvalidOperationException("Internal parser error: no active template section.");
+        private StatementHeader GlobalDraftData = new();
+        private StatementMovement GlobalLineData = new();
+        private StatementMovement? RecordLineData;
+        private XmlDocument XmlDoc = new();
         private int EntryNo = 0;
 
+        /// <summary>
+        /// Reads a required attribute value from a template XML node. Throws a clear exception when the
+        /// attribute is missing or empty, since that indicates a malformed template rather than recoverable
+        /// input data.
+        /// </summary>
+        /// <param name="node">The template XML node the attribute is expected on.</param>
+        /// <param name="attributeName">The name of the required attribute.</param>
+        /// <returns>The non-null, non-empty attribute value.</returns>
+        /// <exception cref="ApplicationException">Thrown when the attribute is missing or empty.</exception>
+        private static string GetRequiredAttribute(XmlNode node, string attributeName)
+        {
+            var value = node.Attributes?[attributeName]?.Value;
+            if (string.IsNullOrEmpty(value))
+                throw new ApplicationException($"Template error: required attribute '{attributeName}' is missing on element '{node.Name}'.");
+            return value;
+        }
 
-        private IEnumerable<StatementMovement> ParseNextLine(string line)
+
+        private IEnumerable<StatementMovement?> ParseNextLine(string line)
         {
             OnBeforeParseLine(ref line);
             switch (CurrentMode)
             {
                 case ParseMode.None:
                     if (CurrentSection == null)
-                        CurrentSection = XmlDoc.DocumentElement.FirstChild;
+                    {
+                        var root = XmlDoc.DocumentElement ?? throw new ApplicationException("Template XML has no root element.");
+                        CurrentSection = root.FirstChild;
+                    }
                     else
                         CurrentSection = CurrentSection.NextSibling;
                     InitSection();
@@ -250,7 +277,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     else if (EndKeywords is not null && EndKeywords.Any(kw => line.Contains(kw)))
                         CurrentMode = ParseMode.None;
                     else
-                        ParseKeyValue(line, CurrentSection);
+                        ParseKeyValue(line, CurrentSectionOrThrow);
                     break;
                 case ParseMode.TableHeader:
                     CurrentMode = ParseMode.Table;
@@ -269,7 +296,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     else
                     {
                         var record = ParseTableRecord(line);
-                                                if (record is not null && record.IsError)
+                        if (record is not null && record.IsError)
                         {
                             CurrentMode = ParseMode.None;
                             foreach (var record2 in ParseNextLine(line))
@@ -306,7 +333,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// (for example a subtotal row). The default implementation returns <c>null</c>.
         /// </summary>
         /// <returns>An optional <see cref="StatementMovement"/> representing the table footer/aggregate, or <c>null</c>.</returns>
-        protected virtual StatementMovement OnTableFinished()
+        protected virtual StatementMovement? OnTableFinished()
         {
             return null;
         }
@@ -318,7 +345,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                 EndKeywords = null;
                 return;
             }
-            switch (CurrentSection.Attributes["type"].Value)
+            switch (GetRequiredAttribute(CurrentSection, "type"))
             {
                 case "ignore":
                     CurrentMode = ParseMode.Ignore;
@@ -329,55 +356,59 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                 case "table":
                     {
                         CurrentMode = ParseMode.Table;
-                        if (CurrentSection.Attributes["containsheader"].Value == "true")
+                        if (CurrentSection.Attributes?["containsheader"]?.Value == "true")
                             CurrentMode = ParseMode.TableHeader;
-                        TableFieldSeparator = CurrentSection.Attributes["fieldSeparator"]?.Value;
-                        if (string.IsNullOrEmpty(TableFieldSeparator))
-                            TableFieldSeparator = ";";
+                        var fieldSeparator = CurrentSection.Attributes?["fieldSeparator"]?.Value;
+                        TableFieldSeparator = string.IsNullOrEmpty(fieldSeparator) ? ";" : fieldSeparator;
 
                         var queryIgnore = from XmlNode cn in CurrentSection.ChildNodes
                                           where cn.Name == "ignore"
-                                          select cn.Attributes["keyword"].Value;
+                                          select GetRequiredAttribute(cn, "keyword");
                         IgnoreRecordKeywords = queryIgnore.ToArray();
-                        if (!bool.TryParse(CurrentSection.Attributes["removeDuplicates"]?.Value, out RemoveDuplicates))
+                        if (!bool.TryParse(CurrentSection.Attributes?["removeDuplicates"]?.Value, out RemoveDuplicates))
                             RemoveDuplicates = false;
-                        StopOnError = CurrentSection.Attributes["stopOnError"]?.Value == "true";
+                        StopOnError = CurrentSection.Attributes?["stopOnError"]?.Value == "true";
                     }
                     break;
                 case "dynTable":
                     {
                         CurrentMode = ParseMode.DynamicTable;
-                        if (!int.TryParse(CurrentSection.Attributes["recordLength"]?.Value, out TableRecordLength))
+                        if (!int.TryParse(CurrentSection.Attributes?["recordLength"]?.Value, out TableRecordLength))
                             TableRecordLength = 0;
-                        TableFieldSeparator = CurrentSection.Attributes["fieldSeparator"]?.Value;
-                        if (string.IsNullOrEmpty(TableFieldSeparator))
-                            TableFieldSeparator = ";";
+                        var fieldSeparator = CurrentSection.Attributes?["fieldSeparator"]?.Value;
+                        TableFieldSeparator = string.IsNullOrEmpty(fieldSeparator) ? ";" : fieldSeparator;
                         var queryIgnore = from XmlNode cn in CurrentSection.ChildNodes
                                           where cn.Name == "ignore"
-                                          select cn.Attributes["keyword"].Value;
+                                          select GetRequiredAttribute(cn, "keyword");
                         IgnoreRecordKeywords = queryIgnore.ToArray();
-                        if (!bool.TryParse(CurrentSection.Attributes["removeDuplicates"]?.Value, out RemoveDuplicates))
+                        if (!bool.TryParse(CurrentSection.Attributes?["removeDuplicates"]?.Value, out RemoveDuplicates))
                             RemoveDuplicates = false;
                     }
                     break;
                 default:
                     throw new ApplicationException("unknown section type!");
             }
-            EndKeywords = CurrentSection.Attributes["endKeyword"]?.Value?.Split('|');
+            EndKeywords = CurrentSection.Attributes?["endKeyword"]?.Value?.Split('|');
         }
 
         private void ParseKeyValue(string line, XmlNode currentSection)
         {
-            var separator = currentSection.Attributes.GetNamedItem("separator")?.Value ?? ";";
+            var separator = currentSection.Attributes?.GetNamedItem("separator")?.Value ?? ";";
             string[] Values = line.Split(separator);
-            foreach (XmlNode Key in CurrentSection.ChildNodes)
+            foreach (XmlNode Key in currentSection.ChildNodes)
             {
-                var fieldCount = Key.Attributes["name"].Value.Split(separator).Length;
+                var keyName = GetRequiredAttribute(Key, "name");
+                var fieldCount = keyName.Split(separator).Length;
                 var name = string.Join(separator, Values.Take(fieldCount));
-                if (name.EndsWith(Key.Attributes["name"].Value))
+                if (name.EndsWith(keyName))
                 {
-                    string VariableName = Key.Attributes["variable"].Value;
-                    ParseVariable(VariableName, Values.Skip(fieldCount).FirstOrDefault(), true, GetVariableMode(Key.Attributes["mode"].Value), 1);
+                    string VariableName = GetRequiredAttribute(Key, "variable");
+                    // A line whose key matches but has nothing after the separator (e.g. a trailing/empty
+                    // value in the statement file) has no value to parse - skip it instead of crashing the
+                    // whole template attempt with a null-argument failure.
+                    var rawValue = Values.Skip(fieldCount).FirstOrDefault();
+                    if (rawValue is not null)
+                        ParseVariable(VariableName, rawValue, true, GetVariableMode(GetRequiredAttribute(Key, "mode")), 1);
                 }
             }
         }
@@ -423,15 +454,15 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 
         private string? ApplyTextReplacements(string inputText)
         {
-            var node = XmlDoc.DocumentElement.ChildNodes.OfType<XmlNode>().FirstOrDefault(node => node.Name == "replacements");
+            var node = XmlDoc.DocumentElement?.ChildNodes.OfType<XmlNode>().FirstOrDefault(node => node.Name == "replacements");
             if (node is null)
                 return inputText;
             foreach (var subNode in node.ChildNodes.OfType<XmlNode>())
             {
                 if (string.Compare(subNode.Name, "replace", true) != 0)
                     continue;
-                var search = subNode.Attributes.GetNamedItem("from")?.Value;
-                var replace = subNode.Attributes.GetNamedItem("to")?.Value;
+                var search = subNode.Attributes?.GetNamedItem("from")?.Value;
+                var replace = subNode.Attributes?.GetNamedItem("to")?.Value;
                 if (string.IsNullOrWhiteSpace(search))
                     continue;
                 inputText = inputText.Replace(search, replace);
@@ -451,11 +482,11 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <exception cref="FormatException">Thrown when date or numeric parsing fails for the provided value.</exception>
         protected void ParseVariable(string Name, string Value, bool global, VariableMode mode, int multiplier)
         {
-            StatementMovement line = global ? GlobalLineData : RecordLineData;
+            var line = global ? GlobalLineData : (RecordLineData ?? throw new InvalidOperationException("Internal parser error: no active record to populate."));
             ParseVariable(line, Name, Value, mode, multiplier);
         }
 
-        private StatementMovement ParseDynamicTableRecord(string line)
+        private StatementMovement? ParseDynamicTableRecord(string line)
         {
             if (TableRecordLength > 0 && line.Length != TableRecordLength)
                 return null;
@@ -466,7 +497,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             catch (FormatException) { return null; }
         }
 
-        private StatementMovement _RecordDelay = null;
+        private StatementMovement? _RecordDelay;
         private int _additionalRecordInformationCount = 0;
         /// <summary>
         /// Parses a single table record line and maps template-defined fields onto a <see cref="StatementMovement"/> instance.
@@ -476,7 +507,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <returns>The parsed <see cref="StatementMovement"/>, or <c>null</c> when the line should be ignored.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the template expects more fields than present and StopOnError is <c>false</c>.</exception>
         /// <exception cref="FormatException">Thrown when numeric/date parsing fails for field values.</exception>
-        protected virtual StatementMovement ParseTableRecord(string line)
+        protected virtual StatementMovement? ParseTableRecord(string line)
         {
             if (_RecordDelay is null)
             {
@@ -493,9 +524,9 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         }
         private bool HasAdditionalRowsDefined()
         {
-            foreach (XmlNode Field in CurrentSection.ChildNodes)
+            foreach (XmlNode Field in CurrentSectionOrThrow.ChildNodes)
             {
-                if (Field.Name == "regExp" && Field.Attributes.GetNamedItem("type")?.Value == "additional")
+                if (Field.Name == "regExp" && Field.Attributes?.GetNamedItem("type")?.Value == "additional")
                     return true;
             }
             return false;
@@ -505,15 +536,16 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// </summary>
         /// <param name="line">The second-line input from the table section.</param>
         /// <returns>The completed <see cref="StatementMovement"/> when parsing succeeded; otherwise <c>null</c>.</returns>
-        private StatementMovement ParseSecondRow(string line)
+        private StatementMovement? ParseSecondRow(string line)
         {
+            var recordDelay = _RecordDelay ?? throw new InvalidOperationException("Internal parser error: no delayed record to complete.");
             var isNextRecord = false;
-            foreach (XmlNode Field in CurrentSection.ChildNodes)
+            foreach (XmlNode Field in CurrentSectionOrThrow.ChildNodes)
             {
                 switch (Field.Name)
                 {
                     case "regExp":
-                        isNextRecord = isNextRecord || SecondRowParseRegularExpression(line, Field);
+                        isNextRecord = isNextRecord || SecondRowParseRegularExpression(line, Field, recordDelay);
                         break;
                 }
             }
@@ -527,15 +559,15 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Returns the currently delayed record and resets the internal delay state.
         /// </summary>
         /// <returns>The delayed <see cref="StatementMovement"/> instance.</returns>
-        private StatementMovement ReturnCurrentDelayedRecord()
+        private StatementMovement? ReturnCurrentDelayedRecord()
         {
             var outputRecord = _RecordDelay;
             _RecordDelay = null;
             _additionalRecordInformationCount = 0;
             return outputRecord;
         }
-        private StatementMovement InternalParseTableRecord(string line)
-        { 
+        private StatementMovement? InternalParseTableRecord(string line)
+        {
             if ((IgnoreRecordKeywords is not null) && IgnoreRecordKeywords.Any(kw => line.Contains(kw)))
                 return null;
             string[] Values = line.Split(TableFieldSeparator);
@@ -544,7 +576,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             try
             {
                 var regExpRecordCount = false;
-                foreach (XmlNode Field in CurrentSection.ChildNodes)
+                foreach (XmlNode Field in CurrentSectionOrThrow.ChildNodes)
                 {
                     switch (Field.Name)
                     {
@@ -571,17 +603,18 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// </summary>
         /// <param name="input">Input text to run the regular expression against.</param>
         /// <param name="field">XML node containing attributes <c>pattern</c> and optional <c>multiplier</c> and <c>type</c>.</param>
+        /// <returns><c>true</c> when the pattern matched the input; otherwise <c>false</c>.</returns>
         /// <exception cref="ArgumentException">Thrown when the configured regular expression pattern is invalid.</exception>
         protected virtual bool ParseRegularExpression(string input, XmlNode field)
         {
-            var type = field.Attributes.GetNamedItem("type")?.Value;
+            var type = field.Attributes?.GetNamedItem("type")?.Value;
             if (type == "additional")
                 return false;
 
-            var pattern = field.Attributes["pattern"].Value;
+            var pattern = GetRequiredAttribute(field, "pattern");
             var regex = new Regex(pattern, RegexOptions.IgnorePatternWhitespace);
             var match = regex.Match(input);
-            if (!int.TryParse(field.Attributes["multiplier"]?.Value, out int multiplier))
+            if (!int.TryParse(field.Attributes?["multiplier"]?.Value, out int multiplier))
                 multiplier = 1;
             if (!match.Success)
                 return false;
@@ -602,12 +635,13 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// </summary>
         /// <param name="input">The input text to match.</param>
         /// <param name="field">XML node defining the regex pattern and multiplier.</param>
+        /// <param name="recordDelay">The delayed record from the first row, whose fields this additional row augments.</param>
         /// <returns><c>true</c> when the input completed parsing for the delayed record (no further additional lines required); otherwise <c>false</c>.</returns>
-        private bool SecondRowParseRegularExpression(string input, XmlNode field)
+        private bool SecondRowParseRegularExpression(string input, XmlNode field, StatementMovement recordDelay)
         {
-            var pattern = field.Attributes["pattern"].Value;
-            var type = field.Attributes.GetNamedItem("type")?.Value;
-            var maxoccur = (field.Attributes.GetNamedItem("maxoccur")?.Value ?? "-").ToInt32();
+            var pattern = GetRequiredAttribute(field, "pattern");
+            var type = field.Attributes?.GetNamedItem("type")?.Value;
+            var maxoccur = (field.Attributes?.GetNamedItem("maxoccur")?.Value ?? "-").ToInt32();
             if (type != "additional")
             {
                 var record = InternalParseTableRecord(input);
@@ -617,7 +651,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
             }
             var regex = new Regex(pattern, RegexOptions.IgnorePatternWhitespace);
             var match = regex.Match(input);
-            if (!int.TryParse(field.Attributes["multiplier"]?.Value, out int multiplier))
+            if (!int.TryParse(field.Attributes?["multiplier"]?.Value, out int multiplier))
                 multiplier = 1;
             if (match.Success)
             {
@@ -629,7 +663,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
                     var value = match.Groups[groupName].Value;
                     if (string.IsNullOrEmpty(value))
                         continue;
-                    ParseVariable(_RecordDelay, groupName, value, VariableMode.Always, multiplier);
+                    ParseVariable(recordDelay, groupName, value, VariableMode.Always, multiplier);
                 }
                 _additionalRecordInformationCount++;
                 if (maxoccur > 0 && _additionalRecordInformationCount >= maxoccur)
@@ -639,9 +673,13 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         }
         private int ParseField(string[] Values, int FieldIdx, XmlNode Field)
         {
-            string VariableName = Field.Attributes["variable"]?.Value;
-            int.TryParse(Field.Attributes["length"]?.Value, out int fieldLength);
-            if (!int.TryParse(Field.Attributes["multiplier"]?.Value, out int multiplier))
+            // An empty (but present) variable attribute is a deliberate template convention meaning
+            // "this column exists in the source data but maps to no target field" - ParseVariable's
+            // switch has no case for an empty name, so it's a safe no-op. GetRequiredAttribute must not
+            // be used here, since it would wrongly reject that intentional empty value.
+            string VariableName = Field.Attributes?["variable"]?.Value ?? string.Empty;
+            int.TryParse(Field.Attributes?["length"]?.Value, out int fieldLength);
+            if (!int.TryParse(Field.Attributes?["multiplier"]?.Value, out int multiplier))
                 multiplier = 1;
             if (TableFieldSeparator == "#None#")
             {
@@ -676,16 +714,17 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Finalizes the current record by returning it if set and resetting the internal state. If the record is empty, <c>null</c> is returned.
         /// </summary>
         /// <returns>The finalized <see cref="StatementMovement"/>, or <c>null</c> when nothing to return.</returns>
-        private StatementMovement FinishRecord()
+        private StatementMovement? FinishRecord()
         {
             try
             {
-                if (!IsRecordSet())
+                var record = RecordLineData;
+                if (record is null || !IsRecordSet())
                     return null;
 
-                RecordLineData.IsPreview = (RecordLineData.BookingDate == DateTime.MinValue)
-                    || (RecordLineData.BookingDate > DateTime.Today);
-                return RecordLineData;
+                record.IsPreview = (record.BookingDate == DateTime.MinValue)
+                    || (record.BookingDate > DateTime.Today);
+                return record;
 
             }
             finally

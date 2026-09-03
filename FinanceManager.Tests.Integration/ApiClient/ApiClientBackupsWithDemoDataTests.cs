@@ -27,15 +27,32 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// Integration tests that exercise the full backup/restore round trip against a realistically populated
+/// account (demo data plus manually created postings and contacts). Unlike a pure unit test, this drives
+/// requests through the real API client, ASP.NET Core pipeline, background task runner, and EF Core database,
+/// and verifies that a create-backup -> apply-backup cycle reproduces the exact same data graph, including
+/// discarding any records created after the backup was taken.
+/// </summary>
 public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes the test class with the shared <see cref="TestWebApplicationFactory"/> fixture, which hosts
+    /// the API in-process for the duration of all tests in this class.
+    /// </summary>
+    /// <param name="factory">The shared web application factory fixture providing the test server and DI container.</param>
     public ApiClientBackupsWithDemoDataTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
     }
 
+    /// <summary>
+    /// Creates a typed API client backed by an in-process <see cref="HttpClient"/> from the test server, with
+    /// automatic redirect following disabled so tests can inspect redirect/auth responses directly.
+    /// </summary>
+    /// <returns>A new <see cref="FinanceManager.Shared.ApiClient"/> bound to a fresh HTTP client.</returns>
     private FinanceManager.Shared.ApiClient CreateClient()
     {
         var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -45,6 +62,12 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         return new FinanceManager.Shared.ApiClient(http);
     }
 
+    /// <summary>
+    /// Registers a new, uniquely named user through the API, which also leaves the given client authenticated
+    /// as that user (registration establishes the session used by subsequent calls).
+    /// </summary>
+    /// <param name="api">The API client to authenticate.</param>
+    /// <returns>The generated username of the newly registered user.</returns>
     private async Task<string> RegisterAndAuthenticateAsync(FinanceManager.Shared.ApiClient api)
     {
         var username = $"user_{Guid.NewGuid():N}";
@@ -52,6 +75,16 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         return username;
     }
 
+    /// <summary>
+    /// Verifies that restoring a backup rolls the account back to exactly the state it was in at backup time,
+    /// including discarding entities created afterwards. The test seeds a realistic dataset (demo data plus an
+    /// extra contact) via the DI-resolved application services, snapshots the full data graph, creates a backup
+    /// through the API, adds another contact to simulate post-backup activity, then triggers a restore and runs
+    /// it to completion through the real <see cref="BackgroundTaskRunner"/>. It re-snapshots the data afterward
+    /// and asserts the two ID-agnostic snapshots are equivalent, which proves both that the restore reproduces
+    /// legitimate data faithfully and that the post-backup contact was removed. This exercises backup creation,
+    /// streaming download, the async restore pipeline, and background task processing end-to-end.
+    /// </summary>
     [Fact]
     public async Task Backup_With_DemoData_Restore_Removes_NewlyCreatedContact()
     {
@@ -68,10 +101,10 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
             // create demo data for this user (including postings)
             var demo = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Demo.IDemoDataService>();
-            await demo.CreateDemoDataAsync(userId, true, default);
+            await demo.CreateDemoDataAsync(userId, true, TestContext.Current.CancellationToken);
 
             var contactService = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Contacts.IContactService>();
-            await contactService.CreateAsync(userId, "FixContact", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "fix", false, default);
+            await contactService.CreateAsync(userId, "FixContact", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "fix", false, TestContext.Current.CancellationToken);
         }
 
         // capture full snapshot before backup (ID-agnostic projections)
@@ -81,17 +114,17 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             beforeSnapshot = await CaptureSnapshotAsync(db, scope.ServiceProvider, userId);
         }
-        
+
 
         // create backup via API
-        var created = await api.Backups_CreateAsync();
+        var created = await api.Backups_CreateAsync(TestContext.Current.CancellationToken);
         created.Should().NotBeNull();
 
-        var allBackups = await api.Backups_ListAsync();
+        var allBackups = await api.Backups_ListAsync(TestContext.Current.CancellationToken);
         allBackups.Should().ContainSingle(b => b.Id == created.Id);
 
         // download backup stream
-        var stream = await api.Backups_DownloadAsync(created.Id);
+        var stream = await api.Backups_DownloadAsync(created.Id, TestContext.Current.CancellationToken);
         stream.Should().NotBeNull();
         stream!.Length.Should().BeGreaterThan(0);
 
@@ -99,18 +132,18 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         using (var scope = _factory.Services.CreateScope())
         {
             var contactService = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Contacts.IContactService>();
-            await contactService.CreateAsync(userId, "TempContactToRemove", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "temp", false, default);
+            await contactService.CreateAsync(userId, "TempContactToRemove", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "temp", false, TestContext.Current.CancellationToken);
         }
 
         // start apply backup
-        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName));
+        var status = await api.Backups_StartApplyAsync(created.Id, new BackupRestoreRequestDto(created.FileName, created.FileName), TestContext.Current.CancellationToken);
         status.Running.Should().BeTrue();
 
         // run background task runner to process the restore
         using (var cts = new CancellationTokenSource())
         {
             var scope = _factory.Services.CreateScope();
-            var runner = new BackgroundTaskRunner(scope.ServiceProvider.GetService<IBackgroundTaskManager>(), scope.ServiceProvider.GetService<ILogger<BackgroundTaskRunner>>(), scope.ServiceProvider.GetServices<IBackgroundTaskExecutor>());
+            var runner = new BackgroundTaskRunner(scope.ServiceProvider.GetRequiredService<IBackgroundTaskManager>(), scope.ServiceProvider.GetRequiredService<ILogger<BackgroundTaskRunner>>(), scope.ServiceProvider.GetServices<IBackgroundTaskExecutor>());
             await runner.StartAsync(cts.Token);
 
             // poll until finished
@@ -118,13 +151,13 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             var processedChanged = false;
             for (int i = 0; i < 60; i = processedChanged ? 0 : i + 1)
             {
-                var polled = await api.Backups_GetStatusAsync();
+                var polled = await api.Backups_GetStatusAsync(TestContext.Current.CancellationToken);
                 if (!string.IsNullOrWhiteSpace(polled.Error))
                     throw new InvalidOperationException($"Backup restore failed: {polled.Error}");
                 if (!polled.Running) break;
                 processedChanged = lastProcessed != polled.Processed;
                 lastProcessed = polled.Processed;
-                await Task.Delay(200, default);
+                await Task.Delay(200, TestContext.Current.CancellationToken);
             }
             cts.Cancel();
             scope.Dispose();
@@ -226,7 +259,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var contactCategories = db.ContactCategories.AsNoTracking().Where(c => c.OwnerUserId == userId).Select(c => c.ToBackupDto()).ToList();
         var contacts = db.Contacts.AsNoTracking().Where(c => c.OwnerUserId == userId).Select(c => c.ToBackupDto()).ToList();
         var contactIds = contacts.Select(c => c.Id).ToList();
-        var aliasNames = db.AliasNames.AsNoTracking().Where(a => a.ContactId != null && contactIds.Contains(a.ContactId)).Select(a => a.ToBackupDto()).ToList();
+        var aliasNames = db.AliasNames.AsNoTracking().Where(a => contactIds.Contains(a.ContactId)).Select(a => a.ToBackupDto()).ToList();
 
         var securityCategories = db.SecurityCategories.AsNoTracking().Where(s => s.OwnerUserId == userId).Select(s => s.ToBackupDto()).ToList();
         var securities = db.Securities.AsNoTracking().Where(s => s.OwnerUserId == userId).Select(s => s.ToBackupDto()).ToList();
@@ -628,7 +661,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         // Remap postings references
         // Build lookup for after postings by composite key to remap posting Ids deterministically
         string PostingKey(FinanceManager.Domain.Postings.Posting.PostingBackupDto p, Snapshot snap)
-            => $"{p.BookingDate.Ticks}|{(p is { } && ((dynamic)p).ValutaDate is DateTime vd ? vd.Ticks : 0)}|{p.Kind}|{p.SourceId}|{p.AccountId}|{p.RecipientName}|{p.Subject}|{p.Amount}";
+            => $"{p.BookingDate.Ticks}|{p.ValutaDate.Ticks}|{p.Kind}|{p.SourceId}|{p.AccountId}|{p.RecipientName}|{p.Subject}|{p.Amount}";
 
         var afterPostingMap = new Dictionary<string, Guid>();
         foreach (var ap in after.Postings)
@@ -653,7 +686,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             var adjusted = p with { AccountId = accountId, ContactId = contactId, SavingsPlanId = savingsPlanId, SecurityId = securityId };
 
             // build key using adjusted values (use account id as string)
-            string key = $"{adjusted.BookingDate.Ticks}|{(adjusted is { } && ((dynamic)adjusted).ValutaDate is DateTime vdt ? vdt.Ticks : 0)}|{adjusted.Kind}|{adjusted.SourceId}|{adjusted.AccountId?.ToString() ?? string.Empty}|{adjusted.RecipientName ?? string.Empty}|{adjusted.Subject ?? string.Empty}|{adjusted.Amount}";
+            string key = $"{adjusted.BookingDate.Ticks}|{adjusted.ValutaDate.Ticks}|{adjusted.Kind}|{adjusted.SourceId}|{adjusted.AccountId?.ToString() ?? string.Empty}|{adjusted.RecipientName ?? string.Empty}|{adjusted.Subject ?? string.Empty}|{adjusted.Amount}";
             if (afterPostingMap.TryGetValue(key, out var mappedPid))
             {
                 adjusted = adjusted with { Id = mappedPid };

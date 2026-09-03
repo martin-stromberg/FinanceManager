@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Infrastructure.Statements.Files
 {
@@ -8,12 +9,12 @@ namespace FinanceManager.Infrastructure.Statements.Files
     /// </summary>
     /// <remarks>Use this class to process and extract data from Barclays PDF bank statements. Inherits
     /// parsing behavior from PdfStatementFile, with configuration optimized for Barclays-specific layouts.</remarks>
-    public class Barclays_PDF_StatementFile: PdfStatementFile
+    public class Barclays_PDF_StatementFile : PdfStatementFile
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Barclays_PDF_StatementFile"/> class with default settings.
         /// </summary>
-        public Barclays_PDF_StatementFile() : this(null)
+        public Barclays_PDF_StatementFile() : this(NullLogger<Barclays_PDF_StatementFile>.Instance)
         {
         }
         /// <summary>

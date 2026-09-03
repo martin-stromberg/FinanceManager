@@ -7,6 +7,10 @@ using System.Reflection;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>BankAccountCardViewModel</c> loading, create/update save flows, deletion, and ribbon shape,
+/// exercised against a minimal DI container with a mocked <see cref="IApiClient"/> instead of the full app host.
+/// </summary>
 public sealed class AccountDetailViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -47,6 +51,10 @@ public sealed class AccountDetailViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that initializing with an existing account id fetches the account and its linked bank
+    /// contact, and populates both the display title and the editable card record from that data.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsAccount_and_builds_card()
     {
@@ -71,6 +79,10 @@ public sealed class AccountDetailViewModelTests
         Assert.NotNull(vm.CardRecord);
     }
 
+    /// <summary>
+    /// Verifies that initializing with <see cref="Guid.Empty"/> (the "new account" case) skips the API
+    /// fetch and still produces a non-null account model and card record so the create form has fields to bind to.
+    /// </summary>
     [Fact]
     public async Task Initialize_NewAccount_ProducesEmptyCard()
     {
@@ -83,6 +95,11 @@ public sealed class AccountDetailViewModelTests
         Assert.NotNull(vm.CardRecord);
     }
 
+    /// <summary>
+    /// Verifies that saving a pending new account (created via <see cref="Guid.Empty"/> initialization
+    /// plus an edited name field) calls the create API and updates the view model's id and account from the response,
+    /// confirming the create-vs-update branch inside the private save routine is chosen correctly.
+    /// </summary>
     [Fact]
     public async Task Save_NewAccount_CreatesAndReturnsId()
     {
@@ -109,6 +126,10 @@ public sealed class AccountDetailViewModelTests
         Assert.Equal(createdId, vm.Account!.Id);
     }
 
+    /// <summary>
+    /// Verifies that saving an existing, already-loaded account calls the update API (not create), keeps
+    /// the same account id, and reflects the server's updated name back into the view model.
+    /// </summary>
     [Fact]
     public async Task Save_Update_CallsUpdateAndKeepsId()
     {
@@ -135,6 +156,10 @@ public sealed class AccountDetailViewModelTests
         Assert.Equal("ExistingUpdated", vm.Account!.Name);
     }
 
+    /// <summary>
+    /// Verifies that deleting a loaded account forwards the call to the API and surfaces its success result
+    /// through <c>DeleteAsync</c>'s return value.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_Success_ReturnsTrue()
     {
@@ -152,6 +177,10 @@ public sealed class AccountDetailViewModelTests
         Assert.True(ok);
     }
 
+    /// <summary>
+    /// Verifies that the ribbon exposes the navigation, manage, and linked-entities groups for both a
+    /// new (empty id) and an existing account, so callers can rely on a stable ribbon shape regardless of state.
+    /// </summary>
     [Fact]
     public void GetRibbon_ContainsExpectedGroups()
     {
@@ -159,7 +188,7 @@ public sealed class AccountDetailViewModelTests
         var loc = new DummyLocalizer();
 
         // New account (empty id)
-        var groupsNew = vm.GetRibbon(loc);
+        var groupsNew = vm.GetRibbon(loc)!;
         Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Navigation"));
         Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Manage"));
         Assert.Contains(groupsNew, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Linked"));
@@ -168,7 +197,7 @@ public sealed class AccountDetailViewModelTests
         // simulate by initializing
         var accountId = Guid.NewGuid();
         // We don't need to load account for ribbon shape
-        var groupsExisting = vm.GetRibbon(loc);
+        var groupsExisting = vm.GetRibbon(loc)!;
         Assert.Contains(groupsExisting, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Linked"));
     }
 }

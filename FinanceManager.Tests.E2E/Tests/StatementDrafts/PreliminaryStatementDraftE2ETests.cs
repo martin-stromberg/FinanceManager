@@ -9,16 +9,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for preliminary statement drafts: booking a manually-created preliminary
+/// draft into preliminary postings, reversing those preliminary postings once a matching real
+/// statement is booked for the same account, creating a preliminary draft through the account
+/// card's ribbon button and landing directly in quick-edit mode, and displaying the "preliminary"
+/// indicator on a preliminary draft's card page.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class PreliminaryStatementDraftE2ETests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PreliminaryStatementDraftE2ETests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public PreliminaryStatementDraftE2ETests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
     }
 
+    /// <summary>
+    /// Verifies that booking a manually-created and manually-filled preliminary statement draft
+    /// produces exactly one posting on the account, that the posting is flagged as preliminary,
+    /// and that the account's posting list displays the preliminary indicator for it.
+    /// </summary>
     [Fact]
     public async Task BookPreliminaryDraft_ShouldCreatePreliminaryPostings()
     {
@@ -79,6 +95,11 @@ public sealed class PreliminaryStatementDraftE2ETests
         (await preliminaryCheckCells.CountAsync()).Should().Be(1);
     }
 
+    /// <summary>
+    /// Verifies that after a preliminary draft has been booked, booking a real (non-preliminary)
+    /// statement draft for the same account reverses the existing preliminary posting (marks it
+    /// reversed with a zeroed amount) while the new real posting is created unaffected.
+    /// </summary>
     [Fact]
     public async Task BookRealStatement_ShouldReversePreliminaryPostings()
     {
@@ -135,7 +156,7 @@ public sealed class PreliminaryStatementDraftE2ETests
         var realEntry = realDraft.AddEntry(DateTime.Today, 50m, "Real", "E2E Shop", DateTime.Today, null, null, false, false);
         db.StatementDrafts.Add(realDraft);
         db.StatementDraftEntries.Add(realEntry);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await BrowserApiHelper.PostJsonAsync(page, $"/api/statement-drafts/{realDraft.Id}/entries/{realEntry.Id}/contact", new StatementDraftSetContactRequest(contact.Id));
 
@@ -160,6 +181,11 @@ public sealed class PreliminaryStatementDraftE2ETests
         await page.Locator("text=Preliminary").First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
     }
 
+    /// <summary>
+    /// Verifies that clicking the "Create preliminary draft" ribbon button on an account's card
+    /// page creates a new preliminary draft, navigates directly to its card page in quick-edit
+    /// mode, and focuses the first quick-edit booking-date field automatically.
+    /// </summary>
     [Fact]
     public async Task CreatePreliminaryDraft_ViaRibbon_ShouldCreateAndOpenDraftWithQuickEdit()
     {
@@ -192,6 +218,10 @@ public sealed class PreliminaryStatementDraftE2ETests
         activeElementId.Should().StartWith("qe_booking_");
     }
 
+    /// <summary>
+    /// Verifies that opening a preliminary draft's card page shows a localized "Preliminary"
+    /// label with a corresponding "Yes" value, in both German and English UI text.
+    /// </summary>
     [Fact]
     public async Task OpenPreliminaryDraft_Card_ShouldShowPreliminaryIndicator()
     {

@@ -11,7 +11,7 @@ public abstract class ValueObject
     /// Returns an ordered sequence of components that participate in equality comparisons for the value object.
     /// Implementations should yield components in a stable order and include nulls when appropriate.
     /// </summary>
-    /// <returns>An <see cref="IEnumerable{object}"/> of components used for equality and hash code generation.</returns>
+    /// <returns>An enumerable of components used for equality and hash code generation.</returns>
     protected abstract IEnumerable<object?> GetEqualityComponents();
 
     /// <summary>

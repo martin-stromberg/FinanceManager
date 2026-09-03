@@ -3,7 +3,7 @@ namespace FinanceManager.Domain.Savings;
 /// <summary>
 /// Represents a user's savings plan which may be recurring or one-off and can have a target amount/date, category and optional contract/attachment.
 /// </summary>
-public sealed class SavingsPlan: Entity
+public sealed class SavingsPlan : Entity
 {
     /// <summary>
     /// Gets the owner user identifier for this savings plan.
@@ -157,6 +157,7 @@ public sealed class SavingsPlan: Entity
     /// <param name="modifiedUtc">The UTC date and time to set as the modification timestamp. If <see langword="null"/>, the modification
     /// timestamp is not changed.</param>
     /// <param name="archivedUtc">The UTC date and time to set as the archive timestamp. If <see langword="null"/>, the archive
+    /// timestamp is not changed.</param>
     private void SetDates(DateTime? createdUtc, DateTime? modifiedUtc, DateTime? archivedUtc)
     {
         base.SetDates(createdUtc, modifiedUtc);

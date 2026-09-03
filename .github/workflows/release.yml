@@ -2,14 +2,18 @@ name: Release
 
 on:
   push:
-    branches: [master, staging]
-    tags: ["v*"]
+    branches: [main]
+    tags: ["v*.*.*"]
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
 
+# Prevents parallel release runs (e.g. a fast merge to main followed shortly after by a
+# manually pushed tag): resolve-release-version.mjs decides on a single target tag/version
+# by querying the GitHub API and existing tags - without serialization, two concurrent runs
+# could race for the same version or fail to create the release.
 concurrency:
   group: release-${{ github.repository }}
   cancel-in-progress: false
@@ -17,6 +21,7 @@ concurrency:
 jobs:
   release:
     runs-on: windows-latest
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -40,23 +45,23 @@ jobs:
         run: npm ci
 
       - name: Resolve release version
+        # Generalized asset-repair mechanism (ci-target-schema.md section 4.10): classifies
+        # this run as automatic (branch push to main, version via semantic-release --dry-run)
+        # or manual (a pushed vX.Y.Z tag), then checks whether a GitHub release for the
+        # resolved tag already exists and whether it already has all expected assets. Missing
+        # assets are repaired in place instead of duplicating the release. Only "main" pushes
+        # are treated as automatic here - staging pushes go through staging-ci.yml
+        # ("Pre-Release") instead. See scripts/resolve-release-version.mjs.
         id: version
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/resolve-release-version.mjs
 
-      - name: Stash manifest script
-        if: steps.version.outputs.released == 'true'
-        run: |
-          $script = "scripts\generate-update-manifest.mjs"
-          if (-not (Test-Path -LiteralPath $script)) {
-            throw "Manifest script not found: $script"
-          }
-          $backup = Join-Path $env:TEMP "generate-update-manifest.mjs"
-          Copy-Item -LiteralPath $script -Destination $backup -Force
-          "MANIFEST_SCRIPT=$backup" | Add-Content -Path $env:GITHUB_ENV -Encoding utf8
-
       - name: Check out release tag for asset repair
+        # Only relevant for the repair path: a previous run created the tag/release but was
+        # interrupted before all assets were uploaded. This checks out the exact tagged
+        # commit so the rebuilt asset matches the already-published release, instead of
+        # rebuilding from whatever commit triggered this run.
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'upload-existing'
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -76,102 +81,18 @@ jobs:
             throw "Release tag checkout did not resolve to the tagged commit."
           }
 
-      - name: Restore solution
-        if: steps.version.outputs.released == 'true'
-        run: dotnet restore FinanceManager.sln
-
-      - name: Test release gate
-        # Nur fuer master: Tests laufen bereits separat in test.yml (push-Event), ein erneuter Lauf hier
-        # waere redundant. Fuer staging-Releases entfaellt das Gate komplett - fehlschlagende Tests duerfen
-        # den Release-Build fuer staging nicht blockieren.
-        if: steps.version.outputs.released == 'true' && github.ref != 'refs/heads/staging'
+      - name: Release gate - regular tests
+        # Safety net now that there is no dedicated PR-gate workflow directly against main
+        # anymore (ci-target-schema.md section 11, item 2): PRs against main can only come
+        # from staging, which was already fully validated by pr-staging-ci.yml/staging-ci.yml,
+        # so this re-run mainly guards against a race between that validation and the actual
+        # merge or tag push. Runs for both automatic and manual-tag releases, but not for the
+        # asset-repair path, which only needs to rebuild an already-validated release.
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
         run: |
-          dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --configuration Release --no-restore
-          dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --configuration Release --no-restore
-
-      - name: Build solution
-        if: steps.version.outputs.released == 'true'
-        run: dotnet build FinanceManager.sln --configuration Release --no-restore
-
-      - name: Publish application
-        if: steps.version.outputs.released == 'true'
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-          RELEASE_REPOSITORY: ${{ github.repository }}
-          RELEASE_COMMIT: ${{ github.sha }}
-        run: |
-          if (Test-Path publish) {
-            Remove-Item -Recurse -Force publish
-          }
-
-          foreach ($runtime in @("win-x64", "linux-x64")) {
-            $output = Join-Path "publish" $runtime
-            dotnet publish FinanceManager.Web/FinanceManager.Web.csproj --configuration Release --framework net10.0 --runtime $runtime --self-contained true --output $output
-            if ($LASTEXITCODE -ne 0) {
-              throw "Publish failed for $runtime."
-            }
-
-            $metadata = @{
-              version = $env:RELEASE_VERSION
-              publishedAt = (Get-Date).ToUniversalTime().ToString("O")
-              commitSha = $env:RELEASE_COMMIT
-              repository = $env:RELEASE_REPOSITORY
-              runtimeIdentifier = $runtime
-            } | ConvertTo-Json
-            Set-Content -LiteralPath (Join-Path $output "release-metadata.json") -Value $metadata -Encoding UTF8
-          }
-
-          if (-not (Test-Path publish -PathType Container)) {
-            throw "The publish directory was not created."
-          }
-
-      - name: Package publish output
-        id: package
-        if: steps.version.outputs.released == 'true'
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:RELEASE_VERSION)) {
-            throw "The release version is missing."
-          }
-
-          $assetPaths = New-Object System.Collections.Generic.List[string]
-
-          foreach ($runtime in @("win-x64", "linux-x64")) {
-            $publishPath = (Resolve-Path (Join-Path "publish" $runtime)).Path
-            $publishedFiles = Get-ChildItem -LiteralPath $publishPath -File -Recurse -Force
-            if ($publishedFiles.Count -eq 0) {
-              throw "The publish directory for $runtime is empty."
-            }
-
-            $archivePath = Join-Path $PWD "FinanceManager-v$env:RELEASE_VERSION-$runtime.zip"
-            if (Test-Path -LiteralPath $archivePath) {
-              Remove-Item -Force -LiteralPath $archivePath
-            }
-
-            Add-Type -AssemblyName System.IO.Compression.FileSystem
-            [System.IO.Compression.ZipFile]::CreateFromDirectory(
-              $publishPath,
-              $archivePath,
-              [System.IO.Compression.CompressionLevel]::Optimal,
-              $false
-            )
-
-            $archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
-            try {
-              if ($archive.Entries.Count -eq 0) {
-                throw "The release archive for $runtime is empty."
-              }
-            }
-            finally {
-              $archive.Dispose()
-            }
-
-            $assetPaths.Add([System.IO.Path]::GetFileName($archivePath))
-          }
-
-          "asset_paths=$($assetPaths -join ';')" | Add-Content -Path $env:GITHUB_OUTPUT
+          dotnet restore FinanceManager.sln
+          dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --configuration Release --filter "Category!=OsInterface"
+          dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --configuration Release
 
       - name: Generate release notes for update manifest
         id: notes
@@ -186,51 +107,30 @@ jobs:
           Set-Content -LiteralPath $notesPath -Value $notes -Encoding UTF8
           "notes_path=release-notes.md" | Add-Content -Path $env:GITHUB_OUTPUT
 
-      - name: Generate update manifest
-        id: manifest
+          $delimiter = "NOTES_EOF_$([guid]::NewGuid().ToString('N'))"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "notes<<$delimiter"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value $notes
+          Add-Content -Path $env:GITHUB_OUTPUT -Value $delimiter
+
+      - name: Build and package
+        id: build
         if: steps.version.outputs.released == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-          RELEASE_NOTES_PATH: ${{ steps.notes.outputs.notes_path }}
-        run: |
-          $publishedAt = ""
-          try {
-            $releaseJson = gh release view "$env:RELEASE_TAG" --json publishedAt 2>$null
-            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($releaseJson)) {
-              $publishedAt = ($releaseJson | ConvertFrom-Json).publishedAt
-            }
-          }
-          catch {
-            $publishedAt = ""
-          }
-
-          if ([string]::IsNullOrWhiteSpace($publishedAt)) {
-            $publishedAt = (Get-Date).ToUniversalTime().ToString("O")
-          }
-
-          $env:RELEASE_PUBLISHED_AT = $publishedAt
-          $env:RELEASE_NOTES = Get-Content -Raw -LiteralPath $env:RELEASE_NOTES_PATH
-
-          $manifestScript = $env:MANIFEST_SCRIPT
-          if ([string]::IsNullOrWhiteSpace($manifestScript) -or -not (Test-Path -LiteralPath $manifestScript)) {
-            $manifestScript = "scripts\generate-update-manifest.mjs"
-          }
-          node $manifestScript
-
-          if (-not (Test-Path -LiteralPath "update.json")) {
-            throw "update.json was not generated."
-          }
-          "manifest_path=update.json" | Add-Content -Path $env:GITHUB_OUTPUT
+        uses: ./.github/actions/build-and-package
+        with:
+          release-version: ${{ steps.version.outputs.version }}
+          release-tag: ${{ steps.version.outputs.tag }}
+          release-notes: ${{ steps.notes.outputs.notes }}
 
       - name: Create automatic GitHub release
+        # Goes through semantic-release's own publish pipeline (releasePlugins in
+        # release.config.js: commit-analyzer, verify-release-version, release-notes-generator,
+        # then @semantic-release/github, which creates the tag, the GitHub release and uploads
+        # the assets listed below).
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create' && steps.version.outputs.release_kind == 'automatic'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_ASSET_PATHS: ${{ steps.package.outputs.asset_paths }}
-          RELEASE_MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
+          RELEASE_ASSET_PATHS: ${{ steps.build.outputs.asset-paths }}
+          RELEASE_MANIFEST_PATH: ${{ steps.build.outputs.manifest-path }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: npm run release
 
@@ -238,8 +138,8 @@ jobs:
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create' && steps.version.outputs.release_kind == 'manual'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_ASSET_PATHS: ${{ steps.package.outputs.asset_paths }}
-          RELEASE_MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
+          RELEASE_ASSET_PATHS: ${{ steps.build.outputs.asset-paths }}
+          RELEASE_MANIFEST_PATH: ${{ steps.build.outputs.manifest-path }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
           $assets = @($env:RELEASE_ASSET_PATHS -split ';') + @($env:RELEASE_MANIFEST_PATH)
@@ -249,8 +149,8 @@ jobs:
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'upload-existing'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_ASSET_PATHS: ${{ steps.package.outputs.asset_paths }}
-          RELEASE_MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
+          RELEASE_ASSET_PATHS: ${{ steps.build.outputs.asset-paths }}
+          RELEASE_MANIFEST_PATH: ${{ steps.build.outputs.manifest-path }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
           $assets = @($env:RELEASE_ASSET_PATHS -split ';') + @($env:RELEASE_MANIFEST_PATH)

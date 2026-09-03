@@ -431,7 +431,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     /// <param name="q">Optional search query to filter results.</param>
     /// <param name="skip">Number of items to skip for paging.</param>
     /// <param name="take">Maximum number of items to return (server clamps to safe maximum).</param>
-    /// <returns>List of matching <see cref="LookupItem"/> values.</returns>
+    /// <returns>List of matching <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.LookupItem"/> values.</returns>
     public override async Task<IReadOnlyList<LookupItem>> QueryLookupAsync(CardField field, string? q, int skip, int take)
     {
         if (!string.IsNullOrWhiteSpace(field.LookupType) && string.Equals(field.LookupType, "SecurityCategory", StringComparison.OrdinalIgnoreCase))
@@ -442,7 +442,11 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 await LoadCategoriesAsync();
             }
 
-            var list = Categories
+            // LoadCategoriesAsync always leaves Categories non-null (success or its catch fallback both
+            // assign it), but the compiler cannot see that guarantee across the await above, so fall back
+            // to an empty list defensively rather than risk a null dereference.
+            var categories = Categories ?? new List<SecurityCategoryDto>();
+            var list = categories
                 .Where(c => string.IsNullOrWhiteSpace(q) || c.Name.Contains(q ?? string.Empty, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(c => c.Name)
                 .Skip(Math.Max(0, skip))

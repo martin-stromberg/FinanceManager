@@ -1496,6 +1496,11 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid?>("BenchmarkSecurityId")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("CacheKpisInLocalStorage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");

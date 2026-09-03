@@ -162,7 +162,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var (security, user) = SetupSecurityAndUser();
         var posting = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-30), -1_000m, 10m);
         _db.Postings.Add(posting);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         ReturnSummaryDto? result = await _sut.GetReturnSummaryAsync(security.Id, user.Id, CancellationToken.None);
@@ -191,7 +191,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
 
         // Add a price so we bypass the "no current price" branch and reach the oversell check
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 105m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         ReturnSummaryDto? result = await _sut.GetReturnSummaryAsync(security.Id, user.Id, CancellationToken.None);
@@ -230,20 +230,20 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             NullLogger<ReturnAnalysisService>.Instance,
             new TestReturnAnalysisLocalizer());
 
-        var groupBuy  = new Guid("9be20b76-c600-4ab5-b388-e02a2b89bffa");
+        var groupBuy = new Guid("9be20b76-c600-4ab5-b388-e02a2b89bffa");
         var groupSell = new Guid("ca09994a-decd-40a7-9eff-a51d1ba581ed");
-        const decimal buyAmount     = -957.75m;
-        const decimal buyFeeAmount  = -7.29m;
-        const decimal sellAmount    =  1151.50m;
+        const decimal buyAmount = -957.75m;
+        const decimal buyFeeAmount = -7.29m;
+        const decimal sellAmount = 1151.50m;
         const decimal sellFeeAmount = -7.78m;
 
         // Expected derived values
         const decimal historicalInvestedCapital = 957.75m + 7.29m;     // 965,04 — used internally for return calc
-        const decimal expectedSalesProceeds     = 1151.50m - 7.78m;    // 1143,72
-        const decimal expectedReturnAbsolute    = expectedSalesProceeds - historicalInvestedCapital; // 178,68
+        const decimal expectedSalesProceeds = 1151.50m - 7.78m;    // 1143,72
+        const decimal expectedReturnAbsolute = expectedSalesProceeds - historicalInvestedCapital; // 178,68
 
         var (security, user) = SetupSecurityAndUser();
-        var buyDate  = new DateTime(2020, 3, 26);
+        var buyDate = new DateTime(2020, 3, 26);
         var sellDate = new DateTime(2024, 8, 6);
 
         // Quantity on Sell is negative in the domain model (outflow of shares)
@@ -276,7 +276,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             .SetGroup(groupSell);
 
         _db.Postings.AddRange(buyPosting, buyFeePosting, sellFeePosting, sellPosting);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         ReturnSummaryDto? result = await sut.GetReturnSummaryAsync(security.Id, user.Id, CancellationToken.None);
@@ -327,7 +327,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         {
             _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today.AddDays(-i), 100m + i));
         }
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         SparklineDataDto? result = await _sut.GetSparklineDataAsync(security.Id, user.Id, CancellationToken.None);
@@ -353,7 +353,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         {
             _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today.AddDays(-i), 100m));
         }
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         SparklineDataDto? result = await _sut.GetSparklineDataAsync(security.Id, user.Id, CancellationToken.None);
@@ -441,7 +441,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
 
         // Point user's benchmark at the foreign security
         user.SetReturnAnalysisSettings(benchmarkSecurity.Id, false, 0m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         BenchmarkComparisonDto? result = await _sut.GetBenchmarkComparisonAsync(security.Id, user.Id, CancellationToken.None);
@@ -466,7 +466,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var otherOwner = Guid.NewGuid();
         var foreignSecurity = new Security(otherOwner, "Foreign ETF", "FOR", null, null, "USD", null);
         _db.Securities.Add(foreignSecurity);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         Func<Task> act = async () => await _sut.UpdateUserSettingsAsync(
@@ -485,13 +485,13 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange – user with an existing benchmark security
         var (security, user) = SetupSecurityAndUser();
         user.SetReturnAnalysisSettings(security.Id, false, 0m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         await _sut.UpdateUserSettingsAsync(user.Id, null, false, 0m, CancellationToken.None);
 
         // Assert – reload the user entity and verify the benchmark was cleared
-        await _db.Entry(user).ReloadAsync();
+        await _db.Entry(user).ReloadAsync(TestContext.Current.CancellationToken);
         user.BenchmarkSecurityId.Should().BeNull();
     }
 
@@ -549,7 +549,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var posting = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-10), -1_000m, 10m);
         _db.Postings.Add(posting);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today.AddDays(-1), 105m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Setup TWR and volatility so the Sharpe guard would fire — if opt-in were true
         _calcMock.Setup(c => c.CalculateTwr(It.IsAny<IReadOnlyList<TwrPeriodInput>>())).Returns(0.05m);
@@ -580,7 +580,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var posting = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-10), -1_000m, 10m);
         _db.Postings.Add(posting);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today.AddDays(-1), 105m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _calcMock.Setup(c => c.CalculateTwr(It.IsAny<IReadOnlyList<TwrPeriodInput>>())).Returns(0.05m);
         _calcMock.Setup(c => c.CalculateVolatility(It.IsAny<IReadOnlyList<decimal>>())).Returns(0m); // zero volatility
@@ -647,7 +647,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var posting = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(posting);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -668,7 +668,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var (security, user) = SetupSecurityAndUser();
         var posting = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-30), -1_000m, 10m);
         _db.Postings.Add(posting);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -696,7 +696,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy1 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-200), -500m, 5m);
         var buy2 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-100), -600m, 6m);
         _db.Postings.AddRange(buy1, buy2);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Configure FIFO mock to return two remaining lots matching the two buys
         _fifoMock
@@ -739,7 +739,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             SecurityPostingSubType.Dividend,
             null);
         _db.Postings.AddRange(buy, dividend);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -770,7 +770,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-200), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m)); // 10 shares × 120 = 1 200 market value
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // FIFO mock: cost basis 1 000, 10 shares held
         _fifoMock
@@ -855,7 +855,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             SecurityPostingSubType.Fee,
             null);
         _db.Postings.AddRange(buy, fee1, fee2);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -942,7 +942,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         standaloneFee.SetGroup(standaloneGroupId);
 
         _db.Postings.AddRange(buy1, fee1, buy2, standaloneFee);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // FIFO: two remaining lots (buy1 absorbs its linked fee in CostPerUnit), standalone fee in StandaloneFeeTotal
         _fifoMock
@@ -1013,7 +1013,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1047,7 +1047,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy2 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-300), -600m, 6m);
         _db.Postings.AddRange(buy1, buy2);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m)); // current price = 110
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1097,7 +1097,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
 
         _db.Postings.AddRange(buy, dividend, tax);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1136,7 +1136,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy2 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-300), -600m, 6m);
         _db.Postings.AddRange(buy1, buy2);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1170,7 +1170,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, firstBuyDate, -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1207,7 +1207,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1241,7 +1241,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today, -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1286,7 +1286,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             null);
         _db.Postings.Add(dividend);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
@@ -1319,7 +1319,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var (security, user) = SetupSecurityAndUser();
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1350,7 +1350,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1382,7 +1382,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy2 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-100), -500m, 5m);
         _db.Postings.AddRange(buy1, dividend, buy2);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1410,7 +1410,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1447,7 +1447,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         tax.SetGroup(divGroupId);
         _db.Postings.AddRange(buy, dividend, tax);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1477,7 +1477,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         _fifoMock
             .Setup(f => f.Calculate(It.IsAny<IReadOnlyList<SecurityTransaction>>()))
             .Returns(new FifoCostBasisResult(1_000m, 0m, Array.Empty<FifoLot>(), 10m, false, null, 0m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1506,7 +1506,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1529,7 +1529,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var (security, user) = SetupSecurityAndUser();
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1575,7 +1575,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
             _db.Postings.Add(buy);
             _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // Act
             IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1612,7 +1612,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-365), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1644,7 +1644,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buy = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-400), -1_000m, 10m);
         _db.Postings.Add(buy);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 115m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1673,7 +1673,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         var buyT0 = CreateBuyPosting(security.Id, DateTime.Today.AddDays(-365), -1_000m, 10m);
         _db.Postings.Add(buyT0);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1718,7 +1718,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         _db.Postings.Add(buy);
         // 10 shares × 110 = 1 100 → terminal cashflow
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 110m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         IReadOnlyList<KpiBreakdownDto>? result = await _sut.GetKpiBreakdownsAsync(security.Id, user.Id, CancellationToken.None);
@@ -1754,7 +1754,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = DateTime.Today.AddDays(-10);
+        var buyDate = DateTime.Today.AddDays(-10);
         var sellDate = DateTime.Today.AddDays(-5);
 
         // Buy: 10 shares; amount is negative (cash outflow), quantity is positive
@@ -1775,11 +1775,11 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         _db.Postings.AddRange(buy, sell);
 
         // Price of 120 on and after the sell date; the test verifies market value = 0, not 2400
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,  100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 120m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, DateTime.Today, 120m));
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
@@ -1816,7 +1816,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = new DateTime(2020, 1, 15);
+        var buyDate = new DateTime(2020, 1, 15);
         var sellDate = new DateTime(2020, 1, 20);
 
         // Buy: 10 shares, 100€ outflow → implied price = 10€/share
@@ -1837,7 +1837,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
 
         _db.Postings.AddRange(buy, sell);
         // deliberately no SecurityPrices — simulation must produce the chart data
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
@@ -1883,8 +1883,8 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate   = new DateTime(2020, 1, 15);
-        var sellDate  = new DateTime(2020, 1, 20);
+        var buyDate = new DateTime(2020, 1, 15);
+        var sellDate = new DateTime(2020, 1, 20);
         var priceDate = new DateTime(2020, 1, 25); // real price only AFTER the sell
 
         var buy = CreateBuyPosting(security.Id, buyDate, -100m, 10m); // 10€/share
@@ -1901,7 +1901,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
 
         _db.Postings.AddRange(buy, sell);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, priceDate, 20m)); // only after sell
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
@@ -1944,9 +1944,9 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate   = new DateTime(2020, 1,  1);
+        var buyDate = new DateTime(2020, 1, 1);
         var priceDate = new DateTime(2020, 1, 11); // real price starts mid-ownership
-        var sellDate  = new DateTime(2020, 1, 21);
+        var sellDate = new DateTime(2020, 1, 21);
 
         // Buy: 10 shares, 100€ → 10€/share
         var buy = CreateBuyPosting(security.Id, buyDate, -100m, 10m);
@@ -1966,7 +1966,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
 
         _db.Postings.AddRange(buy, sell);
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, priceDate, 25m)); // mid-period real price
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PerformanceChartDataDto? result = await _sut.GetPerformanceChartDataAsync(
@@ -2009,7 +2009,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         // Arrange – buy on 2020-06-01, sell on 2021-03-01 (both in the past)
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = new DateTime(2020, 6, 1);
+        var buyDate = new DateTime(2020, 6, 1);
         var sellDate = new DateTime(2021, 3, 1);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
@@ -2019,9 +2019,9 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             1_200m, null, null, null, SecurityPostingSubType.Sell, -10m);
 
         _db.Postings.AddRange(buy, sell);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,  100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
@@ -2049,15 +2049,15 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         //           Year-end price is 120 €/share → 20 % gain.
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate     = new DateTime(2022, 1, 2);
+        var buyDate = new DateTime(2022, 1, 2);
         var yearEndDate = new DateTime(2022, 12, 31);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
 
         _db.Postings.Add(buy);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,     100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, yearEndDate, 120m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
@@ -2087,7 +2087,7 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         //   2023-06-01: fee                    → amount -   10 €
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate  = new DateTime(2022, 1, 2);
+        var buyDate = new DateTime(2022, 1, 2);
         var sellDate = new DateTime(2023, 6, 1);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
@@ -2103,10 +2103,10 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
             -10m, null, null, null, SecurityPostingSubType.Fee, null);
 
         _db.Postings.AddRange(buy, sell, fee);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,                   100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, new DateTime(2022, 12, 31), 100m));
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate,                  130m));
-        await _db.SaveChangesAsync();
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, sellDate, 130m));
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
@@ -2132,15 +2132,15 @@ public sealed class ReturnAnalysisServiceTests : IDisposable
         //           Month-end price (March 31) is 110 €/share.
         var (security, user) = SetupSecurityAndUser();
 
-        var buyDate      = new DateTime(2022, 3, 15);
+        var buyDate = new DateTime(2022, 3, 15);
         var marchEndDate = new DateTime(2022, 3, 31);
 
         var buy = CreateBuyPosting(security.Id, buyDate, -1_000m, 10m);
 
         _db.Postings.Add(buy);
-        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate,      100m));
+        _db.SecurityPrices.Add(new SecurityPrice(security.Id, buyDate, 100m));
         _db.SecurityPrices.Add(new SecurityPrice(security.Id, marchEndDate, 110m));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         PeriodicReturnsDto? result = await _sut.GetPeriodicReturnsAsync(
