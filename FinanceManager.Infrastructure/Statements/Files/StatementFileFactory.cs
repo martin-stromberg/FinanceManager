@@ -8,7 +8,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
     /// <remarks>This factory attempts to load a statement file by trying each registered file type in order
     /// until one succeeds. It is typically used to support multiple statement file formats without requiring the caller
     /// to know the specific type in advance.</remarks>
-    public class StatementFileFactory: IStatementFileFactory
+    public class StatementFileFactory : IStatementFileFactory
     {
         private readonly IServiceProvider serviceProvider;
         /// <summary>
@@ -33,7 +33,7 @@ namespace FinanceManager.Infrastructure.Statements.Files
         public IStatementFile? Load(string fileName, byte[] fileBytes)
         {
             foreach (var instance in serviceProvider.GetServices<IStatementFile>())
-            {                
+            {
                 if (instance.Load(fileName, fileBytes))
                     return instance;
             }

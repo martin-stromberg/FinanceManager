@@ -5,6 +5,13 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="ReportDashboardViewModel"/>'s core reporting logic: querying and aggregating report
+/// points per period, favorite save/update/delete round-trips, computed totals and column visibility
+/// (category, previous/year comparison, projection), the projection-comparison eligibility rule (security-only,
+/// single-kind, non-"all history" selections), grouped parent/child row derivation, and the negative-value marker
+/// used to highlight unfavorable figures in the UI.
+/// </summary>
 public sealed class ReportDashboardViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -34,6 +41,10 @@ public sealed class ReportDashboardViewModelTests
             .ToList();
     }
 
+    /// <summary>
+    /// Verifies that <c>LoadAsync</c> forwards the requested filters to the API, returns the resulting
+    /// points unchanged in count, and does not request projection comparison unless explicitly asked for.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_ReturnsPoints()
     {
@@ -43,7 +54,7 @@ public sealed class ReportDashboardViewModelTests
         apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
-        var resp = await vm.LoadAsync(PostingKind.Bank, 0, 24, false, false, false, false, new[] { PostingKind.Bank }, DateTime.UtcNow, null);
+        var resp = await vm.LoadAsync(PostingKind.Bank, 0, 24, false, false, false, false, new[] { PostingKind.Bank }, DateTime.UtcNow, null, ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(3, resp.Points.Count);
         apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
@@ -51,6 +62,11 @@ public sealed class ReportDashboardViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies the full favorite lifecycle: creating a favorite sends a create request with the
+    /// projection-comparison flag set, updating sends an update request with the same flag preserved, and
+    /// deleting reports success - covering the three API calls the "save report as favorite" feature depends on.
+    /// </summary>
     [Fact]
     public async Task SaveUpdateDelete_Favorites_Roundtrip()
     {
@@ -65,23 +81,28 @@ public sealed class ReportDashboardViewModelTests
         apiMock.Setup(a => a.Reports_DeleteFavoriteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null);
+        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null, ct: TestContext.Current.CancellationToken);
         Assert.NotNull(saved);
         apiMock.Verify(a => a.Reports_CreateFavoriteAsync(
             It.Is<ReportFavoriteCreateApiRequest>(r => r.CompareProjection),
             It.IsAny<CancellationToken>()), Times.Once);
 
-        var updated = await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null);
+        var updated = await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null, ct: TestContext.Current.CancellationToken);
         Assert.NotNull(updated);
         apiMock.Verify(a => a.Reports_UpdateFavoriteAsync(
             It.IsAny<Guid>(),
             It.Is<ReportFavoriteUpdateApiRequest>(r => r.CompareProjection),
             It.IsAny<CancellationToken>()), Times.Once);
 
-        var deleted = await vm.DeleteFavoriteAsync(Guid.NewGuid());
+        var deleted = await vm.DeleteFavoriteAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
         Assert.True(deleted);
     }
 
+    /// <summary>
+    /// Verifies that the per-period chart data sums all selected posting kinds within the same month
+    /// into a single point (e.g. bank + contact for January combine into one 150m point) while keeping later
+    /// months as separate entries, matching the chart's expected month-by-month aggregation.
+    /// </summary>
     [Fact]
     public async Task GetChartByPeriod_ComputesSums_PerMonth()
     {
@@ -103,7 +124,7 @@ public sealed class ReportDashboardViewModelTests
         vm.IncludeCategory = false;
         vm.Take = 24;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
         var byPeriod = vm.GetChartByPeriod();
 
         Assert.Equal(2, byPeriod.Count);
@@ -111,6 +132,11 @@ public sealed class ReportDashboardViewModelTests
         Assert.Equal(200m, byPeriod[1].Sum);
     }
 
+    /// <summary>
+    /// Verifies that enabling category grouping and previous/year comparison flips the corresponding
+    /// column-visibility flags on, and that <c>GetTotals</c> correctly sums current, previous, and
+    /// year-over-year amounts across all rows.
+    /// </summary>
     [Fact]
     public async Task Totals_And_ColumnVisibility_Work()
     {
@@ -132,7 +158,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareYear = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
 
         Assert.True(vm.ShowCategoryColumn);
         Assert.True(vm.ShowPreviousColumns);
@@ -143,6 +169,12 @@ public sealed class ReportDashboardViewModelTests
         Assert.Equal(100m, t.Year);
     }
 
+    /// <summary>
+    /// Verifies that when the selection is eligible for projection comparison (single, security posting
+    /// kind) and the server confirms it compared projections, the view model shows the projection column,
+    /// marks itself as having compared projection, includes the projection sum in totals, and sent the
+    /// projection-comparison flag in its query.
+    /// </summary>
     [Fact]
     public async Task ProjectionColumn_IsVisibleAndTotalsProjection_WhenServerComparedProjection()
     {
@@ -161,7 +193,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
 
         Assert.True(vm.CanCompareProjection);
         Assert.True(vm.ShowProjectionColumn);
@@ -172,6 +204,11 @@ public sealed class ReportDashboardViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that projection comparison is force-disabled when the selection includes a non-security
+    /// posting kind (e.g. bank), even if the caller previously requested it - projections only make sense
+    /// for securities, so the view model must not send a projection request the server cannot honor.
+    /// </summary>
     [Fact]
     public async Task ReloadAsync_DisablesProjection_ForNonSecuritySelection()
     {
@@ -185,7 +222,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(DateTime.UtcNow);
+        await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
         Assert.False(vm.CanCompareProjection);
         Assert.False(vm.CompareProjection);
@@ -195,6 +232,11 @@ public sealed class ReportDashboardViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that projection comparison is force-disabled when multiple posting kinds are selected
+    /// (even including security), since projections are only meaningful for a single, dedicated security
+    /// selection and would otherwise mix incomparable figures.
+    /// </summary>
     [Fact]
     public async Task ReloadAsync_DisablesProjection_ForMultiKindSelection()
     {
@@ -208,7 +250,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.Month;
 
-        await vm.ReloadAsync(DateTime.UtcNow);
+        await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
         Assert.False(vm.CanCompareProjection);
         Assert.False(vm.CompareProjection);
@@ -218,6 +260,10 @@ public sealed class ReportDashboardViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that projection comparison is force-disabled for the "all history" interval, since a
+    /// forward-looking projection is not meaningful once the report already spans the entire history.
+    /// </summary>
     [Fact]
     public async Task ReloadAsync_DisablesProjection_ForAllHistory()
     {
@@ -231,7 +277,7 @@ public sealed class ReportDashboardViewModelTests
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.AllHistory;
 
-        await vm.ReloadAsync(DateTime.UtcNow);
+        await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
         Assert.False(vm.CanCompareProjection);
         Assert.False(vm.CompareProjection);
@@ -241,6 +287,11 @@ public sealed class ReportDashboardViewModelTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that <see cref="ReportDashboardViewModel.IsNegative"/> flags a point as negative even
+    /// when its own amount is zero, as long as its comparison baselines (previous/year) are negative - the
+    /// UI should still highlight a zero-amount row as a decline relative to a negative baseline.
+    /// </summary>
     [Fact]
     public void IsNegative_MarksZeroWithNegativeBaselines()
     {
@@ -248,6 +299,12 @@ public sealed class ReportDashboardViewModelTests
         Assert.True(ReportDashboardViewModel.IsNegative(p));
     }
 
+    /// <summary>
+    /// Verifies that with category grouping enabled and multiple posting kinds selected, each type group
+    /// (e.g. "Type:Bank") only reports its own children as belonging to it: account-level children stay under
+    /// the bank type while category-level children stay under the contact type, without cross-contamination
+    /// between the two groupings' child rows.
+    /// </summary>
     [Fact]
     public async Task PerType_Children_When_IncludeCategory_Multi()
     {
@@ -268,7 +325,7 @@ public sealed class ReportDashboardViewModelTests
         vm.SelectedKinds = new List<PostingKind> { PostingKind.Bank, PostingKind.Contact };
         vm.IncludeCategory = true;
 
-        await vm.ReloadAsync(start);
+        await vm.ReloadAsync(start, TestContext.Current.CancellationToken);
 
         Assert.True(vm.HasChildren("Type:Bank"));
         Assert.True(vm.HasChildren("Type:Contact"));
@@ -278,6 +335,10 @@ public sealed class ReportDashboardViewModelTests
         Assert.All(contactChildren, c => Assert.True(c.GroupKey.StartsWith("Category:")));
     }
 
+    /// <summary>
+    /// Duplicate of <see cref="IsNegative_MarksZeroWithNegativeBaselines"/> - same scenario (zero amount,
+    /// negative previous/year baselines) asserting the point is flagged negative.
+    /// </summary>
     [Fact]
     public void IsNegative_Works()
     {

@@ -10,6 +10,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Tests for <see cref="BackgroundTasksController"/> covering task enqueueing (including duplicate-detection
+/// and its opt-out flag), and that all read/cancel operations are scoped to the requesting user's own tasks
+/// so one user can never see or cancel another user's background work.
+/// </summary>
 public sealed class BackgroundTasksControllerTests
 {
     private static (BackgroundTasksController controller, Guid userA, Guid userB, BackgroundTaskManager manager) Create()
@@ -31,6 +36,10 @@ public sealed class BackgroundTasksControllerTests
         return (controller, userA, userB, manager);
     }
 
+    /// <summary>
+    /// Verifies that enqueueing a task returns the created <see cref="BackgroundTaskInfo"/> owned by the
+    /// current user and that it is tracked by the manager.
+    /// </summary>
     [Fact]
     public void Enqueue_ShouldReturnTask()
     {
@@ -44,6 +53,10 @@ public sealed class BackgroundTasksControllerTests
         Assert.Single(manager.GetAll().Where(t => t.Id == info.Id));
     }
 
+    /// <summary>
+    /// Verifies that enqueueing the same task type twice without the duplicate flag returns the same task
+    /// instance both times, preventing the same expensive job from being scheduled multiple times concurrently.
+    /// </summary>
     [Fact]
     public void Enqueue_ShouldReturnExisting_WhenDuplicateNotAllowed()
     {
@@ -53,6 +66,10 @@ public sealed class BackgroundTasksControllerTests
         Assert.Equal(first!.Id, second!.Id); // same
     }
 
+    /// <summary>
+    /// Verifies that passing <c>allowDuplicate: true</c> lets the same task type be enqueued twice as distinct
+    /// task instances, overriding the default duplicate-suppression behavior.
+    /// </summary>
     [Fact]
     public void Enqueue_ShouldAllowDuplicate_WhenFlagTrue()
     {
@@ -62,6 +79,11 @@ public sealed class BackgroundTasksControllerTests
         Assert.NotEqual(first!.Id, second!.Id); // different
     }
 
+    /// <summary>
+    /// Verifies that the active/queued task listing only returns tasks belonging to the current user, even
+    /// when another user has tasks enqueued in the same shared <see cref="BackgroundTaskManager"/> — a
+    /// cross-user data leakage guard.
+    /// </summary>
     [Fact]
     public void GetActiveAndQueued_ShouldFilterByUser()
     {
@@ -78,6 +100,10 @@ public sealed class BackgroundTasksControllerTests
         Assert.All(tasks, t => Assert.Equal(userA, t.UserId));
     }
 
+    /// <summary>
+    /// Verifies that cancelling a task already in the <c>Running</c> state transitions it to
+    /// <c>Cancelled</c> rather than removing it outright, so its final status remains visible.
+    /// </summary>
     [Fact]
     public void CancelOrRemove_ShouldCancelRunning()
     {
@@ -92,6 +118,10 @@ public sealed class BackgroundTasksControllerTests
         Assert.Equal(BackgroundTaskStatus.Cancelled, updated!.Status);
     }
 
+    /// <summary>
+    /// Verifies that cancelling a task still in the queued (not yet started) state removes it entirely from
+    /// the manager, since a queued task has no partial work to report.
+    /// </summary>
     [Fact]
     public void CancelOrRemove_ShouldRemoveQueued()
     {
@@ -102,6 +132,10 @@ public sealed class BackgroundTasksControllerTests
         Assert.Null(manager.Get(info.Id));
     }
 
+    /// <summary>
+    /// Verifies that requesting task detail for a task owned by a different user returns 404 rather than
+    /// exposing another user's task, even though the task ID itself is valid.
+    /// </summary>
     [Fact]
     public void GetDetail_ShouldReturnNotFound_ForOtherUser()
     {

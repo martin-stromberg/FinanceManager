@@ -7,11 +7,18 @@ using Moq;
 
 namespace FinanceManager.Tests.Infrastructure.Securities;
 
+/// <summary>
+/// Verifies the ING bank CSV price import format: provider-hint matching that is case- and whitespace-insensitive
+/// for "ing", parsing of German-locale semicolon-separated rows with dd.MM.yyyy timestamps and comma decimal
+/// separators, and strict all-or-nothing validation where any single malformed row (unparsable date, non-numeric
+/// or negative close, wrong column count) rejects the entire file instead of silently skipping just that row.
+/// </summary>
 public sealed class IngSecurityPriceImportServiceTests
 {
     /// <summary>
     /// Verifies that provider matching handles casing and surrounding whitespace.
     /// </summary>
+    /// <param name="provider">A variant spelling of the "ing" provider hint (different case and/or padded with whitespace).</param>
     [Theory]
     [InlineData("ing")]
     [InlineData(" ING ")]

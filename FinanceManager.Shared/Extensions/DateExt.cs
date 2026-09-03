@@ -35,7 +35,7 @@
             while (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
             {
                 date = date.AddDays(-1);
-            } 
+            }
             return date;
         }
         /// <summary>

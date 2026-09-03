@@ -50,8 +50,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                 if (EmbeddedList is StatementDraftEntriesListViewModel evm)
                 {
                     evm.ApplyBatchValidationErrors(error);
-                        // request UI focus on the first invalid row so user can correct it
-                        evm.RequestFocusFirstInvalid();
+                    // request UI focus on the first invalid row so user can correct it
+                    evm.RequestFocusFirstInvalid();
                 }
                 // also set a generic card-level error (localized when possible)
                 try
@@ -346,8 +346,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navItems));
 
         // Manage group
-            // Manage group (primary actions)
-            var manageItems = new List<UiRibbonAction>
+        // Manage group (primary actions)
+        var manageItems = new List<UiRibbonAction>
         {
             // Save should be enabled when there are pending changes (including create-mode selections)
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })) { MobileShortcut = true },

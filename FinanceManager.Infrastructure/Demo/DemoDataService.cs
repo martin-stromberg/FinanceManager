@@ -56,6 +56,11 @@ public sealed class DemoDataService : IDemoDataService
     /// <param name="savingsPlanService">Savings plan service used to create and manage savings plans.</param>
     /// <param name="securityCategoryService">Security category service used to create security categories.</param>
     /// <param name="securityService">Security service used to create and manage securities.</param>
+    /// <param name="securityPriceService">Security price service used to create demo security price history.</param>
+    /// <param name="statementDraftService">Statement draft service used to create and book demo statement drafts.</param>
+    /// <param name="attachmentCategoryService">Attachment category service used to create attachment categories.</param>
+    /// <param name="budgetPurposeService">Budget purpose service used to create demo budget purposes.</param>
+    /// <param name="budgetRuleService">Budget rule service used to create demo budget rules.</param>
     /// <param name="logger">Logger instance.</param>
     public DemoDataService(
         IAccountService accountService,
@@ -251,7 +256,7 @@ public sealed class DemoDataService : IDemoDataService
             await _contactService.AddAliasAsync(contact.Id, userId, secondaryAlias, ct);
         return contact;
     }
-    private async Task CreateDemoPostingsForInsurance(Guid userId, SavingsPlanDto? kfz, Guid accountId, bool positive, bool assignSavingsPlan, CancellationToken ct)
+    private async Task CreateDemoPostingsForInsurance(Guid userId, SavingsPlanDto kfz, Guid accountId, bool positive, bool assignSavingsPlan, CancellationToken ct)
     {
         // ensure Self contact exists
         var selfList = await _contactService.ListAsync(userId, 0, 10, ContactType.Self, null, ct);
@@ -318,7 +323,13 @@ public sealed class DemoDataService : IDemoDataService
 
         if (assignSavingsPlan)
         {
-            kfz = await _savingsPlanService.GetAsync(kfz.Id, userId, ct);
+            var refreshedKfz = await _savingsPlanService.GetAsync(kfz.Id, userId, ct);
+            if (refreshedKfz is null)
+            {
+                _logger.LogError("Savings plan {SavingsPlanId} not found after booking demo postings", kfz.Id);
+                throw new InvalidOperationException("Savings plan not found after booking demo postings");
+            }
+            kfz = refreshedKfz;
             var expectedRemaining = kfz.TargetAmount - (9 * monthly);
             if (kfz.RemainingAmount != expectedRemaining)
             {
@@ -328,16 +339,17 @@ public sealed class DemoDataService : IDemoDataService
         }
     }
 
-    private async Task CreateDemoPostingsForSavingsPlan(Guid userId, SavingsPlanDto? plan, Guid accountIdDebit, Guid accountIdCredit, decimal monthlyAmount, int months, CancellationToken ct)
+    private async Task CreateDemoPostingsForSavingsPlan(Guid userId, SavingsPlanDto plan, Guid accountIdDebit, Guid accountIdCredit, decimal monthlyAmount, int months, CancellationToken ct)
     {
         // ensure Self contact exists
         var selfList = await _contactService.ListAsync(userId, 0, 10, ContactType.Self, null, ct);
         var self = selfList.Count > 0 ? selfList[0] : await _contactService.CreateAsync(userId, "Self", ContactType.Self, null, null, false, ct);
 
         // DEBIT draft on Giro (negative amounts) assigned to savings plan
-        var debitDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, $"demo_{plan?.Name}_{months}months_debit.csv", ct);
+        var debitDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, $"demo_{plan.Name}_{months}months_debit.csv", ct);
         if (debitDraft == null) throw new InvalidOperationException("Failed to create debit statement draft for vacation savings");
         debitDraft = await _statementDraftService.SetAccountAsync(debitDraft.DraftId, userId, accountIdDebit, ct);
+        if (debitDraft == null) throw new InvalidOperationException("Failed to set account on debit statement draft for vacation savings");
 
         for (int i = 1; i <= months; i++)
         {
@@ -375,9 +387,10 @@ public sealed class DemoDataService : IDemoDataService
         }
 
         // CREDIT draft on savings account (positive amounts), must NOT be assigned to savings plan
-        var creditDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, $"demo_{plan?.Name}_{months}months_credit.csv", ct);
+        var creditDraft = await _statementDraftService.CreateEmptyDraftAsync(userId, $"demo_{plan.Name}_{months}months_credit.csv", ct);
         if (creditDraft == null) throw new InvalidOperationException("Failed to create credit statement draft for vacation savings");
         creditDraft = await _statementDraftService.SetAccountAsync(creditDraft.DraftId, userId, accountIdCredit, ct);
+        if (creditDraft == null) throw new InvalidOperationException("Failed to set account on credit statement draft for vacation savings");
 
         for (int i = 1; i <= months; i++)
         {
@@ -413,11 +426,16 @@ public sealed class DemoDataService : IDemoDataService
             throw new InvalidOperationException("Booking failed during demo data creation (vacation credit)");
         }
 
-        plan = await _savingsPlanService.GetAsync(plan.Id, userId, ct);
-        if (plan.CurrentAmount != months * monthlyAmount)
+        var refreshedPlan = await _savingsPlanService.GetAsync(plan.Id, userId, ct);
+        if (refreshedPlan is null)
         {
-            _logger.LogError("No postings created for demo savings plan {SavingsPlanId}", plan.Id);
-            throw new InvalidOperationException($"No postings created for demo savings plan ({plan.Name})");
+            _logger.LogError("Savings plan {SavingsPlanId} not found after booking demo postings", plan.Id);
+            throw new InvalidOperationException("Savings plan not found after booking demo postings");
+        }
+        if (refreshedPlan.CurrentAmount != months * monthlyAmount)
+        {
+            _logger.LogError("No postings created for demo savings plan {SavingsPlanId}", refreshedPlan.Id);
+            throw new InvalidOperationException($"No postings created for demo savings plan ({refreshedPlan.Name})");
         }
     }
 
@@ -470,7 +488,7 @@ public sealed class DemoDataService : IDemoDataService
         {
             var desc = e.Subject;
             var recipient = self.Name;
-            if (e.Subject?.Contains("Aldi", StringComparison.OrdinalIgnoreCase) == true) recipient = contAldi.Name;
+            if (e.Subject.Contains("Aldi", StringComparison.OrdinalIgnoreCase)) recipient = contAldi.Name;
             await _statementDraftService.UpdateEntryCoreAsync(giroDraft.DraftId, e.Id, userId, e.BookingDate, e.BookingDate, e.Amount, e.Subject, recipient, "EUR", desc, ct);
         }
 

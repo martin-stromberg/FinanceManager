@@ -1,10 +1,11 @@
-﻿using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Application.Accounts;
@@ -13,8 +14,21 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers auto-assignment of a <see cref="Security"/> to a statement entry during classification: matching by
+/// identifier or by name (including umlaut-normalized name matching), and the ambiguous-match fallback when
+/// several securities could apply. Auto-assignment only ever triggers for a detected account that has security
+/// processing enabled.
+/// </summary>
 public sealed class StatementDraftSecurityClassificationTests
 {
+    // Security classification never needs to load statement files (that happens during upload/create-draft),
+    // but the constructor parameter is non-nullable, so a trivial stub stands in for the real factory.
+    private sealed class StubStatementFileFactory : IStatementFileFactory
+    {
+        public IStatementFile? Load(string fileName, byte[] fileBytes) => null;
+    }
+
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -34,7 +48,7 @@ public sealed class StatementDraftSecurityClassificationTests
         db.SaveChanges();
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, ownerUser.Id);
     }
 
@@ -85,7 +99,7 @@ public sealed class StatementDraftSecurityClassificationTests
         // Arrange securities
         var sec = new Security(owner, name: "ETF World", identifier: "DE000A0XYZ", description: null, alphaVantageCode: "WLD.F", currencyCode: "EUR", categoryId: null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Create draft linked to the account
         var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
@@ -116,7 +130,7 @@ public sealed class StatementDraftSecurityClassificationTests
         // Arrange: security name with umlauts; classification normalizes to plain ASCII (ue/oe/ae/ss)
         var sec = new Security(owner, name: "Münchener Rückversicherung", identifier: "DE000MNRK", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
 
@@ -146,7 +160,7 @@ public sealed class StatementDraftSecurityClassificationTests
         var first = new Security(owner, name: "AAA Corp", identifier: "DE111111", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
         var second = new Security(owner, name: "ZZZ Corp", identifier: "DE222222", description: null, alphaVantageCode: null, currencyCode: "EUR", categoryId: null);
         db.Securities.AddRange(first, second);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draft = await CreateDraftAsync(db, owner, accountId: account.Id);
 

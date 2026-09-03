@@ -435,8 +435,12 @@ public sealed class BudgetReportViewModel : BaseViewModel
 
     private static IReadOnlyList<BudgetReportCategoryRow> BuildCategories(IReadOnlyList<BudgetCategoryOverviewDto> categories, IReadOnlyList<BudgetPurposeOverviewDto> purposes)
     {
+        // Purposes without a BudgetCategoryId can never be looked up below (lookups key on a real
+        // category's non-null Id), so excluding them here is behavior-preserving and lets the
+        // dictionary key be the non-nullable Guid that TryGetValue(cat.Id, ...) below expects.
         var purposeLookup = purposes
-            .GroupBy(p => p.BudgetCategoryId)
+            .Where(p => p.BudgetCategoryId.HasValue)
+            .GroupBy(p => p.BudgetCategoryId!.Value)
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var result = new List<BudgetReportCategoryRow>();

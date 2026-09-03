@@ -7,6 +7,10 @@ using FinanceManager.Web.ViewModels.SavingsPlans;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="SavingsPlansListViewModel"/>'s loading of plans together with their per-plan
+/// analysis data, the active/inactive filter toggle triggering a reload, and ribbon construction.
+/// </summary>
 public sealed class SavingsPlansViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -26,6 +30,11 @@ public sealed class SavingsPlansViewModelTests
         return services.BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Verifies that initialization loads all active plans and, for each one, its analysis data (progress
+    /// toward target, required monthly, etc.), populating the items collection with both a fully-analyzed
+    /// recurring plan and an open-ended plan whose analysis reports "not achievable".
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_LoadsPlans_AndAnalyses()
     {
@@ -53,6 +62,10 @@ public sealed class SavingsPlansViewModelTests
         Assert.Equal(2, vm.Items.Count);
     }
 
+    /// <summary>
+    /// Verifies that toggling the active/inactive filter triggers a fresh call to the list API (a second
+    /// call beyond the initial load), so switching the filter always shows up-to-date data for the new filter state.
+    /// </summary>
     [Fact]
     public async Task ToggleActive_Reloads()
     {
@@ -70,10 +83,14 @@ public sealed class SavingsPlansViewModelTests
         Assert.Equal(1, calls);
 
         vm.ToggleActive();
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.True(calls >= 2);
     }
 
+    /// <summary>
+    /// Smoke test verifying that <c>GetRibbonRegisters</c> returns a non-null result for the savings plan
+    /// list screen.
+    /// </summary>
     [Fact]
     public void GetRibbon_Returns_Registers()
     {

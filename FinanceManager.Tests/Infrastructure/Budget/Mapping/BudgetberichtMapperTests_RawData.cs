@@ -36,6 +36,11 @@ public sealed class BudgetberichtMapperTests_RawData
         BudgetCategoryName: null,
         ValuationType: purpose.ValuationType);
 
+    /// <summary>
+    /// Verifies that a purpose-level rule is aggregated onto the purpose's own row rather than its parent
+    /// category's row, and that the matching posting is marked as valued for that purpose - a rule attached to a
+    /// purpose must not be double-counted (or missed) at the category level.
+    /// </summary>
     [Fact]
     public void MapToRawDataDto_CategorizedPurpose_AggregatesBudgetedAndActualAmounts()
     {
@@ -62,6 +67,11 @@ public sealed class BudgetberichtMapperTests_RawData
         rent.Postings.Should().ContainSingle(p => p.Amount == -500m && p.IsValuedForBudgetPurpose);
     }
 
+    /// <summary>
+    /// Verifies that when a report spans multiple months, all postings and budgeted amounts for the same purpose
+    /// are merged into a single purpose row instead of one row per month - the raw-data report is a period summary,
+    /// not a month-by-month breakdown.
+    /// </summary>
     [Fact]
     public void MapToRawDataDto_MultiMonthPurpose_MergesIntoSinglePurposeRow()
     {
@@ -86,6 +96,11 @@ public sealed class BudgetberichtMapperTests_RawData
         streaming.Postings.Should().OnlyContain(p => p.Amount == -10m);
     }
 
+    /// <summary>
+    /// Verifies that a purpose with no assigned category ends up in <c>UncategorizedPurposes</c> rather than being
+    /// dropped or attached to a phantom category - purposes are not required to belong to a category, and this
+    /// path must still surface their budgeted/actual amounts to the user.
+    /// </summary>
     [Fact]
     public void MapToRawDataDto_PurposeWithoutCategory_AppearsInUncategorizedPurposes()
     {
@@ -107,6 +122,13 @@ public sealed class BudgetberichtMapperTests_RawData
         gym.BudgetedExpense.Should().Be(-20m);
     }
 
+    /// <summary>
+    /// Verifies the defensive fallback when a purpose referenced by the report has no matching entry in the
+    /// caller-supplied purpose-info lookup: the mapper still produces a row (with empty source name, an empty
+    /// source id, and the exact-postings valuation default) instead of throwing, and logs a warning so the data
+    /// inconsistency is observable - a purpose can outlive or precede its overview projection, so the mapper must
+    /// degrade gracefully rather than fail the whole report.
+    /// </summary>
     [Fact]
     public void MapToRawDataDto_MissingPurposeInfo_LogsWarning_AndFallsBackToDefaultSourceInfo()
     {
@@ -138,6 +160,12 @@ public sealed class BudgetberichtMapperTests_RawData
             Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that for an <c>ExactPostings</c> purpose, a posting that matches the source (contact) but has the
+    /// wrong sign relative to the rule is mapped as an <em>unvalued</em> match rather than being valued or dropped -
+    /// the mismatch must remain visible on the purpose so the user can spot a miscategorized posting, while the
+    /// budgeted amount itself still comes from the rule, not the mismatched posting.
+    /// </summary>
     [Fact]
     public void MapToRawDataDto_SignMismatchedExactPosting_MapsAsUnvaluedMatch()
     {
@@ -160,6 +188,12 @@ public sealed class BudgetberichtMapperTests_RawData
         insurance.BudgetedExpense.Should().Be(-50m);
     }
 
+    /// <summary>
+    /// Verifies that both plain unbudgeted postings and cost-neutral mirror postings (identified by a
+    /// <c>GroupId</c>) end up in <c>UnbudgetedPostings</c>, each unvalued and unattributed to any category or
+    /// purpose - the raw-data report's unbudgeted list is meant to catch everything that did not match a budget
+    /// rule, regardless of whether it is a genuine unplanned transaction or a self-transfer.
+    /// </summary>
     [Fact]
     public void MapToRawDataDto_UnbudgetedAndCostNeutralPostings_BothAppearInUnbudgetedPostings()
     {

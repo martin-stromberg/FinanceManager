@@ -1,0 +1,41 @@
+name: Security Scan
+
+# Independent, schedule-driven dependency vulnerability scan for all NuGet dependencies
+# (direct + transitive). The PR-time scan runs as Gate 2 of the "static-checks" job in
+# pr-staging-ci.yml and staging-ci.yml, using the same composite action (see
+# .github/actions/security-scan), so the scan logic itself only exists once instead of being
+# duplicated between the two trigger points - see ci-target-schema.md section 4.9.
+on:
+  schedule:
+    # Weekly on Monday 04:00 UTC, so newly disclosed advisories are also caught against
+    # otherwise unchanged dependencies.
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: security-scan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-scan:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+        shell: pwsh
+
+      - name: Scan for vulnerable packages
+        uses: ./.github/actions/security-scan
+        with:
+          solution-path: FinanceManager.sln
+          artifact-name: vulnerable-packages-scan

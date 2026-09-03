@@ -2,17 +2,33 @@ using System.Net.Http.Json;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// Drives user registration and login for Playwright E2E tests, either through the real browser UI
+/// (<see cref="LoginThroughUiAsync"/>) or via a faster direct API call plus cookie injection
+/// (<see cref="RegisterAsync"/>, <see cref="LoginAsync"/>) for tests where the login flow itself isn't
+/// what's under test.
+/// </summary>
 public sealed class AuthGateway
 {
     private readonly IPage _page;
     private readonly string _baseUrl;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthGateway"/> class.
+    /// </summary>
+    /// <param name="page">Playwright page the gateway navigates and injects cookies into.</param>
+    /// <param name="baseUrl">Base URL of the application under test, used for the direct API auth calls.</param>
     public AuthGateway(IPage page, string baseUrl)
     {
         _page = page;
         _baseUrl = baseUrl;
     }
 
+    /// <summary>
+    /// Registers a new user via the API and lands the browser on the home page authenticated as that user.
+    /// </summary>
+    /// <param name="username">Username to register.</param>
+    /// <param name="password">Password to register with.</param>
     public async Task RegisterAsync(string username, string password)
     {
         await _page.GotoAsync("/register");
@@ -24,6 +40,12 @@ public sealed class AuthGateway
         await _page.GotoAsync("/");
     }
 
+    /// <summary>
+    /// Logs an existing user in via the API (from within the page context, so cookies are set correctly)
+    /// and waits for the resulting home-page navigation to settle.
+    /// </summary>
+    /// <param name="username">Username to log in with.</param>
+    /// <param name="password">Password to log in with.</param>
     public async Task LoginAsync(string username, string password)
     {
         await _page.GotoAsync("/login");
@@ -37,6 +59,15 @@ public sealed class AuthGateway
         await _page.Locator("body").WaitForAsync();
     }
 
+    /// <summary>
+    /// Logs a user in by actually filling and submitting the login form in the browser, retrying the
+    /// submit up to three times to work around Blazor Server occasionally not having attached its event
+    /// handlers yet immediately after navigation - use this over <see cref="LoginAsync"/> when the login
+    /// UI/form behavior itself is part of what the test is verifying.
+    /// </summary>
+    /// <param name="username">Username to log in with.</param>
+    /// <param name="password">Password to log in with.</param>
+    /// <param name="returnUrl">Optional return URL to append to the login page navigation.</param>
     public async Task LoginThroughUiAsync(string username, string password, string? returnUrl = null)
     {
         var loginUrl = string.IsNullOrWhiteSpace(returnUrl)
@@ -94,6 +125,10 @@ public sealed class AuthGateway
             && Uri.TryCreate(_page.Url, UriKind.Absolute, out var uri)
             && uri.AbsolutePath.Equals("/login", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Clears the browser context's cookies and navigates to the login page - the standard way E2E tests
+    /// tear down an authenticated session between scenarios.
+    /// </summary>
     public async Task LogoutAsync()
     {
         await _page.Context.ClearCookiesAsync();

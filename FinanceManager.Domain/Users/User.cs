@@ -32,7 +32,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     }
 
     /// <summary>
-    /// Backwards-compatible alias used in other parts of the codebase. Use <see cref="UserName"/> from the Identity base class instead.
+    /// Backwards-compatible alias used in other parts of the codebase. Use <c>UserName</c> from the Identity base class instead.
     /// This property is not mapped to the database and is obsolete.
     /// </summary>
     [NotMapped]
@@ -182,7 +182,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     /// <param name="mode">Split mode to apply.</param>
     /// <param name="maxEntriesPerDraft">Maximum entries per draft. Must be >= 1.</param>
     /// <param name="monthlySplitThreshold">Monthly split threshold; semantics depend on <paramref name="mode"/>.</param>
-    /// <param name="minEntriesPerDraft">Optional minimum entries per draft. When provided it must be >= 1 and <= <paramref name="maxEntriesPerDraft"/>.</param>
+    /// <param name="minEntriesPerDraft">Optional minimum entries per draft. When provided it must be &gt;= 1 and &lt;= <paramref name="maxEntriesPerDraft"/>.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when numeric parameters are outside allowed ranges, or when monthly threshold constraints are violated.</exception>
     public void SetImportSplitSettings(ImportSplitMode mode, int maxEntriesPerDraft, int? monthlySplitThreshold, int? minEntriesPerDraft = null)
     {

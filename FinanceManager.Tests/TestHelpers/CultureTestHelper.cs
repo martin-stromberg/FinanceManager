@@ -2,6 +2,12 @@ using System.Globalization;
 
 namespace FinanceManager.Tests.TestHelpers;
 
+/// <summary>
+/// Helper for tests that assert on culture-sensitive output (number/date formatting, localized strings).
+/// Test execution order and the host machine's regional settings are otherwise uncontrolled, so any test
+/// relying on a specific format must pin the thread culture explicitly via <see cref="WithInvariantCulture"/>
+/// rather than assuming the ambient culture.
+/// </summary>
 internal static class CultureTestHelper
 {
     /// <summary>

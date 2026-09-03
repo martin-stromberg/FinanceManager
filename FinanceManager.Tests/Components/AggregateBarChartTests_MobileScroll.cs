@@ -10,8 +10,21 @@ using System.Text;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Covers the mobile/narrow-viewport layout of <see cref="AggregateBarChart"/>, specifically the
+/// horizontally scrollable bar track that keeps individual bars readable when the chart has to
+/// display many data points (e.g. two years of monthly aggregates) on a small screen instead of
+/// squeezing them all into the visible width.
+/// </summary>
 public sealed class AggregateBarChartTests_MobileScroll : BunitContext
 {
+    /// <summary>
+    /// Verifies that when the chart is fed a large number of monthly data points (24 months), it
+    /// renders a dedicated ".bars-scroll" scroll container around a ".bars-track" element whose
+    /// inline style sets an explicit "min-width", i.e. the bars are laid out at their natural width
+    /// and made scrollable rather than being compressed to fit the container - the mechanism that
+    /// keeps bars usable on narrow/mobile screens.
+    /// </summary>
     [Fact]
     public void Chart_RendersScrollableBarTrack_WhenManyBarsExist()
     {
@@ -42,6 +55,12 @@ public sealed class AggregateBarChartTests_MobileScroll : BunitContext
         });
     }
 
+    /// <summary>
+    /// Fake <see cref="HttpMessageHandler"/> that answers any request with 24 synthetic monthly
+    /// aggregate data points (one per month starting January 2024, with increasing amounts) as JSON,
+    /// so the chart under test always has enough bars to require the scrollable mobile layout
+    /// without depending on a real API or database.
+    /// </summary>
     private sealed class AggregateChartHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -61,6 +80,11 @@ public sealed class AggregateBarChartTests_MobileScroll : BunitContext
         }
     }
 
+    /// <summary>
+    /// Fake <see cref="IStringLocalizer{T}"/> that returns each resource key unchanged (or, for
+    /// indexed lookups, the key formatted with the given arguments), avoiding a dependency on real
+    /// localization resources for the chart's captions and labels.
+    /// </summary>
     private sealed class TestStringLocalizer<T> : IStringLocalizer<T>
     {
         public LocalizedString this[string name] => new(name, name, false);

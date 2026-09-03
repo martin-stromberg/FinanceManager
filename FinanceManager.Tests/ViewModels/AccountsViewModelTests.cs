@@ -6,6 +6,10 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>BankAccountListViewModel</c> loading behavior, authentication gating, search/ribbon interaction,
+/// and localization of enum-based grid cells, using a minimal DI container with a mocked <see cref="IApiClient"/>.
+/// </summary>
 public sealed class AccountsViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -45,6 +49,10 @@ public sealed class AccountsViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that an authenticated user's initialization loads the account page from the API and
+    /// populates the grid items with non-empty names.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsAccounts_WhenAuthenticated()
     {
@@ -64,6 +72,10 @@ public sealed class AccountsViewModelTests
         Assert.All(vm.Items, a => Assert.False(string.IsNullOrWhiteSpace(a.Name)));
     }
 
+    /// <summary>
+    /// Verifies that an unauthenticated caller never reaches the accounts API: initialization raises
+    /// <c>AuthenticationRequired</c> exactly once, leaves the view model unloaded, and skips the API call entirely.
+    /// </summary>
     [Fact]
     public async Task Initialize_RequiresAuth_WhenNotAuthenticated()
     {
@@ -78,6 +90,10 @@ public sealed class AccountsViewModelTests
         apiMock.Verify(a => a.GetAccountsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that setting a search term is picked up by the subsequent load (the API is queried once)
+    /// and that the ribbon then offers a "ClearSearch" action so the user can reset an active filter.
+    /// </summary>
     [Fact]
     public async Task SetFilter_AffectsLoad_AndRibbon()
     {
@@ -92,19 +108,27 @@ public sealed class AccountsViewModelTests
         apiMock.Verify(a => a.GetAccountsAsync(0, 50, null, It.IsAny<CancellationToken>()), Times.Once);
 
         var loc = new DummyLocalizer();
-        var groups = vm.GetRibbon(loc);
+        var groups = vm.GetRibbon(loc)!;
         Assert.Contains(groups, g => g.Items.Any(i => i.Action == "ClearSearch"));
     }
 
+    /// <summary>
+    /// Verifies that the ribbon always offers a "New" action, so users can create an account from the list view
+    /// regardless of current filter or load state.
+    /// </summary>
     [Fact]
     public void GetRibbon_ContainsNew()
     {
         var (vm, _) = CreateVm();
         var loc = new DummyLocalizer();
-        var groups = vm.GetRibbon(loc);
+        var groups = vm.GetRibbon(loc)!;
         Assert.Contains(groups, g => g.Items.Any(i => i.Action == "New"));
     }
 
+    /// <summary>
+    /// Verifies that grid records render the account type as its localization key (e.g. "EnumType_AccountType_Giro")
+    /// rather than the raw enum value, so the UI layer can resolve it through the localizer.
+    /// </summary>
     [Fact]
     public async Task Initialize_UsesLocalizedAccountTypeInRecords()
     {

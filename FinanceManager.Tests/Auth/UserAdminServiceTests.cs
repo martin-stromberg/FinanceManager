@@ -10,6 +10,12 @@ using Moq;
 
 namespace FinanceManager.Tests.Auth
 {
+    /// <summary>
+    /// Tests for <see cref="UserAdminService"/> covering admin-driven user management: creation,
+    /// renaming, password resets, unlocking, deletion, and - most importantly - the rule that any
+    /// change affecting a user's active state or admin role must invalidate their ASP.NET Identity
+    /// security stamp so already-issued sessions/tokens stop being trusted immediately.
+    /// </summary>
     public sealed class UserAdminServiceTests
     {
         private static (UserAdminService sut, AppDbContext db, Mock<IPasswordHashingService> hasher, Mock<UserManager<User>> userManagerMock) Create()
@@ -25,7 +31,7 @@ namespace FinanceManager.Tests.Auth
 
             // create a minimal UserManager mock to satisfy constructor
             var store = new Mock<IUserStore<User>>();
-            var userManagerMock = new Mock<UserManager<User>>(store.Object, null, null, null, null, null, null, null, null);
+            var userManagerMock = new Mock<UserManager<User>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
             userManagerMock.Setup(u => u.SetLockoutEndDateAsync(It.IsAny<User>(), It.IsAny<DateTimeOffset?>())).ReturnsAsync(IdentityResult.Success);
             userManagerMock.Setup(u => u.ResetAccessFailedCountAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
             userManagerMock.Setup(u => u.UpdateSecurityStampAsync(It.IsAny<User>()))
@@ -65,6 +71,11 @@ namespace FinanceManager.Tests.Auth
             return (sut, db, hasher, userManagerMock);
         }
 
+        /// <summary>
+        /// Verifies that creating a user persists it with the given username and admin flag,
+        /// and that exactly one row exists afterwards - the baseline happy path for admin-driven
+        /// user creation.
+        /// </summary>
         [Fact]
         public async Task CreateAsync_ShouldPersistUser()
         {
@@ -75,6 +86,11 @@ namespace FinanceManager.Tests.Auth
             Assert.Equal(1, db.Users.Count());
         }
 
+        /// <summary>
+        /// Verifies that creating a user with a username that already exists is rejected with
+        /// <see cref="InvalidOperationException"/> instead of silently creating a second account,
+        /// enforcing username uniqueness at the service layer.
+        /// </summary>
         [Fact]
         public async Task CreateAsync_DuplicateUsername_Throws()
         {
@@ -84,6 +100,10 @@ namespace FinanceManager.Tests.Auth
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.CreateAsync("alice", "pw", false, CancellationToken.None));
         }
 
+        /// <summary>
+        /// Verifies that renaming a user to a username that is not yet taken succeeds and the new
+        /// name is reflected in the returned DTO.
+        /// </summary>
         [Fact]
         public async Task UpdateAsync_Rename_WhenUnique_Works()
         {
@@ -94,6 +114,11 @@ namespace FinanceManager.Tests.Auth
             Assert.Equal("new", updated!.Username);
         }
 
+        /// <summary>
+        /// Verifies that renaming a user to a name already used by a different user is rejected,
+        /// preventing username collisions from being introduced through an update rather than
+        /// only being checked at creation time.
+        /// </summary>
         [Fact]
         public async Task UpdateAsync_Rename_ToExisting_Throws()
         {
@@ -104,6 +129,10 @@ namespace FinanceManager.Tests.Auth
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.UpdateAsync(a.Id, "b", null, null, null, CancellationToken.None));
         }
 
+        /// <summary>
+        /// Verifies that resetting a user's password replaces the stored password hash with the
+        /// newly hashed value, confirming the plain-text password is never persisted as-is.
+        /// </summary>
         [Fact]
         public async Task ResetPasswordAsync_UpdatesHash()
         {
@@ -118,6 +147,11 @@ namespace FinanceManager.Tests.Auth
             Assert.Equal("HASH::newpw", re.PasswordHash);
         }
 
+        /// <summary>
+        /// Verifies that deactivating a user's account triggers a security stamp update, which
+        /// invalidates any bearer tokens or cookies already issued to that account - deactivation
+        /// would otherwise not take effect until an existing session naturally expired.
+        /// </summary>
         [Fact]
         public async Task UpdateAsync_Deactivate_ShouldUpdateSecurityStamp()
         {
@@ -131,6 +165,11 @@ namespace FinanceManager.Tests.Auth
             userManagerMock.Verify(um => um.UpdateSecurityStampAsync(It.Is<User>(x => x.Id == u.Id)), Times.Once);
         }
 
+        /// <summary>
+        /// Verifies that removing the Admin role from a user also triggers a security stamp
+        /// update, so a token issued while the user was still an admin cannot keep carrying
+        /// elevated privileges after the role was revoked.
+        /// </summary>
         [Fact]
         public async Task UpdateAsync_RemoveAdminRole_ShouldUpdateSecurityStamp()
         {
@@ -145,6 +184,12 @@ namespace FinanceManager.Tests.Auth
             userManagerMock.Verify(um => um.UpdateSecurityStampAsync(It.Is<User>(x => x.Id == u.Id)), Times.Once);
         }
 
+        /// <summary>
+        /// Verifies that <c>UpdateAsync</c> throws <see cref="InvalidOperationException"/> when the
+        /// security stamp update fails during deactivation, rather than committing the deactivation
+        /// while leaving the stale security stamp in place - a half-applied change would let the
+        /// deactivated user's existing session keep working.
+        /// </summary>
         [Fact]
         public async Task UpdateAsync_Deactivate_ShouldThrow_WhenSecurityStampUpdateFails()
         {
@@ -158,6 +203,11 @@ namespace FinanceManager.Tests.Auth
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.UpdateAsync(u.Id, null, null, false, null, CancellationToken.None));
         }
 
+        /// <summary>
+        /// Verifies that the same failure propagation applies when removing the Admin role and the
+        /// security stamp update fails: the whole update is rejected rather than leaving the role
+        /// change committed without a corresponding stamp refresh.
+        /// </summary>
         [Fact]
         public async Task UpdateAsync_RemoveAdminRole_ShouldThrow_WhenSecurityStampUpdateFails()
         {
@@ -172,6 +222,11 @@ namespace FinanceManager.Tests.Auth
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.UpdateAsync(u.Id, null, false, null, null, CancellationToken.None));
         }
 
+        /// <summary>
+        /// Verifies that <c>UpdateAsync</c> skips the security stamp refresh when neither the
+        /// active flag nor the admin role actually changed, so a no-op update does not needlessly
+        /// invalidate the user's existing sessions.
+        /// </summary>
         [Fact]
         public async Task UpdateAsync_UnchangedActiveAndRole_ShouldNotUpdateSecurityStamp()
         {
@@ -185,6 +240,10 @@ namespace FinanceManager.Tests.Auth
             userManagerMock.Verify(um => um.UpdateSecurityStampAsync(It.IsAny<User>()), Times.Never);
         }
 
+        /// <summary>
+        /// Verifies that resetting a password to an empty string is rejected with
+        /// <see cref="ArgumentException"/> instead of hashing and persisting an unusable password.
+        /// </summary>
         [Fact]
         public async Task ResetPasswordAsync_Empty_Throws()
         {
@@ -194,6 +253,11 @@ namespace FinanceManager.Tests.Auth
             await Assert.ThrowsAsync<ArgumentException>(() => sut.ResetPasswordAsync(u.Id, "", CancellationToken.None));
         }
 
+        /// <summary>
+        /// Verifies that a failed security stamp update during a password reset causes
+        /// <c>ResetPasswordAsync</c> to throw, so a new password hash is never committed without
+        /// also invalidating sessions that were authenticated with the old password.
+        /// </summary>
         [Fact]
         public async Task ResetPasswordAsync_ShouldThrow_WhenSecurityStampUpdateFails()
         {
@@ -208,6 +272,11 @@ namespace FinanceManager.Tests.Auth
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.ResetPasswordAsync(u.Id, "newpw", CancellationToken.None));
         }
 
+        /// <summary>
+        /// Verifies that unlocking a user clears both the Identity lockout end date and the
+        /// access-failed counter, so the account is fully usable again rather than still being one
+        /// failed attempt away from re-triggering the lockout threshold.
+        /// </summary>
         [Fact]
         public async Task UnlockAsync_ClearsIdentityLockout()
         {
@@ -224,6 +293,9 @@ namespace FinanceManager.Tests.Auth
             userManagerMock.Verify(um => um.ResetAccessFailedCountAsync(It.Is<User>(x => x.Id == u.Id)), Times.Once);
         }
 
+        /// <summary>
+        /// Verifies that deleting an existing user removes their record from the database.
+        /// </summary>
         [Fact]
         public async Task DeleteAsync_RemovesUser()
         {
@@ -235,6 +307,10 @@ namespace FinanceManager.Tests.Auth
             Assert.Equal(0, db.Users.Count());
         }
 
+        /// <summary>
+        /// Verifies that deleting a user id that does not exist returns <see langword="false"/>
+        /// instead of throwing, so callers can treat a missing target as a harmless no-op.
+        /// </summary>
         [Fact]
         public async Task DeleteAsync_NonExisting_ReturnsFalse()
         {

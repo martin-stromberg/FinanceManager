@@ -22,6 +22,12 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
     private readonly AppDbContext _db;
     private readonly PortfolioAnalysisReportService _sut;
 
+    /// <summary>
+    /// Sets up a fresh in-memory <see cref="AppDbContext"/> and wires the service under test with
+    /// real <see cref="FifoCostBasisCalculator"/> and <see cref="ReturnCalculationService"/>
+    /// implementations, so tests exercise actual cost-basis and return math rather than mocked-out
+    /// approximations.
+    /// </summary>
     public PortfolioAnalysisReportServiceTests()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -34,6 +40,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         _sut = new PortfolioAnalysisReportService(_db, fifo, calc);
     }
 
+    /// <summary>Releases the in-memory <see cref="AppDbContext"/> used by each test.</summary>
     public void Dispose() => _db.Dispose();
 
     private User CreateUser()
@@ -90,6 +97,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
     private void AddPrice(Guid securityId, DateTime date, decimal close)
         => _db.SecurityPrices.Add(new SecurityPrice(securityId, date, close));
 
+    /// <summary>
+    /// Verifies the baseline structure calculation for a single held security: market value,
+    /// invested capital, and unrealized gain/loss are computed correctly from one buy and a current
+    /// price, and the position shows up in the top-positions list.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_SingleSecurity_ReturnsCorrectStructure()
     {
@@ -97,7 +109,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var security = CreateSecurity(user.Id, "Apple");
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m);
         AddPrice(security.Id, DateTime.Today, 120m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -107,6 +119,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Structure.TopPositions.Should().ContainSingle(p => p.SecurityId == security.Id && p.MarketValue == 1200m);
     }
 
+    /// <summary>
+    /// Verifies that positions are aggregated correctly across category, region, and sector
+    /// dimensions - including that a security without an assigned category is grouped under the
+    /// "Ohne Kategorie" (uncategorized) bucket rather than being dropped or misgrouped.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_MultipleCategoriesRegionsSectors_GroupsCorrectly()
     {
@@ -121,7 +138,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddPrice(s1.Id, DateTime.Today, 100m);
         AddBuyPosting(s2.Id, DateTime.Today.AddYears(-1), 500m, 5m);
         AddPrice(s2.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -132,6 +149,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Structure.SectorDistribution.Should().ContainSingle(sc => sc.Label == "Technologie" && sc.Value == 1500m);
     }
 
+    /// <summary>
+    /// Verifies that a dividend posting in the current year is reflected in
+    /// <c>Cashflow.DividendsCurrentYear</c>, confirming dividend income is picked up separately
+    /// from the buy/sell postings that drive market value.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_WithDividends_CashflowCalculatedCorrectly()
     {
@@ -140,13 +162,19 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m);
         AddDividendPosting(security.Id, DateTime.Today, 42m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
         report.Cashflow.DividendsCurrentYear.Should().Be(42m);
     }
 
+    /// <summary>
+    /// Verifies that a buy posting linked (via posting group) to a bank cash withdrawal is
+    /// correctly attributed to the associated depot's cash account, so the liquidity ratio
+    /// (cash balance versus total market value) reflects the actual depot cash rather than
+    /// treating the withdrawal as unrelated to the security purchase.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_WithDepotCashPostingGroup_CalculatesLiquidityRatio()
     {
@@ -158,7 +186,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, groupId);
         AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -168,6 +196,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Cashflow.LiquidityRatio.Should().Be(500m / 1500m);
     }
 
+    /// <summary>
+    /// Verifies that when the same cash account is linked to two different security purchase
+    /// groups, its balance is counted once in the liquidity calculation rather than being summed
+    /// once per linked group - a regression guard against double-counting shared account cash.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_MultipleSecurityGroupsForSameAccount_DeduplicatesCashBalance()
     {
@@ -182,7 +215,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBankPosting(account.Id, groupA, DateTime.Today.AddYears(-2), -500m);
         AddBankPosting(account.Id, groupB, DateTime.Today.AddYears(-1), -500m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -192,6 +225,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Cashflow.LiquidityRatio.Should().Be(250m / 1250m);
     }
 
+    /// <summary>
+    /// Verifies strict user-scoping of the liquidity calculation: another user's accounts, groups,
+    /// and postings - even when they share a group id with the target user's own postings - must
+    /// not contribute to the target user's cash balance or market value.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_ForeignAccountsAndGroups_DoNotAffectLiquidityRatio()
     {
@@ -211,7 +249,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBankPosting(foreignAccount.Id, foreignGroup, DateTime.Today.AddYears(-1), -500m);
         AddPrice(security.Id, DateTime.Today, 100m);
         AddPrice(otherSecurity.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -221,6 +259,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Cashflow.LiquidityRatio.Should().Be(200m / 1000m);
     }
 
+    /// <summary>
+    /// Verifies that when a user has no linked cash account at all, the liquidity ratio is reported
+    /// as zero rather than null or an error - distinguishing "no cash available" from the
+    /// "ratio cannot be computed" case covered by the negative/closed-position tests below.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_NoCashAccount_ReturnsZeroLiquidityRatio()
     {
@@ -228,7 +271,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var security = CreateSecurity(user.Id, "Apple");
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, Guid.NewGuid());
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -237,6 +280,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Cashflow.LiquidityRatio.Should().Be(0m);
     }
 
+    /// <summary>
+    /// Verifies that a negative depot cash balance (the account is overdrawn) makes the liquidity
+    /// ratio unavailable (<see langword="null"/>) rather than returning a negative or misleading
+    /// ratio value that would not make sense to a user reading the report.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_NegativeDepotCash_ReturnsUnavailableLiquidityRatio()
     {
@@ -248,7 +296,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 1000m, 10m, groupId);
         AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -258,6 +306,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Cashflow.LiquidityRatio.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that once a position has been fully sold (zero market value) despite positive cash
+    /// in the linked depot, the liquidity ratio is unavailable rather than reporting a nonsensical
+    /// zero-over-cash figure - a ratio only makes sense while the position is still open.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_ClosedPositionWithPositiveDepotCash_ReturnsUnavailableLiquidityRatio()
     {
@@ -270,7 +323,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBankPosting(account.Id, groupId, DateTime.Today.AddYears(-1), -1000m);
         AddSellPosting(security.Id, DateTime.Today, 1000m, 10m);
         AddPrice(security.Id, DateTime.Today, 100m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -280,12 +333,17 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Cashflow.LiquidityRatio.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that a user with a security defined but no postings at all gets a well-formed,
+    /// entirely empty report (zero totals, empty collections) instead of a null-reference failure
+    /// or throwing exception.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_NoPostings_ReturnsEmptyStructure()
     {
         var user = CreateUser();
         CreateSecurity(user.Id, "Apple");
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -295,6 +353,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Structure.AssetAllocation.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies core user-scoping: when two users each hold different securities, requesting one
+    /// user's report returns only that user's position and never leaks the other user's holdings
+    /// into the top-positions list.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_MultipleUsers_OnlyReturnsOwnData()
     {
@@ -309,7 +372,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(securityB.Id, DateTime.Today.AddYears(-1), 5000m, 50m);
         AddPrice(securityB.Id, DateTime.Today, 200m);
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var reportA = await _sut.GetPortfolioAnalysisReportAsync(userA.Id, CancellationToken.None);
 
@@ -318,6 +381,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         reportA.Structure.TopPositions.Should().NotContain(p => p.SecurityId == securityB.Id);
     }
 
+    /// <summary>
+    /// Verifies that the full <c>AllPositions</c> list (as opposed to the capped top-positions list)
+    /// contains every non-zero position sorted strictly by market value descending, so consumers of
+    /// the full list can rely on ordering without re-sorting.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_AllPositions_ContainsAllNonZeroPositionsSortedByMarketValueDescending()
     {
@@ -335,7 +403,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(s3.Id, DateTime.Today.AddYears(-1), 200m, 2m);
         AddPrice(s3.Id, DateTime.Today, 100m); // market value 200
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -345,6 +413,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         report.Structure.AllPositions.Should().OnlyContain(p => p.MarketValue != 0m);
     }
 
+    /// <summary>
+    /// Verifies that with more than ten positions held, <c>TopPositions</c> is exactly the first ten
+    /// entries of <c>AllPositions</c> in the same order - confirming the top-10 cap is a simple
+    /// truncation of the already-sorted full list rather than a separately computed ranking.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_TopPositions_EqualsAllPositionsTakeTen()
     {
@@ -361,7 +434,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
             AddPrice(security.Id, DateTime.Today, price);
         }
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -372,6 +445,12 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
             options => options.WithStrictOrdering());
     }
 
+    /// <summary>
+    /// Verifies FIFO lot tracking for the invested-capital breakdown: a fee posting linked to a buy
+    /// via the same posting group is folded into that lot's total cost, the sum of all lots equals
+    /// the security's total invested capital, and lots are ordered by purchase date descending -
+    /// so the newest tax lot is shown first.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_InvestedCapitalBreakdown_LotsSumMatchesInvestedCapitalAndSortedByPurchaseDateDescending()
     {
@@ -390,7 +469,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-1), 500m, 5m); // newer lot, no fee
         AddPrice(security.Id, DateTime.Today, 100m);
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 
@@ -400,6 +479,11 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         breakdown.Lots.Select(l => l.PurchaseDate).Should().BeInDescendingOrder();
     }
 
+    /// <summary>
+    /// Verifies that a security whose entire position has been sold off no longer appears in the
+    /// invested-capital breakdown, since there is no remaining lot to attribute invested capital to
+    /// once the FIFO quantity has been fully depleted.
+    /// </summary>
     [Fact]
     public async Task GetPortfolioReport_InvestedCapitalBreakdown_FullySoldSecurity_IsExcluded()
     {
@@ -407,7 +491,7 @@ public sealed class PortfolioAnalysisReportServiceTests : IDisposable
         var security = CreateSecurity(user.Id, "Apple");
         AddBuyPosting(security.Id, DateTime.Today.AddYears(-2), 1000m, 10m);
         AddSellPosting(security.Id, DateTime.Today.AddYears(-1), 1200m, 10m);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
 

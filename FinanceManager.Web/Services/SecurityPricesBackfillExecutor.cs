@@ -184,7 +184,7 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
                         // unexpected ownership/validation issue - log and break for this security
                         _logger.LogWarning(ex, "Skipping price insert for {Security} on {Date}: {Message}", s.Name, tuple.date, ex.Message);
                         break;
-                    }                    
+                    }
                 }
                 context.ReportProgress(++processed, total, s.Name, 0, 0);
             }

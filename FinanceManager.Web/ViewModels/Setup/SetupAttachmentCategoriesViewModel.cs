@@ -69,7 +69,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// </summary>
     public void OnChanged()
     {
-        ActionOk = false; SetError(null,null); RaiseStateChanged();
+        ActionOk = false; SetError(null, null); RaiseStateChanged();
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// <summary>
     /// Creates a new attachment category with the name in <see cref="NewName"/> and adds it to <see cref="Items"/> on success.
     /// If creation succeeds the <see cref="ActionOk"/> flag is set to true and <see cref="NewName"/> is cleared.
-    /// Errors are captured in the view model via <see cref="SetError(string?, string?)"/>.
+    /// Errors are captured in the view model via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/>.
     /// </summary>
     /// <param name="ct">Cancellation token used for the API call.</param>
     /// <returns>A task representing the asynchronous add operation.</returns>
@@ -109,7 +109,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     {
         var name = NewName?.Trim() ?? string.Empty;
         if (name.Length < 2) { return; }
-        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null, null); ActionOk = false; RaiseStateChanged();
         try
         {
             var dto = await ApiClient.Attachments_CreateCategoryAsync(name, ct);
@@ -138,7 +138,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     public void BeginEdit(Guid id, string currentName)
     {
         if (Busy) { return; }
-        EditId = id; EditName = currentName; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        EditId = id; EditName = currentName; SetError(null, null); ActionOk = false; RaiseStateChanged();
     }
 
     /// <summary>
@@ -146,13 +146,13 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
     /// </summary>
     public void CancelEdit()
     {
-        EditId = Guid.Empty; EditName = string.Empty; SetError(null,null); RaiseStateChanged();
+        EditId = Guid.Empty; EditName = string.Empty; SetError(null, null); RaiseStateChanged();
     }
 
     /// <summary>
     /// Saves the current edit (<see cref="EditId"/> / <see cref="EditName"/>) by calling the API
     /// and updates the corresponding item in <see cref="Items"/> if the update succeeds.
-    /// Errors are captured in the view model via <see cref="SetError(string?, string?)"/>.
+    /// Errors are captured in the view model via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/>.
     /// </summary>
     /// <param name="ct">Cancellation token used for the API call.</param>
     /// <returns>A task representing the asynchronous save operation.</returns>
@@ -161,7 +161,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
         if (EditId == Guid.Empty) { return; }
         var name = EditName?.Trim() ?? string.Empty;
         if (name.Length < 2) { return; }
-        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null, null); ActionOk = false; RaiseStateChanged();
         try
         {
             var dto = await ApiClient.Attachments_UpdateCategoryNameAsync(EditId, name, ct);
@@ -185,14 +185,14 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
 
     /// <summary>
     /// Deletes the category with the specified id by calling the API and removes it from <see cref="Items"/> on success.
-    /// Errors are captured in the view model via <see cref="SetError(string?, string?)"/>.
+    /// Errors are captured in the view model via <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/>.
     /// </summary>
     /// <param name="id">The id of the category to delete.</param>
     /// <param name="ct">Cancellation token used for the API call.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        Busy = true; SetError(null,null); ActionOk = false; RaiseStateChanged();
+        Busy = true; SetError(null, null); ActionOk = false; RaiseStateChanged();
         try
         {
             var ok = await ApiClient.Attachments_DeleteCategoryAsync(id, ct);
@@ -207,7 +207,7 @@ public sealed class SetupAttachmentCategoriesViewModel : BaseViewModel
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed");
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Delete failed");
         }

@@ -5,6 +5,11 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="ReportsHomeViewModel"/>'s favorites loading: that favorites come back sorted by
+/// name regardless of API order, and that a failing favorites request does not leave the view model stuck
+/// in a loading state or throw out of the reload pipeline.
+/// </summary>
 public sealed class ReportsHomeViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -26,6 +31,10 @@ public sealed class ReportsHomeViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that initialization loads favorites from the API and presents them sorted alphabetically
+    /// by name, even though the mocked response returns them in reverse order.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsFavorites_SortsByName()
     {
@@ -52,7 +61,7 @@ public sealed class ReportsHomeViewModelTests
         apiMock.Setup(a => a.Reports_ListFavoritesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(favorites);
 
-        await vm.InitializeAsync();
+        await vm.InitializeAsync(TestContext.Current.CancellationToken);
 
         Assert.False(vm.Loading);
         Assert.Equal(3, vm.Favorites.Count);
@@ -62,6 +71,11 @@ public sealed class ReportsHomeViewModelTests
             c => Assert.Equal("Fav 3", c.Name));
     }
 
+    /// <summary>
+    /// Verifies that a failing favorites API call during reload is swallowed rather than propagated,
+    /// and still leaves the view model with <c>Loading</c> reset to false, so a transient API error does not
+    /// crash the reports home page or leave it stuck showing a spinner.
+    /// </summary>
     [Fact]
     public async Task Reload_DoesNotThrow_OnError()
     {
@@ -69,8 +83,8 @@ public sealed class ReportsHomeViewModelTests
         apiMock.Setup(a => a.Reports_ListFavoritesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Error"));
 
-        await vm.InitializeAsync();
-        await vm.ReloadAsync();
+        await vm.InitializeAsync(TestContext.Current.CancellationToken);
+        await vm.ReloadAsync(TestContext.Current.CancellationToken);
 
         Assert.False(vm.Loading);
     }

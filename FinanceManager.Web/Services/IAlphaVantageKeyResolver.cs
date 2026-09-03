@@ -57,7 +57,7 @@ public sealed class AlphaVantageKeyResolver : IAlphaVantageKeyResolver
 
     /// <summary>
     /// Retrieves the AlphaVantage key configured for a specific user. If the user has no personal key configured
-    /// this method will attempt to return a shared admin key via <see cref="GetSharedAsync"/>.
+    /// this method will attempt to return a shared admin key via <see cref="GetSharedAsync(Guid?, CancellationToken)"/>.
     /// </summary>
     /// <param name="userId">The identifier of the user to lookup the key for.</param>
     /// <param name="ct">Cancellation token.</param>

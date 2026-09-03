@@ -89,8 +89,8 @@ public sealed partial class StatementDraftService
         var parentDraft = await _db.StatementDrafts.Include(d => d.Entries).FirstOrDefaultAsync(d => d.Id == parentEntry.DraftId && d.OwnerUserId == ownerUserId, ct);
         if (parentDraft == null) { return; }
         var assignedDraft = await _db.StatementDrafts.FirstOrDefaultAsync(d => d.Id == splitDraftId && d.OwnerUserId == ownerUserId, ct);
-        if (parentDraft == null) { return; }
-        var assignedDrafts = await _db.StatementDrafts.Where(d => (assignedDraft.UploadGroupId != null &&  d.UploadGroupId == assignedDraft.UploadGroupId) || (d.Id == assignedDraft.Id)).Select(d => d.Id).ToListAsync(ct);
+        if (assignedDraft == null) { return; }
+        var assignedDrafts = await _db.StatementDrafts.Where(d => (assignedDraft.UploadGroupId != null && d.UploadGroupId == assignedDraft.UploadGroupId) || (d.Id == assignedDraft.Id)).Select(d => d.Id).ToListAsync(ct);
         var total = await _db.StatementDraftEntries.Where(e => assignedDrafts.Contains(e.DraftId)).SumAsync(e => e.Amount, ct);
         if (total == parentEntry.Amount && parentEntry.ContactId != null && parentEntry.Status != StatementDraftEntryStatus.Accounted)
         {
@@ -148,7 +148,9 @@ public sealed partial class StatementDraftService
             .ToListAsync(ct);
 
         // Duplicate detection: consider existing Bank postings and historical StatementEntries
-        List<(DateTime BookingDate, decimal Amount, decimal? OriginalAmount, string Subject)> existing = new();
+        // Subject is nullable here because Posting.Subject (bank postings) can legitimately be null,
+        // unlike StatementEntry.Subject which is always populated.
+        List<(DateTime BookingDate, decimal Amount, decimal? OriginalAmount, string? Subject)> existing = new();
         DateTime? oldest = await _db.StatementDraftEntries.AsNoTracking()
                 .Where(e => e.DraftId == draft.Id)
                 .MinAsync(e => (DateTime?)e.BookingDate, ct);
@@ -171,7 +173,7 @@ public sealed partial class StatementDraftService
                 .Where(se => se.BookingDate >= since)
                 .Select(se => new { se.BookingDate, se.Amount, se.Subject })
                 .ToListAsync(ct);
-            existing.AddRange(histEntries.Select(x => (x.BookingDate.Date, x.Amount, (decimal?)null, x.Subject)));
+            existing.AddRange(histEntries.Select(x => (BookingDate: x.BookingDate.Date, Amount: x.Amount, OriginalAmount: (decimal?)null, Subject: (string?)x.Subject)));
         }
 
 
@@ -181,7 +183,9 @@ public sealed partial class StatementDraftService
         {
             bankAccount = await _db.Accounts
                 .FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, ct);
-            bankContactId = bankAccount.BankContactId;
+            // DetectedAccountId can reference an account that no longer exists (e.g. deleted after being
+            // linked to this draft), so bankAccount can legitimately be null here.
+            bankContactId = bankAccount?.BankContactId;
         }
 
         foreach (var entry in entries)
@@ -452,7 +456,7 @@ public sealed partial class StatementDraftService
 
     /// <summary>
     /// Classifies the draft header to detect the account id when possible (IBAN or single account scenarios).
-    /// Also checks <see cref="AccountLinkedIbans"/> for collection-account assignment when no direct match is found.
+    /// Also checks accounts' linked IBANs for collection-account assignment when no direct match is found.
     /// </summary>
     /// <param name="draft">The draft to classify.</param>
     /// <param name="ownerUserId">Owner user identifier used to scope account lookups.</param>
@@ -469,7 +473,7 @@ public sealed partial class StatementDraftService
             if (account is null)
             {
                 var simAccounts = await _db.Accounts.AsNoTracking()
-                    .Where(a => a.OwnerUserId == ownerUserId && (a.Iban.EndsWith(draft.AccountName)))
+                    .Where(a => a.OwnerUserId == ownerUserId && a.Iban != null && a.Iban.EndsWith(draft.AccountName))
                     .Select(a => new { a.Id })
                     .ToListAsync(ct);
                 account = simAccounts.Count == 1 ? simAccounts.First() : null;

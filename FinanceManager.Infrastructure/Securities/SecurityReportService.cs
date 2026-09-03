@@ -31,7 +31,7 @@ public sealed class SecurityReportService : ISecurityReportService
         }
 
         const int SecurityPostingSubType_Dividend = (int)SecurityPostingSubType.Dividend;
-        
+
 
         var today = DateTime.UtcNow.Date;
         var start = new DateTime(today.Year - 1, 1, 1);

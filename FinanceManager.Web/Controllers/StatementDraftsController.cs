@@ -51,6 +51,8 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="localizer">Localizer for i18n support.</param>
     /// <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
     /// <param name="attachments">Attachment service used to list and download attachments.</param>
+    /// <param name="budgetImpact">Optional service used to evaluate the budget impact of bookings; may be null when the feature is disabled.</param>
+    /// <param name="massImportOrchestrator">Optional orchestrator used to coordinate mass import of statement drafts; may be null when the feature is disabled.</param>
     public StatementDraftsController(
         IStatementDraftService drafts,
         ICurrentUserService current,
@@ -390,7 +392,7 @@ public sealed class StatementDraftsController : ControllerBase
         var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
         if (draft is null && draftId == Guid.Empty)
             draft = await _drafts.FindDraftHeaderAsync(entryId, _current.UserId, ct);
-        if (draft is null) return null;
+        if (draft is null) return NotFound();
 
         var ordered = (await _drafts.GetDraftEntriesAsync(draft.DraftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
         var entry = await _drafts.GetDraftEntryAsync(draft.DraftId, entryId, ct);
@@ -647,7 +649,7 @@ public sealed class StatementDraftsController : ControllerBase
         if (fileMeta == null) { return NotFound(); }
         var payload = await _attachments.DownloadAsync(_current.UserId, fileMeta.Id, ct);
         if (payload == null) { return NotFound(); }
-        var downloaded = payload.Value; 
+        var downloaded = payload.Value;
         var content = downloaded.Item1;
         var fileName = downloaded.Item2;
         var contentType = downloaded.Item3;

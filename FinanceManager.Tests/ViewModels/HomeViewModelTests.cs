@@ -10,6 +10,11 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>HomeViewModel</c>'s mass-import file drop workflow: how uploaded statement files are turned
+/// into a pending confirmation dialog, how per-file security selection and exclusion decisions are collected,
+/// and how confirming the dialog submits those decisions back to the API and applies the execution result.
+/// </summary>
 public sealed class HomeViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -30,6 +35,11 @@ public sealed class HomeViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that dropping a file while the user's import-split policy is "always confirm" surfaces a
+    /// pending mass-import dialog populated with the file and the active securities list to choose from,
+    /// instead of importing silently in the background.
+    /// </summary>
     [Fact]
     public async Task ProcessMassImportSelectionAsync_ShouldOpenPendingDialog_WhenConfirmationIsRequired()
     {
@@ -72,6 +82,12 @@ public sealed class HomeViewModelTests
         Assert.False(vm.UploadInProgress);
     }
 
+    /// <summary>
+    /// Verifies the full confirm round-trip: after the user assigns a security to a pending file and
+    /// confirms, the view model submits a request with <c>ConfirmExecution</c> set and the user's per-file
+    /// decision, then clears the pending dialog and applies the server's execution result (success flag and
+    /// resulting draft id) once the import actually runs.
+    /// </summary>
     [Fact]
     public async Task ConfirmMassImportAsync_ShouldSubmitDecisionsAndApplyExecutionResult()
     {
@@ -137,7 +153,7 @@ public sealed class HomeViewModelTests
         vm.SetPendingFileSecurity(fileId, securityId);
         vm.SetPendingFileExcluded(fileId, false);
 
-        await vm.ConfirmMassImportAsync();
+        await vm.ConfirmMassImportAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(confirmRequest);
         Assert.True(confirmRequest!.ConfirmExecution);
@@ -149,6 +165,12 @@ public sealed class HomeViewModelTests
         Assert.NotNull(vm.FirstDraftId);
     }
 
+    /// <summary>
+    /// Verifies that a file the server could not classify (<see cref="MassImportFileType.Unknown"/>) is
+    /// forced to <c>Excluded = true</c> in the pending dialog by default, protecting the user from
+    /// accidentally importing a file the system does not recognize, while still allowing them to manually
+    /// re-include it afterward via <c>SetPendingFileExcluded</c>.
+    /// </summary>
     [Fact]
     public async Task ProcessMassImportSelectionAsync_ShouldForceExcludeUnknownType_AndIgnoreManualSelection()
     {

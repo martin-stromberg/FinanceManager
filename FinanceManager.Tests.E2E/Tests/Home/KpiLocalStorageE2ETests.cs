@@ -14,6 +14,10 @@ public sealed class KpiLocalStorageE2ETests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KpiLocalStorageE2ETests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public KpiLocalStorageE2ETests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;

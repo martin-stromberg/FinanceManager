@@ -1,14 +1,31 @@
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// Wraps the home page's statement-upload widget, in particular the "mass import" dialog that can appear
+/// when the uploaded file matches more than one existing account. Tests use this instead of driving the
+/// file input and dialog directly so they don't have to duplicate the (somewhat involved) two-path wait
+/// logic for "import succeeded immediately" vs. "import needs a disambiguation click first".
+/// </summary>
 public sealed class HomePageGateway
 {
     private readonly IPage _page;
 
+    /// <summary>Creates the gateway for the given page.</summary>
+    /// <param name="page">The Playwright page to drive.</param>
     public HomePageGateway(IPage page)
     {
         _page = page;
     }
 
+    /// <summary>
+    /// Navigates to the home page, uploads a temporary file with the given name and content through the
+    /// import widget, and waits for the import to finish. If the upload triggers the mass-import
+    /// disambiguation dialog (shown when Playwright doesn't get the "import-success" indicator within 10s),
+    /// this confirms the first available action in that dialog and then waits again for success, up to 30s.
+    /// The temporary file is always deleted afterwards, even if the import fails.
+    /// </summary>
+    /// <param name="fileName">File name to present to the upload input; only the name matters, not a real path.</param>
+    /// <param name="content">Text content written to the temporary file before it is uploaded.</param>
     public async Task UploadStatementFileAsync(string fileName, string content)
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-{fileName}");

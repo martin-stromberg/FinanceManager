@@ -5,6 +5,10 @@ using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>SavingsPlanPostingsListViewModel</c>'s paging behavior (first-page load, load-more with the
+/// standard stop-when-below-page-size heuristic) and export URL composition from the active search filter.
+/// </summary>
 public sealed class PostingsSavingsPlanViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -61,6 +65,10 @@ public sealed class PostingsSavingsPlanViewModelTests
             .ToList();
     }
 
+    /// <summary>
+    /// Verifies that initialization loads the first page of postings for the bound savings plan and,
+    /// since fewer items than the page size were returned, correctly infers there is no further page to load.
+    /// </summary>
     [Fact]
     public async Task Initialize_LoadsFirstPage_SetsItemsAndFlags()
     {
@@ -77,6 +85,10 @@ public sealed class PostingsSavingsPlanViewModelTests
         Assert.False(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that loading more pages appends to the existing collection and that "can load more" flips
+    /// off once a page comes back shorter than the fixed page size (50).
+    /// </summary>
     [Fact]
     public async Task LoadMore_AppendsItems_StopsWhenBelowPageSize()
     {
@@ -99,6 +111,10 @@ public sealed class PostingsSavingsPlanViewModelTests
         Assert.False(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that the export URL embeds the savings plan id in its path and the active search text as
+    /// a URL-encoded query parameter, so the export matches the currently filtered list.
+    /// </summary>
     [Fact]
     public async Task GetExportUrl_ComposesQuery()
     {

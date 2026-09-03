@@ -5,11 +5,20 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
-[Collection("IntegrationTests")] 
+/// <summary>
+/// End-to-end test for the budget-planning API: purposes, their rules and per-period overrides, and how
+/// the purposes overview aggregates rule occurrences (yearly, monthly, and time-bounded) into per-range
+/// budget sums.
+/// </summary>
+[Collection("IntegrationTests")]
 public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientBudgetsTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientBudgetsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -30,6 +39,13 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Walks a budget purpose through create/get/update, three rules with different intervals and end
+    /// dates (yearly, open-ended monthly, monthly ending in February), a per-period override, and delete -
+    /// verifying along the way that the purposes overview correctly aggregates each rule's occurrences
+    /// into the budget sum for a given month range (January includes all three, February excludes the
+    /// yearly one, March only the still-open monthly rule).
+    /// </summary>
     [Fact]
     public async Task Budgets_Purposes_Rules_Overrides_Flow()
     {
@@ -38,7 +54,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         await EnsureAuthenticatedAsync(api);
 
         // Act + Assert: purposes empty
-        var purposes0 = await api.Budgets_ListPurposesAsync();
+        var purposes0 = await api.Budgets_ListPurposesAsync(ct: TestContext.Current.CancellationToken);
         purposes0.Should().NotBeNull();
         purposes0.Should().BeEmpty();
 
@@ -47,14 +63,14 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         {
             // Create purpose
             // Use an actual existing contact category so SourceName can be resolved.
-            var groupId = (await api.ContactCategories_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest("GroceriesGroup"))).Id;
+            var groupId = (await api.ContactCategories_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest("GroceriesGroup"), TestContext.Current.CancellationToken)).Id;
 
             createdPurpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
                 Name: "Groceries",
                 SourceType: BudgetSourceType.ContactGroup,
                 SourceId: groupId,
                 Description: null,
-                BudgetCategoryId: null));
+                BudgetCategoryId: null), TestContext.Current.CancellationToken);
         }
         catch (HttpRequestException)
         {
@@ -66,7 +82,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         createdPurpose.ValuationType.Should().Be(BudgetValuationType.ExactPostings);
 
         // Get purpose
-        var gotPurpose = await api.Budgets_GetPurposeAsync(createdPurpose.Id);
+        var gotPurpose = await api.Budgets_GetPurposeAsync(createdPurpose.Id, TestContext.Current.CancellationToken);
         gotPurpose.Should().NotBeNull();
         gotPurpose!.Id.Should().Be(createdPurpose.Id);
         gotPurpose.ValuationType.Should().Be(BudgetValuationType.ExactPostings);
@@ -78,7 +94,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             SourceId: createdPurpose.SourceId,
             Description: "desc",
             BudgetCategoryId: null,
-            ValuationType: BudgetValuationType.TotalBudget));
+            ValuationType: BudgetValuationType.TotalBudget), TestContext.Current.CancellationToken);
 
         updatedPurpose.Should().NotBeNull();
         updatedPurpose!.Name.Should().Be("Groceries2");
@@ -93,7 +109,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             Interval: BudgetIntervalType.Yearly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         var ruleMonthly = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: createdPurpose.Id,
@@ -102,7 +118,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         // Create a monthly rule that ends after February 2026
         var ruleMonthlyEndsFeb = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
@@ -112,24 +128,18 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: new DateOnly(2026, 2, 28)));
+            EndDate: new DateOnly(2026, 2, 28)), TestContext.Current.CancellationToken);
 
         ruleYearlyJan.Id.Should().NotBeEmpty();
         ruleMonthly.Id.Should().NotBeEmpty();
         ruleMonthlyEndsFeb.Id.Should().NotBeEmpty();
 
         // List rules
-        var rules = await api.Budgets_ListRulesByPurposeAsync(createdPurpose.Id);
+        var rules = await api.Budgets_ListRulesByPurposeAsync(createdPurpose.Id, TestContext.Current.CancellationToken);
         rules.Should().HaveCount(3);
 
         // Purposes overview with range filter: February 2026 should include monthly occurrence (10) + ending rule (5)
-        var febPurposes = await api.Budgets_ListPurposesAsync(
-            skip: 0,
-            take: 200,
-            sourceType: null,
-            q: null,
-            from: new DateOnly(2026, 2, 1),
-            to: new DateOnly(2026, 2, 28));
+        var febPurposes = await api.Budgets_ListPurposesAsync(skip: 0, take: 200, sourceType: null, q: null, from: new DateOnly(2026, 2, 1), to: new DateOnly(2026, 2, 28), ct: TestContext.Current.CancellationToken);
 
         febPurposes.Should().HaveCount(1);
         febPurposes[0].Id.Should().Be(createdPurpose.Id);
@@ -140,13 +150,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         febPurposes[0].SourceName.Should().NotBeNull();
 
         // Purposes overview with range filter: January 2026 should include yearly + monthly + ending rule (90 + 10 + 5)
-        var janPurposes = await api.Budgets_ListPurposesAsync(
-            skip: 0,
-            take: 200,
-            sourceType: null,
-            q: null,
-            from: new DateOnly(2026, 1, 1),
-            to: new DateOnly(2026, 1, 31));
+        var janPurposes = await api.Budgets_ListPurposesAsync(skip: 0, take: 200, sourceType: null, q: null, from: new DateOnly(2026, 1, 1), to: new DateOnly(2026, 1, 31), ct: TestContext.Current.CancellationToken);
 
         janPurposes.Should().HaveCount(1);
         janPurposes[0].Id.Should().Be(createdPurpose.Id);
@@ -157,13 +161,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         janPurposes[0].SourceName.Should().NotBeNull();
 
         // Purposes overview with range filter: March 2026 should include only the non-ending monthly rule (10)
-        var marPurposes = await api.Budgets_ListPurposesAsync(
-            skip: 0,
-            take: 200,
-            sourceType: null,
-            q: null,
-            from: new DateOnly(2026, 3, 1),
-            to: new DateOnly(2026, 3, 31));
+        var marPurposes = await api.Budgets_ListPurposesAsync(skip: 0, take: 200, sourceType: null, q: null, from: new DateOnly(2026, 3, 1), to: new DateOnly(2026, 3, 31), ct: TestContext.Current.CancellationToken);
 
         marPurposes.Should().HaveCount(1);
         marPurposes[0].Id.Should().Be(createdPurpose.Id);
@@ -179,7 +177,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         updatedRule.Should().NotBeNull();
         updatedRule!.Amount.Should().Be(12m);
@@ -188,47 +186,51 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         var createdOverride = await api.Budgets_CreateOverrideAsync(new BudgetOverrideCreateRequest(
             BudgetPurposeId: createdPurpose.Id,
             Period: new BudgetPeriodKey(2026, 3),
-            Amount: 500m));
+            Amount: 500m), TestContext.Current.CancellationToken);
 
         createdOverride.Id.Should().NotBeEmpty();
 
         // List overrides
-        var overrides = await api.Budgets_ListOverridesByPurposeAsync(createdPurpose.Id);
+        var overrides = await api.Budgets_ListOverridesByPurposeAsync(createdPurpose.Id, TestContext.Current.CancellationToken);
         overrides.Should().HaveCount(1);
         overrides[0].Id.Should().Be(createdOverride.Id);
 
         // Update override
         var updatedOverride = await api.Budgets_UpdateOverrideAsync(createdOverride.Id, new BudgetOverrideUpdateRequest(
             Period: new BudgetPeriodKey(2026, 3),
-            Amount: 550m));
+            Amount: 550m), TestContext.Current.CancellationToken);
 
         updatedOverride.Should().NotBeNull();
         updatedOverride!.Amount.Should().Be(550m);
 
         // Delete override
-        var delOverrideOk = await api.Budgets_DeleteOverrideAsync(createdOverride.Id);
+        var delOverrideOk = await api.Budgets_DeleteOverrideAsync(createdOverride.Id, TestContext.Current.CancellationToken);
         delOverrideOk.Should().BeTrue();
-        (await api.Budgets_GetOverrideAsync(createdOverride.Id)).Should().BeNull();
+        (await api.Budgets_GetOverrideAsync(createdOverride.Id, TestContext.Current.CancellationToken)).Should().BeNull();
 
         // Delete rules
-        var delRuleOk1 = await api.Budgets_DeleteRuleAsync(ruleYearlyJan.Id);
+        var delRuleOk1 = await api.Budgets_DeleteRuleAsync(ruleYearlyJan.Id, TestContext.Current.CancellationToken);
         delRuleOk1.Should().BeTrue();
-        (await api.Budgets_GetRuleAsync(ruleYearlyJan.Id)).Should().BeNull();
+        (await api.Budgets_GetRuleAsync(ruleYearlyJan.Id, TestContext.Current.CancellationToken)).Should().BeNull();
 
-        var delRuleOk2 = await api.Budgets_DeleteRuleAsync(ruleMonthly.Id);
+        var delRuleOk2 = await api.Budgets_DeleteRuleAsync(ruleMonthly.Id, TestContext.Current.CancellationToken);
         delRuleOk2.Should().BeTrue();
-        (await api.Budgets_GetRuleAsync(ruleMonthly.Id)).Should().BeNull();
+        (await api.Budgets_GetRuleAsync(ruleMonthly.Id, TestContext.Current.CancellationToken)).Should().BeNull();
 
-        var delRuleOk3 = await api.Budgets_DeleteRuleAsync(ruleMonthlyEndsFeb.Id);
+        var delRuleOk3 = await api.Budgets_DeleteRuleAsync(ruleMonthlyEndsFeb.Id, TestContext.Current.CancellationToken);
         delRuleOk3.Should().BeTrue();
-        (await api.Budgets_GetRuleAsync(ruleMonthlyEndsFeb.Id)).Should().BeNull();
+        (await api.Budgets_GetRuleAsync(ruleMonthlyEndsFeb.Id, TestContext.Current.CancellationToken)).Should().BeNull();
 
         // Delete purpose
-        var delPurposeOk = await api.Budgets_DeletePurposeAsync(createdPurpose.Id);
+        var delPurposeOk = await api.Budgets_DeletePurposeAsync(createdPurpose.Id, TestContext.Current.CancellationToken);
         delPurposeOk.Should().BeTrue();
-        (await api.Budgets_GetPurposeAsync(createdPurpose.Id)).Should().BeNull();
+        (await api.Budgets_GetPurposeAsync(createdPurpose.Id, TestContext.Current.CancellationToken)).Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that deleting a budget purpose cascades to its rules, so no orphaned rules remain
+    /// referencing a purpose that no longer exists.
+    /// </summary>
     [Fact]
     public async Task Budgets_DeletePurpose_ShouldAlsoDeleteRules()
     {
@@ -237,7 +239,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
         await EnsureAuthenticatedAsync(api);
 
         // Use an actual existing contact category so SourceName can be resolved.
-        var groupId = (await api.ContactCategories_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest("TestGroup"))).Id;
+        var groupId = (await api.ContactCategories_CreateAsync(new FinanceManager.Shared.Dtos.Contacts.ContactCategoryCreateRequest("TestGroup"), TestContext.Current.CancellationToken)).Id;
 
         BudgetPurposeDto purpose;
         try
@@ -247,7 +249,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
                 SourceType: BudgetSourceType.ContactGroup,
                 SourceId: groupId,
                 Description: null,
-                BudgetCategoryId: null));
+                BudgetCategoryId: null), TestContext.Current.CancellationToken);
         }
         catch (HttpRequestException)
         {
@@ -261,7 +263,7 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         var rule2 = await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
@@ -270,18 +272,18 @@ public sealed class ApiClientBudgetsTests : IClassFixture<TestWebApplicationFact
             Interval: BudgetIntervalType.Yearly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(2026, 1, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
-        (await api.Budgets_ListRulesByPurposeAsync(purpose.Id)).Should().HaveCount(2);
+        (await api.Budgets_ListRulesByPurposeAsync(purpose.Id, TestContext.Current.CancellationToken)).Should().HaveCount(2);
 
         // Act
-        var deleted = await api.Budgets_DeletePurposeAsync(purpose.Id);
+        var deleted = await api.Budgets_DeletePurposeAsync(purpose.Id, TestContext.Current.CancellationToken);
 
         // Assert
         deleted.Should().BeTrue();
-        (await api.Budgets_GetPurposeAsync(purpose.Id)).Should().BeNull();
+        (await api.Budgets_GetPurposeAsync(purpose.Id, TestContext.Current.CancellationToken)).Should().BeNull();
 
-        (await api.Budgets_GetRuleAsync(rule1.Id)).Should().BeNull();
-        (await api.Budgets_GetRuleAsync(rule2.Id)).Should().BeNull();
+        (await api.Budgets_GetRuleAsync(rule1.Id, TestContext.Current.CancellationToken)).Should().BeNull();
+        (await api.Budgets_GetRuleAsync(rule2.Id, TestContext.Current.CancellationToken)).Should().BeNull();
     }
 }

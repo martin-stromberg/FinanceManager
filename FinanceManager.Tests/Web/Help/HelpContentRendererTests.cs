@@ -2,10 +2,21 @@ using FinanceManager.Web.Services.Help;
 
 namespace FinanceManager.Tests.Web.Help;
 
+/// <summary>
+/// Tests for <see cref="HelpContentRenderer"/>, which turns help markdown (and legacy raw HTML) into sanitized
+/// HTML for display: stripping executable content (scripts, event handlers, <c>javascript:</c>/<c>data:</c>
+/// URIs) while preserving legitimate formatting, and rewriting relative document links into the app's
+/// <c>/help/view/...</c> routes. Several tests render the actual on-disk <c>Docs/help</c> markdown files
+/// to catch link-rewriting regressions against real content, not just synthetic snippets.
+/// </summary>
 public sealed class HelpContentRendererTests
 {
     private readonly HelpContentRenderer _renderer = new();
 
+    /// <summary>
+    /// Verifies that rendering markdown strips a <c>&lt;script&gt;</c> tag, an <c>onerror</c>-bearing image,
+    /// a <c>javascript:</c> link, and the raw front-matter block, while the legitimate heading still renders.
+    /// </summary>
     [Fact]
     public void RenderMarkdownToHtml_RemovesExecutableHtml()
     {
@@ -28,6 +39,11 @@ public sealed class HelpContentRendererTests
         Assert.DoesNotContain("title: Test", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that safe formatting (headings, bold, inline code, tables) renders correctly, that external
+    /// links get <c>rel="noopener noreferrer"</c> to prevent tab-nabbing, and that a relative link to another
+    /// markdown file is rewritten to the app's <c>/help/view/...</c> route.
+    /// </summary>
     [Fact]
     public void RenderMarkdownToHtml_KeepsAllowedFormattingAndSafeLinks()
     {
@@ -53,6 +69,10 @@ public sealed class HelpContentRendererTests
         Assert.Contains("href=\"/help/view/f001-konten\"", html);
     }
 
+    /// <summary>
+    /// Verifies against the real <c>Docs/help/index.md</c> that top-level topic links are rewritten to their
+    /// <c>/help/view/...</c> routes and that no raw <c>.md</c> file reference leaks through unrewritten.
+    /// </summary>
     [Fact]
     public void RenderMarkdownToHtml_RewritesRealDocsHelpTopLevelLinks()
     {
@@ -66,6 +86,11 @@ public sealed class HelpContentRendererTests
         Assert.DoesNotContain("href=\"budgetplanung/index.md\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies against the real <c>Docs/help/budgetplanung/index.md</c> that sibling-document links within a
+    /// topic section resolve relative to the current document's directory rather than the help root, so
+    /// the same relative link works correctly regardless of which topic it appears in.
+    /// </summary>
     [Fact]
     public void RenderMarkdownToHtml_RewritesRealDocsHelpSectionLinksRelativeToCurrentDirectory()
     {
@@ -79,6 +104,10 @@ public sealed class HelpContentRendererTests
         Assert.DoesNotContain("href=\"beschreibung.md\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies against the real <c>Docs/help/budgetplanung/beschreibung.md</c> that a "back to section"
+    /// link (<c>index.md</c>) is rewritten to the topic's own route rather than left as a raw file reference.
+    /// </summary>
     [Fact]
     public void RenderMarkdownToHtml_RewritesRealDocsHelpBackLinksToSectionIndex()
     {
@@ -90,6 +119,12 @@ public sealed class HelpContentRendererTests
         Assert.DoesNotContain("href=\"index.md\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that unsafe content nested inside otherwise-safe structures (a <c>data:</c> URI link, a
+    /// <c>javascript:</c> link inside a table cell) is stripped, while a script sample shown as fenced code
+    /// is safely HTML-escaped rather than executed or removed — since fenced code blocks are meant to display
+    /// their content literally.
+    /// </summary>
     [Fact]
     public void RenderMarkdownToHtml_RemovesUnsafeNestedPayloadsAndDataUrls()
     {
@@ -113,6 +148,11 @@ public sealed class HelpContentRendererTests
         Assert.DoesNotContain("javascript:", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that the legacy raw-HTML sanitization path (used for pre-markdown help pages) strips an
+    /// inline <c>onclick</c> handler, a <c>javascript:</c> link, and a <c>&lt;script&gt;</c> tag while keeping
+    /// the legitimate text content.
+    /// </summary>
     [Fact]
     public void SanitizeHtml_RemovesLegacyScriptAndInlineHandlers()
     {
@@ -128,6 +168,11 @@ public sealed class HelpContentRendererTests
         Assert.DoesNotContain("<script", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that legacy HTML sanitization normalizes an external link's <c>rel</c> attribute to include
+    /// <c>nofollow noopener noreferrer</c> even when the source HTML supplied a different, unsafe <c>rel</c>
+    /// value (here "opener", which is exactly what <c>noopener</c> exists to prevent).
+    /// </summary>
     [Fact]
     public void SanitizeHtml_ForcesSafeRelOnExternalLegacyLinks()
     {
@@ -141,6 +186,11 @@ public sealed class HelpContentRendererTests
         Assert.DoesNotContain("rel=\"opener", html, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Verifies that legacy HTML sanitization also catches event handlers and unsafe URIs nested several
+    /// levels deep inside a table structure, not just at the top level, while preserving the surrounding safe
+    /// markup (the table itself and a legitimate external link).
+    /// </summary>
     [Fact]
     public void SanitizeHtml_RemovesNestedLegacyEventHandlersAndDataUrls()
     {

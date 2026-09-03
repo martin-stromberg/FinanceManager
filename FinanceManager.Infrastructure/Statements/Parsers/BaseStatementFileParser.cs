@@ -24,7 +24,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         public BaseStatementFileParser(ILogger logger)
         {
             this.logger = logger;
-        }        
+        }
         /// <summary>
         /// Parses the specified statement file and returns the result of the parsing operation.
         /// </summary>
@@ -71,7 +71,8 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// Writes an informational message to the configured logger, if available.
         /// </summary>
         /// <param name="message">The informational message to log. Cannot be null.</param>
-        protected void LogInformation(string message) { 
+        protected void LogInformation(string message)
+        {
             logger?.LogInformation("{Message}", message);
         }
         /// <summary>

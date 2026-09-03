@@ -22,6 +22,8 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     /// <param name="startDate">Start date (inclusive).</param>
     /// <param name="endDate">Optional end date (inclusive).</param>
     /// <param name="customIntervalMonths">Custom interval in months when <paramref name="interval"/> is <see cref="BudgetIntervalType.CustomMonths"/>.</param>
+    /// <param name="purposePattern">Optional pattern used to match postings for this rule.</param>
+    /// <param name="purposePatternIsRegex">Whether <paramref name="purposePattern"/> should be treated as a regular expression.</param>
     public BudgetRule(
         Guid ownerUserId,
         Guid? budgetPurposeId,

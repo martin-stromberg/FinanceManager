@@ -1,15 +1,31 @@
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for the global top-of-page loading bar: verifies its single-DOM-node/restart
+/// behavior, its fixed positioning on desktop and mobile viewports, that it never gets stuck
+/// visible after a failed form submit or a non-navigating save, and that it starts automatically
+/// for internal link clicks and for report page loads/settings changes that trigger background
+/// data fetches.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class LoadingBarPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LoadingBarPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public LoadingBarPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
     }
 
+    /// <summary>
+    /// Verifies that the loading bar always uses a single, reused DOM node: starting it renders
+    /// exactly one node, and restarting it keeps that same node visible while advancing its
+    /// internal sequence counter rather than creating a new instance.
+    /// </summary>
     [Fact]
     public async Task LoadingBar_ShouldUseSingleDomNodeAndRestartSameInstance()
     {
@@ -33,6 +49,10 @@ public sealed class LoadingBarPlaywrightTests
         int.Parse(secondSequence!).Should().BeGreaterThan(int.Parse(firstSequence!));
     }
 
+    /// <summary>
+    /// Verifies that on a desktop viewport the loading bar is fixed to the top-left of the
+    /// viewport, spans a wide area, and does not intercept pointer events while visible.
+    /// </summary>
     [Fact]
     public async Task LoadingBar_ShouldBeFixedToViewportTop_OnDesktop()
     {
@@ -56,6 +76,10 @@ public sealed class LoadingBarPlaywrightTests
         metrics.Width.Should().BeGreaterThan(100);
     }
 
+    /// <summary>
+    /// Verifies that on a mobile viewport the loading bar is positioned directly below the mobile
+    /// topbar (not overlapping it or floating elsewhere) and keeps its expected thin height.
+    /// </summary>
     [Fact]
     public async Task LoadingBar_ShouldSitBelowMobileTopbar_OnMobile()
     {
@@ -78,6 +102,11 @@ public sealed class LoadingBarPlaywrightTests
         metrics.BarHeight.Should().BeApproximately(3, 0.5);
     }
 
+    /// <summary>
+    /// Verifies that submitting a form which fails client-side validation (a validation message
+    /// appears instead of navigating away) still stops the loading bar shortly after it starts,
+    /// rather than leaving it stuck visible because no navigation occurred.
+    /// </summary>
     [Fact]
     public async Task FormSubmit_WithValidationMessage_ShouldNotLeaveLoadingBarVisible()
     {
@@ -108,6 +137,11 @@ public sealed class LoadingBarPlaywrightTests
         (await page.Locator("#fm-loading-bar").GetAttributeAsync("class")).Should().NotContain("is-visible");
     }
 
+    /// <summary>
+    /// Verifies that clicking an internal navigation link (sidebar link to the accounts list)
+    /// automatically starts the loading bar without any explicit call from the destination page,
+    /// evidenced by its visibility and an advanced sequence counter after the navigation.
+    /// </summary>
     [Fact]
     public async Task InternalLinkClick_ShouldStartLoadingBarAutomatically()
     {
@@ -127,6 +161,11 @@ public sealed class LoadingBarPlaywrightTests
         (await GetLoadingBarSequenceAsync(page)).Should().BeGreaterThan(firstSequence);
     }
 
+    /// <summary>
+    /// Verifies that submitting the setup page's statement settings form - a save that persists
+    /// data without navigating to a different page - starts the loading bar and then stops it
+    /// again once the save completes, instead of leaving it visible indefinitely.
+    /// </summary>
     [Fact]
     public async Task SetupStatementSubmit_ShouldStopLoadingBarAfterNonNavigatingSave()
     {
@@ -155,6 +194,11 @@ public sealed class LoadingBarPlaywrightTests
         (await page.Locator("#fm-loading-bar").GetAttributeAsync("class")).Should().NotContain("is-visible");
     }
 
+    /// <summary>
+    /// Verifies that the initial load of the budget report page starts the global loading bar
+    /// (observed via an early-installed mutation observer, before authentication completes) and
+    /// that it stops again once the report has finished loading.
+    /// </summary>
     [Fact]
     public async Task BudgetReportInitialLoad_ShouldStartGlobalLoadingBar()
     {
@@ -174,6 +218,11 @@ public sealed class LoadingBarPlaywrightTests
         (await page.Locator("#fm-loading-bar").GetAttributeAsync("class")).Should().NotContain("is-visible");
     }
 
+    /// <summary>
+    /// Verifies that applying new settings from the budget report's settings dialog starts the
+    /// global loading bar while the report re-fetches data for the new settings, and stops it
+    /// again once the re-fetch completes.
+    /// </summary>
     [Fact]
     public async Task BudgetReportApplySettings_ShouldStartAndStopGlobalLoadingBar()
     {

@@ -3,7 +3,7 @@ namespace FinanceManager.Domain.Securities;
 /// <summary>
 /// Represents a financial security (e.g. stock, bond) tracked by a user. Contains metadata, status and optional price error state.
 /// </summary>
-public sealed class Security: Entity
+public sealed class Security : Entity
 {
     /// <summary>
     /// Parameterless constructor for ORM/deserialization.
@@ -230,20 +230,6 @@ public sealed class Security: Entity
     /// <summary>
     /// Creates a backup DTO representing this security.
     /// </summary>
-    /// <param name="OwnerUserId">Identifier of the user who owns the security.</param>
-    /// <param name="Name">Display name of the security.</param>
-    /// <param name="Identifier">Primary identifier (e.g. WKN or ISIN).</param>
-    /// <param name="Description">Optional description text.</param>
-    /// <param name="AlphaVantageCode">Optional code for external price providers.</param>
-    /// <param name="CurrencyCode">ISO currency code used for prices.</param>
-    /// <param name="CategoryId">Optional category identifier for the security.</param>
-    /// <param name="IsActive">Whether the security is active.</param>
-    /// <param name="CreatedUtc">Creation timestamp in UTC.</param>
-    /// <param name="ModifiedUtc">Last modification timestamp in UTC, if any.</param>
-    /// <param name="ArchivedUtc">Archive timestamp in UTC if archived.</param>
-    /// <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
-    /// <param name="Region">Optional region of the security.</param>
-    /// <param name="Sector">Optional sector of the security.</param>
     /// <returns>A <see cref="SecurityBackupDto"/> with serializable security data.</returns>
     public SecurityBackupDto ToBackupDto() => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ModifiedUtc, ArchivedUtc, SymbolAttachmentId, Region, Sector);
 

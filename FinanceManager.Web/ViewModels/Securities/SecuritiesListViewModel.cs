@@ -119,7 +119,7 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
     }
 
     /// <summary>
-    /// Builds the list columns and records used by the UI renderer from the current <see cref="Items"/> collection.
+    /// Builds the list columns and records used by the UI renderer from the current <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/> collection.
     /// </summary>
     protected override void BuildRecords()
     {

@@ -6,6 +6,10 @@ using Xunit;
 
 namespace FinanceManager.Tests.Budget;
 
+/// <summary>
+/// Covers <see cref="BudgetCategoryService"/> CRUD behavior against a real (in-memory SQLite) <see cref="AppDbContext"/>,
+/// including the side effect deleting a category has on <see cref="BudgetPurposeService"/> purposes that reference it.
+/// </summary>
 public sealed class BudgetCategoryServiceTests
 {
     private static async Task<AppDbContext> CreateDbAsync(Guid ownerId)
@@ -26,6 +30,11 @@ public sealed class BudgetCategoryServiceTests
         return db;
     }
 
+    /// <summary>
+    /// Exercises the full create/read/update/list/delete lifecycle of a budget category end to end,
+    /// confirming that each operation is visible to the next (e.g. a rename is reflected on the next get,
+    /// and a delete removes the category from subsequent listings) rather than testing each method in isolation.
+    /// </summary>
     [Fact]
     public async Task BudgetCategoryService_CRUD_ShouldWork()
     {
@@ -60,6 +69,10 @@ public sealed class BudgetCategoryServiceTests
         Assert.Empty(list2);
     }
 
+    /// <summary>
+    /// Verifies that deleting a budget category does not cascade-delete or orphan the purposes assigned to it -
+    /// instead their <c>BudgetCategoryId</c> is cleared to null, leaving the purpose itself intact and uncategorized.
+    /// </summary>
     [Fact]
     public async Task BudgetCategoryService_Delete_ShouldClearCategoryFromPurposes()
     {

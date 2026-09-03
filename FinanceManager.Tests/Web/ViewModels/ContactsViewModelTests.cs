@@ -7,31 +7,69 @@ using Moq;
 
 namespace FinanceManager.Tests.Web.ViewModels;
 
+/// <summary>
+/// Covers <c>ContactListViewModel</c>'s data-loading lifecycle: that it tolerates being used while
+/// unauthenticated, loads categories and the first page of contacts once authenticated, paginates
+/// correctly via <c>LoadMoreAsync</c>, and that applying a search filter resets paging and surfaces
+/// a "clear filter" ribbon action so the user can tell a filter is active.
+/// </summary>
 public sealed class ContactsViewModelTests
 {
+    /// <summary>
+    /// Minimal <see cref="ICurrentUserService"/> double whose authentication state is set directly
+    /// by the test, so view models under test can be driven through both authenticated and
+    /// unauthenticated code paths without a real auth pipeline.
+    /// </summary>
     private sealed class TestCurrentUserService : ICurrentUserService
     {
+        /// <inheritdoc />
         public Guid UserId { get; set; } = Guid.NewGuid();
+        /// <inheritdoc />
         public string? PreferredLanguage { get; set; }
+        /// <inheritdoc />
         public bool IsAuthenticated { get; set; }
+        /// <inheritdoc />
         public bool IsAdmin { get; set; }
     }
 
+    /// <summary>
+    /// <see cref="IStringLocalizer"/> stub that echoes the requested resource key back as the
+    /// localized value (formatting in any supplied arguments), so ribbon/action assertions can
+    /// compare against known key strings instead of depending on real resource files.
+    /// </summary>
     private sealed class PassthroughLocalizer : IStringLocalizer
     {
+        /// <inheritdoc />
         public LocalizedString this[string name] => new LocalizedString(name, name, resourceNotFound: false);
+        /// <inheritdoc />
         public LocalizedString this[string name, params object[] arguments] => new LocalizedString(name, string.Format(name, arguments), resourceNotFound: false);
+        /// <inheritdoc />
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
     }
 
+    /// <summary>
+    /// Generic counterpart of <see cref="PassthroughLocalizer"/>, needed because
+    /// <c>BaseViewModel</c> requires an <see cref="IStringLocalizer{T}"/> registration to resolve
+    /// from the DI container built for each test.
+    /// </summary>
     private sealed class PassthroughLocalizerGeneric<T> : IStringLocalizer<T>
     {
+        /// <inheritdoc />
         public LocalizedString this[string name] => new LocalizedString(name, name, resourceNotFound: false);
+        /// <inheritdoc />
         public LocalizedString this[string name, params object[] arguments] => new LocalizedString(name, string.Format(name, arguments), resourceNotFound: false);
+        /// <inheritdoc />
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
+        /// <inheritdoc />
         public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => (IStringLocalizer)this;
     }
 
+    /// <summary>
+    /// Builds a <c>ContactListViewModel</c> wired to a minimal DI container with a mocked
+    /// <see cref="IApiClient"/>, so each test can control API responses without a real backend.
+    /// </summary>
+    /// <param name="isAuthenticated">Whether the simulated current user should appear authenticated.</param>
+    /// <returns>The view model under test along with the API mock used to configure its responses.</returns>
     private static (FinanceManager.Web.ViewModels.Contacts.ContactListViewModel vm, Mock<IApiClient> apiMock) CreateVm(bool isAuthenticated)
     {
         var services = new ServiceCollection();
@@ -45,6 +83,11 @@ public sealed class ContactsViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that initializing the view model while unauthenticated does not throw and simply leaves the
+    /// contact list empty — the view model itself does not enforce authentication (that's the page's job),
+    /// so it must degrade gracefully rather than crash when used before sign-in completes.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_ShouldRequestAuth_WhenNotAuthenticated()
     {
@@ -57,6 +100,10 @@ public sealed class ContactsViewModelTests
         Assert.Equal(0, vm.Items.Count);
     }
 
+    /// <summary>
+    /// Verifies that initializing an authenticated view model loads both the contact categories and the
+    /// first page of contacts, and that a contact's category id is resolved to its display name.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_ShouldLoadCategories_And_FirstPage_WhenAuthenticated()
     {
@@ -78,6 +125,11 @@ public sealed class ContactsViewModelTests
         Assert.Equal("Friends", vm.Items[0].CategoryName);
     }
 
+    /// <summary>
+    /// Verifies that loading more contacts appends the next page to the existing list, and that
+    /// <c>CanLoadMore</c> correctly turns false once a page comes back smaller than the page size — the
+    /// signal the view model uses to know it has reached the end of the list.
+    /// </summary>
     [Fact]
     public async Task LoadMoreAsync_ShouldPaginate_And_SetAllLoaded()
     {
@@ -105,6 +157,11 @@ public sealed class ContactsViewModelTests
         Assert.False(vm.CanLoadMore);
     }
 
+    /// <summary>
+    /// Verifies that applying a search filter discards the previously loaded page and reloads from the
+    /// filtered result set, and that the ribbon then exposes a "clear filter" action so the user has a
+    /// visible way to tell a filter is active and remove it.
+    /// </summary>
     [Fact]
     public async Task SetFilterAsync_ShouldResetAndReload_AndRibbonIncludesClear()
     {
@@ -134,7 +191,7 @@ public sealed class ContactsViewModelTests
         Assert.Equal(2, vm.Items.Count);
         Assert.False(vm.CanLoadMore);
 
-        var ribbonRegs = vm.GetRibbon(new PassthroughLocalizer());
+        var ribbonRegs = vm.GetRibbon(new PassthroughLocalizer())!;
         Assert.Equal(1, ribbonRegs.Count);
         var items = ribbonRegs.SelectMany(r => r.Tabs ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonTab>())
                               .SelectMany(t => t.Items ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonAction>())

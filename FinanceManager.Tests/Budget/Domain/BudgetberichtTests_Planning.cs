@@ -12,6 +12,11 @@ namespace FinanceManager.Tests.Budget.Domain;
 /// </summary>
 public sealed class BudgetberichtTests_Planning
 {
+    /// <summary>
+    /// Verifies that a monthly-interval rule produces its full amount as an expectation in every month
+    /// of the report period - the simplest recurrence case, expanding one rule into N identical monthly
+    /// occurrences.
+    /// </summary>
     [Fact]
     public void SetPlanung_ExpandsMonthlyRule_IntoOneExpectationPerMonth()
     {
@@ -29,6 +34,12 @@ public sealed class BudgetberichtTests_Planning
         }
     }
 
+    /// <summary>
+    /// Verifies that a quarterly rule anchored on day 1 produces its amount only in the first month of
+    /// each quarter it covers (January and April here), with zero in the other two months of every
+    /// quarter - a quarterly occurrence is "homed" to the start of its covering period, not spread or
+    /// repeated across all three months.
+    /// </summary>
     [Fact]
     public void SetPlanung_ExpandsQuarterlyRule_OnlyIntoQuarterHomeMonths()
     {
@@ -49,6 +60,11 @@ public sealed class BudgetberichtTests_Planning
         expectedAmounts.Should().Equal(-120m, 0m, 0m, -120m, 0m, 0m);
     }
 
+    /// <summary>
+    /// Verifies that a yearly rule with a March start date produces exactly one occurrence across a
+    /// full 12-month report, landing in March - the rule's home month tracks its own start date rather
+    /// than always defaulting to the report's first month or to January.
+    /// </summary>
     [Fact]
     public void SetPlanung_ExpandsYearlyRule_OnlyIntoStartMonth()
     {
@@ -67,6 +83,11 @@ public sealed class BudgetberichtTests_Planning
         expectedAmounts[2].Should().Be(-240m);
     }
 
+    /// <summary>
+    /// Verifies that a <see cref="BudgetIntervalType.CustomMonths"/> rule repeats at the configured
+    /// step size (every 2 months here) rather than one of the fixed built-in intervals, and that each
+    /// occurrence is homed to the first month of its covering step, mirroring the quarterly homing rule.
+    /// </summary>
     [Fact]
     public void SetPlanung_ExpandsCustomMonthsRule_AtConfiguredStep()
     {
@@ -87,6 +108,11 @@ public sealed class BudgetberichtTests_Planning
         expectedAmounts.Should().Equal(-30m, 0m, -30m, 0m);
     }
 
+    /// <summary>
+    /// Verifies that purposes belonging to different categories each get their own expectation group
+    /// for the month, and that the group carries the category's display name - confirming the
+    /// category-level grouping the Output phase later renders as Category rows.
+    /// </summary>
     [Fact]
     public void SetPlanung_CreatesExpectationGroup_PerCategory()
     {
@@ -108,6 +134,11 @@ public sealed class BudgetberichtTests_Planning
         groups.Select(g => g.CategoryName).Should().Contain(new[] { "Housing", "Leisure" });
     }
 
+    /// <summary>
+    /// Verifies that multiple purposes sharing the same category are kept as separate purpose entries
+    /// within that category's single expectation group, rather than being merged into one combined
+    /// purpose expectation.
+    /// </summary>
     [Fact]
     public void SetPlanung_CreatesMultiplePurposeExpectations_ForOneCategory()
     {
@@ -128,6 +159,11 @@ public sealed class BudgetberichtTests_Planning
         group.Purposes.Select(p => p.Name).Should().Contain(new[] { "Food", "Bakeries" });
     }
 
+    /// <summary>
+    /// Verifies that a purpose without a category is still grouped, under a synthetic "uncategorized"
+    /// group identified by <see cref="Guid.Empty"/> - every purpose must land in some expectation group
+    /// so it isn't silently dropped from planning just because it lacks a category assignment.
+    /// </summary>
     [Fact]
     public void SetPlanung_CreatesUncategorizedVirtualCategory_ForPurposesWithoutCategory()
     {
@@ -142,6 +178,11 @@ public sealed class BudgetberichtTests_Planning
         group.Purposes.Single().Name.Should().Be("Loose expense");
     }
 
+    /// <summary>
+    /// Verifies that a rule attached directly to a category (rather than to a purpose) produces a
+    /// <c>DirectExpectations</c> entry on that category's group even when the category has no purposes
+    /// at all - direct category budgets exist independently of purpose-level budgets.
+    /// </summary>
     [Fact]
     public void SetPlanung_CreatesDirectCategoryExpectation_ForCategoryLevelRule()
     {
@@ -155,6 +196,11 @@ public sealed class BudgetberichtTests_Planning
         group.DirectExpectations.Single().SumExpectedAmount.Should().Be(-600m);
     }
 
+    /// <summary>
+    /// Verifies that <c>SetPlanung()</c> is a one-shot step, like <c>Finish()</c> - calling it again on
+    /// an already-planned report throws <see cref="BudgetReportCalculationException"/> instead of
+    /// silently re-expanding rules and potentially duplicating expectations.
+    /// </summary>
     [Fact]
     public void SetPlanung_Throws_WhenCalledTwice()
     {
@@ -166,6 +212,11 @@ public sealed class BudgetberichtTests_Planning
         act.Should().Throw<BudgetReportCalculationException>();
     }
 
+    /// <summary>
+    /// Verifies that a rule declared with <see cref="BudgetIntervalType.CustomMonths"/> but no actual
+    /// step size (<c>customIntervalMonths</c> is null) is rejected at planning time rather than causing
+    /// an unclear failure or defaulting to some arbitrary interval later during expansion.
+    /// </summary>
     [Fact]
     public void SetPlanung_Throws_WhenCustomIntervalRuleHasNoCustomIntervalMonths()
     {
@@ -179,6 +230,11 @@ public sealed class BudgetberichtTests_Planning
         act.Should().Throw<BudgetReportCalculationException>();
     }
 
+    /// <summary>
+    /// Verifies that an out-of-range <see cref="BudgetIntervalType"/> value (cast from an arbitrary int,
+    /// simulating data corruption or a future enum member not yet handled) is rejected during expansion
+    /// rather than falling through an unhandled switch case.
+    /// </summary>
     [Fact]
     public void SetPlanung_Throws_WhenRuleIntervalIsInvalid()
     {
@@ -192,6 +248,11 @@ public sealed class BudgetberichtTests_Planning
         act.Should().Throw<BudgetReportCalculationException>();
     }
 
+    /// <summary>
+    /// Verifies that a rule whose <c>EndDate</c> lies entirely before the report's period (a subscription
+    /// cancelled in mid-2025, reported on in 2026) produces zero expected amount - an expired rule must
+    /// not keep generating occurrences into report periods it no longer applies to.
+    /// </summary>
     [Fact]
     public void SetPlanung_RuleStartingBeforeReportOrOutsideEndDate_IsExcluded()
     {

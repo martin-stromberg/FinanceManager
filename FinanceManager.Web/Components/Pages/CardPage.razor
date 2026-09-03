@@ -351,10 +351,10 @@ else
 
     private string GetKindTitle() => (Kind ?? string.Empty).Trim().ToLowerInvariant() switch
     {
-        "accounts" => Localizer["General_Title_Account"],
-        "contacts" => Localizer["General_Title_Contact"],
-        "savings-plans" => (SubKind ?? string.Empty).Trim().ToLowerInvariant() == "categories" ? Localizer["General_Title_SavingsPlan_Categories"] : Localizer["General_Title_SavingsPlans"],
-        _ => Kind
+        "accounts" => Localizer["General_Title_Account"].Value,
+        "contacts" => Localizer["General_Title_Contact"].Value,
+        "savings-plans" => (SubKind ?? string.Empty).Trim().ToLowerInvariant() == "categories" ? Localizer["General_Title_SavingsPlan_Categories"].Value : Localizer["General_Title_SavingsPlans"].Value,
+        _ => Kind ?? string.Empty
     };
 
     protected override async Task OnParametersSetAsync()

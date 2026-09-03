@@ -112,11 +112,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReportFavoriteService, ReportFavoriteService>();
         services.AddScoped<IReportAggregationService, ReportAggregationService>();
         services.AddScoped<IHomeKpiService, HomeKpiService>();
-        services.AddScoped<IIpBlockService, IpBlockService>(); 
-        services.AddScoped<INotificationService, NotificationService>(); 
-        services.AddScoped<IAttachmentService, AttachmentService>(); 
-        services.AddScoped<IAttachmentCategoryService, AttachmentCategoryService>(); 
-        services.AddScoped<IPostingExportService, PostingExportService>(); 
+        services.AddScoped<IIpBlockService, IpBlockService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddScoped<IAttachmentCategoryService, AttachmentCategoryService>();
+        services.AddScoped<IPostingExportService, PostingExportService>();
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
         services.AddScoped<ISecurityPriceImportService, IngSecurityPriceImportService>();

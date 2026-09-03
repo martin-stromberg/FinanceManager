@@ -333,12 +333,6 @@ else
                             return vm.Columns[idx].Title ?? fallback;
                         return fallback;
                     }
-                    string? GetWidth(int idx)
-                    {
-                        if (vm.Columns != null && vm.Columns.Count > idx)
-                            return vm.Columns[idx].Width;
-                        return null;
-                    }
                     var dateTitle = GetTitle(1, localizer != null ? (localizer["List_Th_Date"].Value ?? "Date") : "Date");
                     var amountTitle = GetTitle(2, localizer != null ? (localizer["List_Th_Amount"].Value ?? "Amount") : "Amount");
                     var recipientTitle = GetTitle(3, localizer != null ? (localizer["List_Th_Recipient"].Value ?? "Recipient") : "Recipient");
@@ -459,7 +453,26 @@ else
                         else
                         {
                             <span>@(string.IsNullOrWhiteSpace(item.Subject) ? string.Empty : item.Subject)</span>
-                            <BudgetImpactBadge HintType="@GetHighestSeverity(item.BudgetImpact)" TooltipText="@GetBudgetTooltip(item.BudgetImpact)" />
+                            @if (GetHighestSeverity(item.BudgetImpact) is BudgetImpactHintType budgetSeverity)
+                            {
+                                var budgetIconName = budgetSeverity switch
+                                {
+                                    BudgetImpactHintType.Exceeded => "alert-circle",
+                                    BudgetImpactHintType.AlmostExhausted => "alert-triangle",
+                                    BudgetImpactHintType.StronglyChanged => "info",
+                                    _ => "info"
+                                };
+                                var budgetColorStyle = budgetSeverity switch
+                                {
+                                    BudgetImpactHintType.Exceeded => "color:var(--error-color,#c0392b);",
+                                    BudgetImpactHintType.AlmostExhausted => "color:var(--warning-color,#f39c12);",
+                                    BudgetImpactHintType.StronglyChanged => "color:var(--info-color,#3498db);",
+                                    _ => ""
+                                };
+                                <span class="budget-impact-badge" style="display:inline-flex;vertical-align:middle;margin-left:.25rem;@budgetColorStyle" title="@GetBudgetTooltip(item.BudgetImpact)">
+                                    <svg style="width:1rem;height:1rem;" aria-hidden="true"><use href="/icons/sprite.svg#@budgetIconName" /></svg>
+                                </span>
+                            }
                         }
                     </td>
 

@@ -9,6 +9,13 @@ using Xunit;
 
 namespace FinanceManager.Tests.Budget;
 
+/// <summary>
+/// Verifies the invariant that a budget category cannot end up with both purpose-level and direct
+/// category-level budget rules active for it at the same time, since combining both would double-count the
+/// category's budgeted amount in reports (once via the purpose's rules, once via the direct category rule).
+/// Covers rejection of that conflicting state from both the purpose-assignment side and the
+/// category-rule-creation side, plus the non-conflicting combinations that must still be allowed.
+/// </summary>
 public sealed class BudgetCategoryAssignmentRuleConsistencyTests
 {
     private static async Task<AppDbContext> CreateDbAsync(Guid ownerId)
@@ -29,6 +36,11 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         return db;
     }
 
+    /// <summary>
+    /// Ensures assigning a category to a purpose is rejected when the purpose already has its own budget
+    /// rules and the target category already has direct category-level rules - combining both would
+    /// double-count the category's budgeted amount (once via the purpose, once via the direct category rule).
+    /// </summary>
     [Fact]
     public async Task BudgetPurposeService_Update_ShouldReject_CategoryAssignment_WhenPurposeRulesExistAndCategoryRulesExist()
     {
@@ -53,6 +65,10 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         Assert.Equal("Err_Conflict_CategoryAndPurposeRules", ex.Code);
     }
 
+    /// <summary>
+    /// Ensures a purpose can still be assigned to a category that has direct category-level rules as long as
+    /// the purpose itself has no rules yet - there is nothing on the purpose side that could be double-counted.
+    /// </summary>
     [Fact]
     public async Task BudgetPurposeService_Update_ShouldAllow_CategoryAssignment_WhenOnlyCategoryRulesExist()
     {
@@ -73,6 +89,11 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         Assert.Equal(category.Id, updated!.BudgetCategoryId);
     }
 
+    /// <summary>
+    /// Ensures a purpose with its own budget rules can still be assigned to a category as long as that
+    /// category has no direct category-level rules of its own - only the combination of both rule kinds is
+    /// forbidden, not either one in isolation.
+    /// </summary>
     [Fact]
     public async Task BudgetPurposeService_Update_ShouldAllow_CategoryAssignment_WhenOnlyPurposeRulesExist()
     {
@@ -93,6 +114,10 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         Assert.Equal(category.Id, updated!.BudgetCategoryId);
     }
 
+    /// <summary>
+    /// Ensures assigning a purpose to a category id that does not exist fails with an ArgumentException
+    /// instead of silently persisting a dangling category reference.
+    /// </summary>
     [Fact]
     public async Task BudgetPurposeService_Update_ShouldReject_NonExistingCategory()
     {
@@ -110,6 +135,12 @@ public sealed class BudgetCategoryAssignmentRuleConsistencyTests
         });
     }
 
+    /// <summary>
+    /// Ensures creating a direct category-level rule is rejected when the category is already assigned to a
+    /// purpose that has its own budget rules - the same double-counting conflict as
+    /// <see cref="BudgetPurposeService_Update_ShouldReject_CategoryAssignment_WhenPurposeRulesExistAndCategoryRulesExist"/>,
+    /// but triggered from the category-rule-creation side instead of the purpose-update side.
+    /// </summary>
     [Fact]
     public async Task BudgetRuleService_CreateForCategory_ShouldReject_WhenAssignedPurposeHasPurposeRules()
     {

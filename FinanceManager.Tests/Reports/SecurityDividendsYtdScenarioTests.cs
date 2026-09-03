@@ -14,10 +14,23 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// End-to-end integration test that drives the full statement-draft import/booking pipeline
+/// (<see cref="StatementDraftService"/>) with real-world-shaped Apple Inc. security transactions (one buy plus
+/// five dividends with varying fee/tax across 2024-2025), then verifies the resulting year-to-date
+/// security-dividend report from <see cref="ReportAggregationService"/> matches hand-computed net amounts,
+/// including the prior-year YTD comparison.
+/// </summary>
 public sealed class SecurityDividendsYtdScenarioTests
 {
     private readonly ITestOutputHelper _output;
 
+    /// <summary>
+    /// Captures the xUnit <see cref="ITestOutputHelper"/> so the end-to-end test can dump detailed diagnostic
+    /// output (postings, grouped net amounts, posting aggregates, report points) to aid debugging failures in
+    /// this complex multi-step scenario.
+    /// </summary>
+    /// <param name="output">The xUnit test output sink used to write diagnostic dumps during the test run.</param>
     public SecurityDividendsYtdScenarioTests(ITestOutputHelper output)
     {
         _output = output;
@@ -33,13 +46,22 @@ public sealed class SecurityDividendsYtdScenarioTests
         return db;
     }
 
+    /// <summary>
+    /// Creates a statement draft, adds and books six real-world-shaped Apple Inc. entries (one buy plus five
+    /// dividends across 2024-2025 with varying fee/tax combinations), then queries a YTD Security report filtered
+    /// to the Dividend subtype anchored at October 8, 2025. Verifies the 2025 YTD net dividend total
+    /// (1.64 + 1.70 + 2.01 = 5.35) matches expectations despite each dividend being booked with its own fee/tax
+    /// postings, and that the previous-year comparison correctly includes only the 2024 dividend that occurred
+    /// before the equivalent YTD cutoff (1.91) while excluding the later 2024 dividend that fell after that
+    /// cutoff month.
+    /// </summary>
     [Fact]
     public async Task EndToEnd_SecurityDividends_Ytd_WithPrevYear_ShouldMatchExpectedNetAmounts()
     {
         using var db = CreateDb();
         var agg = new PostingAggregateService(db);
         var accountService = new StubAccountService();
-        var drafts = new StatementDraftService(db, agg, accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var drafts = new StatementDraftService(db, agg, accountService, null!, null, NullLogger<StatementDraftService>.Instance, null);
         var reports = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var ct = CancellationToken.None;
 

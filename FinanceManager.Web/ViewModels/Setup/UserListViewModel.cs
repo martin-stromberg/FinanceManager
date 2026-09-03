@@ -39,7 +39,7 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
     }
 
     /// <summary>
-    /// Loads the full user list from the admin API and populates the view model's <see cref="Items"/> collection.
+    /// Loads the full user list from the admin API and populates the view model's <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/> collection.
     /// This method is safe to call from the UI and will clear the list on failure.
     /// </summary>
     /// <param name="ct">Cancellation token used to cancel the operation.</param>
@@ -76,7 +76,7 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
     }
 
     /// <summary>
-    /// Builds the column definitions and list records used by the UI renderer based on <see cref="Items"/>.
+    /// Builds the column definitions and list records used by the UI renderer based on <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/>.
     /// </summary>
     protected override void BuildRecords()
     {

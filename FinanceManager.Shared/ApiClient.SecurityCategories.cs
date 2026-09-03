@@ -31,17 +31,17 @@ public partial class ApiClient
     /// <summary>
     /// Creates a new security category. Sets LastError on bad request and returns null in that case.
     /// </summary>
-    public async Task<SecurityCategoryDto> SecurityCategories_CreateAsync(SecurityCategoryRequest request, CancellationToken ct = default)
+    public async Task<SecurityCategoryDto?> SecurityCategories_CreateAsync(SecurityCategoryRequest request, CancellationToken ct = default)
     {
         var resp = await _http.PostAsJsonAsync("/api/security-categories", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             var msg = await resp.Content.ReadAsStringAsync(ct);
             LastError = string.IsNullOrWhiteSpace(msg) ? "Bad Request" : msg;
-            return null!;
+            return null;
         }
         resp.EnsureSuccessStatusCode();
-        return (await resp.Content.ReadFromJsonAsync<SecurityCategoryDto>(cancellationToken: ct))!;
+        return await resp.Content.ReadFromJsonAsync<SecurityCategoryDto>(cancellationToken: ct);
     }
 
     /// <summary>

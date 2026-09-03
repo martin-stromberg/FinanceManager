@@ -4,9 +4,7 @@ namespace FinanceManager.Shared;
 
 public partial class ApiClient
 {
-    /// <summary>
-    /// Authentication related operations (login, register, logout).
-    /// </summary>
+    // Authentication related operations (login, register, logout).
     #region Auth
 
     /// <summary>

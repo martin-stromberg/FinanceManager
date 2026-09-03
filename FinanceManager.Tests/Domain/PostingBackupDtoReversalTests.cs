@@ -4,7 +4,7 @@ using FluentAssertions;
 namespace FinanceManager.Tests.Postings;
 
 /// <summary>
-/// Unit tests for the <see cref="PostingBackupDto"/> roundtrip via <c>ToBackupDto</c> and <c>AssignBackupDto</c>.
+/// Unit tests for the <see cref="Posting.PostingBackupDto"/> roundtrip via <c>ToBackupDto</c> and <c>AssignBackupDto</c>.
 /// </summary>
 public sealed class PostingBackupDtoReversalTests
 {

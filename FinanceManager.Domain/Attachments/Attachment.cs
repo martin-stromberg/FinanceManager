@@ -20,7 +20,7 @@ public enum AttachmentRole : short
 /// Domain entity that represents a binary attachment or URL referenced by an entity.
 /// Stores metadata and optional content for small attachments.
 /// </summary>
-public sealed class Attachment: Entity
+public sealed class Attachment : Entity
 {
     /// <summary>
     /// Owner user identifier.

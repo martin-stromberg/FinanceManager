@@ -1,6 +1,6 @@
 # Finance Manager
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/test.yml?label=Tests)](https://github.com/martin-stromberg/FinanceManager/actions)
+[![Tests](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/pr-staging-ci.yml?label=Tests)](https://github.com/martin-stromberg/FinanceManager/actions)
 [![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
@@ -208,12 +208,12 @@ dotnet test FinanceManager.sln
 
 ## Deployment / CI/CD
 
-- **Branch-Workflow:** `staging` ist der Integrations- und Qualitätssicherungsbranch, `master` bleibt der ausschließliche Release-Branch. Feature- und Hotfix-PRs richten sich gegen `staging`. Der Test-Workflow [`test.yml`](.github/workflows/test.yml) läuft auf `push` und `pull_request` für beide Branches. Nach erfolgreichem Lauf auf `staging` erstellt [`staging-to-master.yml`](.github/workflows/staging-to-master.yml) automatisch einen Draft-PR von `staging` nach `master`, der manuell durch einen Maintainer gemergt werden muss. Siehe [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--master) für Details.
-- `test.yml` erzwingt zusätzlich einen Line-Coverage-Schwellwert von 70 % (`FinanceManager.Tests` und `FinanceManager.Tests.Integration`, gemessen via `--collect:"XPlat Code Coverage"` und `reportgenerator`) sowie automatisierte Dependency-Updates über [`dependabot.yml`](.github/dependabot.yml) (NuGet, npm, GitHub Actions) als Quality Gates vor einem Merge auf `staging`/`master`.
-- Branch-Protection-Regeln für `staging` und `master` (Pflicht-Status-Checks, mindestens 1 Approval, kein Direct-Push, `master` nur aus `staging`) werden in den GitHub-Repository-Einstellungen konfiguriert, nicht im Repository-Code.
+- **Branch-Workflow:** `staging` ist der Integrations- und Qualitätssicherungsbranch, `main` bleibt der ausschließliche Release-Branch. Feature- und Hotfix-PRs richten sich gegen `staging`. [`pr-staging-ci.yml`](.github/workflows/pr-staging-ci.yml) ("PR CI for Staging") läuft auf `pull_request` gegen `staging`, [`staging-ci.yml`](.github/workflows/staging-ci.yml) ("Pre-Release") läuft auf `push` nach `staging`. Nach erfolgreichem Lauf auf `staging` erstellt [`staging-to-main-promotion.yml`](.github/workflows/staging-to-main-promotion.yml) automatisch einen Draft-PR von `staging` nach `main`, der manuell durch einen Maintainer gemergt werden muss. Siehe [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--main) für Details.
+- `pr-staging-ci.yml`/`staging-ci.yml` erzwingen zusätzlich einen Line-Coverage-Schwellwert von 70 % (`FinanceManager.Tests` und `FinanceManager.Tests.Integration`, gemessen via `--collect:"XPlat Code Coverage"` und `reportgenerator`) sowie automatisierte Dependency-Updates über [`dependabot.yml`](.github/dependabot.yml) (NuGet, npm, GitHub Actions) als Quality Gates vor einem Merge auf `staging`/`main`.
+- Branch-Protection-Regeln für `staging` und `main` (Pflicht-Status-Checks, mindestens 1 Approval, kein Direct-Push, `main` nur aus `staging`) werden in den GitHub-Repository-Einstellungen konfiguriert, nicht im Repository-Code.
 - Die Release-Pipeline ist in [`.github/workflows/release.yml`](.github/workflows/release.yml) definiert.
-- Ein Push auf `master` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
-  Workflow auf `windows-latest`. Auf `master` bestimmt Semantic Release die
+- Ein Push auf `main` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
+  Workflow auf `windows-latest`. Auf `main` bestimmt Semantic Release die
   nächste Version aus Conventional Commits: `feat` erzeugt ein Minor-, `fix`
   ein Patch- und `feat!` beziehungsweise `BREAKING CHANGE` ein Major-Release.
   `docs`, `refactor` und `chore` erzeugen kein Release. Ein manueller
@@ -290,7 +290,7 @@ dotnet test FinanceManager.sln
 ## Contribution Guide
 
 Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
-- Branch-Workflow: PRs gegen `staging`, automatisierte Promotion nach `master`
+- Branch-Workflow: PRs gegen `staging`, automatisierte Promotion nach `main`
 - API-Fehlerbehandlung (`ValidationProblem` vs. standardisierte `origin/code/message`-Antworten)
 - Lokalisierungskonventionen für `.resx` unter `Resources/...`
 - PR-Hinweise zu Ressourcenpfaden und CI-Checks

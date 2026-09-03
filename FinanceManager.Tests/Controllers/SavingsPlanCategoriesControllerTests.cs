@@ -9,6 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Tests for <see cref="SavingsPlanCategoriesController"/> covering create/read/update against a real
+/// in-memory SQLite-backed <see cref="AppDbContext"/>, exercising the controller together with the actual
+/// <see cref="SavingsPlanCategoryService"/> rather than a mock.
+/// </summary>
 public sealed class SavingsPlanCategoriesControllerTests
 {
     private sealed class TestCurrentUser : ICurrentUserService
@@ -44,6 +49,9 @@ public sealed class SavingsPlanCategoriesControllerTests
         return (controller, db, current);
     }
 
+    /// <summary>
+    /// Verifies that requesting a category by an id that does not exist returns 404.
+    /// </summary>
     [Fact]
     public async Task GetAsync_ShouldReturnNotFound_ForUnknownId()
     {
@@ -52,6 +60,10 @@ public sealed class SavingsPlanCategoriesControllerTests
         Assert.IsType<NotFoundResult>(resp.Result);
     }
 
+    /// <summary>
+    /// Verifies that a category created through the controller is immediately retrievable by its returned id
+    /// with the same name, round-tripping through the real database.
+    /// </summary>
     [Fact]
     public async Task Create_And_Get_ShouldReturnCategory()
     {
@@ -65,6 +77,10 @@ public sealed class SavingsPlanCategoriesControllerTests
         Assert.Equal("MyCat", get.Value!.Name);
     }
 
+    /// <summary>
+    /// Verifies that updating a category's name persists the change, both in the update response and on a
+    /// subsequent fetch.
+    /// </summary>
     [Fact]
     public async Task Update_ShouldModifyName()
     {

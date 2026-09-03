@@ -6,10 +6,19 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end tests for the statement-draft API surface: mass-import analysis/confirmation, the full
+/// upload-to-booking lifecycle of a single draft, bulk deletion, and how booking computes and returns
+/// budget-impact information to the client.
+/// </summary>
 public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientStatementDraftsTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientStatementDraftsTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -30,6 +39,12 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Verifies the two-phase mass-import contract: an initial analysis-only call (no confirmation) flags
+    /// an unrecognized file as requiring a user decision without executing anything, and a follow-up call
+    /// carrying that decision and confirmation then actually executes (here, skipping) the file - so a
+    /// caller can never accidentally execute an import without first reviewing what would happen.
+    /// </summary>
     [Fact]
     public async Task StatementDrafts_ProcessMassImport_ShouldSupportAnalysisAndConfirmationFlow()
     {
@@ -53,7 +68,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             }
         };
 
-        var analysis = await api.StatementDrafts_ProcessMassImportAsync(analyzeRequest);
+        var analysis = await api.StatementDrafts_ProcessMassImportAsync(analyzeRequest, TestContext.Current.CancellationToken);
 
         analysis.Should().NotBeNull();
         analysis!.RequiresConfirmation.Should().BeTrue();
@@ -78,7 +93,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             }
         };
 
-        var execution = await api.StatementDrafts_ProcessMassImportAsync(confirmRequest);
+        var execution = await api.StatementDrafts_ProcessMassImportAsync(confirmRequest, TestContext.Current.CancellationToken);
 
         execution.Should().NotBeNull();
         execution!.RequiresConfirmation.Should().BeFalse();
@@ -87,6 +102,13 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         execution.Files[0].DecisionSource.Should().Be(MassImportDecisionSource.UserConfirmed);
     }
 
+    /// <summary>
+    /// Exercises the full lifecycle of a single statement draft end to end - upload, listing, detail
+    /// retrieval, reassigning the detected account, adding a manual entry, validation, a booking attempt
+    /// that correctly fails for a missing contact, assigning that contact, and a successful re-booking
+    /// that removes the draft from the open list - guarding the entire pipeline against a regression in
+    /// any one step breaking the whole workflow.
+    /// </summary>
     [Fact]
     public async Task StatementDrafts_Flow_Upload_List_Get_SetAccount_AddEntry_Validate_Book_DeleteAll()
     {
@@ -94,7 +116,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         await EnsureAuthenticatedAsync(api);
 
         // Ensure account exists
-        var accounts = await api.GetAccountsAsync();
+        var accounts = await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken);
         Guid accountId;
         string accountIban = "";
         if (accounts.Count == 0)
@@ -107,14 +129,14 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
                 SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-                SecurityProcessingEnabled: true));
+                SecurityProcessingEnabled: true), TestContext.Current.CancellationToken);
             accountId = acc.Id;
-            accountIban = acc.Iban;
+            accountIban = acc.Iban ?? string.Empty;
         }
-        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban; }
+        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban ?? string.Empty; }
 
         // Initially no drafts
-        var open = await api.StatementDrafts_ListOpenAsync(0, 3);
+        var open = await api.StatementDrafts_ListOpenAsync(0, 3, TestContext.Current.CancellationToken);
         open.Should().NotBeNull();
         open.Should().BeEmpty();
 
@@ -134,18 +156,18 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             "Buchung;Wertstellungsdatum;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
             "02.12.2025;02.12.2025;Testempf�nger;�berweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "statement.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "statement.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var first = upload!.FirstDraft;
         first.Should().NotBeNull();
         first!.DetectedAccountId.Should().Be(accountId);
 
         // List open drafts should have one
-        open = await api.StatementDrafts_ListOpenAsync(0, 3);
+        open = await api.StatementDrafts_ListOpenAsync(0, 3, TestContext.Current.CancellationToken);
         open.Should().HaveCount(1);
 
         // Get detail
-        var detail = await api.StatementDrafts_GetAsync(first!.DraftId);
+        var detail = await api.StatementDrafts_GetAsync(first!.DraftId, ct: TestContext.Current.CancellationToken);
         detail.Should().NotBeNull();
         detail!.DraftId.Should().Be(first!.DraftId);
         detail.Entries.Should().NotBeNull();
@@ -160,24 +182,24 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
                 SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-                SecurityProcessingEnabled: true));
-        var afterAccount = await api.StatementDrafts_SetAccountAsync(first.DraftId, secondAccount.Id);
+                SecurityProcessingEnabled: true), TestContext.Current.CancellationToken);
+        var afterAccount = await api.StatementDrafts_SetAccountAsync(first.DraftId, secondAccount.Id, TestContext.Current.CancellationToken);
         afterAccount.Should().NotBeNull();
         afterAccount!.DetectedAccountId.Should().Be(secondAccount.Id);
 
         // Add a manual entry
-        var added = await api.StatementDrafts_AddEntryAsync(first.DraftId, new StatementDraftAddEntryRequest(DateTime.UtcNow.Date, 10.00m, "Manual"));
+        var added = await api.StatementDrafts_AddEntryAsync(first.DraftId, new StatementDraftAddEntryRequest(DateTime.UtcNow.Date, 10.00m, "Manual"), TestContext.Current.CancellationToken);
         added.Should().NotBeNull();
         added!.Entries.Should().NotBeNull();
         added!.Entries.Any(e => e.Subject == "Manual").Should().BeTrue();
 
         // Validate draft
-        var val = await api.StatementDrafts_ValidateAsync(first.DraftId);
+        var val = await api.StatementDrafts_ValidateAsync(first.DraftId, TestContext.Current.CancellationToken);
         val.Should().NotBeNull();
         val!.DraftId.Should().Be(first.DraftId);
 
         // Attempt booking (expect warning/error due to missing contact on first entry)
-        var book = await api.StatementDrafts_BookAsync(first.DraftId, forceWarnings: false);
+        var book = await api.StatementDrafts_BookAsync(first.DraftId, forceWarnings: false, ct: TestContext.Current.CancellationToken);
         book.Should().NotBeNull();
         book!.Success.Should().BeFalse();
         book.HasWarnings.Should().BeFalse();
@@ -191,22 +213,26 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             Description: "For Statement Draft",
             Type: ContactType.Other,
             CategoryId: null,
-            IsPaymentIntermediary: false));
+            IsPaymentIntermediary: false), TestContext.Current.CancellationToken);
         contact.Should().NotBeNull();
-        var assign = await api.StatementDrafts_SetEntryContactAsync(first.DraftId, firstEntryId, new StatementDraftSetContactRequest(contact!.Id));
+        var assign = await api.StatementDrafts_SetEntryContactAsync(first.DraftId, firstEntryId, new StatementDraftSetContactRequest(contact!.Id), TestContext.Current.CancellationToken);
         assign.Should().NotBeNull();
         assign.ContactId.Should().Be(contact.Id);
 
-        var book2 = await api.StatementDrafts_BookAsync(first.DraftId, forceWarnings: true);
+        var book2 = await api.StatementDrafts_BookAsync(first.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
         book2.Should().NotBeNull();
         book2!.Success.Should().BeTrue();
 
         // After successful booking, the draft should be gone
-        open = await api.StatementDrafts_ListOpenAsync(0, 3);
+        open = await api.StatementDrafts_ListOpenAsync(0, 3, TestContext.Current.CancellationToken);
         open.Should().NotBeNull();
         open.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that bulk-deleting all open statement drafts actually removes an uploaded draft from the
+    /// open list, so users can clear out unwanted or duplicate uploads in one call instead of one at a time.
+    /// </summary>
     [Fact]
     public async Task StatementDrafts_Upload_And_DeleteAll_Works()
     {
@@ -214,7 +240,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
         await EnsureAuthenticatedAsync(api);
 
         // ensure account
-        var accounts = await api.GetAccountsAsync();
+        var accounts = await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken);
         Guid accountId;
         string accountIban = "";
         if (accounts.Count == 0)
@@ -227,11 +253,11 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                 NewBankContactName: "Test Bank",
                 SymbolAttachmentId: null,
                 SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-                SecurityProcessingEnabled: true));
+                SecurityProcessingEnabled: true), TestContext.Current.CancellationToken);
             accountId = acc.Id;
-            accountIban = acc.Iban;
+            accountIban = acc.Iban ?? string.Empty;
         }
-        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban; }
+        else { accountId = accounts[0].Id; accountIban = accounts[0].Iban ?? string.Empty; }
 
         var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
                   $"IBAN;{accountIban}\r\n" +
@@ -241,19 +267,19 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Buchung;Wertstellungsdatum;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
                   "02.12.2025;02.12.2025;Testempf�nger;�berweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "statement2.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "statement2.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var first = upload!.FirstDraft;
         first.Should().NotBeNull();
 
-        var open = await api.StatementDrafts_ListOpenAsync(0, 3);
+        var open = await api.StatementDrafts_ListOpenAsync(0, 3, TestContext.Current.CancellationToken);
         open.Should().NotBeNull();
         open.Should().NotBeEmpty();
 
-        var ok = await api.StatementDrafts_DeleteAllAsync();
+        var ok = await api.StatementDrafts_DeleteAllAsync(TestContext.Current.CancellationToken);
         ok.Should().BeTrue();
 
-        open = await api.StatementDrafts_ListOpenAsync(0, 3);
+        open = await api.StatementDrafts_ListOpenAsync(0, 3, TestContext.Current.CancellationToken);
         open.Should().NotBeNull();
         open.Should().BeEmpty();
     }
@@ -277,7 +303,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         // Arrange: contact used as budget source and statement recipient
         var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
@@ -285,7 +311,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             Description: null,
             Type: ContactType.Other,
             CategoryId: null,
-            IsPaymentIntermediary: false));
+            IsPaymentIntermediary: false), TestContext.Current.CancellationToken);
         contact.Should().NotBeNull();
 
         // Arrange: budget purpose linked to the contact with a monthly rule
@@ -295,7 +321,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             SourceType: BudgetSourceType.Contact,
             SourceId: contact!.Id,
             Description: null,
-            BudgetCategoryId: null));
+            BudgetCategoryId: null), TestContext.Current.CancellationToken);
         purpose.Should().NotBeNull();
 
         await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
@@ -305,7 +331,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(today.Year, today.Month, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         // Arrange: upload a statement draft with one entry for that contact
         var csvIban = acc.Iban;
@@ -317,20 +343,20 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Buchung;Wertstellungsdatum;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
                   "02.12.2025;02.12.2025;Budget Contact;�berweisung;Einkauf;2.776,45;EUR;-50,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draft = upload!.FirstDraft;
         draft.Should().NotBeNull();
 
         // Assign the contact to the single entry
-        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId, ct: TestContext.Current.CancellationToken);
         detail.Should().NotBeNull();
         var entryId = detail!.Entries.First().Id;
-        var assign = await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id));
+        var assign = await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id), TestContext.Current.CancellationToken);
         assign.Should().NotBeNull();
 
         // Act: book the full draft
-        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
 
         // Assert: booking succeeded and BudgetImpactSummary is delivered to the client
         result.Should().NotBeNull();
@@ -357,14 +383,14 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
             Name: "Pattern Contact",
             Description: null,
             Type: ContactType.Other,
             CategoryId: null,
-            IsPaymentIntermediary: false));
+            IsPaymentIntermediary: false), TestContext.Current.CancellationToken);
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var purpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
@@ -372,7 +398,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             SourceType: BudgetSourceType.Contact,
             SourceId: contact!.Id,
             Description: null,
-            BudgetCategoryId: null));
+            BudgetCategoryId: null), TestContext.Current.CancellationToken);
 
         await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
@@ -383,7 +409,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             StartDate: new DateOnly(today.Year, today.Month, 1),
             EndDate: null,
             PurposePattern: "SM\\d{4}",
-            UseRegex: true));
+            UseRegex: true), TestContext.Current.CancellationToken);
 
         var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
                   $"IBAN;{acc.Iban}\r\n" +
@@ -393,17 +419,17 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
                   "02.12.2025;02.12.2025;Pattern Contact;Überweisung;Vertrag XX12;2.776,45;EUR;-50,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact_pattern.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact_pattern.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draft = upload!.FirstDraft;
         draft.Should().NotBeNull();
 
-        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId, ct: TestContext.Current.CancellationToken);
         detail.Should().NotBeNull();
         var entryId = detail!.Entries.First().Id;
-        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id));
+        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id), TestContext.Current.CancellationToken);
 
-        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result!.Success.Should().BeTrue();
@@ -430,14 +456,14 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
             Name: "Pattern Contact Regex Match",
             Description: null,
             Type: ContactType.Other,
             CategoryId: null,
-            IsPaymentIntermediary: false));
+            IsPaymentIntermediary: false), TestContext.Current.CancellationToken);
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var purpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
@@ -445,7 +471,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             SourceType: BudgetSourceType.Contact,
             SourceId: contact!.Id,
             Description: null,
-            BudgetCategoryId: null));
+            BudgetCategoryId: null), TestContext.Current.CancellationToken);
 
         await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
@@ -456,7 +482,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             StartDate: new DateOnly(today.Year, today.Month, 1),
             EndDate: null,
             PurposePattern: "XX\\d{2}",
-            UseRegex: true));
+            UseRegex: true), TestContext.Current.CancellationToken);
 
         var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
                   $"IBAN;{acc.Iban}\r\n" +
@@ -466,17 +492,17 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
                   "02.12.2025;02.12.2025;Pattern Contact Regex Match;Überweisung;Vertrag XX12;2.776,45;EUR;-50,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact_pattern_regex_match.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact_pattern_regex_match.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draft = upload!.FirstDraft;
         draft.Should().NotBeNull();
 
-        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId, ct: TestContext.Current.CancellationToken);
         detail.Should().NotBeNull();
         var entryId = detail!.Entries.First().Id;
-        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id));
+        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id), TestContext.Current.CancellationToken);
 
-        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result!.Success.Should().BeTrue();
@@ -501,14 +527,14 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
             Name: "Pattern Contact Contains Match",
             Description: null,
             Type: ContactType.Other,
             CategoryId: null,
-            IsPaymentIntermediary: false));
+            IsPaymentIntermediary: false), TestContext.Current.CancellationToken);
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var purpose = await api.Budgets_CreatePurposeAsync(new BudgetPurposeCreateRequest(
@@ -516,7 +542,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             SourceType: BudgetSourceType.Contact,
             SourceId: contact!.Id,
             Description: null,
-            BudgetCategoryId: null));
+            BudgetCategoryId: null), TestContext.Current.CancellationToken);
 
         await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
@@ -527,7 +553,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             StartDate: new DateOnly(today.Year, today.Month, 1),
             EndDate: null,
             PurposePattern: "vertragsnummer abc123",
-            UseRegex: false));
+            UseRegex: false), TestContext.Current.CancellationToken);
 
         var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n\r\n" +
                   $"IBAN;{acc.Iban}\r\n" +
@@ -537,17 +563,17 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
                   "02.12.2025;02.12.2025;Pattern Contact Contains Match;Überweisung;Vertragsnummer ABC123;2.776,45;EUR;-50,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact_pattern_contains_match.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_impact_pattern_contains_match.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draft = upload!.FirstDraft;
         draft.Should().NotBeNull();
 
-        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId, ct: TestContext.Current.CancellationToken);
         detail.Should().NotBeNull();
         var entryId = detail!.Entries.First().Id;
-        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id));
+        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact.Id), TestContext.Current.CancellationToken);
 
-        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result!.Success.Should().BeTrue();
@@ -574,7 +600,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         // Arrange: contact
         var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
@@ -582,7 +608,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             Description: null,
             Type: ContactType.Other,
             CategoryId: null,
-            IsPaymentIntermediary: false));
+            IsPaymentIntermediary: false), TestContext.Current.CancellationToken);
         contact.Should().NotBeNull();
 
         // Arrange: budget purpose + rule
@@ -592,7 +618,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             SourceType: BudgetSourceType.Contact,
             SourceId: contact!.Id,
             Description: null,
-            BudgetCategoryId: null));
+            BudgetCategoryId: null), TestContext.Current.CancellationToken);
 
         await api.Budgets_CreateRuleAsync(new BudgetRuleCreateRequest(
             BudgetPurposeId: purpose.Id,
@@ -601,7 +627,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             Interval: BudgetIntervalType.Monthly,
             CustomIntervalMonths: null,
             StartDate: new DateOnly(today.Year, today.Month, 1),
-            EndDate: null));
+            EndDate: null), TestContext.Current.CancellationToken);
 
         // Arrange: draft with two entries � only the first will be booked individually
         var csvIban = acc.Iban;
@@ -614,22 +640,22 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "02.12.2025;02.12.2025;Budget Entry Contact;�berweisung;Einkauf 1;2.776,45;EUR;-30,00;EUR\r\n" +
                   "01.12.2025;01.12.2025;Budget Entry Contact;�berweisung;Einkauf 2;2.826,45;EUR;-20,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_entry_impact.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "budget_entry_impact.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draft = upload!.FirstDraft;
         draft.Should().NotBeNull();
 
         // Assign the contact to both entries
-        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId, ct: TestContext.Current.CancellationToken);
         detail.Should().NotBeNull();
         foreach (var entry in detail!.Entries)
         {
-            await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entry.Id, new StatementDraftSetContactRequest(contact.Id));
+            await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entry.Id, new StatementDraftSetContactRequest(contact.Id), TestContext.Current.CancellationToken);
         }
 
         // Act: book only the first entry
         var firstEntryId = detail.Entries.First().Id;
-        var result = await api.StatementDrafts_BookEntryAsync(draft.DraftId, firstEntryId, forceWarnings: true);
+        var result = await api.StatementDrafts_BookEntryAsync(draft.DraftId, firstEntryId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
 
         // Assert: partial booking succeeded and BudgetImpactSummary is delivered to the client
         result.Should().NotBeNull();
@@ -659,7 +685,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             NewBankContactName: "Test Bank",
             SymbolAttachmentId: null,
             SavingsPlanExpectation: SavingsPlanExpectation.Optional,
-            SecurityProcessingEnabled: false));
+            SecurityProcessingEnabled: false), TestContext.Current.CancellationToken);
 
         // Arrange: contact without any budget purpose
         var contact = await api.Contacts_CreateAsync(new ContactCreateRequest(
@@ -667,7 +693,7 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             Description: null,
             Type: ContactType.Other,
             CategoryId: null,
-            IsPaymentIntermediary: false));
+            IsPaymentIntermediary: false), TestContext.Current.CancellationToken);
         contact.Should().NotBeNull();
 
         // Arrange: upload draft
@@ -680,18 +706,18 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
                   "Buchung;Wertstellungsdatum;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
                   "02.12.2025;02.12.2025;No Budget Contact;�berweisung;Zahlung;2.776,45;EUR;-10,00;EUR\r\n";
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
-        var upload = await api.StatementDrafts_UploadAsync(ms, "no_budget.csv");
+        var upload = await api.StatementDrafts_UploadAsync(ms, "no_budget.csv", TestContext.Current.CancellationToken);
         upload.Should().NotBeNull();
         var draft = upload!.FirstDraft;
         draft.Should().NotBeNull();
 
-        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId);
+        var detail = await api.StatementDrafts_GetAsync(draft!.DraftId, ct: TestContext.Current.CancellationToken);
         detail.Should().NotBeNull();
         var entryId = detail!.Entries.First().Id;
-        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact!.Id));
+        await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entryId, new StatementDraftSetContactRequest(contact!.Id), TestContext.Current.CancellationToken);
 
         // Act
-        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true);
+        var result = await api.StatementDrafts_BookAsync(draft.DraftId, forceWarnings: true, ct: TestContext.Current.CancellationToken);
 
         // Assert: booking succeeded and returned a neutral budget impact summary
         result.Should().NotBeNull();

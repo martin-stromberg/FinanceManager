@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @inject IServiceProvider Services
 @inject NavigationManager Nav
-@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages>? Localizer
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 @inject IJSRuntime JS
 @using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.Extensions
@@ -29,10 +29,7 @@ else
 
     <h3 class="list-page-title">@Localizer["General_PageTitle"]: @GetKindTitle()</h3>
 
-    <UploadStatus ViewModel="@(_provider as FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel)"
-                  CreatedCount="@_uploadCreatedCount"
-                  FirstDraftId="@_firstCreatedDraftId"
-                  Error="@_uploadError" />
+    <UploadStatus ViewModel="@(_provider as FinanceManager.Web.ViewModels.Common.IUploadFilesViewModel)" />
 
     @* Background task status panel for viewmodel-specific task types *@
     <BackgroundTaskStatusPanel AllowedTypes="@((_provider as BaseViewModel)?.VisibleBackgroundTaskTypes)" />
@@ -96,13 +93,6 @@ else
     private BaseViewModel.UiOverlaySpec? _overlaySpec;
     private bool _overlayVisible;
 
-    // Upload result fields
-    private int _uploadCreatedCount;
-    private Guid? _firstCreatedDraftId;
-    // Page-level upload configuration and error
-    private int _maxUploadFiles = 10; // configurable limit for GetMultipleFiles
-    private string? _uploadError;
-
     private string GetKindTitle()
     {
         var kind = (Kind ?? string.Empty).Trim().ToLowerInvariant();
@@ -132,7 +122,7 @@ else
             "postings" => Localizer["General_Title_Postings"],
             "securities" => Localizer["General_Title_Securities"],
             _ => Kind
-        };
+        } ?? string.Empty;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -160,7 +150,7 @@ else
         }
     }
 
-    private Task OnItemClick(object item)
+    private Task OnItemClick(object? item)
     {
         if (item is IListItemNavigation nav)
         {

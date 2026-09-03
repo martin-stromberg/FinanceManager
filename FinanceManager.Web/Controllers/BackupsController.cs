@@ -128,6 +128,7 @@ public sealed class BackupsController : ControllerBase
     /// Immediately applies (restores) the specified backup. Legacy synchronous variant; may block longer.
     /// </summary>
     /// <param name="id">Backup id.</param>
+    /// <param name="request">Restore request payload containing the confirmation text used to guard against accidental restores.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>204 No Content when restore succeeded; 404 Not Found when the backup does not exist.</returns>
     [HttpPost("{id:guid}/apply")]
@@ -147,6 +148,8 @@ public sealed class BackupsController : ControllerBase
     /// Returns current status if a task is already active.
     /// </summary>
     /// <param name="id">Backup id to restore.</param>
+    /// <param name="request">Restore request payload containing the confirmation text (and optionally the expected file name) used to guard against accidental restores.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with a <see cref="FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto"/> describing the enqueued or current task status.</returns>
     [HttpPost("{id:guid}/apply/start")]
     [ProducesResponseType(typeof(FinanceManager.Shared.Dtos.Admin.BackupRestoreStatusDto), StatusCodes.Status200OK)]

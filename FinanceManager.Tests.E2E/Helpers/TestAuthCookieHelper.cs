@@ -8,6 +8,11 @@ using Microsoft.Playwright;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// Mints and injects a real, signed auth JWT directly into the Playwright browser context - bypassing the
+/// login flow entirely - so E2E tests can exercise near-expiry/renewal and session-boundary behavior
+/// without waiting out the actual token lifetime.
+/// </summary>
 public sealed class TestAuthCookieHelper
 {
     private const string DevelopmentJwtKey = "PLEASE_REPLACE_WITH_LONG_RANDOM_256BIT_SECRET_BASE64";
@@ -18,12 +23,23 @@ public sealed class TestAuthCookieHelper
     private readonly string _databasePath;
     private readonly string _baseUrl;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestAuthCookieHelper"/> class.
+    /// </summary>
+    /// <param name="databasePath">Path to the SQLite database backing the test server, used to look up the target user.</param>
+    /// <param name="baseUrl">Base URL of the application under test, used as the cookie's target URL.</param>
     public TestAuthCookieHelper(string databasePath, string baseUrl)
     {
         _databasePath = databasePath;
         _baseUrl = baseUrl;
     }
 
+    /// <summary>
+    /// Injects an auth cookie for <paramref name="username"/> that expires in one minute - used to test
+    /// behavior around session expiry without an actual long wait.
+    /// </summary>
+    /// <param name="page">Browser context to inject the cookie into.</param>
+    /// <param name="username">Username the minted token is issued for.</param>
     public async Task SetNearExpiryCookieAsync(IPage page, string username)
     {
         var expiresUtc = DateTimeOffset.UtcNow.AddMinutes(1);

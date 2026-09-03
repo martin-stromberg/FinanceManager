@@ -57,7 +57,7 @@ public sealed class UserAdminService : IUserAdminService
             var isAdmin = await _userManager.IsInRoleAsync(u, "Admin");
             list.Add(new UserAdminDto(
                 u.Id,
-                u.UserName,
+                u.UserName!,
                 isAdmin,
                 u.Active,
                 u.LockoutEnd.HasValue ? u.LockoutEnd.Value.UtcDateTime : (DateTime?)null,
@@ -91,7 +91,7 @@ public sealed class UserAdminService : IUserAdminService
         var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
         return new UserAdminDto(
             user.Id,
-            user.UserName,
+            user.UserName!,
             isAdmin,
             user.Active,
             user.LockoutEnd.HasValue ? user.LockoutEnd.Value.UtcDateTime : (DateTime?)null,
@@ -136,7 +136,7 @@ public sealed class UserAdminService : IUserAdminService
         bool hasSelf = await _db.Contacts.AsNoTracking().AnyAsync(c => c.OwnerUserId == user.Id && c.Type == ContactType.Self, ct);
         if (!hasSelf)
         {
-            _db.Contacts.Add(new Contact(user.Id, user.UserName, ContactType.Self, null));
+            _db.Contacts.Add(new Contact(user.Id, user.UserName!, ContactType.Self, null));
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("Created self contact for user {UserId}", user.Id);
         }
@@ -169,7 +169,7 @@ public sealed class UserAdminService : IUserAdminService
         var finalIsAdmin = await _userManager.IsInRoleAsync(user, "Admin");
         return new UserAdminDto(
             user.Id,
-            user.UserName,
+            user.UserName!,
             finalIsAdmin,
             user.Active,
             user.LockoutEnd.HasValue ? user.LockoutEnd.Value.UtcDateTime : (DateTime?)null,
@@ -281,7 +281,7 @@ public sealed class UserAdminService : IUserAdminService
         var finalIsAdmin = await _userManager.IsInRoleAsync(user, "Admin");
         return new UserAdminDto(
             user.Id,
-            user.UserName,
+            user.UserName!,
             finalIsAdmin,
             user.Active,
             user.LockoutEnd.HasValue ? user.LockoutEnd.Value.UtcDateTime : (DateTime?)null,

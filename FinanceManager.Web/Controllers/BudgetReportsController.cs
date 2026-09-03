@@ -252,7 +252,7 @@ public sealed class BudgetReportsController : ControllerBase
             // Load full posting details for mapping
             var allPostingsQuery = _db.Postings.AsNoTracking();
             allPostingsQuery = dateBasis == BudgetReportDateBasis.ValutaDate
-                ? allPostingsQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
+                ? allPostingsQuery.Where(p => p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
                 : allPostingsQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
 
             var postings = await allPostingsQuery

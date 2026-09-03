@@ -14,7 +14,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
     private readonly IOptionsMonitor<FileLoggerOptions> _optionsMonitor;
     private readonly IOptionsMonitor<LoggerFilterOptions> _filterOptionsMonitor;
-    private readonly IDisposable _onChange;
+    private readonly IDisposable? _onChange;
     private readonly object _writerLock = new();
     private FileLoggerOptions _options;
     private IExternalScopeProvider? _scopeProvider;
@@ -27,6 +27,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// Initializes a new instance of the <see cref="FileLoggerProvider"/> class.
     /// </summary>
     /// <param name="optionsMonitor">Options monitor used to observe changes to <see cref="FileLoggerOptions"/>.</param>
+    /// <param name="filterOptionsMonitor">Options monitor used to observe changes to the logger filter configuration.</param>
     public FileLoggerProvider(IOptionsMonitor<FileLoggerOptions> optionsMonitor, IOptionsMonitor<LoggerFilterOptions> filterOptionsMonitor)
     {
         _optionsMonitor = optionsMonitor;
@@ -49,7 +50,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// </summary>
     public void Dispose()
     {
-        _onChange.Dispose();
+        _onChange?.Dispose();
         lock (_writerLock)
         {
             _writer?.Flush();

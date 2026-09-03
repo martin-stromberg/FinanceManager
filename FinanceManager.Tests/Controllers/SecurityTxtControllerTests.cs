@@ -18,6 +18,11 @@ using Moq;
 
 namespace FinanceManager.Tests.Controllers;
 
+/// <summary>
+/// Tests for <see cref="SecurityTxtController"/> covering the public <c>/security.txt</c> endpoint (RFC 9116),
+/// the admin-only settings read/update endpoints, and the request-level validation rules for the update DTO
+/// (canonical URL format, expiry not in the past).
+/// </summary>
 public sealed class SecurityTxtControllerTests
 {
     // ---------------------------------------------------------------------------
@@ -60,6 +65,10 @@ public sealed class SecurityTxtControllerTests
     // GET /security.txt — public endpoint
     // ---------------------------------------------------------------------------
 
+    /// <summary>
+    /// Verifies that the public <c>/security.txt</c> endpoint returns 200 with the generated plain-text
+    /// content when a contact has been configured.
+    /// </summary>
     [Fact]
     public async Task GetSecurityTxt_Returns200_WhenContactConfigured()
     {
@@ -75,6 +84,10 @@ public sealed class SecurityTxtControllerTests
         content.Content.Should().Contain("Contact: mailto:security@example.com");
     }
 
+    /// <summary>
+    /// Verifies that the public endpoint returns 503 Service Unavailable when no contact has been configured,
+    /// since serving an empty/invalid security.txt would be misleading rather than simply absent.
+    /// </summary>
     [Fact]
     public async Task GetSecurityTxt_Returns503_WhenContactEmpty()
     {
@@ -93,6 +106,9 @@ public sealed class SecurityTxtControllerTests
     // GET api/admin/security-txt — admin role via attribute
     // ---------------------------------------------------------------------------
 
+    /// <summary>
+    /// Verifies that an authenticated admin can read the raw settings DTO used to populate the admin editor.
+    /// </summary>
     [Fact]
     public async Task GetSettings_WithAdminRole_Returns200()
     {
@@ -113,6 +129,11 @@ public sealed class SecurityTxtControllerTests
         ok.Value.Should().BeEquivalentTo(dto);
     }
 
+    /// <summary>
+    /// Verifies the authorization contract declaratively rather than through the ASP.NET Core pipeline (which
+    /// unit tests bypass): asserts that <c>GetSettingsAsync</c> carries <c>[Authorize(Roles = "Admin")]</c>, so
+    /// non-admins are rejected with 403 at request time.
+    /// </summary>
     [Fact]
     public void GetSettings_WithoutAdminRole_Returns403_AuthorizeAttributeRequiresAdminRole()
     {
@@ -133,6 +154,9 @@ public sealed class SecurityTxtControllerTests
     // PUT api/admin/security-txt — update
     // ---------------------------------------------------------------------------
 
+    /// <summary>
+    /// Verifies that a valid settings update from an admin is persisted via the service and returns 204.
+    /// </summary>
     [Fact]
     public async Task UpdateSettings_WithAdminRole_Returns204()
     {
@@ -148,6 +172,10 @@ public sealed class SecurityTxtControllerTests
         result.Should().BeOfType<NoContentResult>();
     }
 
+    /// <summary>
+    /// Verifies that an update request with a pre-populated <c>ModelState</c> error (missing required
+    /// <c>Contact</c>) is rejected as a validation problem without ever calling the update service.
+    /// </summary>
     [Fact]
     public async Task UpdateSettings_InvalidModel_Returns400()
     {
@@ -173,6 +201,13 @@ public sealed class SecurityTxtControllerTests
         service.Verify(s => s.UpdateAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that malformed canonical URLs — a non-HTTPS scheme, an unexpected query string or fragment, or
+    /// a relative path instead of an absolute URL — all fail the request DTO's data-annotation validation and
+    /// are rejected without reaching the update service. RFC 9116 requires the canonical field to be an exact,
+    /// unambiguous HTTPS URL to the file itself.
+    /// </summary>
+    /// <param name="canonical">A canonical URL value that violates the expected format.</param>
     [Theory]
     [InlineData("http://localhost/.well-known/security.txt")]
     [InlineData("https://security.example.com/.well-known/security.txt?from=admin")]
@@ -198,6 +233,10 @@ public sealed class SecurityTxtControllerTests
         service.Verify(s => s.UpdateAsync(It.IsAny<SecurityTxtSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that an <c>Expires</c> value in the past fails validation and is rejected without reaching the
+    /// update service, since a security.txt that is already expired would be published in an invalid state.
+    /// </summary>
     [Fact]
     public async Task UpdateSettings_ExpiredExpires_Returns400()
     {

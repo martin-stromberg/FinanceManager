@@ -17,8 +17,17 @@ using Xunit;
 
 namespace FinanceManager.Tests.Infrastructure
 {
+    /// <summary>
+    /// Covers <c>SetupImportService.ImportAsync</c>, the initial-setup counterpart to <c>BackupService</c>'s restore
+    /// path used to seed a fresh installation from a previously exported backup's NDJSON payload.
+    /// </summary>
     public sealed class SetupImportServiceTests
     {
+        /// <summary>
+        /// Verifies that importing a backup payload restores both category-direct and purpose-direct budget rules
+        /// (<c>BudgetCategoryId</c> vs. <c>BudgetPurposeId</c> set) - a setup import that only handled one of the two
+        /// rule shapes would silently lose part of the user's budget configuration when moving to a new instance.
+        /// </summary>
         [Fact]
         public async Task ImportAsync_RestoresBudgetRulesForPurposeAndCategory()
         {

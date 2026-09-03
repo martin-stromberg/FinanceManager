@@ -6,7 +6,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 {
     /// <summary>
     /// PDF statement file reader implementation for Barclays statement exports.
-    /// Uses template-based parsing (regular expressions and table definitions) inherited from <see cref="PDFStatementFilereader"/>.
+    /// Uses template-based parsing (regular expressions and table definitions) inherited from <see cref="TemplateStatementFileParser"/>.
     /// The templates contained in this class target various Barclays PDF layouts and provide section and field mappings
     /// to build <see cref="StatementMovement"/> instances.
     /// </summary>
@@ -43,7 +43,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         /// <returns>true if the statement file is of a supported type; otherwise, false.</returns>
         protected override bool CanParse(IStatementFile statementFile)
         {
-            return new Type[]{ typeof(Barclays_PDF_StatementFile) }.Any(t => t.IsAssignableFrom(statementFile.GetType()));
+            return new Type[] { typeof(Barclays_PDF_StatementFile) }.Any(t => t.IsAssignableFrom(statementFile.GetType()));
         }
     }
 }

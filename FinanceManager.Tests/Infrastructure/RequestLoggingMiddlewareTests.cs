@@ -5,8 +5,19 @@ using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Tests.Infrastructure;
 
+/// <summary>
+/// Covers <see cref="RequestLoggingMiddleware"/>: it redacts a "token" query parameter from request logs
+/// case-insensitively - guarding against download-link access tokens (e.g. for attachments) leaking into log
+/// files - while leaving other query parameters intact and still logging the request even when the downstream
+/// pipeline throws.
+/// </summary>
 public sealed class RequestLoggingMiddlewareTests
 {
+    /// <summary>
+    /// Verifies that a "token" query parameter is redacted in the logged message regardless of its casing
+    /// (lower/mixed/upper), while an unrelated parameter on the same request stays visible in the log.
+    /// </summary>
+    /// <param name="parameterName">The casing variant of the "token" query parameter name to test.</param>
     [Theory]
     [InlineData("token")]
     [InlineData("Token")]
@@ -32,6 +43,11 @@ public sealed class RequestLoggingMiddlewareTests
         Assert.Contains("page=1", entry.FormattedMessage, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that the token redaction still applies on the exception path - the middleware must log (at
+    /// warning level) and rethrow when the downstream pipeline throws, and the redaction cannot be skipped just
+    /// because the request failed.
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_Exception_RedactsTokenQueryParameter()
     {
@@ -51,6 +67,11 @@ public sealed class RequestLoggingMiddlewareTests
         Assert.Contains("foo=bar", entry.FormattedMessage, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Verifies that when a request has no sensitive parameter at all, the logging pipeline leaves the query
+    /// string untouched - the redaction logic must be additive and not accidentally mangle ordinary requests
+    /// (e.g. ones that end in a non-2xx status).
+    /// </summary>
     [Fact]
     public async Task InvokeAsync_PreservesNonSensitiveQueryParameters()
     {

@@ -16,11 +16,30 @@ using System.Diagnostics;
 
 namespace FinanceManager.Tests.Integration;
 
-// Custom factory that wires AppDbContext to a fresh SQLite in-memory database per factory instance
+/// <summary>
+/// Custom <see cref="WebApplicationFactory{Program}"/> that wires <c>AppDbContext</c> to a fresh, isolated
+/// SQLite in-memory database per factory instance, seeds a bootstrap admin user, disables background
+/// hosted services that would otherwise interfere with deterministic tests, and serves help/static assets
+/// from a private copy of the built web root so tests never mutate the real <c>wwwroot</c> folder.
+/// </summary>
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    /// <summary>
+    /// Username of the admin account seeded into every test database, so tests can authenticate as an
+    /// admin without needing to register the very first (auto-admin) user themselves.
+    /// </summary>
     public const string BootstrapAdminUsername = "bootstrap.admin";
+
+    /// <summary>
+    /// Password of the admin account seeded into every test database. Paired with
+    /// <see cref="BootstrapAdminUsername"/> to authenticate as an admin in tests.
+    /// </summary>
     public const string BootstrapAdminPassword = "Bootstr4pAdmin!";
+
+    /// <summary>
+    /// Absolute path to the <c>FinanceManager.Web</c> project directory, used as the content root and to
+    /// locate the built <c>wwwroot</c> folder that gets copied into each factory's isolated web root.
+    /// </summary>
     public static readonly string WebProjectRoot = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory,
         "..",
@@ -32,6 +51,11 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     private DbConnection? _connection;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestWebApplicationFactory"/> class, copying the built
+    /// web root (help pages, static assets, integrity manifest) into a private, per-instance temp directory
+    /// so tests can freely mutate or delete files without affecting other concurrently running factories.
+    /// </summary>
     public TestWebApplicationFactory()
     {
         CopyDirectory(GetBuiltWebRoot(), _isolatedWebRoot);
@@ -53,8 +77,18 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public DateTime? FixedUtcNow { get; set; }
 
+    /// <summary>
+    /// Absolute path to this factory's isolated copy of the web root, so tests can locate and mutate
+    /// help/static asset files (or the integrity manifest) on disk without touching the shared build output.
+    /// </summary>
     public string HelpWebRootPath => _isolatedWebRoot;
 
+    /// <summary>
+    /// Configures the test web host: points it at an isolated SQLite in-memory database and web root,
+    /// disables background hosted services and file logging that would otherwise run unpredictably during
+    /// tests, optionally installs a fixed <see cref="TimeProvider"/>, and seeds the bootstrap admin user.
+    /// </summary>
+    /// <param name="builder">The web host builder to configure for the in-memory test server.</param>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseDefaultServiceProvider(options =>
@@ -214,6 +248,12 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         public override long GetTimestamp() => _timestamp;
     }
 
+    /// <summary>
+    /// Releases the anchor SQLite connection (which otherwise keeps the shared in-memory database alive
+    /// for the factory's lifetime) and deletes this instance's isolated web root temp directory, so
+    /// per-test resources do not leak across test runs.
+    /// </summary>
+    /// <param name="disposing"><see langword="true"/> to release managed resources; <see langword="false"/> when called from a finalizer.</param>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);

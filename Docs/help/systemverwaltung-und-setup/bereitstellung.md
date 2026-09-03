@@ -13,11 +13,11 @@ Windows- und Linux-Publish-Artefakten sowie einem Update-Manifest. Die Pipeline 
 
 Der Workflow läuft bei:
 
-- einem Push auf `master`, einschließlich eines Merge-Ergebnisses eines Pull
+- einem Push auf `main`, einschließlich eines Merge-Ergebnisses eines Pull
   Requests;
 - einem Push eines Tags im Format `vX.Y.Z`.
 
-Auf `master` bestimmt Semantic Release die nächste Version aus den Commits
+Auf `main` bestimmt Semantic Release die nächste Version aus den Commits
 seit dem letzten Release. Es gelten die folgenden Regeln:
 
 | Commit-Typ | Versionsänderung |
@@ -28,7 +28,7 @@ seit dem letzten Release. Es gelten die folgenden Regeln:
 | `docs:`, `refactor:`, `chore:` | kein Release |
 
 Ein gültiger manueller Tag `vX.Y.Z` hat Vorrang vor der automatischen
-Berechnung. Ein Push auf `master` ohne release-relevante Commits wird
+Berechnung. Ein Push auf `main` ohne release-relevante Commits wird
 erfolgreich mit `released=false` beendet und erzeugt kein leeres Release.
 
 ## Build und Veröffentlichungsartefakt

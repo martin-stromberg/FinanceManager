@@ -11,6 +11,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers core behavior of <see cref="ReportAggregationService.QueryAsync"/>: category grouping and previous/
+/// year-ago comparisons across many months, Ytd aggregation with a correctly cut-off comparison window,
+/// multi-entity filtering across two posting kinds queried simultaneously, edge cases in security-dividend
+/// category rows when comparison data is sparse or absent, and (via the seeded helper below) full-kind coverage
+/// for month/quarter/half-year/year/YTD/all-history intervals.
+/// </summary>
 public sealed class ReportAggregationServiceTests
 {
     private static AppDbContext CreateDb()
@@ -23,20 +30,27 @@ public sealed class ReportAggregationServiceTests
         return db;
     }
 
+    /// <summary>
+    /// Across nearly 3 years of monthly data for three categories holding 1/2/3 contacts respectively, verifies
+    /// that category-level rows correctly sum their member contacts' monthly amounts, that previous-month and
+    /// year-ago comparisons are populated correctly given a constant monthly amount, that a child contact row
+    /// correctly references its category via <c>ParentGroupKey</c>, and that the earliest available month has no
+    /// <c>PreviousAmount</c>/<c>YearAgoAmount</c> since there is no earlier data to compare against.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldAggregateCategoriesAndComparisons_ForContactsAcrossMonths()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Drei Kategorien: A (1 Kontakt), B (2 Kontakte), C (3 Kontakte)
         var catA = new ContactCategory(user.Id, "Cat A");
         var catB = new ContactCategory(user.Id, "Cat B");
         var catC = new ContactCategory(user.Id, "Cat C");
         db.ContactCategories.AddRange(catA, catB, catC);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Helper zum Erstellen eines Kontakts mit Basisbetrag (pro Posting) 10 / 20 / 30
         Contact NewContact(Guid ownerId, ContactCategory cat, string name) => new(ownerId, name, ContactType.Person, cat.Id, null);
@@ -51,15 +65,15 @@ public sealed class ReportAggregationServiceTests
         var cC3 = NewContact(user.Id, catC, "C3");
 
         db.Contacts.AddRange(cA1, cB1, cB2, cC1, cC2, cC3);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        // Monate Jan 2023 .. Sep 2025 (einschlieﬂlich)
+        // Monate Jan 2023 .. Sep 2025 (einschlie√ülich)
         var start = new DateTime(2023, 1, 1);
         var end = new DateTime(2025, 9, 1);
         var months = new List<DateTime>();
         for (var dt = start; dt <= end; dt = dt.AddMonths(1)) { months.Add(new DateTime(dt.Year, dt.Month, 1)); }
 
-        // Pro Monat pro Kontakt zwei Postings: Kontakt 1 Basis 10Ä, Kontakt 2 Basis 20Ä, Kontakt 3 Basis 30Ä => Monatssumme = Basis * 2
+        // Pro Monat pro Kontakt zwei Postings: Kontakt 1 Basis 10‚Ç¨, Kontakt 2 Basis 20‚Ç¨, Kontakt 3 Basis 30‚Ç¨ => Monatssumme = Basis * 2
         void AddMonthlyAggregates(Contact contact, decimal perPosting)
         {
             foreach (var m in months)
@@ -80,10 +94,10 @@ public sealed class ReportAggregationServiceTests
         AddMonthlyAggregates(cC2, 20m);
         AddMonthlyAggregates(cC3, 30m);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
-        // Take groﬂ genug, um alle 33 Monate abzudecken
+        // Take gro√ü genug, um alle 33 Monate abzudecken
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true);
         var result = await sut.QueryAsync(query, CancellationToken.None);
 
@@ -96,7 +110,7 @@ public sealed class ReportAggregationServiceTests
         // Kategorie-Gruppen-Keys
         string CatKey(ContactCategory cat) => $"Category:{PostingKind.Contact}:{cat.Id}";
 
-        // Pr¸fe f¸r letzten Monat (Sep 2025)
+        // Pr√ºfe f√ºr letzten Monat (Sep 2025)
         var lastPeriod = months.Last();
         var catAPoint = result.Points.Single(p => p.GroupKey == CatKey(catA) && p.PeriodStart == lastPeriod);
         var catBPoint = result.Points.Single(p => p.GroupKey == CatKey(catB) && p.PeriodStart == lastPeriod);
@@ -107,7 +121,7 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(20m + 40m, catBPoint.Amount);        // (10*2) + (20*2) = 60
         Assert.Equal(20m + 40m + 60m, catCPoint.Amount);  // 20 + 40 + 60 = 120
 
-        // Previous (Aug 2025) sollten identisch sein, da Betr‰ge konstant
+        // Previous (Aug 2025) sollten identisch sein, da Betr√§ge konstant
         Assert.Equal(20m, catAPoint.PreviousAmount);
         Assert.Equal(60m, catBPoint.PreviousAmount);
         Assert.Equal(120m, catCPoint.PreviousAmount);
@@ -117,39 +131,45 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(60m, catBPoint.YearAgoAmount);
         Assert.Equal(120m, catCPoint.YearAgoAmount);
 
-        // Child-Entity Punkte: Pr¸fe, dass ParentGroupKey gesetzt ist und monatliche Summen korrekt (z.B. C3)
+        // Child-Entity Punkte: Pr√ºfe, dass ParentGroupKey gesetzt ist und monatliche Summen korrekt (z.B. C3)
         var c3Point = result.Points.Single(p => p.GroupKey == $"Contact:{cC3.Id}" && p.PeriodStart == lastPeriod);
         Assert.Equal(60m, c3Point.Amount); // 30 * 2
         Assert.Equal(CatKey(catC), c3Point.ParentGroupKey);
         Assert.Equal(60m, c3Point.PreviousAmount);
         Assert.Equal(60m, c3Point.YearAgoAmount);
 
-        // Fr¸hester Monat (Jan 2023) darf keine Previous/Year Werte haben
+        // Fr√ºhester Monat (Jan 2023) darf keine Previous/Year Werte haben
         var firstCatA = result.Points.Single(p => p.GroupKey == CatKey(catA) && p.PeriodStart == months.First());
         Assert.Null(firstCatA.PreviousAmount);
         Assert.Null(firstCatA.YearAgoAmount);
     }
 
+    /// <summary>
+    /// For the <see cref="ReportInterval.Ytd"/> interval spanning multiple years, verifies category-level
+    /// year-to-date sums are correctly cut off at the current calendar month for every year in range (not just
+    /// the latest), and that the previous-year and year-ago comparisons for YTD rows correctly use the
+    /// equivalent same-cutoff prior year rather than that year's full total.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldAggregateYtdCategoriesAndComparisons_ForContacts()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var catA = new ContactCategory(user.Id, "Cat A");
         var catB = new ContactCategory(user.Id, "Cat B");
         var catC = new ContactCategory(user.Id, "Cat C");
         db.ContactCategories.AddRange(catA, catB, catC);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         Contact NewContact(Guid ownerId, ContactCategory cat, string name) => new(ownerId, name, ContactType.Person, cat.Id, null);
         var cA1 = NewContact(user.Id, catA, "A1");
         var cB1 = NewContact(user.Id, catB, "B1"); var cB2 = NewContact(user.Id, catB, "B2");
         var cC1 = NewContact(user.Id, catC, "C1"); var cC2 = NewContact(user.Id, catC, "C2"); var cC3 = NewContact(user.Id, catC, "C3");
         db.Contacts.AddRange(cA1, cB1, cB2, cC1, cC2, cC3);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var start = new DateTime(2023, 1, 1); var end = new DateTime(2025, 9, 1);
         var months = new List<DateTime>();
@@ -167,7 +187,7 @@ public sealed class ReportAggregationServiceTests
         AddMonthlyAggregates(cA1, 10m); // cat A: 20/Monat
         AddMonthlyAggregates(cB1, 10m); AddMonthlyAggregates(cB2, 20m); // cat B: 60/Monat
         AddMonthlyAggregates(cC1, 10m); AddMonthlyAggregates(cC2, 20m); AddMonthlyAggregates(cC3, 30m); // cat C: 120/Monat
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Ytd, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true);
@@ -178,7 +198,7 @@ public sealed class ReportAggregationServiceTests
 
         string CatKey(ContactCategory cat) => $"Category:{PostingKind.Contact}:{cat.Id}";
 
-        // YTD-Definition im Service: F¸r alle Jahre wird bis zum aktuellen Monat (UtcNow.Month) summiert.
+        // YTD-Definition im Service: F√ºr alle Jahre wird bis zum aktuellen Monat (UtcNow.Month) summiert.
         var cutoffMonth = DateTime.UtcNow.Month; // dynamisch
         int monthsPrevYears = Math.Min(12, cutoffMonth);
         int monthsYear2025 = months.Count(m => m.Year == 2025 && m.Month <= cutoffMonth);
@@ -215,7 +235,7 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(catC_2023, c2024.PreviousAmount); Assert.Equal(catC_2023, c2024.YearAgoAmount);
         Assert.Equal(catC_2024, c2025.PreviousAmount); Assert.Equal(catC_2024, c2025.YearAgoAmount);
 
-        // Child (z.B. C3) ñ YTD Summen: Basis 60 pro Monat => 60 * monthsYear2025
+        // Child (z.B. C3) ‚Äì YTD Summen: Basis 60 pro Monat => 60 * monthsYear2025
         var c3_2025 = result.Points.Single(p => p.GroupKey == $"Contact:{cC3.Id}" && p.PeriodStart == Y(2025));
         Assert.Equal(60m * monthsYear2025, c3_2025.Amount);
         Assert.Equal(60m * monthsPrevYears, c3_2025.PreviousAmount); // Vorjahr (gleicher cutoff)
@@ -223,6 +243,13 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(CatKey(catC), c3_2025.ParentGroupKey);
     }
 
+    /// <summary>
+    /// When a query spans two posting kinds (Bank and Contact) simultaneously with an account-id filter and a
+    /// contact-id filter each selecting two specific entities, only those selected entities' rows must appear
+    /// (the "noise" entity of each kind must be excluded), each entity row's <c>ParentGroupKey</c> must point to
+    /// its kind's "Type:{Kind}" row, and each Type row's amount must equal the sum of only its selected/filtered
+    /// entities - not all entities of that kind.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldApplyEntityFilters_ForTwoKinds_WithTwoSelectedValuesEach()
     {
@@ -230,7 +257,7 @@ public sealed class ReportAggregationServiceTests
         // Arrange user and base data
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Accounts (Bank kind)
         var bankContact = new FinanceManager.Domain.Contacts.Contact(user.Id, "Bank", ContactType.Bank, null, null);
@@ -245,7 +272,7 @@ public sealed class ReportAggregationServiceTests
         var c2 = new FinanceManager.Domain.Contacts.Contact(user.Id, "C2", ContactType.Person, null, null);
         var c3 = new FinanceManager.Domain.Contacts.Contact(user.Id, "NoiseContact", ContactType.Person, null, null);
         db.Contacts.AddRange(c1, c2, c3);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Two months of aggregates for each selected entity + one noise entity per kind
         var m1 = new DateTime(2024, 8, 1);
@@ -265,7 +292,7 @@ public sealed class ReportAggregationServiceTests
         AddAgg(PostingKind.Contact, null, c1.Id, 10m);
         AddAgg(PostingKind.Contact, null, c2.Id, 20m);
         AddAgg(PostingKind.Contact, null, c3.Id, 999m); // noise (must be filtered out)
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
@@ -325,31 +352,37 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(20m + 30m, typeContactM2.Amount);
     }
 
+    /// <summary>
+    /// For a security-category dividend query with comparisons enabled, when only the previous month has an
+    /// actual dividend and the current (analysis) month has none, the service must still produce a zero-amount
+    /// row for the current month carrying the previous month's amount as <c>PreviousAmount</c> - so the UI can
+    /// show "0 this month, was X last month" instead of the current period being missing entirely.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendCategory_ShouldInjectCurrentMonthZero_AndCarryPrevious_WhenCurrentHasNoData()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Setup security category and one security owned by user
         var secCat = new SecurityCategory(user.Id, "Aktien");
         db.SecurityCategories.Add(secCat);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var security = new FinanceManager.Domain.Securities.Security(user.Id, "ACME", "ACME-ISIN", null, null, "EUR", secCat.Id);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Define analysis month (current) and previous month
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var prev = analysis.AddMonths(-1);
 
-        // Only previous month has a dividend aggregate (1.4Ä); current month has no data
+        // Only previous month has a dividend aggregate (1.4‚Ç¨); current month has no data
         var aggPrev = new PostingAggregate(PostingKind.Security, null, null, null, security.Id, prev, AggregatePeriod.Month, SecurityPostingSubType.Dividend);
         aggPrev.Add(1.4m);
         db.PostingAggregates.Add(aggPrev);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
@@ -395,20 +428,26 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(1.4m, currRow.PreviousAmount);
     }
 
+    /// <summary>
+    /// Same scenario as above (a dividend only in the previous month) but with comparisons disabled: the current
+    /// month's row still appears with a zero amount (it falls within the query window), but it must NOT carry a
+    /// <c>PreviousAmount</c> - the carried-forward comparison value is only populated when comparisons are
+    /// actually requested.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendCategory_ShouldNotInjectCurrentMonth_WhenNoComparisons()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var secCat = new SecurityCategory(user.Id, "Aktien");
         db.SecurityCategories.Add(secCat);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var security = new FinanceManager.Domain.Securities.Security(user.Id, "ACME", "ACME-ISIN", null, null, "EUR", secCat.Id);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var prev = analysis.AddMonths(-1);
@@ -416,7 +455,7 @@ public sealed class ReportAggregationServiceTests
         var aggPrev = new PostingAggregate(PostingKind.Security, null, null, null, security.Id, prev, AggregatePeriod.Month, SecurityPostingSubType.Dividend);
         aggPrev.Add(1.4m);
         db.PostingAggregates.Add(aggPrev);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
@@ -464,20 +503,26 @@ public sealed class ReportAggregationServiceTests
         Assert.Null(currRow.PreviousAmount);
     }
 
+    /// <summary>
+    /// Documents current behavior when the only historical dividend data point for a security category falls six
+    /// months before the analysis date rather than in the immediately preceding month: with comparisons enabled,
+    /// the query returns no points at all for this category, rather than showing the six-month-old data as its
+    /// own row or injecting a zero current-month row carrying it forward as <c>PreviousAmount</c>.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityDividendCategory_SixMonthsAgo_ShouldInjectCurrentZero_AndCarryPrev()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var secCat = new SecurityCategory(user.Id, "Aktien");
         db.SecurityCategories.Add(secCat);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var security = new FinanceManager.Domain.Securities.Security(user.Id, "ACME", "ACME-ISIN", null, null, "EUR", secCat.Id);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var sixMonthsAgo = analysis.AddMonths(-6);
@@ -486,7 +531,7 @@ public sealed class ReportAggregationServiceTests
         var agg = new PostingAggregate(PostingKind.Security, null, null, null, security.Id, sixMonthsAgo, AggregatePeriod.Month, SecurityPostingSubType.Dividend);
         agg.Add(1.4m);
         db.PostingAggregates.Add(agg);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var filters = new ReportAggregationFilters(
@@ -541,7 +586,7 @@ public sealed class ReportAggregationServiceTests
 
     /// <summary>
     /// Seeds two accounts, two contacts, two savings plans, two securities and creates monthly aggregates for the last N months.
-    /// For each entity and month two postings are added (1st and 15th), with a global amount counter starting at 1.00Ä and increasing by 0.01Ä per posting to ensure uniqueness.
+    /// For each entity and month two postings are added (1st and 15th), with a global amount counter starting at 1.00‚Ç¨ and increasing by 0.01‚Ç¨ per posting to ensure uniqueness.
     /// Returns the created entities, the list of months and a sum lookup for expected assertions.
     /// </summary>
     private static async Task<SeedResult> SeedAllKindsAsync(AppDbContext db, Guid ownerUserId, DateTime analysisMonth, int monthsBack)
@@ -651,7 +696,7 @@ public sealed class ReportAggregationServiceTests
     }
 
     /// <summary>
-    /// Hilfsfunktion: Erwartete Monats?Summe je Entit‰t und Vergleichswerte (Vormonat, Vorjahr) aus Seed?Lookup berechnen.
+    /// Hilfsfunktion: Erwartete Monats?Summe je Entit√§t und Vergleichswerte (Vormonat, Vorjahr) aus Seed?Lookup berechnen.
     /// </summary>
     private static (decimal current, decimal? prev, decimal? year)
         GetMonthlyExpected(
@@ -673,7 +718,7 @@ public sealed class ReportAggregationServiceTests
     }
 
     /// <summary>
-    /// Seeds 24 months for 2 accounts/contacts/savings/securities with unique amounts (1.00Ä + 0.01Ä per posting), two postings per month (1st/15th).
+    /// Seeds 24 months for 2 accounts/contacts/savings/securities with unique amounts (1.00‚Ç¨ + 0.01‚Ç¨ per posting), two postings per month (1st/15th).
     /// Builds a monthly report for Bank, Contact, SavingsPlan, Security with comparisons (prev + year) and verifies the latest month's balances for both entities.
     /// Expected: Amount equals seeded monthly sum; Previous equals exact previous month; YearAgo equals same month last year.
     /// </summary>
@@ -683,7 +728,7 @@ public sealed class ReportAggregationServiceTests
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var seed = await SeedAllKindsAsync(db, user.Id, analysis, monthsBack: 24);
@@ -733,7 +778,7 @@ public sealed class ReportAggregationServiceTests
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         _ = await SeedAllKindsAsync(db, user.Id, analysis, monthsBack: 12);
@@ -768,7 +813,7 @@ public sealed class ReportAggregationServiceTests
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var analysis = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var seed = await SeedAllKindsAsync(db, user.Id, analysis, monthsBack: 24);
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());

@@ -32,6 +32,11 @@ public sealed class BudgetReportServiceAdapterTests
     private readonly Mock<ISecurityService> _securities = new();
     private readonly Mock<IReportCacheService> _cacheService = new();
 
+    /// <summary>
+    /// Wires up the default, "happy path" stubs shared by every test in this class (empty category/purpose/
+    /// contact/savings-plan/security lists and a cache miss), so individual tests only need to override the
+    /// specific dependency they are exercising instead of re-stubbing every collaborator from scratch.
+    /// </summary>
     public BudgetReportServiceAdapterTests()
     {
         _categories.Setup(x => x.ListAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -52,6 +57,11 @@ public sealed class BudgetReportServiceAdapterTests
             .ReturnsAsync((BudgetReportRawDataDto?)null);
     }
 
+    /// <summary>
+    /// Constructs a <see cref="BudgetReportService"/> wired to this fixture's mocked collaborators, so each
+    /// test can adjust only the mocks relevant to its scenario before creating the service under test.
+    /// </summary>
+    /// <returns>A <see cref="BudgetReportService"/> ready to exercise in a test.</returns>
     private BudgetReportService CreateService() => new(
         _purposes.Object,
         _categories.Object,
@@ -63,6 +73,12 @@ public sealed class BudgetReportServiceAdapterTests
         _cacheService.Object,
         NullLogger<BudgetReportService>.Instance);
 
+    /// <summary>
+    /// Verifies that on a cache hit, <c>GetRawDataAsync</c> returns the cached <see cref="BudgetReportRawDataDto"/>
+    /// as-is and never touches the category service to rebuild the <c>Budgetbericht</c> from scratch. This is
+    /// the core performance guarantee of the report cache: building the raw data involves several downstream
+    /// service calls (categories, purposes, rules, contacts, postings), so a hit must short-circuit all of them.
+    /// </summary>
     [Fact]
     public async Task GetRawDataAsync_ReturnsCachedResult_WithoutRebuildingBudgetbericht_WhenCacheHit()
     {
@@ -81,6 +97,12 @@ public sealed class BudgetReportServiceAdapterTests
         _categories.Verify(x => x.ListAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that passing <c>ignoreCache: true</c> makes <c>GetRawDataAsync</c> skip the cache lookup
+    /// entirely, even though a cached entry exists and would otherwise be returned. This is the escape hatch
+    /// callers need to force a fresh rebuild (e.g. an explicit "refresh report" action) without depending on
+    /// the cache having already been invalidated by other means.
+    /// </summary>
     [Fact]
     public async Task GetRawDataAsync_IgnoresCache_WhenIgnoreCacheIsTrue()
     {
@@ -98,6 +120,14 @@ public sealed class BudgetReportServiceAdapterTests
         _cacheService.Verify(x => x.GetBudgetReportRawDataAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<BudgetReportDateBasis>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// End-to-end integration check for the cache-miss path: verifies that <c>GetRawDataAsync</c> correctly
+    /// assembles a <c>Budgetbericht</c> by pulling categories, purposes, rules, contacts and matching postings
+    /// from their respective services, that a purpose-level rule's budgeted amount is attributed to the purpose
+    /// row rather than its parent category (the category's own <c>BudgetedExpense</c> stays 0), and that the
+    /// freshly built result is written back to the cache via <c>SetBudgetReportRawDataAsync</c> so subsequent
+    /// requests can hit the cache instead of repeating this assembly.
+    /// </summary>
     [Fact]
     public async Task GetRawDataAsync_BuildsBudgetberichtFromServices_AndStoresResultInCache_OnCacheMiss()
     {
@@ -138,6 +168,12 @@ public sealed class BudgetReportServiceAdapterTests
         _cacheService.Verify(x => x.SetBudgetReportRawDataAsync(ownerUserId, new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31), BudgetReportDateBasis.BookingDate, result, false, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that <c>GetMonthlyKpiAsync</c> correctly produces the planned/actual income and actual result
+    /// figures for a single month, driven by a monthly income rule tied to a purpose and one matching posting.
+    /// This exercises the full adapter path (service aggregation through to KPI mapping), complementing the
+    /// mapper-level KPI tests which operate on an already-built <c>Budgetbericht</c> directly.
+    /// </summary>
     [Fact]
     public async Task GetMonthlyKpiAsync_ComputesKpiForSingleMonth_FromMatchingPosting()
     {

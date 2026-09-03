@@ -16,6 +16,8 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>Initializes the test with the shared in-memory web application factory.</summary>
+    /// <param name="factory">The shared in-memory test host used to spin up API clients.</param>
     public ApiClientPostingsReversalTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -146,7 +148,7 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
         var (_, postingId) = await BookPostingViaStatementAsync(api);
 
         // Act
-        var result = await api.Postings_ReverseAsync(postingId);
+        var result = await api.Postings_ReverseAsync(postingId, TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().NotBeNull("reverse must succeed for the posting owner");
@@ -167,11 +169,11 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
         var (_, postingId) = await BookPostingViaStatementAsync(api);
 
         // First reversal must succeed
-        var first = await api.Postings_ReverseAsync(postingId);
+        var first = await api.Postings_ReverseAsync(postingId, TestContext.Current.CancellationToken);
         first.Should().NotBeNull("first reversal must succeed");
 
         // Act – second reversal on the same posting
-        var response = await http.PostAsync($"/api/postings/{postingId}/reverse", null);
+        var response = await http.PostAsync($"/api/postings/{postingId}/reverse", null, TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Conflict,
@@ -200,7 +202,7 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
         await RegisterUserAsync(apiBWrapper);
 
         // Act – user B tries to reverse user A's posting
-        var response = await httpB.PostAsync($"/api/postings/{postingId}/reverse", null);
+        var response = await httpB.PostAsync($"/api/postings/{postingId}/reverse", null, TestContext.Current.CancellationToken);
 
         // Assert – HTTP 400 is the actual response (InvalidOperationException mapped to 400)
         // The controller would return 403 only if the service threw UnauthorizedAccessException,
@@ -221,7 +223,7 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
         var nonExistentId = new Guid("FFFFFFFF-FFFF-FFFF-FFFF-000000000001");
 
         // Act
-        var response = await http.PostAsync($"/api/postings/{nonExistentId}/reverse", null);
+        var response = await http.PostAsync($"/api/postings/{nonExistentId}/reverse", null, TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest,
@@ -241,7 +243,7 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
         var (_, postingId) = await BookPostingViaStatementAsync(api);
 
         // Act
-        var validation = await api.Postings_ValidateReversalAsync(postingId);
+        var validation = await api.Postings_ValidateReversalAsync(postingId, TestContext.Current.CancellationToken);
 
         // Assert
         validation.Should().NotBeNull();
@@ -263,7 +265,7 @@ public sealed class ApiClientPostingsReversalTests : IClassFixture<TestWebApplic
         var anyId = new Guid("AAAAAAAA-0000-0000-0000-000000000001");
 
         // Act
-        var response = await http.PostAsync($"/api/postings/{anyId}/reverse", null);
+        var response = await http.PostAsync($"/api/postings/{anyId}/reverse", null, TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,

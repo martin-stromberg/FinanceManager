@@ -5,6 +5,12 @@ using Xunit;
 
 namespace FinanceManager.Tests.Services;
 
+/// <summary>
+/// Covers <see cref="KpiLocalStorageCache"/>, which caches KPI values in the browser's localStorage via JS
+/// interop under an "fm.kpi." key prefix. Verifies the opt-in gate (caching is a no-op unless explicitly
+/// enabled), key prefixing for per-user isolation when multiple users share a browser profile, tolerant
+/// handling of missing or corrupted cache entries, and that bulk removal only clears this application's keys.
+/// </summary>
 public sealed class KpiLocalStorageCacheTests
 {
     private sealed class FakeJSRuntime : IJSRuntime
@@ -80,6 +86,7 @@ public sealed class KpiLocalStorageCacheTests
         }
     }
 
+    /// <summary>Verifies that when caching is enabled, SetAsync writes the value under the "fm.kpi." prefixed key as JSON.</summary>
     [Fact]
     public async Task SetAsync_WhenEnabled_StoresValue()
     {
@@ -87,7 +94,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        await cache.SetAsync("my-key", 42);
+        await cache.SetAsync("my-key", 42, TestContext.Current.CancellationToken);
 
         Assert.Single(js.Store);
         Assert.True(js.Store.ContainsKey("fm.kpi.my-key"));
@@ -95,6 +102,7 @@ public sealed class KpiLocalStorageCacheTests
         Assert.Equal(42, JsonSerializer.Deserialize<int>(json));
     }
 
+    /// <summary>Verifies that reading a key that was never cached returns the default value instead of throwing.</summary>
     [Fact]
     public async Task GetAsync_WhenEnabledAndMissing_ReturnsDefault()
     {
@@ -102,11 +110,12 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        var result = await cache.GetAsync<int?>("missing");
+        var result = await cache.GetAsync<int?>("missing", TestContext.Current.CancellationToken);
 
         Assert.Null(result);
     }
 
+    /// <summary>Verifies that a previously stored JSON value is correctly deserialized back to its original type on read.</summary>
     [Fact]
     public async Task GetAsync_WhenEnabled_ReturnsCachedValue()
     {
@@ -115,11 +124,12 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        var result = await cache.GetAsync<int>("my-key");
+        var result = await cache.GetAsync<int>("my-key", TestContext.Current.CancellationToken);
 
         Assert.Equal(42, result);
     }
 
+    /// <summary>Ensures SetAsync is a no-op when the local-storage context reports caching disabled, so the feature stays strictly opt-in and never writes to a user's browser storage without consent.</summary>
     [Fact]
     public async Task SetAsync_WhenDisabled_DoesNotStore()
     {
@@ -127,11 +137,12 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(false, null));
 
-        await cache.SetAsync("my-key", 42);
+        await cache.SetAsync("my-key", 42, TestContext.Current.CancellationToken);
 
         Assert.Empty(js.Store);
     }
 
+    /// <summary>Verifies RemoveAllAsync only clears keys under this application's "fm.kpi." prefix, leaving unrelated localStorage entries from other apps or pages on the same origin untouched.</summary>
     [Fact]
     public async Task RemoveAllAsync_RemovesApplicationKeys()
     {
@@ -142,13 +153,14 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        await cache.RemoveAllAsync();
+        await cache.RemoveAllAsync(TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain("fm.kpi.my-key", js.Store.Keys);
         Assert.DoesNotContain("fm.kpi.other-key", js.Store.Keys);
         Assert.Contains("other.app.key", js.Store.Keys);
     }
 
+    /// <summary>Ensures that when the context carries a user ID, RemoveAllAsync clears only that user's keys, leaving another user's cached KPIs intact on a shared browser profile.</summary>
     [Fact]
     public async Task RemoveAllAsync_WhenUserIdIsSet_RemovesOnlyThatUser()
     {
@@ -158,12 +170,13 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, "user-a"));
 
-        await cache.RemoveAllAsync();
+        await cache.RemoveAllAsync(TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain("fm.kpi.user-a.my-key", js.Store.Keys);
         Assert.Contains("fm.kpi.user-b.my-key", js.Store.Keys);
     }
 
+    /// <summary>Verifies GetAsync builds the storage key with the user ID segment included, matching the layout RemoveAllAsync relies on to scope removals per user.</summary>
     [Fact]
     public async Task GetAsync_WithUserId_PrefixesKey()
     {
@@ -172,11 +185,12 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, "the-user"));
 
-        var result = await cache.GetAsync<int>("test");
+        var result = await cache.GetAsync<int>("test", TestContext.Current.CancellationToken);
 
         Assert.Equal(99, result);
     }
 
+    /// <summary>Ensures a cache entry that is not valid JSON (e.g. corrupted or from an incompatible older version) is treated as a cache miss and returns the default value instead of throwing a deserialization exception to the caller.</summary>
     [Fact]
     public async Task GetAsync_IgnoresMalformedJson()
     {
@@ -185,7 +199,7 @@ public sealed class KpiLocalStorageCacheTests
         var cache = new KpiLocalStorageCache(js);
         cache.SetContext(new KpiLocalStorageContext(true, null));
 
-        var result = await cache.GetAsync<int?>("my-key");
+        var result = await cache.GetAsync<int?>("my-key", TestContext.Current.CancellationToken);
 
         Assert.Null(result);
     }

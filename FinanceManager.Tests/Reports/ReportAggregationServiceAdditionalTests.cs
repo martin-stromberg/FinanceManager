@@ -8,6 +8,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers additional edge cases of <see cref="ReportAggregationService.QueryAsync"/> beyond the core suite:
+/// entity-only output when <c>IncludeCategory</c> is off, auto-injecting a zero-amount row for a group missing
+/// data in the latest period when comparisons are enabled, pruning groups with no meaningful (non-zero,
+/// no-comparison) data, the <c>Take</c> period-window limit, aggregation across Quarter/HalfYear/Year intervals
+/// with previous- and year-over-year comparisons, and grouping contacts without a category under an "_none"
+/// pseudo-category.
+/// </summary>
 public sealed class ReportAggregationServiceAdditionalTests
 {
     private static AppDbContext CreateDb()
@@ -27,6 +35,11 @@ public sealed class ReportAggregationServiceAdditionalTests
         return c;
     }
 
+    /// <summary>
+    /// With <c>IncludeCategory = false</c>, the result must contain only entity-level rows (<c>GroupKey</c>
+    /// starting "Contact:") and no synthetic category rows; and a group whose only data point is the latest
+    /// period (no earlier period to compare against) must report a null <c>PreviousAmount</c> rather than zero.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldReturnOnlyEntityRows_WhenIncludeCategoryFalse()
     {
@@ -37,12 +50,12 @@ public sealed class ReportAggregationServiceAdditionalTests
         db.ContactCategories.Add(cat);
         var c1 = CreateContact(db, user.Id, "A", cat);
         var c2 = CreateContact(db, user.Id, "B", cat);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var jan = new PostingAggregate(PostingKind.Contact, null, c1.Id, null, null, new DateTime(2025, 1, 1), AggregatePeriod.Month); jan.Add(10);
         var feb = new PostingAggregate(PostingKind.Contact, null, c2.Id, null, null, new DateTime(2025, 2, 1), AggregatePeriod.Month); feb.Add(20);
         db.PostingAggregates.AddRange(jan, feb);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 12, IncludeCategory: false, ComparePrevious: true, CompareYear: false, AnalysisDate: new DateTime(2025, 2, 1)), CancellationToken.None);
@@ -54,6 +67,12 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Null(febPoint.PreviousAmount);
     }
 
+    /// <summary>
+    /// When comparisons are enabled and one contact has no aggregate for the latest period while another does,
+    /// the query must synthesize a zero-amount row for the latest period for the missing contact, so its
+    /// <c>PreviousAmount</c> (carried from its last available period) can still be surfaced - rather than simply
+    /// omitting that contact from the latest period entirely.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldCreateZeroRowForMissingLatestPeriod_WhenComparisonsEnabled()
     {
@@ -62,14 +81,14 @@ public sealed class ReportAggregationServiceAdditionalTests
         db.Users.Add(user);
         var c1 = CreateContact(db, user.Id, "A");
         var c2 = CreateContact(db, user.Id, "B");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // c1 has Jan & Feb, c2 only Jan. Latest period Feb. IncludeCategory true to also test parent/child creation.
         var c1Jan = new PostingAggregate(PostingKind.Contact, null, c1.Id, null, null, new DateTime(2025, 1, 1), AggregatePeriod.Month); c1Jan.Add(10);
         var c1Feb = new PostingAggregate(PostingKind.Contact, null, c1.Id, null, null, new DateTime(2025, 2, 1), AggregatePeriod.Month); c1Feb.Add(20);
         var c2Jan = new PostingAggregate(PostingKind.Contact, null, c2.Id, null, null, new DateTime(2025, 1, 1), AggregatePeriod.Month); c2Jan.Add(30);
         db.PostingAggregates.AddRange(c1Jan, c1Feb, c2Jan);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var latest = new DateTime(2025, 2, 1);
@@ -82,6 +101,11 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Equal(30m, c2Feb.PreviousAmount);
     }
 
+    /// <summary>
+    /// A group whose only aggregate is a zero-amount historic period, with no current-period activity and
+    /// nothing meaningful to compare, must be pruned from the result entirely - keeping the report free of noise
+    /// rows for contacts with no real financial activity in the requested window.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldRemoveEmptyGroupWithoutComparisonData()
     {
@@ -90,12 +114,12 @@ public sealed class ReportAggregationServiceAdditionalTests
         db.Users.Add(user);
         var c1 = CreateContact(db, user.Id, "A"); // will have zero historic amount only
         var c2 = CreateContact(db, user.Id, "B");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var c1Jan = new PostingAggregate(PostingKind.Contact, null, c1.Id, null, null, new DateTime(2025, 1, 1), AggregatePeriod.Month); // amount 0
         var c2Feb = new PostingAggregate(PostingKind.Contact, null, c2.Id, null, null, new DateTime(2025, 2, 1), AggregatePeriod.Month); c2Feb.Add(50);
         db.PostingAggregates.AddRange(c1Jan, c2Feb);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 12, IncludeCategory: false, ComparePrevious: true, CompareYear: true, AnalysisDate: new DateTime(2025, 2, 1)), CancellationToken.None);
@@ -105,6 +129,10 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Contains(result.Points, p => p.GroupKey == $"Contact:{c2.Id}");
     }
 
+    /// <summary>
+    /// With 15 months of history available but <c>Take = 5</c>, the query must return exactly the most recent 5
+    /// periods relative to the analysis date (November 2024 through March 2025), not the full history.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldRespectTake_PeriodLimitation()
     {
@@ -112,7 +140,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         var user = new FinanceManager.Domain.Users.User("u", "pw", false);
         db.Users.Add(user);
         var c1 = CreateContact(db, user.Id, "A");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Create 15 consecutive months starting Jan 2024
         for (int i = 0; i < 15; i++)
@@ -122,7 +150,7 @@ public sealed class ReportAggregationServiceAdditionalTests
             agg.Add(i + 1);
             db.PostingAggregates.Add(agg);
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var take = 5;
@@ -133,6 +161,11 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Equal(new DateTime(2024, 11, 1), periods.First()); // last 5 of 15 months (2024-11 .. 2025-03)
     }
 
+    /// <summary>
+    /// Confirms the aggregation service correctly reads precomputed Quarter/HalfYear/Year
+    /// <see cref="PostingAggregate"/> rows (not just Month) and wires up previous-period and year-over-year
+    /// comparisons correctly at each of these coarser granularities.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldAggregateQuarterHalfYearYear()
     {
@@ -140,7 +173,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         var user = new FinanceManager.Domain.Users.User("u", "pw", false);
         db.Users.Add(user);
         var c = CreateContact(db, user.Id, "A");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Q1/Q2 2024, H1/H2 2024, Years 2024/2025
         var q1 = new PostingAggregate(PostingKind.Contact, null, c.Id, null, null, new DateTime(2024, 1, 1), AggregatePeriod.Quarter); q1.Add(100);
@@ -150,7 +183,7 @@ public sealed class ReportAggregationServiceAdditionalTests
         var y2024 = new PostingAggregate(PostingKind.Contact, null, c.Id, null, null, new DateTime(2024, 1, 1), AggregatePeriod.Year); y2024.Add(550);
         var y2025 = new PostingAggregate(PostingKind.Contact, null, c.Id, null, null, new DateTime(2025, 1, 1), AggregatePeriod.Year); y2025.Add(50);
         db.PostingAggregates.AddRange(q1, q2, h1, h2, y2024, y2025);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
 
@@ -171,6 +204,12 @@ public sealed class ReportAggregationServiceAdditionalTests
         Assert.Equal(550m, y2025Point.YearAgoAmount);
     }
 
+    /// <summary>
+    /// With <c>IncludeCategory = true</c>, a contact that has no assigned category must be grouped under a
+    /// synthetic "_none" pseudo-category row (<c>GroupKey = "Category:{kind}:_none"</c>) rather than being
+    /// dropped or grouped incorrectly, and the contact's own row must reference that pseudo-category via
+    /// <c>ParentGroupKey</c>.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_ShouldGroupUncategorizedContacts()
     {
@@ -178,10 +217,10 @@ public sealed class ReportAggregationServiceAdditionalTests
         var user = new FinanceManager.Domain.Users.User("u", "pw", false);
         db.Users.Add(user);
         var c1 = CreateContact(db, user.Id, "NoCat");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var agg = new PostingAggregate(PostingKind.Contact, null, c1.Id, null, null, new DateTime(2025, 3, 1), AggregatePeriod.Month); agg.Add(42);
         db.PostingAggregates.Add(agg);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 5, IncludeCategory: true, ComparePrevious: false, CompareYear: false, AnalysisDate: new DateTime(2025, 3, 1)), CancellationToken.None);
         Assert.Contains(result.Points, p => p.GroupKey == $"Category:{PostingKind.Contact}:_none" && p.Amount == 42m);

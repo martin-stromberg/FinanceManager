@@ -3,63 +3,63 @@ namespace FinanceManager.Shared.Dtos.Postings
     /// <summary>
     /// DTO representing a posting with extended metadata used by service endpoints and client view models.
     /// </summary>
+    /// <param name="Id">Unique posting identifier.</param>
+    /// <param name="BookingDate">Booking date of the posting.</param>
+    /// <param name="ValutaDate">Valuta date of the posting.</param>
+    /// <param name="Amount">Amount of the posting.</param>
+    /// <param name="Kind">Kind/category of the posting.</param>
+    /// <param name="AccountId">Bank account id when applicable.</param>
+    /// <param name="ContactId">Contact id when applicable.</param>
+    /// <param name="SavingsPlanId">Savings plan id when applicable.</param>
+    /// <param name="SecurityId">Security id when applicable.</param>
+    /// <param name="SourceId">Original domain source id for traceability.</param>
+    /// <param name="Subject">Subject or title associated with the posting.</param>
+    /// <param name="RecipientName">Recipient or counterparty name.</param>
+    /// <param name="Description">Optional description or additional details.</param>
+    /// <param name="SecuritySubType">Security sub type (enum) for security-related postings.</param>
+    /// <param name="Quantity">Optional quantity for security-related postings.</param>
+    /// <param name="GroupId">Linked group id to connect related postings.</param>
+    /// <param name="LinkedPostingId">Linked posting id when this posting has a counterpart.</param>
+    /// <param name="LinkedPostingKind">Linked posting kind (enum) when linked.</param>
+    /// <param name="LinkedPostingAccountId">Linked posting account id, when applicable.</param>
+    /// <param name="LinkedPostingAccountSymbolAttachmentId">Linked posting account symbol attachment id.</param>
+    /// <param name="LinkedPostingAccountName">Linked posting account name.</param>
+    /// <param name="BankPostingAccountId">Bank posting account id for this posting, when available.</param>
+    /// <param name="BankPostingAccountSymbolAttachmentId">Bank posting account symbol attachment id.</param>
+    /// <param name="BankPostingAccountName">Bank posting account name.</param>
+    /// <param name="IsReversed">Indicates whether this posting has been reversed by a counter-posting.</param>
+    /// <param name="IsReversal">Indicates whether this posting is itself a reversal (counter-posting).</param>
+    /// <param name="ReversedByPostingId">Id of the reversal posting that reversed this posting; populated when <see cref="IsReversed"/> is <c>true</c>.</param>
+    /// <param name="ReversalForPostingId">Id of the original posting that this posting reverses; populated when <see cref="IsReversal"/> is <c>true</c>.</param>
+    /// <param name="IsPreliminary">Indicates whether this posting is a preliminary (provisional) booking.</param>
     public sealed record PostingServiceDto(
-        /// <summary>Unique posting identifier.</summary>
         Guid Id,
-        /// <summary>Booking date of the posting.</summary>
         DateTime BookingDate,
-        /// <summary>Valuta date of the posting.</summary>
         DateTime ValutaDate,
-        /// <summary>Amount of the posting.</summary>
         decimal Amount,
-        /// <summary>Kind/category of the posting.</summary>
         PostingKind Kind,
-        /// <summary>Bank account id when applicable.</summary>
         Guid? AccountId,
-        /// <summary>Contact id when applicable.</summary>
         Guid? ContactId,
-        /// <summary>Savings plan id when applicable.</summary>
         Guid? SavingsPlanId,
-        /// <summary>Security id when applicable.</summary>
         Guid? SecurityId,
-        /// <summary>Original domain source id for traceability.</summary>
         Guid SourceId,
-        /// <summary>Subject or title associated with the posting.</summary>
         string? Subject,
-        /// <summary>Recipient or counterparty name.</summary>
         string? RecipientName,
-        /// <summary>Optional description or additional details.</summary>
         string? Description,
-        /// <summary>Security sub type (enum) for security-related postings.</summary>
         SecurityPostingSubType? SecuritySubType,
-        /// <summary>Optional quantity for security-related postings.</summary>
         decimal? Quantity,
-        /// <summary>Linked group id to connect related postings.</summary>
         Guid GroupId,
-        /// <summary>Linked posting id when this posting has a counterpart.</summary>
         Guid? LinkedPostingId,
-        /// <summary>Linked posting kind (enum) when linked.</summary>
         PostingKind? LinkedPostingKind,
-        /// <summary>Linked posting account id, when applicable.</summary>
         Guid? LinkedPostingAccountId,
-        /// <summary>Linked posting account symbol attachment id.</summary>
         Guid? LinkedPostingAccountSymbolAttachmentId,
-        /// <summary>Linked posting account name.</summary>
         string? LinkedPostingAccountName,
-        /// <summary>Bank posting account id for this posting, when available.</summary>
         Guid? BankPostingAccountId,
-        /// <summary>Bank posting account symbol attachment id.</summary>
         Guid? BankPostingAccountSymbolAttachmentId,
-        /// <summary>Bank posting account name.</summary>
         string? BankPostingAccountName,
-        /// <summary>Indicates whether this posting has been reversed by a counter-posting.</summary>
         bool IsReversed,
-        /// <summary>Indicates whether this posting is itself a reversal (counter-posting).</summary>
         bool IsReversal,
-        /// <summary>Id of the reversal posting that reversed this posting; populated when <see cref="IsReversed"/> is <c>true</c>.</summary>
         Guid? ReversedByPostingId,
-        /// <summary>Id of the original posting that this posting reverses; populated when <see cref="IsReversal"/> is <c>true</c>.</summary>
         Guid? ReversalForPostingId,
-        /// <summary>Indicates whether this posting is a preliminary (provisional) booking.</summary>
         bool IsPreliminary = false);
 }

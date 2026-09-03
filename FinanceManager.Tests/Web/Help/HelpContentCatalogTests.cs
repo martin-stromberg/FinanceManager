@@ -2,6 +2,14 @@ using FinanceManager.Web.Services.Help;
 
 namespace FinanceManager.Tests.Web.Help;
 
+/// <summary>
+/// Tests for <see cref="HelpContentCatalog"/>, the curated list of user-facing help topics and documents:
+/// that the catalog only exposes reviewed, non-technical content; that route-to-document resolution correctly
+/// maps a topic route to its primary document and rejects technical-only document names; and that the search
+/// index built from the catalog stays in sync with it. Also cross-checks the real on-disk
+/// <c>Docs/help</c> tree against the catalog so a document referenced by the catalog always exists and never
+/// leaks implementation details (class/endpoint names, config keys) into user-facing help text.
+/// </summary>
 public sealed class HelpContentCatalogTests
 {
     private static readonly string[] TechnicalContentMarkers =
@@ -18,6 +26,11 @@ public sealed class HelpContentCatalogTests
         "ExecutablePath"
     ];
 
+    /// <summary>
+    /// Verifies the exact expected topic count and that the catalog includes a known reviewed topic while
+    /// excluding an internal/unreviewed one (<c>bestandsaufnahme</c>), guarding against an unreviewed
+    /// documentation folder being accidentally published to end users.
+    /// </summary>
     [Fact]
     public void Topics_ContainsReviewedUserHelpTopicsOnly()
     {
@@ -26,6 +39,12 @@ public sealed class HelpContentCatalogTests
         Assert.DoesNotContain(HelpContentCatalog.Topics, topic => topic.Id == "bestandsaufnahme");
     }
 
+    /// <summary>
+    /// Verifies that document names reserved for technical/implementation documentation (API reference, data
+    /// model, business rules, technical flow, deployment) never resolve through the public help route, even
+    /// though the underlying markdown files exist on disk for internal reference.
+    /// </summary>
+    /// <param name="document">A technical-only document name that must not be publicly resolvable.</param>
     [Theory]
     [InlineData("api")]
     [InlineData("datenmodell")]
@@ -47,6 +66,10 @@ public sealed class HelpContentCatalogTests
         Assert.False(resolved);
     }
 
+    /// <summary>
+    /// Verifies that resolving a bare topic route (no explicit document segment) maps to that topic's primary
+    /// "beschreibung" document and the corresponding markdown file path on disk.
+    /// </summary>
     [Fact]
     public void TryResolveDocument_MapsTopicRouteToReviewedPrimaryDocument()
     {
@@ -66,6 +89,11 @@ public sealed class HelpContentCatalogTests
         Assert.EndsWith(Path.Combine("budgetplanung", "beschreibung.md"), markdownPath);
     }
 
+    /// <summary>
+    /// Verifies that the search index built from the on-disk docs has exactly one entry per catalog topic,
+    /// using the topics' own ids, and that no indexed document id contains a nested path segment — the index
+    /// is meant to surface topics, not every individual sub-document.
+    /// </summary>
     [Fact]
     public void HelpSearchIndexBuilder_UsesCatalogTopicsAndPrimaryDocuments()
     {
@@ -80,6 +108,12 @@ public sealed class HelpContentCatalogTests
         Assert.DoesNotContain(index.Documents, document => document.Id.Contains('/', StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Verifies that no topic in the catalog publishes a document whose file name is on the
+    /// <see cref="HelpContentCatalog.TechnicalOnlyDocumentNames"/> list, and that every document the catalog
+    /// does reference actually exists on disk — catching both an accidental technical-doc publish and a
+    /// broken/renamed markdown file reference.
+    /// </summary>
     [Fact]
     public void CatalogDocuments_ExistAndDoNotPublishTechnicalOnlyFiles()
     {
@@ -101,6 +135,12 @@ public sealed class HelpContentCatalogTests
         }
     }
 
+    /// <summary>
+    /// Verifies that the content of every published help document is free of technical implementation
+    /// markers (class/type name fragments like "Controller"/"ViewModel", config keys like "Jwt:", etc.) —
+    /// a content-level guard against implementation details leaking into user-facing help text, complementing
+    /// the file-name-based check in <see cref="CatalogDocuments_ExistAndDoNotPublishTechnicalOnlyFiles"/>.
+    /// </summary>
     [Fact]
     public void CatalogDocuments_DoNotContainTechnicalImplementationMarkers()
     {
