@@ -35,7 +35,16 @@ const releasePlugins = [
   [
     "@semantic-release/github",
     {
-      assets: releaseAssets
+      assets: releaseAssets,
+      // The default GITHUB_TOKEN only has `contents: write` - it cannot comment on the PR(s)
+      // associated with a released commit, which is what the plugin's "success"/"fail" steps
+      // otherwise attempt by default. Without this, any release whose commit has an associated
+      // PR (e.g. the routine staging->main promotion PR) fails at that final comment step with
+      // a GraphQL "Resource not accessible by integration" error, even though the release
+      // itself was already published successfully. Discovered via a real production incident
+      // on msTools.Updater.
+      successComment: false,
+      failComment: false
     }
   ]
 ];
