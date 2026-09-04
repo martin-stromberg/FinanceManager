@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
 const NEXT_RELEASE_PATTERN = /The next release version is\s+(\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)/i;
-const AUTOMATIC_RELEASE_BRANCHES = ["master", "staging"];
+// Only "main" triggers an automatic release here - staging pushes are handled entirely by
+// staging-ci.yml ("Pre-Release") and never reach this script (ci-target-schema.md section 4.8).
+const AUTOMATIC_RELEASE_BRANCHES = ["main"];
 
 export function parseManualTag(tagName) {
   if (!tagName?.startsWith("v")) {
@@ -74,7 +76,7 @@ function runSemanticReleaseDryRun() {
   );
   const result = spawnSync(process.execPath, [semanticReleaseBinary, "--dry-run"], {
     encoding: "utf8",
-    env: { ...process.env, CI: "true" },
+    env: { ...process.env, CI: "true", RESOLVE_DRY_RUN: "true" },
     stdio: ["ignore", "pipe", "pipe"]
   });
 
@@ -195,8 +197,20 @@ function releaseVersion(release) {
   }
 }
 
+// Only ever considers stable (non-prerelease) releases: release.yml owns exclusively stable
+// vX.Y.Z releases, never RC/prerelease tags (those are staging-ci.yml's domain). Without this
+// guard, an old, unrelated prerelease that legitimately never got an asset (e.g. one created by
+// a since-replaced version of the pipeline) could be picked up and "repaired" by an unrelated
+// later push to main - checking out its old commit, where current workflow files like a
+// composite action may not even exist yet, breaking the run outright. Discovered via a real
+// production incident on msTools.Updater (an ancient v0.5.2-rc.5 prerelease was picked up this
+// way and broke a routine promotion release).
 function incompleteReleases(releases) {
   return releases.filter((release) => {
+    if (release.prerelease) {
+      return false;
+    }
+
     const version = releaseVersion(release);
     return version && !releaseHasExpectedAsset(release, version);
   });

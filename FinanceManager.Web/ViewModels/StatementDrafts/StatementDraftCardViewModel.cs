@@ -50,8 +50,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                 if (EmbeddedList is StatementDraftEntriesListViewModel evm)
                 {
                     evm.ApplyBatchValidationErrors(error);
-                        // request UI focus on the first invalid row so user can correct it
-                        evm.RequestFocusFirstInvalid();
+                    // request UI focus on the first invalid row so user can correct it
+                    evm.RequestFocusFirstInvalid();
                 }
                 // also set a generic card-level error (localized when possible)
                 try
@@ -242,6 +242,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                 new CardField("Card_Caption_StatementDrafts_File", CardFieldKind.Text, text: Draft.OriginalFileName ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Description", CardFieldKind.Text, text: Draft.Description ?? string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Status", CardFieldKind.Text, text: Draft.Status.ToString()),
+                new CardField("Card_Caption_StatementDrafts_IsPreliminary", CardFieldKind.Text, text: Draft.IsPreliminary ? (ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>()["StatementDraft_IsPreliminary"].Value ?? "Yes") : string.Empty),
                 new CardField("Card_Caption_StatementDrafts_Entries", CardFieldKind.Text, text: $"{(Draft.Entries?.Count(e => e.Status != StatementDraftEntryStatus.AlreadyBooked && e.Status != StatementDraftEntryStatus.Announced) ?? 0)} ({(Draft.Entries?.Count ?? 0)})"),
                 // Sum of all entry amounts
                 new CardField("Card_Caption_StatementDrafts_SumAmounts", CardFieldKind.Currency, text: sumAmounts.ToString("C", CultureInfo.CurrentCulture), amount: sumAmounts)
@@ -266,6 +267,11 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
             try
             {
                 await entriesVm.InitializeAsync();
+
+                if (Navigation.ToAbsoluteUri(Navigation.Uri).Query.Contains("quickEdit=true", StringComparison.OrdinalIgnoreCase))
+                {
+                    await entriesVm.BeginQuickEditAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -340,8 +346,8 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navItems));
 
         // Manage group
-            // Manage group (primary actions)
-            var manageItems = new List<UiRibbonAction>
+        // Manage group (primary actions)
+        var manageItems = new List<UiRibbonAction>
         {
             // Save should be enabled when there are pending changes (including create-mode selections)
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })) { MobileShortcut = true },

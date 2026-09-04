@@ -1,4 +1,4 @@
-﻿using Bunit; // added for Self contact
+using Bunit; // added for Self contact
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Contacts;
@@ -99,15 +99,20 @@ public sealed class StatementDraftImportSplitTests
         return drafts;
     }
 
+    /// <summary>
+    /// FixedSize split mode must chunk the imported entries into successive drafts of at most
+    /// <c>maxEntriesPerDraft</c> each (3, 3, 1 for 7 entries with a max of 3), label each chunk's description with
+    /// a "(Teil N)" part suffix, and report <c>EffectiveMonthly = false</c> in <c>LastImportSplitInfo</c>.
+    /// </summary>
     [Fact]
     public async Task FixedSizeMode_ShouldChunk_ByMaxEntries()
     {
         var (sut, db, conn, user) = Create();
         var lines = Enumerable.Range(0, 7).Select(i => (new DateTime(2024, 3, 10).AddDays(i), 10m + i, $"L{i}"));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.FixedSize, 3, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(3, drafts.Count);
         var counts = drafts.Select(d => d.EntryCount).ToArray();
@@ -117,6 +122,10 @@ public sealed class StatementDraftImportSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Monthly split mode must group imported entries into exactly one draft per calendar month, with each
+    /// draft's description ending in the month's "yyyy-MM" identifier, and report <c>EffectiveMonthly = true</c>.
+    /// </summary>
     [Fact]
     public async Task MonthlyMode_ShouldProduceOneDraftPerMonth()
     {
@@ -129,9 +138,9 @@ public sealed class StatementDraftImportSplitTests
             (new DateTime(2024,2,2), 13m, "D")
         };
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.Monthly, 100, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(2, drafts.Count);
         Assert.True(drafts.All(d => d.Description!.EndsWith("2024-01") || d.Description!.EndsWith("2024-02")));
@@ -139,15 +148,20 @@ public sealed class StatementDraftImportSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When a single month's entry count exceeds <c>maxEntriesPerDraft</c>, Monthly mode must further chunk that
+    /// month into multiple "(Teil N)"-labeled parts (2, 2, 1 for 5 entries with a max of 2), combining the
+    /// monthly grouping with the fixed-size safety cap.
+    /// </summary>
     [Fact]
     public async Task MonthlyMode_ShouldSplitMonth_WhenExceedsMax()
     {
         var (sut, db, conn, user) = Create();
         var lines = Enumerable.Range(0, 5).Select(i => (new DateTime(2024, 4, 1).AddDays(i), 1m + i, $"X{i}"));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.Monthly, 2, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(3, drafts.Count);
         var counts = drafts.Select(d => d.EntryCount).ToArray();
@@ -157,6 +171,12 @@ public sealed class StatementDraftImportSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// In <see cref="ImportSplitMode.MonthlyOrFixed"/> (hybrid) mode, when the total imported entry count exceeds
+    /// the configured <c>monthlySplitThreshold</c>, the current implementation switches to monthly grouping (one
+    /// draft per month) rather than fixed-size chunking - documents the current threshold-crossing behavior as a
+    /// TDD baseline (see the class-level note about <c>MinEntriesPerDraft</c> not yet being applied).
+    /// </summary>
     [Fact]
     public async Task HybridMode_UsesMonthly_WhenTotalGreaterThanThreshold_CurrentImplementation()
     {
@@ -164,24 +184,28 @@ public sealed class StatementDraftImportSplitTests
         var lines = Enumerable.Range(0, 6).Select(i => (new DateTime(2024, 1, 1).AddDays(i), 1m, $"J{i}"))
             .Concat(Enumerable.Range(0, 6).Select(i => (new DateTime(2024, 2, 1).AddDays(i), 1m, $"K{i}")));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.MonthlyOrFixed, 8, 8, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(2, drafts.Count);
         Assert.True(sut.LastImportSplitInfo!.EffectiveMonthly);
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Conversely, when the total entry count does not exceed the configured threshold, hybrid mode stays in
+    /// fixed-size mode and produces a single draft containing all entries rather than splitting by month.
+    /// </summary>
     [Fact]
     public async Task HybridMode_UsesFixed_WhenTotalNotGreaterThanThreshold_CurrentImplementation()
     {
         var (sut, db, conn, user) = Create();
         var lines = Enumerable.Range(0, 6).Select(i => (new DateTime(2024, 3, 1).AddDays(i), 1m, $"H{i}"));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.MonthlyOrFixed, 10, 10, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(1, drafts.Count);
         Assert.Equal(6, drafts[0].EntryCount);
@@ -189,6 +213,11 @@ public sealed class StatementDraftImportSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Documents the current (pre-<c>minEntriesPerDraft</c>-enforcement) baseline: a month with very few entries
+    /// (just one) is not yet merged into a neighboring month and remains its own standalone draft, even though it
+    /// would fall below what later becomes the minimum-entries-per-draft threshold.
+    /// </summary>
     [Fact]
     public async Task MonthlyMode_SmallMonth_RemainsStandalone_BeforeMinEntriesLogic()
     {
@@ -197,9 +226,9 @@ public sealed class StatementDraftImportSplitTests
         lines.Add((new DateTime(2024, 5, 15), 5m, "Solo"));
         lines.AddRange(Enumerable.Range(0, 9).Select(i => (new DateTime(2024, 6, 1).AddDays(i), 1m + i, $"M{i}")));
         var payload = BuildBackupPayload(lines);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
         u.SetImportSplitSettings(ImportSplitMode.Monthly, 50, null, 1);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
         var drafts = await ImportAsync(sut, db, user, payload);
         Assert.Equal(2, drafts.Count);
         var ordered = drafts.Select(d => d.EntryCount).OrderBy(x => x).ToArray();
@@ -207,6 +236,11 @@ public sealed class StatementDraftImportSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Test case matrix for <see cref="MonthlyMode_ShouldMergeSmallMonths_WhenBelowMinEntries"/>: describes how
+    /// consecutive small months should be merged with their neighbors once a minimum entries-per-draft threshold
+    /// is configured - covering merges at the start, middle, end, and across multiple consecutive undersized months.
+    /// </summary>
     public static IEnumerable<object[]> MonthlyMinEntriesMergeCases =>
         new[]
         {
@@ -219,6 +253,15 @@ public sealed class StatementDraftImportSplitTests
             new object[] { new[] { 19, 1, 1, 19 }, 5, new[] { 20, 20 } },
         };
 
+    /// <summary>
+    /// When <c>minEntriesPerDraft</c> is configured, Monthly mode must merge a month whose entry count falls below
+    /// the minimum into an adjacent month's draft - regardless of whether the undersized month occurs first,
+    /// last, in the middle, or spans several consecutive small months - producing the draft counts prescribed by
+    /// <see cref="MonthlyMinEntriesMergeCases"/>.
+    /// </summary>
+    /// <param name="monthEntryCounts">Number of entries to generate for each consecutive month, in order.</param>
+    /// <param name="minEntriesPerDraft">The minimum-entries-per-draft threshold under which a month gets merged.</param>
+    /// <param name="expectedDrafts">Expected entry count of each resulting draft, in order, after merging.</param>
     [Theory]
     [MemberData(nameof(MonthlyMinEntriesMergeCases))]
     public async Task MonthlyMode_ShouldMergeSmallMonths_WhenBelowMinEntries(int[] monthEntryCounts, int minEntriesPerDraft, int[] expectedDrafts)
@@ -238,11 +281,11 @@ public sealed class StatementDraftImportSplitTests
         }
 
         var payload = BuildBackupPayload(all);
-        var u = await db.Users.SingleAsync();
+        var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
         // Max gro� genug w�hlen, damit kein Split wegen Max greift
         u.SetImportSplitSettings(ImportSplitMode.Monthly, maxEntriesPerDraft: 500, monthlySplitThreshold: null, minEntriesPerDraft: minEntriesPerDraft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
 
         // Act
         var drafts = await ImportAsync(sut, db, user, payload);

@@ -5,6 +5,7 @@
 @using FinanceManager.Shared.Dtos.Statements
 @using System.Linq
 @using System.Collections.Generic
+@using System.Globalization
 @inject IServiceProvider ServiceProvider
 @inject IJSRuntime JS
 
@@ -33,13 +34,26 @@
             vm?.SetEditValue(id, "Amount", null);
     }
 
-    private void OnDateChanged(ChangeEventArgs e, Guid id)
+    private async Task OnDateChanged(ChangeEventArgs e, Guid id)
     {
         var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
-        if (DateTime.TryParse(e?.Value?.ToString(), out var dt))
-            vm?.SetEditValue(id, "BookingDate", dt.Date);
-        else
-            vm?.SetEditValue(id, "BookingDate", null);
+        if (vm == null) return;
+
+        var oldValuta = vm.GetEditValue(id, "ValutaDate");
+        vm.SetBookingDateFromUi(id, e?.Value?.ToString());
+        var newValuta = vm.GetEditValue(id, "ValutaDate");
+
+        if (!object.Equals(oldValuta, newValuta))
+        {
+            await JS.InvokeVoidAsync("financeManager.quickEdit.applyValues", new[]
+            {
+                new
+                {
+                    id = GetElementId(id, "ValutaDate"),
+                    value = FormatEditValue(newValuta, "ValutaDate")
+                }
+            });
+        }
     }
 
     private void ResetRow(Guid id)
@@ -57,10 +71,19 @@
     private void OnValutaChanged(ChangeEventArgs e, Guid id)
     {
         var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
-        if (DateTime.TryParse(e?.Value?.ToString(), out var dt))
-            vm?.SetEditValue(id, "ValutaDate", dt.Date);
-        else
-            vm?.SetEditValue(id, "ValutaDate", null);
+        vm?.SetValutaDateFromUi(id, e?.Value?.ToString());
+    }
+
+    private async Task OnRowBlur(Guid id)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        if (vm == null) return;
+
+        var stillInRow = await JS.InvokeAsync<bool>("financeManager.quickEdit.isFocusInsideRow", $"qe_row_{id}");
+        if (!stillInRow)
+        {
+            vm.ValidateQuickEditRow(id);
+        }
     }
 
     private void OnBookingDescriptionChanged(ChangeEventArgs e, Guid id)
@@ -166,6 +189,113 @@
         // If no translation key format or translation not found, return the original message
         return message;
     }
+
+    private async Task OnKeyDown(KeyboardEventArgs e, Guid id, string field)
+    {
+        var vm = ViewModel as FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel;
+        if (e.CtrlKey && (e.Key == "ArrowUp" || e.Key == "ArrowDown"))
+        {
+            if (vm != null)
+            {
+                await FocusAdjacentQuickEditFieldAsync(vm, id, field, e.Key == "ArrowUp" ? -1 : 1);
+            }
+
+            return;
+        }
+
+        if (e.Key != "F8" || vm == null) return;
+
+        if (e.CtrlKey)
+        {
+            vm.TakeAllValuesFromAbove(id);
+            var values = new List<object>();
+            foreach (var f in vm.EditableFields)
+            {
+                values.Add(new
+                {
+                    id = GetElementId(id, f),
+                    value = FormatEditValue(vm.GetEditValue(id, f), f)
+                });
+            }
+            await JS.InvokeVoidAsync("financeManager.quickEdit.applyValues", values);
+        }
+        else
+        {
+            vm.TakeValueFromAbove(id, field);
+            await JS.InvokeVoidAsync("financeManager.quickEdit.applyValues", new[]
+            {
+                new
+                {
+                    id = GetElementId(id, field),
+                    value = FormatEditValue(vm.GetEditValue(id, field), field)
+                }
+            });
+        }
+    }
+
+    private async Task FocusAdjacentQuickEditFieldAsync(
+        FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel vm,
+        Guid id,
+        string field,
+        int offset)
+    {
+        var visibleItems = vm.VisibleQuickEditItems;
+        var currentIndex = -1;
+        for (var i = 0; i < visibleItems.Count; i++)
+        {
+            if (visibleItems[i].Id == id)
+            {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex < 0)
+        {
+            return;
+        }
+
+        for (var targetIndex = currentIndex + offset;
+             targetIndex >= 0 && targetIndex < visibleItems.Count;
+             targetIndex += offset)
+        {
+            var target = visibleItems[targetIndex];
+            if (!vm.IsRowEditable(target))
+            {
+                continue;
+            }
+
+            var targetElementId = GetElementId(target.Id, field);
+            if (string.IsNullOrWhiteSpace(targetElementId))
+            {
+                return;
+            }
+
+            await JS.InvokeVoidAsync("financeManager.quickEdit.focusById", targetElementId);
+            return;
+        }
+    }
+
+    private string GetElementId(Guid id, string field) => field switch
+    {
+        "BookingDate" => $"qe_booking_{id}",
+        "ValutaDate" => $"qe_valuta_{id}",
+        "Amount" => $"qe_amount_{id}",
+        "BookingDescription" => $"qe_description_{id}",
+        "RecipientName" => $"qe_recipient_{id}",
+        "Subject" => $"qe_subject_{id}",
+        _ => string.Empty
+    };
+
+    private string FormatEditValue(object? value, string field)
+    {
+        if (value == null) return string.Empty;
+        if ((field == "BookingDate" || field == "ValutaDate") && value is DateTime dt)
+            return dt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (value is decimal dec)
+            return dec.ToString(CultureInfo.CurrentCulture);
+        return value.ToString() ?? string.Empty;
+    }
 }
 
 @{
@@ -203,12 +333,6 @@ else
                             return vm.Columns[idx].Title ?? fallback;
                         return fallback;
                     }
-                    string? GetWidth(int idx)
-                    {
-                        if (vm.Columns != null && vm.Columns.Count > idx)
-                            return vm.Columns[idx].Width;
-                        return null;
-                    }
                     var dateTitle = GetTitle(1, localizer != null ? (localizer["List_Th_Date"].Value ?? "Date") : "Date");
                     var amountTitle = GetTitle(2, localizer != null ? (localizer["List_Th_Amount"].Value ?? "Amount") : "Amount");
                     var recipientTitle = GetTitle(3, localizer != null ? (localizer["List_Th_Recipient"].Value ?? "Recipient") : "Recipient");
@@ -240,9 +364,13 @@ else
                 var rowStyle = isMuted ? "cursor:pointer;opacity:.6;" : "cursor:pointer;";
                 var rowClass = item.IsPlaceholder ? "quick-edit-placeholder-row" : isMuted ? "muted-row" : item.IsNew ? "quick-edit-new-row" : null;
 
-                <tr @key="item.Id" class="@rowClass" style="@rowStyle">
+                <tr id="qe_row_@item.Id" @key="item.Id" class="@rowClass" style="@rowStyle">
                     @* Booking date *@
                     <td style="text-align:left;vertical-align:middle;">
+                        @if (rec != null && !string.IsNullOrWhiteSpace(rec.Hint))
+                        {
+                            <span style="color:#ffc107;margin-right:.25rem;font-weight:bold;cursor:help;" title="@rec.Hint">!</span>
+                        }
                         @if (editable)
                         {
                             var bdVal = vm.GetEditValue(item.Id, "BookingDate");
@@ -250,10 +378,7 @@ else
                             if (bdVal is DateTime bdt) bd = bdt;
                             else if (bdVal != null && DateTime.TryParse(bdVal.ToString(), out var pb)) bd = pb;
                             var bdInput = bd.HasValue ? bd.Value.ToString("yyyy-MM-dd") : string.Empty;
-                            <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" value="@bdInput" @onchange="(ChangeEventArgs e) => {
-                                var s = e?.Value?.ToString() ?? string.Empty;
-                                if (DateTime.TryParse(s, out var dt)) OnDateChanged(new ChangeEventArgs{Value = s}, item.Id); else OnDateChanged(new ChangeEventArgs{Value = null}, item.Id);
-                            }" />
+                            <input id="qe_booking_@item.Id" type="date" class="form-control form-control-sm" data-fm-quickedit-keepalive value="@bdInput" @onchange="@(e => OnDateChanged(e, item.Id))" @onblur="async (e) => await OnRowBlur(item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDate")' />
                         }
                         else
                         {
@@ -275,7 +400,7 @@ else
                             }
 
                             string inputVal = valDate.HasValue ? valDate.Value.ToString("yyyy-MM-dd") : string.Empty;
-                            <input type="date" class="form-control form-control-sm" value="@inputVal" @onchange="@(e => OnValutaChanged(e, item.Id))" />
+                            <input id="qe_valuta_@item.Id" type="date" class="form-control form-control-sm" data-fm-quickedit-keepalive value="@inputVal" @onchange="@(e => OnValutaChanged(e, item.Id))" @onblur="async (e) => await OnRowBlur(item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "ValutaDate")' />
                         }
                         else
                         {
@@ -287,7 +412,7 @@ else
                     <td style="text-align:right;vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm text-end" value="@((vm.GetEditValue(item.Id, "Amount") as decimal?)?.ToString())" @oninput="(e) => OnAmountChanged(e, item.Id)" />
+                            <input id="qe_amount_@item.Id" class="form-control form-control-sm text-end" data-fm-quickedit-keepalive value="@((vm.GetEditValue(item.Id, "Amount") as decimal?)?.ToString())" @oninput="(e) => OnAmountChanged(e, item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Amount")' />
                         }
                         else
                         {
@@ -299,7 +424,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "BookingDescription") as string ?? item.BookingDescription ?? string.Empty)' @oninput="@(e => OnBookingDescriptionChanged(e, item.Id))" />
+                            <input id="qe_description_@item.Id" class="form-control form-control-sm" data-fm-quickedit-keepalive value='@(vm.GetEditValue(item.Id, "BookingDescription") as string ?? item.BookingDescription ?? string.Empty)' @oninput="@(e => OnBookingDescriptionChanged(e, item.Id))" @onblur="async (e) => await OnRowBlur(item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "BookingDescription")' />
                         }
                         else
                         {
@@ -311,7 +436,7 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "RecipientName") as string ?? item.RecipientName ?? string.Empty)' @oninput="(e) => OnRecipientChanged(e, item.Id)" />
+                            <input id="qe_recipient_@item.Id" class="form-control form-control-sm" data-fm-quickedit-keepalive value='@(vm.GetEditValue(item.Id, "RecipientName") as string ?? item.RecipientName ?? string.Empty)' placeholder='@(vm.RecipientPlaceholder ?? string.Empty)' @oninput="(e) => OnRecipientChanged(e, item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "RecipientName")' />
                         }
                         else
                         {
@@ -323,12 +448,31 @@ else
                     <td style="vertical-align:middle;">
                         @if (editable)
                         {
-                            <input class="form-control form-control-sm" value='@(vm.GetEditValue(item.Id, "Subject") as string ?? item.Subject ?? string.Empty)' @oninput="(e) => OnSubjectChanged(e, item.Id)" />
+                            <input id="qe_subject_@item.Id" class="form-control form-control-sm" data-fm-quickedit-keepalive value='@(vm.GetEditValue(item.Id, "Subject") as string ?? item.Subject ?? string.Empty)' @oninput="(e) => OnSubjectChanged(e, item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)" @onkeydown='(e) => OnKeyDown(e, item.Id, "Subject")' />
                         }
                         else
                         {
                             <span>@(string.IsNullOrWhiteSpace(item.Subject) ? string.Empty : item.Subject)</span>
-                            <BudgetImpactBadge HintType="@GetHighestSeverity(item.BudgetImpact)" TooltipText="@GetBudgetTooltip(item.BudgetImpact)" />
+                            @if (GetHighestSeverity(item.BudgetImpact) is BudgetImpactHintType budgetSeverity)
+                            {
+                                var budgetIconName = budgetSeverity switch
+                                {
+                                    BudgetImpactHintType.Exceeded => "alert-circle",
+                                    BudgetImpactHintType.AlmostExhausted => "alert-triangle",
+                                    BudgetImpactHintType.StronglyChanged => "info",
+                                    _ => "info"
+                                };
+                                var budgetColorStyle = budgetSeverity switch
+                                {
+                                    BudgetImpactHintType.Exceeded => "color:var(--error-color,#c0392b);",
+                                    BudgetImpactHintType.AlmostExhausted => "color:var(--warning-color,#f39c12);",
+                                    BudgetImpactHintType.StronglyChanged => "color:var(--info-color,#3498db);",
+                                    _ => ""
+                                };
+                                <span class="budget-impact-badge" style="display:inline-flex;vertical-align:middle;margin-left:.25rem;@budgetColorStyle" title="@GetBudgetTooltip(item.BudgetImpact)">
+                                    <svg style="width:1rem;height:1rem;" aria-hidden="true"><use href="/icons/sprite.svg#@budgetIconName" /></svg>
+                                </span>
+                            }
                         }
                     </td>
 
@@ -339,19 +483,19 @@ else
                     <td style="vertical-align:middle;display:flex;gap:.25rem;align-items:center;">
                         @if (editable && !item.IsPlaceholder)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => ResetRow(item.Id)">@(localizer != null ? localizer["Ribbon_Reset"].Value : "Reset")</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => ResetRow(item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)">@(localizer != null ? localizer["Ribbon_Reset"].Value : "Reset")</button>
                         }
                         @if (vm.CanDeleteRow(item))
                         {
                             var deleteLabel = localizer != null ? (localizer["QuickEdit_DeleteRow"].ResourceNotFound ? "Delete row" : localizer["QuickEdit_DeleteRow"].Value) : "Delete row";
-                            <button type="button" class="quick-edit-delete-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)">
+                            <button type="button" class="quick-edit-delete-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)">
                                 <svg aria-hidden="true"><use href="/icons/sprite.svg#delete"></use></svg>
                             </button>
                         }
                         @* Show Reset Dup only for items marked as AlreadyBooked (duplicate) *@
                         @if (isMuted)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset duplicate status")" style="pointer-events:auto;" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="@(() => ResetDuplicateStatus(item.Id))" @onpointerdown="@(() => ResetDuplicateStatus(item.Id))">@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset Dup")</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset duplicate status")" style="pointer-events:auto;" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="@(() => ResetDuplicateStatus(item.Id))" @onpointerdown="@(() => ResetDuplicateStatus(item.Id))" @onblur="async (e) => await OnRowBlur(item.Id)">@(localizer != null ? localizer["Ribbon_ResetDuplicate"].Value : "Reset Dup")</button>
                         }
                     </td>
                 </tr>
@@ -370,4 +514,23 @@ else
             }
         </tbody>
     </table>
+}
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ViewModel is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntriesListViewModel vm)
+        {
+            var focusId = vm.ConsumeFocusQuickEditBookingDate();
+            if (focusId.HasValue)
+            {
+                try
+                {
+                    await Task.Yield();
+                    await JS.InvokeVoidAsync("eval", $"document.getElementById('qe_booking_{focusId}')?.focus()");
+                }
+                catch { }
+            }
+        }
+    }
 }

@@ -23,6 +23,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
             var subjectLabel = Localizer?["List_Th_Postings_Subject"].Value ?? "Subject";
             var descriptionLabel = Localizer?["List_Th_Postings_Description"].Value ?? "Description";
             var stornoLabel = Localizer?["List_Th_Postings_IsReversal"].Value ?? "Storno";
+            var preliminaryLabel = Localizer?["List_Th_Postings_IsPreliminary"].Value ?? "Vorläufig";
 
             Columns = new[] {
                 new ListColumn("date", dateLabel, Align: ListColumnAlign.Left, Width: "8rem"),
@@ -32,6 +33,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                 new ListColumn("recipient", recipientLabel),
                 new ListColumn("subject", subjectLabel, Width: "22%"),
                 new ListColumn("description", descriptionLabel),
+                new ListColumn("preliminary", preliminaryLabel, Align: ListColumnAlign.Left, Width: "5rem"),
                 new ListColumn("storno", stornoLabel, Align: ListColumnAlign.Left, Width: "5rem")
             };
             _take = 50;
@@ -96,7 +98,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
         protected abstract Task<IReadOnlyList<PostingServiceDto>?> QueryPageAsync(IApiClient api, int skip, int take, string search, DateTime? from, DateTime? to);
 
         /// <summary>
-        /// Builds <see cref="Records"/> from the current <see cref="Items"/>. The default implementation maps the Posting fields
+        /// Builds <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Records"/> from the current <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/>. The default implementation maps the Posting fields
         /// into table cells and constructs navigation wrapper items that implement <see cref="IListItemNavigation"/>.
         /// </summary>
         protected override void BuildRecords()
@@ -114,6 +116,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                     new ListCell(ListCellKind.Text, Text: i.RecipientName ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Subject ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty),
+                    new ListCell(ListCellKind.Text, Text: i.IsPreliminary ? "✓" : string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.IsReversal ? "✓" : (i.IsReversed ? "—" : string.Empty))
                 }, navItem);
             }).ToList();
@@ -127,7 +130,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
         /// </summary>
         /// <param name="Posting">Posting DTO wrapped by this navigation item.</param>
         protected sealed record PostingListItem(PostingServiceDto Posting) : IListItemNavigation
-         {
+        {
             /// <summary>
             /// Returns the target URL for navigating to the posting card.
             /// </summary>

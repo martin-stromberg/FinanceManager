@@ -9,6 +9,10 @@ public sealed class PortfolioAnalysisReportE2ETests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PortfolioAnalysisReportE2ETests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public PortfolioAnalysisReportE2ETests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;

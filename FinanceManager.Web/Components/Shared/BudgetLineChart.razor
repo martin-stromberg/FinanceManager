@@ -126,9 +126,6 @@
         const double top = 20;
         const double bottom = 300;
 
-        var width = right - left;
-        var height = bottom - top;
-
         // Determine X-axis position: if 0 is within range, place axis at 0; otherwise at min.
         var axisValue = (min <= 0m && max >= 0m) ? 0m : min;
         _xAxisY = ValueToY(axisValue, min, max, top, bottom);

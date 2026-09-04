@@ -678,9 +678,12 @@ public sealed class BackupService : IBackupService
         var budgetPurposes = budgetPurposeEntities.Select(b => b.ToBackupDto()).ToList();
 
         var budgetPurposeIds = budgetPurposeEntities.Select(b => b.Id).ToList();
+        var budgetCategoryIds = budgetCategoryEntities.Select(b => b.Id).ToList();
 
         var budgetRuleEntities = await _db.BudgetRules.AsNoTracking()
-            .Where(r => r.OwnerUserId == userId && r.BudgetPurposeId != null && budgetPurposeIds.Contains(r.BudgetPurposeId.Value))
+            .Where(r => r.OwnerUserId == userId &&
+                ((r.BudgetPurposeId != null && budgetPurposeIds.Contains(r.BudgetPurposeId.Value)) ||
+                 (r.BudgetCategoryId != null && budgetCategoryIds.Contains(r.BudgetCategoryId.Value))))
             .ToListAsync(ct);
         var budgetRules = budgetRuleEntities.Select(r => r.ToBackupDto()).ToList();
 

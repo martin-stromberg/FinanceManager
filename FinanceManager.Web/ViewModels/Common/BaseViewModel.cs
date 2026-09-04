@@ -59,8 +59,8 @@ namespace FinanceManager.Web.ViewModels.Common
 
         private readonly List<IAsyncDisposable> _children = new();
         private readonly List<BaseViewModel> _childViewModels = new();
-        private IApiClient _ApiClient = null;
-        private NavigationManager _Navigation = null;
+        private IApiClient? _ApiClient;
+        private NavigationManager? _Navigation;
 
         /// <summary>
         /// Human-readable title for a view. Derived classes may override.
@@ -87,7 +87,7 @@ namespace FinanceManager.Web.ViewModels.Common
         /// </summary>
         /// <param name="errorCode">Machine readable error code or <c>null</c>.</param>
         /// <param name="errorMessage">Fallback human readable message or <c>null</c>.</param>
-        protected void SetError(string errorCode, string errorMessage)
+        protected void SetError(string? errorCode, string? errorMessage)
         {
             LastErrorCode = errorCode;
             LastError = errorMessage;
@@ -107,7 +107,7 @@ namespace FinanceManager.Web.ViewModels.Common
         /// <summary>
         /// Lazily resolved API client instance taken from the service provider.
         /// </summary>
-        protected IApiClient ApiClient  => _ApiClient ??= ServiceProvider.GetRequiredService<IApiClient>();
+        protected IApiClient ApiClient => _ApiClient ??= ServiceProvider.GetRequiredService<IApiClient>();
 
         /// <summary>
         /// Lazily resolved navigation manager used for composing navigation URLs.
@@ -547,7 +547,7 @@ namespace FinanceManager.Web.ViewModels.Common
             }
             return null;
         }
-        
+
         /// <summary>
         /// Determines whether the provided child view model should be considered active for purposes of aggregating its ribbon registers.
         /// Derived classes may override to control which child view models contribute ribbon items.

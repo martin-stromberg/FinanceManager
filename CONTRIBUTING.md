@@ -1,21 +1,21 @@
 # Contributing
 
-Kurz und knapp: Bitte halte dich an die Projekt-Richtlinien, damit Änderungen konsistent und wartbar bleiben.
+Kurz und knapp: Bitte halte dich an die Projekt-Richtlinien, damit ï¿½nderungen konsistent und wartbar bleiben.
 
 ## API Fehlerbehandlung & Lokalisierung (Standard)
 
-Dieses Projekt verwendet zwei eindeutig getrennte Patterns für Fehler, die vom Web API an `ApiClient` und anschließend an die UI propagiert werden.
+Dieses Projekt verwendet zwei eindeutig getrennte Patterns fï¿½r Fehler, die vom Web API an `ApiClient` und anschlieï¿½end an die UI propagiert werden.
 
 ### Pattern 1: Framework-Validation (ModelState / DataAnnotations)
 
 - In Controllern gilt:
   - `if (!ModelState.IsValid) { return ValidationProblem(ModelState); }`
 - Die Response ist i.d.R. `ValidationProblemDetails` (RFC-Style) mit einem `errors` Objekt.
-- Der Client (siehe `ApiClient`) aggregiert diese `errors` best-effort (aktuell über `SetRFCStyleError(...)`) zu einer anzeigbaren Fehlermeldung.
+- Der Client (siehe `ApiClient`) aggregiert diese `errors` best-effort (aktuell ï¿½ber `SetRFCStyleError(...)`) zu einer anzeigbaren Fehlermeldung.
 
 ### Pattern 2: Eigene Fehler (Origin + Code + Message)
 
-Für alle nicht-Framework-Fehler, die dem Anwender angezeigt werden sollen, liefert die API eine standardisierte Fehlerantwort mit:
+Fï¿½r alle nicht-Framework-Fehler, die dem Anwender angezeigt werden sollen, liefert die API eine standardisierte Fehlerantwort mit:
 
 - `origin`: API-Bereich/Endpoint (z.B. `API_BudgetRule`)
 - `code`: stabiler, maschinenlesbarer Fehlercode
@@ -28,16 +28,16 @@ Die API nutzt Request Localization, damit `IStringLocalizer` die richtige Sprach
 
 #### Code-Schema
 
-Die Codes müssen konsistent, stabil und resx-tauglich sein.
+Die Codes mï¿½ssen konsistent, stabil und resx-tauglich sein.
 
 **Formale Eingabefehler (HTTP 400)**
 
 - `ArgumentException` ? `Err_Invalid_{ParamName}`
 - `ArgumentOutOfRangeException` ? `Err_OutOfRange_{ParamName}`
 
-`ParamName` muss das Property/Argument benennen, das unzulässig ist.
+`ParamName` muss das Property/Argument benennen, das unzulï¿½ssig ist.
 
-**Domain-Validierung / unzulässiger Zielzustand (typisch HTTP 409)**
+**Domain-Validierung / unzulï¿½ssiger Zielzustand (typisch HTTP 409)**
 
 - `DomainValidationException` ? z.B.
   - `Err_Conflict_{DomainRule}` oder
@@ -57,9 +57,9 @@ Die Codes müssen konsistent, stabil und resx-tauglich sein.
 
 - `Err_Unexpected`
 
-#### Lokalisierungsschlüssel
+#### Lokalisierungsschlï¿½ssel
 
-Die `message` wird serverseitig über `IStringLocalizer` aufgelöst.
+Die `message` wird serverseitig ï¿½ber `IStringLocalizer` aufgelï¿½st.
 
 Lookup-Key:
 
@@ -72,25 +72,25 @@ Beispiele:
 
 Fallback:
 
-- Wenn kein Ressourceneintrag gefunden wird, wird als `message` die Original-Message der Exception zurückgegeben.
+- Wenn kein Ressourceneintrag gefunden wird, wird als `message` die Original-Message der Exception zurï¿½ckgegeben.
 
 #### HTTP Status Codes
 
 - `400 BadRequest`: formale Eingabefehler
 - `404 NotFound`: Entity nicht gefunden
-- `409 Conflict`: Domain-Regel verletzt / unzulässiger Zielzustand
+- `409 Conflict`: Domain-Regel verletzt / unzulï¿½ssiger Zielzustand
 - `403 Forbidden`: Aktion nicht erlaubt
 - `500 InternalServerError`: unerwarteter Fehler
 
 ## Ressourcen / Lokalisation (resx)
-- Platzierung: Alle `.resx`-Dateien gehören unter das `Resources`-Verzeichnis des betroffenen Projekts und zwar in Unterordnern, die dem Namespace der konsumierenden Klasse/Komponente entsprechen.
+- Platzierung: Alle `.resx`-Dateien gehï¿½ren unter das `Resources`-Verzeichnis des betroffenen Projekts und zwar in Unterordnern, die dem Namespace der konsumierenden Klasse/Komponente entsprechen.
   - Beispiel: Die Komponente `Components.Pages.StatementDraftDetail` im Projekt `FinanceManager.Web` bekommt ihre Ressourcen unter
     `FinanceManager.Web/Resources/Components/Pages/StatementDraftDetail.resx` und die Kulturvariante `FinanceManager.Web/Resources/Components/Pages/StatementDraftDetail.de.resx`.
 - Dateinamen:
   - Standardkultur: `{TypeName}.resx` (z. B. `StatementDraftDetail.resx`)
   - Kulturvarianten: `{TypeName}.{culture}.resx` (z. B. `StatementDraftDetail.de.resx`)
-- Benennung der Schlüssel: sprechend und einheitlich, z. B. `Ribbon_AccountDetails`.
-- Konsumieren in Code (Blazor/Services): Verwende `IStringLocalizer<T>` mit demselben Typ `T`, für den die Ressource gedacht ist. Beispiel:
+- Benennung der Schlï¿½ssel: sprechend und einheitlich, z. B. `Ribbon_AccountDetails`.
+- Konsumieren in Code (Blazor/Services): Verwende `IStringLocalizer<T>` mit demselben Typ `T`, fï¿½r den die Ressource gedacht ist. Beispiel:
   ```csharp
   public class StatementDraftDetail // oder razor component class
   {
@@ -100,17 +100,17 @@ Fallback:
   ```
 - Projektkonfiguration: Stelle sicher, dass `Program.cs`/Startup `services.AddLocalization(options => options.ResourcesPath = "Resources");` setzt.
 
-## Branch-Workflow (staging / master)
-- PRs werden gegen `staging` erstellt, nicht gegen `master`. `staging` ist der Integrations- und QualitÃ¤tssicherungsbranch, `master` ist der ausschlieÃŸliche Release-Branch.
-- Hotfixes gehen ebenfalls Ã¼ber `staging` (kein Direct-Push oder PR direkt gegen `master`).
-- Nach erfolgreichem Merge zu `staging` erstellt der Workflow [`staging-to-master.yml`](.github/workflows/staging-to-master.yml) automatisch einen Draft-PR von `staging` nach `master`. Dieser PR benÃ¶tigt einen manuellen Review und Merge durch einen Maintainer.
-- Versionsbumps (Semantic Release) erfolgen ausschlieÃŸlich beim Merge zu `master`, nicht auf `staging`.
-- FÃ¼r alle PRs (gegen `staging` wie gegen `master`) ist mindestens ein Approval erforderlich; die Branch-Protection-Rules werden Ã¼ber die GitHub-Repository-Einstellungen konfiguriert.
+## Branch-Workflow (staging / main)
+- PRs werden gegen `staging` erstellt, nicht gegen `main`. `staging` ist der Integrations- und QualitÃ¤tssicherungsbranch, `main` ist der ausschlieÃŸliche Release-Branch.
+- Hotfixes gehen ebenfalls Ã¼ber `staging` (kein Direct-Push oder PR direkt gegen `main`).
+- Nach erfolgreichem Lauf von [`staging-ci.yml`](.github/workflows/staging-ci.yml) ("Pre-Release") auf `staging` erstellt der Workflow [`staging-to-main-promotion.yml`](.github/workflows/staging-to-main-promotion.yml) automatisch einen Draft-PR von `staging` nach `main`. Dieser PR benÃ¶tigt einen manuellen Review und Merge durch einen Maintainer.
+- Versionsbumps (Semantic Release) erfolgen ausschlieÃŸlich beim Merge zu `main`, nicht auf `staging`.
+- FÃ¼r alle PRs (gegen `staging` wie gegen `main`) ist mindestens ein Approval erforderlich; die Branch-Protection-Rules werden Ã¼ber die GitHub-Repository-Einstellungen konfiguriert.
 
 ## Pull Requests
-- Prüfe vor dem Erstellen eines PRs, dass keine neuen `*.resx`-Dateien an unerwarteten Orten liegen. Nutze die bestehende Namespace-/Ordner-Struktur.
-- Beschreibe im PR-Text, welche Ressourcen hinzugefügt oder geändert wurden und für welche Komponenten/Typen sie gedacht sind.
+- Prï¿½fe vor dem Erstellen eines PRs, dass keine neuen `*.resx`-Dateien an unerwarteten Orten liegen. Nutze die bestehende Namespace-/Ordner-Struktur.
+- Beschreibe im PR-Text, welche Ressourcen hinzugefï¿½gt oder geï¿½ndert wurden und fï¿½r welche Komponenten/Typen sie gedacht sind.
 
 ## CI / Checks (Empfehlung)
-- Füge wenn möglich einen CI-Check hinzu, der sicherstellt, dass neue `resx`-Dateien unter `Resources/` liegen und dass der Pfad dem Namespace-Pattern entspricht (z. B. `Resources/**/<Namespace-as-folders>/**.resx`). Wir akzeptieren gern Hilfestellung für eine passende GitHub Action.
+- Fï¿½ge wenn mï¿½glich einen CI-Check hinzu, der sicherstellt, dass neue `resx`-Dateien unter `Resources/` liegen und dass der Pfad dem Namespace-Pattern entspricht (z. B. `Resources/**/<Namespace-as-folders>/**.resx`). Wir akzeptieren gern Hilfestellung fï¿½r eine passende GitHub Action.
 

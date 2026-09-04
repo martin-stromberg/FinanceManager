@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <c>SecurityCategoriesListViewModel</c>'s loading behavior, authentication gating, and ribbon
+/// action set (New/Back) for the security category list screen.
+/// </summary>
 public sealed class SecurityCategoriesViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -38,6 +42,9 @@ public sealed class SecurityCategoriesViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that initialization loads all security categories from the API into the items collection.
+    /// </summary>
     [Fact]
     public async Task Initialize_Loads_Categories()
     {
@@ -57,6 +64,10 @@ public sealed class SecurityCategoriesViewModelTests
         Assert.Equal(new[] { "A", "B" }, vm.Items.Select(x => x.Name).OrderBy(x => x).ToArray());
     }
 
+    /// <summary>
+    /// Verifies that an unauthenticated user never reaches the categories API: initialization raises
+    /// <c>AuthenticationRequired</c> and leaves the view model unloaded instead of calling the list endpoint.
+    /// </summary>
     [Fact]
     public async Task Initialize_RequiresAuth_When_NotAuthenticated()
     {
@@ -71,12 +82,17 @@ public sealed class SecurityCategoriesViewModelTests
         apiMock.Verify(a => a.SecurityCategories_ListAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Verifies that the ribbon exposes "New" and "Back" actions, checked across both the modern
+    /// tab-grouped shape and the legacy flat <c>Items</c> property so the assertion stays valid regardless
+    /// of which grouping shape the view model currently uses.
+    /// </summary>
     [Fact]
     public void Ribbon_Has_Actions()
     {
         var (vm, _) = CreateVm();
         var loc = new TestLocalizer<SecurityCategoriesViewModelTests>();
-        var regs = vm.GetRibbon(loc);
+        var regs = vm.GetRibbon(loc)!;
 
         // collect actions from explicit tabs (modern shape)
         var actionsFromTabs = regs.SelectMany(r => r.Tabs ?? new List<UiRibbonTab>()).SelectMany(t => t.Items ?? new List<UiRibbonAction>()).ToList();

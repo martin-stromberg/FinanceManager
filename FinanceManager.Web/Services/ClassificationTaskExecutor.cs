@@ -34,7 +34,7 @@ namespace FinanceManager.Web.Services
 
         /// <summary>
         /// Executes the classification task for all open drafts belonging to the user specified in <paramref name="context"/>.
-        /// Progress is reported using <see cref="BackgroundTaskContext.ReportProgress(int,int,string,int,int)"/>.
+        /// Progress is reported using <see cref="BackgroundTaskContext.ReportProgress"/>.
         /// </summary>
         /// <param name="context">Background task execution context containing TaskId, UserId and optional Payload.</param>
         /// <param name="ct">Cancellation token that may be used to cancel execution. When cancellation is requested an <see cref="OperationCanceledException"/> is thrown.</param>

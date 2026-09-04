@@ -32,7 +32,16 @@ Speichern Sie die Massenänderung, um Bearbeitungen, Löschungen und neue Zeilen
 
 > **Hinweis:** Bereits gebuchte Zeilen können im Massenänderungsmodus nicht gelöscht werden. Angekündigte Zeilen bleiben nicht editierbar, können aber zum Löschen vorgemerkt werden.
 
-### 4. Mobile Ansicht prüfen
+### 4. Schnellbearbeitung per Tastatur verwenden
+
+Im Schnellbearbeitungsmodus können Sie den Fokus innerhalb derselben Feldspalte zeilenweise verschieben:
+
+- `Strg + Pfeil hoch` springt zum gleichen Eingabefeld in der unmittelbar vorherigen sichtbaren Zeile.
+- `Strg + Pfeil runter` springt zum gleichen Eingabefeld in der unmittelbar nächsten sichtbaren Zeile.
+
+Am Anfang oder Ende der Liste bleibt der Fokus im aktuellen Eingabefeld. Die Tastenkombinationen wirken nur in den Eingabefeldern des Schnellbearbeitungsmodus.
+
+### 5. Mobile Ansicht prüfen
 
 Auf mobilen Geräten erscheinen die Kontoauszugseinträge als Karten. Prüfen Sie dort pro Eintrag:
 
@@ -43,7 +52,7 @@ Auf mobilen Geräten erscheinen die Kontoauszugseinträge als Karten. Prüfen Si
 - Zugeordnete Wertpapiere werden zusammen mit der Buchungsart in Klammern angezeigt.
 - Lange Dateinamen und lange Textwerte brechen innerhalb der Karte um.
 
-### 5. Verbuchen
+### 6. Verbuchen
 
 Starten Sie die Verbuchung für den gesamten Entwurf oder einzelne Zeilen.
 

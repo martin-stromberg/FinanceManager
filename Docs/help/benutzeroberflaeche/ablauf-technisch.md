@@ -73,7 +73,11 @@ Beteiligte Komponenten:
 
 ## Fehlerbehandlung
 
+- Schlägt ein geschützter API-Aufruf mit `401 Unauthorized` fehl, veröffentlicht `ApiClient` ein zentrales Authentifizierungssignal. `AuthRedirect` behandelt dieses Signal unabhängig vom aufrufenden Seitenbaustein und leitet einmalig auf `/login` weiter.
+- Vor der Weiterleitung wird aus der aktuellen Navigation ein relatives internes Ziel mit Pfad, Querystring und Fragment gebildet und als URL-kodierter `returnUrl` an die Login-Seite übergeben. Öffentliche Routen, API-Routen, absolute oder externe Ziele sowie `/login`, `/register` und `/error` werden nicht als Rückkehrziel verwendet.
+- Nach erfolgreicher Anmeldung validiert `Login` den optionalen `returnUrl` und navigiert genau einmal zu diesem Ziel. Fehlt das Ziel oder wird es abgelehnt, erfolgt die Navigation zu `/`. Die Validierung verhindert damit auch eine externe Weiterleitung.
+- `403 Forbidden` führt nur bei einem ausdrücklich als Authentifizierungsfehler gekennzeichneten API-Signal zur Login-Weiterleitung. Gewöhnliche Fach- oder Berechtigungsfehler bleiben im normalen Fehlerpfad.
 - Bei nicht initialisiertem Browserkontext wirft `PlaywrightWebAppFixture.CreateSessionAsync(...)` eine `InvalidOperationException`.
 - In UI-Komponenten bleiben bestehende Fallbacks aktiv (z. B. Laden/Leerzustände und defensive `try/catch`-Abschnitte bei JS-Interop).
-- Für die responsive Darstellung wurden keine neuen fachlichen Fehlercodes oder API-Fehlerpfade eingeführt.
+- Für die responsive Darstellung wurden keine neuen fachlichen Fehlercodes eingeführt; der Authentifizierungsfehlerpfad wird zentral für geschützte API-Aufrufe verwendet.
 

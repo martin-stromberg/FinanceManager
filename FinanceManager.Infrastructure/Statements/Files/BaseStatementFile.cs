@@ -21,11 +21,11 @@ namespace FinanceManager.Infrastructure.Statements.Files
         /// <summary>
         /// Gets the underlying byte array representing the data content.
         /// </summary>
-        protected byte[] FileBytes { get; private set; }
+        protected byte[] FileBytes { get; private set; } = [];
         /// <summary>
         /// Gets the name of the file associated with this instance.
         /// </summary>
-        public string FileName { get; private set; }
+        public string FileName { get; private set; } = string.Empty;
         /// <summary>
         /// Gets the logger instance used for recording diagnostic and operational messages.
         /// </summary>

@@ -542,7 +542,7 @@ public sealed class PostingExportService : IPostingExportService
             }
             else
             {
-                row.Append(new Cell { DataType = CellValues.String, CellValue = new CellValue(v.ToString()) });
+                row.Append(new Cell { DataType = CellValues.String, CellValue = new CellValue(v.ToString() ?? string.Empty) });
             }
         }
         return row;

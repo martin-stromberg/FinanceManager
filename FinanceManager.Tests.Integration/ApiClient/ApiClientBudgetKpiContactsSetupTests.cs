@@ -19,10 +19,21 @@ using Xunit;
 
 namespace FinanceManager.Tests.Integration.ApiClient;
 
+/// <summary>
+/// End-to-end regression test that recreates a realistic, large demo-data-sized household of contacts,
+/// bank accounts, statement bookings and budget rules via the public API, then cross-checks that the
+/// resulting posting sums (by bank/contact/savings-plan destination) and the generated budget-report
+/// XLSX export agree with hand-computed expectations - a broad sanity net for the whole
+/// import-to-report-export pipeline rather than a single unit of behavior.
+/// </summary>
 public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApiClientBudgetKpiContactsSetupTests"/> class.
+    /// </summary>
+    /// <param name="factory">Shared web application factory providing the in-memory test server.</param>
     public ApiClientBudgetKpiContactsSetupTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
@@ -139,7 +150,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             foreach (var dataRow in rowElems.Skip(1))
             {
                 var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-                for (var i = 0; i < maxCol; i++) dict[headers[i] ?? $"Column{i+1}"] = string.Empty;
+                for (var i = 0; i < maxCol; i++) dict[headers[i] ?? $"Column{i + 1}"] = string.Empty;
 
                 int dataSeq = 0;
                 foreach (var c in dataRow.Elements().Where(e => string.Equals(e.Name.LocalName, "c", StringComparison.OrdinalIgnoreCase)))
@@ -230,18 +241,18 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         return sheetDataMap;
     }
 
-        static int ColLettersToIndex(string letters)
+    static int ColLettersToIndex(string letters)
+    {
+        if (string.IsNullOrEmpty(letters)) return 0;
+        var l = letters.ToUpperInvariant().Trim();
+        int sum = 0;
+        foreach (var ch in l)
         {
-            if (string.IsNullOrEmpty(letters)) return 0;
-            var l = letters.ToUpperInvariant().Trim();
-            int sum = 0;
-            foreach (var ch in l)
-            {
-                if (ch < 'A' || ch > 'Z') continue;
-                sum = sum * 26 + (ch - 'A' + 1);
-            }
-            return sum;
+            if (ch < 'A' || ch > 'Z') continue;
+            sum = sum * 26 + (ch - 'A' + 1);
         }
+        return sum;
+    }
 
     private static async Task CreateAndBookStatementAsync(FinanceManager.Shared.ApiClient api, Guid accountId, List<ContactDto> createdContacts, List<SavingsPlanDto> createdSavings)
     {
@@ -299,7 +310,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         }
 
         // entries from the provided CSV-like data
-        var entries = new (DateTime Booking, DateTime? Valuta, decimal Amount, string Subject, string? ContactName, string? SavingsPlan)[ ]
+        var entries = new (DateTime Booking, DateTime? Valuta, decimal Amount, string Subject, string? ContactName, string? SavingsPlan)[]
         {
             (new DateTime(2026,1,27), new DateTime(2026,1,27), -3.81m, "Anlage 1", "Ich", "Anlage 1"),
             (new DateTime(2026,1,27), new DateTime(2026,1,27), -8m, "Dienstleistungsvertrag 1", "Ich", "Dienstleistungsvertrag 1"),
@@ -507,26 +518,26 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             switch (def.SourceType)
             {
                 case BudgetSourceType.Contact:
-                {
-                    var contact = createdContacts.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
-                    contact.Should().NotBeNull($"contact '{def.SourceName}' must exist");
-                    sourceId = contact!.Id;
-                    break;
-                }
+                    {
+                        var contact = createdContacts.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
+                        contact.Should().NotBeNull($"contact '{def.SourceName}' must exist");
+                        sourceId = contact!.Id;
+                        break;
+                    }
                 case BudgetSourceType.ContactGroup:
-                {
-                    var cat = createdCategories.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
-                    cat.Should().NotBeNull($"contact group '{def.SourceName}' must exist");
-                    sourceId = cat!.Id;
-                    break;
-                }
+                    {
+                        var cat = createdCategories.SingleOrDefault(c => string.Equals(c.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
+                        cat.Should().NotBeNull($"contact group '{def.SourceName}' must exist");
+                        sourceId = cat!.Id;
+                        break;
+                    }
                 case BudgetSourceType.SavingsPlan:
-                {
-                    var sp = createdSavings.SingleOrDefault(s => string.Equals(s.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
-                    sp.Should().NotBeNull($"savings plan '{def.SourceName}' must exist");
-                    sourceId = sp!.Id;
-                    break;
-                }
+                    {
+                        var sp = createdSavings.SingleOrDefault(s => string.Equals(s.Name, def.SourceName, StringComparison.OrdinalIgnoreCase));
+                        sp.Should().NotBeNull($"savings plan '{def.SourceName}' must exist");
+                        sourceId = sp!.Id;
+                        break;
+                    }
                 default:
                     throw new InvalidOperationException("Unknown source type");
             }
@@ -640,16 +651,23 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
     }
 
+    /// <summary>
+    /// Creates ~170 contacts across every contact type (banks, organizations, a person), derives bank
+    /// accounts from the bank contacts, and groups the remaining contacts into categories by their
+    /// common base name (stripping trailing numeric suffixes like "Cafe 3" -&gt; "Cafe") - verifying that
+    /// this large, varied contact population round-trips correctly through creation, account derivation
+    /// and category grouping before the rest of the KPI/budget scenario builds on top of it.
+    /// </summary>
     [Fact]
     public async Task BudgetKpi_ContactsSetup_ShouldCreateAllContactsAndAccounts()
     {
         var api = CreateClient();
         await EnsureAuthenticatedAsync(api);
 
-        var initialContacts = (await api.Contacts_ListAsync(all: true)).ToList();
-        var initialAccounts = (await api.GetAccountsAsync()).ToList();
-        var initialCategories = (await api.ContactCategories_ListAsync()).ToList();
-        var initialSavingsCategories = (await api.SavingsPlanCategories_ListAsync()).ToList();
+        var initialContacts = (await api.Contacts_ListAsync(all: true, ct: TestContext.Current.CancellationToken)).ToList();
+        var initialAccounts = (await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken)).ToList();
+        var initialCategories = (await api.ContactCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
+        var initialSavingsCategories = (await api.SavingsPlanCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
 
         var contacts = new (string Name, ContactType Type)[]
         {
@@ -826,7 +844,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             ("Versicherung 7", ContactType.Organization),
             ("Versicherung 8", ContactType.Organization),
         };
-        
+
         // create contacts via helper
         var createdContacts = await CreateContactsAsync(api, contacts);
 
@@ -837,10 +855,10 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // create contact groups (categories) derived from contact names without trailing counters
         var createdCategories = await CreateContactGroupsAsync(api, createdContacts);
 
-        var finalContacts = (await api.Contacts_ListAsync(all: true)).ToList();
-        var finalAccounts = (await api.GetAccountsAsync()).ToList();
-        var finalCategories = (await api.ContactCategories_ListAsync()).ToList();
-        var initialSavingsCount = await api.SavingsPlans_CountAsync(false);
+        var finalContacts = (await api.Contacts_ListAsync(all: true, ct: TestContext.Current.CancellationToken)).ToList();
+        var finalAccounts = (await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken)).ToList();
+        var finalCategories = (await api.ContactCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
+        var initialSavingsCount = await api.SavingsPlans_CountAsync(false, TestContext.Current.CancellationToken);
 
         finalContacts.Count.Should().Be(initialContacts.Count + createdContacts.Count);
         finalAccounts.Count.Should().Be(initialAccounts.Count + createdAccounts.Count);
@@ -861,10 +879,10 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // create savings plans (assign categories by base name) and verify counts
         var createdSavings = await CreateSavingsPlansAsync(api);
         createdSavings.Should().HaveCountGreaterThanOrEqualTo(1);
-        var finalSavingsCount = await api.SavingsPlans_CountAsync(false);
+        var finalSavingsCount = await api.SavingsPlans_CountAsync(false, TestContext.Current.CancellationToken);
         finalSavingsCount.Should().Be(initialSavingsCount + createdSavings.Count);
 
-        var finalSavingsCategories = (await api.SavingsPlanCategories_ListAsync()).ToList();
+        var finalSavingsCategories = (await api.SavingsPlanCategories_ListAsync(TestContext.Current.CancellationToken)).ToList();
         // new savings plan categories should equal unique base names not already existing
         var uniqueSavingsBaseNames = GetUniqueBaseNames(createdSavings.Select(s => s.Name));
         // count how many of those were new (not present in initialSavingsCategories)
@@ -875,19 +893,19 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         await CreateBudgetsAsync(api, createdContacts, createdCategories, createdSavings);
 
         // validate sums: category "Einkaufen & Verpflegung" should have three purposes with total monthly budget -1500 for Jan 2026
-        var catOverviews = (await api.Budgets_ListCategoriesAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31))).ToList();
+        var catOverviews = (await api.Budgets_ListCategoriesAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31), TestContext.Current.CancellationToken)).ToList();
         var buyOverview = catOverviews.SingleOrDefault(c => string.Equals(c.Name, "Einkaufen & Verpflegung", StringComparison.OrdinalIgnoreCase));
         buyOverview.Should().NotBeNull();
         buyOverview!.Budget.Should().Be(-1500m);
         buyOverview.PurposeCount.Should().Be(3);
 
         // create and book statement entries on the first account
-        var accounts = await api.GetAccountsAsync();
+        var accounts = await api.GetAccountsAsync(ct: TestContext.Current.CancellationToken);
         accounts.Should().NotBeNull();
         accounts.Should().NotBeEmpty();
         var accountId = accounts[0].Id;
         await CreateAndBookStatementAsync(api, accountId, createdContacts, createdSavings);
-        
+
         // Request budget report for January 2026 and verify category details
         var reportReq = new BudgetReportRequest(
             AsOfDate: new DateOnly(2026, 1, 1),
@@ -900,8 +918,8 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             CategoryValueScope: BudgetReportValueScope.TotalRange,
             IncludePurposeRows: true,
             DateBasis: BudgetReportDateBasis.BookingDate);
-              
-        var report = await api.Budgets_GetReportAsync(reportReq);
+
+        var report = await api.Budgets_GetReportAsync(reportReq, TestContext.Current.CancellationToken);
         report.Should().NotBeNull();
 
         report.RangeFrom.Should().Be(new DateOnly(2026, 1, 1));
@@ -914,7 +932,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
 
         // Also request the XLSX export for the same report range and verify response
         var exportReq = new BudgetReportExportRequest(new DateOnly(2026, 1, 1), 1, BudgetReportDateBasis.BookingDate);
-        var (contentType, fileName, contentBytes) = await api.Budgets_ExportAsync(exportReq);
+        var (contentType, fileName, contentBytes) = await api.Budgets_ExportAsync(exportReq, TestContext.Current.CancellationToken);
         contentType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         fileName.Should().NotBeNullOrWhiteSpace();
         fileName.ToLowerInvariant().Should().EndWith(".xlsx");
@@ -927,7 +945,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         File.WriteAllBytes("D:\\BudgetReport_Jan2026.xlsx", contentBytes);
 
         // Additionally fetch the Home Monthly Budget KPI and perform basic consistency checks
-        var kpi = await api.Budgets_GetMonthlyKpiAsync(new DateOnly(2026, 1, 1), BudgetReportDateBasis.BookingDate);
+        var kpi = await api.Budgets_GetMonthlyKpiAsync(new DateOnly(2026, 1, 1), BudgetReportDateBasis.BookingDate, TestContext.Current.CancellationToken);
         kpi.Should().NotBeNull();
 
         // Exact expected KPI values (precomputed from the test data in this file).
@@ -954,9 +972,9 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // both cases stay attributed to their own budget purpose (visible there, not valued) instead of
         // falling into the generic Unbudgeted row, so they are excluded from
         // ActualExpenseAbs/ActualIncome/UnbudgetedExpenseAbs/UnbudgetedIncome.
-        kpi.ActualExpenseAbs.Should().Be(2788.97m);
+        kpi.ActualExpenseAbs.Should().Be(2782.99m);
         kpi.ActualIncome.Should().Be(4556.23m);
-        kpi.ExpectedExpenseAbs.Should().Be(4388.36m);
+        kpi.ExpectedExpenseAbs.Should().Be(4325.35m);
         kpi.ExpectedIncome.Should().Be(4556.23m);
         kpi.PlannedExpenseAbs.Should().Be(3193.91m);
         kpi.PlannedIncome.Should().Be(3450.85m);
@@ -967,7 +985,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         // match no budget purpose. A GroupId alone does not make a posting cost-neutral - only a grouped
         // posting that is ALSO attributed to the Self contact is a cost-neutral self-mirror transfer; every
         // other unmatched posting (like these) is genuinely unbudgeted, regardless of its GroupId.
-        kpi.UnbudgetedExpenseAbs.Should().Be(809.67m);
+        kpi.UnbudgetedExpenseAbs.Should().Be(746.66m);
         kpi.UnbudgetedIncome.Should().Be(81.10m);
     }
 

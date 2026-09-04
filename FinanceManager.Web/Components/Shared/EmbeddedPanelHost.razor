@@ -78,6 +78,8 @@
 
     private bool CheckClearEmbeddedPanel(BaseViewModel.UiActionEventArgs? e)
     {
+        if (e == null) return false;
+
         if (string.Equals(e.Action, "ClearEmbeddedPanel", StringComparison.OrdinalIgnoreCase))
         {
             // payload may be EmbeddedPanelPosition, string, or null

@@ -1,0 +1,42 @@
+name: Security scan
+
+description: >
+  Runs `dotnet list package --vulnerable` against the given solution, evaluates the output
+  for known vulnerabilities and fails (exit 1) if any are found. Assumes the caller has
+  already run `dotnet restore` for the solution. Used both as Gate 2 of the "static-checks"
+  job (pr-staging-ci.yml / staging-ci.yml) and by the standalone weekly security-scan.yml
+  workflow, so this logic only exists once instead of being duplicated between them.
+
+inputs:
+  solution-path:
+    description: Path to the solution file to scan.
+    required: false
+    default: FinanceManager.sln
+  artifact-name:
+    description: Name of the uploaded scan-log artifact.
+    required: false
+    default: vulnerable-packages-scan
+
+runs:
+  using: composite
+  steps:
+    - name: Scan for vulnerable packages
+      shell: pwsh
+      run: |
+        $output = dotnet list "${{ inputs.solution-path }}" package --vulnerable --include-transitive 2>&1 | Tee-Object -Variable scanOutput
+        $scanOutput | Out-File -FilePath vulnerable-packages-scan.log -Encoding utf8
+
+        if ($scanOutput -match "has the following vulnerable packages" -or $scanOutput -match "Severity") {
+          Write-Host "::error::Vulnerable NuGet packages found. See the scan output above or artifact '${{ inputs.artifact-name }}'."
+          exit 1
+        }
+
+        Write-Host "No vulnerable packages found."
+
+    - name: Upload scan log
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: vulnerable-packages-scan.log
+        retention-days: 14

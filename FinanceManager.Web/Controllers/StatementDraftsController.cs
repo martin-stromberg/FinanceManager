@@ -51,6 +51,8 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="localizer">Localizer for i18n support.</param>
     /// <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
     /// <param name="attachments">Attachment service used to list and download attachments.</param>
+    /// <param name="budgetImpact">Optional service used to evaluate the budget impact of bookings; may be null when the feature is disabled.</param>
+    /// <param name="massImportOrchestrator">Optional orchestrator used to coordinate mass import of statement drafts; may be null when the feature is disabled.</param>
     public StatementDraftsController(
         IStatementDraftService drafts,
         ICurrentUserService current,
@@ -98,6 +100,36 @@ public sealed class StatementDraftsController : ControllerBase
     {
         var count = await _drafts.GetOpenDraftsCountAsync(_current.UserId, ct);
         return Ok(new { count });
+    }
+
+    /// <summary>
+    /// Creates a new preliminary (provisional) statement draft for the specified bank account.
+    /// </summary>
+    /// <param name="body">Request containing the account id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 Created with the created <see cref="StatementDraftDto"/>; 400 when the request is invalid; 404 when the account does not exist.</returns>
+    [HttpPost("preliminary")]
+    [ProducesResponseType(typeof(StatementDraftDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreatePreliminaryDraftAsync([FromBody] CreatePreliminaryStatementDraftRequest body, CancellationToken ct)
+    {
+        if (body.AccountId == Guid.Empty)
+        {
+            return BadRequest(new { error = "Err_Invalid_AccountId", message = "Account id is required" });
+        }
+
+        var pagesLocalizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<FinanceManager.Web.Pages>>();
+        var dateText = DateTime.Today.ToString("d", System.Globalization.CultureInfo.CurrentCulture);
+        var description = pagesLocalizer["StatementDraft_Description_Preliminary", dateText].Value;
+
+        var draft = await _drafts.CreatePreliminaryDraftAsync(_current.UserId, body.AccountId, ct, description);
+        if (draft == null)
+        {
+            return NotFound(new { error = "Err_NotFound", message = "Account not found" });
+        }
+
+        return CreatedAtRoute("GetStatementDraft", new { draftId = draft.DraftId }, draft);
     }
 
     /// <summary>
@@ -341,7 +373,7 @@ public sealed class StatementDraftsController : ControllerBase
         }
         catch { }
 
-        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames, contactNames, accountBankContactId, selfContactId);
+        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId, contactSymbols, planSymbols, planNames, securitySymbols, securityNames, contactNames, accountBankContactId, selfContactId, draft.IsPreliminary);
         return Ok(dto);
     }
 
@@ -360,7 +392,7 @@ public sealed class StatementDraftsController : ControllerBase
         var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
         if (draft is null && draftId == Guid.Empty)
             draft = await _drafts.FindDraftHeaderAsync(entryId, _current.UserId, ct);
-        if (draft is null) return null;
+        if (draft is null) return NotFound();
 
         var ordered = (await _drafts.GetDraftEntriesAsync(draft.DraftId, ct)).OrderBy(e => e.BookingDate).ThenBy(e => e.Id).ToList();
         var entry = await _drafts.GetDraftEntryAsync(draft.DraftId, entryId, ct);
@@ -617,7 +649,7 @@ public sealed class StatementDraftsController : ControllerBase
         if (fileMeta == null) { return NotFound(); }
         var payload = await _attachments.DownloadAsync(_current.UserId, fileMeta.Id, ct);
         if (payload == null) { return NotFound(); }
-        var downloaded = payload.Value; 
+        var downloaded = payload.Value;
         var content = downloaded.Item1;
         var fileName = downloaded.Item2;
         var contentType = downloaded.Item3;

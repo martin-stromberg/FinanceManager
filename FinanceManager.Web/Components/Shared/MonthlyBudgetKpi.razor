@@ -1,16 +1,27 @@
 @using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Logging
 @using System.Globalization
 
 @inject FinanceManager.Shared.IApiClient Api
 @inject IStringLocalizer<FinanceManager.Web.Pages> Localizer
 @inject NavigationManager Nav
+@inject ILogger<MonthlyBudgetKpi> Logger
+@inject TimeProvider TimeProvider
+@inject IServiceProvider Services
 
 @using FinanceManager.Web.ViewModels.Budget
+@using FinanceManager.Web.Services
+@implements IDisposable
 
 @code {
+    private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
+
     [Parameter] public bool EditMode { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public MonthlyBudgetKpiViewModel? ViewModel { get; set; }
+    [Parameter] public string? CacheKey { get; set; }
+
+    private IKpiLocalStorageCache? _kpiCache;
 
     private bool DataLoaded => ViewModel?.DataLoaded ?? false;
     private bool HasLoadError => !string.IsNullOrWhiteSpace(ViewModel?.ErrorMessage);
@@ -32,7 +43,8 @@
     private decimal Result => ActualIncome - ActualExpenseAbs;
     private string ResultText => Result.ToString("0.##");
     private string SollErgebnisText => SollErgebnis.ToString("0.##");
-    private bool IsForCurrentMonth => ViewModel != null && ViewModel.Month.Year == DateTime.Now.Year && ViewModel.Month.Month == DateTime.Now.Month;
+    private DateTime CurrentLocalMonth => TimeZoneInfo.ConvertTime(TimeProvider.GetUtcNow(), TimeZoneInfo.Local).DateTime;
+    private bool IsForCurrentMonth => ViewModel != null && ViewModel.Month.Year == CurrentLocalMonth.Year && ViewModel.Month.Month == CurrentLocalMonth.Month;
     private string ResultTextClass => IsForCurrentMonth ? "budget-text-current" : (Result >= 0 ? "budget-text-pos" : "budget-text-neg");
     private string SaldoMarkerClass => IsForCurrentMonth ? "budget-saldo-marker budget-saldo-current" : (Result >= 0 ? "budget-saldo-marker budget-saldo-pos" : "budget-saldo-marker budget-saldo-neg");
     private string SollMarkerClass => IsForCurrentMonth ? "budget-soll-marker budget-soll-current" : (SollErgebnis >= 0 ? "budget-soll-marker budget-soll-pos" : "budget-soll-marker budget-soll-neg");
@@ -46,6 +58,13 @@
 
     private bool _showIncomeTooltip = false;
     private bool _showExpenseTooltip = false;
+    private bool _loadStarted;
+    private int _loadGenerationStarted = -1;
+    private int _observerGenerationStarted = -1;
+    private bool _observerForError;
+    private bool _disposed;
+    private CancellationTokenSource? _loadCts;
+    private MonthlyBudgetKpiViewModel? _activeViewModel;
 
     private void OnIncomeEnter()
     {
@@ -69,12 +88,216 @@
         _showExpenseTooltip = false;
     }
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
-        if (ViewModel != null)
+        if (!ReferenceEquals(_activeViewModel, ViewModel))
         {
-            await ViewModel.LoadAsync(Api);
+            CancelActiveLoad();
+            _activeViewModel = ViewModel;
+            _loadStarted = ViewModel?.DataLoaded == true || HasLoadError;
+            _loadGenerationStarted = ViewModel?.LoadGeneration ?? -1;
+            _observerGenerationStarted = -1;
+            _observerForError = false;
         }
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_disposed || ViewModel == null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (ViewModel.DataLoaded)
+        {
+            StartRefreshObserver(ViewModel);
+            return Task.CompletedTask;
+        }
+
+        if (HasLoadError)
+        {
+            StartErrorRetryObserver(ViewModel);
+            return Task.CompletedTask;
+        }
+
+        if (_loadStarted && _loadGenerationStarted == ViewModel.LoadGeneration)
+        {
+            return Task.CompletedTask;
+        }
+
+        _loadStarted = true;
+        _loadGenerationStarted = ViewModel.LoadGeneration;
+        CancelActiveLoad();
+        _loadCts = new CancellationTokenSource();
+        _ = LoadViewModelAsync(ViewModel, _loadCts.Token);
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadViewModelAsync(MonthlyBudgetKpiViewModel viewModel, CancellationToken ct)
+    {
+        _kpiCache ??= Services.GetService<IKpiLocalStorageCache>();
+
+        try
+        {
+            if (_kpiCache?.Context.Enabled == true && !string.IsNullOrWhiteSpace(CacheKey))
+            {
+                var cached = await _kpiCache.GetAsync<MonthlyBudgetKpiViewModelSnapshot>(CacheKey, ct);
+                if (cached is not null)
+                {
+                    viewModel.LoadFromSnapshot(cached);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+
+            await viewModel.LoadAsync(Api, TimeProvider, ct);
+
+            if (_kpiCache?.Context.Enabled == true && !string.IsNullOrWhiteSpace(CacheKey))
+            {
+                await _kpiCache.SetAsync(CacheKey, viewModel.CreateSnapshot(), ct);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Monthly budget KPI loading failed.");
+            viewModel.MarkLoadFailed(Api.LastError);
+        }
+
+        if (!_disposed && ReferenceEquals(_activeViewModel, viewModel))
+        {
+            if (viewModel.DataLoaded)
+            {
+                StartRefreshObserver(viewModel);
+            }
+            else if (!string.IsNullOrWhiteSpace(viewModel.ErrorMessage))
+            {
+                StartErrorRetryObserver(viewModel);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void StartRefreshObserver(MonthlyBudgetKpiViewModel viewModel)
+    {
+        if (_observerGenerationStarted == viewModel.LoadGeneration && !_observerForError)
+        {
+            return;
+        }
+
+        _observerGenerationStarted = viewModel.LoadGeneration;
+        _observerForError = false;
+        _ = ObserveRefreshInvalidationAsync(viewModel, viewModel.LoadGeneration, EnsureActiveToken());
+    }
+
+    private void StartErrorRetryObserver(MonthlyBudgetKpiViewModel viewModel)
+    {
+        if (_observerGenerationStarted == viewModel.LoadGeneration && _observerForError)
+        {
+            return;
+        }
+
+        _observerGenerationStarted = viewModel.LoadGeneration;
+        _observerForError = true;
+        _ = ObserveErrorRetryAsync(viewModel, viewModel.LoadGeneration, EnsureActiveToken());
+    }
+
+    private CancellationToken EnsureActiveToken()
+    {
+        _loadCts ??= new CancellationTokenSource();
+        return _loadCts.Token;
+    }
+
+    private async Task ObserveErrorRetryAsync(MonthlyBudgetKpiViewModel viewModel, int generation, CancellationToken ct)
+    {
+        try
+        {
+            await RetryAfterErrorIntervalAsync(viewModel, generation, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Monthly budget KPI error retry scheduling failed.");
+        }
+    }
+
+    private async Task RetryAfterErrorIntervalAsync(MonthlyBudgetKpiViewModel viewModel, int generation, CancellationToken ct)
+    {
+        await Task.Delay(RefreshInterval, TimeProvider, ct);
+
+        if (_disposed || !ReferenceEquals(_activeViewModel, viewModel) || viewModel.LoadGeneration != generation || string.IsNullOrWhiteSpace(viewModel.ErrorMessage))
+        {
+            return;
+        }
+
+        viewModel.Invalidate();
+        _loadStarted = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ObserveRefreshInvalidationAsync(MonthlyBudgetKpiViewModel viewModel, int generation, CancellationToken ct)
+    {
+        try
+        {
+            await InvalidateAfterRefreshIntervalAsync(viewModel, generation, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Monthly budget KPI refresh invalidation failed.");
+        }
+    }
+
+    private async Task InvalidateAfterRefreshIntervalAsync(MonthlyBudgetKpiViewModel viewModel, int generation, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(RefreshInterval, TimeProvider, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (_disposed || !ReferenceEquals(_activeViewModel, viewModel) || viewModel.LoadGeneration != generation)
+        {
+            return;
+        }
+
+        var now = TimeProvider.GetUtcNow();
+        var localNow = TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local).DateTime;
+        if (viewModel.InvalidateIfRefreshDue(now.UtcDateTime, localNow, RefreshInterval))
+        {
+            _loadStarted = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void CancelActiveLoad()
+    {
+        if (_loadCts == null)
+        {
+            return;
+        }
+
+        _loadCts.Cancel();
+        _loadCts.Dispose();
+        _loadCts = null;
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        CancelActiveLoad();
     }
 }
 
@@ -157,6 +380,12 @@
                 }
             </div>
         </div>
+        @if (!DataLoaded && !HasLoadError)
+        {
+            <div class="budget-loading-overlay" role="status" aria-label="@Localizer["Loading"]">
+                <span class="budget-loading-spinner" aria-hidden="true"></span>
+            </div>
+        }
     </div>
     @if (DataLoaded)
     {

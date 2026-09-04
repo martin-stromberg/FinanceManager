@@ -1,10 +1,19 @@
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for the admin-only setup "Update" tab: viewing the current update status,
+/// triggering a manual update check against the configured update source, and persisting update
+/// settings (enabled flag, check schedule) across a page reload.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class UpdateSetupPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UpdateSetupPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public UpdateSetupPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;

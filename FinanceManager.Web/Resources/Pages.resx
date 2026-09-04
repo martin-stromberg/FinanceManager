@@ -294,6 +294,9 @@
   <data name="Ribbon_Group_Navigation" xml:space="preserve">
     <value>Navigation</value>
   </data>
+  <data name="Ribbon_Group_Bookings" xml:space="preserve">
+    <value>Bookings</value>
+  </data>
   <data name="Ribbon_OpenPostings" xml:space="preserve">
     <value>Postings</value>
   </data>
@@ -475,7 +478,7 @@
     <value>Select a target contact to merge the current contact into. Postings, attachments and related data will be reassigned to the target contact.</value>
   </data>
   <data name="Merge_Preference_Label" xml:space="preserve">
-    <value>On conflict, prefer:</value>
+    <value>Preference</value>
   </data>
   <data name="Merge_Preference_DestinationFirst" xml:space="preserve">
     <value>Destination first (keep target values)</value>
@@ -2708,5 +2711,107 @@
   </data>
   <data name="PleaseLoginPrompt" xml:space="preserve">
     <value>Please login.</value>
+  </data>
+  <data name="Ribbon_CreatePreliminaryDraft" xml:space="preserve">
+    <value>Create preliminary statement</value>
+  </data>
+  <data name="List_Th_Postings_IsPreliminary" xml:space="preserve">
+    <value>Preliminary</value>
+  </data>
+  <data name="Validation_PRELIMINARY_POSTINGS_WILL_BE_REVERSED" xml:space="preserve">
+    <value>Preliminary postings for this account will be reversed when this statement is booked.</value>
+  </data>
+  <data name="StatementDraft_Description_Preliminary" xml:space="preserve">
+    <value>Preliminary bookings of {0}</value>
+  </data>
+  <data name="Card_Caption_StatementDrafts_IsPreliminary" xml:space="preserve">
+    <value>Preliminary</value>
+  </data>
+  <data name="StatementDraft_IsPreliminary" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Budget_Report_ShowPostings" xml:space="preserve">
+    <value>Show postings</value>
+  </data>
+  <data name="Btn_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="Err_MergeFailed" xml:space="preserve">
+    <value>Merge failed</value>
+  </data>
+  <data name="General_Title_Contacts" xml:space="preserve">
+    <value>Contacts</value>
+  </data>
+  <data name="KPI" xml:space="preserve">
+    <value>KPI</value>
+  </data>
+  <data name="MoveLeft" xml:space="preserve">
+    <value>Move left</value>
+  </data>
+  <data name="MoveRight" xml:space="preserve">
+    <value>Move right</value>
+  </data>
+  <data name="NoSecurities" xml:space="preserve">
+    <value>No securities</value>
+  </data>
+  <data name="NoSharedKey" xml:space="preserve">
+    <value>No shared key</value>
+  </data>
+  <data name="RateLimited" xml:space="preserve">
+    <value>Rate limited</value>
+  </data>
+  <data name="RB_Canceled" xml:space="preserve">
+    <value>Canceled</value>
+  </data>
+  <data name="RB_Completed" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="Ribbon_ClearPurposePattern" xml:space="preserve">
+    <value>Clear purpose pattern</value>
+  </data>
+  <data name="Ribbon_Group_Fields" xml:space="preserve">
+    <value>Fields</value>
+  </data>
+  <data name="Ribbon_Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="Ribbon_Unblock" xml:space="preserve">
+    <value>Unblock</value>
+  </data>
+  <data name="Users_Title" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="SetupProfile_Label_CacheKpis" xml:space="preserve">
+    <value>Cache home KPIs</value>
+  </data>
+  <data name="SetupProfile_Help_CacheKpis" xml:space="preserve">
+    <value>Store home page KPI data in the browser for faster loading.</value>
+  </data>
+  <data name="QuickEdit_Validation_BookingDateRequired" xml:space="preserve">
+    <value>Booking date is required</value>
+  </data>
+  <data name="QuickEdit_Validation_ValutaDateRequired" xml:space="preserve">
+    <value>Valuta date is required</value>
+  </data>
+  <data name="QuickEdit_Validation_AmountRequired" xml:space="preserve">
+    <value>Amount is required</value>
+  </data>
+  <data name="QuickEdit_Validation_SubjectOrDescriptionRequired" xml:space="preserve">
+    <value>Subject or booking description is required</value>
+  </data>
+  <data name="QuickEdit_Validation_SubjectTooLong" xml:space="preserve">
+    <value>Subject is too long</value>
+  </data>
+  <data name="QuickEdit_Validation_BookingDescriptionTooLong" xml:space="preserve">
+    <value>Booking description is too long</value>
+  </data>
+  <data name="QuickEdit_Validation_RecipientTooLong" xml:space="preserve">
+    <value>Recipient is too long</value>
+  </data>
+  <data name="BK_Progress" xml:space="preserve">
+    <value>Booking</value>
   </data>
 </root>

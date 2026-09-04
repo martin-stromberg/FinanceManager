@@ -1,4 +1,4 @@
-﻿using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Savings;
 using FinanceManager.Domain.Securities;
@@ -6,6 +6,7 @@ using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Application.Statements;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Attachments;
@@ -20,6 +21,12 @@ using Moq;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers <see cref="StatementDraftService.BookAsync"/>, the core commit logic that turns statement draft entries
+/// into postings: bank/contact postings, self-contact savings-plan handling with target-date advancement, security
+/// trade/fee/tax splitting for buy/sell/dividend, payment-intermediary splitting across parent and child drafts,
+/// validation failures for each precondition, cache invalidation, and concurrency guards against double-booking.
+/// </summary>
 public sealed class StatementDraftBookingTests
 {
 
@@ -92,6 +99,13 @@ public sealed class StatementDraftBookingTests
             => throw new NotImplementedException();
     }
 
+    // Booking never needs to load statement files (that happens during upload/create-draft), but the
+    // constructor parameter is non-nullable, so a trivial stub stands in for the real factory.
+    private sealed class StubStatementFileFactory : IStatementFileFactory
+    {
+        public IStatementFile? Load(string fileName, byte[] fileBytes) => null;
+    }
+
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -109,7 +123,7 @@ public sealed class StatementDraftBookingTests
         db.Contacts.Add(self);
         db.SaveChanges();
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, ownerUser.Id);
     }
 
@@ -136,6 +150,11 @@ public sealed class StatementDraftBookingTests
         return draft;
     }
 
+    /// <summary>
+    /// Booking a single entry out of a multi-entry draft must only remove and post that entry - the draft must
+    /// stay in <see cref="StatementDraftStatus.Draft"/> with the untouched entry still present, rather than being
+    /// committed as a whole just because one of its entries was booked.
+    /// </summary>
     [Fact]
     public async Task Booking_SingleEntry_ShouldNotCommitWholeDraft_And_RemoveOnlyThatEntry()
     {
@@ -146,7 +165,7 @@ public sealed class StatementDraftBookingTests
         // normal recipient contact (no intermediary, no self)
         var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
         db.Contacts.Add(shop);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // two entries
         var e1 = draft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
@@ -154,12 +173,12 @@ public sealed class StatementDraftBookingTests
         db.Entry(e1).State = EntityState.Added;
         db.Entry(e2).State = EntityState.Added;
         e1.MarkAccounted(shop.Id); e2.MarkAccounted(shop.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // IMPORTANT: simulate production by using a fresh DbContext (new scope)
         var freshOptions = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
         using var freshDb = new AppDbContext(freshOptions);
-        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null);
+        var freshSut = new StatementDraftService(freshDb, new PostingAggregateService(freshDb), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
 
         // Act: book only first entry on fresh context
         var res = await freshSut.BookAsync(draft.Id, e1.Id, owner, false, CancellationToken.None);
@@ -168,7 +187,7 @@ public sealed class StatementDraftBookingTests
         Assert.True(res.Success);
 
         // Reload draft and verify status and remaining entries using fresh context
-        var reloaded = await freshDb.StatementDrafts.Include(d => d.Entries).FirstAsync(d => d.Id == draft.Id);
+        var reloaded = await freshDb.StatementDrafts.Include(d => d.Entries).FirstAsync(d => d.Id == draft.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(StatementDraftStatus.Draft, reloaded.Status); // not committed because one entry remains
         Assert.Equal(1, reloaded.Entries.Count);
         Assert.Equal("B", reloaded.Entries.Single().Subject);
@@ -181,6 +200,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Even a partial booking (only one of several entries in a draft) must still run the budget impact
+    /// evaluation for that specific entry and attach the resulting summary to the booking result, so the UI can
+    /// show the budget effect regardless of whether the whole draft or just one entry was booked.
+    /// </summary>
     [Fact]
     public async Task Booking_SingleEntry_ShouldAttachBudgetImpactSummary_WhenBookingIsPartial()
     {
@@ -190,7 +214,7 @@ public sealed class StatementDraftBookingTests
 
         var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
         db.Contacts.Add(shop);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var e1 = draft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
         var e2 = draft.AddEntry(DateTime.Today, 20m, "B", shop.Name, DateTime.Today, "EUR", null, false);
@@ -198,7 +222,7 @@ public sealed class StatementDraftBookingTests
         db.Entry(e2).State = EntityState.Added;
         e1.MarkAccounted(shop.Id);
         e2.MarkAccounted(shop.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var summary = new BookingImpactSummaryDto(
             draft.Id,
@@ -221,7 +245,7 @@ public sealed class StatementDraftBookingTests
                     "Changed")
             ]);
         var budgetImpact = new TestBudgetImpactEvaluationService(summary);
-        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
+        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
 
         var res = await bookingSut.BookAsync(draft.Id, e1.Id, owner, false, CancellationToken.None);
 
@@ -238,6 +262,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking must fail with the "NO_ACCOUNT" validation code when the draft has no account assigned, since a
+    /// bank posting cannot be created without knowing which account it belongs to.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldFail_WhenNoAccountAssigned()
     {
@@ -245,7 +273,7 @@ public sealed class StatementDraftBookingTests
         var draft = await CreateDraftAsync(db, owner, null);
         var entry = draft.AddEntry(DateTime.Today, 10m, "Payment A", null, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
 
@@ -254,6 +282,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking must fail with the "ENTRY_NO_CONTACT" validation code when an entry has not yet been assigned a
+    /// counterparty contact, since the contact posting needs a target contact to attribute the money to.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldFail_WhenEntryHasNoContact()
     {
@@ -262,7 +294,7 @@ public sealed class StatementDraftBookingTests
         var draft = await CreateDraftAsync(db, owner, acc.Id);
         var entry = draft.AddEntry(DateTime.Today, 10m, "Payment A", null, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
 
@@ -271,17 +303,24 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A booking accounted to the "self" contact without an assigned savings plan is treated as suspicious (it
+    /// usually means the user forgot to link a savings plan) and must be rejected with a "SAVINGSPLAN_MISSING_FOR_SELF"
+    /// warning that requires explicit confirmation. Once confirmed, the booking must proceed and attach the
+    /// budget impact summary evaluated at the draft level (entry id null) as well as create exactly one bank and
+    /// one contact posting.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContact_ShouldRequireConfirmation_AndCreateBankAndContactPostings()
     {
         var (_, db, conn, owner) = Create();
         var (acc, _) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 25.5m, "Self transfer", self.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
         entry.MarkAccounted(self.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var summary = new BookingImpactSummaryDto(
             draft.Id,
@@ -304,7 +343,7 @@ public sealed class StatementDraftBookingTests
                     "Almost exhausted")
             ]);
         var budgetImpact = new TestBudgetImpactEvaluationService(summary);
-        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
+        var bookingSut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null, null, budgetImpact);
 
         var res1 = await bookingSut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.False(res1.Success);
@@ -331,21 +370,26 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When a self-contact entry is explicitly linked to a savings plan, booking must succeed without requiring
+    /// confirmation and must create bank, contact, and savings-plan postings, with the savings-plan posting
+    /// carrying the negated entry amount (money leaving the regular flow into the plan).
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithSavingsPlan_ShouldCreateBankContactAndSavingsPostings()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, _) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self, cancellationToken: TestContext.Current.CancellationToken);
         var plan = new SavingsPlan(owner, "Plan A", SavingsPlanType.OneTime, null, null, null);
         db.SavingsPlans.Add(plan);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var e = draft.AddEntry(DateTime.Today, 100m, "Save", self.Name, DateTime.Today, "EUR", null, false);
         e.AssignSavingsPlan(plan.Id);
         e.MarkAccounted(self.Id);
         db.Entry(e).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.True(res.Success);
@@ -361,6 +405,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// An entry accounted to a payment intermediary contact (e.g. PayPal) that stands in for the real recipient
+    /// must not be booked as-is - without a linked split draft breaking the amount down to the actual
+    /// counterparties, booking must fail with "INTERMEDIARY_NO_SPLIT".
+    /// </summary>
     [Fact]
     public async Task Booking_PaymentIntermediaryWithoutSplit_ShouldFail()
     {
@@ -369,11 +418,11 @@ public sealed class StatementDraftBookingTests
         var draft = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayPal", ContactType.Organization, null, null, true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var e = draft.AddEntry(DateTime.Today, 50m, "PayPal", intermediary.Name, DateTime.Today, "EUR", null, false);
         db.Entry(e).State = EntityState.Added;
         e.MarkAccounted(intermediary.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);
@@ -381,6 +430,13 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A child draft linked as an intermediary's split cannot be booked on its own; only booking the parent entry
+    /// is valid, and doing so must create zero-amount bank/contact postings on the parent (the intermediary is a
+    /// pass-through, not a real economic movement) plus the real, correctly-dated bank/contact postings on each
+    /// child entry, each referencing its corresponding parent posting via <c>ParentId</c>. Child postings keep the
+    /// parent's booking date but their own valuta date, and both the parent and child drafts end up committed.
+    /// </summary>
     [Fact]
     public async Task Booking_SplitDrafts_ParentCreatesZeroAndChildPostings_AndBothCommitted()
     {
@@ -391,21 +447,21 @@ public sealed class StatementDraftBookingTests
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         // parent booking and valuta differ
         var pBooking = new DateTime(2024, 6, 1);
         var pValuta = new DateTime(2024, 6, 5);
         var pEntry = parent.AddEntry(pBooking, 80m, "Split Root", intermediary.Name, pValuta, "EUR", null, false);
         pEntry.MarkAccounted(intermediary.Id);
         db.Entry(pEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Child draft without account, two entries with assigned contacts totaling 80
         var child = await CreateDraftAsync(db, owner, null);
         var rec1 = new Contact(owner, "Alice", ContactType.Person, null, null);
         var rec2 = new Contact(owner, "Bob", ContactType.Person, null, null);
         db.Contacts.AddRange(rec1, rec2);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         // children have different booking/valuta (and different from parent)
         var c1Booking = new DateTime(2024, 6, 2);
         var c1Valuta = new DateTime(2024, 6, 3);
@@ -417,11 +473,11 @@ public sealed class StatementDraftBookingTests
         c2.MarkAccounted(rec2.Id);
         db.Entry(c1).State = EntityState.Added;
         db.Entry(c2).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Link child as split draft to parent entry
         pEntry.AssignSplitDraft(child.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Booking the child (split) draft should fail
         var childRes = await sut.BookAsync(child.Id, null, owner, false, CancellationToken.None);
@@ -485,12 +541,18 @@ public sealed class StatementDraftBookingTests
         Assert.Equal(parentContact.Id, child2Contact.ParentId);
 
         // Both drafts expected committed
-        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(parent.Id))!.Status);
-        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(child.Id))!.Status);
+        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(new object?[] { parent.Id }, TestContext.Current.CancellationToken))!.Status);
+        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(new object?[] { child.Id }, TestContext.Current.CancellationToken))!.Status);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// If the child entries of a linked split draft have not been assigned contacts, booking the parent must fail
+    /// with an "ENTRY_NO_CONTACT" message prefixed by "[Split]" (so the user can tell the failure originates in
+    /// the split, not the parent entry itself) - and must not be misreported as a missing split
+    /// ("INTERMEDIARY_NO_SPLIT" must not fire, since a split is in fact present, just incomplete).
+    /// </summary>
     [Fact]
     public async Task Booking_ParentFails_WhenSplitDraftHasMissingContacts()
     {
@@ -499,21 +561,21 @@ public sealed class StatementDraftBookingTests
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var pEntry = parent.AddEntry(DateTime.Today, 80m, "Split Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         pEntry.MarkAccounted(intermediary.Id);
         db.Entry(pEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var child = await CreateDraftAsync(db, owner, null);
         var c1 = child.AddEntry(DateTime.Today, 30m, "Child A", null, DateTime.Today, "EUR", null, false);
         var c2 = child.AddEntry(DateTime.Today, 50m, "Child B", null, DateTime.Today, "EUR", null, false);
         db.Entry(c1).State = EntityState.Added;
         db.Entry(c2).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         pEntry.AssignSplitDraft(child.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(parent.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);
@@ -522,6 +584,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// The sum of a split's child entry amounts must equal the parent intermediary entry's amount; otherwise
+    /// booking must fail with "SPLIT_AMOUNT_MISMATCH" - guarding against a split that would silently lose or
+    /// double-count money relative to what the intermediary actually moved.
+    /// </summary>
     [Fact]
     public async Task Booking_ParentFails_WhenSplitTotalsDoNotMatch()
     {
@@ -530,21 +597,21 @@ public sealed class StatementDraftBookingTests
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var pEntry = parent.AddEntry(DateTime.Today, 100m, "Split Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         pEntry.MarkAccounted(intermediary.Id);
         db.Entry(pEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var child = await CreateDraftAsync(db, owner, null);
         var c1 = child.AddEntry(DateTime.Today, 30m, "Child A", null, DateTime.Today, "EUR", null, false);
         var c2 = child.AddEntry(DateTime.Today, 60m, "Child B", null, DateTime.Today, "EUR", null, false);
         db.Entry(c1).State = EntityState.Added;
         db.Entry(c2).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         pEntry.AssignSplitDraft(child.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(parent.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);
@@ -552,6 +619,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A split child entry accounted to the self contact must go through the same "missing savings plan"
+    /// confirmation guard as a direct self-booking, with the resulting warning message prefixed "[Split]" so it
+    /// is traceable back to the specific child entry inside the split rather than the parent.
+    /// </summary>
     [Fact]
     public async Task Booking_Warns_WhenSplitContainsSelfContact()
     {
@@ -560,21 +632,21 @@ public sealed class StatementDraftBookingTests
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var pEntry = parent.AddEntry(DateTime.Today, 100m, "Split Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         pEntry.MarkAccounted(intermediary.Id);
         db.Entry(pEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var child = await CreateDraftAsync(db, owner, null);
-        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self, cancellationToken: TestContext.Current.CancellationToken);
         var c1 = child.AddEntry(DateTime.Today, 100m, "Child A", self.Name, DateTime.Today, "EUR", null, false);
         c1.MarkAccounted(self.Id);
         db.Entry(c1).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         pEntry.AssignSplitDraft(child.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(parent.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);
@@ -583,6 +655,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Intermediary chaining is not supported implicitly: if a split's child entry is itself accounted to another
+    /// payment intermediary without its own further split, booking the parent must fail with
+    /// "INTERMEDIARY_NO_SPLIT" (prefixed "[Split]"), the same rule that applies at the top level.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_WhenSplitContainsIntermediaryWithoutFurtherSplit()
     {
@@ -591,19 +668,19 @@ public sealed class StatementDraftBookingTests
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var pEntry = parent.AddEntry(DateTime.Today, 100m, "Split Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         db.Entry(pEntry).State = EntityState.Added;
         pEntry.MarkAccounted(intermediary.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var child = await CreateDraftAsync(db, owner, null);
         var c1 = child.AddEntry(DateTime.Today, 100m, "Child A", intermediary.Name, DateTime.Today, "EUR", null, false);
         db.Entry(c1).State = EntityState.Added;
         c1.MarkAccounted(intermediary.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         pEntry.AssignSplitDraft(child.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(parent.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);
@@ -611,21 +688,26 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// An entry with a security assigned but no <see cref="SecurityTransactionType"/> chosen cannot be booked -
+    /// booking must fail with "SECURITY_MISSING_TXTYPE" since the transaction type drives which security
+    /// sub-postings (buy/sell/dividend) get created.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_ForSecurityMissingTransactionType()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, bank) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 200m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
-        await db.SaveChangesAsync();
+        entry.MarkAccounted(account!.BankContactId);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, null, null, null, null, owner, CancellationToken.None);
 
@@ -635,21 +717,25 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A Buy transaction requires a quantity; booking must fail with "SECURITY_MISSING_QUANTITY" when the
+    /// quantity was never set, since the resulting holding size would otherwise be undefined.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_ForSecurityMissingQuantity()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, bank) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 200m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
-        await db.SaveChangesAsync();
+        entry.MarkAccounted(account!.BankContactId);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Buy, null, null, null, owner, CancellationToken.None);
 
@@ -659,24 +745,29 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Even with an otherwise valid security assignment, booking must fail with "SECURITY_ACCOUNT_NOT_ALLOWED"
+    /// when the target account has security processing disabled - preventing security trades from landing on
+    /// accounts that were never configured to hold them.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_WhenSecurityProcessingDisabledForAccount()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, bank) = await AddAccountAsync(db, owner);
         acc.SetSecurityProcessingEnabled(false);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 200m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
         entry.MarkAccounted(account!.BankContactId);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Buy, 1.0m, 1.00m, 1.00m, owner, CancellationToken.None);
 
@@ -686,23 +777,28 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Fee plus tax must not exceed the entry's total amount; otherwise booking must fail with
+    /// "SECURITY_FEE_TAX_EXCEEDS_AMOUNT" rather than silently creating a main trade posting with a nonsensical
+    /// negative or inverted amount from bad data entry.
+    /// </summary>
     [Fact]
     public async Task Booking_Fails_WhenSecurityFeePlusTaxExceedsAmount()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, bank) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
 
         // entry with amount smaller than fee+tax
         var entry = draft.AddEntry(DateTime.Today, 100m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
         entry.MarkAccounted(account!.BankContactId);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Set security with Buy, quantity present, but fee+tax exceed entry amount
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Buy, 1.0m, 70.00m, 40.00m, owner, CancellationToken.None);
@@ -713,6 +809,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A Buy trade must split into separate main/fee/tax security postings whose amounts sum exactly back to the
+    /// entry amount, and must preserve a high-precision (six decimal place) quantity on the main posting only -
+    /// fee and tax postings carry no quantity of their own.
+    /// </summary>
     [Fact]
     public async Task Booking_CreatesSecurityTradeFeeTaxPostings_WithSixDecimalQuantity_AndSumsToEntryAmount_ForBuy()
     {
@@ -720,15 +821,15 @@ public sealed class StatementDraftBookingTests
         var (acc, bank) = await AddAccountAsync(db, owner);
 
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(acc => acc.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 1000m, "Trade", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
-        await db.SaveChangesAsync();
+        entry.MarkAccounted(account!.BankContactId);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF X", "DE000A0", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Buy, 1.123456m, 2.50m, 5.00m, owner, CancellationToken.None);
 
@@ -755,6 +856,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// For a Sell, the sign convention is opposite to Buy: the main posting equals amount + fee + tax while fee
+    /// and tax postings themselves are negative, and the quantity on the main posting is negative (reducing the
+    /// holding). The three postings must still sum back to the original entry amount.
+    /// </summary>
     [Fact]
     public async Task Booking_CreatesSecurityPostings_ForSell_WithExpectedSigns_AndSumsToEntryAmount()
     {
@@ -762,15 +868,15 @@ public sealed class StatementDraftBookingTests
         var (acc, bank) = await AddAccountAsync(db, owner);
 
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 800m, "Sell", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
-        await db.SaveChangesAsync();
+        entry.MarkAccounted(account!.BankContactId);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF Y", "DE000B1", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var feeAmt = 3.40m; var taxAmt = 7.60m;
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Sell, 5.0m, feeAmt, taxAmt, owner, CancellationToken.None);
@@ -797,6 +903,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Dividends do not require a quantity (it may remain null, unlike Buy) but must still split into main/fee/tax
+    /// postings that follow the Sell-style sign convention (fee/tax negative) and sum back to the entry amount.
+    /// </summary>
     [Fact]
     public async Task Booking_CreatesSecurityPostings_ForDividend_QuantityOptional_AndSumsToEntryAmount()
     {
@@ -804,15 +914,15 @@ public sealed class StatementDraftBookingTests
         var (acc, bank) = await AddAccountAsync(db, owner);
 
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, 123.45m, "Dividend", bank.Name, DateTime.Today, "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
-        entry.MarkAccounted(account.BankContactId);
-        await db.SaveChangesAsync();
+        entry.MarkAccounted(account!.BankContactId);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new Security(owner, "ETF Z", "DE000C1", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var feeAmt = 1.00m; var taxAmt = 0.50m;
         // Dividend: quantity can be null
@@ -839,24 +949,29 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Regression case for a foreign-currency (USD security, EUR entry) dividend booked net-of-tax with no fee:
+    /// given an 11.88 EUR net entry and 1.68 EUR tax, the main dividend posting must gross back up to 13.56 EUR
+    /// so that main + tax reproduces the original net entry amount exactly.
+    /// </summary>
     [Fact]
     public async Task Booking_Dividend_WithTaxOnly_Net1188_ShouldCreateMain1356_AndTax168()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, bank) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
 
         // Entry: 11.88 EUR net dividend
         var entry = draft.AddEntry(new DateTime(2024, 5, 10), 11.88m, "Dividend", bank.Name, new DateTime(2024, 5, 10), "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
         entry.MarkAccounted(account!.BankContactId);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Security in USD
         var sec = new Security(owner, "US ETF", "US000123", null, null, "USD", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Assign as Dividend with only tax 1.68 EUR
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Dividend, null, null, 1.68m, owner, CancellationToken.None);
@@ -877,24 +992,29 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// A dividend correction/storno (negative entry amount, negative tax) must produce a negative main posting and
+    /// a positive tax reversal that still sum back to the entry amount - verifying the sign handling introduced
+    /// for the positive case is not accidentally inverted for reversals.
+    /// </summary>
     [Fact]
     public async Task Booking_Dividend_Storno_NegativeValues_ShouldCreateMainMinus184_TaxPlus022()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, bank) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
 
         // Entry: -1.62 EUR storno dividend
         var entry = draft.AddEntry(new DateTime(2024, 5, 10), -1.62m, "Dividend Storno", bank.Name, new DateTime(2024, 5, 10), "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
         entry.MarkAccounted(account!.BankContactId);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // USD security
         var sec = new Security(owner, "US ETF", "US000XYZ", null, null, "USD", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Assign Dividend with tax -0.22 EUR
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Dividend, null, null, -0.22m, owner, CancellationToken.None);
@@ -916,24 +1036,29 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Mirror of the storno case: a normal positive-amount dividend with positive tax must produce a positive
+    /// main posting and a negative tax posting summing back to the entry amount, confirming the sign convention
+    /// holds in the non-reversal direction too.
+    /// </summary>
     [Fact]
     public async Task Booking_Dividend_PositiveValues_ShouldCreateMainPlus184_TaxMinus022()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, bank) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId);
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, cancellationToken: TestContext.Current.CancellationToken);
 
         // Entry: +1.62 EUR dividend
         var entry = draft.AddEntry(new DateTime(2024, 5, 10), 1.62m, "Dividend", bank.Name, new DateTime(2024, 5, 10), "EUR", null, false);
         db.Entry(entry).State = EntityState.Added;
         entry.MarkAccounted(account!.BankContactId);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // USD security
         var sec = new Security(owner, "US ETF", "US000XYZ", null, null, "USD", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Assign Dividend with tax +0.22 EUR
         await sut.SetEntrySecurityAsync(draft.Id, entry.Id, sec.Id, SecurityTransactionType.Dividend, null, null, 0.22m, owner, CancellationToken.None);
@@ -955,6 +1080,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking a security-related posting must invalidate the cached portfolio analysis report for the owner, so
+    /// that a subsequent report request recomputes performance figures instead of serving stale cached data.
+    /// </summary>
     [Fact]
     public async Task BookAsync_SecurityPosting_InvalidatesPortfolioAnalysisReportCache()
     {
@@ -967,14 +1096,14 @@ public sealed class StatementDraftBookingTests
 
         var security = new Security(owner, "ETF", "ETF0001", null, null, "EUR", null);
         db.Securities.Add(security);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
         var sut = new StatementDraftService(
             db,
             new PostingAggregateService(db),
             new StubAccountService(),
-            null,
+            new StubStatementFileFactory(),
             null,
             NullLogger<StatementDraftService>.Instance,
             null,
@@ -992,30 +1121,35 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking an ordinary posting on an account with security processing disabled must not trigger portfolio
+    /// analysis report cache invalidation, since it has no bearing on security holdings - avoids unnecessary
+    /// cache churn for postings unrelated to securities.
+    /// </summary>
     [Fact]
     public async Task BookAsync_NormalPostingOnNonSecurityAccount_DoesNotInvalidatePortfolioAnalysisReportCache()
     {
         var (_, db, conn, owner) = Create();
         var (acc, _) = await AddAccountAsync(db, owner);
         acc.SetSecurityProcessingEnabled(false);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var draft = await CreateDraftAsync(db, owner, acc.Id);
         var shop = new Contact(owner, "Shop", ContactType.Organization, null, null, false);
         db.Contacts.Add(shop);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var entry = draft.AddEntry(new DateTime(2024, 5, 10), -25m, "Groceries", shop.Name, new DateTime(2024, 5, 10), "EUR", null, false);
         entry.MarkAccounted(shop.Id);
         db.Entry(entry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var portfolioCache = new Mock<IPortfolioAnalysisReportCacheService>();
         var sut = new StatementDraftService(
             db,
             new PostingAggregateService(db),
             new StubAccountService(),
-            null,
+            new StubStatementFileFactory(),
             null,
             NullLogger<StatementDraftService>.Instance,
             null,
@@ -1031,88 +1165,108 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking a recurring savings-plan contribution whose current target date sits on a month-end (Jan 31) must
+    /// advance the plan's next target date by one calendar month using end-of-month clamping (landing on Feb 29
+    /// in a leap year) rather than naive date arithmetic that would overflow into an invalid day.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithRecurringSavingsPlan_MonthEnd_31Jan_To_29Feb()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, _) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self, cancellationToken: TestContext.Current.CancellationToken);
 
         var plan = new SavingsPlan(owner, "Recurring", SavingsPlanType.Recurring, 1000m, new DateTime(2024, 1, 31), SavingsPlanInterval.Monthly);
         db.SavingsPlans.Add(plan);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var e = draft.AddEntry(new DateTime(2024, 1, 31), 100m, "Save", self.Name, new DateTime(2024, 1, 31), "EUR", null, false);
         e.AssignSavingsPlan(plan.Id);
         e.MarkAccounted(self.Id);
         db.Entry(e).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.True(res.Success);
 
-        var updatedPlan = await db.SavingsPlans.FirstAsync(p => p.Id == plan.Id);
+        var updatedPlan = await db.SavingsPlans.FirstAsync(p => p.Id == plan.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(new DateTime(2024, 2, 29), updatedPlan.TargetDate!.Value.Date);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Even when the plan's current target date is not itself a month-end (Jan 30), advancing it one month must
+    /// still clamp to the shorter month's last valid day (Feb 29) rather than overflowing - the clamping behavior
+    /// applies regardless of whether the starting date happened to be a month-end.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithRecurringSavingsPlan_NonMonthEnd_30Jan_To_29Feb_Capped()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, _) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self, cancellationToken: TestContext.Current.CancellationToken);
 
         var plan = new SavingsPlan(owner, "Recurring", SavingsPlanType.Recurring, 1000m, new DateTime(2024, 1, 30), SavingsPlanInterval.Monthly);
         db.SavingsPlans.Add(plan);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var e = draft.AddEntry(new DateTime(2024, 1, 30), 100m, "Save", self.Name, new DateTime(2024, 1, 30), "EUR", null, false);
         e.AssignSavingsPlan(plan.Id);
         e.MarkAccounted(self.Id);
         db.Entry(e).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.True(res.Success);
 
-        var updatedPlan = await db.SavingsPlans.FirstAsync(p => p.Id == plan.Id);
+        var updatedPlan = await db.SavingsPlans.FirstAsync(p => p.Id == plan.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(new DateTime(2024, 2, 29), updatedPlan.TargetDate!.Value.Date);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When the booking date lies well beyond the plan's current target date, the target must be advanced
+    /// repeatedly, one month at a time, until it reaches or passes the booking date (Jan 31 -> Feb 29 -> Mar 31),
+    /// rather than jumping straight to the booking date or only advancing a single step.
+    /// </summary>
     [Fact]
     public async Task Booking_SelfContactWithRecurringSavingsPlan_MultipleAdvance_To_MarchEnd()
     {
         var (sut, db, conn, owner) = Create();
         var (acc, _) = await AddAccountAsync(db, owner);
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self, cancellationToken: TestContext.Current.CancellationToken);
 
         var plan = new SavingsPlan(owner, "Recurring", SavingsPlanType.Recurring, 1000m, new DateTime(2024, 1, 31), SavingsPlanInterval.Monthly);
         db.SavingsPlans.Add(plan);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Booking on March 15th should advance Jan 31 -> Feb 29 -> Mar 31 (stop because > March 15)
         var e = draft.AddEntry(new DateTime(2024, 3, 15), 100m, "Save", self.Name, new DateTime(2024, 3, 15), "EUR", null, false);
         e.AssignSavingsPlan(plan.Id);
         e.MarkAccounted(self.Id);
         db.Entry(e).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.True(res.Success);
 
-        var updatedPlan = await db.SavingsPlans.FirstAsync(p => p.Id == plan.Id);
+        var updatedPlan = await db.SavingsPlans.FirstAsync(p => p.Id == plan.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(new DateTime(2024, 3, 31), updatedPlan.TargetDate!.Value.Date);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Booking a savings-plan contribution that would push the plan's total past its configured target amount
+    /// must be blocked with a "SAVINGSPLAN_GOAL_EXCEEDS" warning referencing the specific plan, requiring the
+    /// caller to explicitly confirm before the booking (and its bank/contact/savings-plan postings) is created.
+    /// </summary>
     [Fact]
     public async Task Booking_Prevented_When_SavingsPlan_Target_WouldBeExceeded()
     {
@@ -1122,21 +1276,21 @@ public sealed class StatementDraftBookingTests
         // create savings plan target 100
         var plan = new SavingsPlan(owner, "PlanTarget", SavingsPlanType.OneTime, 100m, null, null);
         db.SavingsPlans.Add(plan);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // existing booked savings plan postings totaling 90 (create Posting with positive amount to produce remaining = 10)
         var existing = new Domain.Postings.Posting(Guid.NewGuid(), PostingKind.SavingsPlan, null, null, plan.Id, null, DateTime.Today, DateTime.Today, 90m, "existing", null, null, null);
         db.Postings.Add(existing);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // create draft with one entry of -20 assigned to savings plan (negative amount so planned becomes +20 in validation logic)
         var draft = await CreateDraftAsync(db, owner, acc.Id);
-        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self);
+        var self = await db.Contacts.FirstAsync(c => c.OwnerUserId == owner && c.Type == ContactType.Self, cancellationToken: TestContext.Current.CancellationToken);
         var entry = draft.AddEntry(DateTime.Today, -20m, "Save Over", self.Name, DateTime.Today, "EUR", null, false);
         entry.AssignSavingsPlan(plan.Id);
         entry.MarkAccounted(self.Id);
         db.Entry(entry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         var res = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
@@ -1165,6 +1319,10 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Re-booking a draft that has already been committed must be rejected with "BOOKING_ALREADY_PROCESSED" and
+    /// marked as non-retryable, preventing a duplicate/repeated booking request from creating duplicate postings.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldRejectAsAlreadyProcessed_WhenDraftWasAlreadyBooked()
     {
@@ -1173,12 +1331,12 @@ public sealed class StatementDraftBookingTests
         var draft = await CreateDraftAsync(db, owner, acc.Id);
         var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
         db.Contacts.Add(shop);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var entry = draft.AddEntry(DateTime.Today, 15m, "Booked once", shop.Name, DateTime.Today, "EUR", null, false);
         entry.MarkAccounted(shop.Id);
         db.Entry(entry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var first = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.True(first.Success);
@@ -1191,6 +1349,11 @@ public sealed class StatementDraftBookingTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// If a <see cref="StatementDraftBookingGuard"/> row already marks the draft as currently being booked, a new
+    /// booking attempt must be rejected with "BOOKING_IN_PROGRESS" and marked retryable - protecting against
+    /// overlapping concurrent booking attempts for the same draft racing each other into duplicate postings.
+    /// </summary>
     [Fact]
     public async Task Booking_ShouldRejectWithInProgress_WhenDraftGuardIsAlreadyActive()
     {
@@ -1204,7 +1367,7 @@ public sealed class StatementDraftBookingTests
             Guid.NewGuid(),
             DateTime.UtcNow,
             DateTime.UtcNow.AddMinutes(2)));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None);
         Assert.False(result.Success);
@@ -1225,15 +1388,15 @@ public sealed class StatementDraftBookingTests
         var draft = await CreateDraftAsync(db, owner, account.Id);
         var recipient = new Contact(owner, "Rollback Recipient", ContactType.Organization, null, null, false);
         db.Contacts.Add(recipient);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var entry = draft.AddEntry(DateTime.Today, 45m, "Rollback Booking", recipient.Name, DateTime.Today, "EUR", null, false);
         entry.MarkAccounted(recipient.Id);
         db.Entry(entry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var attachments = new ControlledAttachmentService(_ => throw new InvalidOperationException("reassign failed"));
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, attachments);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, attachments);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.BookAsync(draft.Id, null, owner, false, CancellationToken.None));
 
@@ -1242,11 +1405,11 @@ public sealed class StatementDraftBookingTests
             .Options;
         using var verifyDb = new AppDbContext(verifyOptions);
 
-        var persistedDraft = await verifyDb.StatementDrafts.FirstAsync(d => d.Id == draft.Id);
-        var persistedAccount = await verifyDb.Accounts.FirstAsync(a => a.Id == account.Id);
-        var postingCount = await verifyDb.Postings.CountAsync(p => p.SourceId == entry.Id);
-        var aggregateCount = await verifyDb.PostingAggregates.CountAsync();
-        var guardCount = await verifyDb.StatementDraftBookingGuards.CountAsync(g => g.OwnerUserId == owner && g.DraftId == draft.Id);
+        var persistedDraft = await verifyDb.StatementDrafts.FirstAsync(d => d.Id == draft.Id, cancellationToken: TestContext.Current.CancellationToken);
+        var persistedAccount = await verifyDb.Accounts.FirstAsync(a => a.Id == account.Id, cancellationToken: TestContext.Current.CancellationToken);
+        var postingCount = await verifyDb.Postings.CountAsync(p => p.SourceId == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
+        var aggregateCount = await verifyDb.PostingAggregates.CountAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var guardCount = await verifyDb.StatementDraftBookingGuards.CountAsync(g => g.OwnerUserId == owner && g.DraftId == draft.Id, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(StatementDraftStatus.Draft, persistedDraft.Status);
         Assert.Equal(0m, persistedAccount.CurrentBalance);
@@ -1266,7 +1429,7 @@ public sealed class StatementDraftBookingTests
         var dbName = $"statement-booking-{Guid.NewGuid()}";
         var connectionString = $"Data Source={dbName};Mode=Memory;Cache=Shared";
         await using var keepAlive = new SqliteConnection(connectionString);
-        await keepAlive.OpenAsync();
+        await keepAlive.OpenAsync(TestContext.Current.CancellationToken);
 
         var initOptions = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite(connectionString)
@@ -1277,33 +1440,33 @@ public sealed class StatementDraftBookingTests
         Guid entryId;
         await using (var initDb = new AppDbContext(initOptions))
         {
-            await initDb.Database.EnsureCreatedAsync();
+            await initDb.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
             var ownerUser = new FinanceManager.Domain.Users.User("parallel-owner", "hash", true);
             initDb.Users.Add(ownerUser);
-            await initDb.SaveChangesAsync();
+            await initDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             initDb.Contacts.Add(new Contact(ownerUser.Id, "Ich", ContactType.Self, null, null));
             var bank = new Contact(ownerUser.Id, "Bank", ContactType.Bank, null, null);
             initDb.Contacts.Add(bank);
-            await initDb.SaveChangesAsync();
+            await initDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var account = new Account(ownerUser.Id, AccountType.Giro, "Parallel Account", "DE11", bank.Id);
             initDb.Accounts.Add(account);
-            await initDb.SaveChangesAsync();
+            await initDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var draft = new StatementDraft(ownerUser.Id, "parallel.csv", "", "");
             draft.SetDetectedAccount(account.Id);
             initDb.StatementDrafts.Add(draft);
-            await initDb.SaveChangesAsync();
+            await initDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var contact = new Contact(ownerUser.Id, "Parallel Recipient", ContactType.Organization, null, null, false);
             initDb.Contacts.Add(contact);
-            await initDb.SaveChangesAsync();
+            await initDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var entry = draft.AddEntry(DateTime.Today, 30m, "Parallel Booking", contact.Name, DateTime.Today, "EUR", null, false);
             entry.MarkAccounted(contact.Id);
             initDb.Entry(entry).State = EntityState.Added;
-            await initDb.SaveChangesAsync();
+            await initDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             ownerId = ownerUser.Id;
             draftId = draft.Id;
@@ -1321,11 +1484,11 @@ public sealed class StatementDraftBookingTests
             gateEntered.TrySetResult(true);
             await gateRelease.Task.WaitAsync(ct);
         });
-        var sut1 = new StatementDraftService(db1, new PostingAggregateService(db1), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, blockingAttachments);
-        var sut2 = new StatementDraftService(db2, new PostingAggregateService(db2), new StubAccountService(), null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut1 = new StatementDraftService(db1, new PostingAggregateService(db1), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, blockingAttachments);
+        var sut2 = new StatementDraftService(db2, new PostingAggregateService(db2), new StubAccountService(), new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
 
         var firstTask = sut1.BookAsync(draftId, null, ownerId, false, CancellationToken.None);
-        await Task.WhenAny(gateEntered.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+        await Task.WhenAny(gateEntered.Task, Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
         Assert.True(gateEntered.Task.IsCompleted);
 
         BookingResult? secondResult = null;
@@ -1350,8 +1513,8 @@ public sealed class StatementDraftBookingTests
              secondResult.Retryable == true));
 
         await using var verifyDb = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connectionString).Options);
-        var persistedPostings = await verifyDb.Postings.CountAsync(p => p.SourceId == entryId);
-        var persistedGuardCount = await verifyDb.StatementDraftBookingGuards.CountAsync(g => g.OwnerUserId == ownerId && g.DraftId == draftId);
+        var persistedPostings = await verifyDb.Postings.CountAsync(p => p.SourceId == entryId, cancellationToken: TestContext.Current.CancellationToken);
+        var persistedGuardCount = await verifyDb.StatementDraftBookingGuards.CountAsync(g => g.OwnerUserId == ownerId && g.DraftId == draftId, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(2, persistedPostings);
         Assert.Equal(0, persistedGuardCount);
@@ -1368,7 +1531,7 @@ public sealed class StatementDraftBookingTests
         var draft = await CreateDraftAsync(db, owner, account.Id);
         var recipient = new Contact(owner, "Entry Recipient", ContactType.Organization, null, null, false);
         db.Contacts.Add(recipient);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var firstEntry = draft.AddEntry(DateTime.Today, 12m, "First Entry", recipient.Name, DateTime.Today, "EUR", null, false);
         var secondEntry = draft.AddEntry(DateTime.Today, 18m, "Second Entry", recipient.Name, DateTime.Today, "EUR", null, false);
@@ -1376,11 +1539,11 @@ public sealed class StatementDraftBookingTests
         secondEntry.MarkAccounted(recipient.Id);
         db.Entry(firstEntry).State = EntityState.Added;
         db.Entry(secondEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var firstResult = await sut.BookAsync(draft.Id, firstEntry.Id, owner, false, CancellationToken.None);
         Assert.True(firstResult.Success);
-        var postingCountAfterFirstBooking = await db.Postings.CountAsync(p => p.SourceId == firstEntry.Id);
+        var postingCountAfterFirstBooking = await db.Postings.CountAsync(p => p.SourceId == firstEntry.Id, cancellationToken: TestContext.Current.CancellationToken);
 
         var secondResult = await sut.BookAsync(draft.Id, firstEntry.Id, owner, false, CancellationToken.None);
 
@@ -1388,7 +1551,161 @@ public sealed class StatementDraftBookingTests
         Assert.Equal("BOOKING_ALREADY_PROCESSED", secondResult.ErrorCode);
         Assert.False(secondResult.Retryable);
         Assert.True(secondResult.Validation.Messages.Any(m => m.Code == "BOOKING_ALREADY_PROCESSED"));
-        Assert.Equal(postingCountAfterFirstBooking, await db.Postings.CountAsync(p => p.SourceId == firstEntry.Id));
+        Assert.Equal(postingCountAfterFirstBooking, await db.Postings.CountAsync(p => p.SourceId == firstEntry.Id, cancellationToken: TestContext.Current.CancellationToken));
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that a newly created preliminary draft is linked to the specified account and marked as preliminary.
+    /// </summary>
+    [Fact]
+    public async Task CreatePreliminaryDraftAsync_Should_CreatePreliminaryDraft_ForAccount()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+
+        var dto = await sut.CreatePreliminaryDraftAsync(owner, acc.Id, CancellationToken.None);
+
+        Assert.NotNull(dto);
+        Assert.Equal(acc.Id, dto.DetectedAccountId);
+        Assert.True(dto.IsPreliminary);
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that booking a preliminary draft propagates the preliminary flag to all created postings.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_PreliminaryDraft_ShouldCreatePreliminaryPostings()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+        draft.MarkAsPreliminary();
+        db.Entry(draft).State = EntityState.Modified;
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var entry = draft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(entry).State = EntityState.Added;
+        entry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await sut.BookAsync(draft.Id, entry.Id, owner, false, CancellationToken.None);
+
+        Assert.True(result.Success);
+        var postings = await db.Postings.Where(p => p.SourceId == entry.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.All(postings, p => Assert.True(p.IsPreliminary));
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that booking a real statement reverses all preliminary postings for the same account.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_RealDraft_ShouldReversePreliminaryPostings()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+
+        // 1. Book a preliminary posting
+        var prelimDraft = await CreateDraftAsync(db, owner, acc.Id);
+        prelimDraft.MarkAsPreliminary();
+        db.Entry(prelimDraft).State = EntityState.Modified;
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var prelimEntry = prelimDraft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(prelimEntry).State = EntityState.Added;
+        prelimEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var prelimResult = await sut.BookAsync(prelimDraft.Id, prelimEntry.Id, owner, false, CancellationToken.None);
+        Assert.True(prelimResult.Success);
+
+        // 2. Book a real statement for the same account
+        var realDraft = await CreateDraftAsync(db, owner, acc.Id);
+        var realEntry = realDraft.AddEntry(DateTime.Today, 20m, "B", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(realEntry).State = EntityState.Added;
+        realEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var realResult = await sut.BookAsync(realDraft.Id, realEntry.Id, owner, true, CancellationToken.None);
+        Assert.True(realResult.Success);
+
+        // Preliminary postings are reversed and zeroed
+        var prelimPostings = await db.Postings.Where(p => p.SourceId == prelimEntry.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.All(prelimPostings, p =>
+        {
+            Assert.True(p.IsReversed);
+            Assert.Equal(0m, p.Amount);
+            Assert.True(p.OriginalAmount.HasValue);
+        });
+
+        // Real postings are not preliminary
+        var realPostings = await db.Postings.Where(p => p.SourceId == realEntry.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.All(realPostings, p =>
+        {
+            Assert.False(p.IsPreliminary);
+            Assert.False(p.IsReversed);
+        });
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that another preliminary booking does not reverse existing preliminary postings.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_SecondPreliminaryDraft_ShouldNotReversePreliminaryPostings()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var firstDraft = await CreateDraftAsync(db, owner, acc.Id);
+        firstDraft.MarkAsPreliminary();
+        db.Entry(firstDraft).State = EntityState.Modified;
+        var firstEntry = firstDraft.AddEntry(DateTime.Today, 10m, "A", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(firstEntry).State = EntityState.Added;
+        firstEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var firstResult = await sut.BookAsync(firstDraft.Id, firstEntry.Id, owner, false, CancellationToken.None);
+        Assert.True(firstResult.Success);
+
+        var secondDraft = await CreateDraftAsync(db, owner, acc.Id);
+        secondDraft.MarkAsPreliminary();
+        db.Entry(secondDraft).State = EntityState.Modified;
+        var secondEntry = secondDraft.AddEntry(DateTime.Today, 20m, "B", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(secondEntry).State = EntityState.Added;
+        secondEntry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var secondResult = await sut.BookAsync(secondDraft.Id, secondEntry.Id, owner, false, CancellationToken.None);
+        Assert.True(secondResult.Success);
+
+        var firstPostings = await db.Postings.Where(p => p.SourceId == firstEntry.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.All(firstPostings, p =>
+        {
+            Assert.False(p.IsReversed);
+            Assert.NotEqual(0m, p.Amount);
+        });
+
+        var secondPostings = await db.Postings.Where(p => p.SourceId == secondEntry.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.All(secondPostings, p => Assert.True(p.IsPreliminary));
 
         conn.Dispose();
     }

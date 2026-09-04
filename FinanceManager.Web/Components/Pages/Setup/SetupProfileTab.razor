@@ -54,6 +54,13 @@
                   <label class="setup-checkbox-label" for="share-key">@Localizer["SetupProfile_Help_ShareKey"]</label>
               </div>
           </div>
+          <div class="form-row setup-checkbox-row">
+              <label class="setup-checkbox-row-title" for="cache-kpis">@Localizer["SetupProfile_Label_CacheKpis"]</label>
+              <div class="setup-checkbox-control">
+                  <input id="cache-kpis" type="checkbox" @bind="_vm.Model.CacheKpisInLocalStorage" @bind:after="(()=> _vm.OnChanged())" />
+                  <label class="setup-checkbox-label" for="cache-kpis">@Localizer["SetupProfile_Help_CacheKpis"]</label>
+              </div>
+          </div>
       </div>
 
       if (!string.IsNullOrWhiteSpace(_vm.SaveError))

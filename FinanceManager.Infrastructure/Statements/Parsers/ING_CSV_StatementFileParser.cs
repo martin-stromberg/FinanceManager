@@ -7,7 +7,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 {
     /// <summary>
     /// Statement file reader for ING statement exports using template-based parsing.
-    /// Provides templates used by the base <see cref="TemplateStatementFileReader"/> to detect account
+    /// Provides templates used by the base <see cref="TemplateStatementFileParser"/> to detect account
     /// information and table columns. The reader exposes a UTF-8 content reader suitable for PDF-to-text
     /// conversions that produce UTF-8 encoded bytes.
     /// Supports multi-result parsing for ING collection statements (Sammelauszüge) that contain

@@ -53,7 +53,9 @@ public static class ApiErrorFactory
     /// <returns>Standardized API error DTO.</returns>
     public static ApiErrorDto FromDomainValidationException(string origin, DomainValidationException ex, IStringLocalizer? localizer)
     {
-        var code = ex.Code;
+        // DomainValidationException.Code is optional (the message-only constructor leaves it null);
+        // fall back to a generic code so the Origin/Code/Message contract always has a real code value.
+        var code = ex.Code ?? "Err_Validation";
         var message = ResolveMessage(origin, code, ex.Message, localizer);
         return ApiErrorDto.Create(origin, code, message);
     }

@@ -156,7 +156,7 @@ public sealed class SetupImportService : ISetupImportService
     /// <summary>
     /// Event raised when import progress changes. Subscribers receive an <see cref="ImportProgress"/> instance.
     /// </summary>
-    public event EventHandler<ImportProgress> ProgressChanged;
+    public event EventHandler<ImportProgress>? ProgressChanged;
 
     /// <summary>
     /// Imports a backup stream for the specified user.
@@ -180,7 +180,7 @@ public sealed class SetupImportService : ISetupImportService
 
         var meta = JsonSerializer.Deserialize<BackupMeta>(metaLine);
         if (meta == null || meta.Type != "Backup" || meta.Version < 2)
-            throw new InvalidOperationException("Ungültiges Backup-Format.");
+            throw new InvalidOperationException("Ungï¿½ltiges Backup-Format.");
         var jsonData = await reader.ReadToEndAsync();
         switch (meta.Version)
         {
@@ -510,19 +510,34 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
             foreach (var dto in list)
             {
-                if (dto.BudgetPurposeId == null || dto.BudgetPurposeId == Guid.Empty)
+                Guid? mappedPurposeId = null;
+                Guid? mappedCategoryId = null;
+
+                if (dto.BudgetPurposeId.HasValue && dto.BudgetPurposeId.Value != Guid.Empty)
+                {
+                    if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId.Value, out var mp))
+                    {
+                        ProgressChanged?.Invoke(this, progress.IncSub());
+                        continue;
+                    }
+                    mappedPurposeId = mp;
+                }
+                else if (dto.BudgetCategoryId.HasValue && dto.BudgetCategoryId.Value != Guid.Empty)
+                {
+                    if (!budgetCategoryMap.TryGetValue(dto.BudgetCategoryId.Value, out var mc))
+                    {
+                        ProgressChanged?.Invoke(this, progress.IncSub());
+                        continue;
+                    }
+                    mappedCategoryId = mc;
+                }
+                else
                 {
                     ProgressChanged?.Invoke(this, progress.IncSub());
                     continue;
                 }
 
-                if (!budgetPurposeMap.TryGetValue(dto.BudgetPurposeId.Value, out var mappedPurposeId))
-                {
-                    ProgressChanged?.Invoke(this, progress.IncSub());
-                    continue;
-                }
-
-                var entity = new BudgetRule(userId, budgetPurposeId: mappedPurposeId, budgetCategoryId: null, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
+                var entity = new BudgetRule(userId, mappedPurposeId, mappedCategoryId, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
                 _db.BudgetRules.Add(entity);
                 await _db.SaveChangesAsync(ct);
                 ProgressChanged?.Invoke(this, progress.IncSub());
@@ -1023,6 +1038,12 @@ public sealed class SetupImportService : ISetupImportService
                 else
                 {
                     var bank = _db.Contacts.FirstOrDefault(c => c.Type == ContactType.Bank && c.Name == dto.Name);
+                    if (bank is null)
+                    {
+                        _logger.LogWarning("Failed to import account {AccountId}: no matching bank contact found for name {Name}", dto.Id, dto.Name);
+                        ProgressChanged?.Invoke(this, progress.IncSub());
+                        continue;
+                    }
                     adjusted = adjusted with { BankContactId = bank.Id };
                 }
                 if (accountMap.TryGetValue(dto.Id, out var mappedId))

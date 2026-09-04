@@ -2,7 +2,17 @@ window.financeManager = window.financeManager || {};
 
 (function (fm) {
   const loadingBarId = "fm-loading-bar";
+  const keepaliveUrl = "/api/auth/keepalive";
+  const keepaliveIntervalMs = 60000;
+  const keepaliveForcedIntervalMs = 5000;
+  const keepaliveTimeoutMs = 8000;
+  const keepaliveInteractionEvents = ["pointerdown", "keydown", "focusin", "input"];
   let submitFallbackTimers = [];
+  let keepaliveRequest = null;
+  let keepaliveLastSuccess = 0;
+  let keepaliveLastForcedStart = 0;
+  let keepaliveAbortController = null;
+  let keepaliveListenersAttached = false;
 
   function getLoadingBar() {
     return document.querySelector("[data-mst-loading-bar]") || document.getElementById(loadingBarId);
@@ -126,6 +136,135 @@ window.financeManager = window.financeManager || {};
     stopIfValidationFailed();
   }
 
+  function isPublicKeepalivePath() {
+    const path = (window.location.pathname || "/").toLowerCase();
+    return path === "/login"
+      || path === "/register"
+      || path === "/help"
+      || path === "/error"
+      || path.startsWith("/help/");
+  }
+
+  function triggerKeepalive(options) {
+    options = options || {};
+    const now = Date.now();
+
+    if (isPublicKeepalivePath()) {
+      return Promise.resolve(false);
+    }
+
+    if (keepaliveRequest) {
+      return keepaliveRequest;
+    }
+
+    if (options.force) {
+      if (now - keepaliveLastForcedStart < keepaliveForcedIntervalMs) {
+        return Promise.resolve(false);
+      }
+
+      keepaliveLastForcedStart = now;
+    } else if (now - keepaliveLastSuccess < keepaliveIntervalMs) {
+      return Promise.resolve(false);
+    }
+
+    keepaliveAbortController = typeof AbortController === "function" ? new AbortController() : null;
+    let timeoutHandle = null;
+    if (keepaliveAbortController) {
+      timeoutHandle = window.setTimeout(function () {
+        try {
+          keepaliveAbortController.abort();
+        } catch { }
+      }, keepaliveTimeoutMs);
+    }
+
+    keepaliveRequest = fetch(keepaliveUrl, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "X-Requested-With": "fetch" },
+      signal: keepaliveAbortController ? keepaliveAbortController.signal : undefined
+    })
+      .then(function (response) {
+        if (response.ok) {
+          keepaliveLastSuccess = Date.now();
+          return true;
+        }
+
+        return false;
+      })
+      .catch(function () {
+        return false;
+      })
+      .finally(function () {
+        if (timeoutHandle !== null) {
+          window.clearTimeout(timeoutHandle);
+        }
+
+        keepaliveRequest = null;
+        keepaliveAbortController = null;
+      });
+
+    return keepaliveRequest;
+  }
+
+  function handleKeepaliveInteraction(event) {
+    if (event
+      && event.type === "input"
+      && event.target
+      && event.target.matches
+      && event.target.matches("[data-fm-quickedit-keepalive]")) {
+      return;
+    }
+
+    triggerKeepalive();
+  }
+
+  function handleQuickEditBlur(event) {
+    const target = event.target;
+    if (!target || !target.matches || !target.matches("[data-fm-quickedit-keepalive]")) {
+      return;
+    }
+
+    window.setTimeout(function () {
+      triggerKeepalive({ force: true, replace: true });
+    }, 0);
+  }
+
+  function registerKeepalive() {
+    if (keepaliveListenersAttached) {
+      return;
+    }
+
+    keepaliveInteractionEvents.forEach(function (eventName) {
+      document.addEventListener(eventName, handleKeepaliveInteraction, true);
+    });
+    document.addEventListener("blur", handleQuickEditBlur, true);
+    keepaliveListenersAttached = true;
+  }
+
+  function unregisterKeepalive() {
+    if (!keepaliveListenersAttached) {
+      return;
+    }
+
+    keepaliveInteractionEvents.forEach(function (eventName) {
+      document.removeEventListener(eventName, handleKeepaliveInteraction, true);
+    });
+    document.removeEventListener("blur", handleQuickEditBlur, true);
+    keepaliveListenersAttached = false;
+  }
+
+  function handleQuickEditKeyDown(event) {
+    const target = event.target;
+    if (!target || !target.id || !target.id.startsWith("qe_")) {
+      return;
+    }
+
+    if (event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+      event.preventDefault();
+    }
+  }
+
   function attachGlobalListeners() {
     if (fm.__loadingBarListenersAttached) {
       return;
@@ -133,6 +272,7 @@ window.financeManager = window.financeManager || {};
 
     document.addEventListener("click", handleClick, true);
     document.addEventListener("submit", handleSubmit, true);
+    document.addEventListener("keydown", handleQuickEditKeyDown, true);
     window.addEventListener("pageshow", stopLoadingBar);
     fm.__loadingBarListenersAttached = true;
   }
@@ -144,6 +284,33 @@ window.financeManager = window.financeManager || {};
     } catch { }
   };
 
+  fm.quickEdit = {
+    applyValues: function (values) {
+      if (!Array.isArray(values)) return;
+      values.forEach(function (v) {
+        var el = document.getElementById(v.id);
+        if (el) el.value = v.value;
+      });
+    },
+    focusById: function (id) {
+      var el = document.getElementById(id);
+      if (el && typeof el.focus === "function") {
+        el.focus();
+      }
+    },
+    isFocusInsideRow: function (rowId) {
+      var row = document.getElementById(rowId);
+      var active = document.activeElement;
+      return !!(row && active && (row === active || row.contains(active)));
+    }
+  };
+
+  fm.keepalive = {
+    ping: triggerKeepalive,
+    register: registerKeepalive,
+    unregister: unregisterKeepalive
+  };
+
   fm.loadingBar = {
     start: startLoadingBar,
     restart: startLoadingBar,
@@ -151,4 +318,5 @@ window.financeManager = window.financeManager || {};
   };
 
   attachGlobalListeners();
+  registerKeepalive();
 })(window.financeManager);

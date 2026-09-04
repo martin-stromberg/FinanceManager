@@ -1,4 +1,4 @@
-﻿using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Accounts;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Postings;
@@ -7,6 +7,7 @@ using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,8 +15,21 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers split-draft linking edge cases: how postings from a parent (intermediary) entry and its linked child
+/// draft get their booking/valuta dates on booking, duplicate/already-booked detection when the parent's
+/// intermediary posting is re-imported, and the upload-group constraint governing which drafts may legitimately
+/// be linked as parent and child via <c>SetEntrySplitDraftAsync</c>.
+/// </summary>
 public sealed class StatementDraftSplitLinkTests
 {
+    // Split-linking never needs to load statement files (that happens during upload/create-draft), but the
+    // constructor parameter is non-nullable, so a trivial stub stands in for the real factory.
+    private sealed class StubStatementFileFactory : IStatementFileFactory
+    {
+        public IStatementFile? Load(string fileName, byte[] fileBytes) => null;
+    }
+
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -33,7 +47,7 @@ public sealed class StatementDraftSplitLinkTests
         db.SaveChanges();
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, owner.Id);
     }
 
@@ -52,11 +66,11 @@ public sealed class StatementDraftSplitLinkTests
         var contactB = new Contact(owner, "Shop B", ContactType.Organization, null, null);
         var contactC = new Contact(owner, "Shop C", ContactType.Organization, null, null);
         db.Contacts.AddRange(bank, intermediary, contactA, contactB, contactC);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var account = new Account(owner, AccountType.Giro, "Giro", "DE12500105170648489890", bank.Id);
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var childDraft = new StatementDraft(owner, "child.pdf", null, null);
         childDraft.SetUploadGroup(Guid.NewGuid());
@@ -64,7 +78,7 @@ public sealed class StatementDraftSplitLinkTests
         parentDraft.SetUploadGroup(Guid.NewGuid());
         parentDraft.SetDetectedAccount(account.Id);
         db.StatementDrafts.AddRange(childDraft, parentDraft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var childEntry1 = childDraft.AddEntry(new DateTime(2026, 1, 10), -30m, "Child A", contactA.Name, new DateTime(2026, 1, 11), "EUR", null, false);
         childEntry1.MarkAccounted(contactA.Id);
@@ -83,7 +97,7 @@ public sealed class StatementDraftSplitLinkTests
         parentEntry.MarkAccounted(intermediary.Id);
         db.Entry(parentEntry).State = EntityState.Added;
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.SetEntrySplitDraftAsync(parentDraft.Id, parentEntry.Id, childDraft.Id, owner, CancellationToken.None);
 
@@ -92,16 +106,16 @@ public sealed class StatementDraftSplitLinkTests
 
         var childEntries = await db.StatementDraftEntries.AsNoTracking()
             .Where(e => e.DraftId == childDraft.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         var childBookings = childEntries.ToDictionary(e => e.Id, e => e.BookingDate);
 
         var childPostings = await db.Postings.AsNoTracking()
             .Where(p => p.SourceId != Guid.Empty && childBookings.Keys.Contains(p.SourceId))
-            .ToListAsync();
+            .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         var parentZeroPostings = await db.Postings.AsNoTracking()
             .Where(p => p.SourceId == parentEntry.Id && p.Amount == 0m)
-            .ToListAsync();
+            .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotEmpty(childPostings);
         Assert.NotEmpty(parentZeroPostings);
@@ -133,11 +147,11 @@ public sealed class StatementDraftSplitLinkTests
         var contactB = new Contact(owner, "Shop B", ContactType.Organization, null, null);
         var contactC = new Contact(owner, "Shop C", ContactType.Organization, null, null);
         db.Contacts.AddRange(bank, intermediary, contactA, contactB, contactC);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var account = new Account(owner, AccountType.Giro, "Giro", "DE12500105170648489890", bank.Id);
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var childDraft = new StatementDraft(owner, "child.pdf", null, null);
         childDraft.SetUploadGroup(Guid.NewGuid());
@@ -145,7 +159,7 @@ public sealed class StatementDraftSplitLinkTests
         parentDraft.SetUploadGroup(Guid.NewGuid());
         parentDraft.SetDetectedAccount(account.Id);
         db.StatementDrafts.AddRange(childDraft, parentDraft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var childEntry1 = childDraft.AddEntry(new DateTime(2026, 1, 10), -30m, "Child A", contactA.Name, new DateTime(2026, 1, 11), "EUR", null, false);
         childEntry1.MarkAccounted(contactA.Id);
@@ -163,7 +177,7 @@ public sealed class StatementDraftSplitLinkTests
         var parentEntry = parentDraft.AddEntry(parentBookingDate, -120m, "Card Statement", intermediary.Name, parentBookingDate, "EUR", null, false);
         parentEntry.MarkAccounted(intermediary.Id);
         db.Entry(parentEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.SetEntrySplitDraftAsync(parentDraft.Id, parentEntry.Id, childDraft.Id, owner, CancellationToken.None);
 
@@ -174,18 +188,18 @@ public sealed class StatementDraftSplitLinkTests
         secondParent.SetUploadGroup(Guid.NewGuid());
         secondParent.SetDetectedAccount(account.Id);
         db.StatementDrafts.Add(secondParent);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var secondEntry = secondParent.AddEntry(parentBookingDate, parentEntry.Amount - 1m, parentEntry.Subject, intermediary.Name, parentBookingDate, "EUR", null, false);
         secondEntry.MarkAccounted(intermediary.Id);
         db.Entry(secondEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var classified = await sut.ClassifyAsync(secondParent.Id, null, owner, CancellationToken.None);
         Assert.NotNull(classified);
 
         var updatedEntry = await db.StatementDraftEntries.AsNoTracking()
-            .FirstAsync(e => e.Id == secondEntry.Id);
+            .FirstAsync(e => e.Id == secondEntry.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEqual(StatementDraftEntryStatus.AlreadyBooked, updatedEntry.Status);
 
         conn.Dispose();
@@ -205,11 +219,11 @@ public sealed class StatementDraftSplitLinkTests
         var contactB = new Contact(owner, "Shop B", ContactType.Organization, null, null);
         var contactC = new Contact(owner, "Shop C", ContactType.Organization, null, null);
         db.Contacts.AddRange(bank, intermediary, contactA, contactB, contactC);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var account = new Account(owner, AccountType.Giro, "Giro", "DE12500105170648489890", bank.Id);
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var childDraft = new StatementDraft(owner, "child.pdf", null, null);
         childDraft.SetUploadGroup(Guid.NewGuid());
@@ -217,7 +231,7 @@ public sealed class StatementDraftSplitLinkTests
         parentDraft.SetUploadGroup(Guid.NewGuid());
         parentDraft.SetDetectedAccount(account.Id);
         db.StatementDrafts.AddRange(childDraft, parentDraft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var childEntry1 = childDraft.AddEntry(new DateTime(2026, 1, 10), -30m, "Child A", contactA.Name, new DateTime(2026, 1, 11), "EUR", null, false);
         childEntry1.MarkAccounted(contactA.Id);
@@ -235,7 +249,7 @@ public sealed class StatementDraftSplitLinkTests
         var parentEntry = parentDraft.AddEntry(parentBookingDate, -120m, "Card Statement", intermediary.Name, parentBookingDate, "EUR", null, false);
         parentEntry.MarkAccounted(intermediary.Id);
         db.Entry(parentEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.SetEntrySplitDraftAsync(parentDraft.Id, parentEntry.Id, childDraft.Id, owner, CancellationToken.None);
 
@@ -246,23 +260,28 @@ public sealed class StatementDraftSplitLinkTests
         secondParent.SetUploadGroup(Guid.NewGuid());
         secondParent.SetDetectedAccount(account.Id);
         db.StatementDrafts.Add(secondParent);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var secondEntry = secondParent.AddEntry(parentBookingDate, parentEntry.Amount, parentEntry.Subject, intermediary.Name, parentBookingDate, "EUR", null, false);
         secondEntry.MarkAccounted(intermediary.Id);
         db.Entry(secondEntry).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var classified = await sut.ClassifyAsync(secondParent.Id, null, owner, CancellationToken.None);
         Assert.NotNull(classified);
 
         var updatedEntry = await db.StatementDraftEntries.AsNoTracking()
-            .FirstAsync(e => e.Id == secondEntry.Id);
+            .FirstAsync(e => e.Id == secondEntry.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(StatementDraftEntryStatus.AlreadyBooked, updatedEntry.Status);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Linking a parent entry to a child draft must succeed when the two drafts originate from different upload
+    /// groups (imported as separate files/batches) - the normal case for pairing an intermediary statement with a
+    /// separately imported detail statement.
+    /// </summary>
     [Fact]
     public async Task SetEntrySplitDraftAsync_ShouldLink_WhenUploadGroupIdDiffers()
     {
@@ -274,28 +293,33 @@ public sealed class StatementDraftSplitLinkTests
         var child = new StatementDraft(owner, "child.pdf", null, null);
         child.SetUploadGroup(Guid.NewGuid()); // different group -> should be allowed now
         db.StatementDrafts.Add(child);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, isPaymentIntermediary: true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var pEntry = parent.AddEntry(DateTime.Today, 100m, "Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         db.Entry(pEntry).State = EntityState.Added;
         pEntry.MarkAccounted(intermediary.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         var result = await sut.SetEntrySplitDraftAsync(parent.Id, pEntry.Id, child.Id, owner, CancellationToken.None);
 
         // Assert
         Assert.NotNull(result);
-        var updated = await db.StatementDraftEntries.FirstAsync(e => e.Id == pEntry.Id);
+        var updated = await db.StatementDraftEntries.FirstAsync(e => e.Id == pEntry.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(child.Id, updated.SplitDraftId);
 
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Linking must be rejected with an <see cref="InvalidOperationException"/> when the parent and child drafts
+    /// share the same upload group id, since a draft from the very same upload batch cannot legitimately be its
+    /// own split detail - guards against accidentally linking two entries produced by the same import run.
+    /// </summary>
     [Fact]
     public async Task SetEntrySplitDraftAsync_ShouldThrow_WhenUploadGroupIdSame()
     {
@@ -308,16 +332,16 @@ public sealed class StatementDraftSplitLinkTests
         var child = new StatementDraft(owner, "child.pdf", null, null);
         child.SetUploadGroup(uploadId); // same group -> should now fail
         db.StatementDrafts.Add(child);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, isPaymentIntermediary: true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var pEntry = parent.AddEntry(DateTime.Today, 100m, "Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         db.Entry(pEntry).State = EntityState.Added;
         pEntry.MarkAccounted(intermediary.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var act = async () => await sut.SetEntrySplitDraftAsync(parent.Id, pEntry.Id, child.Id, owner, CancellationToken.None);
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(act);

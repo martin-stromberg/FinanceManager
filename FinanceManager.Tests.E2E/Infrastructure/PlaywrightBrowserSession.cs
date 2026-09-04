@@ -1,5 +1,11 @@
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// Wraps a single Playwright <see cref="IBrowserContext"/>/<see cref="IPage"/> pair used to drive one E2E
+/// test session, and captures diagnostic artifacts (a screenshot, the final page HTML, any browser
+/// console/page errors, and an optional trace) on disposal, so a failing test leaves behind enough evidence
+/// to diagnose it without needing to rerun it interactively.
+/// </summary>
 public sealed class PlaywrightBrowserSession : IAsyncDisposable
 {
     private readonly IBrowserContext _context;
@@ -8,6 +14,18 @@ public sealed class PlaywrightBrowserSession : IAsyncDisposable
     private readonly bool _traceEnabled;
     private readonly List<string> _browserMessages = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PlaywrightBrowserSession"/> class.
+    /// </summary>
+    /// <param name="context">The browser context that owns <paramref name="page"/> and any trace recording.</param>
+    /// <param name="page">The page the test will interact with, exposed via <see cref="Page"/>.</param>
+    /// <param name="artifactPrefix">
+    /// File path prefix (without extension) used when writing captured artifacts, or <see langword="null"/>
+    /// if no artifact directory is available, in which case artifact and trace capture are skipped even if
+    /// otherwise enabled.
+    /// </param>
+    /// <param name="artifactCaptureEnabled">Whether to capture a screenshot, HTML snapshot, and browser console/error log on disposal.</param>
+    /// <param name="traceEnabled">Whether to stop and save a Playwright trace on disposal.</param>
     public PlaywrightBrowserSession(IBrowserContext context, IPage page, string? artifactPrefix, bool artifactCaptureEnabled, bool traceEnabled)
     {
         _context = context;
@@ -23,8 +41,16 @@ public sealed class PlaywrightBrowserSession : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// The Playwright page this session drives.
+    /// </summary>
     public IPage Page { get; }
 
+    /// <summary>
+    /// Captures any enabled diagnostic artifacts (screenshot, HTML snapshot, browser log, trace) for the
+    /// session, then disposes the underlying browser context. Artifact capture failures are swallowed so
+    /// they never mask the actual test failure they were meant to help diagnose.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         try

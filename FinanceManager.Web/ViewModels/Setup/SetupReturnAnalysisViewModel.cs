@@ -21,8 +21,7 @@ public sealed class SetupReturnAnalysisViewModel : BaseViewModel
         _logger = sp.GetRequiredService<ILogger<SetupReturnAnalysisViewModel>>();
     }
 
-    /// <summary>Whether a load operation is in progress.</summary>
-    public bool Loading { get; private set; }
+    // Loading is inherited from BaseViewModel (protected set) - no local redeclaration needed.
 
     /// <summary>Whether a save operation is in progress.</summary>
     public bool Saving { get; private set; }

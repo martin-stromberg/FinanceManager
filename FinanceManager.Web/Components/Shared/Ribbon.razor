@@ -153,7 +153,7 @@
     [Parameter] public IRibbonProvider? Provider { get; set; }
     [Parameter] public Microsoft.Extensions.Localization.IStringLocalizer? Localizer { get; set; }
     // Legacy parameters maintained for pages that construct tabs locally
-    [Parameter] public TTabEnum ActiveTab { get; set; }
+    [Parameter] public TTabEnum ActiveTab { get; set; } = default!;
     [Parameter] public EventCallback<TTabEnum> ActiveTabChanged { get; set; }
 
     [Parameter] public string AriaLabel { get; set; } = "Application ribbon";
@@ -165,7 +165,9 @@
 
     private List<RibbonTab<TTabEnum>>? BuildTabsToRender()
     {
-        var regs = Provider?.GetRibbonRegisters(Localizer);
+        // Localizer can legitimately be omitted (e.g. injected as nullable by some pages); without it,
+        // the provider cannot resolve labels for its registers, so treat this the same as "no registers".
+        var regs = Localizer == null ? null : Provider?.GetRibbonRegisters(Localizer);
         if (regs == null) { return new List<RibbonTab<TTabEnum>>(); }
 
         // Merge groups across registers: groups with same title get merged; preserve first-seen order
@@ -272,25 +274,28 @@
     protected override void OnParametersSet()
     {
         // Ensure tabs are recomputed on next render
-        var regs = Provider?.GetRibbonRegisters(Localizer);
+        var regs = Localizer == null ? null : Provider?.GetRibbonRegisters(Localizer);
         if (regs != null && regs.Any())
         {
+            var currentTabs = TabsToRender;
+            if (currentTabs == null || currentTabs.Count == 0) { return; }
+
             if (Provider is IRibbonProvider rp)
             {
                 var boxed = (object?)rp.GetActiveTab<TTabEnum>();
                 var providerActive = boxed != null ? (TTabEnum)boxed : default!;
-                if (boxed != null && !TabsToRender.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, providerActive)))
+                if (boxed != null && !currentTabs.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, providerActive)))
                 {
-                    rp.SetActiveTab<TTabEnum>(TabsToRender.First().Id);
+                    rp.SetActiveTab<TTabEnum>(currentTabs.First().Id);
                 }
-                else if (boxed == null && !TabsToRender.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab)))
+                else if (boxed == null && !currentTabs.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab)))
                 {
-                    rp.SetActiveTab<TTabEnum>(TabsToRender.First().Id);
+                    rp.SetActiveTab<TTabEnum>(currentTabs.First().Id);
                 }
             }
-            else if (!TabsToRender.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab)))
+            else if (!currentTabs.Any(t => EqualityComparer<TTabEnum>.Default.Equals(t.Id, ActiveTab)))
             {
-                ActiveTab = TabsToRender.First().Id;
+                ActiveTab = currentTabs.First().Id;
             }
         }
     }

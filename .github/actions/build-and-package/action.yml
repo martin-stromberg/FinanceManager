@@ -1,0 +1,143 @@
+name: Build and package
+description: >
+  Provisions the .NET 10 SDK, restores, publishes FinanceManager.Web (win-x64 and linux-x64,
+  self-contained) in Release mode, packages each runtime as a separate ZIP, and generates the
+  update manifest (update.json, Rezepte-format: SHA-256/size/URL per asset) via the existing
+  scripts/generate-update-manifest.mjs. Used by both the "prerelease" job in staging-ci.yml
+  ("Pre-Release") and the "release" job in release.yml, so these build/publish/zip/manifest
+  steps only exist once instead of being duplicated between them.
+
+inputs:
+  release-version:
+    description: Version without a leading v, written into release-metadata.json and update.json.
+    required: true
+  release-tag:
+    description: Release tag (e.g. v1.2.3 or v1.2.3-rc.1), written into release-metadata.json and used to build asset download URLs.
+    required: true
+  release-notes:
+    description: Release notes text to embed in update.json's releaseNotes field.
+    required: false
+    default: ''
+
+outputs:
+  asset-paths:
+    description: Semicolon-separated list of the generated ZIP file names.
+    value: ${{ steps.package.outputs.asset_paths }}
+  manifest-path:
+    description: Path to the generated update manifest.
+    value: ${{ steps.manifest.outputs.manifest_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore solution
+      run: dotnet restore FinanceManager.sln
+      shell: pwsh
+
+    - name: Publish application (win-x64, linux-x64, self-contained)
+      env:
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+      run: |
+        if (Test-Path publish) {
+          Remove-Item -Recurse -Force publish
+        }
+
+        foreach ($runtime in @("win-x64", "linux-x64")) {
+          $output = Join-Path "publish" $runtime
+          dotnet publish FinanceManager.Web/FinanceManager.Web.csproj --configuration Release --framework net10.0 --runtime $runtime --self-contained true --output $output
+          if ($LASTEXITCODE -ne 0) {
+            throw "Publish failed for $runtime."
+          }
+
+          $metadata = @{
+            version = $env:RELEASE_VERSION
+            publishedAt = (Get-Date).ToUniversalTime().ToString("O")
+            commitSha = $env:GITHUB_SHA
+            repository = $env:GITHUB_REPOSITORY
+            runtimeIdentifier = $runtime
+          } | ConvertTo-Json
+          Set-Content -LiteralPath (Join-Path $output "release-metadata.json") -Value $metadata -Encoding UTF8
+        }
+
+        if (-not (Test-Path publish -PathType Container)) {
+          throw "The publish directory was not created."
+        }
+      shell: pwsh
+
+    - name: Package publish output
+      id: package
+      env:
+        RELEASE_VERSION: ${{ inputs.release-version }}
+      run: |
+        if ([string]::IsNullOrWhiteSpace($env:RELEASE_VERSION)) {
+          throw "The release version is missing."
+        }
+
+        $assetPaths = New-Object System.Collections.Generic.List[string]
+
+        foreach ($runtime in @("win-x64", "linux-x64")) {
+          $publishPath = (Resolve-Path (Join-Path "publish" $runtime)).Path
+          $publishedFiles = Get-ChildItem -LiteralPath $publishPath -File -Recurse -Force
+          if ($publishedFiles.Count -eq 0) {
+            throw "The publish directory for $runtime is empty."
+          }
+
+          $archivePath = Join-Path $PWD "FinanceManager-v$env:RELEASE_VERSION-$runtime.zip"
+          if (Test-Path -LiteralPath $archivePath) {
+            Remove-Item -Force -LiteralPath $archivePath
+          }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory(
+            $publishPath,
+            $archivePath,
+            [System.IO.Compression.CompressionLevel]::Optimal,
+            $false
+          )
+
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+          try {
+            if ($archive.Entries.Count -eq 0) {
+              throw "The release archive for $runtime is empty."
+            }
+          }
+          finally {
+            $archive.Dispose()
+          }
+
+          $assetPaths.Add([System.IO.Path]::GetFileName($archivePath))
+        }
+
+        "asset_paths=$($assetPaths -join ';')" | Add-Content -Path $env:GITHUB_OUTPUT
+      shell: pwsh
+
+    - name: Generate update manifest
+      id: manifest
+      # Rezepte-format update manifest (SHA-256, size, download URL per asset), see
+      # ci-target-schema.md section 4.7 - reuses the existing, already-tested
+      # scripts/generate-update-manifest.mjs (see scripts/generate-update-manifest.test.mjs)
+      # rather than re-implementing manifest generation inline, unlike Softwareschmiede's
+      # PowerShell-inline approach. Node is preinstalled on GitHub-hosted runners, so no
+      # separate setup-node step is needed here.
+      env:
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        RELEASE_NOTES: ${{ inputs.release-notes }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+      run: |
+        if ([string]::IsNullOrWhiteSpace($env:RELEASE_NOTES)) {
+          $env:RELEASE_NOTES = "Release ${{ inputs.release-tag }}"
+        }
+
+        node scripts/generate-update-manifest.mjs
+
+        if (-not (Test-Path -LiteralPath "update.json")) {
+          throw "update.json was not generated."
+        }
+        "manifest_path=update.json" | Add-Content -Path $env:GITHUB_OUTPUT
+      shell: pwsh

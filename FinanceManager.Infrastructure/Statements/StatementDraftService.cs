@@ -1,4 +1,4 @@
-﻿using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Attachments; // added
 using FinanceManager.Application.Budget;
@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging; // added
 using Microsoft.Extensions.Logging.Abstractions; // added
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace FinanceManager.Infrastructure.Statements;
 
@@ -46,8 +47,8 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
     // helper: move entry attachments to bank posting and create references for other postings
     private async Task PropagateEntryAttachmentsAsync(
-        Guid ownerUserId, 
-        StatementDraftEntry entry, 
+        Guid ownerUserId,
+        StatementDraftEntry entry,
         Guid bankPostingId, IEnumerable<Guid> otherPostingIds, CancellationToken ct)
     {
         if (_attachments == null) { return; }
@@ -94,16 +95,21 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// <param name="db">Database context.</param>
     /// <param name="aggregateService">Posting aggregate service used to update aggregates when postings are created.</param>
     /// <param name="accountService">Account service used to resolve account metadata.</param>
+    /// <param name="statementFileFactory">Factory used to construct the correct <see cref="IStatementFile"/> for an uploaded file's format.</param>
     /// <param name="readers">Optional collection of statement file readers to parse uploaded files; a default set is used when not provided.</param>
     /// <param name="logger">Optional logger instance; a null logger is used when omitted.</param>
     /// <param name="attachments">Optional attachment service for storing and moving attachments.</param>
+    /// <param name="reportCacheService">Optional report cache service invalidated when new postings are created from a draft.</param>
+    /// <param name="budgetImpactEvaluationService">Optional service used to evaluate how committed postings affect budget purposes.</param>
+    /// <param name="knownContactCatalog">Optional catalog used to suggest known contacts during classification.</param>
+    /// <param name="portfolioAnalysisReportCacheService">Optional portfolio analysis report cache invalidated when postings affecting a security are created.</param>
     public StatementDraftService(
-        AppDbContext db, 
-        IPostingAggregateService aggregateService, 
+        AppDbContext db,
+        IPostingAggregateService aggregateService,
         IAccountService accountService,
         IStatementFileFactory statementFileFactory,
-        IEnumerable<IStatementFileParser>? readers = null, 
-        ILogger<StatementDraftService>? logger = null, 
+        IEnumerable<IStatementFileParser>? readers = null,
+        ILogger<StatementDraftService>? logger = null,
         IAttachmentService? attachments = null,
         IReportCacheService? reportCacheService = null,
         IBudgetImpactEvaluationService? budgetImpactEvaluationService = null,
@@ -123,10 +129,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
         // localization not required in constructor
         _statementFileParsers = (readers is not null && readers.ToList().Any()) ? readers.ToList() : new List<IStatementFileParser>
         {
-            new ING_PDF_StatementFileParser(null),
-            new ING_CSV_StatementFileParser(null),
-            new Wuestenrot_StatementFileParser(null),
-            new Barclays_PDF_StatementFileParser(null),
+            new ING_PDF_StatementFileParser(NullLogger<ING_PDF_StatementFileParser>.Instance),
+            new ING_CSV_StatementFileParser(NullLogger<ING_CSV_StatementFileParser>.Instance),
+            new Wuestenrot_StatementFileParser(NullLogger<Wuestenrot_StatementFileParser>.Instance),
+            new Barclays_PDF_StatementFileParser(NullLogger<Barclays_PDF_StatementFileParser>.Instance),
             new Backup_JSON_StatementFileParser()
         };
     }
@@ -371,7 +377,14 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
         var account = allAccounts.FirstOrDefault(acc => acc.Iban == parsedDraft.Header.IBAN);
         var line = parsedDraft.Movements.FirstOrDefault();
-        var security = allSecurities.FirstOrDefault(s => s.IsActive && line.Subject.Contains(s.Identifier, StringComparison.OrdinalIgnoreCase));
+        if (line is null)
+        {
+            // Movements is guaranteed non-empty by the "result.Movements.Any()" filter above, but guard defensively.
+            return;
+        }
+        // line.Subject can legitimately be null (not every parsed statement movement carries a subject text);
+        // treat that as "no match" rather than throwing.
+        var security = allSecurities.FirstOrDefault(s => s.IsActive && (line.Subject?.Contains(s.Identifier, StringComparison.OrdinalIgnoreCase) ?? false));
         if (security is not null)
         {
             // Respect account setting: if security processing is disabled on the detected account, do not add security details
@@ -383,35 +396,37 @@ public sealed partial class StatementDraftService : IStatementDraftService
             {
                 foreach (var draft in allDrafts.Where(draft => draft.DetectedAccountId == account.Id))
                 {
-                var draftEntries = (await _db.StatementDraftEntries
-                    .Where(e => e.DraftId == draft.DraftId)
-                    .Where(e => e.ContactId == account.BankContactId)
-                    .Where(e => e.SecurityId == security.Id)
-                    .Where(e => e.Amount == line.Amount)
-                    .ToListAsync(ct))
-                    .Where(e => (e.BookingDate == line.BookingDate) || (line.ValutaDate == e.ValutaDate && e.BookingDate.ToFirstOfMonth() == line.BookingDate.ToFirstOfMonth()))
-                    .ToList();
-                if (!draftEntries.Any()) continue;
+                    var draftEntries = (await _db.StatementDraftEntries
+                        .Where(e => e.DraftId == draft.DraftId)
+                        .Where(e => e.ContactId == account.BankContactId)
+                        .Where(e => e.SecurityId == security.Id)
+                        .Where(e => e.Amount == line.Amount)
+                        .ToListAsync(ct))
+                        .Where(e => (e.BookingDate == line.BookingDate) || (line.ValutaDate == e.ValutaDate && e.BookingDate.ToFirstOfMonth() == line.BookingDate.ToFirstOfMonth()))
+                        .ToList();
+                    if (!draftEntries.Any()) continue;
 
-                if (draftEntries.Count > 1)
-                {
-                    var entry2 = draftEntries.FirstOrDefault();
-                    ApplySecurityDetails(entry2, line);
-                    await _db.SaveChangesAsync(ct);
-
-                    foreach (var entry3 in draftEntries.Skip(1))
+                    if (draftEntries.Count > 1)
                     {
-                        entry3.MarkAlreadyBooked();
+                        var entry2 = draftEntries.FirstOrDefault();
+                        if (entry2 is null) continue; // draftEntries.Count > 1 guarantees a first element; guard defensively
+                        ApplySecurityDetails(entry2, line);
                         await _db.SaveChangesAsync(ct);
-                    }
-                    continue;
-                }
 
-                var entry = draftEntries.FirstOrDefault();
-                ApplySecurityDetails(entry, line);
-                await _db.SaveChangesAsync(ct);
-                break;
-            }
+                        foreach (var entry3 in draftEntries.Skip(1))
+                        {
+                            entry3.MarkAlreadyBooked();
+                            await _db.SaveChangesAsync(ct);
+                        }
+                        continue;
+                    }
+
+                    var entry = draftEntries.FirstOrDefault();
+                    if (entry is null) continue; // the "if (!draftEntries.Any()) continue;" check above guarantees a first element; guard defensively
+                    ApplySecurityDetails(entry, line);
+                    await _db.SaveChangesAsync(ct);
+                    break;
+                }
             }
         }
     }
@@ -445,7 +460,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// The method parses the file, determines the split configuration (monthly or fixed size), creates draft headers,
     /// and adds movements to the drafts. It also logs the import split details.
     /// </remarks>
-    public async IAsyncEnumerable<StatementDraftDto> CreateDraftAsync(Guid ownerUserId, string originalFileName, byte[] fileBytes, CancellationToken ct)
+    public async IAsyncEnumerable<StatementDraftDto> CreateDraftAsync(Guid ownerUserId, string originalFileName, byte[] fileBytes, [EnumeratorCancellation] CancellationToken ct)
     {
         _logger.LogInformation("Starting CreateDraftAsync for user {User} and file {File}", ownerUserId, originalFileName);
         var statementFile = statementFileFactory.Load(originalFileName, fileBytes);
@@ -1048,7 +1063,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// <param name="originalFileName">Original file name for the draft.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The created <see cref="StatementDraftDto"/>.</returns>
-    public async Task<StatementDraftDto> CreateEmptyDraftAsync(Guid ownerUserId, string originalFileName, CancellationToken ct)
+    public async Task<StatementDraftDto?> CreateEmptyDraftAsync(Guid ownerUserId, string originalFileName, CancellationToken ct)
     {
         // Create draft with no account number / description
         var draft = new StatementDraft(ownerUserId, originalFileName, accountNumber: null, description: null);
@@ -1425,7 +1440,13 @@ public sealed partial class StatementDraftService : IStatementDraftService
         {
             await ClassifyInternalAsync(draft, entryId, ownerUserId, ct);
             await _db.SaveChangesAsync(ct);
-            resultLust.Add(await GetDraftAsync(draft.Id, ownerUserId, ct));
+            var resultDto = await GetDraftAsync(draft.Id, ownerUserId, ct);
+            // GetDraftAsync can legitimately return null if the draft was concurrently deleted/committed
+            // between the initial load above and this re-fetch; skip it rather than adding a null entry.
+            if (resultDto is not null)
+            {
+                resultLust.Add(resultDto);
+            }
         }
         return resultLust.FirstOrDefault();
     }
@@ -1989,6 +2010,14 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 messages.Add(new("SAVINGSPLAN_DUE", "Information", $"Validation_SAVINGSPLAN_DUE|{plan.Name}|{effectiveDue:d}", draft.Id, null, "savings-plans", plan.Id));
             }
         }
+        if (!draft.IsPreliminary && draft.DetectedAccountId.HasValue)
+        {
+            var hasPreliminary = await _db.Postings.AsNoTracking().AnyAsync(p => p.AccountId == draft.DetectedAccountId.Value && p.Kind == PostingKind.Bank && p.IsPreliminary && !p.ReversedByPostingId.HasValue, ct);
+            if (hasPreliminary)
+            {
+                messages.Add(new("PRELIMINARY_POSTINGS_WILL_BE_REVERSED", "Warning", $"Validation_PRELIMINARY_POSTINGS_WILL_BE_REVERSED|/list/postings/account/{draft.DetectedAccountId.Value}", draft.Id, null, "accounts", draft.DetectedAccountId.Value));
+            }
+        }
         var isValid = messages.All(m => !string.Equals(m.Severity, "Error", StringComparison.OrdinalIgnoreCase));
         var budgetImpact = includeBudgetImpact && _budgetImpactEvaluationService != null
             ? await _budgetImpactEvaluationService.EvaluateDraftImpactAsync(draft.Id, entryId, ownerUserId, ct)
@@ -2156,6 +2185,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
         var account = await _db.Accounts.FirstAsync(a => a.Id == draft.DetectedAccountId, ct);
         var self = await _db.Contacts.FirstAsync(c => c.OwnerUserId == ownerUserId && c.Type == ContactType.Self, ct);
+        if (!draft.IsPreliminary)
+        {
+            await ReversePreliminaryPostingsAsync(account.Id, ownerUserId, ct);
+        }
         var allEntriesScope = await _db.StatementDraftEntries.Where(e => e.DraftId == draft.Id && (entryId == null || e.Id == entryId)).ToListAsync(ct);
         if (entryId.HasValue && allEntriesScope.Count == 0)
         {
@@ -2202,9 +2235,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
         async Task<(Guid groupId, Guid bankPostingId, Guid contactPostingId)> CreateBankAndContactPostingAsync(StatementDraftEntry e, decimal amount, Guid? contactId, CancellationToken token)
         {
             var gid = Guid.NewGuid();
-            var bankPosting = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
+            var bankPosting = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
             _db.Postings.Add(bankPosting); await UpsertAggregatesAsync(bankPosting, token);
-            var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
+            var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
             _db.Postings.Add(contactPosting); await UpsertAggregatesAsync(contactPosting, token);
 
             if (amount == 0m)
@@ -2236,16 +2269,16 @@ public sealed partial class StatementDraftService : IStatementDraftService
             var tradeAmount = e.SecurityTransactionType switch { SecurityTransactionType.Buy => e.Amount - fee - tax, SecurityTransactionType.Sell => e.Amount + fee + tax, SecurityTransactionType.Dividend => e.Amount + fee + tax, _ => e.Amount + fee + tax };
             var tradeSub = e.SecurityTransactionType switch { SecurityTransactionType.Buy => SecurityPostingSubType.Buy, SecurityTransactionType.Sell => SecurityPostingSubType.Sell, SecurityTransactionType.Dividend => SecurityPostingSubType.Dividend, _ => SecurityPostingSubType.Buy };
             decimal? qty = e.SecurityTransactionType switch { SecurityTransactionType.Buy => e.SecurityQuantity.HasValue ? Math.Abs(e.SecurityQuantity.Value) : (decimal?)null, SecurityTransactionType.Sell => e.SecurityQuantity.HasValue ? -Math.Abs(e.SecurityQuantity.Value) : (decimal?)null, SecurityTransactionType.Dividend => null, _ => e.SecurityQuantity };
-            var main = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, tradeAmount, e.Subject, e.RecipientName, e.BookingDescription, tradeSub, qty).SetGroup(gid);
+            var main = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, tradeAmount, e.Subject, e.RecipientName, e.BookingDescription, tradeSub, qty).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
             _db.Postings.Add(main); await UpsertAggregatesAsync(main, token);
             if (fee != 0m)
             {
-                var feeP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * fee, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Fee, null).SetGroup(gid);
+                var feeP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * fee, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Fee, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                 _db.Postings.Add(feeP); await UpsertAggregatesAsync(feeP, token);
             }
             if (tax != 0m)
             {
-                var taxP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * tax, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Tax, null).SetGroup(gid);
+                var taxP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, e.BookingDate, e.ValutaDate ?? e.BookingDate, factor * tax, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Tax, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                 _db.Postings.Add(taxP); await UpsertAggregatesAsync(taxP, token);
             }
         }
@@ -2288,7 +2321,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 Guid? spPostingId = null;
                 if (e.SavingsPlanId != null && e.ContactId == self.Id)
                 {
-                    var spPosting = new Domain.Postings.Posting(e.Id, PostingKind.SavingsPlan, null, null, e.SavingsPlanId, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, -e.Amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
+                    var spPosting = new Domain.Postings.Posting(e.Id, PostingKind.SavingsPlan, null, null, e.SavingsPlanId, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, -e.Amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                     _db.Postings.Add(spPosting); await UpsertAggregatesAsync(spPosting, ct);
                     spPostingId = spPosting.Id;
 
@@ -2515,6 +2548,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
 
         foreach (var childDraft in group)
         {
+            var draft = childDraft;
             foreach (var ce in childDraft.Entries)
             {
                 if (ce.ContactId == null) { continue; }
@@ -2524,9 +2558,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 async Task<(Guid groupId, Guid bankId, Guid contactId)> CreateBankAndContactAsync(StatementDraftEntry e, decimal amount, DateTime bookingDate, DateTime valutaDate)
                 {
                     var gid = Guid.NewGuid();
-                    var bank = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
+                    var bank = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                     _db.Postings.Add(bank); await UpsertAggregatesAsync(bank, ct);
-                    var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid);
+                    var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                     _db.Postings.Add(contactPosting); await UpsertAggregatesAsync(contactPosting, ct);
 
                     if (amount == 0m)
@@ -2562,16 +2596,16 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     var tradeAmt = e.SecurityTransactionType switch { SecurityTransactionType.Buy => e.Amount - fee - tax, SecurityTransactionType.Sell => e.Amount + fee + tax, SecurityTransactionType.Dividend => e.Amount + fee + tax, _ => e.Amount + fee + tax };
                     var sub = e.SecurityTransactionType switch { SecurityTransactionType.Buy => SecurityPostingSubType.Buy, SecurityTransactionType.Sell => SecurityPostingSubType.Sell, SecurityTransactionType.Dividend => SecurityPostingSubType.Dividend, _ => SecurityPostingSubType.Buy };
                     decimal? qty = e.SecurityTransactionType switch { SecurityTransactionType.Buy => e.SecurityQuantity, SecurityTransactionType.Sell => e.SecurityQuantity.HasValue ? -Math.Abs(e.SecurityQuantity.Value) : null, SecurityTransactionType.Dividend => null, _ => e.SecurityQuantity };
-                    var main = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, tradeAmt, e.Subject, e.RecipientName, e.BookingDescription, sub, qty).SetGroup(gid);
+                    var main = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, tradeAmt, e.Subject, e.RecipientName, e.BookingDescription, sub, qty).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                     _db.Postings.Add(main); await UpsertAggregatesAsync(main, ct);
                     if (fee != 0m)
                     {
-                        var feeP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, factor * fee, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Fee, null).SetGroup(gid);
+                        var feeP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, factor * fee, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Fee, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                         _db.Postings.Add(feeP); await UpsertAggregatesAsync(feeP, ct);
                     }
                     if (tax != 0m)
                     {
-                        var taxP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, factor * tax, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Tax, null).SetGroup(gid);
+                        var taxP = new Domain.Postings.Posting(e.Id, PostingKind.Security, null, null, null, e.SecurityId, bookingDate, valutaDate, factor * tax, e.Subject, e.RecipientName, e.BookingDescription, SecurityPostingSubType.Tax, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                         _db.Postings.Add(taxP); await UpsertAggregatesAsync(taxP, ct);
                     }
                 }
@@ -2604,7 +2638,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     Guid? spId = null;
                     if (ce.SavingsPlanId != null && ce.ContactId == self.Id)
                     {
-                        var sp = new Domain.Postings.Posting(ce.Id, PostingKind.SavingsPlan, null, null, ce.SavingsPlanId, null, effectiveBookingDate, effectiveValutaDate, -ce.Amount, ce.Subject, ce.RecipientName, ce.BookingDescription, null).SetGroup(gid);
+                        var sp = new Domain.Postings.Posting(ce.Id, PostingKind.SavingsPlan, null, null, ce.SavingsPlanId, null, effectiveBookingDate, effectiveValutaDate, -ce.Amount, ce.Subject, ce.RecipientName, ce.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                         _db.Postings.Add(sp); await UpsertAggregatesAsync(sp, ct);
                         if (parentBankPostingId.HasValue) sp.SetParent(parentBankPostingId.Value);
                         if (parentContactPostingId.HasValue) sp.SetParent(parentContactPostingId.Value);

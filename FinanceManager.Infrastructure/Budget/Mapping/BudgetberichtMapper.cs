@@ -6,7 +6,7 @@ namespace FinanceManager.Infrastructure.Budget.Mapping;
 
 /// <summary>
 /// Maps a calculated <see cref="Budgetbericht"/> to the API-facing DTOs (<see cref="BudgetReportRawDataDto"/>,
-/// <see cref="MonthlyBudgetKpiDto"/>) that <see cref="IBudgetReportService"/> consumers rely on.
+/// <see cref="MonthlyBudgetKpiDto"/>) that <see cref="FinanceManager.Application.Budget.IBudgetReportService"/> consumers rely on.
 /// </summary>
 public static class BudgetberichtMapper
 {

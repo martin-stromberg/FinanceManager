@@ -1,9 +1,10 @@
-﻿using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Statements;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Statements;
+using FinanceManager.Infrastructure.Statements.Files;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using FinanceManager.Application.Accounts;
@@ -23,6 +24,13 @@ namespace FinanceManager.Tests.Statements;
 /// </summary>
 public sealed class StatementDraftUploadGroupSplitTests
 {
+    // Booking/split-linking never needs to load statement files (that happens during upload/create-draft), but
+    // the constructor parameter is non-nullable, so a trivial stub stands in for the real factory.
+    private sealed class StubStatementFileFactory : IStatementFileFactory
+    {
+        public IStatementFile? Load(string fileName, byte[] fileBytes) => null;
+    }
+
     private static (StatementDraftService sut, AppDbContext db, SqliteConnection conn, Guid owner) Create()
     {
         var conn = new SqliteConnection("DataSource=:memory:");
@@ -41,7 +49,7 @@ public sealed class StatementDraftUploadGroupSplitTests
         db.SaveChanges();
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, null, null, NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, new StubStatementFileFactory(), null, NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, conn, owner.Id);
     }
 
@@ -73,6 +81,12 @@ public sealed class StatementDraftUploadGroupSplitTests
         return d;
     }
 
+    /// <summary>
+    /// Linking just one representative child draft from a multi-file upload group must cause booking to treat
+    /// ALL drafts sharing that upload group as children of the split - summing their entries against the
+    /// parent's intermediary amount, committing all of them together with the parent, while an unrelated draft
+    /// outside the group is left untouched in <see cref="StatementDraftStatus.Draft"/>.
+    /// </summary>
     [Fact]
     public async Task Booking_GroupedSplitDrafts_AllChildrenBooked_IndependentsRemain()
     {
@@ -83,11 +97,11 @@ public sealed class StatementDraftUploadGroupSplitTests
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, isPaymentIntermediary: true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var pEntry = parent.AddEntry(DateTime.Today, 300m, "Root", intermediary.Name, DateTime.Today, "EUR", null, false);
         db.Entry(pEntry).State = EntityState.Added;
         pEntry.MarkAccounted(intermediary.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Upload group with three child drafts: 120 + 80 + 100 = 300
         var groupId = Guid.NewGuid();
@@ -99,21 +113,21 @@ public sealed class StatementDraftUploadGroupSplitTests
         var cB = new Contact(owner, "Bob", ContactType.Person, null, null);
         var cC = new Contact(owner, "Carol", ContactType.Person, null, null);
         db.Contacts.AddRange(cA, cB, cC);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var e1 = child1.AddEntry(DateTime.Today, 120m, "A", cA.Name, DateTime.Today, "EUR", null, false); e1.MarkAccounted(cA.Id); db.Entry(e1).State = EntityState.Added;
         var e2 = child2.AddEntry(DateTime.Today, 80m, "B", cB.Name, DateTime.Today, "EUR", null, false); e2.MarkAccounted(cB.Id); db.Entry(e2).State = EntityState.Added;
         var e3 = child3.AddEntry(DateTime.Today, 100m, "C", cC.Name, DateTime.Today, "EUR", null, false); e3.MarkAccounted(cC.Id); db.Entry(e3).State = EntityState.Added;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Unrelated independent draft (should survive)
         var independent = await CreateDraftAsync(db, owner, null, Guid.NewGuid());
         var indEntry = independent.AddEntry(DateTime.Today, 50m, "Ind", cA.Name, DateTime.Today, "EUR", null, false); db.Entry(indEntry).State = EntityState.Added; indEntry.MarkAccounted(cA.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Link only one of the child drafts (implementation should pick up all same upload group drafts)
         pEntry.AssignSplitDraft(child2.Id); // arbitrary representative
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
         var res = await sut.BookAsync(parent.Id, null, owner, false, CancellationToken.None);
@@ -122,13 +136,13 @@ public sealed class StatementDraftUploadGroupSplitTests
         Assert.True(res.Success, "sum of grouped child drafts (300) equals parent entry amount 300");
 
         // All three grouped drafts committed
-        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(child1.Id))!.Status);
-        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(child2.Id))!.Status);
-        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(child3.Id))!.Status);
-        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(parent.Id))!.Status);
+        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(new object?[] { child1.Id }, TestContext.Current.CancellationToken))!.Status);
+        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(new object?[] { child2.Id }, TestContext.Current.CancellationToken))!.Status);
+        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(new object?[] { child3.Id }, TestContext.Current.CancellationToken))!.Status);
+        Assert.Equal(StatementDraftStatus.Committed, (await db.StatementDrafts.FindAsync(new object?[] { parent.Id }, TestContext.Current.CancellationToken))!.Status);
 
         // Independent draft remains Draft
-        Assert.Equal(StatementDraftStatus.Draft, (await db.StatementDrafts.FindAsync(independent.Id))!.Status);
+        Assert.Equal(StatementDraftStatus.Draft, (await db.StatementDrafts.FindAsync(new object?[] { independent.Id }, TestContext.Current.CancellationToken))!.Status);
 
         // Postings: parent zero postings + 3 children with normal postings (each 2) => 1 parent (0 bank + 0 contact) + 3*2 child = 8 total postings of kind Bank/Contact
         var bank = db.Postings.Where(p => p.Kind == PostingKind.Bank).ToList();
@@ -145,6 +159,11 @@ public sealed class StatementDraftUploadGroupSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// When the combined entry total across all grouped child drafts falls short of the parent intermediary
+    /// entry's amount, booking must fail with "SPLIT_AMOUNT_MISMATCH" - the sum check spans the whole upload
+    /// group, not just the explicitly linked representative draft.
+    /// </summary>
     [Fact]
     public async Task Booking_GroupedSplitDrafts_Fails_WhenSumLessThanParent()
     {
@@ -153,22 +172,22 @@ public sealed class StatementDraftUploadGroupSplitTests
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, true);
         db.Contacts.Add(intermediary);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var pEntry = parent.AddEntry(DateTime.Today, 300m, "Root", intermediary.Name, DateTime.Today, "EUR", null, false); db.Entry(pEntry).State = EntityState.Added; pEntry.MarkAccounted(intermediary.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var groupId = Guid.NewGuid();
         var child1 = await CreateDraftAsync(db, owner, null, groupId);
         var child2 = await CreateDraftAsync(db, owner, null, groupId);
         var cA = new Contact(owner, "Alice", ContactType.Person, null, null);
         var cB = new Contact(owner, "Bob", ContactType.Person, null, null);
-        db.Contacts.AddRange(cA, cB); await db.SaveChangesAsync();
+        db.Contacts.AddRange(cA, cB); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var e1 = child1.AddEntry(DateTime.Today, 100m, "A", cA.Name, DateTime.Today, "EUR", null, false); e1.MarkAccounted(cA.Id); db.Entry(e1).State = EntityState.Added;
         var e2 = child2.AddEntry(DateTime.Today, 150m, "B", cB.Name, DateTime.Today, "EUR", null, false); e2.MarkAccounted(cB.Id); db.Entry(e2).State = EntityState.Added;
-        await db.SaveChangesAsync(); // sum = 250 < 300
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken); // sum = 250 < 300
 
         pEntry.AssignSplitDraft(child1.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(parent.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);
@@ -176,6 +195,11 @@ public sealed class StatementDraftUploadGroupSplitTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Conversely, when the grouped children's combined total exceeds the parent amount, booking must also fail
+    /// with "SPLIT_AMOUNT_MISMATCH", confirming the group-wide sum check catches over-allocation just as it
+    /// catches under-allocation.
+    /// </summary>
     [Fact]
     public async Task Booking_GroupedSplitDrafts_Fails_WhenSumGreaterThanParent()
     {
@@ -183,8 +207,8 @@ public sealed class StatementDraftUploadGroupSplitTests
         var (acc, _) = await AddAccountAsync(db, owner);
         var parent = await CreateDraftAsync(db, owner, acc.Id);
         var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, true);
-        db.Contacts.Add(intermediary); await db.SaveChangesAsync();
-        var pEntry = parent.AddEntry(DateTime.Today, 300m, "Root", intermediary.Name, DateTime.Today, "EUR", null, false); db.Entry(pEntry).State = EntityState.Added; pEntry.MarkAccounted(intermediary.Id); await db.SaveChangesAsync();
+        db.Contacts.Add(intermediary); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var pEntry = parent.AddEntry(DateTime.Today, 300m, "Root", intermediary.Name, DateTime.Today, "EUR", null, false); db.Entry(pEntry).State = EntityState.Added; pEntry.MarkAccounted(intermediary.Id); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var groupId = Guid.NewGuid();
         var child1 = await CreateDraftAsync(db, owner, null, groupId);
@@ -193,14 +217,14 @@ public sealed class StatementDraftUploadGroupSplitTests
         var cA = new Contact(owner, "Alice", ContactType.Person, null, null);
         var cB = new Contact(owner, "Bob", ContactType.Person, null, null);
         var cC = new Contact(owner, "Carol", ContactType.Person, null, null);
-        db.Contacts.AddRange(cA, cB, cC); await db.SaveChangesAsync();
+        db.Contacts.AddRange(cA, cB, cC); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var e1 = child1.AddEntry(DateTime.Today, 120m, "A", cA.Name, DateTime.Today, "EUR", null, false); e1.MarkAccounted(cA.Id); db.Entry(e1).State = EntityState.Added;
         var e2 = child2.AddEntry(DateTime.Today, 110m, "B", cB.Name, DateTime.Today, "EUR", null, false); e2.MarkAccounted(cB.Id); db.Entry(e2).State = EntityState.Added;
         var e3 = child3.AddEntry(DateTime.Today, 130m, "C", cC.Name, DateTime.Today, "EUR", null, false); e3.MarkAccounted(cC.Id); db.Entry(e3).State = EntityState.Added; // total 360 > 300
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         pEntry.AssignSplitDraft(child2.Id);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var res = await sut.BookAsync(parent.Id, null, owner, false, CancellationToken.None);
         Assert.False(res.Success);

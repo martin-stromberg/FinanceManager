@@ -114,6 +114,7 @@
 
     private List<HomeKpiDto> _kpis = new();
     private Dictionary<Guid, FavKpiData> _favData = new();
+    private Dictionary<Guid, MonthlyBudgetKpiViewModel> _monthlyBudgetKpis = new();
     private HashSet<Guid> _favLoading = new();
     private HashSet<Guid> _kpiMoving = new();
 
@@ -123,12 +124,32 @@
     private HomeKpiDisplayMode _selDisplay = HomeKpiDisplayMode.TotalOnly;
     private Guid? _selFavoriteId;
     private List<ReportFavoriteDto> _favorites = new();
+    private IKpiLocalStorageCache? _kpiCache;
+    private bool _kpisLoaded;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await Task.WhenAll(
-            LoadKpisAsync()
-        );
+        if (_kpisLoaded)
+        {
+            return;
+        }
+
+        _kpisLoaded = true;
+        _kpiCache = Services.GetService<IKpiLocalStorageCache>();
+
+        if (_kpiCache?.Context.Enabled == true)
+        {
+            var cached = await _kpiCache.GetAsync<List<HomeKpiDto>>("home.kpi.list");
+            if (cached?.Count > 0)
+            {
+                _kpis = cached;
+                PruneMonthlyBudgetKpiViewModels();
+                await RestoreFavoriteCacheAsync();
+                StateHasChanged();
+            }
+        }
+
+        await LoadKpisAsync();
     }
 
     private async Task LoadKpisAsync()
@@ -137,9 +158,33 @@
         {
             var list = await Api.HomeKpis_ListAsync();
             _kpis = list.ToList();
+            PruneMonthlyBudgetKpiViewModels();
+
+            if (_kpiCache?.Context.Enabled == true)
+            {
+                await _kpiCache.SetAsync("home.kpi.list", _kpis);
+                await RestoreFavoriteCacheAsync();
+            }
         }
         catch { }
         StateHasChanged();
+    }
+
+    private async Task RestoreFavoriteCacheAsync()
+    {
+        if (_kpiCache?.Context.Enabled != true)
+        {
+            return;
+        }
+
+        foreach (var k in _kpis.Where(k => k.Kind == HomeKpiKind.ReportFavorite))
+        {
+            var cached = await _kpiCache.GetAsync<FavKpiData>($"home.kpi.favorite-{k.Id}");
+            if (cached != null)
+            {
+                _favData[k.Id] = cached;
+            }
+        }
     }
 
     private void OpenAddKpiDialog()
@@ -189,6 +234,7 @@
             {
                 _kpis.RemoveAll(k => k.Id == id);
                 _favData.Remove(id);
+                _monthlyBudgetKpis.Remove(id);
             }
         }
         catch { }
@@ -304,7 +350,8 @@
                     builder.OpenComponent(i++, typeof(MonthlyBudgetKpi));
                     builder.AddAttribute(i++, "EditMode", EditMode);
                     builder.AddAttribute(i++, "Title", title);
-                    builder.AddAttribute(i++, "ViewModel", new MonthlyBudgetKpiViewModel());
+                    builder.AddAttribute(i++, "ViewModel", GetMonthlyBudgetKpiViewModel(k.Id));
+                    builder.AddAttribute(i++, "CacheKey", $"home.kpi.monthly-budget-{k.Id}");
                     builder.CloseComponent();
                     break;
                 case HomeKpiPredefined.AccountsAggregates:
@@ -362,6 +409,7 @@
                         var j = 0;
                         builder2.OpenComponent<NumericKpi>(j++);
                         builder2.AddAttribute(j++, "Load", (Func<Task<int>>)(async () => { try { var cnt = await Api.SavingsPlans_CountAsync(true); return cnt; } catch { return 0; } }));
+                        builder2.AddAttribute(j++, "CacheKey", $"home.kpi.numeric-{k.Id}");
                         builder2.CloseComponent();
                     }));
                     builder.CloseElement();
@@ -383,6 +431,7 @@
                         var j = 0;
                         builder2.OpenComponent<NumericKpi>(j++);
                         builder2.AddAttribute(j++, "Load", (Func<Task<int>>)(async () => { try { var cnt = await Api.Contacts_CountAsync(); return cnt; } catch { return 0; } }));
+                        builder2.AddAttribute(j++, "CacheKey", $"home.kpi.numeric-{k.Id}");
                         builder2.CloseComponent();
                     }));
                     builder.CloseElement();
@@ -404,6 +453,7 @@
                         var j = 0;
                         builder2.OpenComponent<NumericKpi>(j++);
                         builder2.AddAttribute(j++, "Load", (Func<Task<int>>)(async () => { try { var cnt = await Api.Securities_CountAsync(true); return cnt; } catch { return 0; } }));
+                        builder2.AddAttribute(j++, "CacheKey", $"home.kpi.numeric-{k.Id}");
                         builder2.CloseComponent();
                     }));
                     builder.CloseElement();
@@ -425,6 +475,7 @@
                         var j = 0;
                         builder2.OpenComponent<NumericKpi>(j++);
                         builder2.AddAttribute(j++, "Load", (Func<Task<int>>)(async () => { try { var cnt = await Api.StatementDrafts_GetOpenCountAsync(); return cnt; } catch { return 0; } }));
+                        builder2.AddAttribute(j++, "CacheKey", $"home.kpi.numeric-{k.Id}");
                         builder2.CloseComponent();
                     }));
                     builder.CloseElement();
@@ -497,6 +548,30 @@
         }
     }
 
+    private MonthlyBudgetKpiViewModel GetMonthlyBudgetKpiViewModel(Guid kpiId)
+    {
+        if (!_monthlyBudgetKpis.TryGetValue(kpiId, out var viewModel))
+        {
+            viewModel = new MonthlyBudgetKpiViewModel();
+            _monthlyBudgetKpis[kpiId] = viewModel;
+        }
+
+        return viewModel;
+    }
+
+    private void PruneMonthlyBudgetKpiViewModels()
+    {
+        var activeMonthlyBudgetIds = _kpis
+            .Where(k => k.Kind == HomeKpiKind.Predefined && k.PredefinedType == HomeKpiPredefined.MonthlyBudget)
+            .Select(k => k.Id)
+            .ToHashSet();
+
+        foreach (var id in _monthlyBudgetKpis.Keys.Except(activeMonthlyBudgetIds).ToList())
+        {
+            _monthlyBudgetKpis.Remove(id);
+        }
+    }
+
     private async Task LoadFavoriteKpiDataAsync(HomeKpiDto k)
     {
         try
@@ -550,6 +625,11 @@
                               .Where(p => p.YearAgoAmount.HasValue).Sum(p => p.YearAgoAmount!.Value);
             }
             _favData[k.Id] = new FavKpiData(amount, prev, year, series, (int)fav.PostingKind);
+
+            if (_kpiCache?.Context.Enabled == true)
+            {
+                await _kpiCache.SetAsync($"home.kpi.favorite-{k.Id}", _favData[k.Id]);
+            }
         }
         catch { }
         finally
@@ -559,6 +639,6 @@
         }
     }
 
-    private sealed record FavKpiData(decimal Amount, decimal? Prev, decimal? Year, List<SeriesPoint> Series, int Kind);
-    private sealed record SeriesPoint(DateTime Date, decimal Amount);
+    public sealed record FavKpiData(decimal Amount, decimal? Prev, decimal? Year, List<SeriesPoint> Series, int Kind);
+    public sealed record SeriesPoint(DateTime Date, decimal Amount);
 }

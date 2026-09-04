@@ -4,8 +4,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Contacts;
 
+/// <summary>
+/// Covers <see cref="KnownContactCatalog"/>, which loads a JSON file of known counterparties (with wildcard
+/// aliases) to auto-suggest a contact for imported statement lines, and its handling of ambiguous alias matches.
+/// </summary>
 public sealed class KnownContactCatalogTests
 {
+    /// <summary>Verifies the catalog can parse a JSON definition file (including a string-based enum for the contact type) and match a statement line against a wildcard alias.</summary>
     [Fact]
     public async Task FindMatchAsync_LoadsJsonStringEnumAndMatchesAlias()
     {
@@ -20,7 +25,7 @@ public sealed class KnownContactCatalogTests
             }
           ]
         }
-        """);
+        """, TestContext.Current.CancellationToken);
 
         try
         {
@@ -39,6 +44,7 @@ public sealed class KnownContactCatalogTests
         }
     }
 
+    /// <summary>Ensures an ambiguous alias - one that matches more than one catalog entry - yields no match at all, rather than guessing which contact was meant.</summary>
     [Fact]
     public async Task FindMatchAsync_ReturnsNull_WhenMultipleDefinitionsMatch()
     {
@@ -50,7 +56,7 @@ public sealed class KnownContactCatalogTests
             { "name": "Amazon Payments", "aliases": [ "AMAZON*" ] }
           ]
         }
-        """);
+        """, TestContext.Current.CancellationToken);
 
         try
         {

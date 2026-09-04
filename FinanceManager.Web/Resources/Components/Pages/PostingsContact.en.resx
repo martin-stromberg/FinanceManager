@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>Text/microsoft-resx</value></resheader>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
@@ -29,4 +29,13 @@
   <data name="Ribbon_Group_Export" xml:space="preserve"><value>Export</value></data>
   <data name="Ribbon_ExportCsv" xml:space="preserve"><value>Export CSV</value></data>
   <data name="Ribbon_ExportExcel" xml:space="preserve"><value>Export Excel</value></data>
+  <data name="Ribbon_Group_Related" xml:space="preserve"><value>Related</value></data>
+  <data name="Ribbon_Attachments" xml:space="preserve"><value>Attachments</value></data>
+  <data name="Attachments_Title" xml:space="preserve"><value>Attachments</value></data>
+  <data name="Btn_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Ribbon_Group_Linked" xml:space="preserve"><value>Linked information</value></data>
+  <data name="Ribbon_OpenAccount" xml:space="preserve"><value>Open account</value></data>
+  <data name="Ribbon_OpenContact" xml:space="preserve"><value>Open contact</value></data>
+  <data name="Ribbon_OpenSavingsPlan" xml:space="preserve"><value>Open savings plan</value></data>
+  <data name="Ribbon_OpenSecurity" xml:space="preserve"><value>Open security</value></data>
 </root>

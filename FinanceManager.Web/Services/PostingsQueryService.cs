@@ -154,7 +154,8 @@ namespace FinanceManager.Web.Services
                                      IsReversed = x.P.IsReversed,
                                      IsReversal = x.P.IsReversal,
                                      ReversedByPostingId = x.P.ReversedByPostingId,
-                                     ReversalForPostingId = x.P.ReversalForPostingId
+                                     ReversalForPostingId = x.P.ReversalForPostingId,
+                                     IsPreliminary = x.P.IsPreliminary
                                  };
 
             var rows = await queryProjected.ToListAsync(ct);
@@ -193,8 +194,9 @@ namespace FinanceManager.Web.Services
                     r.IsReversed,
                     r.IsReversal,
                     r.ReversedByPostingId,
-                    r.ReversalForPostingId)
-                {                    
+                    r.ReversalForPostingId,
+                    r.IsPreliminary)
+                {
                 };
             }).ToList();
 
@@ -300,7 +302,8 @@ namespace FinanceManager.Web.Services
                     r.P.IsReversed,
                     r.P.IsReversal,
                     r.P.ReversedByPostingId,
-                    r.P.ReversalForPostingId);
+                    r.P.ReversalForPostingId,
+                    r.P.IsPreliminary);
             }).ToList();
 
             return result;
@@ -395,7 +398,7 @@ namespace FinanceManager.Web.Services
                 r.P.IsReversed,
                 r.P.IsReversal,
                 r.P.ReversedByPostingId,
-                r.P.ReversalForPostingId)).ToList();
+                r.P.ReversalForPostingId, r.P.IsPreliminary)).ToList();
 
             return result;
         }
@@ -472,7 +475,7 @@ namespace FinanceManager.Web.Services
                 r.P.IsReversed,
                 r.P.IsReversal,
                 r.P.ReversedByPostingId,
-                r.P.ReversalForPostingId)).ToList();
+                r.P.ReversalForPostingId, r.P.IsPreliminary)).ToList();
 
             return result;
         }

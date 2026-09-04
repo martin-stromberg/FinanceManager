@@ -1,4 +1,4 @@
-﻿using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Contacts;
@@ -17,6 +17,11 @@ using FinanceManager.Tests.TestHelpers;
 
 namespace FinanceManager.Tests.Statements;
 
+/// <summary>
+/// Covers the persistence-facing operations of <see cref="StatementDraftService"/> around an imported draft's
+/// lifecycle: retrieving a persisted draft, appending a manual entry, canceling (deleting) a draft, and
+/// committing it into a permanent <see cref="Domain.Statements.StatementImport"/> with its <see cref="Domain.Statements.StatementEntry"/> rows.
+/// </summary>
 public sealed class StatementDraftPersistenceTests
 {
     private sealed class TestCurrentUserService : FinanceManager.Application.ICurrentUserService
@@ -67,17 +72,22 @@ public sealed class StatementDraftPersistenceTests
         };
 
         var accountService = new StubAccountService();
-        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
+        var sut = new StatementDraftService(db, new PostingAggregateService(db), accountService, sp.GetRequiredService<IStatementFileFactory>(), sp.GetServices<IStatementFileParser>(), NullLogger<StatementDraftService>.Instance, null);
         return (sut, db, owner.Id);
     }
 
+    /// <summary>
+    /// After <c>CreateDraftAsync</c> persists a newly imported draft, <c>GetDraftAsync</c> must be able to
+    /// re-fetch it by id for the owning user and return the same entries - confirming the import actually
+    /// round-trips through the database rather than only existing in the in-memory stream.
+    /// </summary>
     [Fact]
     public async Task GetDraftAsync_ShouldReturnPersistedDraft()
     {
         var (sut, db, owner) = Create();
         var account = new Account(owner, AccountType.Giro, "A", null, Guid.NewGuid());
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var counter = 0;
         var bytes = Encoding.UTF8.GetBytes($"{{\"Type\":\"Backup\",\"Version\":2}}\n{{ \"BankAccounts\": [{{ \"IBAN\": \"{account.Iban}\"}}], \"BankAccountLedgerEntries\": [], \"BankAccountJournalLines\": [{{\"Id\": 1,\"PostingDate\": \"2017-07-15T00:00:00\",\"ValutaDate\": \"2017-07-15T00:00:00\",\"PostingDescription\": \"Lastschrift\",\"SourceName\": \"GEZ\",\"Description\": \"GEZ Gebuehr\",\"CurrencyCode\": \"EUR\",\"Amount\": -97.95,\"CreatedAt\": \"2017-07-16T12:33:42.000041\"}}] }}");
@@ -91,13 +101,18 @@ public sealed class StatementDraftPersistenceTests
         Assert.Equal(1, counter);
     }
 
+    /// <summary>
+    /// Manually adding an entry to an existing draft via <c>AddEntryAsync</c> must append it to the persisted
+    /// entry collection (increasing the count by one) and make the new entry retrievable with its given subject -
+    /// supporting the "add a transaction the bank statement missed" workflow.
+    /// </summary>
     [Fact]
     public async Task AddEntryAsync_ShouldAppendEntry()
     {
         var (sut, db, owner) = Create();
         var account = new Account(owner, AccountType.Giro, "A", null, Guid.NewGuid());
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var counter = 0;
         var bytes = Encoding.UTF8.GetBytes($"{{\"Type\":\"Backup\",\"Version\":2}}\n{{ \"BankAccounts\": [{{ \"IBAN\": \"{account.Iban}\"}}], \"BankAccountLedgerEntries\": [], \"BankAccountJournalLines\": [{{\"Id\": 1,\"PostingDate\": \"2017-07-15T00:00:00\",\"ValutaDate\": \"2017-07-15T00:00:00\",\"PostingDescription\": \"Lastschrift\",\"SourceName\": \"GEZ\",\"Description\": \"GEZ Gebuehr\",\"CurrencyCode\": \"EUR\",\"Amount\": -97.95,\"CreatedAt\": \"2017-07-16T12:33:42.000041\"}}] }}");
@@ -113,6 +128,10 @@ public sealed class StatementDraftPersistenceTests
         Assert.Equal(1, counter);
     }
 
+    /// <summary>
+    /// Canceling a draft must delete it entirely, so that a subsequent <c>GetDraftAsync</c> for the same id
+    /// returns null - ensures canceled imports don't linger as orphaned records.
+    /// </summary>
     [Fact]
     public async Task CancelAsync_ShouldRemoveDraft()
     {
@@ -133,13 +152,19 @@ public sealed class StatementDraftPersistenceTests
         Assert.Equal(1, counter);
     }
 
+    /// <summary>
+    /// Committing a draft must create exactly one <c>StatementImport</c> record, persist all of its entries as
+    /// permanent <c>StatementEntry</c> rows (used later for duplicate-import detection), and flip the draft's
+    /// status to <see cref="StatementDraftStatus.Committed"/> - the transition from a transient draft into
+    /// permanent import history.
+    /// </summary>
     [Fact]
     public async Task CommitAsync_ShouldPersistImportAndEntries_AndMarkDraftCommitted()
     {
         var (sut, db, owner) = Create();
         var account = new Account(owner, AccountType.Giro, "Acc", null, Guid.NewGuid());
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var counter = 0;
         var bytes = Encoding.UTF8.GetBytes($"{{\"Type\":\"Backup\",\"Version\":2}}\n{{ \"BankAccounts\": [{{ \"IBAN\": \"{account.Iban}\"}}], \"BankAccountLedgerEntries\": [], \"BankAccountJournalLines\": [{{\"Id\": 1,\"PostingDate\": \"2017-07-15T00:00:00\",\"ValutaDate\": \"2017-07-15T00:00:00\",\"PostingDescription\": \"Lastschrift\",\"SourceName\": \"GEZ\",\"Description\": \"GEZ Gebuehr\",\"CurrencyCode\": \"EUR\",\"Amount\": -97.95,\"CreatedAt\": \"2017-07-16T12:33:42.000041\"}}] }}");

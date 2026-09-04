@@ -15,6 +15,7 @@ public interface IBudgetReportService
     /// <param name="to">Inclusive range end.</param>
     /// <param name="dateBasis">Date basis used when calculating actual values.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="ignoreCache">When true, bypasses any cached result and recomputes the data.</param>
     /// <returns>A raw data DTO containing categories, purposes and contributing postings.</returns>
     Task<BudgetReportRawDataDto> GetRawDataAsync(
         Guid ownerUserId,

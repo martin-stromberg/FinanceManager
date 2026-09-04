@@ -25,10 +25,7 @@ public sealed class SetupStatementsViewModel : BaseViewModel
     public ImportSplitSettingsDto? Model { get; private set; }
     private ImportSplitSettingsDto? _original;
 
-    /// <summary>
-    /// Indicates whether the view model is currently loading the model from the server.
-    /// </summary>
-    public bool Loading { get; private set; }
+    // Loading is inherited from BaseViewModel (protected set) - no local redeclaration needed.
 
     /// <summary>
     /// Indicates whether the view model is currently saving changes to the server.

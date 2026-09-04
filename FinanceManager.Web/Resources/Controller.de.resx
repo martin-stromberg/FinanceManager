@@ -128,4 +128,7 @@
 	<data name="API_Attachment_Err_Conflict" xml:space="preserve">
 		<value>Die Aktion konnte nicht ausgeführt werden.</value>
 	</data>
+	<data name="Budget_PurposePattern_InvalidRegex" xml:space="preserve">
+		<value>Ungültiger regulärer Ausdruck</value>
+	</data>
 </root>

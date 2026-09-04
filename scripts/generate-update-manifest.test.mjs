@@ -24,6 +24,32 @@ test("creates update manifest with release notes and platform assets", () => {
     assert.equal(manifest.releaseNotes, "Release notes");
     assert.deepEqual(manifest.assets.map((asset) => asset.runtimeIdentifier), ["win-x64", "linux-x64"]);
     assert.ok(manifest.assets.every((asset) => asset.sha256.length === 64));
+    assert.ok(manifest.assets.every((asset) => asset.assetUrl.includes("/releases/download/v1.2.3/")));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("builds asset URLs from an explicit tag instead of reconstructing it from version", () => {
+  // Regression test: staging-ci.yml's RC pre-releases resolve a plain semantic version
+  // (e.g. "1.2.3") separately from the actual RC-suffixed release tag (e.g. "v1.2.3-rc.1").
+  // Without an explicit tag, assetUrl previously reconstructed "v${version}" ("v1.2.3"),
+  // pointing at a release that was never created.
+  const dir = mkdtempSync(join(tmpdir(), "fm-release-"));
+  try {
+    writeFileSync(join(dir, releaseAssetName("1.2.3-rc.1", "win-x64")), "windows");
+    writeFileSync(join(dir, releaseAssetName("1.2.3-rc.1", "linux-x64")), "linux");
+
+    const manifest = createUpdateManifest({
+      version: "1.2.3-rc.1",
+      releaseNotes: "Release candidate",
+      publishedAt: "2026-07-19T00:00:00Z",
+      repository: "martin-stromberg/FinanceManager",
+      tag: "v1.2.3-rc.1",
+      assetDirectory: dir
+    });
+
+    assert.ok(manifest.assets.every((asset) => asset.assetUrl.includes("/releases/download/v1.2.3-rc.1/")));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

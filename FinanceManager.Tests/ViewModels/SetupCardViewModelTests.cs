@@ -9,6 +9,7 @@ using Moq;
 using Xunit;
 using FinanceManager.Web.ViewModels.Setup;
 using FinanceManager.Web.ViewModels.Common;
+using FinanceManager.Web.Services;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Shared.Dtos.Statements;
@@ -16,6 +17,14 @@ using FinanceManager.Shared.Dtos.Update;
 
 namespace FinanceManager.Tests.ViewModels
 {
+    /// <summary>
+    /// Covers <see cref="SetupCardViewModel"/>, the composite settings screen that hosts multiple setup
+    /// sub-sections (profile, notifications, statements, return analysis, backup, and the admin-only update
+    /// section) behind a single embedded panel and a single global Save/Reset ribbon action. Verifies section
+    /// discovery and instantiation (including caching), admin-only section visibility, ribbon action
+    /// aggregation across sections without action-id collisions, and that a global Save fans out to every
+    /// dirty section's own save call.
+    /// </summary>
     public class SetupCardViewModelTests
     {
         private sealed class TestCurrentUserService : FinanceManager.Application.ICurrentUserService
@@ -39,6 +48,7 @@ namespace FinanceManager.Tests.ViewModels
             var sc = new ServiceCollection();
             sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid(), isAdmin: isAdmin));
             sc.AddLogging();
+            sc.AddSingleton<IKpiLocalStorageCache>(Mock.Of<IKpiLocalStorageCache>());
             sc.AddSingleton<IApiClient>(new Mock<IApiClient>().Object);
             return sc.BuildServiceProvider();
         }
@@ -48,10 +58,16 @@ namespace FinanceManager.Tests.ViewModels
             var sc = new ServiceCollection();
             sc.AddSingleton<FinanceManager.Application.ICurrentUserService>(new TestCurrentUserService(Guid.NewGuid(), isAdmin: isAdmin));
             sc.AddLogging();
+            sc.AddSingleton<IKpiLocalStorageCache>(Mock.Of<IKpiLocalStorageCache>());
             sc.AddSingleton(apiClient);
             return sc.BuildServiceProvider();
         }
 
+        /// <summary>
+        /// Verifies that loading raises an "EmbeddedPanel" UI action targeting <c>SetupPanel</c>,
+        /// positioned after the ribbon, with the inner component type and parameters passed through - the
+        /// mechanism by which the host page embeds the setup sections panel below the ribbon.
+        /// </summary>
         [Fact]
         public async Task LoadAsync_Requests_EmbeddedSectionsPanel_AfterRibbon()
         {
@@ -80,6 +96,10 @@ namespace FinanceManager.Tests.ViewModels
             parms.Should().ContainKey("InnerParameters");
         }
 
+        /// <summary>
+        /// Verifies that the "profile" section key resolves to the <c>SetupProfileTab</c> component type,
+        /// part of the section registry the embedded panel uses to render the right tab content.
+        /// </summary>
         [Fact]
         public void TryGetSectionComponentType_Profile_ReturnsExpectedComponent()
         {
@@ -93,6 +113,10 @@ namespace FinanceManager.Tests.ViewModels
             componentType.Should().Be(typeof(FinanceManager.Web.Components.Pages.Setup.SetupProfileTab));
         }
 
+        /// <summary>
+        /// Verifies that the "profile" section key instantiates a <see cref="SetupProfileViewModel"/>,
+        /// confirming the section-key-to-view-model-type mapping used when a tab is first opened.
+        /// </summary>
         [Fact]
         public void CreateSectionViewModel_Profile_CreatesExpectedViewModel()
         {
@@ -105,6 +129,12 @@ namespace FinanceManager.Tests.ViewModels
             sectionVm.Should().BeOfType<SetupProfileViewModel>();
         }
 
+        /// <summary>
+        /// Verifies that a non-admin user does not see the "update" section at all: it is absent from
+        /// <c>SettingSections</c>, its component type cannot be resolved, and its view model cannot be
+        /// created - a security-relevant gate preventing non-admins from reaching update settings even by
+        /// directly requesting the section key.
+        /// </summary>
         [Fact]
         public async Task LoadAsync_HidesUpdateSectionForNonAdmin()
         {
@@ -118,6 +148,11 @@ namespace FinanceManager.Tests.ViewModels
             vm.CreateSectionViewModel("update", sp).Should().BeNull();
         }
 
+        /// <summary>
+        /// Verifies that an admin user does see the "update" section, resolving to the
+        /// <c>SetupUpdateTab</c> component - the counterpart to
+        /// <see cref="LoadAsync_HidesUpdateSectionForNonAdmin"/> confirming the gate opens correctly for admins.
+        /// </summary>
         [Fact]
         public async Task LoadAsync_ShowsUpdateSectionForAdmin()
         {
@@ -131,6 +166,11 @@ namespace FinanceManager.Tests.ViewModels
             componentType.Should().Be(typeof(FinanceManager.Web.Components.Pages.Setup.SetupUpdateTab));
         }
 
+        /// <summary>
+        /// Verifies that after loading, the aggregated ribbon includes the backup section's own actions
+        /// ("CreateBackup", "UploadBackup"), confirming that per-section ribbon contributions are merged
+        /// into the card's overall ribbon.
+        /// </summary>
         [Fact]
         public async Task GetRibbonRegisters_AfterLoad_IncludesBackupSectionActions()
         {
@@ -140,6 +180,11 @@ namespace FinanceManager.Tests.ViewModels
             allActionIds.Should().Contain("UploadBackup");
         }
 
+        /// <summary>
+        /// Verifies that once the admin-only update section is loaded, its actions ("UpdateCheckNow",
+        /// "UpdateInstall", "UpdateResetLock") appear in the aggregated ribbon alongside the other sections'
+        /// actions.
+        /// </summary>
         [Fact]
         public async Task GetRibbonRegisters_AfterAdminLoad_IncludesUpdateActions()
         {
@@ -152,7 +197,7 @@ namespace FinanceManager.Tests.ViewModels
             var vm = new SetupCardViewModel(sp);
             await vm.LoadAsync(Guid.Empty);
             var updateVm = (SetupUpdateViewModel)vm.CreateSectionViewModel("update", sp)!;
-            await updateVm.LoadAsync();
+            await updateVm.LoadAsync(TestContext.Current.CancellationToken);
 
             var allActionIds = GetAllActionIds(vm);
 
@@ -161,6 +206,12 @@ namespace FinanceManager.Tests.ViewModels
             allActionIds.Should().Contain("UpdateResetLock");
         }
 
+        /// <summary>
+        /// Verifies the core "single global Save/Reset" design of the setup card: exactly one "Save" and
+        /// one "Reset" action appear across the whole ribbon, even though multiple sections each have their
+        /// own save/reset logic - individual sections must not leak their own per-section
+        /// "SaveNotifications"/"ResetImportSplit"-style actions into the aggregated ribbon.
+        /// </summary>
         [Fact]
         public async Task GetRibbonRegisters_AfterLoad_ExposesSingleGlobalSaveAndReset()
         {
@@ -183,6 +234,11 @@ namespace FinanceManager.Tests.ViewModels
             return GetAllActionIds(vm);
         }
 
+        /// <summary>
+        /// Verifies that requesting the same section twice returns the same cached view model instance
+        /// rather than constructing a new one each time - preserving in-progress edits/dirty state when a
+        /// user switches away from a tab and back.
+        /// </summary>
         [Fact]
         public async Task CreateSectionViewModel_AfterLoad_ReturnsCachedInstance()
         {
@@ -198,6 +254,12 @@ namespace FinanceManager.Tests.ViewModels
             sectionVm2.Should().BeSameAs(sectionVm);
         }
 
+        /// <summary>
+        /// Verifies that even if a section view model was created before <c>LoadAsync</c> ran (e.g. an
+        /// eager tab pre-creation), loading still wires up the core global actions (Save, Reset,
+        /// DetectTimezone) correctly - guarding against a load-order bug where an early-created section
+        /// would end up excluded from the aggregated ribbon.
+        /// </summary>
         [Fact]
         public async Task LoadAsync_InitializesCoreSections_WhenSectionWasCreatedBeforeLoad()
         {
@@ -215,6 +277,12 @@ namespace FinanceManager.Tests.ViewModels
             allActionIds.Should().Contain("DetectTimezone");
         }
 
+        /// <summary>
+        /// Verifies the fan-out behavior of the global Save action: after making a change in each of five
+        /// sections (profile, notifications, statements, return analysis, update), invoking the single
+        /// "Save" ribbon action calls every dirty section's own update API exactly once - the mechanism
+        /// that lets one Save button persist all pending changes across the whole settings screen.
+        /// </summary>
         [Fact]
         public async Task GlobalSave_InvokesDirtySetupSectionSaves()
         {
@@ -255,27 +323,27 @@ namespace FinanceManager.Tests.ViewModels
             await vm.LoadAsync(Guid.Empty);
 
             var profileVm = (SetupProfileViewModel)vm.CreateSectionViewModel("profile", sp)!;
-            await profileVm.LoadAsync();
+            await profileVm.LoadAsync(TestContext.Current.CancellationToken);
             profileVm.Model.PreferredLanguage = "en";
             profileVm.OnChanged();
 
             var notificationsVm = (SetupNotificationsViewModel)vm.CreateSectionViewModel("notifications", sp)!;
-            await notificationsVm.LoadAsync();
+            await notificationsVm.LoadAsync(TestContext.Current.CancellationToken);
             notificationsVm.Model.MonthlyReminderEnabled = true;
             notificationsVm.OnChanged();
 
             var statementsVm = (SetupStatementsViewModel)vm.CreateSectionViewModel("statements", sp)!;
-            await statementsVm.LoadAsync();
+            await statementsVm.LoadAsync(TestContext.Current.CancellationToken);
             statementsVm.Model!.MaxEntriesPerDraft = 25;
             statementsVm.Validate();
 
             var returnAnalysisVm = (SetupReturnAnalysisViewModel)vm.CreateSectionViewModel("returnanalysis", sp)!;
-            await returnAnalysisVm.LoadAsync();
+            await returnAnalysisVm.LoadAsync(TestContext.Current.CancellationToken);
             returnAnalysisVm.ShowSharpeRatio = true;
             returnAnalysisVm.OnChanged();
 
             var updateVm = (SetupUpdateViewModel)vm.CreateSectionViewModel("update", sp)!;
-            await updateVm.LoadAsync();
+            await updateVm.LoadAsync(TestContext.Current.CancellationToken);
             updateVm.UpdateSettings(updateSettings with { Enabled = true });
 
             var localizerMock = new Mock<IStringLocalizer>();

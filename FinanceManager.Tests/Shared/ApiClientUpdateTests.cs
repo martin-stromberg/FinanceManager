@@ -7,8 +7,14 @@ using FluentAssertions;
 
 namespace FinanceManager.Tests.ApiClientTests;
 
+/// <summary>
+/// Covers the self-update endpoints of <see cref="ApiClient"/>: that each method targets the expected
+/// setup/update route, and that a structured <c>ApiErrorDto</c> returned on failure survives the round trip
+/// so the caller can show the specific error code/message rather than a generic HTTP failure.
+/// </summary>
 public sealed class ApiClientUpdateTests
 {
+    /// <summary>Verifies that a 404 from the install-start endpoint (no update package staged) throws and preserves the API's specific error code and message rather than just the HTTP status.</summary>
     [Fact]
     public async Task Updates_StartInstallAsync_WhenNotReady404_ThrowsAndPreservesApiError()
     {
@@ -24,6 +30,7 @@ public sealed class ApiClientUpdateTests
         api.LastError.Should().Be("No ready update package is available.");
     }
 
+    /// <summary>Verifies that a 409 Conflict from the lock-reset endpoint (no active lock to reset) throws and preserves the API's specific error code and message.</summary>
     [Fact]
     public async Task Updates_ResetLockAsync_WhenConflict_PreservesApiErrorCodeAndMessage()
     {
@@ -40,6 +47,7 @@ public sealed class ApiClientUpdateTests
     }
 
 
+    /// <summary>Exercises the full self-update client surface in one pass - service discovery, check, schedule, install-start, and lock-reset - verifying each call hits its expected route/verb and that query parameters and response payloads are passed through correctly.</summary>
     [Fact]
     public async Task UpdateApiClientFlows_CallExpectedEndpoints()
     {
@@ -63,11 +71,11 @@ public sealed class ApiClientUpdateTests
             };
         });
 
-        var services = await api.Updates_GetServiceNamesAsync("finance manager", 10);
-        var check = await api.Updates_CheckAsync();
-        var schedule = await api.Updates_ScheduleAsync(new UpdateScheduleRequest(new TimeOnly(3, 15)));
-        var install = await api.Updates_StartInstallAsync(new UpdateStartRequest(true));
-        var reset = await api.Updates_ResetLockAsync(new UpdateLockResetRequest("stale"));
+        var services = await api.Updates_GetServiceNamesAsync("finance manager", 10, TestContext.Current.CancellationToken);
+        var check = await api.Updates_CheckAsync(TestContext.Current.CancellationToken);
+        var schedule = await api.Updates_ScheduleAsync(new UpdateScheduleRequest(new TimeOnly(3, 15)), TestContext.Current.CancellationToken);
+        var install = await api.Updates_StartInstallAsync(new UpdateStartRequest(true), TestContext.Current.CancellationToken);
+        var reset = await api.Updates_ResetLockAsync(new UpdateLockResetRequest("stale"), TestContext.Current.CancellationToken);
 
         services.Should().ContainSingle().Which.Should().Be("financemanager.service");
         serviceQuery.Should().Contain("take=10");

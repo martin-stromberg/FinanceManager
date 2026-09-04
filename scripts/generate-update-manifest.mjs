@@ -38,6 +38,12 @@ export function createUpdateManifest({
   releaseNotes,
   publishedAt,
   repository,
+  // Defaults to "v${version}" for backward compatibility (previously the only option, and
+  // still correct whenever the release tag is exactly "v" + the resolved version). Staging
+  // RC pre-releases (staging-ci.yml) need this to be passed explicitly, though: their
+  // resolved tag (e.g. "v1.2.3-rc.1") does not match "v${version}" 1:1 once the RC suffix is
+  // tracked separately from the plain semantic version - see build-and-package/action.yml.
+  tag,
   assetDirectory = process.cwd()
 }) {
   if (!version) {
@@ -53,6 +59,7 @@ export function createUpdateManifest({
     throw new Error("repository must be in owner/name format.");
   }
 
+  const resolvedTag = tag || `v${version}`;
   const [repositoryOwner, repositoryName] = repository.split("/");
   const assets = platforms.map((item) => {
     const assetName = releaseAssetName(version, item.runtimeIdentifier);
@@ -63,7 +70,7 @@ export function createUpdateManifest({
       platform: item.platform,
       runtimeIdentifier: item.runtimeIdentifier,
       assetName,
-      assetUrl: `https://github.com/${repository}/releases/download/v${version}/${assetName}`,
+      assetUrl: `https://github.com/${repository}/releases/download/${resolvedTag}/${assetName}`,
       sha256,
       sizeBytes
     };
@@ -94,6 +101,7 @@ export function main(environment = process.env) {
     releaseNotes: environment.RELEASE_NOTES,
     publishedAt,
     repository: environment.GITHUB_REPOSITORY,
+    tag: environment.RELEASE_TAG,
     assetDirectory: environment.RELEASE_ASSET_DIRECTORY ?? process.cwd()
   });
   console.log(`Wrote ${basename(outputPath)}`);

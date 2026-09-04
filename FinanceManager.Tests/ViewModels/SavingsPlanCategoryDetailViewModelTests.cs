@@ -7,6 +7,10 @@ using FinanceManager.Web.ViewModels.SavingsPlans.Categories;
 
 namespace FinanceManager.Tests.ViewModels;
 
+/// <summary>
+/// Covers <see cref="SavingsPlanCategoryCardViewModel"/>'s load behavior for an existing category,
+/// including the not-found error path, and that ribbon registers can be built.
+/// </summary>
 public sealed class SavingsPlanCategoryDetailViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -28,6 +32,9 @@ public sealed class SavingsPlanCategoryDetailViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that loading an existing category by id populates the card's name field from the API response.
+    /// </summary>
     [Fact]
     public async Task Initialize_Edit_Loads_Model()
     {
@@ -42,6 +49,11 @@ public sealed class SavingsPlanCategoryDetailViewModelTests
         Assert.Equal("Cat1", vm.Name);
     }
 
+    /// <summary>
+    /// Verifies that loading a category id the API cannot find (returns <see langword="null"/>) sets a
+    /// non-empty <c>LastError</c> instead of leaving the card silently blank, so the user gets feedback that
+    /// the requested category no longer exists.
+    /// </summary>
     [Fact]
     public async Task Initialize_Edit_NotFound_Sets_Error()
     {
@@ -55,6 +67,10 @@ public sealed class SavingsPlanCategoryDetailViewModelTests
         Assert.False(string.IsNullOrWhiteSpace(vm.LastError));
     }
 
+    /// <summary>
+    /// Smoke test verifying that <c>GetRibbonRegisters</c> returns a non-null result, guarding against
+    /// a null-reference regression in ribbon construction rather than asserting specific actions.
+    /// </summary>
     [Fact]
     public void Ribbon_Has_Actions()
     {

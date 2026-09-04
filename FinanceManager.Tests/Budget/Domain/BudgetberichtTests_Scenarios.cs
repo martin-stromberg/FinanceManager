@@ -13,6 +13,11 @@ namespace FinanceManager.Tests.Budget.Domain;
 /// </summary>
 public sealed class BudgetberichtTests_Scenarios
 {
+    /// <summary>
+    /// End-to-end run of a category with two contact-group purposes, confirming that per-purpose actuals
+    /// are kept separate while the category row correctly sums both purposes' budgeted and actual amounts -
+    /// the full pipeline from planning through output for the "multiple purposes per category" shape.
+    /// </summary>
     [Fact]
     public void Scenario_ShoppingAndFood_CategorizedWithMultiplePurposes()
     {
@@ -43,6 +48,12 @@ public sealed class BudgetberichtTests_Scenarios
         categoryRow.ActualAmount.Should().Be(-51.50m);
     }
 
+    /// <summary>
+    /// End-to-end run over a full 12-month report combining a recurring monthly expense with a one-off
+    /// yearly income rule, verifying the Total row's budgeted amount correctly sums twelve monthly
+    /// occurrences plus a single yearly occurrence, and the actual amount reflects only the two postings
+    /// that actually occurred.
+    /// </summary>
     [Fact]
     public void Scenario_MixedIncomeAndExpense_MonthlyExpenseAndYearlyIncome()
     {
@@ -68,6 +79,12 @@ public sealed class BudgetberichtTests_Scenarios
         entries.Single(e => e.RowKind == BudgetReportEntryRowKind.Total).ActualAmount.Should().Be(-12m + 1000m);
     }
 
+    /// <summary>
+    /// End-to-end run of the "Streaming Provider" overrun case: three postings exceed the -10 total
+    /// budget by -5.98, verifying through the public <c>GetCurrentResult()</c> output that the purpose
+    /// row caps its actual amount at the budget, the excess is attributed to the purpose's occurrence
+    /// (not lost), and the report-wide Unbudgeted row stays at zero.
+    /// </summary>
     [Fact]
     public void Scenario_Overrun_StreamingProvider()
     {
@@ -95,6 +112,12 @@ public sealed class BudgetberichtTests_Scenarios
         unbudgetedRow.ActualAmount.Should().Be(0m);
     }
 
+    /// <summary>
+    /// End-to-end mirror of <see cref="Scenario_Overrun_StreamingProvider"/> for an income overrun: a
+    /// salary posting of 3450 against a 3000 expectation caps the actual amount and deviation at zero
+    /// while the surplus 450 stays attributed to the purpose rather than appearing as Unbudgeted -
+    /// confirming overrun capping applies symmetrically to income, not only expenses.
+    /// </summary>
     [Fact]
     public void Scenario_Salary_Income_Overrun()
     {
@@ -119,6 +142,13 @@ public sealed class BudgetberichtTests_Scenarios
         budgetbericht.GetCurrentResult().Single(e => e.RowKind == BudgetReportEntryRowKind.Unbudgeted).ActualAmount.Should().Be(0m);
     }
 
+    /// <summary>
+    /// End-to-end verification of the Total row's "Endsumme" definition from the feature's issue
+    /// specification: a cost-neutral self-transfer and a genuinely unbudgeted posting are kept in
+    /// separate rows (CostNeutral vs. Unbudgeted) in <c>GetCurrentResult()</c>, yet the report-wide Total
+    /// row's actual amount explicitly includes both - the CostNeutral row is excluded from the narrower
+    /// Unbudgeted row but not from the overall total.
+    /// </summary>
     [Fact]
     public void Scenario_CostNeutralTransfer_WithGroupIdAndSelfContact_DoesNotCountAsUnbudgeted()
     {
@@ -145,6 +175,11 @@ public sealed class BudgetberichtTests_Scenarios
             "the Total row is the 'Endsumme' which issue.md explicitly defines as including the CostNeutral row");
     }
 
+    /// <summary>
+    /// End-to-end run with no purposes or rules planned at all, confirming a real-world posting still
+    /// flows through the full pipeline into the Unbudgeted bucket rather than being rejected or ignored
+    /// simply because the report has no budget configuration to match against.
+    /// </summary>
     [Fact]
     public void Scenario_UnbudgetedPostings_ForPurposesWithoutAnyMatchingRule()
     {

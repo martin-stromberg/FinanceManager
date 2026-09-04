@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers domain-level invariants of the <see cref="HomeKpi"/> entity: the constructor's requirement that a
+/// favorite-backed KPI always references a <see cref="ReportFavorite"/> id, and the database-level cascade delete
+/// that removes home KPI tiles when their underlying report favorite is deleted.
+/// </summary>
 public sealed class HomeKpiTests
 {
     private static AppDbContext CreateDb()
@@ -17,44 +22,54 @@ public sealed class HomeKpiTests
         return db;
     }
 
+    /// <summary>
+    /// A <see cref="HomeKpi"/> of kind <see cref="HomeKpiKind.ReportFavorite"/> must carry a
+    /// <c>reportFavoriteId</c>; constructing one with a null favorite id must throw <see cref="ArgumentException"/>
+    /// immediately, preventing a dangling favorite-backed KPI tile with nothing to render.
+    /// </summary>
     [Fact]
     public async Task Create_HomeKpi_ForFavorite_ShouldRequireFavoriteId()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var fav = new ReportFavorite(user.Id, "Fav", PostingKind.Contact, false, ReportInterval.Month, false, false, false, true);
-        db.ReportFavorites.Add(fav); await db.SaveChangesAsync();
+        db.ReportFavorites.Add(fav); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // valid
         var kpi = new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalOnly, sortOrder: 0, reportFavoriteId: fav.Id);
         db.HomeKpis.Add(kpi);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // invalid: missing favorite id
         var act = () => { var invalid = new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalOnly, sortOrder: 1, reportFavoriteId: null); };
         Assert.Throws<ArgumentException>(act);
     }
 
+    /// <summary>
+    /// Deleting a <see cref="ReportFavorite"/> that has home KPI tiles referencing it must cascade-delete those
+    /// <see cref="HomeKpi"/> rows at the database level, so the dashboard never ends up with orphaned KPI tiles
+    /// pointing at a report favorite that no longer exists.
+    /// </summary>
     [Fact]
     public async Task CascadeDelete_Favorite_ShouldRemoveRelatedHomeKpis()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
-        db.Users.Add(user); await db.SaveChangesAsync();
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var fav = new ReportFavorite(user.Id, "Fav", PostingKind.Contact, false, ReportInterval.Month, false, false, false, true);
-        db.ReportFavorites.Add(fav); await db.SaveChangesAsync();
+        db.ReportFavorites.Add(fav); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         db.HomeKpis.Add(new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalOnly, 0, fav.Id));
         db.HomeKpis.Add(new HomeKpi(user.Id, HomeKpiKind.ReportFavorite, HomeKpiDisplayMode.TotalWithComparisons, 1, fav.Id));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(2, await db.HomeKpis.CountAsync());
+        Assert.Equal(2, await db.HomeKpis.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         db.ReportFavorites.Remove(fav);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(0, await db.HomeKpis.CountAsync());
+        Assert.Equal(0, await db.HomeKpis.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 }

@@ -32,7 +32,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     }
 
     /// <summary>
-    /// Backwards-compatible alias used in other parts of the codebase. Use <see cref="UserName"/> from the Identity base class instead.
+    /// Backwards-compatible alias used in other parts of the codebase. Use <c>UserName</c> from the Identity base class instead.
     /// This property is not mapped to the database and is obsolete.
     /// </summary>
     [NotMapped]
@@ -148,6 +148,11 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     public bool KnownContactAutoCreateEnabled { get; private set; } = true;
 
     /// <summary>
+    /// Whether the user has enabled caching of home page KPI data in the browser's local storage.
+    /// </summary>
+    public bool CacheKpisInLocalStorage { get; private set; }
+
+    /// <summary>
     /// Admin flag persisted in the database.
     /// </summary>
     /// <value><c>true</c> for administrators.</value>
@@ -177,7 +182,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     /// <param name="mode">Split mode to apply.</param>
     /// <param name="maxEntriesPerDraft">Maximum entries per draft. Must be >= 1.</param>
     /// <param name="monthlySplitThreshold">Monthly split threshold; semantics depend on <paramref name="mode"/>.</param>
-    /// <param name="minEntriesPerDraft">Optional minimum entries per draft. When provided it must be >= 1 and <= <paramref name="maxEntriesPerDraft"/>.</param>
+    /// <param name="minEntriesPerDraft">Optional minimum entries per draft. When provided it must be &gt;= 1 and &lt;= <paramref name="maxEntriesPerDraft"/>.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when numeric parameters are outside allowed ranges, or when monthly threshold constraints are violated.</exception>
     public void SetImportSplitSettings(ImportSplitMode mode, int maxEntriesPerDraft, int? monthlySplitThreshold, int? minEntriesPerDraft = null)
     {
@@ -242,6 +247,16 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     public void SetKnownContactAutoCreateEnabled(bool enabled)
     {
         KnownContactAutoCreateEnabled = enabled;
+        Touch();
+    }
+
+    /// <summary>
+    /// Enables or disables caching of home page KPI data in the browser's local storage.
+    /// </summary>
+    /// <param name="enabled">True to enable local storage KPI caching; false to disable it.</param>
+    public void SetCacheKpisInLocalStorage(bool enabled)
+    {
+        CacheKpisInLocalStorage = enabled;
         Touch();
     }
 

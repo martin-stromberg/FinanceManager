@@ -142,7 +142,8 @@ public sealed class PostingsController : ControllerBase
             p.IsReversed,
             p.IsReversal,
             p.ReversedByPostingId,
-            p.ReversalForPostingId);
+            p.ReversalForPostingId,
+            p.IsPreliminary);
         return Ok(dto);
     }
 

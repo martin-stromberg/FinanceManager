@@ -70,7 +70,7 @@ public sealed class HomeKpisController : ControllerBase
     {
         /// <summary>Widget kind definition.</summary>
         [Required] public HomeKpiKind Kind { get; set; }
-        /// <summary>Optional report favorite id if <see cref="HomeKpiKind.Report"/>.</summary>
+        /// <summary>Optional report favorite id if <see cref="HomeKpiKind.ReportFavorite"/>.</summary>
         public Guid? ReportFavoriteId { get; set; }
         /// <summary>Optional predefined KPI type if <see cref="HomeKpiKind.Predefined"/>.</summary>
         public HomeKpiPredefined? PredefinedType { get; set; }
@@ -139,7 +139,7 @@ public sealed class HomeKpisController : ControllerBase
     {
         /// <summary>Widget kind definition.</summary>
         [Required] public HomeKpiKind Kind { get; set; }
-        /// <summary>Optional report favorite id if <see cref="HomeKpiKind.Report"/>.</summary>
+        /// <summary>Optional report favorite id if <see cref="HomeKpiKind.ReportFavorite"/>.</summary>
         public Guid? ReportFavoriteId { get; set; }
         /// <summary>Optional predefined KPI type if <see cref="HomeKpiKind.Predefined"/>.</summary>
         public HomeKpiPredefined? PredefinedType { get; set; }

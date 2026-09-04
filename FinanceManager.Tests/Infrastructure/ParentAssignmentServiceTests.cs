@@ -10,6 +10,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Infrastructure;
 
+/// <summary>
+/// Covers <see cref="ParentAssignmentService"/>: input validation for the generic "assign a newly created entity
+/// (e.g. a contact) to some parent record" flow used across creation dialogs, its ownership checks that stop a user
+/// from linking to another user's records, and its idempotent no-op behavior when the same value is reassigned.
+/// </summary>
 public sealed class ParentAssignmentServiceTests
 {
     private const string StatementEntryParentKind = "statement-drafts/entries";
@@ -56,6 +61,8 @@ public sealed class ParentAssignmentServiceTests
     /// <summary>
     /// Verifies invalid parent kind or empty parent id is rejected.
     /// </summary>
+    /// <param name="parentKind">The parent kind string to test (blank/whitespace cases).</param>
+    /// <param name="useEmptyParentId">Whether to use <see cref="Guid.Empty"/> as the parent id instead of a real one.</param>
     [Theory]
     [InlineData("", false)]
     [InlineData(" ", false)]
@@ -74,6 +81,8 @@ public sealed class ParentAssignmentServiceTests
     /// <summary>
     /// Verifies invalid created context is rejected.
     /// </summary>
+    /// <param name="createdKind">The created-entity kind string to test (blank/whitespace cases).</param>
+    /// <param name="useEmptyCreatedId">Whether to use <see cref="Guid.Empty"/> as the created entity id instead of a real one.</param>
     [Theory]
     [InlineData("", false)]
     [InlineData(" ", false)]
@@ -184,7 +193,7 @@ public sealed class ParentAssignmentServiceTests
         var result = await sut.TryAssignAsync(owner.Id, parent, "contacts", contact.Id, CancellationToken.None);
 
         Assert.True(result);
-        var reloaded = await db.StatementDraftEntries.AsNoTracking().SingleAsync(e => e.Id == entry.Id);
+        var reloaded = await db.StatementDraftEntries.AsNoTracking().SingleAsync(e => e.Id == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(contact.Id, reloaded.ContactId);
         Assert.Equal(modifiedUtcBefore, reloaded.ModifiedUtc);
     }

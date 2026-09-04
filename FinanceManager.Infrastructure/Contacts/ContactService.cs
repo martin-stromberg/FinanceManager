@@ -432,7 +432,7 @@ public sealed class ContactService : IContactService
         // Fields of interest: Name, CategoryId, Description, IsPaymentIntermediary, SymbolAttachmentId
         // DestinationFirst: keep target value when present; otherwise take from source
         // SourceFirst: overwrite target with source when source has value
-        
+
         // Name: prefer target or source per preference
         if (preference == FinanceManager.Shared.Dtos.Contacts.MergePreference.SourceFirst)
         {

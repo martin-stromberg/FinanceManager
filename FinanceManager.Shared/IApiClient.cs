@@ -24,6 +24,13 @@ public interface IApiClient
     /// </summary>
     string? LastErrorCode { get; }
 
+    /// <summary>
+    /// Raised when an API response indicates that the current authentication is missing, expired or invalid.
+    /// Implementations raise this for HTTP 401 and for HTTP 403 only when the response carries an explicit
+    /// authentication-related machine-readable signal.
+    /// </summary>
+    event EventHandler<ApiAuthenticationRequiredEventArgs>? AuthenticationRequired;
+
     // Accounts
 
     /// <summary>
@@ -307,7 +314,7 @@ public interface IApiClient
     /// <summary>Gets a single security category by id or null if not found.</summary>
     Task<SecurityCategoryDto?> SecurityCategories_GetAsync(Guid id, CancellationToken ct = default);
     /// <summary>Creates a new security category.</summary>
-    Task<SecurityCategoryDto> SecurityCategories_CreateAsync(SecurityCategoryRequest request, CancellationToken ct = default);
+    Task<SecurityCategoryDto?> SecurityCategories_CreateAsync(SecurityCategoryRequest request, CancellationToken ct = default);
     /// <summary>Updates the name of a security category. Returns null when not found.</summary>
     Task<SecurityCategoryDto?> SecurityCategories_UpdateAsync(Guid id, SecurityCategoryRequest request, CancellationToken ct = default);
     /// <summary>Deletes a security category. Returns false when not found.</summary>
@@ -709,6 +716,8 @@ public interface IApiClient
     Task<StatementDraftSetEntrySplitDraftResultDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default);
     /// <summary>Sets the description of a statement draft and returns updated detail or null when not found.</summary>
     Task<StatementDraftDetailDto?> StatementDrafts_SetDescriptionAsync(Guid draftId, string? description, CancellationToken ct = default);
+    /// <summary>Creates a new preliminary (provisional) statement draft for the specified bank account.</summary>
+    Task<StatementDraftDto?> StatementDrafts_CreatePreliminaryAsync(CreatePreliminaryStatementDraftRequest request, CancellationToken ct = default);
     // Users
     /// <summary>Checks if any users exist in the system.</summary>
     Task<bool> Users_HasAnyAsync(CancellationToken ct = default);

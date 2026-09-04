@@ -264,9 +264,10 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
             .Select(r => new { r.BudgetPurposeId, r.Amount, r.Interval, r.CustomIntervalMonths, r.StartDate, r.EndDate })
             .ToListAsync(ct);
 
+        // rules is already filtered to r.BudgetPurposeId != null above, so the group key is never null here.
         var ruleCounts = rules
             .GroupBy(r => r.BudgetPurposeId)
-            .ToDictionary(g => g.Key, g => g.Count());
+            .ToDictionary(g => g.Key!.Value, g => g.Count());
 
         var budgetSums = new Dictionary<Guid, decimal>();
         if (effectiveFrom.HasValue && effectiveTo.HasValue)
@@ -333,7 +334,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                     .Where(p => p.ContactId != null && contactIds.Contains(p.ContactId.Value));
 
                 contactQuery = dateBasis == FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
-                     ? contactQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
+                     ? contactQuery.Where(p => p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
                      : contactQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
 
                 var contactActuals = await contactQuery
@@ -354,7 +355,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                     .Where(p => p.SavingsPlanId != null && savingsPlanIds.Contains(p.SavingsPlanId.Value));
 
                 planQuery = dateBasis == FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
-                     ? planQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
+                     ? planQuery.Where(p => p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
                      : planQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
 
                 var planActuals = await planQuery
@@ -393,7 +394,7 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                         .Where(p => p.ContactId != null && ids.Contains(p.ContactId.Value));
 
                     groupQuery = dateBasis == FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
-                         ? groupQuery.Where(p => p.ValutaDate != null && p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
+                         ? groupQuery.Where(p => p.ValutaDate >= fromDt && p.ValutaDate <= toDt)
                          : groupQuery.Where(p => p.BookingDate >= fromDt && p.BookingDate <= toDt);
 
                     var sum = await groupQuery.SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;

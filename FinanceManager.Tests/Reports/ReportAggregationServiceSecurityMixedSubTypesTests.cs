@@ -7,6 +7,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// Covers <see cref="ReportAggregationService.QueryAsync"/>'s handling of Security postings that are stored as
+/// separate <see cref="PostingAggregate"/> rows per <see cref="SecurityPostingSubType"/> (Buy, Fee, Dividend,
+/// Tax, etc.) for the same security and period - specifically that querying without a subtype filter collapses
+/// them all into a single summed row per security/period rather than one row per subtype.
+/// </summary>
 public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
 {
     private static AppDbContext CreateDb()
@@ -19,17 +25,22 @@ public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
         return db;
     }
 
+    /// <summary>
+    /// When a security has four separate per-subtype aggregates (Buy, Fee, Dividend, Tax) for the same month and
+    /// no subtype filter is applied, the query must sum all four into a single result row for that security and
+    /// period - not report them as four separate rows or silently drop any subtype.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_SecurityMonth_NoSubtypeFilter_ShouldSumAllSubTypes()
     {
         using var db = CreateDb();
         var user = new FinanceManager.Domain.Users.User("owner", "pw", false);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sec = new FinanceManager.Domain.Securities.Security(user.Id, "ACME CORP", "ACME-ISIN", null, null, "EUR", null);
         db.Securities.Add(sec);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Target month (analysis)
         var analysis = new DateTime(2025, 8, 1);
@@ -47,7 +58,7 @@ public sealed class ReportAggregationServiceSecurityMixedSubTypesTests
         Add(SecurityPostingSubType.Fee, -4.50m);
         Add(SecurityPostingSubType.Dividend, 25.75m);
         Add(SecurityPostingSubType.Tax, -3.90m);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var query = new ReportAggregationQuery(

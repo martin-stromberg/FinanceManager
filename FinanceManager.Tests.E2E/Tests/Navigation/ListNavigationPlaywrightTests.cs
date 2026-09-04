@@ -8,11 +8,21 @@ using System.Text;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for navigating between the app's list and card (detail) pages: clicking a
+/// list row to open the matching detail route, the mobile ribbon's collapsible-group shortcut
+/// buttons, and full create/edit/(alias/delete/import) round trips for contacts, bank accounts,
+/// savings plans and securities driven through their list and card pages.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class ListNavigationPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ListNavigationPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public ListNavigationPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
@@ -30,6 +40,11 @@ public sealed class ListNavigationPlaywrightTests
             "Navigated Account");
     }
 
+    /// <summary>
+    /// Same as <see cref="ClickAccountRow_ShouldNavigateToDetailPage"/> but on a mobile viewport,
+    /// to catch responsive-layout regressions in the list-to-detail navigation that only show up
+    /// at mobile widths.
+    /// </summary>
     [Fact]
     public async Task ClickAccountRow_ShouldNavigateToDetailPage_OnMobileViewport()
     {
@@ -39,6 +54,11 @@ public sealed class ListNavigationPlaywrightTests
             "Navigated Mobile Account");
     }
 
+    /// <summary>
+    /// Verifies, across a representative set of list and card pages, that a mobile ribbon
+    /// shortcut button (e.g. "New", "Import", "Back") is shown without a text label while its
+    /// action group is collapsed, and disappears once the group is expanded via its toggle.
+    /// </summary>
     [Fact]
     public async Task MobileRibbonShortcuts_ShouldShowShortcutOnlyWhenGroupIsClosed_OnRepresentativePages()
     {
@@ -113,6 +133,11 @@ public sealed class ListNavigationPlaywrightTests
         await page.WaitForURLAsync($"**/card/accounts/{account.Id}");
     }
 
+    /// <summary>
+    /// Verifies a full contact lifecycle from the contacts list and card pages: creating a
+    /// contact, editing its name through the card page, and adding an alias name that is
+    /// retrievable afterwards.
+    /// </summary>
     [Fact]
     public async Task Create_Edit_AndAliasContact_FromContactsPage_ShouldWork()
     {
@@ -142,6 +167,11 @@ public sealed class ListNavigationPlaywrightTests
         aliases.Should().ContainSingle(x => x.Pattern == "E2E-ALIAS");
     }
 
+    /// <summary>
+    /// Verifies that creating a new contact directly from a statement draft entry's card page
+    /// (using the entry as the contact's parent link) assigns the newly created contact to that
+    /// entry immediately, without a separate assignment step.
+    /// </summary>
     [Fact]
     public async Task CreateContact_FromStatementEntryPage_ShouldAssignContactDirectly()
     {
@@ -180,6 +210,10 @@ public sealed class ListNavigationPlaywrightTests
         detail.Entries.Should().ContainSingle(x => x.Id == entryId && x.ContactId == created.Id);
     }
 
+    /// <summary>
+    /// Verifies a full bank account lifecycle from the accounts list and card pages: creating a
+    /// bank account, editing its name through the card page, and deleting it.
+    /// </summary>
     [Fact]
     public async Task Create_Edit_Delete_BankAccount_ShouldWork()
     {
@@ -191,6 +225,11 @@ public sealed class ListNavigationPlaywrightTests
             "Konto Bearbeitet");
     }
 
+    /// <summary>
+    /// Same as <see cref="Create_Edit_Delete_BankAccount_ShouldWork"/> but on a mobile viewport,
+    /// to catch responsive-layout regressions in the account create/edit/delete flow that only
+    /// show up at mobile widths.
+    /// </summary>
     [Fact]
     public async Task Create_Edit_Delete_BankAccount_ShouldWork_OnMobileViewport()
     {
@@ -251,6 +290,11 @@ public sealed class ListNavigationPlaywrightTests
         deleteStatus.Should().BeOneOf(200, 204);
     }
 
+    /// <summary>
+    /// Verifies a full savings plan lifecycle from the savings plans list and card pages:
+    /// creating a plan, editing its name/type/interval through the card page, archiving it and
+    /// deleting it.
+    /// </summary>
     [Fact]
     public async Task Create_Edit_Delete_SavingsPlan_ShouldWork()
     {
@@ -280,6 +324,11 @@ public sealed class ListNavigationPlaywrightTests
         deletedStatus.Should().BeOneOf(200, 204);
     }
 
+    /// <summary>
+    /// Verifies a full security lifecycle from the securities list and card pages: creating a
+    /// security, editing its name through the card page, importing historical prices for it on
+    /// the security prices page, archiving it and deleting it.
+    /// </summary>
     [Fact]
     public async Task Create_Edit_Delete_Security_AndImportPrices_OnPricesPage_ShouldWork()
     {

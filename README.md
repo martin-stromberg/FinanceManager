@@ -1,6 +1,6 @@
 # Finance Manager
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/test.yml?label=Tests)](https://github.com/martin-stromberg/FinanceManager/actions)
+[![Tests](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/pr-staging-ci.yml?label=Tests)](https://github.com/martin-stromberg/FinanceManager/actions)
 [![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
@@ -12,7 +12,7 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 ## Features / Highlights
 
 - Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`), inklusive mobiler Kontoauszugsansicht mit lesbarer Kartenstruktur, zweispaltigem Datum/Betrag, abgeschwächten gebuchten Einträgen sowie Kontakt-, Sparplan- und Wertpapierinformationen
-- Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen
+- Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen; im Schnellbearbeitungsmodus mit `Strg + Pfeil hoch` bzw. `Strg + Pfeil runter` zeilenübergreifend in derselben Feldspalte navigieren, Ribbon-Speichern-Aktion dynamisch an der vollständigen Validierung aller Zeilen ausrichten, Valutadatum automatisch übernehmen und unvollständige Zeilen vor dem Buchungsdatum hervorheben
 - Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte sowie Sparplan-Kennzahlen zu aktuellem Saldo, Restbetrag und benötigtem Monatsbetrag in der Detailansicht
 - Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
 - Depot-Analysebericht (`/portfolio/analysis-report`, Ribbon-Gruppe "Berichte" → "Depot-Bericht" der Wertpapierübersicht): konsolidierter Bericht über alle Wertpapiere mit konfigurierbaren, visuell aufbereiteten Kacheln (Depotstruktur mit Ringdiagramm, Performance und Cashflow mit Balkendiagrammen plus Liquiditätsquote; Risikoanalyse als Platzhalter für Phase 2), Info-Buttons mit Overlay-Erklärungen zu den Kennzahlen (z. B. scrollbare Übersicht aller Positionen im Gesamtmarktwert-Panel statt nur Top 10, Akkordeon mit FIFO-Lot-Details je Wertpapier im Investiertes-Kapital-Panel), inklusive Bearbeitungsmodus für Kachel-Sichtbarkeit/-Reihenfolge je Benutzer und monatlichem Berichts-Cache mit automatischer Invalidierung bei Kursänderungen, Buchungsstornierungen und depotrelevanten Kontoauszugsbuchungen; Wertpapiere unterstützen optionale Region-/Sektor-Felder, die über die Wertpapier-Bearbeitungsmaske gepflegt werden können (200er-Kappung bei Positionen und FIFO-Lots im Bericht; volle Seitenbreite, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben)
@@ -21,8 +21,11 @@ Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Report
 - Globale, responsive Ladeleiste für Navigationen, relevante Formularvorgänge und länger laufende UI-Aktionen; umgesetzt als wiederverwendbare `msTools.Web.Blazor`-Komponente mit projektseitig konfigurierbarer Farbgestaltung
 - Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
 - Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
-- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh
+- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh; aktive Navigation, Interaktion und Kontoauszugs-Schnellbearbeitung halten die Session per stillem Keepalive aufrecht, abgelaufene Sessions führen bei geschützten Datenabrufen zum Login und danach zurück zur ursprünglichen internen Route
 - RFC-9116-konforme `security.txt` unter `/security.txt` und `/.well-known/security.txt`, zusätzlich als Markdown (`/.well-known/security.md`) und HTML (`/.well-known/security.html`); Direktiven (Contact, Expires, Canonical, Encryption, Acknowledgments, Preferred-Languages, Policy, Hiring) im Setup konfigurierbar — `Canonical` optional als vollständige HTTPS-URL ohne Query/Fragment und ohne localhost/Loopback, sonst Fallback auf `<Api:BaseAddress>/.well-known/security.txt`; liefert HTTP 503, solange keine Konfiguration vorhanden ist
+- Vorläufige Buchungen für Sparkonten erfassen und stornieren: aus der Bankkonten-Detailansicht lässt sich ein provisorischer Kontoauszug anlegen, dessen Posten in den Übersichten für Bankkonten, Kontakte, Sparpläne und Wertpapiere als „Vorläufig“ markiert werden; beim späteren Buchen eines echten Kontoauszugs für dasselbe Konto werden diese Posten automatisch storniert
+
+- Optionales clientseitiges Zwischenspeichern der Startseiten-KPIs im Browser-LocalStorage: in den Profileinstellungen pro Benutzer aktivierbar, zeigt gespeicherte Werte sofort an und aktualisiert sie im Hintergrund; bei Deaktivierung werden alle zugehörigen Cache-Einträge sofort gelöscht
 
 ## Installation / Setup
 
@@ -51,11 +54,20 @@ Hinweise:
 ### Help-Dokumentation und Sicherheit
 
 - Help ist unter `/help` verfügbar; die Markdown-Quellen liegen unter `Docs/help/`.
+- Sichtbare Themen, Suche und Detailseiten verwenden ausschließlich den
+  redaktionellen Katalog in `FinanceManager.Web/Services/Help/HelpContentCatalog.cs`.
+  Die freigegebenen Dateien und der Änderungsablauf sind in
+  [Docs/maintenance/help-content-publishing.md](Docs/maintenance/help-content-publishing.md)
+  dokumentiert; technische Markdown-Dateien bleiben im Repository, werden aber
+  nicht als Anwenderhilfe veröffentlicht.
 - Help-Markdown wird über einen Whitelist-Renderer ausgegeben. Rohes HTML, Skripte,
   Inline-Handler und unsichere Linkziele sind kein unterstütztes Format.
 - Für Help-Seiten und Help-Assets gilt eine restriktive CSP. Der Build erzeugt
+  für `de` und `en` jeweils einen statischen `search-index.json` sowie
   `FinanceManager.Web/wwwroot/help/help-assets.sha256`; Änderungen unter
-  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment.
+  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment. Fehlende,
+  nicht im Manifest enthaltene oder manipulierte Help-Assets werden nicht
+  ausgeliefert (`404 Not Found`).
 
 ## Konfiguration
 
@@ -140,7 +152,7 @@ FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUn
 FinanceManager.Tests.Integration        # Integrationstests
 FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
 
-external/msTools.Updater/v0.3.0         # Geprueftes externes Updater-Release fuer den Testlauf vor NuGet
+external/msTools.Updater/msTools.Updater.0.10.0-rc.1.nupkg  # Lokales NuGet-Paket fuer msTools.Updater
 external/msTools.Web.Blazor             # Lokales NuGet-Paket fuer wiederverwendbare Blazor-Komponenten
 ```
 
@@ -150,9 +162,9 @@ external/msTools.Web.Blazor             # Lokales NuGet-Paket fuer wiederverwend
 
 Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` eingebunden. Die fruehere lokale Bibliothek `SoftwareSchmiede.AutoUpdate` und ihr Testprojekt sind nicht mehr Teil der Solution.
 
-Bis zur geplanten NuGet-Veröffentlichung liegt der geprüfte Release `v0.3.0` aus `martin-stromberg/msTools.Updater` unter [`external/msTools.Updater/v0.3.0/`](external/msTools.Updater/v0.3.0/). Dort sind das originale `release.zip`, `SHA256SUMS.txt`, eine Herkunfts-README und die entpackte `lib/msTools.Updater.dll` abgelegt; der dokumentierte SHA-256 des ZIPs ist `9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`.
+Die Bibliothek `msTools.Updater` wird als lokal bereitgestelltes NuGet-Paket `msTools.Updater.0.10.0-rc.1.nupkg` unter `external/msTools.Updater/` referenziert. Die Paketquelle ist in `NuGet.config` als `local-msTools.Updater` registriert.
 
-`FinanceManager.Web` referenziert die entpackte DLL direkt und kopiert sie in Build- und Publish-Ausgaben. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
+`FinanceManager.Web` bindet das Paket über eine normale `PackageReference` ein. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
 
 ### Wiederverwendbare Blazor-Komponenten
 
@@ -196,12 +208,12 @@ dotnet test FinanceManager.sln
 
 ## Deployment / CI/CD
 
-- **Branch-Workflow:** `staging` ist der Integrations- und Qualitätssicherungsbranch, `master` bleibt der ausschließliche Release-Branch. Feature- und Hotfix-PRs richten sich gegen `staging`. Der Test-Workflow [`test.yml`](.github/workflows/test.yml) läuft auf `push` und `pull_request` für beide Branches. Nach erfolgreichem Lauf auf `staging` erstellt [`staging-to-master.yml`](.github/workflows/staging-to-master.yml) automatisch einen Draft-PR von `staging` nach `master`, der manuell durch einen Maintainer gemergt werden muss. Siehe [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--master) für Details.
-- `test.yml` erzwingt zusätzlich einen Line-Coverage-Schwellwert von 70 % (`FinanceManager.Tests` und `FinanceManager.Tests.Integration`, gemessen via `--collect:"XPlat Code Coverage"` und `reportgenerator`) sowie automatisierte Dependency-Updates über [`dependabot.yml`](.github/dependabot.yml) (NuGet, npm, GitHub Actions) als Quality Gates vor einem Merge auf `staging`/`master`.
-- Branch-Protection-Regeln für `staging` und `master` (Pflicht-Status-Checks, mindestens 1 Approval, kein Direct-Push, `master` nur aus `staging`) werden in den GitHub-Repository-Einstellungen konfiguriert, nicht im Repository-Code.
+- **Branch-Workflow:** `staging` ist der Integrations- und Qualitätssicherungsbranch, `main` bleibt der ausschließliche Release-Branch. Feature- und Hotfix-PRs richten sich gegen `staging`. [`pr-staging-ci.yml`](.github/workflows/pr-staging-ci.yml) ("PR CI for Staging") läuft auf `pull_request` gegen `staging`, [`staging-ci.yml`](.github/workflows/staging-ci.yml) ("Pre-Release") läuft auf `push` nach `staging`. Nach erfolgreichem Lauf auf `staging` erstellt [`staging-to-main-promotion.yml`](.github/workflows/staging-to-main-promotion.yml) automatisch einen Draft-PR von `staging` nach `main`, der manuell durch einen Maintainer gemergt werden muss. Siehe [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--main) für Details.
+- `pr-staging-ci.yml`/`staging-ci.yml` erzwingen zusätzlich einen Line-Coverage-Schwellwert von 70 % (`FinanceManager.Tests` und `FinanceManager.Tests.Integration`, gemessen via `--collect:"XPlat Code Coverage"` und `reportgenerator`) sowie automatisierte Dependency-Updates über [`dependabot.yml`](.github/dependabot.yml) (NuGet, npm, GitHub Actions) als Quality Gates vor einem Merge auf `staging`/`main`.
+- Branch-Protection-Regeln für `staging` und `main` (Pflicht-Status-Checks, mindestens 1 Approval, kein Direct-Push, `main` nur aus `staging`) werden in den GitHub-Repository-Einstellungen konfiguriert, nicht im Repository-Code.
 - Die Release-Pipeline ist in [`.github/workflows/release.yml`](.github/workflows/release.yml) definiert.
-- Ein Push auf `master` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
-  Workflow auf `windows-latest`. Auf `master` bestimmt Semantic Release die
+- Ein Push auf `main` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
+  Workflow auf `windows-latest`. Auf `main` bestimmt Semantic Release die
   nächste Version aus Conventional Commits: `feat` erzeugt ein Minor-, `fix`
   ein Patch- und `feat!` beziehungsweise `BREAKING CHANGE` ein Major-Release.
   `docs`, `refactor` und `chore` erzeugen kein Release. Ein manueller
@@ -278,7 +290,7 @@ dotnet test FinanceManager.sln
 ## Contribution Guide
 
 Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
-- Branch-Workflow: PRs gegen `staging`, automatisierte Promotion nach `master`
+- Branch-Workflow: PRs gegen `staging`, automatisierte Promotion nach `main`
 - API-Fehlerbehandlung (`ValidationProblem` vs. standardisierte `origin/code/message`-Antworten)
 - Lokalisierungskonventionen für `.resx` unter `Resources/...`
 - PR-Hinweise zu Ressourcenpfaden und CI-Checks

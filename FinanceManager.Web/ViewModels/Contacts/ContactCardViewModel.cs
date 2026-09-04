@@ -295,7 +295,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
             })
         });
 
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>{nav, manage, linked}) };
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage, linked }) };
     }
 
     private ContactDto BuildDto(CardRecord? record)

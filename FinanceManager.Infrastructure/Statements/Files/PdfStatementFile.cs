@@ -29,7 +29,8 @@ namespace FinanceManager.Infrastructure.Statements.Files
         /// <remarks>Use this enumeration to control how line content is interpreted during parsing
         /// operations. Selecting the appropriate mode allows callers to focus on text, tables, or a combination,
         /// depending on the requirements of the parsing scenario.</remarks>
-        public enum LineParsingMode {
+        public enum LineParsingMode
+        {
             /// <summary>
             /// Specifies that only text content is allowed, excluding any formatting or markup.
             /// </summary>
@@ -354,5 +355,5 @@ namespace FinanceManager.Infrastructure.Statements.Files
         // ClusterColumns removed - using simple per-line whitespace splitting for column detection
 
     }
- 
+
 }

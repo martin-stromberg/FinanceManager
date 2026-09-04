@@ -11,6 +11,12 @@ namespace FinanceManager.Tests.Budget.Domain;
 /// </summary>
 public sealed class BudgetberichtTests_Output
 {
+    /// <summary>
+    /// Verifies the overall row structure produced by <c>GetCurrentResult()</c>: category, purpose and
+    /// subtotal rows appear in that order for a categorized purpose, unmatched postings surface as a
+    /// distinct Unbudgeted row, self-contact group postings surface as a distinct CostNeutral row, and
+    /// exactly one Total row summarizes everything.
+    /// </summary>
     [Fact]
     public void GetCurrentResult_ReturnsCategoryPurposeSubtotalUnbudgetedCostNeutralAndTotalRows()
     {
@@ -41,6 +47,10 @@ public sealed class BudgetberichtTests_Output
         entries.Should().ContainSingle(e => e.RowKind == BudgetReportEntryRowKind.Total);
     }
 
+    /// <summary>
+    /// Verifies that each of several distinct categories in use gets its own Category row - the report
+    /// does not collapse multiple categories into one summary row.
+    /// </summary>
     [Fact]
     public void GetCurrentResult_ShowsCategoryRow_WhenMultipleCategoriesExist()
     {
@@ -63,6 +73,11 @@ public sealed class BudgetberichtTests_Output
         entries.Count(e => e.RowKind == BudgetReportEntryRowKind.Category).Should().Be(2);
     }
 
+    /// <summary>
+    /// Verifies that a purpose with no assigned category produces no Category row at all - the report
+    /// must not fabricate an empty or "Uncategorized" grouping row when every purpose is uncategorized,
+    /// it should just list the purpose directly.
+    /// </summary>
     [Fact]
     public void GetCurrentResult_HidesCategoryRow_WhenOnlyUncategorizedPurposesExist()
     {
@@ -79,6 +94,11 @@ public sealed class BudgetberichtTests_Output
         entries.Should().ContainSingle(e => e.RowKind == BudgetReportEntryRowKind.Purpose && e.Name == "Loose expense");
     }
 
+    /// <summary>
+    /// Verifies that a category's row sums both the amounts of the purposes assigned to it and a direct
+    /// category-level rule ("Direktes Kategorie-Budget") in the same total - a category can have its own
+    /// expectation on top of what its purposes budget individually.
+    /// </summary>
     [Fact]
     public void GetCurrentResult_AggregatesCategoryAndPurposeSums_IncludingDirectCategoryExpectations()
     {
@@ -96,6 +116,10 @@ public sealed class BudgetberichtTests_Output
         categoryRow.BudgetedAmount.Should().Be(-600m);
     }
 
+    /// <summary>
+    /// Verifies that passing a specific month to <c>GetCurrentResult(DateOnly)</c> restricts the Total row
+    /// to that single month's budgeted amount instead of summing across the whole multi-month report period.
+    /// </summary>
     [Fact]
     public void GetCurrentResult_FiltersByMonth_WhenMonthIsGiven()
     {
@@ -112,6 +136,11 @@ public sealed class BudgetberichtTests_Output
             "only February's single month should be included, not all 3 months of the report period");
     }
 
+    /// <summary>
+    /// Verifies that omitting the month filter on <c>GetCurrentResult()</c> sums the budgeted amount
+    /// across every month of the report period into the Total row - the counterpart to
+    /// <see cref="GetCurrentResult_FiltersByMonth_WhenMonthIsGiven"/>.
+    /// </summary>
     [Fact]
     public void GetCurrentResult_AggregatesAllMonths_WhenNoMonthIsGiven()
     {
@@ -127,6 +156,11 @@ public sealed class BudgetberichtTests_Output
         entries.Single(e => e.RowKind == BudgetReportEntryRowKind.Total).BudgetedAmount.Should().Be(-1500m);
     }
 
+    /// <summary>
+    /// Verifies that a purpose row's <c>Deviation</c> and <c>DeviationPercentage</c> reflect an under-spend
+    /// (actual less than budgeted) correctly, deliberately staying within budget so the result isn't
+    /// confounded by the overrun-capping behavior covered separately in <c>BudgetberichtTests_Finish</c>.
+    /// </summary>
     [Fact]
     public void GetCurrentResult_CalculatesDeviationAndDeviationPercentage()
     {

@@ -1,5 +1,6 @@
 using FinanceManager.Shared;
 using Microsoft.Extensions.Localization;
+using System.Globalization;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -17,6 +18,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private readonly int _take = 50;
     // API client and maps for symbols/names (per-instance)
     private readonly IApiClient _api;
+    private readonly IStringLocalizer<Pages> _localizer;
     private Dictionary<Guid, Guid?> _contactSymbols = new();
     private Dictionary<Guid, string?> _contactNames = new();
     private Dictionary<Guid, Guid?> _savingsPlanSymbols = new();
@@ -29,15 +31,21 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     private readonly Dictionary<Guid, string> _entryHints = new();
     // flag to request UI focus on first invalid entry after validation
     private bool _focusFirstInvalidRequested;
+    // id of the row whose BookingDate input should receive focus when quick-edit opens
+    private Guid? _focusQuickEditBookingDateId;
     private readonly HashSet<Guid> _pendingDeleteIds = new();
     private readonly HashSet<Guid> _newEntryIds = new();
     private Guid? _placeholderId;
+    private string? _bankContactName;
+
+    public string? RecipientPlaceholder => _bankContactName;
 
     public StatementDraftEntriesListViewModel(IServiceProvider sp, Guid draftId)
         : base(sp)
     {
         _draftId = draftId;
         _api = sp.GetRequiredService<IApiClient>();
+        _localizer = sp.GetRequiredService<IStringLocalizer<Pages>>();
     }
 
     /// <summary>
@@ -145,6 +153,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         }
         AddPlaceholderRow();
         BuildRecords();
+        _focusQuickEditBookingDateId = Items.FirstOrDefault()?.Id;
         return base.BeginQuickEditAsync();
     }
 
@@ -176,10 +185,15 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     /// <summary>
     /// Sets an edited value for the given entry id and field key.
     /// Raises state changed so UI can re-render.
+    /// For BookingDate, the ValutaDate is automatically copied if it was empty
+    /// or matched the previous booking date, and only valid 4-digit years are accepted.
     /// </summary>
     public void SetEditValue(Guid entryId, string field, object? value)
     {
         if (!_editValues.TryGetValue(entryId, out var map)) return;
+        // Snapshot previous date values before updating so the Valuta auto-copy rule can be applied.
+        map.TryGetValue("ValutaDate", out var previousValuta);
+        map.TryGetValue("BookingDate", out var previousBooking);
         map[field] = value;
         var item = Items.FirstOrDefault(i => i.Id == entryId);
         if (item != null)
@@ -187,10 +201,18 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             switch (field)
             {
                 case "BookingDate":
-                    item.BookingDate = value is DateTime bd ? bd : DateTime.MinValue;
+                    var newBooking = value is DateTime newBdt && IsValidEditDate(newBdt) ? newBdt : (DateTime?)null;
+                    item.BookingDate = newBooking ?? DateTime.MinValue;
+                    var oldBooking = previousBooking as DateTime?;
+                    var oldValuta = previousValuta as DateTime?;
+                    if (newBooking.HasValue && (oldValuta == null || (oldBooking.HasValue && oldValuta.Value == oldBooking.Value)))
+                    {
+                        map["ValutaDate"] = newBooking.Value;
+                        item.ValutaDate = newBooking;
+                    }
                     break;
                 case "ValutaDate":
-                    item.ValutaDate = value is DateTime vd ? vd : null;
+                    item.ValutaDate = value is DateTime newVdt && IsValidEditDate(newVdt) ? newVdt : (DateTime?)null;
                     break;
                 case "Amount":
                     item.Amount = value is decimal amount ? amount : 0m;
@@ -214,6 +236,57 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             PromotePlaceholder(entryId);
         }
         RaiseStateChanged();
+    }
+
+    private static bool IsValidEditDate(DateTime dt) => dt.Year >= 1000;
+
+    /// <summary>
+    /// Copies the value of the given field from the row directly above the
+    /// specified entry into the same field of the specified entry.
+    /// </summary>
+    public void TakeValueFromAbove(Guid entryId, string field)
+    {
+        var idx = -1;
+        for (int i = 0; i < VisibleQuickEditItems.Count; i++)
+        {
+            if (VisibleQuickEditItems[i].Id == entryId)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (idx <= 0) return;
+        var previous = VisibleQuickEditItems[idx - 1];
+        if (!_editValues.TryGetValue(previous.Id, out var prevMap)) return;
+        if (!prevMap.TryGetValue(field, out var value)) return;
+        SetEditValue(entryId, field, value);
+    }
+
+    /// <summary>
+    /// Copies all editable values from the row directly above the specified
+    /// entry into the corresponding fields of the specified entry.
+    /// </summary>
+    public void TakeAllValuesFromAbove(Guid entryId)
+    {
+        var idx = -1;
+        for (int i = 0; i < VisibleQuickEditItems.Count; i++)
+        {
+            if (VisibleQuickEditItems[i].Id == entryId)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (idx <= 0) return;
+        var previous = VisibleQuickEditItems[idx - 1];
+        if (!_editValues.TryGetValue(previous.Id, out var prevMap)) return;
+        foreach (var f in EditableFields)
+        {
+            if (prevMap.TryGetValue(f, out var value))
+            {
+                SetEditValue(entryId, f, value);
+            }
+        }
     }
 
     private static bool PlaceholderHasUserInput(IDictionary<string, object?> map)
@@ -313,13 +386,10 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             // Additionally, allow status changes applied to the lightweight item (e.g., ResetDup) to be included
             if (Items.FirstOrDefault(i => i.Id == kv.Key) is var lightweight && lightweight != null)
             {
-                if (lightweight.Status != null)
+                // if original snapshot did not include status change, include it
+                if (!orig.TryGetValue("Status", out var origStatus) || !object.Equals(origStatus, lightweight.Status))
                 {
-                    // if original snapshot did not include status change, include it
-                    if (!orig.TryGetValue("Status", out var origStatus) || !object.Equals(origStatus, lightweight.Status))
-                    {
-                        diffs["Status"] = lightweight.Status;
-                    }
+                    diffs["Status"] = lightweight.Status;
                 }
             }
             if (diffs.Count > 0) result[kv.Key] = diffs;
@@ -368,7 +438,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     }
 
     /// <summary>
-    /// Performs basic client-side validation for a single row based on current edit values.
+    /// Performs client-side validation for a single row based on current edit values.
     /// Returns tuples of (field, message) for validation errors.
     /// </summary>
     public override IEnumerable<(string Field, string Message)> ValidateRow(object item)
@@ -376,52 +446,35 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         if (item is not StatementDraftEntryItem it) yield break;
         if (!_editValues.TryGetValue(it.Id, out var map)) yield break;
 
-        // BookingDate must be set
-        if (!map.TryGetValue("BookingDate", out var bd) || bd is not DateTime dt)
-        {
-            if (it.IsNew || it.IsPlaceholder)
-                yield return ("BookingDate", "Booking date is required");
-        }
-        else
-        {
-            if (dt == DateTime.MinValue)
-                yield return ("BookingDate", "Booking date is required");
-        }
+        // BookingDate must be set and have a realistic 4-digit year
+        if (!map.TryGetValue("BookingDate", out var bd) || bd is not DateTime bdt || !IsValidEditDate(bdt))
+            yield return ("BookingDate", _localizer["QuickEdit_Validation_BookingDateRequired"].Value!);
 
-        // Amount must be a valid decimal
-        if (map.TryGetValue("Amount", out var amt))
-        {
-            if (amt == null || !(amt is decimal))
-                yield return ("Amount", "Amount is required");
-            else if (amt is decimal dec && dec == 0m)
-                yield return ("Amount", "Amount must not be zero");
-        }
-        else if (it.IsNew || it.IsPlaceholder)
-        {
-            yield return ("Amount", "Amount is required");
-        }
+        // ValutaDate must be set and have a realistic 4-digit year
+        if (!map.TryGetValue("ValutaDate", out var vd) || vd is not DateTime vdt || !IsValidEditDate(vdt))
+            yield return ("ValutaDate", _localizer["QuickEdit_Validation_ValutaDateRequired"].Value!);
+
+        // Amount must be a non-zero decimal
+        if (!map.TryGetValue("Amount", out var amt) || amt is not decimal dec || dec == 0m)
+            yield return ("Amount", _localizer["QuickEdit_Validation_AmountRequired"].Value!);
+
+        // At least one of subject (purpose) or booking description must be provided
+        map.TryGetValue("Subject", out var subj);
+        map.TryGetValue("BookingDescription", out var desc);
+        if (string.IsNullOrWhiteSpace(subj as string) && string.IsNullOrWhiteSpace(desc as string))
+            yield return ("Subject", _localizer["QuickEdit_Validation_SubjectOrDescriptionRequired"].Value!);
 
         // Subject length
-        if (map.TryGetValue("Subject", out var subj) && subj is string s)
-        {
-            if ((it.IsNew || it.IsPlaceholder) && string.IsNullOrWhiteSpace(s)) yield return ("Subject", "Subject is required");
-            if (s.Length > 1000) yield return ("Subject", "Subject too long");
-        }
-        else if (it.IsNew || it.IsPlaceholder)
-        {
-            yield return ("Subject", "Subject is required");
-        }
+        if (subj is string s && s.Length > 1000)
+            yield return ("Subject", _localizer["QuickEdit_Validation_SubjectTooLong"].Value!);
 
-        // RecipientName length
-        if (map.TryGetValue("RecipientName", out var rec) && rec is string r)
-        {
-            if (r.Length > 250) yield return ("RecipientName", "Recipient name too long");
-        }
+        // BookingDescription length
+        if (desc is string bookingDescription && bookingDescription.Length > 1000)
+            yield return ("BookingDescription", _localizer["QuickEdit_Validation_BookingDescriptionTooLong"].Value!);
 
-        if (map.TryGetValue("BookingDescription", out var desc) && desc is string bookingDescription)
-        {
-            if (bookingDescription.Length > 1000) yield return ("BookingDescription", "Booking description too long");
-        }
+        // RecipientName length (optional field)
+        if (map.TryGetValue("RecipientName", out var rec) && rec is string r && r.Length > 250)
+            yield return ("RecipientName", _localizer["QuickEdit_Validation_RecipientTooLong"].Value!);
     }
 
     protected override async Task LoadPageAsync(bool resetPaging)
@@ -447,19 +500,38 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 }
                 // capture symbol/name maps from draft so list can show icons and names similar to StatementDraftDetail page
                 _contactSymbols = draft?.ContactSymbols != null ? new Dictionary<Guid, Guid?>(draft.ContactSymbols) : new Dictionary<Guid, Guid?>();
-                _contactNames = draft?.ContactNames != null ? new Dictionary<Guid, string?>(draft.ContactNames) : new Dictionary<Guid, string?>();
+                _contactNames = draft?.ContactNames != null ? draft.ContactNames.ToDictionary(kv => kv.Key, kv => (string?)kv.Value) : new Dictionary<Guid, string?>();
                 _savingsPlanSymbols = draft?.SavingsPlanSymbols != null ? new Dictionary<Guid, Guid?>(draft.SavingsPlanSymbols) : new Dictionary<Guid, Guid?>();
-                _savingsPlanNames = draft?.SavingsPlanNames != null ? new Dictionary<Guid, string?>(draft.SavingsPlanNames) : new Dictionary<Guid, string?>();
+                _savingsPlanNames = draft?.SavingsPlanNames != null ? draft.SavingsPlanNames.ToDictionary(kv => kv.Key, kv => (string?)kv.Value) : new Dictionary<Guid, string?>();
                 _securitySymbols = draft?.SecuritySymbols != null ? new Dictionary<Guid, Guid?>(draft.SecuritySymbols) : new Dictionary<Guid, Guid?>();
-                _securityNames = draft?.SecurityNames != null ? new Dictionary<Guid, string?>(draft.SecurityNames) : new Dictionary<Guid, string?>();
+                _securityNames = draft?.SecurityNames != null ? draft.SecurityNames.ToDictionary(kv => kv.Key, kv => (string?)kv.Value) : new Dictionary<Guid, string?>();
                 _accountBankContactId = draft?.AccountBankContactId;
                 _selfContactId = draft?.SelfContactId;
+                _bankContactName = null;
+                if (_accountBankContactId.HasValue)
+                {
+                    if (_contactNames != null && _contactNames.TryGetValue(_accountBankContactId.Value, out var bankName) && !string.IsNullOrWhiteSpace(bankName))
+                    {
+                        _bankContactName = bankName;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var contact = await _api.Contacts_GetAsync(_accountBankContactId.Value, CancellationToken.None);
+                            if (contact != null)
+                                _bankContactName = contact.Name;
+                        }
+                        catch { }
+                    }
+                }
             }
             catch
             {
                 _allEntries = new List<StatementDraftEntryDto>();
                 _accountBankContactId = null;
                 _selfContactId = null;
+                _bankContactName = null;
             }
         }
 
@@ -491,7 +563,8 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             new ListColumn("status", L["List_Th_Status"].Value ?? "Status", "8rem", ListColumnAlign.Left)
         };
 
-        Records = Items.Select(i => {
+        Records = Items.Select(i =>
+        {
             // resolve symbol ids and names from draft-level maps if available
             _contactSymbols.TryGetValue(i.Id, out var contactSym);
             _contactNames.TryGetValue(i.Id, out var contactName);
@@ -665,7 +738,10 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 {
                     // translate severity (e.g. Error -> Fehler)
                     string severityKey = $"Validation_Severity_{m.Severity}";
-                    var severityLocalized = L[severityKey].Value;
+                    // L comes from ServiceProvider.GetRequiredService<IStringLocalizer<Pages>>() (throws if
+                    // unavailable, so L is never actually null); the null-forgiving operator below just works
+                    // around the compiler losing that guarantee across the loops above.
+                    var severityLocalized = L![severityKey].Value;
                     if (string.IsNullOrWhiteSpace(severityLocalized) || severityLocalized == severityKey)
                     {
                         severityLocalized = m.Severity ?? string.Empty;
@@ -704,7 +780,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                                                 formattedParams.Add(p);
                                             }
                                         }
-                                        
+
                                         msgLocalized = string.Format(localizedString.Value, formattedParams.ToArray());
                                     }
                                     catch (FormatException)
@@ -824,6 +900,17 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     }
 
     /// <summary>
+    /// If quick-edit just opened, returns the id of the first row whose BookingDate input should be focused.
+    /// The request is consumed by the component rendering the list.
+    /// </summary>
+    public Guid? ConsumeFocusQuickEditBookingDate()
+    {
+        var id = _focusQuickEditBookingDateId;
+        _focusQuickEditBookingDateId = null;
+        return id;
+    }
+
+    /// <summary>
     /// Validates client-side edit state for all changed rows and returns whether all rows are valid.
     /// Also populates _entryHints for display.
     /// </summary>
@@ -850,23 +937,35 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
     public bool ValidateAllQuickEditRows()
     {
         _entryHints.Clear();
-        var idsToValidate = CollectChangedRows().Keys
-            .Concat(_newEntryIds)
-            .Distinct()
-            .ToList();
-        foreach (var id in idsToValidate)
+        foreach (var recItem in GetQuickEditRowsToValidate())
         {
-            var recItem = Items.FirstOrDefault(i => i.Id == id);
-            if (recItem == null || recItem.IsPlaceholder) continue;
             var errors = ValidateRow(recItem).ToList();
             if (errors.Any())
             {
-                _entryHints[id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
+                _entryHints[recItem.Id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
             }
         }
         BuildRecords();
         RaiseStateChanged();
         return !_entryHints.Any();
+    }
+
+    /// <summary>
+    /// Validates a single quick-edit row, updates the hint for it and triggers a re-render.
+    /// </summary>
+    public bool ValidateQuickEditRow(Guid id)
+    {
+        if (_pendingDeleteIds.Contains(id)) { _entryHints.Remove(id); return true; }
+        var item = Items.FirstOrDefault(i => i.Id == id);
+        if (item == null || item.IsPlaceholder) return true;
+        var errors = ValidateRow(item).ToList();
+        if (errors.Any())
+            _entryHints[id] = string.Join("; ", errors.Select(e => $"{e.Field}: {e.Message}"));
+        else
+            _entryHints.Remove(id);
+        BuildRecords();
+        RaiseStateChanged();
+        return !errors.Any();
     }
 
     /// <summary>
@@ -901,16 +1000,54 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
 
     public bool QuickEditRowsAreValid()
     {
-        var idsToValidate = CollectChangedRows().Keys
-            .Concat(_newEntryIds)
-            .Distinct();
-        foreach (var id in idsToValidate)
+        foreach (var recItem in GetQuickEditRowsToValidate())
         {
-            var recItem = Items.FirstOrDefault(i => i.Id == id);
-            if (recItem == null || recItem.IsPlaceholder) continue;
             var errors = ValidateRow(recItem);
             if (errors.Any()) return false;
         }
         return true;
+    }
+
+    /// <summary>
+    /// Returns all visible quick-edit rows that should participate in the validity check.
+    /// Excludes placeholders, rows marked for deletion, and non-editable (AlreadyBooked / announced) rows.
+    /// </summary>
+    private IEnumerable<StatementDraftEntryItem> GetQuickEditRowsToValidate()
+        => VisibleQuickEditItems
+            .Where(i => !i.IsPlaceholder && !_pendingDeleteIds.Contains(i.Id) && IsRowEditable(i));
+
+    /// <summary>
+    /// Parses a raw yyyy-MM-dd date string from the UI and stores it as the BookingDate.
+    /// Only valid dates with a 4-digit year (>= 1000) are accepted. Invalid input clears the field.
+    /// The ValutaDate is automatically copied from the new BookingDate when the copy rule applies.
+    /// </summary>
+    public void SetBookingDateFromUi(Guid entryId, string? rawDate)
+    {
+        if (!_editValues.TryGetValue(entryId, out var map)) return;
+        DateTime? parsed = null;
+        if (!string.IsNullOrWhiteSpace(rawDate) &&
+            DateTime.TryParseExact(rawDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) &&
+            IsValidEditDate(dt))
+        {
+            parsed = dt;
+        }
+        SetEditValue(entryId, "BookingDate", parsed);
+    }
+
+    /// <summary>
+    /// Parses a raw yyyy-MM-dd date string from the UI and stores it as the ValutaDate.
+    /// Only valid dates with a 4-digit year (>= 1000) are accepted. Invalid input clears the field.
+    /// </summary>
+    public void SetValutaDateFromUi(Guid entryId, string? rawDate)
+    {
+        if (!_editValues.TryGetValue(entryId, out var map)) return;
+        DateTime? parsed = null;
+        if (!string.IsNullOrWhiteSpace(rawDate) &&
+            DateTime.TryParseExact(rawDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) &&
+            IsValidEditDate(dt))
+        {
+            parsed = dt;
+        }
+        SetEditValue(entryId, "ValutaDate", parsed);
     }
 }

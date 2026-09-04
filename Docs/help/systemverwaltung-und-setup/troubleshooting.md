@@ -11,13 +11,13 @@
 **Lösung:**
 1. Als Administrator den Setup-Bereich **security.txt** öffnen.
 2. Ein gültiges Feld **Kontakt** (z. B. `mailto:security@example.com`) und ein Ablaufdatum in der Zukunft eintragen.
-3. Speichern und den Endpunkt erneut aufrufen.
+3. Speichern und die öffentliche Adresse erneut aufrufen.
 
 ## Speichern schlägt wegen `Canonical` fehl
 
 **Symptom:** Beim Speichern der `security.txt`-Einstellungen erscheint ein Validierungsfehler.
 
-**Ursache:** Der Wert in **Canonical** erfüllt die API-Regeln nicht.
+**Ursache:** Der Wert in **Canonical** erfüllt die Regeln für öffentliche HTTPS-Adressen nicht.
 
 **Lösung:**
 1. Prüfen, dass `Canonical` eine absolute `https://`-URL ist.

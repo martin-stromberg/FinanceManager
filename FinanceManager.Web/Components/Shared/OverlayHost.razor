@@ -32,7 +32,7 @@
                         <h2>@GetOverlayTitle()</h2>
                 }
               </div>
-                <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                <button class="icon-btn" title='@(Localizer?["Btn_Close"] ?? "Close")' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
             </div>
             @{ 
                 IDictionary<string, object?>? parms = null;

@@ -8,68 +8,38 @@ Der Bereich stellt Betriebs- und Administrationsfunktionen bereit: Benutzer, Rol
 
 ## Funktionsweise
 
-Setup-Abschnitte (`profile`, `notifications`, `statements`, `attachments`, `backup`, `update`, `security`, `returnanalysis`) werden über `SetupCardViewModel` bereitgestellt. Die Update-Sektion ist nur fuer authentifizierte Administratoren sichtbar. API-seitig decken `AuthController`, `AdminController`, `UserSettingsController`, `BackupsController`, `UpdateController`, `NotificationsController`, `MetaHolidayProvidersController` und `BackgroundTasksController` den Funktionsumfang ab.
+Die Setup-Seite bündelt persönliche Einstellungen, Benachrichtigungen, Importvorgaben, Anhänge, Backups, Updates, Sicherheitsangaben und Berichtseinstellungen. Einige Abschnitte sind nur für Administratoren sichtbar.
 
-Die Authentifizierung verwendet 30-Minuten-JWTs. Tokens sind an den aktuellen
-Identity-`SecurityStamp` gebunden; Request-Validierung und Refresh pruefen den
-aktuellen Benutzerzustand in der Datenbank. Deaktivierte Benutzer, geaenderte
-SecurityStamps und Rollenabweichungen invalidieren alte Tokens.
+Benutzer können ihr Profil, Spracheinstellungen und Benachrichtigungen pflegen.
+Administratoren können Benutzer verwalten, Backups erstellen oder wiederherstellen,
+Updates prüfen und Sicherheitsinformationen für die öffentliche Kontaktaufnahme
+pflegen.
 
-Backups werden als ZIP-Dateien verwaltet. Uploads und Restores akzeptieren nur ZIP-Container mit genau einer zulässigen NDJSON-Datei (`backup.ndjson` oder `backup-*.ndjson`) und Backup-Metadaten `Type = "Backup"` sowie `Version = 3`. Raw-NDJSON-Uploads werden nicht mehr automatisch in ein ZIP verpackt, sondern als ungültiges Format abgelehnt.
+Backups werden als Archivdateien verwaltet. Eine Wiederherstellung ersetzt
+vorhandene Daten und ist deshalb eine besonders riskante Aktion. Vor dem Start
+muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog
+eingeben. Bei falscher oder fehlender Bestätigung wird keine Wiederherstellung
+gestartet.
 
-Ein Restore ersetzt vorhandene Daten und ist deshalb eine besonders riskante Aktion. Vor dem Start muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog eingeben. Die Eingabe wird serverseitig geprüft; eine reine UI-Bestätigung reicht nicht aus. Bei falscher oder fehlender Bestätigung wird kein Restore gestartet und kein Hintergrundtask angelegt.
-
-AlphaVantage API Keys aus dem Benutzerprofil werden verschluesselt gespeichert.
+AlphaVantage-Schlüssel aus dem Benutzerprofil werden geschützt gespeichert.
 Die Profilansicht zeigt nur an, ob ein Key vorhanden ist; der gespeicherte Wert
-wird nicht im Klartext zurueckgegeben. Admins koennen ihren Key weiterhin zur
-gemeinsamen Nutzung freigeben. Andere Benutzer verwenden diesen geteilten Key
-als Fallback fuer Kursabrufe, ohne den Klartext in Profilantworten oder UI
-einsehen zu koennen.
+wird nicht im Klartext angezeigt. Administratoren können ihren Key weiterhin
+zur gemeinsamen Nutzung freigeben. Andere Benutzer verwenden diesen geteilten
+Key als Fallback für Kursabrufe, ohne den Klartext einsehen zu können.
 
-Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln auf- und zugeklappt werden. Die Ribbon-Aktionsleiste zeigt die Aktionen aller Sektionen dauerhaft an — unabhängig davon, welche Sektion gerade geöffnet ist. Vier Section-ViewModels tragen Ribbon-Aktionen bei:
-
-| Section | ViewModel | Ribbon-Aktionen |
-|---------|-----------|-----------------|
-| Profil | `SetupProfileViewModel` | `Save`, `Reset`, `DetectTimezone` |
-| Benachrichtigungen | `SetupNotificationsViewModel` | `SaveNotifications`, `ResetNotifications` |
-| Backup | `SetupBackupsViewModel` | `CreateBackup`, `UploadBackup` |
-| Kontoauszüge | `SetupStatementsViewModel` | `SaveImportSplit`, `ResetImportSplit` |
+Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln auf- und zugeklappt werden. Die Ribbon-Aktionsleiste zeigt die wichtigsten Aktionen dauerhaft an, unabhängig davon, welche Sektion gerade geöffnet ist.
 
 Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie beim Klick auf den Ribbon-Button noch geschlossen ist, bevor der Datei-Picker geöffnet wird.
 
 Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel angezeigt. Dieses Panel fragt laufende und wartende Tasks nur ab, wenn ein authentifizierter Benutzerkontext vorhanden ist. Nicht angemeldete Benutzer starten keine wiederkehrende Statusabfrage gegen `/api/background-tasks/active`. Falls ein bereits gestartetes Panel vom API-Client dennoch `401 Unauthorized` erhält, beendet es seine Polling-Schleife für die aktuelle Komponenteninstanz und blendet die Task-Anzeige aus.
 
 Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
-verfuegbaren Release-Assets. Administratoren koennen die automatische Pruefung
-aktivieren, Vorabversionen beruecksichtigen, Repository/Manifest,
-Start- und Enduhrzeit des Prueffensters, geplante Uhrzeit, Service-/EXE-Ziele, WorkingDirectory und
-Health-Timeout pflegen. Ein manueller
-Installationsstart verlangt eine Downtime-Bestaetigung. Nach dem Start zeigt
-die UI eine Warteseite, wartet zunaechst auf einen beobachteten Ausfall und
-laedt erst nach einem spaeteren erfolgreichen `/health`-Aufruf neu.
-Ein aktiver Update-Lock kann durch Administratoren zurueckgesetzt werden, wenn
-die Lock-Datei aelter als das konfigurierte Health-Timeout ist. Schlaegt der
-Reset fehl, unterscheidet die UI zwischen fehlendem Lock, noch nicht altem
-Lock, fehlgeschlagenem Loeschen und sonstigem technischen Reset-Fehler.
-
-Die Self-Update-Logik selbst wird als externe, hosting-unabhaengige Bibliothek
-`msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung referenziert
-FinanceManager den geprueften Release `v0.3.0` unter
-`external/msTools.Updater/v0.3.0/`; die dort entpackte `msTools.Updater.dll`
-wird beim Start ueber einen einzigen Aufruf `builder.UseAutoUpdate(...)` in
-`ProgramExtensions` registriert. FinanceManager greift darauf ueber die duenne
-Adapterschicht `UpdateOrchestratorAdapter` zu, sodass Controller, `ApiClient`,
-`SetupUpdateViewModel` und `SetupUpdateTab.razor` stabil bleiben. Die
-Konfigurationssektion `Updates` in `appsettings.json` steuert zusaetzlich
-folgende, neu hinzugekommene Werte: `SourceType` (`Github` oder `LocalFolder`)
-waehlt die Update-Quelle, `LocalFolderPath` das Quellverzeichnis fuer
-`LocalFolder`, `EnableAutomaticDownload`/`EnableAutomaticInstallation`
-schalten den automatischen Download bzw. die automatische Installation nach
-einer gefundenen neueren Version, `SourceCheckStartTime` und
-`SourceCheckEndTime` steuern das taegliche Zeitfenster der
-Hintergrundpruefung, `IncludePrereleases` erlaubt explizit GitHub-Prereleases,
-und `StopHostAfterScriptStart` beendet den Host nach dem Start des
-Installationsskripts (Standard: deaktiviert, wie bisher).
+verfügbaren Aktualisierung. Administratoren können die automatische Prüfung
+aktivieren, Vorabversionen berücksichtigen, ein tägliches Prüfzeitfenster
+festlegen, eine geplante Uhrzeit eintragen und den Dienstnamen pflegen. Ein
+manueller Installationsstart verlangt eine Ausfallzeit-Bestätigung. Nach dem
+Start zeigt die Oberfläche eine Warteseite und lädt neu, sobald die Anwendung
+wieder erreichbar ist.
 
 ## Beispiele
 
@@ -99,28 +69,11 @@ Unterstützte Sprachen sind aktuell **Deutsch (de)**, **Englisch (en)** und **Au
 | **Deutsch (de)** | Die Oberfläche erscheint immer auf Deutsch |
 | **Englisch (en)** | Die Oberfläche erscheint immer auf Englisch |
 
-### Technische Umsetzung
-
-Die gewählte Sprache wird als `PreferredLanguage`-Feld am Benutzer in der Datenbank gespeichert.
-Bei explizit gewählter Sprache wird der Wert beim Login als `pref_lang`-Claim in das JWT eingebettet.
-
-Der `UserPreferenceRequestCultureProvider` liest bei jedem HTTP-Request die Anzeigesprache
-in folgender Priorität:
-
-1. **JWT-Claim `pref_lang`** — schnellster Pfad, kein Datenbankzugriff
-2. **Datenbankabfrage** — Fallback, wenn der Claim fehlt oder ungültig ist
-3. **`null` (= Automatisch)** — Weiterreichen an den nächsten Provider in der Kette
-4. **`Accept-Language`-Header** — Browsersprache, wenn keine explizite Einstellung gesetzt ist
-5. **Standardsprache Deutsch (`de`)** — falls der Browser keine Sprache sendet
-
-Unangemeldete Benutzer sehen die Anwendung gemäß ihrer Browsersprache oder auf Deutsch.
-
 ### Sprachänderung & sofortige Wirkung
 
-Wenn ein Benutzer die Sprache speichert, stellt der Server den Auth-Cookie mit einem neuen
-JWT neu aus, der den aktualisierten `pref_lang`-Claim enthält. Die Seite lädt anschließend
-automatisch neu, sodass die neue Sprache unmittelbar in der gesamten Benutzeroberfläche
-sichtbar wird — ohne erneuten Login.
+Wenn ein Benutzer die Sprache speichert, lädt die Seite automatisch neu. Die
+neue Sprache ist danach unmittelbar in der gesamten Benutzeroberfläche sichtbar
+— ohne erneuten Login.
 
 ### Beispiele
 
@@ -132,18 +85,18 @@ sichtbar wird — ohne erneuten Login.
 
 Der Setup-Bereich enthält eine eigene Einstellungssektion **security.txt**, die ausschließlich für Benutzer mit der Rolle `Admin` sichtbar ist. Hierüber werden alle konfigurierbaren RFC-9116-Direktiven gepflegt.
 
-### Öffentliche Ausgabe-Endpunkte
+### Öffentliche Ausgabeadressen
 
-Nach erfolgreicher Konfiguration sind folgende Endpunkte ohne Anmeldung erreichbar:
+Nach erfolgreicher Konfiguration sind folgende Adressen ohne Anmeldung erreichbar:
 
-| Endpunkt | Format | MIME-Typ |
+| Adresse | Format |
 |----------|--------|----------|
-| `/security.txt` | RFC-9116-Plaintext | `text/plain; charset=utf-8` |
-| `/.well-known/security.txt` | RFC-9116-Plaintext | `text/plain; charset=utf-8` |
-| `/.well-known/security.md` | Markdown | `text/markdown; charset=utf-8` |
-| `/.well-known/security.html` | HTML | `text/html; charset=utf-8` |
+| `/security.txt` | Text |
+| `/.well-known/security.txt` | Text |
+| `/.well-known/security.md` | Markdown |
+| `/.well-known/security.html` | HTML |
 
-Solange das Pflichtfeld **Kontakt** noch nicht konfiguriert ist, antworten alle vier Endpunkte mit **HTTP 503** und einer erklärenden Fehlermeldung.
+Solange das Pflichtfeld **Kontakt** noch nicht konfiguriert ist, bleiben die vier öffentlichen Ausgaben mit einer erklärenden Fehlermeldung deaktiviert.
 
 ### Konfigurierbare Direktiven
 
@@ -167,7 +120,7 @@ Die Direktive `Canonical` kann im Setup-Bereich als vollständige HTTPS-URL gepf
 
 ## Einschränkungen
 
-- Administrative Endpunkte erfordern entsprechende Berechtigungen.
+- Administrative Bereiche erfordern entsprechende Berechtigungen.
 - Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen; die automatische Statusabfrage erfolgt nur für authentifizierte Benutzer.
 - Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.
 - Die Lesbarkeit verschluesselt gespeicherter AlphaVantage API Keys haengt vom

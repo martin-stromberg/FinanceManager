@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Infrastructure;
 
+/// <summary>
+/// Covers <see cref="ContactService.MergeAsync"/>: reassigning all references from a duplicate ("source") contact to
+/// the surviving ("target") contact and then deleting the source, including the aggregate-table bookkeeping where a
+/// naive reassignment would create duplicate rows or lose the source's accumulated amounts.
+/// </summary>
 public sealed class ContactServiceMergeTests
 {
     private static AppDbContext CreateSqliteContext()
@@ -19,6 +24,12 @@ public sealed class ContactServiceMergeTests
         return db;
     }
 
+    /// <summary>
+    /// Verifies that merging repoints both <see cref="FinanceManager.Domain.Postings.Posting"/> and
+    /// <see cref="FinanceManager.Domain.Statements.StatementEntry"/> records from the source contact to the target
+    /// contact, and that the now-orphaned source contact is deleted - a merge must not leave any transaction history
+    /// dangling on a contact the user believed was consolidated away.
+    /// </summary>
     [Fact]
     public async Task Merge_ShouldReassign_Postings_And_StatementEntries_ToTarget()
     {
@@ -27,7 +38,7 @@ public sealed class ContactServiceMergeTests
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "Source", ContactType.Person, null, null, false);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "Target", ContactType.Person, null, null, false);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Seed a posting that references the source contact
         var posting = new FinanceManager.Domain.Postings.Posting(Guid.NewGuid(), PostingKind.Contact,
@@ -38,25 +49,32 @@ public sealed class ContactServiceMergeTests
         // Seed a statement entry that references the source contact (via EF entry since private setter)
         var se = new FinanceManager.Domain.Statements.StatementEntry(Guid.NewGuid(), DateTime.UtcNow.Date, 10m, "Subj", Guid.NewGuid().ToString(), null, null, "EUR", null, false, false);
         db.StatementEntries.Add(se);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         db.Entry(se).Property<Guid?>("ContactId").CurrentValue = src.Id;
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
         await svc.MergeAsync(owner, src.Id, tgt.Id, CancellationToken.None);
 
         // Posting now references target
-        var reloadedPosting = await db.Postings.AsNoTracking().FirstAsync(p => p.Id == posting.Id);
+        var reloadedPosting = await db.Postings.AsNoTracking().FirstAsync(p => p.Id == posting.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(tgt.Id, reloadedPosting.ContactId);
 
         // StatementEntry now references target
-        var reloadedSe = await db.StatementEntries.AsNoTracking().FirstAsync(x => x.Id == se.Id);
+        var reloadedSe = await db.StatementEntries.AsNoTracking().FirstAsync(x => x.Id == se.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(tgt.Id, reloadedSe.ContactId);
 
         // Source removed
-        Assert.Null(await db.Contacts.FindAsync(src.Id));
+        Assert.Null(await db.Contacts.FindAsync(new object?[] { src.Id }, TestContext.Current.CancellationToken));
     }
 
+    /// <summary>
+    /// Verifies the aggregate-table merge logic: when both the source and target contact already have a
+    /// <see cref="FinanceManager.Domain.Postings.PostingAggregate"/> for the same kind/period, the amounts are
+    /// summed into the target row and the source row is removed (rather than left as a duplicate key), while a
+    /// source aggregate for a period the target does not yet have is simply reassigned - the unique-key constraint
+    /// on (kind, dimension, period) would otherwise be violated by a naive contact-id rewrite.
+    /// </summary>
     [Fact]
     public async Task Merge_ShouldMergeAndReassign_PostingAggregates_WithoutDuplicates()
     {
@@ -65,7 +83,7 @@ public sealed class ContactServiceMergeTests
         var src = new FinanceManager.Domain.Contacts.Contact(owner, "Source", ContactType.Person, null, null, false);
         var tgt = new FinanceManager.Domain.Contacts.Contact(owner, "Target", ContactType.Person, null, null, false);
         db.Contacts.AddRange(src, tgt);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var keyPeriodStart = new DateTime(2024, 1, 1);
         var period = FinanceManager.Domain.Postings.AggregatePeriod.Month;
@@ -107,12 +125,12 @@ public sealed class ContactServiceMergeTests
         srcAggOther.Add(30m);
         db.PostingAggregates.Add(srcAggOther);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new ContactService(db);
         await svc.MergeAsync(owner, src.Id, tgt.Id, CancellationToken.None);
 
-        var aggs = await db.PostingAggregates.AsNoTracking().Where(a => a.Kind == PostingKind.Contact).ToListAsync();
+        var aggs = await db.PostingAggregates.AsNoTracking().Where(a => a.Kind == PostingKind.Contact).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         // Source aggregate with same key should be removed, target amount summed (100 + 50)
         var merged = aggs.Single(a => a.ContactId == tgt.Id && a.PeriodStart == keyPeriodStart && a.Period == period);
         Assert.Equal(150m, merged.Amount);

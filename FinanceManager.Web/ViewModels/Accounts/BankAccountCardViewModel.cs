@@ -7,7 +7,7 @@ using Microsoft.Extensions.Localization;
 namespace FinanceManager.Web.ViewModels.Accounts
 {
     // Card VM: builds key/value pairs for a single bank account
-    
+
     /// <summary>
     /// View model for the account detail card displayed in the UI.
     /// Responsible for loading a single account, building the card record and handling save / delete actions.
@@ -23,7 +23,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             : base(sp)
         {
         }
-        
+
         /// <summary>
         /// Identifier of the currently loaded account.
         /// </summary>
@@ -166,7 +166,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             return ApplyPendingValues(record);
         }
 
-        private AccountDto BuildDto(CardRecord record)
+        private AccountDto BuildDto(CardRecord? record)
         {
             var name = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Name")?.Text ?? Account?.Name ?? string.Empty;
             var iban = record?.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_Account_Iban")?.Text ?? Account?.Iban ?? string.Empty;
@@ -186,7 +186,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 {
                     var key = $"EnumType_{enumType.Name}_{v}";
                     var val = Localizer?[key];
-                    if (!string.IsNullOrWhiteSpace(val) && string.Equals(val.Value, spText, StringComparison.OrdinalIgnoreCase))
+                    if (val != null && !string.IsNullOrWhiteSpace(val.Value) && string.Equals(val.Value, spText, StringComparison.OrdinalIgnoreCase))
                     {
                         spExpectation = v;
                         break;
@@ -272,11 +272,30 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 })
             };
 
+            // Group: Buchungen (CreatePreliminaryDraft)
+            var bookingActions = new List<UiRibbonAction>
+            {
+                new UiRibbonAction("CreatePreliminaryDraft", localizer["Ribbon_CreatePreliminaryDraft"].Value ?? "Vorläufige Buchungen erfassen", "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, Account == null || Account.Id == Guid.Empty, null, async () => {
+                    var request = new FinanceManager.Shared.Dtos.Statements.CreatePreliminaryStatementDraftRequest(Id);
+                    var draft = await ApiClient.StatementDrafts_CreatePreliminaryAsync(request);
+                    if (draft == null)
+                    {
+                        SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? "Create preliminary draft failed");
+                        RaiseStateChanged();
+                        return;
+                    }
+                    var url = $"/card/statement-drafts/{draft.DraftId}?quickEdit=true";
+                    RaiseUiActionRequested("OpenStatementDraft", url);
+                })
+                { MobileShortcut = true }
+            };
+
             var tabs = new List<UiRibbonTab>
             {
                 new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navActions),
                 new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manageActions),
-                new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions)
+                new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions),
+                new UiRibbonTab(localizer["Ribbon_Group_Bookings"].Value ?? "Buchungen", bookingActions)
             };
 
             return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

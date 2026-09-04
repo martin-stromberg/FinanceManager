@@ -72,6 +72,7 @@ artifacts/
 /FinanceManager.Domain/FinanceManager.Domain.xml
 /FinanceManager.Infrastructure/FinanceManager.Infrastructure.xml
 /FinanceManager.Shared/FinanceManager.Shared.xml
+/FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.xml
 /FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.xml
 /FinanceManager.Tests/FinanceManager.Tests.xml
 /FinanceManager.Web/FinanceManager.Web.xml
@@ -440,7 +441,6 @@ FodyWeavers.xsd
 *.copilot.context.md.bak
 /.github/agents/*
 /.github/tools/*
-/.github/workflows/*
 /.softwareschmiede/copilot-runtime/*
 *.copilot.task.md
 *.copilot.task.md.bak
@@ -450,3 +450,5 @@ issue.md
 
 # Design reference artifact used while building the portfolio analysis visualizations (not a build input)
 /stitch_advanced_portfolio_analysis_report.zip
+/.agents/
+/AGENTS.md

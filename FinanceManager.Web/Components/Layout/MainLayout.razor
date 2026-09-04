@@ -3,6 +3,7 @@
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 @inject Microsoft.AspNetCore.Components.NavigationManager Nav
 @inject LoadingBarService LoadingBar
+@inject IJSRuntime JS
 @implements IDisposable
 
 <link rel="stylesheet" href="/css/ribbon.css" />
@@ -70,6 +71,7 @@
     private string _logoPath = "/icons/finance_manager.png";
     private bool _useFullWidth;
     private IDisposable? _locationChangingRegistration;
+    private bool _keepaliveRegistered;
 
     protected override void OnInitialized()
     {
@@ -89,8 +91,50 @@
     private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         UpdateLogo(e.Location);
+        _ = PingKeepaliveAsync();
         _ = StopLoadingBarAsync();
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _keepaliveRegistered)
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("financeManager.keepalive.register");
+            _keepaliveRegistered = true;
+        }
+        catch
+        {
+            // Keepalive must not affect page rendering when JavaScript is unavailable during prerender/disconnect.
+        }
+    }
+
+    private async Task PingKeepaliveAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("financeManager.keepalive.ping", new { force = true });
+        }
+        catch
+        {
+            // Background session maintenance must not surface as a navigation or rendering error.
+        }
+    }
+
+    private async Task UnregisterKeepaliveAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("financeManager.keepalive.unregister");
+        }
+        catch
+        {
+        }
     }
 
     private async Task StopLoadingBarAsync()
@@ -112,7 +156,7 @@
         }
 
         // Support generic list routes, e.g., /list/accounts
-        string kind = null;
+        string? kind = null;
         if (path.StartsWith("/list/"))
         {
             var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -172,5 +216,9 @@
     {
         Nav.LocationChanged -= HandleLocationChanged;
         _locationChangingRegistration?.Dispose();
+        if (_keepaliveRegistered)
+        {
+            _ = UnregisterKeepaliveAsync();
+        }
     }
 }

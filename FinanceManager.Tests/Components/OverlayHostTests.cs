@@ -10,6 +10,13 @@ using Moq;
 
 namespace FinanceManager.Tests.Components;
 
+/// <summary>
+/// Covers <see cref="OverlayHost{T}"/>, the generic component that renders an arbitrary component
+/// (looked up by <c>Type</c> plus a parameter dictionary) inside a modal-style card whenever a
+/// view model raises an "OpenOverlay" UI action. These tests guard the header title resolution
+/// logic: an explicitly supplied "OverlayTitle" parameter must win, and when it is absent the host
+/// must fall back to a localized title based on the overlay's component type.
+/// </summary>
 public sealed class OverlayHostTests : BunitContext
 {
     /// <summary>
@@ -61,6 +68,11 @@ public sealed class OverlayHostTests : BunitContext
         cut.WaitForAssertion(() => Assert.Equal("SecurityPricesImport_Title", cut.Find("h2").TextContent));
     }
 
+    /// <summary>
+    /// Minimal <see cref="BaseCardViewModel{T}"/> stand-in used only to trigger the "OpenOverlay" UI
+    /// action that <see cref="OverlayHost{T}"/> listens for. The abstract symbol-upload members are
+    /// stubbed with no-ops since they are unrelated to overlay rendering and never exercised here.
+    /// </summary>
     private sealed class TestCardViewModel : BaseCardViewModel<(string Key, string Value)>
     {
         public TestCardViewModel(IServiceProvider serviceProvider) : base(serviceProvider)
@@ -76,12 +88,23 @@ public sealed class OverlayHostTests : BunitContext
 
         protected override Task AssignNewSymbolAsync(Guid? attachmentId) => Task.CompletedTask;
 
+        /// <summary>
+        /// Raises the "OpenOverlay" UI action with the given spec, simulating what a real view model
+        /// does when it wants <see cref="OverlayHost{T}"/> to display an overlay component.
+        /// </summary>
+        /// <param name="spec">The overlay component type and parameters to open.</param>
         public void RaiseOverlay(BaseViewModel.UiOverlaySpec spec)
         {
             RaiseUiActionRequested("OpenOverlay", spec);
         }
     }
 
+    /// <summary>
+    /// Fake <see cref="IStringLocalizer{T}"/> that echoes each resource key back as its own value
+    /// (or, for known keys such as "SecurityPricesImport_Title", the fixed localized fallback string
+    /// asserted by the tests) so localization behavior can be verified without loading real
+    /// resource files.
+    /// </summary>
     private sealed class PassthroughLocalizer<T> : IStringLocalizer<T>
     {
         public LocalizedString this[string name] => new(name, name, resourceNotFound: false);

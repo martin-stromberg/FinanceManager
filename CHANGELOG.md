@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Aktive Session-Erneuerung:** Authentifizierte Browser-Nutzung hält die JWT-Session jetzt per stillem Keepalive aufrecht. Navigation, Interaktion und das Verlassen von Eingabefeldern im Kontoauszugs-Schnellbearbeitungsmodus lösen bei Bedarf einen gedrosselten Refresh-Ping aus; nicht erneuerbare Sessions bleiben beim normalen Login-Redirect mit Return-URL.
+
 - **Posting Reversal (Stornierung):** Erroneous postings can now be cancelled (reversed) via the API and UI (feature branch `140-buchung-rückgängig-machen`).
   - New endpoint `POST /api/postings/{id}/reverse` — creates a counter-posting with negated amount, reversing the original posting (and all postings in the same booking group). Returns a `ReversalResultDto` with the IDs of reversed and newly created postings plus the reconciliation import ID.
   - New endpoint `GET /api/postings/{id}/validate-reversal` — validates whether a posting can be reversed without performing the operation. Returns a `ReversalValidationDto` (`isValid`, `errors[]`). Use this to pre-validate before showing a confirmation UI.
@@ -38,6 +40,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - macOS is not supported (unchanged from before); documented as a known limitation of the library.
 
 ### Changed
+
+- **msTools.Updater auf 0.10.0-rc.1 aktualisiert:** `FinanceManager.Web`, `FinanceManager.Tests` und `FinanceManager.Tests.Integration` referenzieren jetzt das lokale NuGet-Paket `msTools.Updater 0.10.0-rc.1`. Die alte `0.8.0-rc.1`-Paketdatei in `external/msTools.Updater/` wurde entfernt.
+
+- **Schnellbearbeitung im Kontoauszug:** `Strg`+`Pfeil hoch` bzw. `Strg`+`Pfeil runter` navigiert im Schnellbearbeitungsmodus in derselben Feldspalte zur vorherigen bzw. nächsten sichtbaren editierbaren Zeile.
 
 - **Budgetbericht objektorientiert neu strukturiert:** Die Berechnungslogik des Budgetberichts wurde von einer prozeduralen `BudgetReportService`-Implementierung auf ein objektorientiertes Domänenmodell umgestellt (`Budgetbericht`, `MonthlyBudgetResult`, `MonthlyBudgetExpectationGroup`, `MonthlyBudgetExpectation`, `MonthlyBudgetExpectationPosting` in `FinanceManager.Domain.Budget.ReportCalculation`); `BudgetReportService` bleibt als schlanker Adapter bestehen.
   - Neue Zeilenreihenfolge im Detailbericht: Kategorie-/Zweckzeilen → Zwischensumme → Unbudgetiert → Zwischensumme → Kostenneutral → Endsumme.

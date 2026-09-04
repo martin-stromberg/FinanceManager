@@ -127,7 +127,7 @@ public sealed class BudgetCategoryService : IBudgetCategoryService
             }
 
             purposeCountByCategory.TryGetValue(c.Id, out var purposeCount);
-            result.Add(new BudgetCategoryOverviewDto(c.Id, c.Name, budget, actual, actual-budget, purposeCount));
+            result.Add(new BudgetCategoryOverviewDto(c.Id, c.Name, budget, actual, actual - budget, purposeCount));
         }
 
         return result;

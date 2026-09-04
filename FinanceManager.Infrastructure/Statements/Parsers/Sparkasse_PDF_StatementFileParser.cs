@@ -71,7 +71,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         protected override void OnBeforeParseLine(ref string line)
         {
             base.OnBeforeParseLine(ref line);
-            switch(CurrentMode)
+            switch (CurrentMode)
             {
                 case ParseMode.KeyValue:
                     if (line.StartsWith("Herrn") || line.StartsWith("Frau"))
@@ -125,7 +125,7 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
 
         private void CheckSetSelfCounterparty(StatementMovement rec)
         {
-            if ((rec.Subject?? "").Contains("Eigenleistung"))
+            if ((rec.Subject ?? "").Contains("Eigenleistung"))
                 rec.Counterparty = rec.Counterparty ?? _contactName;
         }
 
@@ -147,22 +147,26 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
         {
             if (!string.IsNullOrWhiteSpace(rec.PostingDescription))
                 return;
+            var subject = rec.Subject ?? string.Empty;
+            var counterparty = rec.Counterparty ?? string.Empty;
             foreach (var description in PostingDescriptions)
             {
-                if (rec.Subject.StartsWith(description))
+                if (subject.StartsWith(description))
                 {
                     rec.PostingDescription = description;
-                    rec.Subject = rec.Subject.Remove(0, description.Length).TrimStart();
+                    subject = subject.Remove(0, description.Length).TrimStart();
                 }
-                if (rec.Counterparty.StartsWith(description))
+                if (counterparty.StartsWith(description))
                 {
                     rec.PostingDescription = description;
-                    rec.Counterparty = rec.Counterparty.Remove(0, description.Length).TrimStart();
+                    counterparty = counterparty.Remove(0, description.Length).TrimStart();
                 }
             }
+            rec.Subject = subject;
+            rec.Counterparty = counterparty;
         }
 
-        private string ClearPDFTableValue(string value)
+        private string ClearPDFTableValue(string? value)
         {
             return value?.Replace("|", " ") ?? string.Empty;
         }

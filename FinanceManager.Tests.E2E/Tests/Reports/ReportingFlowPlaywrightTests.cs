@@ -7,11 +7,21 @@ using System.Text.Json;
 
 namespace FinanceManager.Tests.E2E;
 
+/// <summary>
+/// End-to-end tests for the reporting dashboard and the setup backup/restore feature: saving a
+/// report favorite and reloading it from the dashboard, and creating a database backup, mutating
+/// master data (contacts, savings plans, securities, accounts) and then restoring the backup to
+/// verify the original state comes back.
+/// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class ReportingFlowPlaywrightTests
 {
     private readonly PlaywrightWebAppFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReportingFlowPlaywrightTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared Playwright web app fixture providing the browser and test server.</param>
     public ReportingFlowPlaywrightTests(PlaywrightWebAppFixture fixture)
     {
         _fixture = fixture;
@@ -29,6 +39,11 @@ public sealed class ReportingFlowPlaywrightTests
             "Playwright Favorite");
     }
 
+    /// <summary>
+    /// Same as <see cref="SaveFavorite_ShouldPersistAndReload"/> but on a mobile viewport, to
+    /// catch responsive-layout regressions in the report favorite save/reload flow that only
+    /// show up at mobile widths.
+    /// </summary>
     [Fact]
     public async Task SaveFavorite_ShouldPersistAndReload_OnMobileViewport()
     {
@@ -82,6 +97,12 @@ public sealed class ReportingFlowPlaywrightTests
         heading.Should().Contain(favoriteName);
     }
 
+    /// <summary>
+    /// Verifies the setup backup/restore round trip: creates a backup with seeded master data
+    /// (contact, account, savings plan, security), mutates or removes that data afterwards, then
+    /// applies the backup and asserts that the originally seeded contact, savings plan, security
+    /// and account are all present again.
+    /// </summary>
     [Fact]
     public async Task CreateBackup_EditMasterData_AndRestoreBackup_ShouldRestoreOriginalState()
     {

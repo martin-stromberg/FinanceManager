@@ -9,6 +9,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FinanceManager.Tests.Reports;
 
+/// <summary>
+/// End-to-end test using a real-world-shaped set of 43 postings spanning several years, where many entries share
+/// a booking date far from their valuta date (a recurring pattern of bookings settling roughly six weeks later),
+/// to verify <see cref="ReportAggregationService.QueryAsync"/> aggregates correctly by whichever date kind is
+/// requested (<c>UseValutaDate</c> true or false) and that <see cref="PostingAggregateService"/>
+/// upserts both a Booking-dated and a Valuta-dated <see cref="PostingAggregate"/> per posting so either query mode
+/// can be served from precomputed data.
+/// </summary>
 public sealed class ReportAggregation_ValutaBookingTests
 {
     private static AppDbContext CreateDb()
@@ -69,6 +77,11 @@ public sealed class ReportAggregation_ValutaBookingTests
         (new DateTime(2018,11,6), new DateTime(2018,11,6), -15.86m)
     };
 
+    /// <summary>
+    /// With <c>UseValutaDate = true</c>, September 2025 must aggregate only the postings whose valuta date (not
+    /// booking date) falls in that month, using the precomputed Valuta-dated aggregate rather than recomputing
+    /// from raw postings, and the query must not leak later periods (e.g. October 2025) into the result.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_Monthly_ByValutaDate_ShouldAggregateSep2025()
     {
@@ -139,6 +152,12 @@ public sealed class ReportAggregation_ValutaBookingTests
         Assert.DoesNotContain(result.Points, p => p.PeriodStart > periodStart);
     }
 
+    /// <summary>
+    /// With <c>UseValutaDate = false</c>, the same posting set must instead aggregate September 2025 by booking
+    /// date using the precomputed Booking-dated aggregate, producing a different total from the valuta-date
+    /// variant (since several postings' booking and valuta months diverge), and likewise must not leak later
+    /// periods into the result.
+    /// </summary>
     [Fact]
     public async Task QueryAsync_Monthly_ByBookingDate_ShouldAggregateSep2025()
     {

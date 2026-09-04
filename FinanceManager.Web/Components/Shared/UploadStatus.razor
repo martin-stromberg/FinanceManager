@@ -12,7 +12,7 @@
 {
     <div class="upload-progress" role="status" aria-live="polite" style="margin:0.5rem 0;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem;">
-            <span class="title">@Localizer?["Upload_Progress_Title"]</span>
+            <span class="title">@(Localizer?["Upload_Progress_Title"]?.Value ?? "Upload progress")</span>
             <span class="cnt">@ViewModel.UploadDone/@ViewModel.UploadTotal</span>
         </div>
         <div style="background:#222;border:1px solid var(--border);height:8px;border-radius:6px;overflow:hidden;">
@@ -28,11 +28,11 @@
 @if (CreatedCount > 0)
 {
     <div class="alert alert-success import-success" style="margin:0.5rem 0;">
-        @Localizer?["Import_Success"]
+        @(Localizer?["Import_Success"]?.Value ?? "Import completed")
         <div style="margin-top:.25rem;">@string.Format(Localizer?["Import_Result_Count"]?.Value ?? "{0} drafts created.", CreatedCount)</div>
         @if (FirstDraftId.HasValue)
         {
-            <a href="@($"/statement-drafts/{FirstDraftId}")" class="alert-link">@Localizer?["Import_ShowDetails"]</a>
+            <a href="@($"/statement-drafts/{FirstDraftId}")" class="alert-link">@(Localizer?["Import_ShowDetails"]?.Value ?? "Show details")</a>
         }
     </div>
 }

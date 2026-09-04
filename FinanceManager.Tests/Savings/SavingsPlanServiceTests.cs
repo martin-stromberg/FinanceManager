@@ -4,6 +4,10 @@ using FinanceManager.Infrastructure.Savings;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
+/// <summary>
+/// Covers <see cref="SavingsPlanService"/>'s CRUD lifecycle (create, update, archive, delete) and the
+/// AnalyzeAsync projection for open-ended plans that have no target date or amount to project against.
+/// </summary>
 public sealed class SavingsPlanServiceTests
 {
     private static (SavingsPlanService sut, AppDbContext db, SqliteConnection conn) Create()
@@ -17,6 +21,7 @@ public sealed class SavingsPlanServiceTests
         return (sut, db, conn);
     }
 
+    /// <summary>Verifies the baseline path: a created savings plan can be fetched back by ID and carries the name it was created with.</summary>
     [Fact]
     public async Task CreateAndGet_ShouldWork()
     {
@@ -29,6 +34,7 @@ public sealed class SavingsPlanServiceTests
         conn.Dispose();
     }
 
+    /// <summary>Verifies that updating a plan can change every mutable field at once - name, type (OneTime to Recurring), target amount, and interval - and that the returned DTO reflects all of them.</summary>
     [Fact]
     public async Task Update_ShouldChangeValues()
     {
@@ -44,6 +50,7 @@ public sealed class SavingsPlanServiceTests
         conn.Dispose();
     }
 
+    /// <summary>Verifies a plan can be archived and then deleted in sequence, both operations reporting success.</summary>
     [Fact]
     public async Task ArchiveAndDelete_ShouldWork()
     {
@@ -57,6 +64,12 @@ public sealed class SavingsPlanServiceTests
         conn.Dispose();
     }
 
+    /// <summary>
+    /// Verifies AnalyzeAsync's behavior for an "Open" plan that has neither a target amount nor a target date:
+    /// it still sums the plan's postings into AccumulatedAmount, but short-circuits the projection fields
+    /// (RequiredMonthly, MonthsRemaining) to zero and reports the plan as reachable by definition, instead of
+    /// attempting a month-based projection that has nothing to project against.
+    /// </summary>
     [Fact]
     public async Task AnalyzeAsync_ShortCircuits_When_TargetDateMissing_EvenWithPostings()
     {
@@ -104,7 +117,7 @@ public sealed class SavingsPlanServiceTests
         Assert.True(analysis.TargetReachable);
 
         // Sanity: postings sum in DB
-        var sum = await db.Postings.AsNoTracking().Where(p => p.SavingsPlanId == dto.Id).SumAsync(p => p.Amount);
+        var sum = await db.Postings.AsNoTracking().Where(p => p.SavingsPlanId == dto.Id).SumAsync(p => p.Amount, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(150m, sum);
 
         conn.Dispose();

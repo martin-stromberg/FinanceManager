@@ -6,6 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.Aggregates;
 
+/// <summary>
+/// Covers <see cref="PostingAggregateService.UpsertForPostingAsync"/> for security postings that carry a
+/// <see cref="SecurityPostingSubType"/> (e.g. dividend vs. tax): verifies that the sub-type participates
+/// in the aggregate key, so postings with different sub-types on the same security and date are kept as
+/// separate aggregate rows instead of being netted into one.
+/// </summary>
 public sealed class PostingAggregateServiceSubtypeSplitTests
 {
     private static AppDbContext CreateDb()
@@ -20,6 +26,12 @@ public sealed class PostingAggregateServiceSubtypeSplitTests
         return db;
     }
 
+    /// <summary>
+    /// Posts a Dividend and a Tax posting for the same security and date, then checks that each of the
+    /// four aggregate periods (Month/Quarter/HalfYear/Year) ends up with 4 aggregate rows (2 sub-types x
+    /// 2 date kinds) and that both the dividend and the tax amount are present in each period - i.e. the
+    /// sub-type split does not merge or drop either side of the pair.
+    /// </summary>
     [Fact]
     public async Task UpsertForPostingAsync_Security_SubTypes_Dividend_And_Tax_ShouldCreateTwoAggregatesPerPeriod()
     {

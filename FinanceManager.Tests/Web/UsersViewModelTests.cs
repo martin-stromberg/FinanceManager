@@ -8,6 +8,13 @@ using Moq;
 
 namespace FinanceManager.Tests.Web;
 
+/// <summary>
+/// Tests for the admin user-management view models <see cref="UserListViewModel"/> and
+/// <see cref="UserCardViewModel"/> against a mocked <see cref="IApiClient"/>: loading and listing users,
+/// creating a user (including the follow-up update call the save flow performs after creation), editing and
+/// saving an existing user, deleting a user and observing the list refresh, unlocking a locked-out user, and
+/// the ribbon action grouping exposed for the list view.
+/// </summary>
 public sealed class UsersViewModelTests
 {
     private sealed class TestCurrentUserService : ICurrentUserService
@@ -42,6 +49,10 @@ public sealed class UsersViewModelTests
         return (vm, apiMock);
     }
 
+    /// <summary>
+    /// Verifies that loading the user list populates <c>Items</c> from the admin API with the expected user
+    /// data.
+    /// </summary>
     [Fact]
     public async Task InitializeAsync_ShouldLoadUsers_AndSetLoaded()
     {
@@ -53,12 +64,17 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(users);
 
-        await vm.LoadAsync();
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(vm.Items);
         Assert.Equal("u1", vm.Items[0].Username);
     }
 
+    /// <summary>
+    /// Verifies that saving a new user (an empty-id card) calls the create API and then the update API with
+    /// the newly created user's id — the card's save flow performs an update immediately after creation to
+    /// apply any fields not accepted by the create endpoint itself.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldPostAppendAndReset()
     {
@@ -86,16 +102,19 @@ public sealed class UsersViewModelTests
             .ReturnsAsync(new List<UserAdminDto>())
             .ReturnsAsync(new List<UserAdminDto> { new UserAdminDto(createdId, "new", true, true, null, DateTime.UtcNow, null) });
 
-        await cardVm.LoadAsync(Guid.Empty);
+        await cardVm.LoadAsync(Guid.Empty, TestContext.Current.CancellationToken);
         // set values on the User fallback so SaveAsync uses them
         var userProp = cardVm.GetType().GetProperty("User")!;
         var newUser = new UserAdminDto(Guid.Empty, "new", true, true, null, DateTime.UtcNow, null);
         userProp.SetValue(cardVm, newUser);
 
-        var created = await cardVm.SaveAsync();
+        var created = await cardVm.SaveAsync(TestContext.Current.CancellationToken);
         Assert.True(created);
     }
 
+    /// <summary>
+    /// Verifies that editing and saving an existing user calls the update API and reports success.
+    /// </summary>
     [Fact]
     public async Task BeginEdit_SaveEditAsync_ShouldUpdateUser_AndClearEdit()
     {
@@ -108,16 +127,21 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_UpdateUserAsync(userId, It.IsAny<UpdateUserRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserAdminDto(userId, "updated", false, false, null, DateTime.UtcNow, null));
 
-        await cardVm.LoadAsync(userId);
+        await cardVm.LoadAsync(userId, TestContext.Current.CancellationToken);
         // change username via reflection on User property
         var userProp = cardVm.GetType().GetProperty("User")!;
         var edited = new UserAdminDto(userId, "updated", false, false, null, DateTime.UtcNow, null);
         userProp.SetValue(cardVm, edited);
 
-        var ok = await cardVm.SaveAsync();
+        var ok = await cardVm.SaveAsync(TestContext.Current.CancellationToken);
         Assert.True(ok);
     }
 
+    /// <summary>
+    /// Verifies that deleting a user through the card view model and reloading the list view model reflects
+    /// the removal — the two view models share the same underlying API state even though they are separate
+    /// instances.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldRemoveUser_FromList()
     {
@@ -133,7 +157,7 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_DeleteUserAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await listVm.LoadAsync();
+        await listVm.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Single(listVm.Items);
 
         // perform delete via card vm
@@ -141,13 +165,16 @@ public sealed class UsersViewModelTests
         // set user on card and call delete
         var userProp = cardVm.GetType().GetProperty("User")!;
         userProp.SetValue(cardVm, users[0]);
-        await cardVm.DeleteAsync();
+        await cardVm.DeleteAsync(TestContext.Current.CancellationToken);
 
         // reload list
-        await listVm.LoadAsync();
+        await listVm.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Empty(listVm.Items);
     }
 
+    /// <summary>
+    /// Verifies that the admin password-reset API call succeeds when invoked for an existing user.
+    /// </summary>
     [Fact]
     public async Task ResetPasswordAsync_ShouldSetLastResetFields_OnList()
     {
@@ -160,14 +187,18 @@ public sealed class UsersViewModelTests
         var userProp = cardVm.GetType().GetProperty("User")!;
         userProp.SetValue(cardVm, new UserAdminDto(id, "u", false, true, null, DateTime.UtcNow, null));
 
-        var ok = await cardVm.UnblockAsync(); // reuse Unblock/Reset path isn't identical, so call Reset via API directly
+        var ok = await cardVm.UnblockAsync(TestContext.Current.CancellationToken); // reuse Unblock/Reset path isn't identical, so call Reset via API directly
         // instead call API directly for reset simulation
         var api = apiMock.Object;
-        var called = await api.Admin_ResetPasswordAsync(id, new ResetPasswordRequest("secret"));
+        var called = await api.Admin_ResetPasswordAsync(id, new ResetPasswordRequest("secret"), TestContext.Current.CancellationToken);
 
         Assert.True(called);
     }
 
+    /// <summary>
+    /// Verifies that unblocking a user whose account is currently locked out calls the unlock API and
+    /// succeeds.
+    /// </summary>
     [Fact]
     public async Task UnlockAsync_ShouldClearLockoutEnd()
     {
@@ -178,13 +209,17 @@ public sealed class UsersViewModelTests
         apiMock.Setup(a => a.Admin_UnlockUserAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        await cardVm.LoadAsync(id);
+        await cardVm.LoadAsync(id, TestContext.Current.CancellationToken);
         Assert.NotNull(cardVm.GetType().GetProperty("User")!.GetValue(cardVm));
 
-        var ok = await cardVm.UnblockAsync();
+        var ok = await cardVm.UnblockAsync(TestContext.Current.CancellationToken);
         Assert.True(ok);
     }
 
+    /// <summary>
+    /// Verifies that the user list's ribbon exposes exactly one group ("Actions") in the current UI design,
+    /// a regression guard against an unintended extra group appearing after a ribbon layout change.
+    /// </summary>
     [Fact]
     public void GetRibbon_ShouldComposeGroups_ByState()
     {

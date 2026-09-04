@@ -9,6 +9,7 @@ namespace FinanceManager.Web.ViewModels.Common
         private readonly string _endpointBase;
         private readonly int? _take;
         private readonly int? _maxYearsBack;
+        private readonly string _title;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AggregateBarChartViewModel"/> class.
@@ -24,7 +25,7 @@ namespace FinanceManager.Web.ViewModels.Common
         {
             _http = services.GetRequiredService<HttpClient>();
             _endpointBase = endpointBase ?? string.Empty;
-            Title = title ?? string.Empty;
+            _title = title ?? string.Empty;
             _take = take;
             _maxYearsBack = maxYearsBack;
             Data = new List<TimeSeriesPoint>();
@@ -43,7 +44,7 @@ namespace FinanceManager.Web.ViewModels.Common
         /// <summary>
         /// Chart title displayed in the UI.
         /// </summary>
-        public string Title { get; set; }
+        public override string Title => _title;
 
         /// <summary>
         /// Color used to render positive bars (hex string).
@@ -100,10 +101,7 @@ namespace FinanceManager.Web.ViewModels.Common
         /// </summary>
         public int? BarsHeightPx { get; set; }
 
-        /// <summary>
-        /// Indicates whether the view model is currently loading data from the server.
-        /// </summary>
-        public bool Loading { get; private set; }
+        // Loading is inherited from BaseViewModel (protected set) - no local redeclaration needed.
 
         /// <summary>
         /// True when the loaded data contains points from more than one year.
