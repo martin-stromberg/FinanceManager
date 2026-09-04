@@ -320,12 +320,24 @@ public sealed class HelpAssetIntegrityValidatorTests : IDisposable
         return dir.FullName;
     }
 
+    // Must match the configuration this test assembly itself was built with (Debug locally/in regular CI,
+    // Release under release.yml's "Release gate - regular tests" step, which runs
+    // `dotnet test --configuration Release`) - FinanceManager.Web is built as this project's own dependency
+    // under that same configuration, so a hardcoded "Debug" here previously made GetWebBuildOutputRoot()
+    // find no matching candidate at all (InvalidOperationException: "Sequence contains no matching element")
+    // whenever tests actually ran under Release.
+#if DEBUG
+    private const string BuildConfiguration = "Debug";
+#else
+    private const string BuildConfiguration = "Release";
+#endif
+
     private static string GetWebBuildOutputRoot(string webProjectRoot)
     {
         var candidates = new[]
         {
-            Path.Combine(webProjectRoot, "bin", "FromFinanceManagerTests", "Debug", "net10.0"),
-            Path.Combine(webProjectRoot, "bin", "Debug", "net10.0")
+            Path.Combine(webProjectRoot, "bin", "FromFinanceManagerTests", BuildConfiguration, "net10.0"),
+            Path.Combine(webProjectRoot, "bin", BuildConfiguration, "net10.0")
         };
 
         return candidates.First(candidate => File.Exists(Path.Combine(candidate, "wwwroot", "help", "help-assets.sha256")));
