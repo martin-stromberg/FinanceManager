@@ -268,22 +268,35 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         }
     }
 
+    // Must match the configuration this test assembly itself was built with (Debug locally/in regular CI,
+    // Release under release.yml's "Release gate - regular tests" step, which runs
+    // `dotnet test --configuration Release`) - FinanceManager.Web is built as this project's own dependency
+    // under that same configuration, so a hardcoded "Debug" here previously made every candidate below miss
+    // under a Release test run, falling through to the source wwwroot folder - which never has
+    // search-index.json/help-assets.sha256 (both gitignored as build-generated) - instead of the real build
+    // output.
+#if DEBUG
+    private const string BuildConfiguration = "Debug";
+#else
+    private const string BuildConfiguration = "Release";
+#endif
+
     private static string GetBuiltWebRoot()
     {
-        var builtWebRoot = Path.Combine(WebProjectRoot, "bin", "Debug", "net10.0", "wwwroot");
-        var integrationWebRoot = Path.Combine(WebProjectRoot, "bin", "FromFinanceManagerIntegrationTests", "Debug", "net10.0", "wwwroot");
+        var builtWebRoot = Path.Combine(WebProjectRoot, "bin", BuildConfiguration, "net10.0", "wwwroot");
+        var integrationWebRoot = Path.Combine(WebProjectRoot, "bin", "FromFinanceManagerIntegrationTests", BuildConfiguration, "net10.0", "wwwroot");
         if (IsBuiltHelpWebRoot(integrationWebRoot))
         {
             return integrationWebRoot;
         }
 
-        builtWebRoot = Path.Combine(WebProjectRoot, "bin", "FromFinanceManagerTests", "Debug", "net10.0", "wwwroot");
+        builtWebRoot = Path.Combine(WebProjectRoot, "bin", "FromFinanceManagerTests", BuildConfiguration, "net10.0", "wwwroot");
         if (IsBuiltHelpWebRoot(builtWebRoot))
         {
             return builtWebRoot;
         }
 
-        builtWebRoot = Path.Combine(WebProjectRoot, "bin", "Debug", "net10.0", "wwwroot");
+        builtWebRoot = Path.Combine(WebProjectRoot, "bin", BuildConfiguration, "net10.0", "wwwroot");
         if (IsBuiltHelpWebRoot(builtWebRoot))
         {
             return builtWebRoot;
