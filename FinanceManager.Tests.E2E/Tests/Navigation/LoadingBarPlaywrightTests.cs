@@ -268,12 +268,6 @@ public sealed class LoadingBarPlaywrightTests
         isAvailable.Should().BeTrue();
     }
 
-    private static Task<int> GetLoadingBarSequenceAsync(IPage page)
-    {
-        return page.EvaluateAsync<int>(
-            "() => Number((document.querySelector('[data-mst-loading-bar]') || document.querySelector('#fm-loading-bar'))?.dataset.sequence || '0')");
-    }
-
     private static Task InstallLoadingBarVisibilityObserverAsync(IPage page)
     {
         return page.EvaluateAsync(

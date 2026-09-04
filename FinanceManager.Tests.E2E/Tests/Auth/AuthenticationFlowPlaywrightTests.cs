@@ -197,7 +197,7 @@ public sealed class AuthenticationFlowPlaywrightTests
         await seed.EnsureUserAsync(username, password);
         await auth.LoginAsync(username, password);
         await cookies.SetNearExpiryCookieAsync(page, username);
-        await WaitForForcedKeepaliveThrottleAsync(page);
+        await PlaywrightTestTiming.WaitForForcedKeepaliveThrottleAsync(page);
 
         await page.GotoAsync("/list/accounts");
         await page.Locator("body").ClickAsync();
@@ -233,7 +233,7 @@ public sealed class AuthenticationFlowPlaywrightTests
         await page.GotoAsync(protectedRoute);
         await page.Locator("#Reload").WaitForAsync();
         await seed.InvalidateSecurityStampAsync(username);
-        await WaitForForcedKeepaliveThrottleAsync(page);
+        await PlaywrightTestTiming.WaitForForcedKeepaliveThrottleAsync(page);
 
         var loginDocumentNavigations = 0;
         page.Request += (_, request) =>
@@ -323,9 +323,6 @@ public sealed class AuthenticationFlowPlaywrightTests
             }
             """);
 
-    private static Task WaitForForcedKeepaliveThrottleAsync(IPage page)
-        => page.WaitForTimeoutAsync(5200);
-
     private static string CurrentRelativeUrl(string url)
     {
         var uri = new Uri(url);
@@ -356,4 +353,11 @@ public sealed class AuthenticationFlowPlaywrightTests
 
         return null;
     }
+}
+
+
+internal static class PlaywrightTestTiming
+{
+    public static Task WaitForForcedKeepaliveThrottleAsync(IPage page)
+        => page.WaitForTimeoutAsync(5200);
 }

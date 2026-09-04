@@ -8,13 +8,13 @@ und müssen manuell oder in einem erneuten Lauf bearbeitet werden.
 
 ## Offene Planelemente
 
-- [ ] Keine offenen Planelemente (Status in review.md: Vollständig umgesetzt).
+- [x] Keine offenen Planelemente (Status in review.md: Vollständig umgesetzt).
 
 ## Code-Review-Befunde
 
-- [ ] Toter Code — `GetLoadingBarSequenceAsync` wird im File nicht aufgerufen. Der Sequence-Wert wird im relevanten Test bereits direkt per `GetAttributeAsync("data-sequence")` gelesen.
-- [ ] Doppelter Code — `WaitForForcedKeepaliveThrottleAsync` ist in beiden Klassen identisch implementiert und kapselt jeweils nur `page.WaitForTimeoutAsync(5200)`.
-- [ ] Latenter Bug / OverflowException — `CreateUniqueIban` nutzt `Math.Abs(Guid.NewGuid().GetHashCode())`. `Math.Abs(int)` wirft bei `int.MinValue` eine `OverflowException`; dadurch kann die Helper-Methode selten, aber real, beim Erzeugen einer IBAN ausfallen.
+- [x] Toter Code — `GetLoadingBarSequenceAsync` wird im File nicht aufgerufen. Der Sequence-Wert wird im relevanten Test bereits direkt per `GetAttributeAsync("data-sequence")` gelesen.
+- [x] Doppelter Code — `WaitForForcedKeepaliveThrottleAsync` ist in beiden Klassen identisch implementiert und kapselt jeweils nur `page.WaitForTimeoutAsync(5200)`.
+- [x] Latenter Bug / OverflowException — `CreateUniqueIban` nutzt `Math.Abs(Guid.NewGuid().GetHashCode())`. `Math.Abs(int)` wirft bei `int.MinValue` eine `OverflowException`; dadurch kann die Helper-Methode selten, aber real, beim Erzeugen einer IBAN ausfallen.
 
 ## Fehlgeschlagene Tests
 
