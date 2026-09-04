@@ -478,7 +478,7 @@
     <value>Wählen Sie einen Zielkontakt, in den der aktuelle Kontakt zusammengeführt werden soll. Buchungen, Anhänge und zugehörige Daten werden dem Zielkontakt zugewiesen.</value>
   </data>
   <data name="Merge_Preference_Label" xml:space="preserve">
-    <value>Bei Konflikten bevorzugen:</value>
+    <value>Präferenz</value>
   </data>
   <data name="Merge_Preference_DestinationFirst" xml:space="preserve">
     <value>Ziel zuerst (Zielwerte behalten)</value>
@@ -2748,9 +2748,6 @@
   <data name="KPI" xml:space="preserve">
     <value>KPI</value>
   </data>
-  <data name="Merge_Preference_LABEL" xml:space="preserve">
-    <value>Präferenz</value>
-  </data>
   <data name="MoveLeft" xml:space="preserve">
     <value>Nach links</value>
   </data>
@@ -2813,5 +2810,8 @@
   </data>
   <data name="QuickEdit_Validation_RecipientTooLong" xml:space="preserve">
     <value>Empfänger ist zu lang</value>
+  </data>
+  <data name="BK_Progress" xml:space="preserve">
+    <value>Buche</value>
   </data>
 </root>

@@ -478,7 +478,7 @@
     <value>Select a target contact to merge the current contact into. Postings, attachments and related data will be reassigned to the target contact.</value>
   </data>
   <data name="Merge_Preference_Label" xml:space="preserve">
-    <value>On conflict, prefer:</value>
+    <value>Preference</value>
   </data>
   <data name="Merge_Preference_DestinationFirst" xml:space="preserve">
     <value>Destination first (keep target values)</value>
@@ -2748,9 +2748,6 @@
   <data name="KPI" xml:space="preserve">
     <value>KPI</value>
   </data>
-  <data name="Merge_Preference_LABEL" xml:space="preserve">
-    <value>Preference</value>
-  </data>
   <data name="MoveLeft" xml:space="preserve">
     <value>Move left</value>
   </data>
@@ -2813,5 +2810,8 @@
   </data>
   <data name="QuickEdit_Validation_RecipientTooLong" xml:space="preserve">
     <value>Recipient is too long</value>
+  </data>
+  <data name="BK_Progress" xml:space="preserve">
+    <value>Booking</value>
   </data>
 </root>
