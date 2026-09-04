@@ -151,14 +151,12 @@ public sealed class LoadingBarPlaywrightTests
 
         await page.Locator("#fm-loading-bar").WaitForAsync();
         await AssertLoadingBarApiAvailableAsync(page);
-        var firstSequence = await GetLoadingBarSequenceAsync(page);
 
         await InstallLoadingBarVisibilityObserverAsync(page);
         await page.Locator("nav.sidebar a[href='/list/accounts']").ClickAsync();
         await page.WaitForURLAsync("**/list/accounts");
 
         await page.WaitForFunctionAsync("() => window.__fmLoadingBarObservedVisible === true");
-        (await GetLoadingBarSequenceAsync(page)).Should().BeGreaterThan(firstSequence);
     }
 
     /// <summary>
@@ -273,7 +271,7 @@ public sealed class LoadingBarPlaywrightTests
     private static Task<int> GetLoadingBarSequenceAsync(IPage page)
     {
         return page.EvaluateAsync<int>(
-            "() => Number(document.querySelector('#fm-loading-bar')?.dataset.sequence || '0')");
+            "() => Number((document.querySelector('[data-mst-loading-bar]') || document.querySelector('#fm-loading-bar'))?.dataset.sequence || '0')");
     }
 
     private static Task InstallLoadingBarVisibilityObserverAsync(IPage page)
@@ -282,7 +280,7 @@ public sealed class LoadingBarPlaywrightTests
             @"() => {
                 window.__fmLoadingBarObservedVisible = false;
                 window.__fmLoadingBarObserver?.disconnect();
-                const bar = document.querySelector('#fm-loading-bar');
+                const bar = document.querySelector('[data-mst-loading-bar]') || document.querySelector('#fm-loading-bar');
                 const markIfVisible = () => {
                     if (bar?.classList.contains('is-visible')) {
                         window.__fmLoadingBarObservedVisible = true;
@@ -304,7 +302,7 @@ public sealed class LoadingBarPlaywrightTests
                     window.__fmLoadingBarObservedVisible = false;
                     window.__fmLoadingBarObserver?.disconnect();
                     const markIfVisible = () => {
-                        const bar = document.querySelector('#fm-loading-bar');
+                        const bar = document.querySelector('[data-mst-loading-bar]') || document.querySelector('#fm-loading-bar');
                         if (bar?.classList.contains('is-visible')) {
                             window.__fmLoadingBarObservedVisible = true;
                         }

@@ -1,39 +1,72 @@
-# Finance Manager
+# FinanceManager
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/pr-staging-ci.yml?label=Tests)](https://github.com/martin-stromberg/FinanceManager/actions)
-[![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions)
+[![Tests](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/pr-staging-ci.yml?label=Tests)](https://github.com/martin-stromberg/FinanceManager/actions/workflows/pr-staging-ci.yml)
+[![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions/workflows/release.yml)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D22.x-339933?logo=nodedotjs)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-22.x-339933?logo=nodedotjs)](https://nodejs.org/)
 
 `FinanceManager` ist eine Blazor-Server-Anwendung zur Verwaltung persönlicher Finanzen.  
-Sie deckt Import, Klassifizierung und Verbuchung von Kontoauszügen sowie Reporting, Budgetplanung, Sparpläne, Wertpapiermanagement und Setup-/Admin-Funktionen ab.
+Die Anwendung bündelt Stammdatenverwaltung, Kontoauszugsimport, Budget- und Reporting-Funktionen, Portfolio-Auswertungen sowie Setup- und Admin-Funktionen in einer gemeinsamen Weboberfläche.
 
-## Features / Highlights
+## Überblick
 
-- Kontoauszüge importieren, klassifizieren und verbuchen (`StatementDraftsController`), inklusive mobiler Kontoauszugsansicht mit lesbarer Kartenstruktur, zweispaltigem Datum/Betrag, abgeschwächten gebuchten Einträgen sowie Kontakt-, Sparplan- und Wertpapierinformationen
-- Kontoauszugsentwürfe im Massenänderungsmodus bearbeiten, Zeilen zum Löschen vormerken und neue Zeilen ergänzen; im Schnellbearbeitungsmodus mit `Strg + Pfeil hoch` bzw. `Strg + Pfeil runter` zeilenübergreifend in derselben Feldspalte navigieren, Ribbon-Speichern-Aktion dynamisch an der vollständigen Validierung aller Zeilen ausrichten, Valutadatum automatisch übernehmen und unvollständige Zeilen vor dem Buchungsdatum hervorheben
-- Konten, Sammelkonten, Kontakte, Sparpläne und Wertpapiere verwalten, inklusive sichtbarer SVG-Symbole für Kontakte sowie Sparplan-Kennzahlen zu aktuellem Saldo, Restbetrag und benötigtem Monatsbetrag in der Detailansicht
-- Berichte, KPI-Dashboards und Budgetauswertungen nutzen, inklusive bestandsgepruefter Hochrechnung fuer Wertpapier-Dividendenreports
-- Depot-Analysebericht (`/portfolio/analysis-report`, Ribbon-Gruppe "Berichte" → "Depot-Bericht" der Wertpapierübersicht): konsolidierter Bericht über alle Wertpapiere mit konfigurierbaren, visuell aufbereiteten Kacheln (Depotstruktur mit Ringdiagramm, Performance und Cashflow mit Balkendiagrammen plus Liquiditätsquote; Risikoanalyse als Platzhalter für Phase 2), Info-Buttons mit Overlay-Erklärungen zu den Kennzahlen (z. B. scrollbare Übersicht aller Positionen im Gesamtmarktwert-Panel statt nur Top 10, Akkordeon mit FIFO-Lot-Details je Wertpapier im Investiertes-Kapital-Panel), inklusive Bearbeitungsmodus für Kachel-Sichtbarkeit/-Reihenfolge je Benutzer und monatlichem Berichts-Cache mit automatischer Invalidierung bei Kursänderungen, Buchungsstornierungen und depotrelevanten Kontoauszugsbuchungen; Wertpapiere unterstützen optionale Region-/Sektor-Felder, die über die Wertpapier-Bearbeitungsmaske gepflegt werden können (200er-Kappung bei Positionen und FIFO-Lots im Bericht; volle Seitenbreite, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben)
-- Anhänge und Sicherungen (Backup/Restore) verwalten
-- Responsive Web-UI für kleine Viewports (mobile Topbar, responsive Container, mobile Ribbon-Shortcuts, mobile E2E-Abdeckung)
-- Globale, responsive Ladeleiste für Navigationen, relevante Formularvorgänge und länger laufende UI-Aktionen; umgesetzt als wiederverwendbare `msTools.Web.Blazor`-Komponente mit projektseitig konfigurierbarer Farbgestaltung
-- Einstellungs-Ribbon mit stets sichtbaren Aktionen: Backup erstellen/hochladen, Profil speichern/zurücksetzen, Benachrichtigungen, Kontoauszugs-Importregeln und Update-Einstellungen speichern sowie Update-Prüfung, Installation und Lock-Reset auslösen — unabhängig davon, welche Sektion gerade aufgeklappt ist
-- Versionsinformation im Programmmenü (Footer) angezeigt — aktuelle Versionnummer oder Fallback `"Version unbekannt"`
-- JWT-Authentifizierung mit 30 Minuten Access-Token-Laufzeit, SecurityStamp-/Rollen-/Active-Revalidierung und DB-validiertem Refresh; aktive Navigation, Interaktion und Kontoauszugs-Schnellbearbeitung halten die Session per stillem Keepalive aufrecht, abgelaufene Sessions führen bei geschützten Datenabrufen zum Login und danach zurück zur ursprünglichen internen Route
-- RFC-9116-konforme `security.txt` unter `/security.txt` und `/.well-known/security.txt`, zusätzlich als Markdown (`/.well-known/security.md`) und HTML (`/.well-known/security.html`); Direktiven (Contact, Expires, Canonical, Encryption, Acknowledgments, Preferred-Languages, Policy, Hiring) im Setup konfigurierbar — `Canonical` optional als vollständige HTTPS-URL ohne Query/Fragment und ohne localhost/Loopback, sonst Fallback auf `<Api:BaseAddress>/.well-known/security.txt`; liefert HTTP 503, solange keine Konfiguration vorhanden ist
-- Vorläufige Buchungen für Sparkonten erfassen und stornieren: aus der Bankkonten-Detailansicht lässt sich ein provisorischer Kontoauszug anlegen, dessen Posten in den Übersichten für Bankkonten, Kontakte, Sparpläne und Wertpapiere als „Vorläufig“ markiert werden; beim späteren Buchen eines echten Kontoauszugs für dasselbe Konto werden diese Posten automatisch storniert
+Im aktuellen Code sind unter anderem folgende Bereiche vorhanden:
 
-- Optionales clientseitiges Zwischenspeichern der Startseiten-KPIs im Browser-LocalStorage: in den Profileinstellungen pro Benutzer aktivierbar, zeigt gespeicherte Werte sofort an und aktualisiert sie im Hintergrund; bei Deaktivierung werden alle zugehörigen Cache-Einträge sofort gelöscht
+- **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity
+- **Konten, Kontakte, Sparpläne und Wertpapiere** mit eigenen Listen-, Detail- und Bearbeitungsbereichen
+- **Kontoauszugsverarbeitung** mit Upload, Massenimport, Klassifizierung, Schnellbearbeitung und Buchung
+- **Budget- und Reporting-Funktionen** inklusive Budget-Kategorien, -Zwecken, -Regeln und Berichten
+- **Portfolio-Analyse** mit Bericht und benutzerspezifischer KPI-Konfiguration
+- **Betriebsfunktionen** wie Backups, Update-Steuerung, Help-System und `security.txt`
 
-## Installation / Setup
+Die Navigation in `FinanceManager.Web/Components/Layout/MainLayout.razor` verweist aktuell auf Home, Konten, Kontoauszüge, Kontakte, Sparpläne, Wertpapiere, Budgetzwecke, Reports, Setup, Benutzerverwaltung und Help.
 
-### Voraussetzungen
+## Tech-Stack
 
-- .NET SDK 10.0
+- **.NET 10 / ASP.NET Core**
+- **Blazor Server** mit interaktiven Razor Components
+- **Entity Framework Core 10** mit **SQLite**
+- **ASP.NET Core Identity** und **JWT-Bearer-Authentifizierung**
+- **xUnit v3**, **FluentAssertions**, **bUnit** für Unit-/Komponententests
+- **Microsoft.Playwright** für End-to-End-Tests
+- **Node.js 22.x** für Release-/Versionsskripte und GitHub-Workflows
 
-### Lokal starten
+Zusätzlich werden lokale Paketquellen aus `external/` verwendet:
+
+- `external/msTools.Web.Blazor`
+- `external/msTools.Updater`
+
+## Projektstruktur
+
+Die Solution `FinanceManager.sln` enthält aktuell diese Projekte:
+
+```text
+FinanceManager.Web                      Blazor Server UI, API-Controller, Hosting
+FinanceManager.Application              Anwendungslogik und Services
+FinanceManager.Domain                   Domänenmodelle
+FinanceManager.Infrastructure           Persistenz, Integrationen, Auth- und Setup-Infrastruktur
+FinanceManager.Shared                   Gemeinsame DTOs und API-Client-Typen
+
+FinanceManager.Tests                    Unit- und Komponenten-Tests
+FinanceManager.Tests.Integration        Integrationstests
+FinanceManager.Tests.E2E                End-to-End-Tests mit Playwright
+
+tools/FinanceManager.HelpSearchIndexGenerator
+                                        Build-Tool für Help-Suchindizes
+```
+
+## Voraussetzungen
+
+Für die lokale Ausführung der Webanwendung:
+
+- .NET SDK **10.0**
+
+Zusätzlich für Release-/CI-nahe Aufgaben:
+
+- Node.js **22.x**
+
+## Lokal starten
 
 ```bash
 dotnet restore
@@ -41,303 +74,175 @@ dotnet build FinanceManager.sln
 dotnet run --project FinanceManager.Web
 ```
 
-Hinweise:
-- In Development sind laut `launchSettings.json` u. a. `https://localhost:7013` und `http://localhost:5208` hinterlegt.
-- Beim Start werden Migrationen/Initialisierung ausgeführt (`ApplyMigrationsAndSeed()` in `ProgramExtensions`).
+Entwicklungsprofile aus `FinanceManager.Web/Properties/launchSettings.json`:
 
-## Usage
+- `http://localhost:5208`
+- `https://localhost:7013`
 
-- Web-App starten: `dotnet run --project FinanceManager.Web`
-- Anmelden/Registrieren über die UI
-- Typischer Flow: Import (`/api/statement-drafts/upload` oder `mass-import`) → Klassifizieren → optional im Massenänderungsmodus nachbearbeiten → Buchen → Reporting
+Beim Start der Webanwendung werden in `Program.cs` und `ProgramExtensions.cs` unter anderem:
 
-### Help-Dokumentation und Sicherheit
-
-- Help ist unter `/help` verfügbar; die Markdown-Quellen liegen unter `Docs/help/`.
-- Sichtbare Themen, Suche und Detailseiten verwenden ausschließlich den
-  redaktionellen Katalog in `FinanceManager.Web/Services/Help/HelpContentCatalog.cs`.
-  Die freigegebenen Dateien und der Änderungsablauf sind in
-  [Docs/maintenance/help-content-publishing.md](Docs/maintenance/help-content-publishing.md)
-  dokumentiert; technische Markdown-Dateien bleiben im Repository, werden aber
-  nicht als Anwenderhilfe veröffentlicht.
-- Help-Markdown wird über einen Whitelist-Renderer ausgegeben. Rohes HTML, Skripte,
-  Inline-Handler und unsichere Linkziele sind kein unterstütztes Format.
-- Für Help-Seiten und Help-Assets gilt eine restriktive CSP. Der Build erzeugt
-  für `de` und `en` jeweils einen statischen `search-index.json` sowie
-  `FinanceManager.Web/wwwroot/help/help-assets.sha256`; Änderungen unter
-  `Docs/help/` erfordern daher einen neuen Build vor dem Deployment. Fehlende,
-  nicht im Manifest enthaltene oder manipulierte Help-Assets werden nicht
-  ausgeliefert (`404 Not Found`).
+- Services und Logging registriert,
+- EF-Core-Migrationen ausgeführt (`ApplyMigrationsAndSeed()`),
+- gespeicherte Update-Einstellungen angewendet,
+- Middleware, Authentifizierung und Routing konfiguriert.
 
 ## Konfiguration
 
-Wesentliche Konfigurationswerte aus `appsettings*.json` und Startup-Code:
+Die wichtigsten Standardwerte stammen aus `FinanceManager.Web/appsettings.json`, `appsettings.Development.json` und `appsettings.Production.json`.
 
-| Parameter | Typ | Standardwert | Beschreibung |
-|---|---|---|---|
-| `ConnectionStrings:Default` | string | `Data Source=financemanager.db` (Fallback) | Standard-SQLite-Datenbank (Fallback in `AddInfrastructure`) |
-| `Jwt:Key` | string | kein produktiver Standardwert | Signaturschluessel fuer JWT; in Produktion extern bereitstellen, nicht im Repository |
-| `Jwt:Issuer` | string | `financemanager` | Erwarteter JWT-Issuer fuer Ausstellung und Validierung |
-| `Jwt:Audience` | string | `financemanager` | Erwartete JWT-Audience fuer Ausstellung und Validierung |
-| `Jwt:LifetimeMinutes` | int | `30` | JWT-/Cookie-Lebensdauer in Minuten |
-| `DataProtection:KeysPath` | string | leer | Optionaler Pfad fuer den ASP.NET-Core-Data-Protection-Key-Ring; in produktionsnahen Deployments persistent und geschuetzt bereitstellen |
-| `Api:BaseAddress` | string | leer | Basisadresse der API; wird als Fallback fuer `Canonical` unter `security.txt` verwendet, wenn im Setup kein eigener Canonical-Wert gesetzt ist (muss dann absolute URI sein) |
-| `BackgroundTasks:Enabled` | bool | `true` | Aktiviert den `BackgroundTaskRunner` |
-| `Workers:SecurityPriceWorker:Enabled` | bool | `true` | Aktiviert den Security-Price-Worker |
-| `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Self-Update-Releases (steuert die externe `msTools.Updater`-Bibliothek) |
-| `Updates:SourceType` | string | `Github` | Update-Quelle: `Github` oder `LocalFolder` |
-| `Updates:RepositoryOwner` / `Updates:RepositoryName` | string | `martin-stromberg` / `FinanceManager` | GitHub-Repository (nur bei `SourceType: Github`) |
-| `Updates:LocalFolderPath` | string? | `null` | Lokales Quellverzeichnis (nur bei `SourceType: LocalFolder`; Fallback: `{WorkingDirectory}/source`) |
-| `Updates:IncludePrereleases` | bool | `false` | Beruecksichtigt Vorabversionen bei GitHub-Updatepruefungen; wird in den gespeicherten Update-Einstellungen als `UpdateSettings.IncludePrereleases` persistiert |
-| `Updates:EnableAutomaticDownload` | bool | `true` | Download nach erfolgreicher Versionsprüfung |
-| `Updates:EnableAutomaticInstallation` | bool | `false` | Installation nach erfolgreichem Download |
-| `Updates:ManifestAssetName` | string | `update.json` | Release-Asset mit Update-Metadaten |
-| `Updates:WorkingDirectory` | string | `updates` | Betriebsverzeichnis fuer Pending-Paket, Status, Lock, Staging und Skripte |
-| `Updates:ServiceName` | string? | leer | Optionaler Service-Override fuer die aktuelle Plattform; in der Admin-UI mit Windows-/Linux-Service-Autocomplete |
-| `Updates:ExecutablePath` | string? | leer | Windows-Fallback, wenn kein Service gesteuert wird; muss absolut im aktuellen Anwendungsverzeichnis liegen; nicht mehr ueber die Admin-UI editierbar |
-| `Updates:HealthTimeoutSeconds` | int | `120` | Wartezeit der Setup-UI bis zur Wiedererreichbarkeit von `/health`, serverseitig auf 10..600 begrenzt; nicht mehr ueber die Admin-UI editierbar |
-| `Updates:MaxAssetBytes` | long | `536870912` | Maximale Groesse eines Update-ZIP-Assets |
-| `Updates:HostedServicesEnabled` | bool | `true` | Aktiviert `AutoUpdateCheckerService` und `AutoUpdateSchedulerService` |
-| `Updates:SourceCheckStartTime` | time | `20:00:00` | Beginn des täglichen Zeitfensters fuer automatische Updatepruefungen |
-| `Updates:SourceCheckEndTime` | time | `06:00:00` | Ende des täglichen Zeitfensters fuer automatische Updatepruefungen; Fenster ueber Mitternacht werden unterstuetzt |
-| `Updates:StopHostAfterScriptStart` | bool | `false` | Host nach erfolgreichem Update-Skriptstart beenden |
-| `Backups:Security:MaxUploadBytes` | long | `104857600` | Maximale Uploadgroesse fuer Backup-ZIP-Dateien |
-| `Backups:Security:MaxCompressedZipBytes` | long | `104857600` | Maximale komprimierte ZIP-Groesse fuer Backup-Validierung |
-| `Backups:Security:MaxUncompressedNdjsonBytes` | long | `262144000` | Maximale entpackte NDJSON-Nutzlast im Backup |
-| `Backups:Security:MaxZipEntries` | int | `1` | Maximal erlaubte ZIP-Entries pro Backup |
-| `Backups:Security:MaxCompressionRatio` | int | `25` | Maximal erlaubtes Verhaeltnis zwischen entpackter und komprimierter Backup-Nutzlast |
-| `Backups:Security:AllowedBackupVersions` | int[] | `[3]` | Erlaubte Backup-Metaversionen fuer Upload und Restore |
-| `AlphaVantage:Quota:MaxSymbolsPerRun` | int | `8` | Begrenzung pro Abruflauf |
-| `AlphaVantage:Quota:RequestsPerMinute` | int | `4` | API-Rate-Limit pro Minute |
-| `FileLogging:Enabled` | bool | `false` (appsettings.json) | Aktiviert Dateilogging |
-| `Identity:Lockout:MaxFailedAccessAttempts` | int | `3` | Max. Fehlversuche bis Lockout |
-| `Identity:Password:RequiredLength` | int | `8` | Mindestlänge Passwort |
-| `Data/KnownContacts.json` | JSON-Datei | mitgelieferte Beispiele | Programmliste bekannter Unternehmen und Alias-Muster für automatische Kontaktanlage beim Kontoauszugsimport |
+| Schlüssel | Standardwert | Bedeutung |
+|---|---|---|
+| `ConnectionStrings:Default` | Fallback auf `Data Source=financemanager.db` | Standarddatenbank für die Infrastruktur |
+| `Jwt:Issuer` | `financemanager` | JWT-Issuer |
+| `Jwt:Audience` | `financemanager` | JWT-Audience |
+| `Jwt:LifetimeMinutes` | `30` | Gültigkeitsdauer der JWT-/Auth-Sitzung |
+| `DataProtection:KeysPath` | leer | Optionaler persistenter Speicherort für Data-Protection-Keys |
+| `Api:BaseAddress` | leer | Basisadresse für API-/Security.txt-bezogene Fallbacks |
+| `BackgroundTasks:Enabled` | `true` | Aktiviert den Background-Task-Runner |
+| `Workers:SecurityPriceWorker:Enabled` | `true` | Aktiviert den Kurs-Worker |
+| `Updates:Enabled` | `false` | Aktiviert die Update-Funktionen |
+| `Updates:SourceType` | `Github` | Update-Quelle (`Github` oder `LocalFolder`) |
+| `Updates:RepositoryOwner` | `martin-stromberg` | Eigentümer des Release-Repositories |
+| `Updates:RepositoryName` | `FinanceManager` | Name des Release-Repositories |
+| `Updates:ManifestAssetName` | `update.json` | Manifest-Datei für Updates |
+| `Updates:WorkingDirectory` | `updates` | Arbeitsverzeichnis des Update-Systems |
+| `Updates:HealthTimeoutSeconds` | `120` | Timeout für Health-basierte Update-Prüfungen |
+| `Backups:Security:MaxUploadBytes` | `104857600` | Maximale Backup-Uploadgröße |
+| `FileLogging:Enabled` | `false` in `appsettings.json`, `true` in `appsettings.Production.json` | Schaltet Dateilogging ein/aus |
+| `Identity:Lockout:MaxFailedAccessAttempts` | `3` | Maximale Fehlversuche bis zum Lockout |
+| `Identity:Password:RequiredLength` | `8` | Minimale Passwortlänge |
 
-```json
-{
-  "ConnectionStrings": {
-    "Default": "Data Source=financemanager.db"
-  },
-  "Jwt": {
-    "Key": "",
-    "Issuer": "financemanager",
-    "Audience": "financemanager",
-    "LifetimeMinutes": 30
-  },
-  "BackgroundTasks": {
-    "Enabled": true
-  },
-  "Workers": {
-    "SecurityPriceWorker": {
-      "Enabled": true
-    }
-  }
-}
-```
+### Wichtige Hinweise zur Produktionskonfiguration
 
-## Architektur / Projektstruktur
+- In produktionsnahen Umgebungen validiert `JwtOptionsValidator` die JWT-Konfiguration bereits beim Start.
+- `Jwt:Key` darf dort nicht leer sein, kein Platzhalterwert sein und muss mindestens **32 UTF-8-Bytes** enthalten.
+- Wenn `security.txt` keinen expliziten `Canonical`-Wert hat, erwartet der Fallback `Api:BaseAddress` eine gültige absolute URI.
+- Für geschützte persistierte Secrets, z. B. AlphaVantage-Zugangsdaten, sollte `DataProtection:KeysPath` auf einen persistenten Speicher zeigen.
 
-Schichten und Projekte laut Solution:
+Typische Environment-Variablen sind beispielsweise:
 
-```text
-FinanceManager.Web                      # Blazor Server UI + API Controller
-FinanceManager.Application              # Anwendungslogik / Services
-FinanceManager.Domain                   # Domain-Modelle
-FinanceManager.Infrastructure           # EF Core, Persistenz, Integrationen
-FinanceManager.Shared                   # Gemeinsame DTOs / Client
-FinanceManager.Shared.Dtos.Budget       # Budget-DTO-Paket
+- `ConnectionStrings__Default`
+- `Jwt__Key`
+- `Jwt__Issuer`
+- `Jwt__Audience`
+- `Jwt__LifetimeMinutes`
+- `DataProtection__KeysPath`
+- `Api__BaseAddress`
 
-FinanceManager.Tests                    # Unit- und Komponenten-Tests (xUnit/bUnit)
-FinanceManager.Tests.Integration        # Integrationstests
-FinanceManager.Tests.E2E                # Playwright-End-to-End-Tests
+## Authentifizierung und Sitzungserhaltung
 
-external/msTools.Updater/msTools.Updater.0.10.0-rc.1.nupkg  # Lokales NuGet-Paket fuer msTools.Updater
-external/msTools.Web.Blazor             # Lokales NuGet-Paket fuer wiederverwendbare Blazor-Komponenten
-```
+Die Anwendung verwendet JWT-basierte Authentifizierung mit Cookie-Transport:
 
-**Technologien:** .NET 10, ASP.NET Core, Blazor Server, EF Core (SQLite), ASP.NET Identity/JWT, xUnit, bUnit, Playwright.
+- Login: `POST /api/auth/login`
+- Registrierung: `POST /api/auth/register`
+- Logout: `POST /api/auth/logout`
+- Keepalive: `GET /api/auth/keepalive`
 
-### Self-Update-System
+Wichtige Punkte aus dem aktuellen Code:
 
-Das Self-Update-System wird aus dem externen Release-Artefakt `msTools.Updater` eingebunden. Die fruehere lokale Bibliothek `SoftwareSchmiede.AutoUpdate` und ihr Testprojekt sind nicht mehr Teil der Solution.
+- Das Auth-Cookie heißt **`FinanceManager.Auth`**.
+- Die konfigurierte Standardlaufzeit beträgt **30 Minuten** (`Jwt:LifetimeMinutes`).
+- `JwtRefreshMiddleware` erneuert Tokens automatisch, sobald sie in ihr Renewal-Fenster kommen.
+- `JwtRefreshService` validiert vor einem Refresh den Benutzerzustand, den `security_stamp` und die aktuelle Admin-Rolle erneut gegen die Datenbank.
+- `MainLayout.razor` und `wwwroot/js/financeManager.js` triggern Keepalive-Aufrufe bei Navigation sowie bei Benutzerinteraktionen wie `pointerdown`, `keydown`, `focusin`, `input` und Quick-Edit-`blur`.
+- Ein fehlgeschlagener Keepalive-Aufruf führt nicht selbst direkt zu einer Umleitung; die Umleitung auf geschützten Routen erfolgt über die reguläre Authentifizierungsprüfung.
 
-Die Bibliothek `msTools.Updater` wird als lokal bereitgestelltes NuGet-Paket `msTools.Updater.0.10.0-rc.1.nupkg` unter `external/msTools.Updater/` referenziert. Die Paketquelle ist in `NuGet.config` als `local-msTools.Updater` registriert.
+Damit ist die in den Feature-Unterlagen beschriebene Sitzungserhaltung für aktive Benutzer explizit im aktuellen Codepfad abgebildet.
 
-`FinanceManager.Web` bindet das Paket über eine normale `PackageReference` ein. Die Integration erfolgt weiterhin über den FinanceManager-Adapter (`UpdateOrchestratorAdapter`); Controller, DTOs, Admin-UI und REST-API bleiben dadurch aus Anwendersicht stabil. Vorabversionen werden nur geladen, wenn `Updates:IncludePrereleases` beziehungsweise `UpdateSettings.IncludePrereleases` aktiviert ist.
+## Relevante Endpunkte
 
-### Wiederverwendbare Blazor-Komponenten
+Eine Auswahl konkreter, im Repository vorhandener Einstiegspunkte:
 
-Die globale Ladeleiste kommt aus dem separaten Paket `msTools.Web.Blazor`.
-FinanceManager bindet bis zur zentralen NuGet-Veroeffentlichung das lokal
-versionierte Paket unter `external/msTools.Web.Blazor/` ein. Die konkrete
-Registrierung, Root-Komponente, Service-Nutzung und der Aktualisierungsablauf
-sind in [Docs/maintenance/mstools-web-blazor-integration.md](Docs/maintenance/mstools-web-blazor-integration.md)
-dokumentiert.
+- `GET /health`
+- `GET /api/health`
+- `POST /api/auth/login`
+- `POST /api/auth/register`
+- `POST /api/auth/logout`
+- `GET /api/auth/keepalive`
+- `POST /api/statement-drafts/upload`
+- `POST /api/statement-drafts/mass-import`
+- `POST /api/statement-drafts/preliminary`
+- `GET /api/portfolio/analysis-report`
+- `GET /api/portfolio/kpi-configuration`
+- `POST /api/portfolio/kpi-configuration`
+- `GET /api/setup/update/status`
+- `GET /api/setup/update/settings`
+- `PUT /api/setup/update/settings`
+- `GET /security.txt`
+- `GET /.well-known/security.txt`
+- `GET /.well-known/security.md`
+- `GET /.well-known/security.html`
 
-## API-Dokumentation
-
-Wichtige Einstiegspunkte:
-
-- `POST /api/auth/login` – Anmeldung und JWT-Ausstellung
-- `POST /api/statement-drafts/upload` – Kontoauszug als Entwurf importieren
-- `POST /api/statement-drafts/mass-import` – Massenimport analysieren und ausführen
-- `GET|PUT /api/setup/update/settings` – Self-Update-Einstellungen für Admins lesen/speichern
-- `GET /api/portfolio/analysis-report` – konsolidierter Depot-Analysebericht (gecacht, monatliche Gültigkeit)
-- `GET /.well-known/security.txt` – öffentliche RFC-9116-Sicherheitsrichtlinie (`Canonical` aus Setup oder Fallback auf `<Api:BaseAddress>/.well-known/security.txt`)
-
-Weitere API-Oberflächen:
-- Setup- und Betriebs-API unter `/api/setup/*` (Backups, Updates, Benachrichtigungen)
-- Admin-API unter `/api/admin/*` (Benutzerverwaltung, rollenbasiert)
-- Öffentliche Security-Endpunkte unter `/security.txt` und `/.well-known/security.*`
-
-Weitere API-Dokumentation:
-- `Docs/help/*/api.md`
-- Controller unter `FinanceManager.Web/Controllers`
+Die Controller liegen unter `FinanceManager.Web/Controllers/`.
 
 ## Tests
 
-Testprojekte und Frameworks:
-- Unit/Komponente: xUnit v3, FluentAssertions, bUnit
-- Integration: xUnit v3, `Microsoft.AspNetCore.Mvc.Testing`
-- E2E: Playwright (`Microsoft.Playwright`) mit mobilen Sessions (`390x844`, Touch)
+Die Testprojekte in der Solution sind:
+
+- `FinanceManager.Tests`
+- `FinanceManager.Tests.Integration`
+- `FinanceManager.Tests.E2E`
+
+Frameworks laut Projektdateien:
+
+- **xUnit v3**
+- **FluentAssertions**
+- **bUnit**
+- **Microsoft.AspNetCore.Mvc.Testing**
+- **Microsoft.Playwright**
+
+Alle Tests der Solution starten:
 
 ```bash
 dotnet test FinanceManager.sln
 ```
 
-## Deployment / CI/CD
+Die aktuellen Testdateien enthalten unter anderem Abdeckung für:
 
-- **Branch-Workflow:** `staging` ist der Integrations- und Qualitätssicherungsbranch, `main` bleibt der ausschließliche Release-Branch. Feature- und Hotfix-PRs richten sich gegen `staging`. [`pr-staging-ci.yml`](.github/workflows/pr-staging-ci.yml) ("PR CI for Staging") läuft auf `pull_request` gegen `staging`, [`staging-ci.yml`](.github/workflows/staging-ci.yml) ("Pre-Release") läuft auf `push` nach `staging`. Nach erfolgreichem Lauf auf `staging` erstellt [`staging-to-main-promotion.yml`](.github/workflows/staging-to-main-promotion.yml) automatisch einen Draft-PR von `staging` nach `main`, der manuell durch einen Maintainer gemergt werden muss. Siehe [CONTRIBUTING.md](CONTRIBUTING.md#branch-workflow-staging--main) für Details.
-- `pr-staging-ci.yml`/`staging-ci.yml` erzwingen zusätzlich einen Line-Coverage-Schwellwert von 70 % (`FinanceManager.Tests` und `FinanceManager.Tests.Integration`, gemessen via `--collect:"XPlat Code Coverage"` und `reportgenerator`) sowie automatisierte Dependency-Updates über [`dependabot.yml`](.github/dependabot.yml) (NuGet, npm, GitHub Actions) als Quality Gates vor einem Merge auf `staging`/`main`.
-- Branch-Protection-Regeln für `staging` und `main` (Pflicht-Status-Checks, mindestens 1 Approval, kein Direct-Push, `main` nur aus `staging`) werden in den GitHub-Repository-Einstellungen konfiguriert, nicht im Repository-Code.
-- Die Release-Pipeline ist in [`.github/workflows/release.yml`](.github/workflows/release.yml) definiert.
-- Ein Push auf `main` sowie ein Push eines Tags im Format `vX.Y.Z` starten den
-  Workflow auf `windows-latest`. Auf `main` bestimmt Semantic Release die
-  nächste Version aus Conventional Commits: `feat` erzeugt ein Minor-, `fix`
-  ein Patch- und `feat!` beziehungsweise `BREAKING CHANGE` ein Major-Release.
-  `docs`, `refactor` und `chore` erzeugen kein Release. Ein manueller
-  `vX.Y.Z`-Tag hat Vorrang vor der automatischen Berechnung.
-- Der Workflow verwendet Node 22 und das .NET-SDK `10.0.x`. Vor der
-  Veröffentlichung laufen `npm ci`, ein Restore der Solution, die Unit- und
-  Integrationstests als Release-Gate sowie ein vollständiger Solution-Build.
-  Die Playwright-E2E-Tests bleiben Bestandteil der Testsuite, blockieren aber
-  den Release-Publish-Pfad nicht. Anschließend wird
-  `FinanceManager.Web/FinanceManager.Web.csproj` mit .NET 10 als
-  self-contained `win-x64`- und `linux-x64`-Anwendung veröffentlicht.
-- Die vollständigen Inhalte der runtime-spezifischen Publish-Verzeichnisse
-  werden als `FinanceManager-vX.Y.Z-win-x64.zip` und
-  `FinanceManager-vX.Y.Z-linux-x64.zip` verpackt. Zusaetzlich erzeugt der
-  Workflow `update.json` mit Plattform, Runtime, Asset-URL, Dateigroesse,
-  SHA-256 und Release Notes. Alle drei Assets werden am passenden
-  GitHub-Release veröffentlicht. Fehler bei Versionierung, Tests, Build,
-  Publish, Manifest oder Paketierung verhindern unvollständige Releases.
-  Ein Push ohne release-relevante Commits endet erfolgreich ohne neues Release.
-  Bei der Reparatur eines unvollständigen Assets wird dessen Release-Tag
-  ausgecheckt; die Reparatursuche verarbeitet alle Seiten der
-  GitHub-Release-API.
-- Das Self-Update ist eine Admin-Funktion im Setup. Die UI zeigt Status,
-  Paketmetadaten und Release Notes; die technische Update-Quelle (GitHub-Repository
-  oder lokaler Ordner via `Updates:SourceType`) sowie Manifest-Asset und
-  Arbeitsverzeichnis werden serverseitig über `msTools.Updater`
-  konfiguriert. Sichtbare Einstellungswerte werden über den globalen
-  Ribbon-Button `Speichern` persistiert. Die automatische Pruefung laeuft einmal
-  taeglich im konfigurierten Zeitfenster, standardmaessig von `20:00` bis `06:00`;
-  die Aktionen `Jetzt prüfen`,
-  `Update installieren` und `Update-Lock zurücksetzen` liegen ebenfalls im
-  Setup-Ribbon. Der Service-Name bietet Vorschläge aus Windows-Diensten oder
-  Linux-systemd-Services. Vor manueller Installation verlangt die UI eine
-  Downtime-Bestaetigung und wartet nach Start erst auf einen beobachteten
-  Ausfall, bevor ein spaeterer `/health`-Erfolg als abgeschlossen gilt. Vor der
-  Installation validiert der Server Hash, Groesse, ZIP-Pfade, Service-/EXE-Ziel
-  und Lock. Eine geplante Installationszeit wird vom Scheduler minuetlich
-  geprueft und startet ein bereites Update ohne erneute Benutzerbestaetigung.
-  Ein Admin-Lock-Reset loescht nur vorhandene Locks, die aelter als der interne
-  Health-Timeout sind, und verweigert den Reset, solange der aktuelle Prozess
-  noch eine laufende Installation kennt. Fehlgeschlagene Resets zeigen konkrete
-  Ursachen wie fehlenden Lock, noch nicht stalen Lock, fehlgeschlagenes Loeschen
-  oder technischen Reset-Fehler; Diagnose-Logs enthalten Fehlerart, Quelle und
-  technische Ursache. `Err_Update_InstallRunning` bleibt Faellen vorbehalten, in
-  denen eine laufende Installation tatsaechlich belegt ist.
-- **Verbesserungen (Issue #206):** Das Update-System wurde fuer Produktionsumgebungen
-  (insbesondere Linux) stabilisiert: Lock-Verwaltung ist atomarer, verwaiste Locks
-  werden zuverlaessiger erkannt und bereinigt, der Service-Neustart und die
-  Versionserkennung nach dem Update sind robuster, und kritische Fehlermeldungen
-  sind vollstaendig lokalisiert. Die UI zeigt waehrend der Installation einen
-  Fortschrittsstatus an (Installation laeuft → Warte auf Neustart). Siehe
-  `Docs/help/updates/troubleshooting.md` fuer Linux-spezifische Hinweise.
-- Produktionsnahe Konfiguration liegt in
-  `FinanceManager.Web/appsettings.Production.json` (u. a. Kestrel-Endpoint
-  `http://*:5003`, FileLogging aktivierbar).
-- JWT-Secrets gehoeren nicht ins Repository. Betreiber stellen produktive Werte
-  ueber die .NET-Konfiguration bereit, bevorzugt als Environment-Variablen:
-  `Jwt__Key`, `Jwt__Issuer`, `Jwt__Audience` und `Jwt__LifetimeMinutes`.
-  `Jwt__LifetimeMinutes` ist auf 30 Minuten ausgelegt; Refresh und Request-
-  Authentifizierung validieren Benutzerstatus, SecurityStamp und aktuelle Rollen
-  serverseitig gegen die Datenbank.
-  In produktionsnahen Umgebungen (alle Umgebungen ausser `Development`) bricht
-  der Start ab, wenn `Jwt__Key` fehlt, ein Platzhalter ist, weniger als 32
-  UTF-8-Bytes Schluesselmaterial enthaelt oder `Jwt__Issuer`,
-  `Jwt__Audience` beziehungsweise `Jwt__LifetimeMinutes` ungueltig sind.
-- AlphaVantage API Keys werden vor der Persistenz mit ASP.NET Core Data
-  Protection geschuetzt und nur fuer den unmittelbaren API-Aufruf entschluesselt.
-  Fuer produktionsnahe Deployments muss der Data-Protection-Key-Ring erhalten
-  bleiben, sonst koennen gespeicherte AlphaVantage-Keys nach Containerwechsel,
-  Neuinstallation oder Deployment nicht verlaesslich gelesen werden. Setze
-  dafuer `DataProtection__KeysPath` auf ein persistentes, zugriffsgeschuetztes
-  Volume und sichere diesen Key-Ring gemeinsam mit der Datenbank.
+- Login, Registrierung, Logout
+- JWT-Validierung und Refresh-Verhalten
+- Keepalive bei aktiver Navigation und Interaktion
+- Quick-Edit-Verhalten in Kontoauszugsentwürfen
 
-## Contribution Guide
+## Help, Betrieb und Sicherheit
 
-Siehe [CONTRIBUTING.md](CONTRIBUTING.md), insbesondere:
-- Branch-Workflow: PRs gegen `staging`, automatisierte Promotion nach `main`
-- API-Fehlerbehandlung (`ValidationProblem` vs. standardisierte `origin/code/message`-Antworten)
-- Lokalisierungskonventionen für `.resx` unter `Resources/...`
-- PR-Hinweise zu Ressourcenpfaden und CI-Checks
+- Die Help-Oberfläche ist unter **`/help`** verfügbar.
+- Die Markdown-Quellen liegen unter **`Docs/help/`**.
+- Während des Builds werden Help-Suchindizes über `tools/FinanceManager.HelpSearchIndexGenerator` erzeugt.
+- Öffentliche Security-Kontaktinformationen werden über `SecurityTxtController` unter `/security.txt` und `/.well-known/security.*` ausgeliefert.
+- `HealthController` stellt `/health` und `/api/health` bereit.
 
-## Roadmap
+## CI/CD und Releases
 
-### Aktuelle / In Bearbeitung
+Im Repository sind folgende GitHub-Workflows vorhanden:
 
-**Issue #298 – Wertpapierstatistiken für Gesamtdepot** ✓ Abgeschlossen (Phase 1 + Fortsetzung)
-- Depot-Analysebericht mit Kacheln für Depotstruktur, Performance und Cashflow implementiert; eigene Ribbon-Gruppe "Berichte" auf der Wertpapierübersicht
-- Kacheln visuell aufbereitet mit Ring-/Balkendiagrammen (`DonutChart`, `MiniBarChart`) statt reiner Zahlenlisten
-- Kennzahlen-Erklärungen über Info-Buttons (`KpiInfoButton`) mit Overlay-Panel; Gesamtmarktwert zeigt alle Positionen in scrollbarem Container, Investiertes-Kapital zeigt Akkordeon mit FIFO-Lot-Details je Wertpapier
-- Kachel-Konfiguration (Sichtbarkeit/Reihenfolge) pro Benutzer sowie monatlicher Berichts-Cache mit automatischer Invalidierung
-- `Region`/`Sector` Wertpapierfelder sind jetzt über die Wertpapier-Bearbeitungsmaske pflegbar (200er-Kappung bei Positionen/Lots im Bericht)
-- UI-Verbesserungen: Tabellen-Overflow behoben, volle Seitenbreite genutzt, Speichern-Button im Editiermodus ins Ribbon-Menü verschoben
-- Offen für Phase 2: Risikoanalyse-Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
+- **`pr-staging-ci.yml`** für Pull Requests gegen `staging`
+- **`staging-ci.yml`** als Pre-Release-Pipeline für Pushes nach `staging`
+- **`staging-to-main-promotion.yml`** für den automatisierten Draft-PR von `staging` nach `main`
+- **`release.yml`** für Releases auf `main` und für Tags im Format `v*.*.*`
+- **`security-scan.yml`** für Sicherheitsprüfungen
 
-**Issue #224 – Update-Einstellungen vereinheitlichen** ✓ Abgeschlossen
-- Technische Update-Konfiguration aus der Admin-UI entfernt und serverseitig normalisiert
-- Update-Einstellungen an das globale Setup-Speicherpattern angebunden
-- Update-Aktionen in das Setup-Ribbon verschoben
-- Service-Name mit plattformspezifischem Autocomplete für Windows und Linux ergänzt
-- Update-Statuswerte lokalisiert
+Aus den aktuellen Workflow-Dateien ergeben sich diese Punkte:
 
-### Geplant
+- PRs gegen `staging` führen Formatprüfung, Security-Scan, Build und Tests aus.
+- Die Coverage-Schwelle für Unit- und Integrationstests liegt bei **70 % Line Coverage**.
+- E2E-Tests werden in PR- und Staging-CI ausgeführt, sind dort aber als **best effort** markiert.
+- Der Release-Workflow baut `FinanceManager.Web` als **self-contained** Paket für **`win-x64`** und **`linux-x64`**.
+- Zusätzlich wird ein **`update.json`**-Manifest für das Update-System erzeugt.
+- Versionsableitung für automatische Releases erfolgt über **Semantic Release** und Conventional Commits.
 
-Aus `Docs/features/task/issue-90-fb7b291b995c45f3b35a0bf86c8ae321-mobile-ansicht/plan.md` (Mobile Ansicht):
+## Weitere Dokumentation
 
-1. Responsive Basis/Breakpoints vereinheitlichen
-2. Layout/Navigationscontainer mobilfähig machen
-3. Generische Listen-/Kartenbausteine standardisieren
-4. Kernseiten (Home/Reports/Budget/Setup) anpassen
-5. Setup- und Securities-Tabs harmonisieren
-6. Playwright-Fixture für Mobile Sessions erweitern
-7. Mobile E2E-Flows ergänzen
-8. Regression/Stabilisierung
-
-## Changelog
-
-- Laufender Änderungsverlauf: [CHANGELOG.md](CHANGELOG.md)
-- Ergänzende Chronik: [changes.log](changes.log)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CHANGELOG.md](CHANGELOG.md)
+- [changes.log](changes.log)
+- [CI-CD.md](CI-CD.md)
 
 ## Lizenz
 
-MIT – siehe [LICENSE](LICENSE).
+Dieses Repository steht unter der **MIT-Lizenz**. Details siehe [LICENSE](LICENSE).
 
-## Kontakt / Maintainer
+## Repository
 
-- Repository: `martin-stromberg/FinanceManager`
-- Rückfragen/Fehler: GitHub Issues im Repository verwenden.
+- GitHub: `martin-stromberg/FinanceManager`
+- Issues: bitte über die GitHub-Issue-Verwaltung des Repositories melden

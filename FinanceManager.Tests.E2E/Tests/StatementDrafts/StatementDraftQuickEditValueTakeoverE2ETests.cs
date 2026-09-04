@@ -544,7 +544,7 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
     /// single coalesced keepalive request instead of one request per blurred field.
     /// </summary>
     [Fact]
-    public async Task QuickEdit_MultipleFastBlurs_ShouldCoalesceKeepaliveRequests()
+    public async Task QuickEdit_Blur_ShouldCoalesceKeepaliveRequests()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
