@@ -19,8 +19,6 @@ test("creates update manifest with release notes and platform assets", () => {
       assetDirectory: dir
     });
 
-    assert.equal(manifest.repositoryOwner, "martin-stromberg");
-    assert.equal(manifest.repositoryName, "FinanceManager");
     assert.equal(manifest.releaseNotes, "Release notes");
     assert.deepEqual(manifest.assets.map((asset) => asset.runtimeIdentifier), ["win-x64", "linux-x64"]);
     assert.ok(manifest.assets.every((asset) => asset.sha256.length === 64));

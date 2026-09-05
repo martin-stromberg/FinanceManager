@@ -155,7 +155,15 @@ jobs:
         # Best-effort: E2E/browser-driven tests are not always reliable on GitHub-hosted
         # runners. Results are uploaded separately but don't block PRs, matching the
         # OsInterface best-effort pattern used across the other projects.
+        # PLAYWRIGHT_TRACE/PLAYWRIGHT_ARTIFACTS (PlaywrightTestOptions.cs) are opt-in and off
+        # by default - without them, PlaywrightWebAppFixture never writes a trace/screenshot,
+        # so a failure here previously left nothing to actually inspect. Enabled unconditionally
+        # (not just on failure) so a real trace is always available, matching Schnittstellenzentrale's
+        # equivalent step.
         continue-on-error: true
+        env:
+          PLAYWRIGHT_TRACE: '1'
+          PLAYWRIGHT_ARTIFACTS: '1'
         run: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-e2e-tests.trx" --logger "console;verbosity=normal"
         shell: pwsh
 
@@ -209,6 +217,16 @@ jobs:
           name: test-results-e2e-pr
           path: |
             FinanceManager.Tests.E2E/TestResults/*e2e*.trx
+          retention-days: 14
+
+      - name: Upload Playwright traces
+        # See PlaywrightWebAppFixture.GetArtifactDirectory(): writes to <repo-root>/TestResults/E2E/artifacts,
+        # not under FinanceManager.Tests.E2E/TestResults like the trx logger output above.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces-pr
+          path: TestResults/E2E/artifacts/
           retention-days: 14
 
   back-merge-skip:
