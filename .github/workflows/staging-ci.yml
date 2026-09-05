@@ -139,7 +139,12 @@ jobs:
         shell: pwsh
 
       - name: Test E2E tests
+        # See pr-staging-ci.yml's equivalent step for why PLAYWRIGHT_TRACE/PLAYWRIGHT_ARTIFACTS
+        # are set here.
         continue-on-error: true
+        env:
+          PLAYWRIGHT_TRACE: '1'
+          PLAYWRIGHT_ARTIFACTS: '1'
         run: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-e2e-tests.trx" --logger "console;verbosity=normal"
         shell: pwsh
 
@@ -192,6 +197,16 @@ jobs:
           name: test-results-e2e-staging
           path: |
             FinanceManager.Tests.E2E/TestResults/*e2e*.trx
+          retention-days: 14
+
+      - name: Upload Playwright traces
+        # See PlaywrightWebAppFixture.GetArtifactDirectory(): writes to <repo-root>/TestResults/E2E/artifacts,
+        # not under FinanceManager.Tests.E2E/TestResults like the trx logger output above.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces-staging
+          path: TestResults/E2E/artifacts/
           retention-days: 14
 
   version:
