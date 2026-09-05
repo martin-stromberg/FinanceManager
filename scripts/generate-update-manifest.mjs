@@ -60,7 +60,6 @@ export function createUpdateManifest({
   }
 
   const resolvedTag = tag || `v${version}`;
-  const [repositoryOwner, repositoryName] = repository.split("/");
   const assets = platforms.map((item) => {
     const assetName = releaseAssetName(version, item.runtimeIdentifier);
     const assetPath = resolve(assetDirectory, assetName);
@@ -80,8 +79,6 @@ export function createUpdateManifest({
     version,
     releaseNotes,
     publishedAt,
-    repositoryOwner,
-    repositoryName,
     assets
   };
 }
