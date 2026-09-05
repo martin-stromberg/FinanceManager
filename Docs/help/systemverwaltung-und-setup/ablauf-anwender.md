@@ -7,6 +7,12 @@
 - Sie sind angemeldet.
 - Für das Bearbeiten der `security.txt`-Einstellungen besitzen Sie die Rolle `Admin`.
 
+## Automatische Sitzungserhaltung
+
+Wenn Sie auf geschützten Seiten aktiv sind, bleibt Ihre Anmeldung für Sie weitgehend unsichtbar erhalten. Mausklicks, Tastatureingaben und Quick-Edit-Felder lösen im Hintergrund einen Keepalive-Request aus; dadurch wird das vorhandene Anmeldetoken verlängert, ohne dass Sie erneut auf `/login` geleitet werden.
+
+Nur wenn die Sitzung fachlich ungültig wird (zum Beispiel durch Deaktivierung des Benutzers, Wechsel des `security_stamp` oder abgelaufenes Token) oder wenn Sie wirklich nicht mehr authentifiziert sind, erscheint der normale Login-Fluss.
+
 ## Schritt-für-Schritt-Anleitung
 
 ### 1. Setup-Bereich öffnen

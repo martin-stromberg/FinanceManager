@@ -23,6 +23,20 @@ Beteiligte Komponenten: `ProgramExtensions`, `UserManager<User>`,
 
 ---
 
+
+### 2a. Keepalive-Request für aktive Sitzungen
+
+1. `window.financeManager.keepalive` registriert für die geschützten Seiten Listener auf `pointerdown`, `keydown`, `focusin`, `input` und für den Quick-Edit-Blur-Flow. Dabei werden öffentliche Pfade wie `/login`, `/register`, `/help` und `/error` ausdrücklich übersprungen.
+2. Bei aktiver Nutzung ruft `triggerKeepalive()` ein `fetch("/api/auth/keepalive", { credentials: "include" })` auf; doppelte oder zu nahe hintereinander liegende Requests werden durch `keepaliveRequest` und Timeouts coalesced, damit keine Request-Stürme entstehen.
+3. `AuthKeepaliveController.Get()` antwortet mit `204 No Content`, sobald der Benutzer im JWT-Auth-Kontext authentifiziert ist und der Request den Middleware-Pfad erreicht.
+4. `JwtRefreshMiddleware.InvokeAsync(HttpContext)` liest das Token aus dem `Authorization`-Header oder dem `FinanceManager.Auth`-Cookie, prüft das Ablaufdatum und entscheidet anhand der konfigurierten Laufzeit, ob das Token in einem Renewal-Window liegt.
+5. Wenn das Token im Window liegt, ruft das Middleware `IJwtRefreshService.RefreshAsync(context.User, ...)` auf. `JwtRefreshService` lädt den aktuellen Benutzer, prüft `Active`, `security_stamp` und Admin-Rolle erneut gegen den aktuellen ASP.NET-Identity-Status und erzeugt bei Erfolg ein neues JWT.
+6. Bei erfolgreichem Refresh setzt das Middleware das neue Cookie `FinanceManager.Auth` mit `Secure`, `HttpOnly` und `Expires` sowie die Response-Header `X-Auth-Token` und `X-Auth-Token-Expires`. Bei Ablehnung löscht es das Cookie und beendet den Refresh-Pfad sauber, ohne die Antwort zu blockieren.
+
+Beteiligte Komponenten: `window.financeManager.keepalive`, `AuthKeepaliveController`, `JwtRefreshMiddleware`, `IJwtRefreshService`, `JwtRefreshService`, `FinanceManager.Auth`
+
+---
+
 ### 2. DB-validierter JWT-Refresh
 
 1. `JwtRefreshMiddleware` oder `JwtCookieAuthTokenProvider` erkennt ein Token

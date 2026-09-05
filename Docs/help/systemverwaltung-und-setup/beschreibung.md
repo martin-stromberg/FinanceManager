@@ -33,13 +33,11 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 
 Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel angezeigt. Dieses Panel fragt laufende und wartende Tasks nur ab, wenn ein authentifizierter Benutzerkontext vorhanden ist. Nicht angemeldete Benutzer starten keine wiederkehrende Statusabfrage gegen `/api/background-tasks/active`. Falls ein bereits gestartetes Panel vom API-Client dennoch `401 Unauthorized` erhält, beendet es seine Polling-Schleife für die aktuelle Komponenteninstanz und blendet die Task-Anzeige aus.
 
-Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
-verfügbaren Aktualisierung. Administratoren können die automatische Prüfung
-aktivieren, Vorabversionen berücksichtigen, ein tägliches Prüfzeitfenster
-festlegen, eine geplante Uhrzeit eintragen und den Dienstnamen pflegen. Ein
-manueller Installationsstart verlangt eine Ausfallzeit-Bestätigung. Nach dem
-Start zeigt die Oberfläche eine Warteseite und lädt neu, sobald die Anwendung
-wieder erreichbar ist.
+## Aktive Sitzungsverlängerung und Token-Refresh
+
+Die Anwendung hält aktive Sitzungen für authentifizierte Browser automatisch aufrecht. Wenn ein Anmeldetoken kurz vor dem Ablauf steht, startet der Client einen Keepalive-Request auf `/api/auth/keepalive`, und das Backend erneuert das Token als neues `FinanceManager.Auth`-Cookie, ohne dass der Benutzer manuell erneut anmelden muss.
+
+Diese Validierung erfolgt serverseitig im zentralen Erneuerungsablauf: Nur aktive Benutzer mit gültigem `security_stamp`, unveränderter Admin-Rolle und aktuellem Benutzerstatus werden berücksichtigt. Ein veralteter oder fachlich invalidierter Token führt nicht zu einem absichtlichen Redirect auf aktiven Seiten, sondern wird sauber verworfen und erst bei einem echten Auth-Verlust als Login-Redirect behandelt.
 
 ## Beispiele
 
@@ -55,6 +53,16 @@ wieder erreichbar ist.
 - Ein Administrator prueft auf ein Self-Update, kontrolliert Paketmetadaten und
   startet die Installation nach Downtime-Bestaetigung.
 - Ein angemeldeter Benutzer startet einen Hintergrundtask und sieht Fortschritt, Warteschlange sowie Abbrechen- oder Entfernen-Aktionen im Statuspanel.
+- Ein Benutzer arbeitet weiter auf geschützten Seiten; Tastatur-, Mausklick- und Quick-Edit-Interaktionen lösen automatische Keepalive-Requests aus und verlängern die Session ohne sichtbaren Login.
+- Ein Benutzer wird deaktiviert oder erhält einen neuen `security_stamp`; der nächste Refresh wird abgelehnt und die Sitzung endet fachlich sauber.
+
+Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
+verfügbaren Aktualisierung. Administratoren können die automatische Prüfung
+aktivieren, Vorabversionen berücksichtigen, ein tägliches Prüfzeitfenster
+festlegen, eine geplante Uhrzeit eintragen und den Dienstnamen pflegen. Ein
+manueller Installationsstart verlangt eine Ausfallzeit-Bestätigung. Nach dem
+Start zeigt die Oberfläche eine Warteseite und lädt neu, sobald die Anwendung
+wieder erreichbar ist.
 
 ## Spracheinstellung (Anzeigesprache)
 

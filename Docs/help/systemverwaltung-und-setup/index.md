@@ -1,6 +1,6 @@
 # Systemverwaltung und Setup
 
-Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen, Sicherungen und die security.txt-Konfiguration gemäß RFC 9116.
+Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen, Sicherungen und die security.txt-Konfiguration gemäß RFC 9116. Aktive Web-Sitzungen werden dabei automatisch erneuert, solange der Benutzer fachlich gültig und authentifiziert bleibt.
 
 ## Inhalt
 

@@ -524,7 +524,7 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         (await subject.InputValueAsync()).Should().Be(expectedSubject);
 
         await cookies.SetNearExpiryCookieAsync(page, username);
-        await WaitForForcedKeepaliveThrottleAsync(page);
+        await PlaywrightTestTiming.WaitForForcedKeepaliveThrottleAsync(page);
         var response = await page.RunAndWaitForResponseAsync(async () =>
         {
             await subject.FocusAsync();
@@ -544,7 +544,7 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
     /// single coalesced keepalive request instead of one request per blurred field.
     /// </summary>
     [Fact]
-    public async Task QuickEdit_MultipleFastBlurs_ShouldCoalesceKeepaliveRequests()
+    public async Task QuickEdit_Blur_ShouldCoalesceKeepaliveRequests()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
@@ -567,7 +567,7 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         await page.GotoAsync($"{_fixture.BaseUrl}/card/statement-drafts/{prelimDraft.DraftId}?quickEdit=true");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await page.Locator("input[id^='qe_subject_']").Nth(1).WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
-        await WaitForForcedKeepaliveThrottleAsync(page);
+        await PlaywrightTestTiming.WaitForForcedKeepaliveThrottleAsync(page);
 
         var keepaliveRequests = 0;
         page.Request += (_, request) =>
@@ -598,9 +598,6 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
     private static bool IsKeepaliveRequest(IRequest request)
         => Uri.TryCreate(request.Url, UriKind.Absolute, out var uri)
             && uri.AbsolutePath.Equals("/api/auth/keepalive", StringComparison.OrdinalIgnoreCase);
-
-    private static Task WaitForForcedKeepaliveThrottleAsync(IPage page)
-        => page.WaitForTimeoutAsync(5200);
 
     private static bool IsKeepaliveResponse(IResponse response)
         => Uri.TryCreate(response.Url, UriKind.Absolute, out var uri)
@@ -724,7 +721,7 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
 
     private static string CreateUniqueIban()
     {
-        var value = Math.Abs(Guid.NewGuid().GetHashCode()) % 100000000;
+        var value = unchecked((uint)Guid.NewGuid().GetHashCode()) % 100000000;
         return string.Create(CultureInfo.InvariantCulture, $"DE507005000000{value:00000000}");
     }
 }

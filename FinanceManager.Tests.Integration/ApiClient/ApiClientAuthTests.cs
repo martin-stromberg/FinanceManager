@@ -174,7 +174,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
     /// authenticated without the user re-entering credentials.
     /// </summary>
     [Fact]
-    public async Task Keepalive_WithBearerNearExpiry_ShouldRefreshCookieAndReturnNoContent()
+    public async Task Keepalive_ActiveUserInteraction_ShouldRefreshNearExpiryCookie()
     {
         var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -200,7 +200,7 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
     /// headers - a stale token must not be able to perpetually renew itself.
     /// </summary>
     [Fact]
-    public async Task Keepalive_WithInvalidSecurityStamp_ShouldReturnUnauthorizedWithoutRefreshLoop()
+    public async Task JwtRefreshMiddleware_ShouldNotLoopOnRejectedRefresh()
     {
         var token = await CreateBearerTokenAsync(includeAdminRole: true, expiresUtc: DateTime.UtcNow.AddMinutes(10));
         using (var scope = _factory.Services.CreateScope())
