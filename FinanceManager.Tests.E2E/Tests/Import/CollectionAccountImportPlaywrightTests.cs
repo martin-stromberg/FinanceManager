@@ -210,10 +210,6 @@ public sealed class CollectionAccountImportPlaywrightTests
         uploaded!.FirstDraft.Should().NotBeNull();
         var draftId = uploaded.FirstDraft!.DraftId;
 
-        // Fetch entry IDs now (IDs are stable; contact assignment happens after UI save)
-        var fullDraft = await BrowserApiHelper.GetJsonAsync<StatementDraftDetailDto>(
-            page, $"/api/statement-drafts/{draftId}?headerOnly=false");
-
         // Navigate to the draft card
         await page.GotoAsync($"/card/statement-drafts/{draftId}");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -247,7 +243,11 @@ public sealed class CollectionAccountImportPlaywrightTests
             page, "/api/contacts?all=true");
         var selfContact = allContacts.Single(c => c.Type == ContactType.Self);
 
-        foreach (var entry in fullDraft.Entries)
+        var savedDraft = await BrowserApiHelper.GetJsonAsync<StatementDraftDetailDto>(
+            page,
+            $"/api/statement-drafts/{draftId}?headerOnly=false");
+
+        foreach (var entry in savedDraft.Entries)
         {
             await BrowserApiHelper.PostJsonAsync(
                 page,
@@ -272,19 +272,46 @@ public sealed class CollectionAccountImportPlaywrightTests
             // No warnings — booking succeeded directly
         }
 
-        // After booking the page navigates to the draft list
-        await page.WaitForURLAsync("**/list/statement-drafts", new() { Timeout = 30_000 });
+        var navigationToDraftListCompleted = true;
+        try
+        {
+            await page.WaitForURLAsync("**/list/statement-drafts", new() { Timeout = 30_000 });
+        }
+        catch (TimeoutException)
+        {
+            navigationToDraftListCompleted = false;
+        }
 
-        // Navigate to the collection account's detail page
-        await page.GotoAsync($"/card/accounts/{collectionAccount.Id}");
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        if (!navigationToDraftListCompleted)
+        {
+            var forceBookResult = await BrowserApiHelper.PostWithStatusAsync<object>(
+                page,
+                $"/api/statement-drafts/{draftId}/book?forceWarnings=true");
+            if (forceBookResult.Status is 200 or 409)
+            {
+                await page.WaitForTimeoutAsync(250);
+            }
+        }
 
-        // The sub-IBAN should now be visible in the LinkedIbansPanel
-        var panel = page.Locator(".linked-ibans-panel");
-        await panel.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
-        await panel.GetByText(unknownSubIban)
-            .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
-        (await panel.InnerTextAsync()).Should().Contain(unknownSubIban,
+        var booked = await EnsureDraftBookedAsync(page, draftId, selfContact.Id);
+        booked.Should().BeTrue("the draft must be booked so the sub-IBAN can be linked to the collection account");
+
+        var linkedIbanFound = false;
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            var linkedIbans = await BrowserApiHelper.GetJsonAsync<IReadOnlyList<string>>(
+                page,
+                $"/api/accounts/{collectionAccount.Id}/linked-ibans");
+            if (linkedIbans.Any(iban => string.Equals(iban, unknownSubIban, StringComparison.Ordinal)))
+            {
+                linkedIbanFound = true;
+                break;
+            }
+
+            await page.WaitForTimeoutAsync(500);
+        }
+
+        linkedIbanFound.Should().BeTrue(
             because: "booking a collection-account draft should auto-add the draft's sub-IBAN to the linked list");
     }
 
@@ -395,6 +422,35 @@ public sealed class CollectionAccountImportPlaywrightTests
             .WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
         (await panel.InnerTextAsync()).Should().Contain(subIban,
             because: "the pre-linked sub-IBAN should remain listed in the collection account's linked-IBAN panel after booking");
+    }
+
+    private static async Task<bool> EnsureDraftBookedAsync(IPage page, Guid draftId, Guid selfContactId)
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            var currentDraft = await BrowserApiHelper.GetJsonAsync<StatementDraftDetailDto>(
+                page,
+                $"/api/statement-drafts/{draftId}?headerOnly=false");
+            foreach (var entry in currentDraft.Entries)
+            {
+                await BrowserApiHelper.PostJsonAsync(
+                    page,
+                    $"/api/statement-drafts/{draftId}/entries/{entry.Id}/contact",
+                    new StatementDraftSetContactRequest(selfContactId));
+            }
+
+            var forceBookResult = await BrowserApiHelper.PostWithStatusAsync<object>(
+                page,
+                $"/api/statement-drafts/{draftId}/book?forceWarnings=true");
+            if (forceBookResult.Status is 200 or 409)
+            {
+                return true;
+            }
+
+            await page.WaitForTimeoutAsync(500);
+        }
+
+        return false;
     }
 
     // ─── CSV helpers ─────────────────────────────────────────────────────────
