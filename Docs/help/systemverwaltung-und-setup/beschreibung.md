@@ -33,11 +33,11 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 
 Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel angezeigt. Dieses Panel fragt laufende und wartende Tasks nur ab, wenn ein authentifizierter Benutzerkontext vorhanden ist. Nicht angemeldete Benutzer starten keine wiederkehrende Statusabfrage gegen `/api/background-tasks/active`. Falls ein bereits gestartetes Panel vom API-Client dennoch `401 Unauthorized` erhält, beendet es seine Polling-Schleife für die aktuelle Komponenteninstanz und blendet die Task-Anzeige aus.
 
-## Aktive Sitzungsverlängerung und JWT-Refresh
+## Aktive Sitzungsverlängerung und Token-Refresh
 
-Die Anwendung hält aktive Sitzungen für authentifizierte Browser automatisch aufrecht. Wenn ein JWT kurz vor dem Ablauf steht, startet der Client einen Keepalive-Request auf `/api/auth/keepalive`, und das Backend erneuert das Token als neues `FinanceManager.Auth`-Cookie, ohne dass der Benutzer manuell erneut anmelden muss.
+Die Anwendung hält aktive Sitzungen für authentifizierte Browser automatisch aufrecht. Wenn ein Anmeldetoken kurz vor dem Ablauf steht, startet der Client einen Keepalive-Request auf `/api/auth/keepalive`, und das Backend erneuert das Token als neues `FinanceManager.Auth`-Cookie, ohne dass der Benutzer manuell erneut anmelden muss.
 
-Diese Validierung erfolgt serverseitig mit `JwtRefreshMiddleware` und `JwtRefreshService`: Nur aktive Benutzer mit gültigem `security_stamp`, unveränderter Admin-Rolle und aktuellem Benutzerstatus werden berücksichtigt. Ein veralteter oder fachlich invalidierter Token führt nicht zu einem absichtlichen Redirect auf aktiven Seiten, sondern wird sauber verworfen und erst bei einem echten Auth-Verlust als Login-Redirect behandelt.
+Diese Validierung erfolgt serverseitig im zentralen Erneuerungsablauf: Nur aktive Benutzer mit gültigem `security_stamp`, unveränderter Admin-Rolle und aktuellem Benutzerstatus werden berücksichtigt. Ein veralteter oder fachlich invalidierter Token führt nicht zu einem absichtlichen Redirect auf aktiven Seiten, sondern wird sauber verworfen und erst bei einem echten Auth-Verlust als Login-Redirect behandelt.
 
 ## Beispiele
 

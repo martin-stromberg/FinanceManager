@@ -9,7 +9,7 @@
 
 ## Automatische Sitzungserhaltung
 
-Wenn Sie auf geschützten Seiten aktiv sind, bleibt Ihre Anmeldung für Sie weitgehend unsichtbar erhalten. Mausklicks, Tastatureingaben und Quick-Edit-Felder lösen im Hintergrund einen Keepalive-Request aus; dadurch wird das vorhandene JWT verlängert, ohne dass Sie erneut auf `/login` geleitet werden.
+Wenn Sie auf geschützten Seiten aktiv sind, bleibt Ihre Anmeldung für Sie weitgehend unsichtbar erhalten. Mausklicks, Tastatureingaben und Quick-Edit-Felder lösen im Hintergrund einen Keepalive-Request aus; dadurch wird das vorhandene Anmeldetoken verlängert, ohne dass Sie erneut auf `/login` geleitet werden.
 
 Nur wenn die Sitzung fachlich ungültig wird (zum Beispiel durch Deaktivierung des Benutzers, Wechsel des `security_stamp` oder abgelaufenes Token) oder wenn Sie wirklich nicht mehr authentifiziert sind, erscheint der normale Login-Fluss.
 
