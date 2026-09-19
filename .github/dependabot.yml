@@ -7,6 +7,56 @@ updates:
       interval: weekly
     labels:
       - dependencies
+    groups:
+      # Die Microsoft-/System-Paketfamilie muss immer gemeinsam aktualisiert
+      # werden: Einzelbumps erzeugen NU1605-Downgrade-Fehler ueber transitive
+      # Abhaengigkeiten (z. B. Identity.EntityFrameworkCore -> Extensions.Identity.Core).
+      microsoft:
+        patterns:
+          - "Microsoft.*"
+          - "System.*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Security-Fixes derselben Familie ebenfalls gebuendelt (gleicher Grund).
+      microsoft-security:
+        applies-to: security-updates
+        patterns:
+          - "Microsoft.*"
+          - "System.*"
+      # Test-Stack: bunit referenziert AngleSharp; xunit.v3 und der
+      # VSTest-Runner muessen versionsmaessig zusammenpassen.
+      test:
+        patterns:
+          - "xunit*"
+          - "bunit"
+          - "AngleSharp"
+          - "Moq"
+          - "FluentAssertions"
+          - "coverlet*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Alle uebrigen Third-Party-Pakete in einem Sammel-PR
+      # (z. B. itext + itext.bouncy-castle-adapter). Major-Updates bleiben
+      # bewusst ungruppierte Einzel-PRs, damit Breaking Changes einzeln
+      # bewertet werden koennen.
+      third-party:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "Microsoft.*"
+          - "System.*"
+          - "xunit*"
+          - "bunit"
+          - "AngleSharp"
+          - "Moq"
+          - "FluentAssertions"
+          - "coverlet*"
+          - "msTools.*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: npm
     directory: /
@@ -21,6 +71,13 @@ updates:
       # compatible release-notes-generator version exists.
       - dependency-name: "conventional-changelog-conventionalcommits"
         update-types: ["version-update:semver-major"]
+    groups:
+      npm:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,3 +86,10 @@ updates:
       interval: weekly
     labels:
       - dependencies
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
