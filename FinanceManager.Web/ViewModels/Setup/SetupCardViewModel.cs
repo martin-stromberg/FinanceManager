@@ -71,6 +71,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         new SetupSectionDefinition("update", "Setup_Section_Update", "Update", typeof(SetupUpdateViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupUpdateTab)),
         new SetupSectionDefinition("security", "Setup_Section_Security", "Sicherheit", typeof(SetupSecurityViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupSecurityTab)),
         new SetupSectionDefinition("securitytxt", "Setup_Section_SecurityTxt", "security.txt", typeof(SetupSecurityTxtViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SecurityTxtSettingsTab)),
+        new SetupSectionDefinition("wellknown", "Setup_Section_WellKnown", "Well-Known", typeof(SetupWellKnownViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.WellKnownSettingsTab)),
         new SetupSectionDefinition("returnanalysis", "Setup_Section_ReturnAnalysis", "Renditeanalyse", typeof(SetupReturnAnalysisViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupReturnAnalysisTab)),
     };
 
@@ -98,7 +99,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 || GetSectionViewModel<SetupStatementsViewModel>("statements")?.Dirty == true
                 || GetSectionViewModel<SetupUpdateViewModel>("update")?.Dirty == true
                 || GetSectionViewModel<SetupReturnAnalysisViewModel>("returnanalysis")?.Dirty == true
-                || GetSectionViewModel<SetupSecurityTxtViewModel>("securitytxt")?.Dirty == true;
+                || GetSectionViewModel<SetupSecurityTxtViewModel>("securitytxt")?.Dirty == true
+                || GetSectionViewModel<SetupWellKnownViewModel>("wellknown")?.Dirty == true;
         }
     }
 
@@ -211,6 +213,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     _sectionViewModels["securitytxt"] = securityTxtVm;
                 }
 
+                if (TryGetSectionDefinition("wellknown", out var wellKnownSection) && wellKnownSection is not null && IsSectionVisible(wellKnownSection))
+                {
+                    var wellKnownVm = CreateSubViewModel<SetupWellKnownViewModel>();
+                    _sectionViewModels["wellknown"] = wellKnownVm;
+                }
+
                 _coreSectionViewModelsInitialized = true;
             }
 
@@ -275,6 +283,12 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             if (securityTxtVm?.Dirty == true)
             {
                 await securityTxtVm.SaveAsync(ct);
+            }
+
+            var wellKnownVm = GetSectionViewModel<SetupWellKnownViewModel>("wellknown");
+            if (wellKnownVm?.Dirty == true)
+            {
+                await wellKnownVm.SaveAsync(ct);
             }
         }
         finally

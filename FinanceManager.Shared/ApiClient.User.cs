@@ -111,5 +111,26 @@ public partial class ApiClient
         return resp.IsSuccessStatusCode;
     }
 
+    /// <summary>
+    /// Changes the current user's password.
+    /// </summary>
+    /// <param name="request">Request payload containing the current and the new password.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns><c>true</c> when the password change was accepted by the server; otherwise <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="request"/> is <c>null</c>.</exception>
+    /// <exception cref="HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
+    public async Task<bool> UserSettings_ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var resp = await _http.PutAsJsonAsync("/api/user/settings/password", request, ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            // Populate LastError/LastErrorCode without throwing — the failure is reported as false.
+            await TrySetErrorFromResponseAsync(resp);
+            return false;
+        }
+        return true;
+    }
+
     #endregion User Settings
 }

@@ -1640,6 +1640,27 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.WellKnown.WellKnownSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ChangePasswordUrl")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WellKnownSettings");
+                });
+
             modelBuilder.Entity("FinanceManager.Infrastructure.Backups.BackupRecord", b =>
                 {
                     b.Property<Guid>("Id")
