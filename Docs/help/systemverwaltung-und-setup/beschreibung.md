@@ -55,6 +55,7 @@ Diese Validierung erfolgt serverseitig im zentralen Erneuerungsablauf: Nur aktiv
 - Ein angemeldeter Benutzer startet einen Hintergrundtask und sieht Fortschritt, Warteschlange sowie Abbrechen- oder Entfernen-Aktionen im Statuspanel.
 - Ein Benutzer arbeitet weiter auf geschützten Seiten; Tastatur-, Mausklick- und Quick-Edit-Interaktionen lösen automatische Keepalive-Requests aus und verlängern die Session ohne sichtbaren Login.
 - Ein Benutzer wird deaktiviert oder erhält einen neuen `security_stamp`; der nächste Refresh wird abgelehnt und die Sitzung endet fachlich sauber.
+- Ein Benutzer ändert sein eigenes Passwort über die Seite **Passwort ändern**; die aktuelle Sitzung bleibt angemeldet, andere Sitzungen werden beendet.
 
 Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
 verfügbaren Aktualisierung. Administratoren können die automatische Prüfung
@@ -126,6 +127,34 @@ Die Direktive `Canonical` kann im Setup-Bereich als vollständige HTTPS-URL gepf
 - Ein Administrator trägt `mailto:security@example.com` als Kontakt ein und setzt ein Ablaufdatum in der Zukunft. Nach dem Speichern ist `/.well-known/security.txt` öffentlich erreichbar.
 - Ein Sicherheitsforscher ruft `/.well-known/security.html` auf und erhält eine strukturierte HTML-Seite mit allen konfigurierten Direktiven.
 
+## Eigenes Passwort ändern
+
+Angemeldete Benutzer können ihr eigenes Passwort auf der Seite **Passwort ändern** selbst ändern. Der Einstieg erfolgt über den Link **Passwort ändern** im Anmeldebereich (direkt über der Abmelde-Schaltfläche) oder über die Adresse `/change-password`.
+
+Die Seite fragt drei Felder ab: **Aktuelles Passwort**, **Neues Passwort** und **Neues Passwort bestätigen**. Nach dem Absenden über **Passwort ändern** erscheint bei Erfolg die Meldung „Das Passwort wurde geändert.". Das neue Passwort muss den konfigurierten Passwort-Regeln entsprechen (mindestens 8 Zeichen, mindestens eine Ziffer). Nach der Änderung bleibt die aktuelle Sitzung angemeldet; Anmeldungen auf anderen Geräten oder in anderen Browsern werden ungültig und erfordern eine neue Anmeldung mit dem neuen Passwort.
+
+## Well-Known-Adressen
+
+Der Setup-Bereich enthält eine eigene Einstellungssektion **Well-Known**, die nur für Benutzer mit der Rolle `Admin` bearbeitbar ist. Hierüber wird das Weiterleitungsziel der öffentlichen Adresse `/.well-known/change-password` gepflegt.
+
+### Öffentliche Adresse
+
+Die Adresse `/.well-known/change-password` ist ohne Anmeldung erreichbar und leitet Aufrufe per HTTP-Weiterleitung auf die konfigurierte Passwort-ändern-Seite um. Browser und Passwortmanager nutzen diese standardisierte Adresse, um die Passwort-ändern-Seite der Anwendung automatisch zu finden.
+
+### Konfigurierbares Ziel
+
+| Feldbezeichnung (UI) | Bedeutung |
+|----------------------|-----------|
+| Passwort-ändern-URL | Weiterleitungsziel für `/.well-known/change-password`; lokaler Pfad oder absolute `http`/`https`-Adresse |
+
+Ist keine gültige Ziel-Adresse konfiguriert, leitet die öffentliche Adresse auf den Standard `/change-password` weiter — also auf die eigene Seite **Passwort ändern** der Anwendung.
+
+### Beispiele
+
+- Ein Administrator trägt `/change-password` ein. Aufrufe von `/.well-known/change-password` landen auf der eigenen Passwort-ändern-Seite.
+- Ein Administrator hinterlegt eine externe Adresse wie `https://idp.example.com/password`. Die Weiterleitung führt dann auf die zentrale Passwort-Seite des Identitätsanbieters.
+- Ein Passwortmanager öffnet `/.well-known/change-password` und wird automatisch auf die richtige Seite geführt.
+
 ## Einschränkungen
 
 - Administrative Bereiche erfordern entsprechende Berechtigungen.
@@ -145,3 +174,6 @@ Die Direktive `Canonical` kann im Setup-Bereich als vollständige HTTPS-URL gepf
   Deutsch und Englisch angeboten.
 - Die `security.txt`-Direktive `Contact` akzeptiert nur einen einzelnen Wert (URI oder mailto). Mehrfacheinträge gemäß RFC 9116 werden aktuell nicht unterstützt.
 - Die `Canonical`-Direktive akzeptiert optional nur absolute HTTPS-URLs ohne Query/Fragment und ohne localhost/Loopback-Host. Bei leerem Feld wird `Api:BaseAddress` als Fallback verwendet.
+- Das Feld **Passwort-ändern-URL** in der Sektion **Well-Known** akzeptiert nur lokale Pfade (beginnend mit `/`, aber nicht `//`) oder absolute `http`-/`https`-Adressen. Andere Werte werden beim Speichern abgelehnt.
+- Die öffentliche Adresse `/.well-known/change-password` enthält keine eigenen Inhalte und gibt keine Benutzer- oder Sitzungsdaten aus; sie leitet nur weiter.
+- Für das Ändern des eigenen Passworts ist eine Anmeldung erforderlich; nicht angemeldete Besucher werden auf die Anmeldeseite geführt und nach erfolgreicher Anmeldung zurück auf die Seite **Passwort ändern**.

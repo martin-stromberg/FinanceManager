@@ -291,6 +291,17 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     Task UpdateSecurityTxtSettingsAsync(SecurityTxtSettingsUpdateRequest request, CancellationToken ct = default);
 
+    // Admin - Well-known
+
+    /// <summary>Reads the current well-known settings.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    Task<WellKnownSettingsDto?> GetWellKnownSettingsAsync(CancellationToken ct = default);
+    /// <summary>Updates the current well-known settings.</summary>
+    /// <param name="request">Request payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task UpdateWellKnownSettingsAsync(WellKnownSettingsUpdateRequest request, CancellationToken ct = default);
+
     // Attachments
 
     /// <summary>Lists attachments for an entity with optional filters.</summary>
@@ -1332,6 +1343,11 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The result.</returns>
     Task<bool> UserSettings_UpdateImportSplitAsync(ImportSplitSettingsUpdateRequest request, CancellationToken ct = default);
+    /// <summary>Changes the current user's password.</summary>
+    /// <param name="request">Request payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    Task<bool> UserSettings_ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default);
 
     // Budgets
 

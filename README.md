@@ -13,12 +13,12 @@ Die Anwendung bündelt Stammdatenverwaltung, Kontoauszugsimport, Budget- und Rep
 
 Die Anwendung bietet unter anderem:
 
-- **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity
+- **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity, inklusive Selbstbedienungs-Seite zum Ändern des eigenen Passworts (`/change-password`)
 - **Konten, Kontakte, Sparpläne und Wertpapiere** mit Listen-, Detail- und Bearbeitungsbereichen sowie Verteilungen in der Bankübersicht
 - **Kontoauszugsverarbeitung** mit Upload, Massenimport, Klassifizierung, Schnellbearbeitung und Buchung
 - **Budget- und Reporting-Funktionen** inklusive Budget-Kategorien, -Zwecken, -Regeln und Berichten
 - **Portfolio-Analyse** mit Bericht und benutzerspezifischer KPI-Konfiguration
-- **Betriebsfunktionen** wie Backups, Update-Steuerung, Help-System und `security.txt`
+- **Betriebsfunktionen** wie Backups, Update-Steuerung, Help-System und Well-Known-Endpunkte (`security.txt`, `/.well-known/change-password` mit administrierbarem Weiterleitungsziel)
 
 Bei der Erstregistrierung, wenn noch kein Benutzer vorhanden ist, wird der Start auf die Registrierungsseite umgeleitet. Nur der erste Benutzer sieht dort die Checkbox `Demodaten anlegen`; ist sie aktiviert, erstellt ein Hintergrundtask nach der Registrierung den vollständigen Demo-Datenbestand. Der Fortschritt ist auf der Startseite in der Background-Task-Anzeige sichtbar.
 

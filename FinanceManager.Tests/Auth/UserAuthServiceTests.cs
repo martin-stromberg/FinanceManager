@@ -453,4 +453,77 @@ public sealed class UserAuthServiceTests
         Assert.Equal("de", saved.PreferredLanguage);
     }
 
+    /// <summary>
+    /// Verifies that a successful password change delegates to <c>UserManager.ChangePasswordAsync</c>
+    /// (which rotates the security stamp internally) and reports success.
+    /// </summary>
+    [Fact]
+    public async Task ChangePasswordAsync_UpdatesHash()
+    {
+        var (sut, _, userManager, _, _, _) = Create();
+        var user = new User("bob", "HASH::old", false);
+        userManager.Setup(u => u.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+        userManager.Setup(u => u.ChangePasswordAsync(user, "old-pw", "new-pw-123")).ReturnsAsync(IdentityResult.Success);
+
+        var result = await sut.ChangePasswordAsync(user.Id, "old-pw", "new-pw-123", CancellationToken.None);
+
+        Assert.True(result.Success);
+        userManager.Verify(u => u.ChangePasswordAsync(user, "old-pw", "new-pw-123"), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that Identity's <c>PasswordMismatch</c> error maps to the stable
+    /// <c>Err_InvalidCurrentPassword</c> code so the API layer can present a dedicated message.
+    /// </summary>
+    [Fact]
+    public async Task ChangePasswordAsync_WrongCurrent_ReturnsFail()
+    {
+        var (sut, _, userManager, _, _, _) = Create();
+        var user = new User("bob", "HASH::old", false);
+        userManager.Setup(u => u.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+        userManager.Setup(u => u.ChangePasswordAsync(user, "wrong", It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "PasswordMismatch", Description = "Incorrect password." }));
+
+        var result = await sut.ChangePasswordAsync(user.Id, "wrong", "new-pw-123", CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal("Err_InvalidCurrentPassword", result.Error);
+    }
+
+    /// <summary>
+    /// Verifies that any non-mismatch Identity failure (e.g. password policy violations) maps to the
+    /// stable <c>Err_PasswordPolicyViolation</c> code.
+    /// </summary>
+    [Fact]
+    public async Task ChangePasswordAsync_PolicyViolation_ReturnsFail()
+    {
+        var (sut, _, userManager, _, _, _) = Create();
+        var user = new User("bob", "HASH::old", false);
+        userManager.Setup(u => u.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+        userManager.Setup(u => u.ChangePasswordAsync(user, "old-pw", "short"))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "PasswordTooShort", Description = "Passwords must be at least 8 characters." }));
+
+        var result = await sut.ChangePasswordAsync(user.Id, "old-pw", "short", CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal("Err_PasswordPolicyViolation", result.Error);
+    }
+
+    /// <summary>
+    /// Verifies that an unknown user id produces a failed result with the stable
+    /// <c>Err_UserNotFound</c> code without reaching the password-change path.
+    /// </summary>
+    [Fact]
+    public async Task ChangePasswordAsync_UnknownUser_ReturnsFail()
+    {
+        var (sut, _, userManager, _, _, _) = Create();
+        userManager.Setup(u => u.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
+
+        var result = await sut.ChangePasswordAsync(Guid.NewGuid(), "old-pw", "new-pw-123", CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal("Err_UserNotFound", result.Error);
+        userManager.Verify(u => u.ChangePasswordAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
 }

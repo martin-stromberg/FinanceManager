@@ -44,6 +44,62 @@ Speichern Sie die Änderungen über die Ribbon-Aktion **Speichern**.
 Nach erfolgreichem Speichern sind die Einstellungen persistent gespeichert.  
 Die öffentlichen Adressen `/security.txt`, `/.well-known/security.txt`, `/.well-known/security.md` und `/.well-known/security.html` liefern die aktualisierten Inhalte.
 
+## Eigenes Passwort ändern
+
+### Voraussetzungen
+
+- Sie sind angemeldet. Falls Sie die Seite ohne Anmeldung aufrufen, werden Sie zunächst zur Anmeldeseite geführt und nach der Anmeldung automatisch zurück auf die Seite **Passwort ändern**.
+
+### Schritt-für-Schritt-Anleitung
+
+#### 1. Seite öffnen
+
+Klicken Sie im Anmeldebereich auf den Link **Passwort ändern** oder öffnen Sie die Adresse `/change-password`.
+
+#### 2. Felder ausfüllen
+
+Tragen Sie Ihr **Aktuelles Passwort**, das **Neues Passwort** und die Bestätigung unter **Neues Passwort bestätigen** ein.
+
+> **Hinweis:** Das neue Passwort muss mindestens 8 Zeichen lang sein und mindestens eine Ziffer enthalten. Die Eingabe in **Neues Passwort bestätigen** muss mit dem neuen Passwort übereinstimmen.
+
+#### 3. Änderung absenden
+
+Klicken Sie auf **Passwort ändern**.
+
+> **Hinweis:** Bei einem falschen aktuellen Passwort oder einem neuen Passwort, das die Regeln nicht erfüllt, erscheint eine Fehlermeldung; das Passwort wird dann nicht geändert.
+
+### Ergebnis
+
+Nach erfolgreicher Änderung erscheint die Meldung „Das Passwort wurde geändert.". Ihre aktuelle Sitzung bleibt angemeldet. Anmeldungen auf anderen Geräten oder Browsern werden beendet und erfordern eine neue Anmeldung mit dem neuen Passwort.
+
+## Well-Known-Weiterleitung konfigurieren (Administrator)
+
+### Voraussetzungen
+
+- Sie sind angemeldet und besitzen die Rolle `Admin`.
+
+### Schritt-für-Schritt-Anleitung
+
+#### 1. Setup-Bereich öffnen
+
+Öffnen Sie die Seite **Setup** und klappen Sie den Abschnitt **Well-Known** auf.
+
+> **Hinweis:** Ohne Admin-Berechtigung sehen Sie in dem Abschnitt nur einen Hinweis, dass die Einstellungen Administratoren vorbehalten sind.
+
+#### 2. Ziel-Adresse eintragen
+
+Tragen Sie im Feld **Passwort-ändern-URL** das Weiterleitungsziel für die öffentliche Adresse `/.well-known/change-password` ein.
+
+> **Hinweis:** Zulässig sind lokale Pfade, die mit `/` beginnen (z. B. `/change-password`), oder vollständige Adressen mit `http://` oder `https://`. Andere Eingaben werden beim Speichern abgelehnt.
+
+#### 3. Speichern
+
+Speichern Sie die Änderungen über die Ribbon-Aktion **Speichern**.
+
+### Ergebnis
+
+Nach dem Speichern leitet `/.well-known/change-password` sofort auf die neue Ziel-Adresse weiter. Ohne gültige Konfiguration gilt der Standard `/change-password`.
+
 ## Barrierefreiheit
 
 - Die Felder sind als Standard-Formularelemente mit sichtbaren Labels umgesetzt.

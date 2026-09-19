@@ -37,3 +37,48 @@
 1. `Api:BaseAddress` in der Serverkonfiguration setzen.
 2. Auf absolute URL prüfen (z. B. `https://finance.example.com/`).
 3. Anwendung neu starten und Ausgabe erneut prüfen.
+
+## Passwort ändern meldet „Das aktuelle Passwort ist nicht korrekt."
+
+**Symptom:** Auf der Seite **Passwort ändern** erscheint nach dem Absenden die Meldung „Das aktuelle Passwort ist nicht korrekt.".
+
+**Ursache:** Die Eingabe im Feld **Aktuelles Passwort** stimmt nicht mit dem bisherigen Passwort überein.
+
+**Lösung:**
+1. Das aktuelle Passwort erneut eingeben (Groß-/Kleinschreibung und Tastaturlayout prüfen).
+2. Erneut auf **Passwort ändern** klicken.
+
+> **Hinweis:** Wer das aktuelle Passwort nicht mehr kennt, muss es von einem Administrator zurücksetzen lassen; eine Wiederherstellung ohne Administrator ist nicht möglich.
+
+## Passwort ändern meldet „Das neue Passwort erfüllt die Passwort-Richtlinien nicht."
+
+**Symptom:** Auf der Seite **Passwort ändern** erscheint nach dem Absenden die Meldung „Das neue Passwort erfüllt die Passwort-Richtlinien nicht.".
+
+**Ursache:** Das neue Passwort verstößt gegen die konfigurierten Passwort-Regeln (unter anderem mindestens 8 Zeichen und mindestens eine Ziffer).
+
+**Lösung:**
+1. Ein längeres Passwort mit mindestens einer Ziffer wählen.
+2. Die Eingabe unter **Neues Passwort bestätigen** exakt wiederholen.
+3. Erneut absenden.
+
+## Nach der Passwortänderung sind andere Geräte abgemeldet
+
+**Symptom:** Nach einer erfolgreichen Passwortänderung müssen Sie sich auf anderen Geräten oder in anderen Browsern neu anmelden.
+
+**Ursache:** Das ist gewolltes Sicherheitsverhalten — beim Passwortwechsel werden alle bisher ausgestellten Anmeldetoken ungültig.
+
+**Lösung:**
+1. Auf den betroffenen Geräten mit dem neuen Passwort anmelden.
+
+> **Hinweis:** Die Sitzung, in der die Passwortänderung erfolgte, bleibt ohne Neueingabe angemeldet.
+
+## `/.well-known/change-password` leitet nicht auf das gewünschte Ziel weiter
+
+**Symptom:** Der Aufruf von `/.well-known/change-password` landet auf einer anderen Seite als erwartet.
+
+**Ursache:** Die hinterlegte **Passwort-ändern-URL** in der Setup-Sektion **Well-Known** ist nicht gesetzt, ungültig oder verweist auf ein anderes Ziel. Ungültige gespeicherte Werte werden durch den Standard `/change-password` ersetzt.
+
+**Lösung:**
+1. Als Administrator den Setup-Bereich **Well-Known** öffnen.
+2. Das Feld **Passwort-ändern-URL** prüfen und korrigieren (lokaler Pfad mit führendem `/` oder absolute `http`/`https`-Adresse).
+3. Speichern und die öffentliche Adresse erneut aufrufen.

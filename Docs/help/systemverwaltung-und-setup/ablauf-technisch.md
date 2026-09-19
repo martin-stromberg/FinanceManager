@@ -349,3 +349,55 @@ Beteiligte Komponenten: `UpdateController`, `AutoUpdateSchedulerService`,
 `AutoUpdateServiceResolver`, `AutoUpdateScriptGenerator`,
 `DefaultAutoUpdateProcessRunner`, `DefaultAutoUpdateHostTerminator`,
 `HealthController`, `SetupUpdateViewModel`, `SetupUpdateTab.razor`.
+
+---
+
+### 13. Well-Known-Endpunkt `/.well-known/change-password` (anonymer Redirect)
+
+1. Ein Client sendet `GET /.well-known/change-password` ohne Authentifizierung (pfadbasiert, schema- und hostname-unabhängig).
+2. `RequestLoggingMiddleware` protokolliert den Request; `IpBlockMiddleware` liefert ggf. `403` bei gesperrter IP.
+3. `UseStaticFiles` beantwortet `/.well-known/*`-Pfade bewusst nicht — die Controller-Route greift.
+4. `[AllowAnonymous]` an `WellKnownController.GetChangePasswordRedirectAsync` lässt den Request ohne Credentials durch.
+5. Der Controller ruft `IWellKnownSettingsService.GetChangePasswordUrlAsync` auf. `WellKnownSettingsService` lädt die `WellKnownSettings`-Singleton-Zeile aus `AppDbContext`; existiert keine Zeile, wird sie via `WellKnownSettings.CreateDefault()` mit `ChangePasswordUrl = "/change-password"` angelegt.
+6. `GetChangePasswordUrlAsync` liefert den gespeicherten Wert, sofern er `WellKnownSettings.IsValidUrl` (lokaler Root-Pfad oder absolute `http`/`https`-URL) erfüllt, sonst den Fallback `WellKnownSettings.DefaultChangePasswordUrl`.
+7. `Redirect(url)` erzeugt **HTTP 302** mit `Location`-Header und leerem Body — keine Nutzer- oder Sessiondaten in der Antwort. Absolute externe Ziel-URLs sind zulässig.
+
+Beteiligte Komponenten: `WellKnownController`, `IWellKnownSettingsService`, `WellKnownSettingsService`, `WellKnownSettings`, `WellKnownUrlValidator`, `AppDbContext`, `RequestLoggingMiddleware`, `IpBlockMiddleware`
+
+---
+
+### 14. Admin pflegt die Well-Known-Ziel-URL
+
+1. Admin öffnet `/card/setup` und expandiert die Sektion `wellknown` (Anzeigename `Setup_Section_WellKnown`); `SetupSections.razor` rendert `WellKnownSettingsTab` per `DynamicComponent`.
+2. `WellKnownSettingsTab` prüft `ICurrentUserService.IsAdmin` — Nicht-Admins sehen den Hinweis `Access_AdminOnly`; der serverseitige Schutz erfolgt über `[Authorize(Roles="Admin")]` an den Admin-Endpunkten.
+3. `SetupWellKnownViewModel.LoadAsync` ruft `IApiClient.GetWellKnownSettingsAsync` → `GET api/admin/well-known` → `WellKnownController.GetSettingsAsync` → `IWellKnownSettingsService.GetAsync` → `WellKnownSettingsDto`.
+4. Jede Änderung des Felds setzt `Dirty = true` (`OnChanged` → `RecomputeDirty`); `SetupCardViewModel.HasPendingChanges` aktiviert dadurch den globalen `Save`-Ribbon-Button. `SetupCardViewModel.LoadAsync` erzeugt das ViewModel bereits vorab über `CreateSubViewModel<SetupWellKnownViewModel>()`, damit Dirty-Tracking und `SaveAllAsync` auch ohne vorheriges Expandieren der Sektion funktionieren.
+5. `SetupCardViewModel.SaveAllAsync` → `SetupWellKnownViewModel.SaveAsync` → `IApiClient.UpdateWellKnownSettingsAsync` → `PUT api/admin/well-known` mit `WellKnownSettingsUpdateRequest`.
+6. `WellKnownController.UpdateSettingsAsync` validiert `ModelState` inklusive `IValidatableObject` von `WellKnownSettingsUpdateRequest` (lokaler Root-Pfad oder absolute `http`/`https`-URL, `[Required]`, `[MaxLength(2048)]`) — bei Verstoß `400 ValidationProblem`.
+7. `WellKnownSettingsService` lädt die Singleton-Zeile (`GetEntityAsync`), ruft `WellKnownSettings.Update(url)` auf — der dortige Domain-Guard ist die zweite Verteidigungslinie — und speichert mit `SaveChangesAsync`.
+8. Der Controller antwortet mit **HTTP 204**; das ViewModel setzt `SavedOk = true` und `Dirty = false`. Der nächste anonyme Aufruf von `/.well-known/change-password` leitet sofort auf das neue Ziel weiter (kein Caching).
+
+Beteiligte Komponenten: `WellKnownSettingsTab.razor`, `SetupWellKnownViewModel`, `SetupCardViewModel`, `SetupSections.razor`, `ApiClient.WellKnown.cs`, `WellKnownSettingsDto`, `WellKnownSettingsUpdateRequest`, `WellKnownController`, `IWellKnownSettingsService`, `WellKnownSettingsService`, `WellKnownSettings`, `AppDbContext`
+
+---
+
+### 15. Self-Service-Passwortänderung
+
+1. Der angemeldete Benutzer öffnet `/change-password` (direkt, über den Link `Nav_ChangePassword` in `LoginStatus.razor` oder über den Well-Known-Redirect). Die Seite ist kein `AuthReturnUrl.IsPublicPath` — `AuthRedirect` führt nicht authentifizierte Besucher über `AuthReturnUrl.BuildLoginUrl("/change-password")` auf `/login?returnUrl=...` und nach dem Login zurück.
+2. `ChangePassword.razor` rendert ein `EditForm` mit `ChangePasswordVm` (`CurrentPassword`, `NewPassword`, `ConfirmPassword`); `DataAnnotationsValidator` prüft `[Required]`, `[MinLength(8)]` und `[Compare]` clientseitig. Die Passwortfelder tragen `autocomplete="current-password"` bzw. `autocomplete="new-password"` für die Passwortmanager-Integration.
+3. `SubmitAsync` ruft `IApiClient.UserSettings_ChangePasswordAsync` → `PUT /api/user/settings/password` mit `ChangePasswordRequest`.
+4. `UserSettingsController.ChangePasswordAsync` (`[Authorize(JwtBearer)]`) validiert `ModelState` (→ `ValidationProblem` 400), lädt den Benutzer via `UserManager.FindByIdAsync` (→ `404 NotFound`) und ruft `IUserAuthService.ChangePasswordAsync(_current.UserId, ...)`.
+5. `UserAuthService` ruft `UserManager.ChangePasswordAsync` auf; dabei werden das bisherige Passwort geprüft, die `Identity:Password`-Policy erzwungen und der Security Stamp rotiert. Fehlschläge werden auf stabile Codes gemappt: `PasswordMismatch` → `Err_InvalidCurrentPassword`, sonst `Err_PasswordPolicyViolation`; unbekannter Benutzer → `Err_UserNotFound`.
+6. Bei Misserfolg antwortet der Controller `400` mit `ApiErrorDto` (Code + lokalisierte Meldung über `IStringLocalizer<Controller>` mit Schlüsseln `API_UserSettings_{code}`).
+7. Bei Erfolg stellt `ReissueAuthCookieAsync` ein neues JWT mit rotiertem Security Stamp aus (`_jwt.CreateToken`), ersetzt das Cookie `FinanceManager.Auth`, ruft `_tokenProvider.InvalidateCache()` und antwortet `204`. Die aktuelle Sitzung bleibt damit gültig; JWTs anderer Geräte werden durch die Stamp-Rotation ungültig.
+
+Beteiligte Komponenten: `ChangePassword.razor`, `LoginStatus.razor`, `AuthRedirect`, `AuthReturnUrl`, `ApiClient.User.cs`, `ChangePasswordRequest`, `UserSettingsController`, `IUserAuthService`, `UserAuthService`, `UserManager<User>`, `IJwtTokenService`, `IAuthTokenProvider`, `ICurrentUserService`
+
+---
+
+### 16. Auth-Härtung des internen API-HttpClient
+
+1. Der für `IApiClient` erzeugte `HttpClient` (`AddHttpClient("Api")` in `ProgramExtensions`) setzt `UseCookies = false` auf dem `HttpClientHandler`. Damit verwaltet der Client keinen gemeinsamen Cookie-Container: Ein `FinanceManager.Auth`-Cookie, den eine Response (z. B. von `JwtRefreshMiddleware`) setzt, kann nicht versehentlich in nachfolgende Requests anderer Benutzer/Circuits übernommen werden und dort den Bearer-Token überschatten.
+2. Der JWT-Cookie-Fallback in `JwtBearerEvents.OnMessageReceived` greift nur noch, wenn der Request keinen `Authorization: Bearer`-Header trägt. Ein mitgeschicktes, veraltetes Cookie kann ein gültiges Bearer-Token nicht mehr still überschreiben.
+
+Beteiligte Komponenten: `ProgramExtensions.RegisterAppServices`, `AuthenticatedHttpClientHandler`, `JwtBearerEvents`, `JwtCookieAuthTokenProvider`

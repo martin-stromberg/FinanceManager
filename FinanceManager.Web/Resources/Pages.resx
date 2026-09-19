@@ -1257,6 +1257,9 @@
   <data name="Nav_Legal" xml:space="preserve">
     <value>Legal</value>
   </data>
+  <data name="Nav_ChangePassword" xml:space="preserve">
+    <value>Change password</value>
+  </data>
   <data name="Error_Unhandled" xml:space="preserve">
     <value>An unexpected error has occurred.</value>
   </data>
@@ -1286,6 +1289,9 @@
   </data>
   <data name="Setup_Section_SecurityTxt" xml:space="preserve">
     <value>security.txt</value>
+  </data>
+  <data name="Setup_Section_WellKnown" xml:space="preserve">
+    <value>Well-Known</value>
   </data>
   <data name="Setup_Section_Update" xml:space="preserve">
     <value>Updates</value>
@@ -1531,6 +1537,18 @@
     <value>Hiring</value>
   </data>
   <data name="SetupSecurityTxt_SaveSuccess" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="SetupWellKnown_Title" xml:space="preserve">
+    <value>Well-known endpoints</value>
+  </data>
+  <data name="SetupWellKnown_Label_ChangePasswordUrl" xml:space="preserve">
+    <value>Change password URL</value>
+  </data>
+  <data name="SetupWellKnown_Hint_ChangePasswordUrl" xml:space="preserve">
+    <value>Redirect target for /.well-known/change-password. Use a local path or an absolute http/https URL.</value>
+  </data>
+  <data name="SetupWellKnown_SaveSuccess" xml:space="preserve">
     <value>Settings saved.</value>
   </data>
   <data name="SetupSecurity_Ip_Placeholder" xml:space="preserve">
@@ -2929,4 +2947,13 @@
   <data name="Confirmation_Archive_Message" xml:space="preserve"><value>Das Objekt wird archiviert.</value></data>
   <data name="Confirmation_Book_Title" xml:space="preserve"><value>Verbuchen bestätigen</value></data>
   <data name="Confirmation_Book_Message" xml:space="preserve"><value>Die Buchungen werden finalisiert.</value></data>
+  <data name="Err_InvalidCurrentPassword" xml:space="preserve">
+    <value>The current password is not correct.</value>
+  </data>
+  <data name="Err_PasswordPolicyViolation" xml:space="preserve">
+    <value>The new password does not meet the password policy.</value>
+  </data>
+  <data name="Err_UserNotFound" xml:space="preserve">
+    <value>The user was not found.</value>
+  </data>
 </root>
