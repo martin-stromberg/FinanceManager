@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Common;
+using FinanceManager.Application.Users;
 using FinanceManager.Domain.Notifications;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
@@ -40,6 +41,7 @@ public sealed class UserSettingsController : ControllerBase
     private readonly IAuthTokenProvider _tokenProvider;
     private readonly UserManager<User> _userManager;
     private readonly IAlphaVantageSecretProtector _alphaVantageSecretProtector;
+    private readonly IUserAuthService _authService;
 
     /// <summary>
     /// Initializes a new instance of <see cref="UserSettingsController"/>
@@ -52,7 +54,8 @@ public sealed class UserSettingsController : ControllerBase
     /// <param name="tokenProvider">Token provider whose cache is invalidated after the auth cookie is replaced.</param>
     /// <param name="userManager">Identity user manager used to read current roles and security stamp.</param>
     /// <param name="alphaVantageSecretProtector">Protector used to store AlphaVantage API keys in encrypted form.</param>
-    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer, IJwtTokenService jwt, IAuthTokenProvider tokenProvider, UserManager<User> userManager, IAlphaVantageSecretProtector alphaVantageSecretProtector)
+    /// <param name="authService">Service used to change the current user's password.</param>
+    public UserSettingsController(AppDbContext db, ICurrentUserService current, ILogger<UserSettingsController> logger, IStringLocalizer<Controller> localizer, IJwtTokenService jwt, IAuthTokenProvider tokenProvider, UserManager<User> userManager, IAlphaVantageSecretProtector alphaVantageSecretProtector, IUserAuthService authService)
     {
         _db = db;
         _current = current;
@@ -62,6 +65,7 @@ public sealed class UserSettingsController : ControllerBase
         _tokenProvider = tokenProvider;
         _userManager = userManager;
         _alphaVantageSecretProtector = alphaVantageSecretProtector;
+        _authService = authService;
     }
 
     /// <summary>
@@ -146,20 +150,7 @@ public sealed class UserSettingsController : ControllerBase
             // claims are picked up immediately by the request culture provider without requiring re-login.
             if (languageChanged || timezoneChanged)
             {
-                var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-                var securityStamp = await _userManager.GetSecurityStampAsync(user);
-                var newToken = _jwt.CreateToken(user.Id, user.UserName!, isAdmin, securityStamp, out var expiresUtc, user.PreferredLanguage, user.TimeZoneId);
-                Response.Cookies.Append(AuthCookieName, newToken, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = Request.IsHttps,
-                    SameSite = SameSiteMode.Lax,
-                    Path = "/",
-                    IsEssential = true,
-                    Expires = new DateTimeOffset(expiresUtc)
-                });
-                _tokenProvider.InvalidateCache();
-                _logger.LogInformation("Reissued auth cookie after profile language/timezone update for user {UserId}", user.Id);
+                await ReissueAuthCookieAsync(user, "profile language/timezone update");
             }
 
             return NoContent();
@@ -313,5 +304,61 @@ public sealed class UserSettingsController : ControllerBase
             ModelState.AddModelError(ex.ParamName ?? "value", ex.Message);
             return ValidationProblem(ModelState);
         }
+    }
+
+    /// <summary>
+    /// Changes the password of the current user after verifying the current password.
+    /// On success a new auth cookie with the rotated security stamp is issued so the
+    /// current session stays valid.
+    /// </summary>
+    /// <param name="req">Password change payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content response on success or validation/problem responses on failure.</returns>
+    /// <response code="204">Password changed successfully.</response>
+    /// <response code="400">Invalid payload or password change rejected.</response>
+    /// <response code="404">User not found.</response>
+    // PUT api/user/settings/password
+    [HttpPut("password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangePasswordAsync([FromBody] ChangePasswordRequest req, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) { return ValidationProblem(ModelState); }
+
+        var user = await _userManager.FindByIdAsync(_current.UserId.ToString());
+        if (user == null) { return NotFound(); }
+
+        var result = await _authService.ChangePasswordAsync(_current.UserId, req.CurrentPassword, req.NewPassword, ct);
+        if (!result.Success)
+        {
+            var code = result.Error ?? "Err_InvalidCurrentPassword";
+            var entry = _localizer[$"{Origin}_{code}"];
+            var message = entry.ResourceNotFound ? result.Error! : entry.Value;
+            return BadRequest(ApiErrorDto.Create(Origin, code, message));
+        }
+
+        // Re-issue the auth cookie because the security stamp was rotated by the password change;
+        // without a fresh token the current session would be rejected by the stamp validator.
+        await ReissueAuthCookieAsync(user, "password change");
+        return NoContent();
+    }
+
+    private async Task ReissueAuthCookieAsync(User user, string reason)
+    {
+        var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+        var securityStamp = await _userManager.GetSecurityStampAsync(user);
+        var newToken = _jwt.CreateToken(user.Id, user.UserName!, isAdmin, securityStamp, out var expiresUtc, user.PreferredLanguage, user.TimeZoneId);
+        Response.Cookies.Append(AuthCookieName, newToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            IsEssential = true,
+            Expires = new DateTimeOffset(expiresUtc)
+        });
+        _tokenProvider.InvalidateCache();
+        _logger.LogInformation("Reissued auth cookie after {Reason} for user {UserId}", reason, user.Id);
     }
 }

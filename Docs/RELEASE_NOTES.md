@@ -1,12 +1,21 @@
 # Release Notes
 
-## Unreleased
+## Important Notes Before Update
 
-- Die Git-Hooks wurden aus dem Pattern-Collection-Repository übernommen und erweitert: Pre-Commit prüft nun Übersetzungen, XML-Dokumentation, lokalisierte UI-Texte, unreferenzierte Razor-Komponenten, Stub-Implementierungen und Enum-Testabdeckung; Pre-Push führt die statischen Prüfungen strikt für das gesamte Repository aus.
-- Die Bankübersicht zeigt nun Gesamtbestand, Jahres-/Monatsveränderung und Verteilungen nach Kontotyp sowie Bankkontakt; Suche, leere Ansichten und Ladefehler bleiben konsistent mit der Kontoliste.
-- Startseiten-KPIs können in den Profileinstellungen optional im Browser-LocalStorage zwischengespeichert werden; gespeicherte Werte werden sofort angezeigt und im Hintergrund aktualisiert.
-- Aktive Navigation, Benutzerinteraktion und Kontoauszugs-Schnellbearbeitung halten die Anmeldung nun im Hintergrund per Keepalive aktiv.
-- Beim Verlassen eines QuickEdit-Eingabefelds wird ein gedrosselter Server-Ping ausgelöst, ohne lokale Eingaben zu verlieren oder die Seite neu zu laden.
-- Schnellbearbeitung von Kontoauszugsentwürfen: Speichern-Aktivierung, Zeilenvalidierung und Valuta-Übernahme erfolgen nun konsistent; leere/unvollständige Jahreszahlen führen nicht mehr zu fehlerhaften Valuta-Datumswerten.
-- Nicht erneuerbare Sessions bleiben kontrolliert: Keepalive-Fehler lösen keinen Redirect-Sturm aus; geschützte Aktionen führen wie bisher einmalig zum Login mit Return-URL.
-- `msTools.Updater` wurde auf `0.10.0-rc.1` aktualisiert; die alte `0.8.0-rc.1`-Datei wurde ersetzt.
+- There are no special notices.
+
+## What's New
+
+- New public endpoint `/.well-known/change-password` (W3C Well-Known): redirects via HTTP 302 to the configured password-change page as a standard discovery address for browsers and password managers.
+- New self-service page `/change-password`: signed-in users can change their own password (current and new password); previously only an admin reset was possible.
+- New "Well-Known" section in the setup area: admins can configure the redirect target URL (local path or external http/https URL, default `/change-password`).
+
+## Wichtige Hinweise vor dem Update
+
+- Es gibt keine besonderen Hinweise.
+
+## Neuerungen
+
+- Neuer öffentlicher Endpunkt `/.well-known/change-password` (W3C Well-Known): leitet per HTTP 302 auf die konfigurierte Passwort-ändern-Seite weiter — Standard-Auffindadresse für Browser und Passwortmanager.
+- Neue Self-Service-Seite `/change-password`: Angemeldete Nutzer können ihr eigenes Passwort ändern (aktuelles und neues Passwort); bisher war nur ein Admin-Reset möglich.
+- Neue Sektion „Well-Known" im Setup-Bereich: Administratoren können die Ziel-URL der Weiterleitung konfigurieren (lokaler Pfad oder externe http/https-URL, Standard `/change-password`).

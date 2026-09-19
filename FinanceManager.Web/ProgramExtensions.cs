@@ -8,7 +8,9 @@ using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Notifications;
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Infrastructure.Security;
+using FinanceManager.Infrastructure.WellKnown;
 using FinanceManager.Application.Security;
+using FinanceManager.Application.WellKnown;
 using FinanceManager.Shared; // register ApiClient
 using FinanceManager.Web.Components;
 using FinanceManager.Web.Infrastructure;
@@ -163,6 +165,7 @@ namespace FinanceManager.Web
             builder.Services.AddTransient<AuthenticatedHttpClientHandler>();
             builder.Services.AddScoped<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
             builder.Services.AddScoped<ISecurityTxtSettingsService, SecurityTxtSettingsService>();
+            builder.Services.AddScoped<IWellKnownSettingsService, WellKnownSettingsService>();
             builder.Services.AddHttpClient("Api", (sp, client) =>
             {
                 var accessor = sp.GetRequiredService<IHttpContextAccessor>();
@@ -174,7 +177,18 @@ namespace FinanceManager.Web
                     ? $"{ctx.Request.Scheme}://{ctx.Request.Host.ToUriComponent()}/"
                     : "https://localhost:5001/";
                 client.BaseAddress = new Uri(baseUri);
-            }).AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
+            })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                {
+                    // API calls authenticate exclusively via the bearer token supplied by
+                    // AuthenticatedHttpClientHandler. Cookies must be disabled: the default
+                    // shared CookieContainer would persist any FinanceManager.Auth cookie that a
+                    // response (for example JwtRefreshMiddleware) sets and then leak it into
+                    // subsequent requests of other users/circuits, where it could shadow the
+                    // intended bearer token.
+                    UseCookies = false
+                })
+                .AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
             builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
             builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
             builder.Services.AddScoped<IConfirmationService, ConfirmationService>();
@@ -233,7 +247,13 @@ namespace FinanceManager.Web
                     {
                         OnMessageReceived = ctx =>
                         {
-                            if (string.IsNullOrEmpty(ctx.Token))
+                            // Only fall back to the auth cookie when the request does not already carry a
+                            // Bearer Authorization header. ctx.Token is always empty at this point because
+                            // JwtBearerHandler extracts the header only after this event has run, so the
+                            // header itself must be checked - otherwise a stale cookie would silently
+                            // override a valid bearer token.
+                            var authorization = ctx.Request.Headers.Authorization.ToString();
+                            if (string.IsNullOrEmpty(authorization) || !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                             {
                                 var cookie = ctx.Request.Cookies["FinanceManager.Auth"];
                                 if (!string.IsNullOrEmpty(cookie))
