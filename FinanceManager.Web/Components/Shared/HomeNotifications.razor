@@ -103,7 +103,7 @@
             if (Guid.TryParse(idPart, out var securityId))
             {
                 var back = Uri.EscapeDataString(Nav.Uri);
-                Nav.NavigateTo($"/securities/{securityId}?back={back}");
+                Nav.NavigateTo($"/card/securities/{securityId}?back={back}");
             }
             return Task.CompletedTask;
         }
@@ -114,7 +114,7 @@
             if (Guid.TryParse(idPart, out var securityId))
             {
                 var back = Uri.EscapeDataString(Nav.Uri);
-                Nav.NavigateTo($"/securities/{securityId}?back={back}");
+                Nav.NavigateTo($"/card/securities/{securityId}?back={back}");
             }
             return Task.CompletedTask;
         }
