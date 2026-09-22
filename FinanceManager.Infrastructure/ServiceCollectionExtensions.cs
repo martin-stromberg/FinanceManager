@@ -11,6 +11,7 @@ using FinanceManager.Application.Postings;
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
+using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Application.Security; // new
 using FinanceManager.Application.Setup;
@@ -28,6 +29,7 @@ using FinanceManager.Infrastructure.Postings;
 using FinanceManager.Infrastructure.Reports;
 using FinanceManager.Infrastructure.Savings;
 using FinanceManager.Infrastructure.Securities;
+using FinanceManager.Infrastructure.Securities.GoldenCross;
 using FinanceManager.Infrastructure.Securities.ReturnAnalysis;
 using FinanceManager.Infrastructure.Security; // new
 using FinanceManager.Infrastructure.Setup;
@@ -121,6 +123,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPostingExportService, PostingExportService>();
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
+        services.AddScoped<IGoldenCrossService, GoldenCrossService>();
         services.AddScoped<ISecurityPriceImportService, IngSecurityPriceImportService>();
         services.AddScoped<ISecurityPriceImportServiceFactory, SecurityPriceImportServiceFactory>();
         services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();

@@ -1,4 +1,5 @@
 ﻿using FinanceManager.Application.Notifications; // NEW
+using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities;
 using FinanceManager.Domain.Notifications;    // NEW
 using FinanceManager.Infrastructure;
@@ -92,6 +93,7 @@ public sealed class SecurityPriceWorker : BackgroundService
         var prices = scope.ServiceProvider.GetRequiredService<IPriceProvider>();
         var priceService = scope.ServiceProvider.GetRequiredService<ISecurityPriceService>();
         var notifier = scope.ServiceProvider.GetRequiredService<INotificationWriter>(); // NEW
+        var goldenCross = scope.ServiceProvider.GetRequiredService<IGoldenCrossService>();
         var resolver = scope.ServiceProvider.GetRequiredService<IAlphaVantageKeyResolver>();
 
         // Check for shared admin key configured
@@ -171,6 +173,15 @@ public sealed class SecurityPriceWorker : BackgroundService
                 }
                 await db.SaveChangesAsync(ct);
                 processed++;
+
+                try
+                {
+                    await goldenCross.EvaluateAndNotifyAsync(sec.Id, ct);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogWarning(ex, "Golden cross evaluation failed for security {SecurityId}.", sec.Id);
+                }
             }
             catch (RequestLimitExceededException ex)
             {

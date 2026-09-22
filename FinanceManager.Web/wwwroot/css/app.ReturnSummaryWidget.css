@@ -372,3 +372,15 @@
     stroke: #c94040;
 }
 
+
+/* ── Golden Cross widget ─────────────────────────────── */
+.golden-cross-widget.gcw-approaching { border-left: 4px solid #b7700a; }
+.golden-cross-widget.gcw-crossed { border-left: 4px solid #c9a227; }
+.golden-cross-widget .gcw-hint {
+    justify-content: flex-start;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.golden-cross-widget.gcw-approaching .gcw-hint { color: #b7700a; }
+.golden-cross-widget.gcw-crossed .gcw-hint { color: #8a6d0b; }
+.golden-cross-widget .gcw-asof { font-size: 0.8rem; }

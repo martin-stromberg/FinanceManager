@@ -1,0 +1,97 @@
+@rendermode InteractiveServer
+@using FinanceManager.Shared
+@using FinanceManager.Shared.Dtos.Securities
+@inject IApiClient ApiClient
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.GoldenCrossWidget> Localizer
+
+@if (_loading || _data == null || _data.Phase == GoldenCrossPhaseDto.Far)
+{
+    @* Nothing to show: still loading, no data, or the golden cross is far away (hidden by design). *@
+}
+else if (_data.Phase == GoldenCrossPhaseDto.InsufficientData)
+{
+    <div class="return-summary-widget golden-cross-widget no-data" title="@Localizer["Widget_Title"]">
+        <div class="rsw-row rsw-header">
+            <span class="rsw-label">@Localizer["Widget_Title"]</span>
+        </div>
+        <span>@string.Format(Localizer["InsufficientData"], _data.LongWindow)</span>
+    </div>
+}
+else
+{
+    var crossed = _data.Phase == GoldenCrossPhaseDto.Crossed;
+    <div class="return-summary-widget golden-cross-widget @(crossed ? "gcw-crossed" : "gcw-approaching")" title="@Localizer["Widget_Title"]">
+        <div class="rsw-row rsw-header">
+            <span class="rsw-label">@Localizer["Widget_Title"]</span>
+            <span class="rsw-value">@(crossed ? "✚" : "↗") @(crossed ? Localizer["Phase_Crossed"] : Localizer["Phase_Approaching"])</span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">@string.Format(Localizer["Label_ShortAverage"], _data.ShortWindow)</span>
+            <span class="rsw-value">@FormatAmount(_data.ShortAverage, _data.CurrencyCode)</span>
+        </div>
+        <div class="rsw-row">
+            <span class="rsw-label">@string.Format(Localizer["Label_LongAverage"], _data.LongWindow)</span>
+            <span class="rsw-value">@FormatAmount(_data.LongAverage, _data.CurrencyCode)</span>
+        </div>
+        @if (_data.DistancePercent.HasValue)
+        {
+            <div class="rsw-row">
+                <span class="rsw-label">@Localizer["Label_Distance"]</span>
+                <span class="rsw-value @(_data.DistancePercent.Value >= 0 ? "positive" : "negative")">@FormatPercent(_data.DistancePercent.Value)</span>
+            </div>
+        }
+        <div class="rsw-row gcw-hint" role="status">
+            <span>
+                @if (crossed)
+                {
+                    @(_data.CrossDate.HasValue
+                        ? string.Format(Localizer["Hint_Crossed_WithDate"], _data.CrossDate.Value.ToString("d"))
+                        : Localizer["Hint_Crossed"])
+                }
+                else
+                {
+                    @Localizer["Hint_Approaching"]
+                }
+            </span>
+        </div>
+        @if (_data.AsOfDate.HasValue)
+        {
+            <div class="rsw-row gcw-asof">
+                <span class="rsw-label">@Localizer["Label_AsOf"]</span>
+                <span class="rsw-value">@_data.AsOfDate.Value.ToString("d")</span>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>Security identifier to show golden cross statistics for.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private GoldenCrossDto? _data;
+    private bool _loading = true;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SecurityId == Guid.Empty) { _loading = false; return; }
+        _loading = true;
+        _data = null;
+        try
+        {
+            _data = await ApiClient.Securities_GetGoldenCrossAsync(SecurityId, CancellationToken.None);
+        }
+        catch
+        {
+            // Non-critical statistics box: stay hidden on errors.
+            _data = null;
+        }
+        finally { _loading = false; }
+    }
+
+    private static string FormatAmount(decimal? value, string currency)
+        => value.HasValue ? $"{value.Value:N2} {currency}" : "–";
+
+    private static string FormatPercent(decimal value)
+        => (value >= 0 ? "+" : string.Empty) + value.ToString("N2") + " %";
+}

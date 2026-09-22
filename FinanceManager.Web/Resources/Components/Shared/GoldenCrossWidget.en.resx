@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Widget_Title" xml:space="preserve"><value>Golden Cross</value></data>
+  <data name="InsufficientData" xml:space="preserve"><value>Not enough price history yet (at least {0} daily prices required).</value></data>
+  <data name="Phase_Approaching" xml:space="preserve"><value>Approaching</value></data>
+  <data name="Phase_Crossed" xml:space="preserve"><value>Reached</value></data>
+  <data name="Label_ShortAverage" xml:space="preserve"><value>Short-term average ({0} days)</value></data>
+  <data name="Label_LongAverage" xml:space="preserve"><value>Long-term average ({0} days)</value></data>
+  <data name="Label_Distance" xml:space="preserve"><value>Distance short/long</value></data>
+  <data name="Label_AsOf" xml:space="preserve"><value>As of</value></data>
+  <data name="Hint_Approaching" xml:space="preserve"><value>The short-term average is approaching the long-term average – a golden cross may be imminent.</value></data>
+  <data name="Hint_Crossed" xml:space="preserve"><value>The short-term average has crossed above the long-term average – a golden cross has formed.</value></data>
+  <data name="Hint_Crossed_WithDate" xml:space="preserve"><value>Golden cross formed on {0}: the short-term average is above the long-term average.</value></data>
+</root>

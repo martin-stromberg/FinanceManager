@@ -113,7 +113,7 @@ public sealed class SetupNotificationsViewModelTests
         apiMock.Setup(a => a.User_UpdateNotificationSettingsAsync(
                 It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>(),
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         await vm.LoadAsync(TestContext.Current.CancellationToken);
@@ -127,7 +127,7 @@ public sealed class SetupNotificationsViewModelTests
         await vm.SaveAsync(TestContext.Current.CancellationToken);
 
         apiMock.Verify(a => a.User_UpdateNotificationSettingsAsync(
-            true, 10, 15, "Memory", null, null, It.IsAny<CancellationToken>()), Times.Once);
+            true, 10, 15, "Memory", null, null, true, It.IsAny<CancellationToken>()), Times.Once);
         Assert.True(vm.SavedOk);
         Assert.False(vm.Dirty);
     }

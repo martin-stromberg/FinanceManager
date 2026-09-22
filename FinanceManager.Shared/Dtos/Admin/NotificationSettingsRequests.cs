@@ -11,6 +11,7 @@ namespace FinanceManager.Shared.Dtos.Admin;
 /// <param name="HolidayProvider">The holiday provider kind as string.</param>
 /// <param name="HolidayCountryCode">Optional ISO country code.</param>
 /// <param name="HolidaySubdivisionCode">Optional region/subdivision code.</param>
+/// <param name="GoldenCrossNotificationsEnabled">Enables or disables golden cross notifications on the home page (default: enabled).</param>
 /// <returns>The result.</returns>
 public sealed record UserNotificationSettingsUpdateRequest(
     bool MonthlyReminderEnabled,
@@ -18,5 +19,6 @@ public sealed record UserNotificationSettingsUpdateRequest(
     [param: Range(0, 59)] int? MonthlyReminderMinute,
     [param: Required] string HolidayProvider,
     [param: StringLength(10, MinimumLength = 2)] string? HolidayCountryCode,
-    [param: StringLength(20, MinimumLength = 2)] string? HolidaySubdivisionCode
+    [param: StringLength(20, MinimumLength = 2)] string? HolidaySubdivisionCode,
+    bool GoldenCrossNotificationsEnabled = true
 );

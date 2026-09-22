@@ -135,7 +135,7 @@ public sealed class SetupNotificationsViewModel : BaseViewModel
         Saving = true; SavedOk = false; SaveError = null; RaiseStateChanged();
         try
         {
-            var ok = await _api.User_UpdateNotificationSettingsAsync(Model.MonthlyReminderEnabled, Hour, Minute, Model.HolidayProvider, Model.HolidayCountryCode, Model.HolidaySubdivisionCode, ct);
+            var ok = await _api.User_UpdateNotificationSettingsAsync(Model.MonthlyReminderEnabled, Hour, Minute, Model.HolidayProvider, Model.HolidayCountryCode, Model.HolidaySubdivisionCode, Model.GoldenCrossNotificationsEnabled, ct);
             if (ok)
             {
                 Model.MonthlyReminderEnabled = Model.MonthlyReminderEnabled;
@@ -226,6 +226,7 @@ public sealed class SetupNotificationsViewModel : BaseViewModel
     private void RecomputeDirty()
     {
         Dirty = Model.MonthlyReminderEnabled != _original.MonthlyReminderEnabled
+             || Model.GoldenCrossNotificationsEnabled != _original.GoldenCrossNotificationsEnabled
              || (Hour ?? 9) != (_original.MonthlyReminderHour ?? 9)
              || (Minute ?? 0) != (_original.MonthlyReminderMinute ?? 0)
              || Model.HolidayProvider != _original.HolidayProvider
@@ -240,7 +241,8 @@ public sealed class SetupNotificationsViewModel : BaseViewModel
         MonthlyReminderMinute = src.MonthlyReminderMinute,
         HolidayProvider = src.HolidayProvider,
         HolidayCountryCode = src.HolidayCountryCode,
-        HolidaySubdivisionCode = src.HolidaySubdivisionCode
+        HolidaySubdivisionCode = src.HolidaySubdivisionCode,
+        GoldenCrossNotificationsEnabled = src.GoldenCrossNotificationsEnabled
     };
 
     /// <summary>

@@ -123,6 +123,22 @@ public sealed class Security : Entity
     public Guid? SymbolAttachmentId { get; private set; }
 
     /// <summary>
+    /// Highest golden cross phase for which a notification has been raised in the current cycle.
+    /// Reset to <see cref="GoldenCrossPhase.Far"/> once the cross is far away again.
+    /// </summary>
+    /// <value>The last notified phase; <see cref="GoldenCrossPhase.Far"/> when nothing has been notified in the current cycle.</value>
+    public GoldenCrossPhase GoldenCrossNotifiedPhase { get; private set; } = GoldenCrossPhase.Far;
+
+    /// <summary>
+    /// Records the golden cross phase that has been notified to the owner.
+    /// </summary>
+    /// <param name="phase">The phase that was notified (or <see cref="GoldenCrossPhase.Far"/> to reset the cycle).</param>
+    public void SetGoldenCrossNotifiedPhase(GoldenCrossPhase phase)
+    {
+        GoldenCrossNotifiedPhase = phase;
+    }
+
+    /// <summary>
     /// Updates core metadata for the security.
     /// </summary>
     /// <param name="name">Display name. Must not be null or whitespace.</param>
