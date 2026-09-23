@@ -45,6 +45,110 @@ else
                 }
             </span>
         </div>
+        <div class="gcw-section">
+            <div class="gcw-section-title">@Localizer["Section_Meaning"]</div>
+            <p class="gcw-text">@string.Format(Localizer[crossed ? "Meaning_Averages_Crossed" : "Meaning_Averages_Approaching"], _data.ShortWindow, _data.LongWindow)</p>
+            @if (_data.DistancePercent.HasValue)
+            {
+                <p class="gcw-text">
+                    @if (crossed)
+                    {
+                        @string.Format(Localizer["Meaning_Distance"], FormatPercent(_data.DistancePercent.Value), Localizer[StrengthKey(_data.DistancePercent.Value)])
+                    }
+                    else
+                    {
+                        @string.Format(Localizer["Meaning_Distance_Approaching"], FormatPercent(_data.DistancePercent.Value))
+                    }
+                </p>
+            }
+            <p class="gcw-text gcw-disclaimer">@Localizer["Meaning_Disclaimer"]</p>
+        </div>
+        @if (crossed && _data.CrossDate.HasValue)
+        {
+            <div class="gcw-section">
+                <div class="gcw-section-title">@Localizer["Section_Entries"]</div>
+                <div class="rsw-row">
+                    <span class="rsw-label">@Localizer["Label_CrossDate"]</span>
+                    <span class="rsw-value">@_data.CrossDate.Value.ToString("d")@(_data.DaysSinceCross.HasValue ? $" ({string.Format(Localizer["DaysAgo"], _data.DaysSinceCross.Value)})" : string.Empty)</span>
+                </div>
+                @foreach (var w in _data.EntryWindows ?? Array.Empty<GoldenCrossEntryWindowDto>())
+                {
+                    var key = w.Scenario.ToString();
+                    <div class="gcw-entry @(w.Confirmed ? "gcw-entry-confirmed" : string.Empty) gcw-entry-@(w.Status.ToString().ToLowerInvariant())">
+                        <div class="rsw-row">
+                            <span class="rsw-label">@string.Format(Localizer[$"Entry_{key}"], w.FromDays, w.ToDays)</span>
+                            <span class="rsw-value">@w.StartDate.ToString("d") – @w.EndDate.ToString("d") · @Localizer[$"Window_{w.Status}"]</span>
+                        </div>
+                        <div class="gcw-text">@Localizer[$"Entry_{key}_Basis"]</div>
+                        <div class="gcw-text">
+                            @if (w.Confirmed && w.SignalDate.HasValue)
+                            {
+                                @string.Format(Localizer[$"Entry_{key}_Signal"], w.SignalDate.Value.ToString("d"))
+                            }
+                            else
+                            {
+                                @Localizer[$"Entry_{key}_Pending"]
+                            }
+                            @if (w.LowClose.HasValue && w.HighClose.HasValue)
+                            {
+                                <text> @string.Format(Localizer["Entry_Range"], FormatAmount(w.LowClose, _data.CurrencyCode), FormatAmount(w.HighClose, _data.CurrencyCode))</text>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            @if (_data.Retest is { } retest)
+            {
+                <div class="gcw-section">
+                    <div class="gcw-section-title">@Localizer["Section_Retest"]</div>
+                    <p class="gcw-text">
+                        @if (retest.Status == GoldenCrossRetestStatusDto.None)
+                        {
+                            @string.Format(Localizer["Retest_None"], _data.ShortWindow, _data.LongWindow)
+                        }
+                        else
+                        {
+                            var lineDays = retest.Line == GoldenCrossLineDto.Long ? _data.LongWindow : _data.ShortWindow;
+                            @string.Format(Localizer[$"Retest_{retest.Status}"],
+                                lineDays,
+                                retest.StartDate?.ToString("d"),
+                                FormatAmount(retest.LowClose, _data.CurrencyCode),
+                                retest.LowDate?.ToString("d"),
+                                retest.EndDate?.ToString("d"))
+                        }
+                    </p>
+                </div>
+            }
+            @if (_data.Trend is { } trend)
+            {
+                <div class="gcw-section">
+                    <div class="gcw-section-title">@Localizer["Section_Trend"]</div>
+                    <div class="rsw-row">
+                        <span class="rsw-label">@Localizer["Label_TrendStructure"]</span>
+                        <span class="rsw-value">@Localizer[$"Trend_{trend.Structure}"]</span>
+                    </div>
+                    @if (trend.ChangeSinceCrossPercent.HasValue)
+                    {
+                        <div class="rsw-row">
+                            <span class="rsw-label">@Localizer["Label_ChangeSinceCross"]</span>
+                            <span class="rsw-value @(trend.ChangeSinceCrossPercent.Value >= 0 ? "positive" : "negative")">@FormatPercent(trend.ChangeSinceCrossPercent.Value)</span>
+                        </div>
+                    }
+                    <p class="gcw-text">
+                        @if (trend.Structure == GoldenCrossTrendStructureDto.Unknown)
+                        {
+                            @Localizer["Trend_Unknown_Text"]
+                        }
+                        else
+                        {
+                            @string.Format(Localizer["Trend_Swings"], trend.HigherHighs, trend.SwingHighs, trend.HigherLows, trend.SwingLows)
+                            <text> </text>
+                            @Localizer[$"Trend_{trend.Structure}_Text"]
+                        }
+                    </p>
+                </div>
+            }
+        }
         @if (_data.AsOfDate.HasValue)
         {
             <div class="rsw-row gcw-asof">
@@ -82,6 +186,9 @@ else
 
     private static string FormatAmount(decimal? value, string currency)
         => value.HasValue ? $"{value.Value:N2} {currency}" : "–";
+
+    private static string StrengthKey(decimal distance)
+        => distance < 1m ? "Strength_Weak" : distance < 5m ? "Strength_Moderate" : "Strength_Strong";
 
     private static string FormatPercent(decimal value)
         => (value >= 0 ? "+" : string.Empty) + value.ToString("N2") + " %";

@@ -87,4 +87,136 @@ public sealed class GoldenCrossAnalyzerTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    private static readonly GoldenCrossOptions ExtendedOptions = new() { ShortWindow = 2, LongWindow = 10, ApproachThresholdPercent = 3m };
+
+    private static IReadOnlyList<(DateTime Date, decimal Close)> CrossedSeries(params decimal[] afterCross)
+    {
+        // Short SMA (100) below long SMA (107) for the first ten prices; the jump to 130 crosses at index 10 (2024-01-11).
+        var closes = Enumerable.Repeat(110m, 7).Concat(Enumerable.Repeat(100m, 3)).Concat(new[] { 130m }).Concat(afterCross).ToArray();
+        return Series(closes);
+    }
+
+    /// <summary>Extended analysis is only populated when a cross date is known.</summary>
+    [Fact]
+    public void Analyze_WithoutCross_HasNoExtendedAnalysis()
+    {
+        var result = GoldenCrossAnalyzer.Analyze(Series(100, 100, 100, 80, 80, 80), Options);
+
+        result.Windows.Should().BeEmpty();
+        result.Retest.Should().BeNull();
+        result.Trend.Should().BeNull();
+        result.DaysSinceCross.Should().BeNull();
+    }
+
+    /// <summary>The three entry windows are derived from the cross date with fixed calendar-day offsets.</summary>
+    [Fact]
+    public void Analyze_AfterCross_BuildsThreeEntryWindows()
+    {
+        var result = GoldenCrossAnalyzer.Analyze(CrossedSeries(131, 132), ExtendedOptions);
+        var cross = new DateTime(2024, 1, 11);
+
+        result.CrossDate.Should().Be(cross);
+        result.DaysSinceCross.Should().Be(2);
+        result.Windows.Should().HaveCount(3);
+
+        var early = result.Windows.Single(w => w.Scenario == GoldenCrossEntryScenario.Early);
+        early.StartDate.Should().Be(cross);
+        early.EndDate.Should().Be(cross.AddDays(5));
+        early.Status.Should().Be(GoldenCrossWindowStatus.Open);
+        early.Confirmed.Should().BeTrue();
+        early.SignalDate.Should().Be(cross);
+        early.LowClose.Should().Be(130m);
+        early.HighClose.Should().Be(132m);
+
+        var average = result.Windows.Single(w => w.Scenario == GoldenCrossEntryScenario.Average);
+        average.StartDate.Should().Be(cross.AddDays(5));
+        average.EndDate.Should().Be(cross.AddDays(30));
+        average.Status.Should().Be(GoldenCrossWindowStatus.Upcoming);
+        average.Confirmed.Should().BeFalse();
+
+        var late = result.Windows.Single(w => w.Scenario == GoldenCrossEntryScenario.Late);
+        late.StartDate.Should().Be(cross.AddDays(30));
+        late.EndDate.Should().Be(cross.AddDays(60));
+        late.Status.Should().Be(GoldenCrossWindowStatus.Upcoming);
+    }
+
+    /// <summary>Without a pullback the retest status is <see cref="GoldenCrossRetestStatus.None"/>.</summary>
+    [Fact]
+    public void Analyze_WithoutPullback_ReportsNoRetest()
+    {
+        var result = GoldenCrossAnalyzer.Analyze(CrossedSeries(135, 140, 145), ExtendedOptions);
+
+        result.Retest!.Status.Should().Be(GoldenCrossRetestStatus.None);
+        result.Retest.Line.Should().BeNull();
+    }
+
+    /// <summary>A pullback to the short average that bounces back confirms the average entry scenario.</summary>
+    [Fact]
+    public void Analyze_PullbackToShortLineWithBounce_ReportsSuccessfulRetest()
+    {
+        // After the cross: 134, 138, then a dip to 130 (touching the short SMA, well above the long SMA) and recovery to 142/146.
+        var result = GoldenCrossAnalyzer.Analyze(CrossedSeries(134, 138, 130, 142, 146), ExtendedOptions);
+
+        result.Retest!.Status.Should().Be(GoldenCrossRetestStatus.Successful);
+        result.Retest.Line.Should().Be(GoldenCrossLine.Short);
+        result.Retest.StartDate.Should().Be(new DateTime(2024, 1, 14));
+        result.Retest.LowClose.Should().Be(130m);
+        result.Retest.EndDate.Should().Be(new DateTime(2024, 1, 15));
+
+        var average = result.Windows.Single(w => w.Scenario == GoldenCrossEntryScenario.Average);
+        average.Confirmed.Should().BeTrue();
+        average.SignalDate.Should().Be(result.Retest.EndDate);
+    }
+
+    /// <summary>A pullback that is still at or below the tested line is reported as in progress.</summary>
+    [Fact]
+    public void Analyze_OngoingPullback_ReportsInProgress()
+    {
+        var result = GoldenCrossAnalyzer.Analyze(CrossedSeries(134, 138, 130), ExtendedOptions);
+
+        result.Retest!.Status.Should().Be(GoldenCrossRetestStatus.InProgress);
+        result.Retest.EndDate.Should().BeNull();
+    }
+
+    /// <summary>Too few prices since the cross leave the trend structure unknown.</summary>
+    [Fact]
+    public void Analyze_ShortlyAfterCross_TrendIsUnknown()
+    {
+        var result = GoldenCrossAnalyzer.Analyze(CrossedSeries(131, 132), ExtendedOptions);
+
+        result.Trend!.Structure.Should().Be(GoldenCrossTrendStructure.Unknown);
+        result.Windows.Single(w => w.Scenario == GoldenCrossEntryScenario.Late).Confirmed.Should().BeFalse();
+    }
+
+    /// <summary>Higher highs and higher lows classify a stable uptrend and confirm the late entry scenario.</summary>
+    [Fact]
+    public void Analyze_HigherHighsAndLows_ReportsStableUptrend()
+    {
+        // Swing highs 140 -> 148 -> 155 and swing lows 135 -> 142 -> 149; shallow pullbacks keep the short SMA above the long SMA.
+        var result = GoldenCrossAnalyzer.Analyze(
+            CrossedSeries(132, 134, 136, 138, 140, 137, 135, 139, 142, 145, 148, 144, 142, 146, 149, 152, 155, 151, 149, 153, 156, 160),
+            ExtendedOptions);
+
+        result.Trend!.Structure.Should().Be(GoldenCrossTrendStructure.StableUptrend);
+        result.Trend.HigherHighs.Should().BeGreaterThanOrEqualTo(1);
+        result.Trend.HigherLows.Should().BeGreaterThanOrEqualTo(1);
+        result.Trend.ConfirmedDate.Should().NotBeNull();
+        result.Trend.ChangeSinceCrossPercent.Should().BeGreaterThan(0);
+
+        var late = result.Windows.Single(w => w.Scenario == GoldenCrossEntryScenario.Late);
+        late.Confirmed.Should().BeTrue();
+        late.SignalDate.Should().Be(result.Trend.ConfirmedDate);
+    }
+
+    /// <summary>Prices without meaningful progress since the cross are classified as a sideways phase.</summary>
+    [Fact]
+    public void Analyze_NoProgressSinceCross_ReportsSideways()
+    {
+        var result = GoldenCrossAnalyzer.Analyze(
+            CrossedSeries(130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 131),
+            ExtendedOptions);
+
+        result.Trend!.Structure.Should().Be(GoldenCrossTrendStructure.Sideways);
+    }
 }

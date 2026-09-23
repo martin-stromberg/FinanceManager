@@ -65,7 +65,39 @@ public sealed class GoldenCrossService : IGoldenCrossService
             analysis.DistancePercent,
             analysis.CrossDate,
             analysis.AsOfDate,
-            security.CurrencyCode);
+            security.CurrencyCode,
+            analysis.LastClose,
+            analysis.DaysSinceCross,
+            analysis.Windows.Select(w => new GoldenCrossEntryWindowDto(
+                (GoldenCrossEntryScenarioDto)(int)w.Scenario,
+                w.FromDays,
+                w.ToDays,
+                w.StartDate,
+                w.EndDate,
+                (GoldenCrossWindowStatusDto)(int)w.Status,
+                w.LowClose,
+                w.HighClose,
+                w.SignalDate,
+                w.Confirmed)).ToList(),
+            analysis.Retest is { } r
+                ? new GoldenCrossRetestDto(
+                    (GoldenCrossRetestStatusDto)(int)r.Status,
+                    r.Line.HasValue ? (GoldenCrossLineDto)(int)r.Line.Value : null,
+                    r.StartDate,
+                    r.LowDate,
+                    r.LowClose,
+                    r.EndDate)
+                : null,
+            analysis.Trend is { } t
+                ? new GoldenCrossTrendDto(
+                    (GoldenCrossTrendStructureDto)(int)t.Structure,
+                    t.HigherHighs,
+                    t.HigherLows,
+                    t.SwingHighs,
+                    t.SwingLows,
+                    t.ChangeSinceCrossPercent,
+                    t.ConfirmedDate)
+                : null);
     }
 
     /// <inheritdoc />
@@ -141,7 +173,7 @@ public sealed class GoldenCrossService : IGoldenCrossService
 
     private async Task<GoldenCrossAnalysis> AnalyzeAsync(Guid securityId, CancellationToken ct)
     {
-        var take = _options.LongWindow * 2;
+        var take = _options.LongWindow * 3;
         var rows = await _db.SecurityPrices.AsNoTracking()
             .Where(p => p.SecurityId == securityId)
             .OrderByDescending(p => p.Date)

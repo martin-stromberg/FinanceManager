@@ -15,4 +15,49 @@
   <data name="Hint_Approaching" xml:space="preserve"><value>The short-term average is approaching the long-term average – a golden cross may be imminent.</value></data>
   <data name="Hint_Crossed" xml:space="preserve"><value>The short-term average has crossed above the long-term average – a golden cross has formed.</value></data>
   <data name="Hint_Crossed_WithDate" xml:space="preserve"><value>Golden cross formed on {0}: the short-term average is above the long-term average.</value></data>
+  <data name="Section_Meaning" xml:space="preserve"><value>What the figures mean</value></data>
+  <data name="Meaning_Averages_Crossed" xml:space="preserve"><value>The {0}-day average is above the {1}-day average: prices of the last few weeks were on average higher than those of the past year – short-term momentum is more positive than the long-term trend.</value></data>
+  <data name="Meaning_Averages_Approaching" xml:space="preserve"><value>The {0}-day average is still slightly below the {1}-day average. If prices keep rising it will cross above shortly – that would be a golden cross.</value></data>
+  <data name="Meaning_Distance" xml:space="preserve"><value>The {0} distance between the two averages measures trend strength: currently {1}. The larger the distance, the stronger the upward impulse – very large distances, however, also hint at an overheated move.</value></data>
+  <data name="Meaning_Distance_Approaching" xml:space="preserve"><value>The distance is currently {0}. The closer it gets to 0 %, the more likely a crossing becomes.</value></data>
+  <data name="Strength_Weak" xml:space="preserve"><value>weak trend (below 1 %)</value></data>
+  <data name="Strength_Moderate" xml:space="preserve"><value>moderate trend (1–5 %)</value></data>
+  <data name="Strength_Strong" xml:space="preserve"><value>strong trend (above 5 %)</value></data>
+  <data name="Meaning_Disclaimer" xml:space="preserve"><value>A golden cross is a trend confirmation signal: it indicates that an uptrend has established itself but does not guarantee a risk-free entry. False signals are possible, especially in sideways markets.</value></data>
+  <data name="Section_Entries" xml:space="preserve"><value>Entry scenarios</value></data>
+  <data name="Label_CrossDate" xml:space="preserve"><value>Cross date</value></data>
+  <data name="DaysAgo" xml:space="preserve"><value>{0} days ago</value></data>
+  <data name="Window_Upcoming" xml:space="preserve"><value>upcoming</value></data>
+  <data name="Window_Open" xml:space="preserve"><value>current</value></data>
+  <data name="Window_Closed" xml:space="preserve"><value>past</value></data>
+  <data name="Entry_Early" xml:space="preserve"><value>a) Early entry ({0}–{1} days)</value></data>
+  <data name="Entry_Early_Basis" xml:space="preserve"><value>Based solely on the cross date: entry right after the signal.</value></data>
+  <data name="Entry_Early_Signal" xml:space="preserve"><value>Signal on {0} (day of the cross).</value></data>
+  <data name="Entry_Early_Pending" xml:space="preserve"><value>No signal yet.</value></data>
+  <data name="Entry_Average" xml:space="preserve"><value>b) Average entry ({0}–{1} days)</value></data>
+  <data name="Entry_Average_Basis" xml:space="preserve"><value>Based on the first pullback to the short- or long-term average line.</value></data>
+  <data name="Entry_Average_Signal" xml:space="preserve"><value>Retest completed successfully on {0} – entry on the bounce off the line.</value></data>
+  <data name="Entry_Average_Pending" xml:space="preserve"><value>No completed retest yet.</value></data>
+  <data name="Entry_Late" xml:space="preserve"><value>c) Late entry ({0}–{1} days)</value></data>
+  <data name="Entry_Late_Basis" xml:space="preserve"><value>Based on a confirmed trend structure (higher highs and higher lows).</value></data>
+  <data name="Entry_Late_Signal" xml:space="preserve"><value>Trend structure confirmed on {0}.</value></data>
+  <data name="Entry_Late_Pending" xml:space="preserve"><value>Trend structure not confirmed yet.</value></data>
+  <data name="Entry_Range" xml:space="preserve"><value>Price range in this period: {0} to {1}.</value></data>
+  <data name="Section_Retest" xml:space="preserve"><value>Retest analysis</value></data>
+  <data name="Retest_None" xml:space="preserve"><value>No pullback to the {0}- or {1}-day line has occurred since the cross.</value></data>
+  <data name="Retest_InProgress" xml:space="preserve"><value>Pullback to the {0}-day line since {1} is still in progress (low so far {2} on {3}). Whether the retest succeeds is still open.</value></data>
+  <data name="Retest_Successful" xml:space="preserve"><value>Pullback to the {0}-day line from {1}, low {2} on {3}. The price bounced back above the line on {4} and resumed the trend – retest successful.</value></data>
+  <data name="Retest_Failed" xml:space="preserve"><value>Pullback to the {0}-day line from {1} (low {2} on {3}). The price has since dropped below the long-term line – retest failed, the signal is weakened.</value></data>
+  <data name="Section_Trend" xml:space="preserve"><value>Trend structure since the cross</value></data>
+  <data name="Label_TrendStructure" xml:space="preserve"><value>Classification</value></data>
+  <data name="Label_ChangeSinceCross" xml:space="preserve"><value>Price change since cross</value></data>
+  <data name="Trend_Unknown" xml:space="preserve"><value>Not assessable yet</value></data>
+  <data name="Trend_StableUptrend" xml:space="preserve"><value>Stable uptrend</value></data>
+  <data name="Trend_WeakUptrend" xml:space="preserve"><value>Weak uptrend</value></data>
+  <data name="Trend_Sideways" xml:space="preserve"><value>Sideways phase</value></data>
+  <data name="Trend_Unknown_Text" xml:space="preserve"><value>Too few prices since the cross to assess highs and lows.</value></data>
+  <data name="Trend_Swings" xml:space="preserve"><value>{0} of {1} swing highs and {2} of {3} swing lows were above their predecessor.</value></data>
+  <data name="Trend_StableUptrend_Text" xml:space="preserve"><value>Higher highs and higher lows confirm the trend.</value></data>
+  <data name="Trend_WeakUptrend_Text" xml:space="preserve"><value>The price is rising, but the sequence of higher highs and lows is not clean.</value></data>
+  <data name="Trend_Sideways_Text" xml:space="preserve"><value>No meaningful price progress since the cross.</value></data>
 </root>
