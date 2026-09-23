@@ -6,7 +6,6 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
   <data name="Widget_Title" xml:space="preserve"><value>Golden Cross</value></data>
-  <data name="InsufficientData" xml:space="preserve"><value>Not enough price history yet (at least {0} daily prices required).</value></data>
   <data name="Phase_Approaching" xml:space="preserve"><value>Approaching</value></data>
   <data name="Phase_Crossed" xml:space="preserve"><value>Reached</value></data>
   <data name="Label_ShortAverage" xml:space="preserve"><value>Short-term average ({0} days)</value></data>
