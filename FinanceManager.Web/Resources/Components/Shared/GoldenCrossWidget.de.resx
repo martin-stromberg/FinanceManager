@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Widget_Title" xml:space="preserve"><value>Goldenes Kreuz</value></data>
+  <data name="Phase_Approaching" xml:space="preserve"><value>Nähert sich</value></data>
+  <data name="Phase_Crossed" xml:space="preserve"><value>Erreicht</value></data>
+  <data name="Label_ShortAverage" xml:space="preserve"><value>Kurzfristiger Durchschnitt ({0} Tage)</value></data>
+  <data name="Label_LongAverage" xml:space="preserve"><value>Langfristiger Durchschnitt ({0} Tage)</value></data>
+  <data name="Label_Distance" xml:space="preserve"><value>Abstand kurz/lang</value></data>
+  <data name="Label_AsOf" xml:space="preserve"><value>Stand</value></data>
+  <data name="Hint_Approaching" xml:space="preserve"><value>Der kurzfristige Durchschnitt nähert sich dem langfristigen – ein Goldenes Kreuz könnte bevorstehen.</value></data>
+  <data name="Hint_Crossed" xml:space="preserve"><value>Der kurzfristige Durchschnitt hat den langfristigen überschritten – ein Goldenes Kreuz liegt vor.</value></data>
+  <data name="Hint_Crossed_WithDate" xml:space="preserve"><value>Goldenes Kreuz am {0} entstanden: Der kurzfristige Durchschnitt liegt über dem langfristigen.</value></data>
+  <data name="Section_Meaning" xml:space="preserve"><value>Bedeutung der Kennzahlen</value></data>
+  <data name="Meaning_Averages_Crossed" xml:space="preserve"><value>Der {0}-Tage-Durchschnitt liegt über dem {1}-Tage-Durchschnitt: Die Kurse der letzten Wochen waren im Mittel höher als die des vergangenen Jahres – die kurzfristige Dynamik ist positiver als der langfristige Trend.</value></data>
+  <data name="Meaning_Averages_Approaching" xml:space="preserve"><value>Der {0}-Tage-Durchschnitt liegt noch knapp unter dem {1}-Tage-Durchschnitt. Steigen die Kurse weiter, überschreitet er ihn in Kürze – das wäre ein Goldenes Kreuz.</value></data>
+  <data name="Meaning_Distance" xml:space="preserve"><value>Der Abstand von {0} zwischen beiden Durchschnitten ist ein Maß für die Trendstärke: Aktuell {1}. Je größer der Abstand, desto stärker der Aufwärtsimpuls – sehr große Abstände deuten aber auch auf eine überhitzte Bewegung hin.</value></data>
+  <data name="Meaning_Distance_Approaching" xml:space="preserve"><value>Der Abstand beträgt derzeit {0}. Je näher er an 0 % rückt, desto wahrscheinlicher ist eine Kreuzung.</value></data>
+  <data name="Strength_Weak" xml:space="preserve"><value>schwacher Trend (unter 1 %)</value></data>
+  <data name="Strength_Moderate" xml:space="preserve"><value>moderater Trend (1–5 %)</value></data>
+  <data name="Strength_Strong" xml:space="preserve"><value>starker Trend (über 5 %)</value></data>
+  <data name="Meaning_Disclaimer" xml:space="preserve"><value>Ein Goldenes Kreuz ist ein Trendbestätigungssignal: Es zeigt an, dass sich ein Aufwärtstrend etabliert hat, garantiert aber keinen risikofreien Einstieg. Fehlsignale sind insbesondere in Seitwärtsphasen möglich.</value></data>
+  <data name="Section_Entries" xml:space="preserve"><value>Einstiegsszenarien</value></data>
+  <data name="Label_CrossDate" xml:space="preserve"><value>Kreuzungsdatum</value></data>
+  <data name="DaysAgo" xml:space="preserve"><value>vor {0} Tagen</value></data>
+  <data name="Window_Upcoming" xml:space="preserve"><value>steht bevor</value></data>
+  <data name="Window_Open" xml:space="preserve"><value>aktuell</value></data>
+  <data name="Window_Closed" xml:space="preserve"><value>vergangen</value></data>
+  <data name="Entry_Early" xml:space="preserve"><value>a) Früher Einstieg ({0}–{1} Tage)</value></data>
+  <data name="Entry_Early_Basis" xml:space="preserve"><value>Basiert ausschließlich auf dem Kreuzungsdatum: Einstieg unmittelbar nach dem Signal.</value></data>
+  <data name="Entry_Early_Signal" xml:space="preserve"><value>Signal am {0} (Tag der Kreuzung).</value></data>
+  <data name="Entry_Early_Pending" xml:space="preserve"><value>Noch kein Signal.</value></data>
+  <data name="Entry_Average" xml:space="preserve"><value>b) Durchschnittlicher Einstieg ({0}–{1} Tage)</value></data>
+  <data name="Entry_Average_Basis" xml:space="preserve"><value>Basiert auf dem ersten Rücksetzer (Pullback) zur kurz- oder langfristigen Durchschnittslinie.</value></data>
+  <data name="Entry_Average_Signal" xml:space="preserve"><value>Retest erfolgreich abgeschlossen am {0} – Einstieg beim Abprallen von der Linie.</value></data>
+  <data name="Entry_Average_Pending" xml:space="preserve"><value>Noch kein abgeschlossener Retest.</value></data>
+  <data name="Entry_Late" xml:space="preserve"><value>c) Später Einstieg ({0}–{1} Tage)</value></data>
+  <data name="Entry_Late_Basis" xml:space="preserve"><value>Basiert auf einer bestätigten Trendstruktur (höhere Hochs und höhere Tiefs).</value></data>
+  <data name="Entry_Late_Signal" xml:space="preserve"><value>Trendstruktur bestätigt am {0}.</value></data>
+  <data name="Entry_Late_Pending" xml:space="preserve"><value>Trendstruktur noch nicht bestätigt.</value></data>
+  <data name="Entry_Range" xml:space="preserve"><value>Kursspanne im Zeitraum: {0} bis {1}.</value></data>
+  <data name="Section_Retest" xml:space="preserve"><value>Retest-Analyse</value></data>
+  <data name="Retest_None" xml:space="preserve"><value>Seit der Kreuzung gab es noch keinen Rücksetzer zur {0}- oder {1}-Tage-Linie.</value></data>
+  <data name="Retest_InProgress" xml:space="preserve"><value>Rücksetzer zur {0}-Tage-Linie seit dem {1} läuft noch (Tief bisher {2} am {3}). Ob der Retest gelingt, ist noch offen.</value></data>
+  <data name="Retest_Successful" xml:space="preserve"><value>Rücksetzer zur {0}-Tage-Linie ab dem {1}, Tief {2} am {3}. Der Kurs ist am {4} wieder über die Linie abgeprallt und setzt den Trend fort – Retest erfolgreich.</value></data>
+  <data name="Retest_Failed" xml:space="preserve"><value>Rücksetzer zur {0}-Tage-Linie ab dem {1} (Tief {2} am {3}). Der Kurs notiert inzwischen unter der langfristigen Linie – Retest gescheitert, das Signal ist geschwächt.</value></data>
+  <data name="Section_Trend" xml:space="preserve"><value>Trendstruktur seit der Kreuzung</value></data>
+  <data name="Label_TrendStructure" xml:space="preserve"><value>Einstufung</value></data>
+  <data name="Label_ChangeSinceCross" xml:space="preserve"><value>Kursänderung seit Kreuzung</value></data>
+  <data name="Trend_Unknown" xml:space="preserve"><value>Noch nicht bewertbar</value></data>
+  <data name="Trend_StableUptrend" xml:space="preserve"><value>Stabiler Aufwärtstrend</value></data>
+  <data name="Trend_WeakUptrend" xml:space="preserve"><value>Schwacher Aufwärtstrend</value></data>
+  <data name="Trend_Sideways" xml:space="preserve"><value>Seitwärtsphase</value></data>
+  <data name="Trend_Unknown_Text" xml:space="preserve"><value>Seit der Kreuzung liegen noch zu wenige Kurse vor, um Hochs und Tiefs zu bewerten.</value></data>
+  <data name="Trend_Swings" xml:space="preserve"><value>{0} von {1} Zwischenhochs und {2} von {3} Zwischentiefs lagen über ihrem Vorgänger.</value></data>
+  <data name="Trend_StableUptrend_Text" xml:space="preserve"><value>Höhere Hochs und höhere Tiefs bestätigen den Trend.</value></data>
+  <data name="Trend_WeakUptrend_Text" xml:space="preserve"><value>Der Kurs steigt, die Abfolge höherer Hochs und Tiefs ist aber nicht sauber ausgeprägt.</value></data>
+  <data name="Trend_Sideways_Text" xml:space="preserve"><value>Seit der Kreuzung gibt es keinen nennenswerten Kursfortschritt.</value></data>
+</root>

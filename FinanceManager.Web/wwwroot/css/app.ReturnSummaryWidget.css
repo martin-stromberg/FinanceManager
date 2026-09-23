@@ -372,3 +372,24 @@
     stroke: #c94040;
 }
 
+
+/* ── Golden Cross widget ─────────────────────────────── */
+.golden-cross-widget.gcw-approaching { border-left: 4px solid #b7700a; }
+.golden-cross-widget.gcw-crossed { border-left: 4px solid #c9a227; }
+.golden-cross-widget .gcw-hint {
+    justify-content: flex-start;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.golden-cross-widget.gcw-approaching .gcw-hint { color: #b7700a; }
+.golden-cross-widget.gcw-crossed .gcw-hint { color: #8a6d0b; }
+.golden-cross-widget .gcw-asof { font-size: 0.8rem; }
+
+.golden-cross-widget .gcw-section { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color, #e3e3e3); }
+.golden-cross-widget .gcw-section-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+.golden-cross-widget .gcw-text { font-size: 0.8rem; margin: 0.15rem 0; color: inherit; opacity: 0.85; }
+.golden-cross-widget .gcw-sep::before { content: ' '; }
+.golden-cross-widget .gcw-disclaimer { font-style: italic; }
+.golden-cross-widget .gcw-entry { margin: 0.35rem 0; padding: 0.3rem 0.5rem; border-left: 3px solid var(--border-color, #c8c8c8); background: rgba(127, 127, 127, 0.08); }
+.golden-cross-widget .gcw-entry-open { border-left-color: #b7700a; }
+.golden-cross-widget .gcw-entry-confirmed { border-left-color: #2e7d32; }

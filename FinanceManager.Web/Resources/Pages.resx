@@ -1416,6 +1416,12 @@
   <data name="Notifications_MonthlyReminder_Help" xml:space="preserve">
     <value>Show a reminder on the last business day of the month on the home page.</value>
   </data>
+  <data name="Notifications_GoldenCross" xml:space="preserve">
+    <value>Enable golden cross notifications</value>
+  </data>
+  <data name="Notifications_GoldenCross_Help" xml:space="preserve">
+    <value>Show a notification on the home page when the short-term moving average of a security approaches or crosses above the long-term moving average (golden cross). Shown once per cycle.</value>
+  </data>
   <data name="Notifications_MonthlyReminder_Time" xml:space="preserve">
     <value>Time (local)</value>
   </data>

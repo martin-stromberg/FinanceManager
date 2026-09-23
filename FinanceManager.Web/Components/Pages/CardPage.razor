@@ -53,6 +53,7 @@ else
         @if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "securities" && string.IsNullOrWhiteSpace(SubKind) && Id != Guid.Empty)
         {
             <ReturnSummaryWidget SecurityId="Id" />
+            <GoldenCrossWidget SecurityId="Id" />
         }
 
         @if (_vm.ChartViewModel != null)

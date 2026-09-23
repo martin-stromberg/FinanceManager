@@ -1416,6 +1416,12 @@
   <data name="Notifications_MonthlyReminder_Help" xml:space="preserve">
     <value>Am letzten Werktag des Monats eine Erinnerung auf der Startseite anzeigen.</value>
   </data>
+  <data name="Notifications_GoldenCross" xml:space="preserve">
+    <value>Goldenes-Kreuz-Hinweise aktivieren</value>
+  </data>
+  <data name="Notifications_GoldenCross_Help" xml:space="preserve">
+    <value>Auf der Startseite einen Hinweis anzeigen, wenn sich der kurzfristige Kursdurchschnitt eines Wertpapiers dem langfristigen annähert oder ihn überschreitet (Goldenes Kreuz). Pro Zyklus nur einmal.</value>
+  </data>
   <data name="Notifications_MonthlyReminder_Time" xml:space="preserve">
     <value>Uhrzeit (lokal)</value>
   </data>
