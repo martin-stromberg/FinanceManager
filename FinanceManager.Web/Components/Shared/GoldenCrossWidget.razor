@@ -91,7 +91,7 @@ else
                             }
                             @if (w.LowClose.HasValue && w.HighClose.HasValue)
                             {
-                                <text> @string.Format(Localizer["Entry_Range"], FormatAmount(w.LowClose, _data.CurrencyCode), FormatAmount(w.HighClose, _data.CurrencyCode))</text>
+                                <span class="gcw-sep">@string.Format(Localizer["Entry_Range"], FormatAmount(w.LowClose, _data.CurrencyCode), FormatAmount(w.HighClose, _data.CurrencyCode))</span>
                             }
                         </div>
                     </div>
@@ -142,8 +142,7 @@ else
                         else
                         {
                             @string.Format(Localizer["Trend_Swings"], trend.HigherHighs, trend.SwingHighs, trend.HigherLows, trend.SwingLows)
-                            <text> </text>
-                            @Localizer[$"Trend_{trend.Structure}_Text"]
+                            <span class="gcw-sep">@Localizer[$"Trend_{trend.Structure}_Text"]</span>
                         }
                     </p>
                 </div>
