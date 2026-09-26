@@ -6,7 +6,7 @@
 
 ## Benutzerführung
 
-- [Benutzeroberfläche](benutzeroberflaeche/index.md) — Dieser Bereich beschreibt die responsive Bedienung der Web-Oberfläche auf kleinen Viewports.
+- [Benutzeroberfläche](benutzeroberflaeche/index.md) — Dieser Bereich beschreibt die Bedienung der Web-Oberfläche: die responsive Darstellung auf kleinen Viewports sowie das Verhalten von Dialogen und Bestätigungsabfragen.
 
 ## Prozesse
 
