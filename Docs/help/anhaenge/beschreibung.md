@@ -8,7 +8,7 @@ Der Bereich verwaltet Dateien und URLs als Anhänge zu Fachobjekten (z. B. Konta
 
 ## Funktionsweise
 
-Anhänge können als Datei, Link oder Referenz zu Buchungen und anderen Einträgen abgelegt werden. Neben Upload und Download sind Metadatenpflege, Kategorisierung und Symbolzuordnungen möglich. Symbolanhänge können als Bilddateien, einschließlich sicherer SVG-Dateien, hochgeladen und in der Oberfläche angezeigt werden.
+Anhänge können als Datei, Link oder Referenz zu Buchungen und anderen Einträgen abgelegt werden. Neben Upload und Download sind Metadatenpflege, Kategorisierung und Symbolzuordnungen möglich. Symbolanhänge können als Bilddateien, einschließlich sicherer SVG-Dateien, hochgeladen und in der Oberfläche angezeigt werden. Beim Löschen eines Anhangs erscheint eine Sicherheitsabfrage („Löschen bestätigen"), die oberhalb der geöffneten Anhangsliste liegt und bestätigt oder abgebrochen werden kann.
 
 ## Beispiele
 
