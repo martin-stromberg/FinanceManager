@@ -16,7 +16,8 @@ public static class HelpContentCatalog
         new("beschreibung", "beschreibung.md", "Uebersicht"),
         new("startseite", "startseite.md", "Startseite und KPI-Kacheln"),
         new("ablauf-anwender", "ablauf-anwender.md", "Bedienablauf"),
-        new("installation", "installation.md", "Einrichtung")
+        new("installation", "einrichtung-anwender.md", "Einrichtung"),
+        new("troubleshooting", "fehlerbehebung-anwender.md", "Fehlerbehebung")
     ];
 
     private static readonly IReadOnlyList<HelpTopicDocument> DescriptionOnlyDocuments =

@@ -416,6 +416,10 @@ form {
     padding: 1.5rem; 
 }
 
+.split-center.confirm-dialog-layer {
+    z-index: 1100;
+}
+
 .split-dialog { 
     width: 100%; 
     border-radius: var(--radius); 
