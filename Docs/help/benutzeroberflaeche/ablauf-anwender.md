@@ -1,11 +1,11 @@
 ← [Zurück zur Übersicht](index.md)
 
-# Mobile Ansicht (Responsive Web-UI) — Ablauf für Anwender
+# Benutzeroberfläche — Ablauf für Anwender
 
 ## Voraussetzungen
 
-- Die Anwendung wird auf einem kleinen Display bzw. schmalen Browserfenster geöffnet.
 - Der Anwender ist angemeldet und hat Zugriff auf die gewünschten Bereiche.
+- Für die Schritte zur mobilen Ansicht wird die Anwendung auf einem kleinen Display bzw. schmalen Browserfenster geöffnet.
 
 ## Schritt-für-Schritt-Anleitung
 
@@ -45,6 +45,15 @@ Wenn die Anmeldung während einer längeren Inaktivität abläuft und anschließ
 Nach erfolgreicher erneuter Anmeldung kehrt die Anwendung zu der ursprünglich angeforderten Seite zurück. Dabei bleiben auch die ausgewählte Ansicht sowie vorhandene Filter oder andere Angaben in der Adresse erhalten. Wird die Login-Seite direkt geöffnet, führt die Anmeldung weiterhin zur Startseite.
 
 > **Hinweis:** Bei längerer Inaktivität oder einer serverseitig ungültig gewordenen Anmeldung bleibt eine erneute Eingabe der Zugangsdaten erforderlich.
+
+### 6. Kritische Aktionen bestätigen
+
+Bei Aktionen wie dem Löschen eines Eintrags — zum Beispiel eines Anhangs über die Löschen-Schaltfläche in der geöffneten Anhangsliste — erscheint ein Bestätigungsdialog wie „Löschen bestätigen". Der Dialog liegt im Vordergrund, auch wenn bereits ein Bereich geöffnet ist, und bleibt dadurch sichtbar und bedienbar.
+
+- Mit „Bestätigen" wird die Aktion ausgeführt.
+- Mit „Abbrechen", dem Schließen-Symbol oder einem Klick auf die abgedunkelte Fläche neben dem Dialog wird sie verworfen. Der geöffnete Bereich dahinter bleibt erhalten und wird nicht geschlossen.
+
+> **Hinweis:** Erscheint keine Nachfrage, ist die Einstellung „Bestätigungsdialoge anzeigen" unter „Einrichtung" → „Profil" deaktiviert — die Aktion wird dann sofort ausgeführt.
 
 ## Ergebnis
 
