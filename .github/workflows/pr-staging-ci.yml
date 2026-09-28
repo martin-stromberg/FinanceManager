@@ -16,6 +16,7 @@ concurrency:
 permissions:
   contents: read
   checks: write
+  pull-requests: read
 
 jobs:
   detect-backmerge:
@@ -232,6 +233,31 @@ jobs:
           name: playwright-traces-pr
           path: TestResults/E2E/artifacts/
           retention-days: 14
+
+  no-pending-backmerge:
+    name: no pending backmerge
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    # Third gate, running in parallel with static-checks and build-and-test: while an
+    # automated back-merge PR (main -> staging, created by sync-staging-with-main.yml)
+    # is still open, no other PR may merge into staging. Merging here first would
+    # change staging underneath the back-merge and leave it stale or conflicted -
+    # the back-merge always goes first.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check for an open back-merge PR from main to staging
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # No checkout needed - gh gets an explicit -R so it does not depend on a
+        # local git repository to resolve the target repo.
+        run: |
+          open_backmerges="$(gh pr list -R ${{ github.repository }} --base staging --head main --state open --json number --jq 'length')"
+          if [ "$open_backmerges" != "0" ]; then
+            echo "::error::An open back-merge PR from main to staging exists. Merge it first (with 'Create a merge commit') before merging this PR."
+            exit 1
+          fi
+          echo "No open back-merge PR from main - OK."
 
   back-merge-skip:
     needs: detect-backmerge
