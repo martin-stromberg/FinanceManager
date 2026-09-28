@@ -131,11 +131,12 @@ jobs:
         shell: pwsh
 
       - name: Test regular tests
-        run: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --filter "Category!=OsInterface" --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results-regular-tests.trx" --logger "console;verbosity=normal"
+        # See pr-staging-ci.yml's equivalent step for the MTP/global.json/xunit.v3 notes.
+        run: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --results-directory FinanceManager.Tests/TestResults -- --filter-not-trait "Category=OsInterface" --report-xunit-trx --report-xunit-trx-filename test-results-regular-tests.trx --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
         shell: pwsh
 
       - name: Test regular integration
-        run: dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-build -c Debug --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results-regular-integration.trx" --logger "console;verbosity=normal"
+        run: dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --no-build -c Debug --results-directory FinanceManager.Tests.Integration/TestResults -- --report-xunit-trx --report-xunit-trx-filename test-results-regular-integration.trx --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
         shell: pwsh
 
       - name: Test E2E tests
@@ -145,7 +146,7 @@ jobs:
         env:
           PLAYWRIGHT_TRACE: '1'
           PLAYWRIGHT_ARTIFACTS: '1'
-        run: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --logger "trx;LogFileName=test-results-e2e-tests.trx" --logger "console;verbosity=normal"
+        run: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --results-directory FinanceManager.Tests.E2E/TestResults -- --report-xunit-trx --report-xunit-trx-filename test-results-e2e-tests.trx
         shell: pwsh
 
       - name: Install ReportGenerator
