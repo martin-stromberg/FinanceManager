@@ -60,4 +60,16 @@
   <data name="Trend_StableUptrend_Text" xml:space="preserve"><value>Höhere Hochs und höhere Tiefs bestätigen den Trend.</value></data>
   <data name="Trend_WeakUptrend_Text" xml:space="preserve"><value>Der Kurs steigt, die Abfolge höherer Hochs und Tiefs ist aber nicht sauber ausgeprägt.</value></data>
   <data name="Trend_Sideways_Text" xml:space="preserve"><value>Seit der Kreuzung gibt es keinen nennenswerten Kursfortschritt.</value></data>
+  <data name="Aria_Info" xml:space="preserve">
+    <value>Erläuterungen zum Goldenen Kreuz anzeigen</value>
+  </data>
+  <data name="Panel_Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Panel_Formula" xml:space="preserve">
+    <value>Berechnung</value>
+  </data>
+  <data name="Formula_Text" xml:space="preserve">
+    <value>SMA{0} = Ø Schlusskurs der letzten {0} Tage; SMA{1} = Ø der letzten {1} Tage; Distanz = (SMA{0} − SMA{1}) / SMA{1}</value>
+  </data>
 </root>

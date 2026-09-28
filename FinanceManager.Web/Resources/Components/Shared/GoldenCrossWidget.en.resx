@@ -60,4 +60,16 @@
   <data name="Trend_StableUptrend_Text" xml:space="preserve"><value>Higher highs and higher lows confirm the trend.</value></data>
   <data name="Trend_WeakUptrend_Text" xml:space="preserve"><value>The price is rising, but the sequence of higher highs and lows is not clean.</value></data>
   <data name="Trend_Sideways_Text" xml:space="preserve"><value>No meaningful price progress since the cross.</value></data>
+  <data name="Aria_Info" xml:space="preserve">
+    <value>Show explanations for the golden cross</value>
+  </data>
+  <data name="Panel_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Panel_Formula" xml:space="preserve">
+    <value>Calculation</value>
+  </data>
+  <data name="Formula_Text" xml:space="preserve">
+    <value>SMA{0} = average close of the last {0} days; SMA{1} = average of the last {1} days; distance = (SMA{0} − SMA{1}) / SMA{1}</value>
+  </data>
 </root>
