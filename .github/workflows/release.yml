@@ -91,7 +91,7 @@ jobs:
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
         run: |
           dotnet restore FinanceManager.sln
-          dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --configuration Release --filter "Category!=OsInterface"
+          dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --configuration Release -- --filter-not-trait "Category=OsInterface"
           dotnet test FinanceManager.Tests.Integration/FinanceManager.Tests.Integration.csproj --configuration Release
 
       - name: Generate release notes for update manifest
