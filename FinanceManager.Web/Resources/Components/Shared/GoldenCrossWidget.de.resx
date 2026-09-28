@@ -72,4 +72,10 @@
   <data name="Formula_Text" xml:space="preserve">
     <value>SMA{0} = Ø Schlusskurs der letzten {0} Tage; SMA{1} = Ø der letzten {1} Tage; Distanz = (SMA{0} − SMA{1}) / SMA{1}</value>
   </data>
+  <data name="CrossDate_Unknown" xml:space="preserve">
+    <value>vor Beginn der Kursdaten</value>
+  </data>
+  <data name="Extended_Unavailable" xml:space="preserve">
+    <value>Der kurzfristige Durchschnitt liegt im gesamten auswertbaren Kursverlauf über dem langfristigen. Der Kreuzungszeitpunkt liegt vor den vorhandenen Kursdaten, daher können Einstiegsszenarien, Retest und Trendstruktur nicht bestimmt werden. Dafür werden mindestens {0} Kurse vor dem Kreuzungstag benötigt.</value>
+  </data>
 </root>

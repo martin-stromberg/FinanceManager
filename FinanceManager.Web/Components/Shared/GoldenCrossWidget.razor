@@ -34,11 +34,20 @@ else
                 <span class="rsw-value @(_data.DistancePercent.Value >= 0 ? "positive" : "negative")">@FormatPercent(_data.DistancePercent.Value)</span>
             </div>
         }
-        @if (crossed && _data.CrossDate.HasValue)
+        @if (crossed)
         {
             <div class="rsw-row">
                 <span class="rsw-label">@Localizer["Label_CrossDate"]</span>
-                <span class="rsw-value">@_data.CrossDate.Value.ToString("d")@(_data.DaysSinceCross.HasValue ? $" ({string.Format(Localizer["DaysAgo"], _data.DaysSinceCross.Value)})" : string.Empty)</span>
+                <span class="rsw-value">
+                    @if (_data.CrossDate.HasValue)
+                    {
+                        @_data.CrossDate.Value.ToString("d")@(_data.DaysSinceCross.HasValue ? $" ({string.Format(Localizer["DaysAgo"], _data.DaysSinceCross.Value)})" : string.Empty)
+                    }
+                    else
+                    {
+                        @Localizer["CrossDate_Unknown"]
+                    }
+                </span>
             </div>
         }
         @if (crossed && _data.Trend is { } trendKpi)
@@ -110,6 +119,13 @@ else
                     }
                     <p class="rsw-panel-desc gcw-disclaimer">@Localizer["Meaning_Disclaimer"]</p>
                 </div>
+                @if (crossed && !_data.CrossDate.HasValue)
+                {
+                    <div class="gcw-section">
+                        <div class="gcw-section-title">@Localizer["Section_Entries"]</div>
+                        <p class="rsw-panel-desc">@string.Format(Localizer["Extended_Unavailable"], _data.LongWindow)</p>
+                    </div>
+                }
                 @if (crossed && _data.CrossDate.HasValue)
                 {
                     <div class="gcw-section">

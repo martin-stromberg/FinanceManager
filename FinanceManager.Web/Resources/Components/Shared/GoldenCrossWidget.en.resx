@@ -72,4 +72,10 @@
   <data name="Formula_Text" xml:space="preserve">
     <value>SMA{0} = average close of the last {0} days; SMA{1} = average of the last {1} days; distance = (SMA{0} − SMA{1}) / SMA{1}</value>
   </data>
+  <data name="CrossDate_Unknown" xml:space="preserve">
+    <value>before available price history</value>
+  </data>
+  <data name="Extended_Unavailable" xml:space="preserve">
+    <value>The short-term average has been above the long-term average for the entire evaluable price history. The cross occurred before the available price data, so entry scenarios, retest and trend structure cannot be determined. At least {0} prices before the cross day are required.</value>
+  </data>
 </root>
