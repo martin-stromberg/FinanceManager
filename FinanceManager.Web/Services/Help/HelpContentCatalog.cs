@@ -61,7 +61,8 @@ public static class HelpContentCatalog
     private static readonly IReadOnlyList<HelpTopicDocument> SecuritiesDocuments =
     [
         new("beschreibung", "beschreibung.md", "Uebersicht"),
-        new("ablauf-anwender", "ablauf-anwender.md", "Bedienablauf")
+        new("ablauf-anwender", "ablauf-anwender.md", "Bedienablauf"),
+        new("goldenes-kreuz", "goldenes-kreuz.md", "Goldenes Kreuz")
     ];
 
     /// <summary>

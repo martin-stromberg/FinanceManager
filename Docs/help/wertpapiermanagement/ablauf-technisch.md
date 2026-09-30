@@ -184,3 +184,35 @@ flowchart TD
 - Kann der gecachte JSON-Wert nicht deserialisiert werden (`null` nach
   `JsonSerializer.Deserialize`), wird der Bericht wie bei einem Cache-Miss neu
   berechnet.
+
+## Goldenes Kreuz
+
+```mermaid
+flowchart TD
+    A[GoldenCrossWidget auf /card/securities/{id}] --> B[GET /api/securities/{id}/golden-cross]
+    B --> C[GoldenCrossService.GetAsync]
+    C --> D[Bis zu LongWindow*3 Schlusskurse laden]
+    D --> E[GoldenCrossAnalyzer.Analyze]
+    E --> F[GoldenCrossDto: Phase, SMA50/200, Kreuzungsdatum, Einstiegsfenster, Retest, Trend]
+    G[SecurityPriceWorker nach Kursabruf] --> H[GoldenCrossService.EvaluateAndNotifyAsync]
+    H --> E
+    H --> I{Phase > GoldenCrossNotifiedPhase?}
+    I -- ja --> J[Notification HomePage, Trigger security:golden-cross:{id}]
+    I -- nein --> K[keine Aktion]
+```
+
+- Das Widget rendert nur bei `Approaching`/`Crossed`; bei `Far`/`InsufficientData`
+  bleibt die Karte ohne Goldenes-Kreuz-Box.
+- Fenster und Annäherungsschwelle sind über den Abschnitt `GoldenCross` in
+  `appsettings.json` konfigurierbar (`GoldenCrossOptions`):
+
+```json
+"GoldenCross": {
+  "ShortWindow": 50,
+  "LongWindow": 200,
+  "ApproachThresholdPercent": 3
+}
+```
+
+Fachliche Details: [Statistikfeld „Goldenes Kreuz"](goldenes-kreuz.md),
+[Business Rules](business-rules.md).

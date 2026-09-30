@@ -16,6 +16,17 @@ freigegebener Key als Fallback genutzt werden. Gespeicherte Keys liegen in der
 Datenbank verschluesselt vor und werden nur unmittelbar fuer den externen
 AlphaVantage-Aufruf entschluesselt.
 
+Die Wertpapierkarte zeigt unterhalb der Box „Gesamtrendite" das Statistikfeld
+**Goldenes Kreuz** (siehe [Statistikfeld „Goldenes Kreuz"](goldenes-kreuz.md)):
+Es vergleicht den 50-Tage- mit dem 200-Tage-Kursdurchschnitt und erscheint nur,
+wenn der kurzfristige Durchschnitt den langfristigen überschritten hat oder
+sich ihm bis auf 3 % angenähert hat. Über ein Info-Symbol öffnet sich – wie bei
+den Rendite-Kennzahlen – ein Seitenpanel mit Bedeutung, Kreuzungsdatum,
+Einstiegsszenarien, Retest-Analyse und Trendstruktur. Erreicht ein Wertpapier
+die Phase „Nähert sich" oder „Erreicht", wird einmal pro Zyklus ein Hinweis auf
+der Startseite erzeugt; dieser lässt sich in den Benachrichtigungseinstellungen
+abschalten.
+
 Zusätzlich zur Performance-Ansicht je einzelnem Wertpapier gibt es den
 **Depot-Analysebericht**: eine konsolidierte Auswertung über alle Wertpapiere
 eines Benutzers hinweg. Der Bericht wird über den Ribbon-Button
@@ -79,6 +90,9 @@ Kachel-Konfiguration verworfen werden.
 - Ein Benutzer ruft über den Ribbon-Button "Depot-Bericht" der
   Wertpapierübersicht den Depot-Analysebericht auf und sieht Gesamtmarktwert,
   Asset Allocation und Top-10-Positionen über alle Wertpapiere hinweg.
+- Bei einem Wertpapier hat der 50-Tage-Durchschnitt den 200-Tage-Durchschnitt
+  überschritten; auf der Wertpapierkarte erscheint die Box „Goldenes Kreuz" mit
+  Kreuzungsdatum, und auf der Startseite wird ein Hinweis angezeigt.
 - Ein Benutzer blendet in der Bearbeitungsansicht des Depot-Analyseberichts
   die Cashflow-Kachel aus und sortiert die verbleibenden Kacheln neu; nach dem
   Speichern zeigt der Bericht sofort die neue Auswahl und Reihenfolge.
@@ -101,6 +115,9 @@ Kachel-Konfiguration verworfen werden.
 - Bei sehr großen Depots (mehr als ca. 1000 Positionen) kann die
   Neuberechnung bei Cache-Miss spürbar dauern, da alle Positionen,
   Buchungen und Kurse pro Aufruf geladen werden.
+- Die Goldenes-Kreuz-Analyse benötigt mindestens 200 Kurse; Kreuzungsdatum,
+  Einstiegsszenarien, Retest und Trendstruktur nur, wenn die Kreuzung innerhalb
+  der zuletzt 600 geladenen Kurse liegt.
 - Die Auflistung von Positionen und FIFO-Kauf-Lots im Depot-Analysebericht
   ist auf jeweils 200 Einträge gedeckelt; bei Überschreitung wird dies mit
   einem „und N weitere"-Hinweis angezeigt.
