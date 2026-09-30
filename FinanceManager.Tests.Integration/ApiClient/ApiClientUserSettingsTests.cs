@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Json;
 using FluentAssertions;
 using FinanceManager.Infrastructure;
 using FinanceManager.Web.Services;
@@ -10,10 +12,10 @@ namespace FinanceManager.Tests.Integration.ApiClient;
 
 /// <summary>
 /// End-to-end test for the per-user settings API: profile defaults and updates (language, timezone,
-/// protected Alpha Vantage API key storage), notification preferences, and CSV import-splitting
-/// preferences.
+/// protected Alpha Vantage API key storage), notification preferences, CSV import-splitting
+/// preferences, and the self-service password change (<c>PUT /api/user/settings/password</c>).
 /// </summary>
-public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactory>
+public sealed class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
 
@@ -283,5 +285,52 @@ public class ApiClientUserSettingsTests : IClassFixture<TestWebApplicationFactor
         split.MaxEntriesPerDraft.Should().Be(100);
         split.MinEntriesPerDraft.Should().Be(5);
         split.MassImportDialogPolicy.Should().Be(MassImportDialogPolicy.AlwaysConfirm);
+    }
+
+    /// <summary>
+    /// Verifies the complete password-change flow: after registration the current password must be
+    /// supplied, the change is accepted, the old password can no longer authenticate, and the new
+    /// password logs the user in — proving the Identity-backed change persisted.
+    /// </summary>
+    [Fact]
+    public async Task ChangePassword_EndToEnd_ViaApi()
+    {
+        var api = CreateClient();
+        var username = $"user_{Guid.NewGuid():N}";
+        const string oldPassword = "Secret123";
+        const string newPassword = "NewSecret456";
+        await api.Auth_RegisterAsync(new RegisterRequest(username, oldPassword, null, null), TestContext.Current.CancellationToken);
+
+        // Wrong current password is rejected
+        var wrongResult = await api.UserSettings_ChangePasswordAsync(new ChangePasswordRequest("wrong-pw", newPassword), TestContext.Current.CancellationToken);
+        wrongResult.Should().BeFalse();
+        api.LastErrorCode.Should().Be("Err_InvalidCurrentPassword");
+
+        // Correct current password succeeds
+        var ok = await api.UserSettings_ChangePasswordAsync(new ChangePasswordRequest(oldPassword, newPassword), TestContext.Current.CancellationToken);
+        ok.Should().BeTrue();
+
+        // Old password no longer works, new password authenticates
+        var loginApi = CreateClient();
+        Func<Task> oldLogin = () => loginApi.Auth_LoginAsync(new LoginRequest(username, oldPassword, null, null), TestContext.Current.CancellationToken);
+        await oldLogin.Should().ThrowAsync<HttpRequestException>();
+
+        var newLogin = await loginApi.Auth_LoginAsync(new LoginRequest(username, newPassword, null, null), TestContext.Current.CancellationToken);
+        newLogin.Should().NotBeNull();
+        newLogin.user.Should().Be(username);
+    }
+
+    /// <summary>
+    /// Verifies that an anonymous caller is rejected with 401 Unauthorized — password changes must
+    /// only be possible for authenticated users.
+    /// </summary>
+    [Fact]
+    public async Task ChangePassword_WithoutAuthentication_Returns401()
+    {
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var response = await http.PutAsJsonAsync("/api/user/settings/password", new ChangePasswordRequest("old", "new-pw-123"), TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

@@ -21,6 +21,7 @@ public sealed class AuthReturnUrlTests
     /// <param name="expected">The expected normalized/decoded return URL.</param>
     [Theory]
     [InlineData("/reports", "/reports")]
+    [InlineData("/change-password", "/change-password")]
     [InlineData("/reports/dashboard?favoriteId=123&edit=false#details", "/reports/dashboard?favoriteId=123&edit=false#details")]
     [InlineData("/reports/dashboard?filter=a%26b#section%201", "/reports/dashboard?filter=a%26b#section%201")]
     [InlineData("%2Freports%3Fq%3D1%23top", "/reports?q=1#top")]

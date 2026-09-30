@@ -5,10 +5,12 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject FinanceManager.Web.Services.Updates.IInstalledReleaseMetadataProvider ReleaseMetadata
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 
 @if (CurrentUser.IsAuthenticated)
 {
     <div class="login-status">@DisplayVersion<br />
+        <a id="change-password-link" href="/change-password">@L["Nav_ChangePassword"]</a><br />
         <button @onclick="LogoutAsync">Logout</button>
     </div>
 }

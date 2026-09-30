@@ -262,6 +262,43 @@ public sealed class UserAuthService : IUserAuthService
         return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName!, isAdmin, token, expires));
     }
 
+    /// <summary>
+    /// Changes the password of the user identified by <paramref name="userId"/> after verifying the current
+    /// password via ASP.NET Core Identity. A successful change rotates the security stamp internally.
+    /// </summary>
+    /// <param name="userId">Identifier of the user whose password should be changed.</param>
+    /// <param name="currentPassword">The current password used for verification.</param>
+    /// <param name="newPassword">The new password to set.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A <see cref="Result"/> indicating success, or a failed <see cref="Result"/> carrying a stable error code
+    /// (<c>Err_InvalidCurrentPassword</c> when the current password is wrong,
+    /// <c>Err_PasswordPolicyViolation</c> when the new password violates the password policy,
+    /// <c>Err_UserNotFound</c> when the user does not exist).
+    /// </returns>
+    public async Task<Result> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken ct)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            _logger.LogWarning("Password change failed: user {UserId} not found", userId);
+            return Result.Fail("Err_UserNotFound");
+        }
+
+        var changeResult = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        if (!changeResult.Succeeded)
+        {
+            var code = changeResult.Errors.Any(e => string.Equals(e.Code, "PasswordMismatch", StringComparison.Ordinal))
+                ? "Err_InvalidCurrentPassword"
+                : "Err_PasswordPolicyViolation";
+            _logger.LogWarning("Password change failed for {UserId}: {Errors}", userId, string.Join(';', changeResult.Errors.Select(e => e.Description)));
+            return Result.Fail(code);
+        }
+
+        _logger.LogInformation("Password changed for user {UserId}", userId);
+        return Result.Ok();
+    }
+
     // wrapper to keep calls test-friendly / readable
     private Task<IdentityResult> _user_manager_create_wrapper(User user, string password)
         => _userManager.CreateAsync(user, password);

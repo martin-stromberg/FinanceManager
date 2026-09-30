@@ -18,7 +18,7 @@ public sealed class ApiClientUpdateTests
     [Fact]
     public async Task Updates_StartInstallAsync_WhenNotReady404_ThrowsAndPreservesApiError()
     {
-        var api = CreateClient(request => new HttpResponseMessage(HttpStatusCode.NotFound)
+        var api = StubHttpMessageHandler.CreateClient(request => new HttpResponseMessage(HttpStatusCode.NotFound)
         {
             Content = JsonContent.Create(ApiErrorDto.Create("API_Update", "Err_Update_NotReady", "No ready update package is available."))
         });
@@ -34,7 +34,7 @@ public sealed class ApiClientUpdateTests
     [Fact]
     public async Task Updates_ResetLockAsync_WhenConflict_PreservesApiErrorCodeAndMessage()
     {
-        var api = CreateClient(request => new HttpResponseMessage(HttpStatusCode.Conflict)
+        var api = StubHttpMessageHandler.CreateClient(request => new HttpResponseMessage(HttpStatusCode.Conflict)
         {
             Content = JsonContent.Create(ApiErrorDto.Create("API_Update", "Err_Update_Reset_NoLock", "No active update lock exists."))
         });
@@ -53,7 +53,7 @@ public sealed class ApiClientUpdateTests
     {
         var requests = new List<(HttpMethod Method, string Path)>();
         string? serviceQuery = null;
-        var api = CreateClient(request =>
+        var api = StubHttpMessageHandler.CreateClient(request =>
         {
             requests.Add((request.Method, request.RequestUri!.AbsolutePath));
             if (request.RequestUri!.AbsolutePath == "/api/setup/update/services")
@@ -91,9 +91,6 @@ public sealed class ApiClientUpdateTests
         requests.Should().Contain((HttpMethod.Post, "/api/setup/update/lock/reset"));
     }
 
-    private static ApiClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> handler)
-        => new(new HttpClient(new DelegatingHandlerStub(handler)) { BaseAddress = new Uri("https://example.test") });
-
     private static HttpResponseMessage JsonResponse<T>(T value)
         => new(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
 
@@ -102,17 +99,4 @@ public sealed class ApiClientUpdateTests
 
     private static UpdateStatusDto Status(UpdateStatusKind kind)
         => new(kind, "1.0.0", null, null, "win-x64", null, null, null, kind == UpdateStatusKind.Installing, kind == UpdateStatusKind.Installing ? DateTimeOffset.UtcNow : null, null, null);
-
-    private sealed class DelegatingHandlerStub : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
-
-        public DelegatingHandlerStub(Func<HttpRequestMessage, HttpResponseMessage> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => Task.FromResult(_handler(request));
-    }
 }

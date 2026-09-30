@@ -90,7 +90,7 @@
 		<value>text/microsoft-resx</value>
 	</resheader>
 	<resheader name="version">
-		<value>2.0</value>
+		<value>1.3</value>
 	</resheader>
 	<resheader name="reader">
 		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
@@ -98,42 +98,46 @@
 	<resheader name="writer">
 		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</resheader>
-
 	<data name="API_Common_Err_Unexpected" xml:space="preserve">
-		<value>Unexpected error.</value>
+		<value>Unerwarteter Fehler.</value>
 	</data>
-
 	<data name="API_Auth_Err_InvalidCredentials" xml:space="preserve">
-		<value>Username or password is invalid.</value>
+		<value>Benutzername oder Passwort ist ungültig.</value>
 	</data>
 	<data name="API_Auth_Err_Conflict_UserAlreadyExists" xml:space="preserve">
-		<value>A user with this name already exists.</value>
+		<value>Ein Benutzer mit diesem Namen existiert bereits.</value>
 	</data>
-
 	<data name="API_BackgroundTask_Err_CancelFailed" xml:space="preserve">
-		<value>Could not cancel running task.</value>
+		<value>Der laufende Task konnte nicht abgebrochen werden.</value>
 	</data>
 	<data name="API_BackgroundTask_Err_RemoveFailed" xml:space="preserve">
-		<value>Could not remove queued task.</value>
+		<value>Der queued Task konnte nicht entfernt werden.</value>
 	</data>
 	<data name="API_BackgroundTask_Err_InvalidState" xml:space="preserve">
-		<value>Only queued or running tasks can be cancelled or removed.</value>
+		<value>Nur queued oder laufende Tasks können abgebrochen oder entfernt werden.</value>
 	</data>
-
 	<data name="API_Backup_Err_Invalid_File" xml:space="preserve">
-		<value>No file selected.</value>
+		<value>Keine Datei ausgewählt.</value>
 	</data>
 	<data name="API_Backup_Err_Conflict_DuplicateFileName" xml:space="preserve">
-		<value>A backup with that filename already exists.</value>
+		<value>Ein Backup mit diesem Dateinamen existiert bereits.</value>
 	</data>
 	<data name="API_Contacts_Err_Conflict_ParentAssignment" xml:space="preserve">
-		<value>Contact creation could not be completed because assignment to the selected statement entry failed.</value>
+		<value>Der Kontakt konnte nicht abgeschlossen erstellt werden, da die Zuordnung zum ausgewählten Kontoauszugseintrag fehlgeschlagen ist.</value>
 	</data>
-
 	<data name="API_Attachment_Err_Conflict" xml:space="preserve">
-		<value>The operation could not be performed.</value>
+		<value>Die Aktion konnte nicht ausgeführt werden.</value>
+	</data>
+	<data name="API_UserSettings_Err_InvalidCurrentPassword" xml:space="preserve">
+		<value>Das aktuelle Passwort ist nicht korrekt.</value>
+	</data>
+	<data name="API_UserSettings_Err_PasswordPolicyViolation" xml:space="preserve">
+		<value>Das neue Passwort erfüllt die Passwort-Richtlinien nicht.</value>
+	</data>
+	<data name="API_UserSettings_Err_UserNotFound" xml:space="preserve">
+		<value>Der Benutzer wurde nicht gefunden.</value>
 	</data>
 	<data name="Budget_PurposePattern_InvalidRegex" xml:space="preserve">
-		<value>Invalid regex</value>
+		<value>Ungültiger regulärer Ausdruck</value>
 	</data>
 </root>

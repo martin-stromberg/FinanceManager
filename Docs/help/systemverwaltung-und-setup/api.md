@@ -38,6 +38,34 @@ nicht ueber die API aus.
 
 **Beschreibung:** Import-Split-Einstellungen speichern.
 
+### `PUT /api/user/settings/password`
+
+**Beschreibung:** Ändert das Passwort des aktuell angemeldeten Benutzers nach Prüfung des bisherigen Passworts. Bei Erfolg wird das Auth-Cookie `FinanceManager.Auth` mit einem neuen JWT (rotierter Security Stamp) neu ausgestellt, damit die laufende Sitzung gültig bleibt.
+
+**Berechtigung:** JWT-Bearer-Authentifizierung (`[Authorize]` auf `UserSettingsController`).
+
+**Request-Body:** `ChangePasswordRequest`
+
+```json
+{
+  "currentPassword": "alt",
+  "newPassword": "neu-mit-1-ziffer"
+}
+```
+
+**Parameter:**
+
+| Name | Typ | Pflicht | Beschreibung |
+|------|-----|---------|--------------|
+| `CurrentPassword` | `string` | Ja | Bisheriges Passwort (`[Required]`) |
+| `NewPassword` | `string` | Ja | Neues Passwort (`[Required]`, `[MinLength(8)]`); muss serverseitig die `Identity:Password`-Policy erfüllen |
+
+**Antworten:**
+- `204 No Content` bei erfolgreicher Änderung (Set-Cookie mit neuem Auth-Token).
+- `400 ValidationProblem` bei ungültigem Payload.
+- `400 ApiErrorDto` mit `Err_InvalidCurrentPassword` (falsches bisheriges Passwort), `Err_PasswordPolicyViolation` (Policy-Verletzung) oder `Err_UserNotFound`.
+- `404 Not Found`, wenn der Benutzer nicht gefunden wird.
+
 ### `GET /api/admin/users`
 
 **Beschreibung:** Benutzerverwaltung.
@@ -307,4 +335,66 @@ zurueckgegeben: `Err_Update_Reset_NoLock`, `Err_Update_Reset_LockNotStale`,
 **Antworten:**
 - `204 No Content` bei Erfolg.
 - `400 ValidationProblem` bei fehlenden Pflichtfeldern, ungültigem `Canonical` oder überschrittener Maximallänge.
+- `403 Forbidden` ohne Admin-Rolle.
+
+---
+
+## Well-Known-Endpunkte
+
+### `GET /.well-known/change-password`
+
+**Beschreibung:** W3C-Well-Known-URI (RFC 8615), der per HTTP-Weiterleitung auf die konfigurierte Passwort-ändern-Seite verweist — u. a. für Browser und Passwortmanager als standardisierte Auffind-Adresse. Der Endpunkt ist pfadbasiert und schema-/hostname-unabhängig.
+
+**Berechtigung:** Keine (öffentlich, `[AllowAnonymous]` auf `WellKnownController.GetChangePasswordRedirectAsync`).
+
+**Antworten:**
+- `302 Found` mit `Location`-Header auf die konfigurierte `ChangePasswordUrl` (lokaler Pfad oder absolute `http`/`https`-URL) und leerem Body.
+- `403 Forbidden` bei gesperrter IP (`IpBlockMiddleware`).
+
+Ohne gültige gespeicherte Konfiguration wird auf den Standard `/change-password` weitergeleitet (`WellKnownSettings.DefaultChangePasswordUrl`).
+
+---
+
+### `GET /api/admin/well-known`
+
+**Beschreibung:** Aktuelle Well-Known-Einstellungen als `WellKnownSettingsDto` laden (`WellKnownController.GetSettingsAsync`).
+
+**Berechtigung:** JWT-Bearer, Rolle `Admin`.
+
+**Antworten:**
+- `200 OK` mit `WellKnownSettingsDto`.
+- `403 Forbidden` ohne Admin-Rolle.
+
+**Beispielantwort:**
+```json
+{
+  "changePasswordUrl": "/change-password"
+}
+```
+
+---
+
+### `PUT /api/admin/well-known`
+
+**Beschreibung:** Well-Known-Einstellungen aktualisieren (`WellKnownController.UpdateSettingsAsync`). Änderungen wirken sofort auf den nächsten Aufruf des öffentlichen Endpunkts (kein Caching).
+
+**Berechtigung:** JWT-Bearer, Rolle `Admin`.
+
+**Request-Body:** `WellKnownSettingsUpdateRequest`
+
+```json
+{
+  "changePasswordUrl": "/change-password"
+}
+```
+
+**Parameter:**
+
+| Name | Typ | Pflicht | Max. Länge | Beschreibung |
+|------|-----|---------|-----------|--------------|
+| `ChangePasswordUrl` | `string` | Ja | 2048 | Lokaler Root-Pfad (`/…`, nicht `//…`) oder absolute `http`-/`https`-URL (`IValidatableObject`-Prüfung) |
+
+**Antworten:**
+- `204 No Content` bei Erfolg.
+- `400 ValidationProblem` bei fehlendem oder strukturell ungültigem Wert.
 - `403 Forbidden` ohne Admin-Rolle.

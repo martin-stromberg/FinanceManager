@@ -64,8 +64,9 @@ public sealed class UserImportSplitSettingsControllerTests
         userManagerMock.Setup(um => um.IsInRoleAsync(It.IsAny<User>(), "Admin")).ReturnsAsync(false);
         userManagerMock.Setup(um => um.GetSecurityStampAsync(It.IsAny<User>())).ReturnsAsync((User u) => u.SecurityStamp ?? "stamp");
         var alphaVantageSecretProtectorMock = new Mock<IAlphaVantageSecretProtector>();
+        var authServiceMock = new Mock<FinanceManager.Application.Users.IUserAuthService>();
 
-        var controller = new UserSettingsController(db, current, logger, localizer, jwtMock.Object, tokenProviderMock.Object, userManagerMock.Object, alphaVantageSecretProtectorMock.Object);
+        var controller = new UserSettingsController(db, current, logger, localizer, jwtMock.Object, tokenProviderMock.Object, userManagerMock.Object, alphaVantageSecretProtectorMock.Object, authServiceMock.Object);
         var http = new DefaultHttpContext();
         http.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, current.UserId.ToString()) }, "test"));
         controller.ControllerContext = new ControllerContext { HttpContext = http };

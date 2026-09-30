@@ -1,9 +1,12 @@
 using Bunit;
 using FinanceManager.Application;
 using FinanceManager.Shared.Dtos.Update;
+using FinanceManager.Web;
 using FinanceManager.Web.Components;
+using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Updates;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 
 namespace FinanceManager.Tests.Components;
 
@@ -37,6 +40,16 @@ public sealed class LoginStatusTests : BunitContext
     }
 
     /// <summary>
+    /// Registers the localization services that <see cref="LoginStatus"/> requires via its injected
+    /// <see cref="IStringLocalizer{T}"/> of <see cref="Pages"/>.
+    /// </summary>
+    private void RegisterLocalization()
+    {
+        Services.AddLocalization(options => options.ResourcesPath = "Resources");
+        Services.AddSingleton(typeof(IStringLocalizer<Pages>), new PagesStringLocalizer());
+    }
+
+    /// <summary>
     /// Verifies that an authenticated user with a known installed version sees that version number
     /// rendered in the login status.
     /// </summary>
@@ -45,6 +58,7 @@ public sealed class LoginStatusTests : BunitContext
     {
         // Arrange
         Services.AddSingleton<ICurrentUserService>(new FakeCurrentUserService());
+        RegisterLocalization();
         Services.AddSingleton<IInstalledReleaseMetadataProvider>(
             new FakeInstalledReleaseMetadataProvider(new InstalledReleaseMetadataDto("1.2.3", null, null, null, null)));
 
@@ -64,6 +78,7 @@ public sealed class LoginStatusTests : BunitContext
     {
         // Arrange
         Services.AddSingleton<ICurrentUserService>(new FakeCurrentUserService());
+        RegisterLocalization();
         Services.AddSingleton<IInstalledReleaseMetadataProvider>(
             new FakeInstalledReleaseMetadataProvider(new InstalledReleaseMetadataDto(null, null, null, null, null)));
 
@@ -85,6 +100,7 @@ public sealed class LoginStatusTests : BunitContext
         // Arrange
         var userId = Guid.NewGuid();
         Services.AddSingleton<ICurrentUserService>(new FakeCurrentUserService { UserId = userId });
+        RegisterLocalization();
         Services.AddSingleton<IInstalledReleaseMetadataProvider>(
             new FakeInstalledReleaseMetadataProvider(new InstalledReleaseMetadataDto("1.2.3", null, null, null, null)));
 
@@ -107,6 +123,7 @@ public sealed class LoginStatusTests : BunitContext
     {
         // Arrange
         Services.AddSingleton<ICurrentUserService>(new FakeCurrentUserService { IsAuthenticated = false });
+        RegisterLocalization();
         Services.AddSingleton<IInstalledReleaseMetadataProvider>(
             new FakeInstalledReleaseMetadataProvider(new InstalledReleaseMetadataDto("1.2.3", null, null, null, null)));
 

@@ -66,6 +66,19 @@ Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). Beim ersten Auf
 
 Ist `Canonical` leer, wird die Direktive zur Laufzeit weiterhin aus `IConfiguration["Api:BaseAddress"]` als `<BaseAddress>/.well-known/security.txt` abgeleitet.
 
+### `WellKnownSettings`
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `Id` | `Guid` | Primärschlüssel (Singleton-Zeile) |
+| `ChangePasswordUrl` | `string` | Weiterleitungsziel von `/.well-known/change-password`; lokaler Root-Pfad oder absolute `http`/`https`-URL |
+| `CreatedUtc` | `DateTime` | Erzeugungszeit (Basisspalte `Entity`) |
+| `ModifiedUtc` | `DateTime?` | Letzte Änderung (Basisspalte `Entity`, via `Touch()`) |
+
+Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). Beim ersten Zugriff (`GetEntityAsync` in `WellKnownSettingsService`) wird die Zeile automatisch über `WellKnownSettings.CreateDefault()` mit `ChangePasswordUrl = "/change-password"` (`DefaultChangePasswordUrl`) angelegt.
+
+Ungültige gespeicherte Werte werden beim Lesen für den öffentlichen Endpunkt durch den Standard `/change-password` ersetzt (`WellKnownSettings.IsValidUrl` über `WellKnownUrlValidator`). Schreibzugriffe validieren zusätzlich in `WellKnownSettings.Update` als Domain-Guard.
+
 ## Self-Update-DTOs
 
 Die Self-Update-Funktion persistiert ihre Betriebsdaten dateibasiert im

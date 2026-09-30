@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting; // for IHostedService
+using msTools.Updater;
 using System.Data.Common;
 using System.Diagnostics;
 
@@ -49,6 +50,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
         "..",
         "FinanceManager.Web"));
     private readonly string _isolatedWebRoot = Path.Combine(Path.GetTempPath(), $"fm-webroot-{Guid.NewGuid():N}");
+    private readonly string _isolatedUpdatesWorkspace = Path.Combine(Path.GetTempPath(), $"fm-updates-work-{Guid.NewGuid():N}");
 
     private DbConnection? _connection;
 
@@ -111,6 +113,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["Updates:HostedServicesEnabled"] = "false",
                 ["Updates:SourceType"] = "LocalFolder",
                 ["Updates:LocalFolderPath"] = Path.Combine(Path.GetTempPath(), $"updates-source-{Guid.NewGuid():N}"),
+                ["Updates:WorkingDirectory"] = _isolatedUpdatesWorkspace,
                 ["FileLogging:Enabled"] = "false"
             };
             cfg.AddInMemoryCollection(overrides);
@@ -128,6 +131,17 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             foreach (var d in hostedToRemove)
             {
                 services.Remove(d);
+            }
+
+            // Isolate the updater workspace per factory instance: the "updates" working directory
+            // resolves under the shared ContentRoot, so hosts starting in parallel raced on
+            // pending-update recovery (AutoUpdateWorkspaceRecoveryException on locked .tmp files).
+            // Mutating the singleton is required because the DownloadPath is seeded before the
+            // configuration overrides above take effect (see UpdateControllerIntegrationTests).
+            var autoUpdateDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(AutoUpdateOptions));
+            if (autoUpdateDescriptor?.ImplementationInstance is AutoUpdateOptions autoUpdateOptions)
+            {
+                autoUpdateOptions.DownloadPath = _isolatedUpdatesWorkspace;
             }
 
             // Remove existing AppDbContext registration

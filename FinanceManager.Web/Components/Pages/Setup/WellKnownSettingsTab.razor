@@ -1,0 +1,64 @@
+@using FinanceManager.Shared.Dtos.Admin
+@using FinanceManager.Web.ViewModels.Setup
+@implements IDisposable
+@inject FinanceManager.Application.ICurrentUserService CurrentUser
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
+
+@if (!CurrentUser.IsAuthenticated || !CurrentUser.IsAdmin)
+{
+    <p>@Localizer["Access_AdminOnly"]</p>
+}
+else
+{
+    <div class="setup-tab setup-wellknown-tab">
+        <h4 style="margin-top:0;">@Localizer["SetupWellKnown_Title"]</h4>
+
+        @if (_vm is null)
+        {
+            <div>@Localizer["Msg_Loading"]</div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_vm.Error))
+        {
+            <div class="error">@_vm.Error</div>
+        }
+        else
+        {
+            <div class="form-grid">
+                <div class="form-row"><label for="wellknown-changepasswordurl">@Localizer["SetupWellKnown_Label_ChangePasswordUrl"]</label><input id="wellknown-changepasswordurl" @bind="_vm.Model.ChangePasswordUrl" @bind:after="_vm.OnChanged" /></div>
+                <div class="form-row"><small class="hint">@Localizer["SetupWellKnown_Hint_ChangePasswordUrl"]</small></div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_vm.SaveError))
+            {
+                <div class="error">@_vm.SaveError</div>
+            }
+
+            @if (_vm.SavedOk)
+            {
+                <div class="info">@Localizer["SetupWellKnown_SaveSuccess"]</div>
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public SetupWellKnownViewModel? ViewModel { get; set; }
+    private SetupWellKnownViewModel? _vm;
+    private EventHandler? _handler;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vm = ViewModel ?? throw new InvalidOperationException("ViewModel parameter is required for WellKnownSettingsTab.");
+        _handler = (_, __) => _ = InvokeAsync(StateHasChanged);
+        _vm.StateChanged += _handler;
+        await _vm.LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        if (_vm is not null && _handler is not null)
+        {
+            _vm.StateChanged -= _handler;
+        }
+    }
+}

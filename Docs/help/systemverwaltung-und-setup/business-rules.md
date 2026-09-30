@@ -357,3 +357,64 @@ zurueckgeblieben ist.
 - Bei Verstoß liefert die API einen `400 ValidationProblem` und speichert keine Änderung.
 
 **Umsetzung:** `SecurityTxtSettingsUpdateRequest.Validate(...)`, `SecurityTxtController.UpdateSettingsAsync(...)`.
+
+## Well-Known-Redirect-Ziel akzeptiert lokale Pfade und absolute http/https-URLs
+
+**Beschreibung:** Das Weiterleitungsziel von `/.well-known/change-password` wird in zwei Schichten validiert, um strukturell ungültige Werte (kein Schema, `javascript:` o. ä.) auszuschließen. Absolute URLs auf andere Hosts sind bewusst zulässig — die Konfiguration liegt in Admin-Hand, ein Open-Redirect-Schutz ist nicht vorgesehen.
+
+**Bedingungen:**
+- `WellKnownSettingsUpdateRequest.ChangePasswordUrl` wird über `PUT api/admin/well-known` gesetzt.
+- `WellKnownSettings.Update` wird beim Speichern aufgerufen.
+
+**Verhalten:**
+- Lokaler Root-Pfad (beginnt mit `/`, nicht mit `//`): gültig.
+- Absolute URI mit Schema `http` oder `https`: gültig.
+- Leere, nicht-URL- oder sonstige Werte: `400 ValidationProblem` an der API beziehungsweise `ArgumentException` im Domain-Guard.
+
+**Umsetzung:** `WellKnownUrlValidator.IsValidUrl`, `WellKnownSettingsUpdateRequest.Validate(...)`, `WellKnownSettings.Update(...)`.
+
+## Well-Known-Redirect fällt auf das Standardziel zurück
+
+**Beschreibung:** Der öffentliche Endpunkt `/.well-known/change-password` bleibt auch ohne explizite Admin-Konfiguration funktionsfähig.
+
+**Bedingungen:**
+- `WellKnownSettingsService.GetChangePasswordUrlAsync` liest die `WellKnownSettings`-Singleton-Zeile.
+- Gespeicherter Wert ist leer oder erfüllt `WellKnownSettings.IsValidUrl` nicht.
+
+**Verhalten:**
+- Gültiger gespeicherter Wert: Redirect auf diesen Wert.
+- Fehlende Zeile: `GetEntityAsync` legt die Standard-Row mit `/change-password` an.
+- Ungültiger gespeicherter Wert: Redirect auf `WellKnownSettings.DefaultChangePasswordUrl` (`/change-password`).
+
+**Umsetzung:** `WellKnownSettingsService.GetEntityAsync`, `WellKnownSettingsService.GetChangePasswordUrlAsync`, `WellKnownController.GetChangePasswordRedirectAsync`.
+
+## Self-Service-Passwortänderung prüft das bisherige Passwort und erhält die Sitzung
+
+**Beschreibung:** Benutzer können ihr eigenes Passwort über `PUT /api/user/settings/password` ändern, ohne dass ein Administrator eingreifen muss. Das bisherige Passwort wird geprüft; nach der Änderung bleibt die aktuelle Sitzung gültig, während andere Sitzungen desselben Benutzers ungültig werden.
+
+**Bedingungen:**
+- Request ist mit JWT-Bearer authentifiziert.
+- `ChangePasswordRequest.CurrentPassword` stimmt mit dem gespeicherten Passwort-Hash überein.
+- `ChangePasswordRequest.NewPassword` erfüllt die `Identity:Password`-Policy (`RequiredLength=8`, `RequireDigit=true`, `RequireNonAlphanumeric=false`).
+
+**Verhalten:**
+- Falsches aktuelles Passwort: `400` mit `Err_InvalidCurrentPassword`.
+- Policy-Verletzung: `400` mit `Err_PasswordPolicyViolation`.
+- Benutzer nicht gefunden: `404` beziehungsweise `Err_UserNotFound`.
+- Erfolg: `UserManager.ChangePasswordAsync` rotiert den Security Stamp; der Controller stellt über `ReissueAuthCookieAsync` ein neues JWT aus und ersetzt das Cookie `FinanceManager.Auth`, damit die aktuelle Sitzung weiterläuft. JWTs anderer Geräte/Browser werden durch die Stamp-Rotation ungültig.
+
+**Umsetzung:** `UserSettingsController.ChangePasswordAsync`, `UserAuthService.ChangePasswordAsync`, `UserSettingsController.ReissueAuthCookieAsync`, `ChangePassword.razor`.
+
+## Admin-Passwort-Reset bleibt vom Self-Service unverändert
+
+**Beschreibung:** Der administrative Passwort-Reset (`AdminController.ResetPasswordAsync`, `SetPasswordOverlay` auf `/card/users/{id}`) fragt kein bisheriges Passwort ab und ist der Rolle `Admin` vorbehalten. Er bleibt durch die neue Self-Service-Route unverändert und funktionsfähig.
+
+**Bedingungen:**
+- Admin öffnet die Benutzerverwaltung und setzt ein Passwort zurück.
+- Benutzer ändert sein Passwort selbst über `/change-password`.
+
+**Verhalten:**
+- Admin-Reset: kein bisheriges Passwort nötig, nur Rolle `Admin`; Security Stamp wird ebenfalls rotiert.
+- Self-Service: bisheriges Passwort ist Pflicht, keine Admin-Rolle nötig.
+
+**Umsetzung:** `AdminController.ResetPasswordAsync`, `UserSettingsController.ChangePasswordAsync`.

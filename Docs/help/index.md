@@ -6,7 +6,7 @@
 
 ## Benutzerführung
 
-- [Benutzeroberfläche](benutzeroberflaeche/index.md) — Dieser Bereich beschreibt die responsive Bedienung der Web-Oberfläche auf kleinen Viewports.
+- [Benutzeroberfläche](benutzeroberflaeche/index.md) — Dieser Bereich beschreibt die Bedienung der Web-Oberfläche: die responsive Darstellung auf kleinen Viewports sowie das Verhalten von Dialogen und Bestätigungsabfragen.
 
 ## Prozesse
 
@@ -29,4 +29,4 @@
 - [Anhänge](anhaenge/index.md) — Dieser Bereich verwaltet Dateianhänge und Kategorien für Fachobjekte.
 - [Automatische Updates](updates/index.md) — Dieser Bereich orchestriert automatische Erkennung, Download und Installation von Programmaktualisierungen auf produktiven Servern.
 - [Programminformationen](programminformationen/index.md) — Die Anwendung zeigt die aktuelle Versionsnummer des Programms im Menü-Fußbereich an.
-- [Systemverwaltung und Setup](systemverwaltung-und-setup/index.md) — Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen, Sicherungen und die security.txt-Konfiguration gemäß RFC 9116.
+- [Systemverwaltung und Setup](systemverwaltung-und-setup/index.md) — Dieser Bereich bündelt Benutzerverwaltung, Sicherheit, Benachrichtigungen, Sicherungen, die security.txt-Konfiguration gemäß RFC 9116 und die Well-Known-Endpunkte inklusive der Selbstbedienungs-Seite zum Ändern des eigenen Passworts.

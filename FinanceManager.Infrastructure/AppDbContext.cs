@@ -13,6 +13,7 @@ using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Security; // new
 using FinanceManager.Domain.Statements;
 using FinanceManager.Domain.Users;
+using FinanceManager.Domain.WellKnown;
 using FinanceManager.Infrastructure.Backups;
 using FinanceManager.Infrastructure.Notifications; // new
 using FinanceManager.Infrastructure.Statements;
@@ -247,6 +248,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         get
         {
             return Set<SecurityTxtSettings>();
+        }
+    }
+    /// <summary>Well-known endpoint settings.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<WellKnownSettings> WellKnownSettings
+    {
+        get
+        {
+            return Set<WellKnownSettings>();
         }
     }
     /// <summary>Notification entities for user notifications.</summary>

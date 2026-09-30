@@ -23,7 +23,7 @@ public sealed class ApiClientSecurityTxtTests
             Expires = DateTimeOffset.UtcNow.AddYears(1),
             Canonical = "https://security.example.com/.well-known/security.txt"
         };
-        var api = CreateClient(request =>
+        var api = StubHttpMessageHandler.CreateClient(request =>
         {
             capturedRequest = request;
             return new HttpResponseMessage(HttpStatusCode.OK)
@@ -45,7 +45,7 @@ public sealed class ApiClientSecurityTxtTests
     public async Task SecurityTxt_UpdateSettingsAsync_CallsExpectedEndpoint()
     {
         HttpRequestMessage? capturedRequest = null;
-        var api = CreateClient(request =>
+        var api = StubHttpMessageHandler.CreateClient(request =>
         {
             capturedRequest = request;
             return new HttpResponseMessage(HttpStatusCode.NoContent);
@@ -63,26 +63,10 @@ public sealed class ApiClientSecurityTxtTests
     [Fact]
     public async Task SecurityTxt_GetSettingsAsync_WhenApiFails_Throws()
     {
-        var api = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.BadRequest));
+        var api = StubHttpMessageHandler.CreateClient(_ => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
         var act = () => api.GetSecurityTxtSettingsAsync();
 
         await act.Should().ThrowAsync<HttpRequestException>();
-    }
-
-    private static ApiClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> handler)
-        => new(new HttpClient(new DelegatingHandlerStub(handler)) { BaseAddress = new Uri("https://example.test") });
-
-    private sealed class DelegatingHandlerStub : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
-
-        public DelegatingHandlerStub(Func<HttpRequestMessage, HttpResponseMessage> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => Task.FromResult(_handler(request));
     }
 }

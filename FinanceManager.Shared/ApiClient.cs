@@ -45,11 +45,26 @@ public partial class ApiClient : IApiClient
     /// <param name="resp">The HTTP response message to inspect.</param>
     private async Task EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp)
     {
+        await TrySetErrorFromResponseAsync(resp);
+        resp.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Extracts structured error information (including RFC ProblemDetails style validation errors)
+    /// from a failed response into <see cref="LastError"/> and <see cref="LastErrorCode"/> and raises
+    /// <see cref="AuthenticationRequired"/> for authentication failures — without throwing.
+    /// Callers that convert failures into a return value should prefer this over
+    /// <see cref="EnsureSuccessOrSetErrorAsync"/>.
+    /// </summary>
+    /// <param name="resp">The HTTP response message to inspect.</param>
+    /// <returns><c>true</c> when the response indicates success; otherwise <c>false</c>.</returns>
+    private async Task<bool> TrySetErrorFromResponseAsync(HttpResponseMessage resp)
+    {
         LastError = null;
         LastErrorCode = null;
         if (resp.IsSuccessStatusCode)
         {
-            return;
+            return true;
         }
 
         try
@@ -114,7 +129,7 @@ public partial class ApiClient : IApiClient
             AuthenticationRequired?.Invoke(this, new ApiAuthenticationRequiredEventArgs(resp.StatusCode, LastErrorCode, LastError));
         }
 
-        resp.EnsureSuccessStatusCode();
+        return false;
     }
 
     private bool IsAuthenticationFailure(HttpResponseMessage resp)
