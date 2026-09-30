@@ -44,6 +44,31 @@ namespace FinanceManager.Infrastructure.Statements.Parsers
     <field name='Betrag' variable='Amount'/>
     <field name='Währung' variable='CurrencyCode'/>
   </section>
+</template>",
+            @"
+<template>
+  <section name='Title' type='ignore'>
+  </section>
+  <section name='AccountInfo' type='keyvalue'>
+    <key name='IBAN' variable='BankAccountNo' mode='always'/>
+    <key name='Kunde' variable='BankAccountNo' mode='onlywhenempty'/>
+  </section>
+  <section name='Sortierung ' type='ignore'>
+  </section>
+  <section name='BlaBla' type='ignore'>
+  </section>
+  <section name='table' type='table' containsheader='true'>
+    <field name='Buchung' variable='PostingDate'/>
+    <field name='Wertstellungsdatum' variable='ValutaDate'/>
+    <field name='Auftraggeber/Empfänger' variable='SourceName'/>
+    <field name='Buchungstext' variable='PostingDescription'/>
+    <field name='Verwendungszweck' variable='Description'/>
+    <field name='Referenz' variable=''/>
+    <field name='Saldo' variable=''/>
+    <field name='Währung' variable='CurrencyCode'/>
+    <field name='Betrag' variable='Amount'/>
+    <field name='Währung' variable='CurrencyCode'/>
+  </section>
 </template>"
         };
         /// <summary>

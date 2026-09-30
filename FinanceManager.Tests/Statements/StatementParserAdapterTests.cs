@@ -138,6 +138,99 @@ public sealed class StatementParserAdapterTests
     }
 
     /// <summary>
+    /// ING extended the CSV export with a "Referenz" column between "Verwendungszweck" and "Saldo"
+    /// (10 columns instead of 9). A single-account export in that new layout must parse into exactly one
+    /// <see cref="StatementParseResult"/> with all movement fields mapped to their correct positions -
+    /// the "Referenz" value itself is discarded because <see cref="StatementMovement"/> has no field for it.
+    /// </summary>
+    [Fact]
+    public void Parse_IngCsvNewFormat_ShouldReturnSingleElementList_WhenValidSingleBlockContent()
+    {
+        var csv =
+            "Bank;ING\r\n" +
+            "\r\n" +
+            "IBAN;DE11100000000000\r\n" +
+            "Kontoname;Testkonto\r\n" +
+            "Kunde;Testinhaber\r\n" +
+            "Zeitraum;01.01.2023 - 31.01.2023\r\n" +
+            "Saldo;100,00;EUR\r\n" +
+            "\r\n" +
+            "Sortierung;Datum absteigend\r\n" +
+            "\r\n" +
+            "\r\n" +
+            "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Referenz;Saldo;Währung;Betrag;Währung\r\n" +
+            "01.01.2023;02.01.2023;TestPerson;Überweisung;Testzweck;NOTPROVIDED;100,00;EUR;-50,00;EUR\r\n";
+
+        var ingFile = new ING_Csv_StatementFile(NullLogger<ING_Csv_StatementFile>.Instance);
+        var loaded = ingFile.Load("test.csv", CreateIngCsvBytes(csv));
+        Assert.True(loaded, "ING_Csv_StatementFile should load the CSV");
+
+        var parser = new ING_CSV_StatementFileParser(NullLogger<ING_CSV_StatementFileParser>.Instance);
+
+        var result = parser.Parse(ingFile);
+
+        Assert.NotNull(result);
+        var statement = Assert.Single(result!);
+        var movement = Assert.Single(statement.Movements);
+        Assert.Equal(new DateTime(2023, 1, 1), movement.BookingDate);
+        Assert.Equal(new DateTime(2023, 1, 2), movement.ValutaDate);
+        Assert.Equal("TestPerson", movement.Counterparty);
+        Assert.Equal("Überweisung", movement.PostingDescription);
+        Assert.Equal("Testzweck", movement.Subject);
+        Assert.Equal(-50.00m, movement.Amount);
+        Assert.Equal("EUR", movement.CurrencyCode);
+    }
+
+    /// <summary>
+    /// A collection-account CSV (multiple IBAN blocks) in the new "Referenz" column layout must be split
+    /// into one <see cref="StatementParseResult"/> per block, same as with the legacy 9-column layout.
+    /// </summary>
+    [Fact]
+    public void Parse_IngCsvNewFormat_ShouldReturnMultipleResults_ForCollectionAccountCSV()
+    {
+        var csv =
+            "Bank;ING\r\n" +
+            "\r\n" +
+            "IBAN;DE11100000000000\r\n" +
+            "Kontoname;Konto1\r\n" +
+            "Kunde;User1\r\n" +
+            "Zeitraum;01.01.2023 - 31.01.2023\r\n" +
+            "Saldo;100,00;EUR\r\n" +
+            "\r\n" +
+            "Sortierung;Datum absteigend\r\n" +
+            "\r\n" +
+            "\r\n" +
+            "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Referenz;Saldo;Währung;Betrag;Währung\r\n" +
+            "01.01.2023;01.01.2023;Person1;Überweisung;Test1;REF-1;100,00;EUR;-50,00;EUR\r\n" +
+            "\r\n" +
+            "Bank;ING\r\n" +
+            "\r\n" +
+            "IBAN;DE22200000000000\r\n" +
+            "Kontoname;Konto2\r\n" +
+            "Kunde;User2\r\n" +
+            "Zeitraum;01.01.2023 - 31.01.2023\r\n" +
+            "Saldo;200,00;EUR\r\n" +
+            "\r\n" +
+            "Sortierung;Datum absteigend\r\n" +
+            "\r\n" +
+            "\r\n" +
+            "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Referenz;Saldo;Währung;Betrag;Währung\r\n" +
+            "02.01.2023;02.01.2023;Person2;Überweisung;Test2;REF-2;200,00;EUR;-100,00;EUR\r\n";
+
+        var ingFile = new ING_Csv_StatementFile(NullLogger<ING_Csv_StatementFile>.Instance);
+        var loaded = ingFile.Load("sammel.csv", CreateIngCsvBytes(csv));
+        Assert.True(loaded, "ING_Csv_StatementFile should load the multi-block CSV");
+
+        var parser = new ING_CSV_StatementFileParser(NullLogger<ING_CSV_StatementFileParser>.Instance);
+
+        var result = parser.Parse(ingFile);
+
+        Assert.NotNull(result);
+        Assert.IsAssignableFrom<IReadOnlyList<StatementParseResult>>(result);
+        Assert.True(result!.Count > 1, "Collection account CSV should produce multiple StatementParseResult instances");
+    }
+
+    /// <summary>
     /// An ING CSV export that bundles multiple accounts' blocks into a single file (a collection-account /
     /// "Sammelkonto" export) must be split by the parser into more than one <see cref="StatementParseResult"/>,
     /// one per embedded account block, rather than merging all blocks' movements into a single result.

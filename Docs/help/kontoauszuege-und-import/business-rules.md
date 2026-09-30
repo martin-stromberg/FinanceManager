@@ -71,6 +71,19 @@
 
 **Umsetzung:** `StatementDraftEntriesListViewModel` liefert die mobilen Listenzeilen; `GenericListPage` rendert die mobile Kartenstruktur.
 
+## Massenimport-Prüfdialog zeigt nicht importierbare Dateien
+
+**Beschreibung:** Dateien, die beim Massenimport nicht zugeordnet oder nicht importiert werden können, werden im Prüfdialog sichtbar mit Grund angezeigt.
+
+**Bedingungen:**
+- Mindestens eine Datei im Upload-Batch ist nicht importierbar oder benötigt eine Benutzerentscheidung (Dialog-Policy `AlwaysConfirm` oder `OnMissingInformation`).
+
+**Verhalten:**
+- Nicht importierbare Dateien erscheinen abgeschwächt (`muted-row`) mit ihrer `ValidationMessage`; für `MassImportFileType.Unknown` wird die lokalisierte Meldung `MassImport_Validation_UnknownFileType` angezeigt.
+- Die Finalisierungs-Warnung „Die Aktion kann nicht rückgängig gemacht werden." erscheint nur, wenn mindestens eine nicht ausgeschlossene, importierbare Datei im Batch vorhanden ist.
+
+**Umsetzung:** `Home.razor` (Dialog-Listendarstellung) und `HomeViewModel.ConfirmMassImportAsync` (konditionale Bestätigung).
+
 ## Sammelauszüge erzeugen mehrere Entwürfe
 
 **Beschreibung:** Wenn ein Import mehrere Auszüge für unterschiedliche IBANs enthält, wird für jede IBAN ein eigener Entwurf erzeugt.
