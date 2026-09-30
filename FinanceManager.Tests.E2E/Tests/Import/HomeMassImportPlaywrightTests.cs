@@ -101,6 +101,116 @@ public sealed class HomeMassImportPlaywrightTests
     }
 
     /// <summary>
+    /// Uploads an ING account-statement CSV in the new export layout (extra "Referenz" column between
+    /// "Verwendungszweck" and "Saldo") through the home page's import widget and verifies the file is
+    /// recognized and imported directly - without the mass-import review dialog - and that the success
+    /// indicator with a link to the created draft appears.
+    /// </summary>
+    [Fact]
+    public async Task UploadIngCsvNewFormat_ViaUi_ShouldImportWithoutReviewDialog()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var userSeed = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"import-ing-new-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        var user = await userSeed.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+        await userSeed.EnsureSelfContactAsync(user.Id, $"Self {username}");
+
+        var csv = "Umsatzanzeige;Datei erstellt am: 02.12.2025 19:04\r\n" +
+                  "\r\n" +
+                  "IBAN;DE50700500000007882996\r\n" +
+                  "Kontoname;Girokonto\r\n" +
+                  "Bank;ING\r\n" +
+                  "Kunde;Admin\r\n" +
+                  "Zeitraum;02.11.2025 - 02.12.2025\r\n" +
+                  "Saldo;2.776,45;EUR\r\n" +
+                  "\r\n" +
+                  "Sortierung;Datum absteigend\r\n" +
+                  "\r\n" +
+                  "\r\n" +
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Referenz;Saldo;Währung;Betrag;Währung\r\n" +
+                  "02.12.2025;02.12.2025;Testempfänger;Überweisung;Ihr Einkauf;NOTPROVIDED;2.776,45;EUR;-206,44;EUR\r\n";
+
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-ing-new-format.csv");
+        await File.WriteAllTextAsync(tempFile, csv, TestContext.Current.CancellationToken);
+        try
+        {
+            await page.GotoAsync("/");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await page.Locator("#Import").WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+            await page.Locator("#Import input[type=file]").SetInputFilesAsync(tempFile);
+
+            var success = page.Locator(".import-success");
+            await success.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30_000 });
+
+            (await page.Locator(".mass-import-dialog").CountAsync()).Should().Be(0,
+                because: "a recognized ING statement must import directly without the review dialog");
+            var detailsLink = success.Locator("a.alert-link");
+            (await detailsLink.GetAttributeAsync("href")).Should().Contain("/card/statement-drafts/");
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// Uploads a file that no parser recognizes through the home page's import widget and verifies the
+    /// mass-import review dialog lists the file together with its failure reason. Confirming the dialog
+    /// must close it without showing the "cannot be undone" finalize confirmation, because a batch in
+    /// which nothing is importable executes no changes at all.
+    /// </summary>
+    [Fact]
+    public async Task UploadUnrecognizedFile_ViaUi_ShouldShowReasonInReviewDialog_WithoutFinalizeWarning()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var userSeed = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"import-unknown-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        await userSeed.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}-unrecognized.txt");
+        await File.WriteAllTextAsync(tempFile, "just some text\nthat matches nothing\n", TestContext.Current.CancellationToken);
+        try
+        {
+            await page.GotoAsync("/");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await page.Locator("#Import").WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+            await page.Locator("#Import input[type=file]").SetInputFilesAsync(tempFile);
+
+            var dialog = page.Locator(".mass-import-dialog");
+            await dialog.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+
+            var fileName = Path.GetFileName(tempFile);
+            (await dialog.InnerTextAsync()).Should().Contain(fileName,
+                because: "the review dialog must list the unrecognized file so the user sees what was uploaded");
+            var errorMessage = dialog.Locator(".mass-import-entry .error");
+            await errorMessage.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+            (await errorMessage.InnerTextAsync()).Should().NotBeNullOrWhiteSpace(
+                because: "the review dialog must surface a localized reason why the file cannot be imported");
+
+            await dialog.Locator("button.btn").First.ClickAsync();
+
+            await dialog.WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 15_000 });
+            await page.WaitForTimeoutAsync(500);
+            (await page.Locator(".confirm-dialog").CountAsync()).Should().Be(0,
+                because: "nothing is executed for a fully skipped batch, so the irreversibility warning is pointless");
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
     /// Drives a single statement draft through the full booking lifecycle - a failing validation (missing
     /// contact), a forced-warning booking, then a successful booking that also assigns a savings plan and a
     /// security transaction to a second entry - and verifies the resulting postings are correctly linked to
