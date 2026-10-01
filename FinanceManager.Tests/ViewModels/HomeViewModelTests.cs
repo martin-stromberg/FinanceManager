@@ -25,12 +25,16 @@ public sealed class HomeViewModelTests
         public bool IsAdmin { get; set; } = false;
     }
 
-    private static (HomeViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private static (HomeViewModel vm, Mock<IApiClient> apiMock) CreateVm(Mock<FinanceManager.Web.Services.IConfirmationService>? confirmationMock = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
+        if (confirmationMock != null)
+        {
+            services.AddSingleton(confirmationMock.Object);
+        }
         var vm = new HomeViewModel(services.BuildServiceProvider());
         return (vm, apiMock);
     }
@@ -212,6 +216,135 @@ public sealed class HomeViewModelTests
         vm.SetPendingFileExcluded(file.FileId, false);
 
         Assert.True(vm.PendingMassImport.Files[0].Excluded);
+    }
+
+    /// <summary>
+    /// When the pending batch contains no file that would actually be imported (all files excluded or not
+    /// importable), confirming the review dialog must not show the "cannot be undone" finalize confirmation -
+    /// the confirm request is still sent so the server can mark the files as skipped and log the audit trail.
+    /// </summary>
+    [Fact]
+    public async Task ConfirmMassImportAsync_ShouldSkipFinalizeConfirmation_WhenNothingImportable()
+    {
+        var confirmationMock = new Mock<FinanceManager.Web.Services.IConfirmationService>();
+        confirmationMock
+            .Setup(x => x.ConfirmAsync(It.IsAny<FinanceManager.Web.Services.ConfirmationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var (vm, apiMock) = CreateVm(confirmationMock);
+        MassImportBatchRequestDto? confirmRequest = null;
+
+        apiMock
+            .Setup(x => x.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ImportSplitSettingsDto { MassImportDialogPolicy = MassImportDialogPolicy.OnMissingInformation });
+        apiMock
+            .Setup(x => x.StatementDrafts_ProcessMassImportAsync(It.IsAny<MassImportBatchRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MassImportBatchRequestDto request, CancellationToken _) =>
+            {
+                if (!request.ConfirmExecution)
+                {
+                    return new MassImportBatchResultDto
+                    {
+                        DialogRequired = true,
+                        RequiresConfirmation = true,
+                        Files = request.Files
+                            .Select(file => new MassImportBatchFileResultDto
+                            {
+                                FileId = file.FileId,
+                                FileName = file.FileName,
+                                FileType = MassImportFileType.Unknown,
+                                ServiceKey = string.Empty,
+                                CanImport = false,
+                                ExecutionStatus = MassImportFileExecutionStatus.Pending,
+                                ValidationMessage = "File type could not be recognized."
+                            })
+                            .ToList()
+                    };
+                }
+
+                confirmRequest = request;
+                return new MassImportBatchResultDto
+                {
+                    DialogRequired = true,
+                    RequiresConfirmation = false,
+                    Files = request.Files
+                        .Select(file => new MassImportBatchFileResultDto
+                        {
+                            FileId = file.FileId,
+                            FileName = file.FileName,
+                            FileType = MassImportFileType.Unknown,
+                            CanImport = false,
+                            Excluded = true,
+                            ExecutionStatus = MassImportFileExecutionStatus.Skipped
+                        })
+                        .ToList()
+                };
+            });
+        apiMock
+            .Setup(x => x.Securities_ListAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SecurityDto>());
+
+        await InvokeProcessMassImportSelectionAsync(vm, [new FakeBrowserFile("unknown.bin", "application/octet-stream", "data"u8.ToArray())]);
+        await vm.ConfirmMassImportAsync(TestContext.Current.CancellationToken);
+
+        confirmationMock.Verify(
+            x => x.ConfirmAsync(It.IsAny<FinanceManager.Web.Services.ConfirmationRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        Assert.NotNull(confirmRequest);
+        Assert.True(confirmRequest!.ConfirmExecution);
+        Assert.Null(vm.PendingMassImport);
+    }
+
+    /// <summary>
+    /// When the pending batch still contains at least one file that will actually be imported, the
+    /// "cannot be undone" finalize confirmation must be shown before the confirm request is sent.
+    /// </summary>
+    [Fact]
+    public async Task ConfirmMassImportAsync_ShouldShowFinalizeConfirmation_WhenFileImportable()
+    {
+        var confirmationMock = new Mock<FinanceManager.Web.Services.IConfirmationService>();
+        confirmationMock
+            .Setup(x => x.ConfirmAsync(It.IsAny<FinanceManager.Web.Services.ConfirmationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var (vm, apiMock) = CreateVm(confirmationMock);
+
+        apiMock
+            .Setup(x => x.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ImportSplitSettingsDto { MassImportDialogPolicy = MassImportDialogPolicy.AlwaysConfirm });
+        apiMock
+            .Setup(x => x.StatementDrafts_ProcessMassImportAsync(It.IsAny<MassImportBatchRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MassImportBatchRequestDto request, CancellationToken _) => new MassImportBatchResultDto
+            {
+                DialogRequired = true,
+                RequiresConfirmation = !request.ConfirmExecution,
+                Files = request.Files
+                    .Select(file => new MassImportBatchFileResultDto
+                    {
+                        FileId = file.FileId,
+                        FileName = file.FileName,
+                        FileType = MassImportFileType.AccountStatement,
+                        ServiceKey = "ing",
+                        ServiceDisplayName = "ING",
+                        CanImport = true,
+                        ExecutionStatus = request.ConfirmExecution
+                            ? MassImportFileExecutionStatus.Imported
+                            : MassImportFileExecutionStatus.Pending,
+                        StatementDraftId = request.ConfirmExecution ? Guid.NewGuid() : null
+                    })
+                    .ToList()
+            });
+        apiMock
+            .Setup(x => x.Securities_ListAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SecurityDto>());
+
+        await InvokeProcessMassImportSelectionAsync(vm, [new FakeBrowserFile("statement.csv", "text/csv", "data"u8.ToArray())]);
+        await vm.ConfirmMassImportAsync(TestContext.Current.CancellationToken);
+
+        confirmationMock.Verify(
+            x => x.ConfirmAsync(
+                It.Is<FinanceManager.Web.Services.ConfirmationRequest>(r => r.MessageResourceKey == "Confirmation_Finalize_Message"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        Assert.Null(vm.PendingMassImport);
     }
 
     private static async Task InvokeProcessMassImportSelectionAsync(HomeViewModel vm, IReadOnlyList<IBrowserFile> files)

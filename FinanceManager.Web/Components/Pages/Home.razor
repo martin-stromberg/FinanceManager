@@ -72,10 +72,10 @@
                 <h3>@Localizer["MassImport_Dialog_Title"]</h3>
                 <p>@Localizer["MassImport_Dialog_Hint"]</p>
                 <div class="mass-import-list">
-                    @foreach (var file in _vm.PendingMassImport.Files.Where(x => !x.Excluded))
+                    @foreach (var file in _vm.PendingMassImport.Files)
                     {
                         var selectable = IsPendingFileSelectable(file);
-                        <article class="mass-import-entry @(!selectable ? "muted-row" : null)">
+                        <article class="mass-import-entry @(!selectable || file.Excluded ? "muted-row" : null)">
                             <div class="mass-import-entry-header">
                                 <div class="mass-import-entry-title-wrap">
                                     @if (HasMissingSecurityAssignmentWarning(file))
@@ -86,7 +86,7 @@
                                     }
                                     <div class="mass-import-entry-title" title="@file.FileName">@file.FileName</div>
                                 </div>
-                                <button class="icon-btn danger" title="@Localizer["Ribbon_Delete"]" @onclick="@(() => RemovePendingEntry(file.FileId))">
+                                <button class="icon-btn danger" title="@Localizer["Ribbon_Delete"]" disabled="@(!selectable)" @onclick="@(() => RemovePendingEntry(file.FileId))">
                                     <svg><use href="/icons/sprite.svg#delete" /></svg>
                                 </button>
                             </div>
@@ -119,7 +119,11 @@
                                 </span>
                             </div>
 
-                            @if (!string.IsNullOrWhiteSpace(file.ValidationMessage) && !HasMissingSecurityAssignmentWarning(file))
+                            @if (file.FileType == MassImportFileType.Unknown)
+                            {
+                                <div class="error">@Localizer["MassImport_Validation_UnknownFileType"]</div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(file.ValidationMessage) && !HasMissingSecurityAssignmentWarning(file))
                             {
                                 <div class="error">@file.ValidationMessage</div>
                             }

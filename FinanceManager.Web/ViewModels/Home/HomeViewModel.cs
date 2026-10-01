@@ -121,10 +121,11 @@ public sealed class HomeViewModel : ViewModelBase
             return;
         }
 
-        if (!await ConfirmationService.ConfirmAsync(new(
-            TitleResourceKey: "Confirmation_Finalize_Title",
-            MessageResourceKey: "Confirmation_Finalize_Message",
-            Severity: ConfirmationSeverity.Warning)))
+        if (PendingMassImport.Files.Any(file => !file.Excluded && file.CanImport)
+            && !await ConfirmationService.ConfirmAsync(new(
+                TitleResourceKey: "Confirmation_Finalize_Title",
+                MessageResourceKey: "Confirmation_Finalize_Message",
+                Severity: ConfirmationSeverity.Warning)))
         {
             return;
         }

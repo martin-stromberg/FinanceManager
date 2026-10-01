@@ -65,6 +65,22 @@ public sealed class ConfirmDialogTests : BunitContext
     }
 
     /// <summary>
+    /// Verifies that the outer backdrop container carries the dedicated <c>confirm-dialog-layer</c> class
+    /// alongside <c>split-center</c>, which the CSS uses to raise the confirmation dialog above overlays.
+    /// </summary>
+    [Fact]
+    public void ConfirmDialog_RendersDedicatedLayerClass()
+    {
+        RegisterServices();
+
+        var request = new ConfirmationRequest("Confirmation_Delete_Title", "Confirmation_Delete_Message");
+        var cut = Render<ConfirmDialog>(parameters => parameters.Add(p => p.Request, request));
+
+        var container = cut.Find("div.split-center");
+        Assert.Contains("confirm-dialog-layer", container.ClassList);
+    }
+
+    /// <summary>
     /// Registers the services required to render <see cref="ConfirmDialog"/> in a bUnit test context.
     /// </summary>
     /// <param name="confirmationService">Optional confirmation service mock; a default mock is used when null.</param>

@@ -14,6 +14,8 @@ Ein Konto muss vorhanden sein. Für Wertpapierimporte sollte das betroffene Wert
 
 > **Hinweis:** Beim Massenimport müssen alle Dateien vollständig klassifizierbar sein.
 
+Wenn eine Datei nicht automatisch zugeordnet werden kann, erscheint der Dialog „Massenimport prüfen". Dort wird jede Datei mit ihrem erkannten Typ und — falls der Import nicht möglich ist — dem Grund dafür angezeigt (z. B. „Der Dateityp konnte nicht erkannt werden."). Sie können Dateien aus dem Import ausschließen oder bei Wertpapierkursdateien das zugehörige Wertpapier auswählen. Die abschließende Sicherheitsfrage „Die Aktion kann nicht rückgängig gemacht werden." erscheint nur, wenn tatsächlich mindestens eine Datei importiert wird.
+
 ### 2. Entwurf prüfen
 
 Kontrollieren Sie die vorgeschlagenen Zuordnungen (Kontakt, Sparplan, Wertpapier, Kostenneutralität).

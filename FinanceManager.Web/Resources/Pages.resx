@@ -1101,6 +1101,9 @@
   <data name="MassImport_FileType_Unknown" xml:space="preserve">
     <value>Unknown</value>
   </data>
+  <data name="MassImport_Validation_UnknownFileType" xml:space="preserve">
+    <value>The file type could not be recognized.</value>
+  </data>
   <data name="MassImport_FileType_AccountStatement" xml:space="preserve">
     <value>Account statement</value>
   </data>
