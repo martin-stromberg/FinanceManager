@@ -694,9 +694,10 @@ public interface IApiClient
     /// <param name="provider">Holiday provider name.</param>
     /// <param name="country">Holiday country ISO code.</param>
     /// <param name="subdivision">Holiday subdivision code.</param>
+    /// <param name="goldenCrossEnabled">Whether golden cross notifications are enabled (default: true).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True on success.</returns>
-    Task<bool> User_UpdateNotificationSettingsAsync(bool monthlyEnabled, int? hour, int? minute, string? provider, string? country, string? subdivision, CancellationToken ct = default);
+    Task<bool> User_UpdateNotificationSettingsAsync(bool monthlyEnabled, int? hour, int? minute, string? provider, string? country, string? subdivision, bool goldenCrossEnabled = true, CancellationToken ct = default);
 
     // Notifications
 
@@ -1039,6 +1040,12 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The result.</returns>
     Task<ReturnSummaryDto?> Securities_GetReturnSummaryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Gets the golden cross statistics (short-/long-term moving averages and phase) for a security.</summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="GoldenCrossDto"/> when found; otherwise null.</returns>
+    Task<GoldenCrossDto?> Securities_GetGoldenCrossAsync(Guid id, CancellationToken ct = default);
     /// <summary>Gets detailed return metrics for a security. Returns null when not found.</summary>
     /// <param name="id">Identifier of the entity.</param>
     /// <param name="ct">Cancellation token.</param>

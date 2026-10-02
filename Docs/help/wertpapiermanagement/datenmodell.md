@@ -19,6 +19,12 @@
 | `Sector` | `string?` | Optionaler Sektor (max. 255 Zeichen), Basis für die Sektorverteilung im Depot-Analysebericht |
 | `HasPriceError` | `bool` | Preisfehler-Flag |
 | `SymbolAttachmentId` | `Guid?` | Symbol |
+| `GoldenCrossNotifiedPhase` | `GoldenCrossPhase` | Zuletzt per Startseiten-Hinweis gemeldete Goldenes-Kreuz-Phase (Standard `Far`); verhindert Mehrfach-Hinweise innerhalb eines Zyklus |
+
+`GoldenCrossPhase` ist ein Enum mit den Werten `InsufficientData`, `Far`,
+`Approaching`, `Crossed`. Die Benutzereinstellung
+`User.GoldenCrossNotificationsEnabled` (`bool`, Standard `true`) steuert, ob
+Goldenes-Kreuz-Hinweise auf der Startseite erzeugt werden.
 
 ### `PortfolioKpiConfiguration`
 

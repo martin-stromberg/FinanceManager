@@ -51,6 +51,45 @@ persoenlichem Key auf einen freigegebenen Admin-Key zurueck.
 **Umsetzung:** `AlphaVantagePriceProvider`, `AlphaVantageKeyResolver`,
 `DataProtectionAlphaVantageSecretProtector`.
 
+## Goldenes Kreuz: Anzeige nur bei erreichter oder naher Schwelle
+
+**Beschreibung:** Das Statistikfeld „Goldenes Kreuz" auf der Wertpapierkarte
+wird nur angezeigt, wenn eine Goldenes-Kreuz-Situation vorliegt.
+
+**Bedingungen:**
+- `Crossed`: Kurzfristiger Durchschnitt (SMA50) ≥ langfristiger Durchschnitt
+  (SMA200).
+- `Approaching`: SMA50 liegt unter SMA200, aber um höchstens
+  `ApproachThresholdPercent` (Standard 3 %).
+
+**Verhalten:**
+- `Crossed`/`Approaching`: Box mit Kennzahlen und Info-Panel wird angezeigt.
+- `Far` oder `InsufficientData` (weniger als `LongWindow` Kurse): Box wird
+  vollständig ausgeblendet – auch bei ausreichenden Kursdaten.
+
+**Umsetzung:** `GoldenCrossAnalyzer.Analyze`, `GoldenCrossWidget.razor`.
+
+## Goldenes Kreuz: Startseiten-Hinweis einmal pro Zyklus
+
+**Beschreibung:** Nach jedem Kursabruf wird die Phase neu bewertet und bei
+Bedarf ein ereignisgesteuerter Hinweis auf der Startseite erzeugt.
+
+**Bedingungen:**
+- Die neue Phase ist höher als `Security.GoldenCrossNotifiedPhase`
+  (`Far` → `Approaching` → `Crossed`).
+- `User.GoldenCrossNotificationsEnabled` ist gesetzt (Standard `true`).
+
+**Verhalten:**
+- Hinweis wird erzeugt und die gemeldete Phase am Wertpapier gespeichert;
+  dieselbe Phase wird nicht erneut gemeldet.
+- Fällt die Phase auf `Far` zurück, wird die gespeicherte Phase zurückgesetzt,
+  so dass ein neuer Zyklus wieder Hinweise auslöst.
+- Ist die Benutzereinstellung deaktiviert, wird die Phase gespeichert, aber
+  kein Hinweis erzeugt.
+
+**Umsetzung:** `GoldenCrossService.EvaluateAndNotifyAsync`, aufgerufen aus
+`SecurityPriceWorker`.
+
 ## Depot-Analysebericht: Kachel-Konfiguration muss konsistent sein
 
 **Beschreibung:** Beim Speichern der Kachel-Sichtbarkeit/-Reihenfolge für den

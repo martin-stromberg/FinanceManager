@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- {0}=Name, {1}=Identifier, {2}=ShortWindow, {3}=LongWindow, {4}=ShortAverage, {5}=LongAverage, {6}=Currency -->
+  <data name="GoldenCross_Approaching_Title" xml:space="preserve"><value>Goldenes Kreuz nähert sich: {0}</value></data>
+  <data name="GoldenCross_Approaching_Message" xml:space="preserve"><value>Bei '{0}' ({1}) nähert sich der kurzfristige Kursdurchschnitt ({2} Tage: {4:N2} {6}) dem langfristigen Kursdurchschnitt ({3} Tage: {5:N2} {6}). Ein Goldenes Kreuz könnte bevorstehen.</value></data>
+  <data name="GoldenCross_Crossed_Title" xml:space="preserve"><value>Goldenes Kreuz erreicht: {0}</value></data>
+  <data name="GoldenCross_Crossed_Message" xml:space="preserve"><value>Bei '{0}' ({1}) hat der kurzfristige Kursdurchschnitt ({2} Tage: {4:N2} {6}) den langfristigen Kursdurchschnitt ({3} Tage: {5:N2} {6}) überschritten. Ein Goldenes Kreuz liegt vor.</value></data>
+</root>

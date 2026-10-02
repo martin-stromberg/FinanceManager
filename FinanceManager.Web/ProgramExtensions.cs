@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Notifications;
+using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
@@ -78,6 +79,8 @@ namespace FinanceManager.Web
             builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
             builder.Services.AddSingleton<IStringLocalizer<Pages>, PagesStringLocalizer>();
             builder.Services.AddScoped<IReturnAnalysisLocalizer, ReturnAnalysisLocalizer>();
+            builder.Services.AddScoped<IGoldenCrossLocalizer, GoldenCrossLocalizer>();
+            builder.Services.Configure<GoldenCrossOptions>(builder.Configuration.GetSection(GoldenCrossOptions.SectionName));
 
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();

@@ -1,6 +1,7 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities;
+using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Domain.Notifications;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Users;
@@ -285,6 +286,7 @@ public sealed class SecurityPriceErrorRecoveryTests
         services.AddSingleton(keyResolver.Object);
         services.AddSingleton(securityService ?? Mock.Of<ISecurityService>());
         services.AddSingleton(priceService ?? Mock.Of<ISecurityPriceService>());
+        services.AddSingleton(Mock.Of<IGoldenCrossService>());
         services.AddSingleton(localizer ?? CreateLocalizer());
         return services.BuildServiceProvider();
     }
