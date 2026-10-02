@@ -404,7 +404,7 @@ public sealed class DemoDataService : IDemoDataService
             "Logistik");
 
         var worldPriceHistory = await CreateSecurityPriceHistoryAsync(userId, worldSecurity, referenceMonthStart, 11.36m, random, ct);
-        var postPriceHistory = await CreateSecurityPriceHistoryAsync(userId, postSecurity, referenceMonthStart, 44.25m, random, ct);
+        var postPriceHistory = await CreateSecurityPriceHistoryAsync(userId, postSecurity, referenceMonthStart, 44.25m, random, ct, GoldenCrossTrendProfile);
 
         var giroAccount = await _accountService.CreateAsync(
             userId,
@@ -957,18 +957,34 @@ public sealed class DemoDataService : IDemoDataService
             ct);
     }
 
+    /// <summary>
+    /// Daily drift profile (fraction of the history elapsed, drift per trading day) that produces a
+    /// long decline, a sharp recovery crossing the 200-day average roughly two months before the
+    /// reference date, a short pullback and a subsequent uptrend – i.e. a demo golden cross.
+    /// </summary>
+    private static readonly IReadOnlyList<(decimal UntilFraction, decimal Drift)> GoldenCrossTrendProfile =
+    [
+        (0.55m, 0.0005m),
+        (0.83m, -0.0035m),
+        (0.955m, 0.0060m),
+        (0.972m, -0.0140m),
+        (1.0m, 0.0070m)
+    ];
+
     private async Task<Dictionary<DateTime, decimal>> CreateSecurityPriceHistoryAsync(
         Guid userId,
         SecurityDto security,
         DateTime referenceMonthStart,
         decimal startPrice,
         Random random,
-        CancellationToken ct)
+        CancellationToken ct,
+        IReadOnlyList<(decimal UntilFraction, decimal Drift)>? trendProfile = null)
     {
         var culture = CultureInfo.GetCultureInfo("de-DE");
         var priceHistory = new Dictionary<DateTime, decimal>();
         var firstDate = referenceMonthStart.AddYears(-2);
         var lastDate = referenceMonthStart;
+        var totalDays = (decimal)(lastDate - firstDate).TotalDays;
 
         var close = startPrice;
         var firstPriceCreated = false;
@@ -982,6 +998,12 @@ public sealed class DemoDataService : IDemoDataService
             if (firstPriceCreated)
             {
                 var factor = -0.010m + ((decimal)random.NextDouble() * 0.021m);
+                if (trendProfile is not null)
+                {
+                    var elapsed = (decimal)(day - firstDate).TotalDays / totalDays;
+                    factor += trendProfile.First(segment => elapsed <= segment.UntilFraction).Drift;
+                }
+
                 close = Math.Round(close * (1m + factor), 2, MidpointRounding.AwayFromZero);
                 if (close <= 0m)
                 {

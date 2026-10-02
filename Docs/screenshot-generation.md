@@ -71,6 +71,8 @@ Die Skripte liegen unter [`scripts/screenshots/`](../scripts/screenshots/):
 | `budget-purposes.png` | `/list/budget/purposes` – Budgetzwecke |
 | `reports.png` | `/reports` – Berichtsfavoriten |
 | `budget-report.png` | `/reports/budget` – Budgetbericht |
+| `golden-cross.png` | `/card/securities/{id}` (Demo-Wertpapier „Inländische Post AG") – Statistikfeld „Goldenes Kreuz" (Element-Screenshot der Box) |
+| `golden-cross-panel.png` | dito, geöffnetes ⓘ-Info-Panel (Element-Screenshot des Seitenpanels bei 2000 px Viewport-Höhe, unten beschnitten) |
 
 ## Wichtige Details
 

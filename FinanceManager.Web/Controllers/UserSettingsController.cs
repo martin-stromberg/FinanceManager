@@ -187,7 +187,8 @@ public sealed class UserSettingsController : ControllerBase
                 MonthlyReminderMinute = u.MonthlyReminderMinute,
                 HolidayProvider = u.HolidayProviderKind.ToString(),
                 HolidayCountryCode = u.HolidayCountryCode,
-                HolidaySubdivisionCode = u.HolidaySubdivisionCode
+                HolidaySubdivisionCode = u.HolidaySubdivisionCode,
+                GoldenCrossNotificationsEnabled = u.GoldenCrossNotificationsEnabled
             })
             .SingleOrDefaultAsync(ct) ?? new NotificationSettingsDto();
         return Ok(dto);
@@ -221,6 +222,7 @@ public sealed class UserSettingsController : ControllerBase
         }
 
         user.SetNotificationSettings(req.MonthlyReminderEnabled);
+        user.SetGoldenCrossNotificationsEnabled(req.GoldenCrossNotificationsEnabled);
         user.SetMonthlyReminderTime(req.MonthlyReminderHour, req.MonthlyReminderMinute);
         user.SetHolidayProvider(kind);
         user.SetHolidayRegion(req.HolidayCountryCode, req.HolidaySubdivisionCode);
