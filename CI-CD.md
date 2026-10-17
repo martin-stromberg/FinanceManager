@@ -52,8 +52,8 @@ Feature-Branch
 4. Playwright Browser installieren
 5. `dotnet restore` und Dependency-Restore
 6. Build der Test-Projekte (Debug)
-7. **Unit-Tests ausführen** (`FinanceManager.Tests`, XPlat Code Coverage sammeln)
-8. **Integrationstests ausführen** (`FinanceManager.Tests.Integration`, XPlat Code Coverage)
+7. **Unit-Tests ausführen** (`FinanceManager.Tests`, Coverage via `--coverage` im Cobertura-Format sammeln)
+8. **Integrationstests ausführen** (`FinanceManager.Tests.Integration`, Coverage via `--coverage`)
 9. **E2E-Tests ausführen** (`FinanceManager.Tests.E2E`, continue-on-error)
 10. Coverage-Report mit `reportgenerator` generieren
 11. **Coverage-Schwellwert erzwingen** (Line Coverage ≥ 70%)
@@ -143,7 +143,7 @@ Feature-Branch
 
 - **Mindestanforderung:** 70% Line Coverage
 - **Gemessen auf:** `FinanceManager.Tests` und `FinanceManager.Tests.Integration`
-- **Methode:** `dotnet test --collect:"XPlat Code Coverage"` + `reportgenerator`
+- **Methode:** `dotnet test -- --coverage --coverage-output-format cobertura` (Microsoft.Testing.Extensions.CodeCoverage unter Microsoft.Testing.Platform) + `reportgenerator`
 - **Blockiert Merge bei Unterschreitung**
 
 ### Dependency-Updates (dependabot.yml)
@@ -221,10 +221,13 @@ Feature-Branch
 - Alte Tests wurden gelöscht oder deaktiviert
 
 **Lösung:**
-1. `dotnet test --collect:"XPlat Code Coverage"` lokal ausführen
-2. Coverage-Report prüfen: `coverage-report/Summary.txt`
-3. Untestete Zeilen identifizieren und Tests hinzufügen
-4. Push und PR erneut versuchen
+1. Coverage lokal sammeln (Microsoft.Testing.Platform, wie in der CI):
+   `dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --results-directory FinanceManager.Tests/TestResults -- --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml`
+   (analog für `FinanceManager.Tests.Integration`)
+2. Report erzeugen: `reportgenerator "-reports:FinanceManager.Tests/TestResults/**/coverage.cobertura.xml;FinanceManager.Tests.Integration/TestResults/**/coverage.cobertura.xml" "-targetdir:coverage-report" "-reporttypes:TextSummary"`
+3. Coverage-Report prüfen: `coverage-report/Summary.txt`
+4. Untestete Zeilen identifizieren und Tests hinzufügen
+5. Push und PR erneut versuchen
 
 ### staging-to-master PR wird nicht erstellt
 

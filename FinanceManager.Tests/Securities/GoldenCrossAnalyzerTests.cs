@@ -219,4 +219,46 @@ public sealed class GoldenCrossAnalyzerTests
 
         result.Trend!.Structure.Should().Be(GoldenCrossTrendStructure.Sideways);
     }
+
+    /// <summary>A pullback to the long average that never recovers and ends below it is a failed retest.</summary>
+    [Fact]
+    public void Analyze_PullbackNeverRecovering_ReportsFailedRetest()
+    {
+        // After the cross the price collapses to 60 (touching the long SMA); a brief spike to 200
+        // keeps the short SMA above the long SMA so the cross stays the most recent one, while the
+        // final close of 50 ends below the long SMA.
+        var result = GoldenCrossAnalyzer.Analyze(
+            CrossedSeries(130, 135, 60, 60, 60, 60, 60, 60, 200, 50),
+            ExtendedOptions);
+
+        result.Retest!.Status.Should().Be(GoldenCrossRetestStatus.Failed);
+        result.Retest.Line.Should().Be(GoldenCrossLine.Long);
+        result.Retest.EndDate.Should().BeNull();
+    }
+
+    /// <summary>Once the latest price lies beyond all three entry windows they are reported as closed.</summary>
+    [Fact]
+    public void Analyze_LongAfterCross_AllWindowsAreClosed()
+    {
+        var afterCross = Enumerable.Repeat(140m, 61).ToArray();
+
+        var result = GoldenCrossAnalyzer.Analyze(CrossedSeries(afterCross), ExtendedOptions);
+
+        result.DaysSinceCross.Should().Be(61);
+        result.Windows.Should().OnlyContain(w => w.Status == GoldenCrossWindowStatus.Closed);
+    }
+
+    /// <summary>Rising prices without a clean swing structure are classified as a weak uptrend.</summary>
+    [Fact]
+    public void Analyze_RisingWithoutSwingStructure_ReportsWeakUptrend()
+    {
+        // Monotonic rise: no swing highs/lows can form, but the gain since the cross exceeds 1%.
+        var result = GoldenCrossAnalyzer.Analyze(
+            CrossedSeries(131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141),
+            ExtendedOptions);
+
+        result.Trend!.Structure.Should().Be(GoldenCrossTrendStructure.WeakUptrend);
+        result.Trend.ChangeSinceCrossPercent.Should().BeGreaterThan(1m);
+        result.Trend.ConfirmedDate.Should().BeNull();
+    }
 }
