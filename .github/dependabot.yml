@@ -33,7 +33,6 @@ updates:
           - "AngleSharp"
           - "Moq"
           - "FluentAssertions"
-          - "coverlet*"
         update-types:
           - "minor"
           - "patch"
@@ -52,7 +51,6 @@ updates:
           - "AngleSharp"
           - "Moq"
           - "FluentAssertions"
-          - "coverlet*"
           - "msTools.*"
         update-types:
           - "minor"
