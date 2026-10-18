@@ -93,14 +93,16 @@ public partial class ApiClient
     /// <param name="provider">Holiday provider identifier, or <c>null</c> to unset.</param>
     /// <param name="country">Holiday country ISO code, or <c>null</c> to unset.</param>
     /// <param name="subdivision">Holiday subdivision code, or <c>null</c> to unset.</param>
+    /// <param name="goldenCrossEnabled">Whether golden cross notifications on the home page are enabled.</param>
     /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
     /// <returns><c>true</c> when the update was accepted by the server; otherwise <c>false</c>.</returns>
     /// <exception cref="HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
-    public async Task<bool> User_UpdateNotificationSettingsAsync(bool monthlyEnabled, int? hour, int? minute, string? provider, string? country, string? subdivision, CancellationToken ct = default)
+    public async Task<bool> User_UpdateNotificationSettingsAsync(bool monthlyEnabled, int? hour, int? minute, string? provider, string? country, string? subdivision, bool goldenCrossEnabled = true, CancellationToken ct = default)
     {
         var payload = new
         {
             MonthlyReminderEnabled = monthlyEnabled,
+            GoldenCrossNotificationsEnabled = goldenCrossEnabled,
             MonthlyReminderHour = hour,
             MonthlyReminderMinute = minute,
             HolidayProvider = provider,

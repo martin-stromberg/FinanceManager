@@ -45,6 +45,23 @@ public sealed partial class User
     }
 
     /// <summary>
+    /// Whether home page notifications about approaching or reached golden crosses of the user's securities are enabled.
+    /// Enabled by default.
+    /// </summary>
+    /// <value><c>true</c> when golden cross notifications are enabled; otherwise <c>false</c>.</value>
+    public bool GoldenCrossNotificationsEnabled { get; private set; } = true;
+
+    /// <summary>
+    /// Enables or disables golden cross notifications on the home page.
+    /// </summary>
+    /// <param name="enabled">True to enable golden cross notifications; false to disable.</param>
+    public void SetGoldenCrossNotificationsEnabled(bool enabled)
+    {
+        GoldenCrossNotificationsEnabled = enabled;
+        Touch();
+    }
+
+    /// <summary>
     /// Sets the preferred local time (hour and minute) for the monthly reminder notification.
     /// </summary>
     /// <param name="hour">Hour of day in the range 0..23, or <c>null</c> to use the default hour (09).</param>

@@ -2,6 +2,7 @@ using FinanceManager.Application;
 using FinanceManager.Application.Attachments;
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Securities;
+using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Postings;
@@ -44,6 +45,7 @@ public sealed class SecuritiesController : ControllerBase
     private readonly IParentAssignmentService _parentAssign;
     private readonly IStringLocalizer<Controller> _localizer;
     private readonly IReturnAnalysisService _returnAnalysis;
+    private readonly IGoldenCrossService _goldenCross;
 
     /// <summary>
     /// Initializes a new instance of <see cref="SecuritiesController"/>.
@@ -60,6 +62,7 @@ public sealed class SecuritiesController : ControllerBase
     /// <param name="parentAssign">Service that manages server-side create-and-assign operations.</param>
     /// <param name="localizer">Localizer for generating user-friendly error messages.</param>
     /// <param name="returnAnalysis">Service providing return analysis calculations.</param>
+    /// <param name="goldenCross">Service providing golden cross statistics.</param>
     public SecuritiesController(
         ISecurityService service,
         ICurrentUserService current,
@@ -72,7 +75,8 @@ public sealed class SecuritiesController : ControllerBase
         ILogger<SecuritiesController> logger,
         IParentAssignmentService parentAssign,
         IStringLocalizer<Controller> localizer,
-        IReturnAnalysisService returnAnalysis)
+        IReturnAnalysisService returnAnalysis,
+        IGoldenCrossService goldenCross)
     {
         _service = service;
         _current = current;
@@ -86,6 +90,7 @@ public sealed class SecuritiesController : ControllerBase
         _parentAssign = parentAssign;
         _localizer = localizer;
         _returnAnalysis = returnAnalysis;
+        _goldenCross = goldenCross;
     }
 
     /// <summary>
@@ -515,6 +520,23 @@ public sealed class SecuritiesController : ControllerBase
     {
         _logger.LogInformation("Getting return summary for security {SecurityId}", id);
         var result = await _returnAnalysis.GetReturnSummaryAsync(id, _current.UserId, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns the golden cross statistics (short-/long-term moving averages and phase) for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with <see cref="GoldenCrossDto"/>; 404 when not found or not owned by user.</returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpGet("{id:guid}/golden-cross")]
+    [ProducesResponseType(typeof(GoldenCrossDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetGoldenCrossAsync(Guid id, CancellationToken ct = default)
+    {
+        var result = await _goldenCross.GetAsync(id, _current.UserId, ct);
         return result == null ? NotFound() : Ok(result);
     }
 

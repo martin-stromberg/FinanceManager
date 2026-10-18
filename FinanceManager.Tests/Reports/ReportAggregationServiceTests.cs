@@ -99,8 +99,9 @@ public sealed class ReportAggregationServiceTests
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
-        // Take groß genug, um alle 33 Monate abzudecken
-        var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true);
+        // Take groß genug, um alle 33 Monate abzudecken; AnalysisDate fix auf den letzten Datenmonat,
+        // damit der Test unabhängig vom aktuellen Datum ist
+        var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Month, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true, AnalysisDate: end);
         var result = await sut.QueryAsync(query, CancellationToken.None);
 
         Assert.NotNull(result);
@@ -192,7 +193,8 @@ public sealed class ReportAggregationServiceTests
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
-        var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Ytd, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true);
+        // AnalysisDate fix auf den letzten Datenmonat, damit der Test unabhängig vom aktuellen Datum ist
+        var query = new ReportAggregationQuery(user.Id, PostingKind.Contact, ReportInterval.Ytd, 40, IncludeCategory: true, ComparePrevious: true, CompareYear: true, AnalysisDate: end);
         var result = await sut.QueryAsync(query, CancellationToken.None);
 
         Assert.Equal(ReportInterval.Ytd, result.Interval);
@@ -200,8 +202,8 @@ public sealed class ReportAggregationServiceTests
 
         string CatKey(ContactCategory cat) => $"Category:{PostingKind.Contact}:{cat.Id}";
 
-        // YTD-Definition im Service: Für alle Jahre wird bis zum aktuellen Monat (UtcNow.Month) summiert.
-        var cutoffMonth = DateTime.UtcNow.Month; // dynamisch
+        // YTD-Definition im Service: Für alle Jahre wird bis zum AnalysisDate-Monat summiert.
+        var cutoffMonth = end.Month;
         int monthsPrevYears = Math.Min(12, cutoffMonth);
         int monthsYear2025 = months.Count(m => m.Year == 2025 && m.Month <= cutoffMonth);
 

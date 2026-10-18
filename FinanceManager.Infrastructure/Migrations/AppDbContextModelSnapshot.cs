@@ -15,7 +15,7 @@ namespace FinanceManager.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.Account", b =>
                 {
@@ -1043,6 +1043,11 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<short>("GoldenCrossNotifiedPhase")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue((short)1);
+
                     b.Property<bool>("HasPriceError")
                         .HasColumnType("INTEGER");
 
@@ -1511,6 +1516,11 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("GoldenCrossNotificationsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("HolidayCountryCode")
                         .HasColumnType("TEXT");

@@ -35,7 +35,7 @@ Wenn Ihre öffentliche Zieladresse von der internen Serveradresse abweicht (z. B
 
 ### 4. Speichern
 
-Speichern Sie die Änderungen über die Ribbon-Aktion **Speichern**.
+Speichern Sie die Änderungen über die Ribbon-Aktion **Speichern**. Die Schaltfläche wird aktiv, sobald Sie ein Feld ändern, und wieder inaktiv, wenn der gespeicherte Wert wiederhergestellt ist.
 
 > **Hinweis:** Bei ungültigen Eingaben zeigt die Seite eine Fehlermeldung; die Werte werden dann nicht übernommen.
 

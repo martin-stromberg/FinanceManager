@@ -3,6 +3,7 @@ using FinanceManager.Application.Attachments;
 using FinanceManager.Application.Common;
 using FinanceManager.Application.Reports;
 using FinanceManager.Application.Securities;
+using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Securities;
@@ -48,6 +49,7 @@ public sealed class SecuritiesControllerTests
         var parentAssign = new Mock<IParentAssignmentService>();
         var localizer = new Mock<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();
         var returnAnalysis = new Mock<IReturnAnalysisService>();
+        var goldenCross = new Mock<IGoldenCrossService>();
 
         localizer
             .Setup(l => l[It.IsAny<string>()])
@@ -69,7 +71,8 @@ public sealed class SecuritiesControllerTests
             NullLogger<SecuritiesController>.Instance,
             parentAssign.Object,
             localizer.Object,
-            returnAnalysis.Object);
+            returnAnalysis.Object,
+            goldenCross.Object);
 
         controller.ControllerContext = new ControllerContext
         {

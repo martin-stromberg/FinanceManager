@@ -40,6 +40,17 @@ Die API wird über `SecuritiesController` und `SecurityCategoriesController` ber
 
 **Beschreibung:** Liefert Benchmarkvergleich.
 
+### `GET /api/securities/{id}/golden-cross`
+
+**Beschreibung:** Liefert die Goldenes-Kreuz-Analyse eines Wertpapiers
+(`GoldenCrossDto`): `Phase` (`InsufficientData`, `Far`, `Approaching`,
+`Crossed`), `ShortWindow`/`LongWindow`, `ShortAverage`/`LongAverage`,
+`DistancePercent`, `CrossDate`, `AsOfDate`, `CurrencyCode`, `LastClose`,
+`DaysSinceCross` sowie – nur bei innerhalb der geladenen Kurshistorie
+erkanntem Kreuzungsdatum – `EntryWindows` (früh/durchschnittlich/spät),
+`Retest` und `Trend`. Wertpapiere anderer Benutzer liefern `404`.
+Siehe [Statistikfeld „Goldenes Kreuz"](goldenes-kreuz.md).
+
 ## Depot-Analysebericht
 
 Die folgenden Endpunkte werden über `PortfolioAnalysisReportController`

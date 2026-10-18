@@ -285,7 +285,7 @@ namespace FinanceManager.Tests.ViewModels
 
             apiMock.Setup(a => a.User_GetNotificationSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new NotificationSettingsDto { HolidayProvider = "Memory" });
-            apiMock.Setup(a => a.User_UpdateNotificationSettingsAsync(It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            apiMock.Setup(a => a.User_UpdateNotificationSettingsAsync(It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             apiMock.Setup(a => a.UserSettings_GetImportSplitAsync(It.IsAny<CancellationToken>()))
@@ -349,7 +349,7 @@ namespace FinanceManager.Tests.ViewModels
             await saveAction.Callback!();
 
             apiMock.Verify(a => a.UserSettings_UpdateProfileAsync(It.IsAny<UserProfileSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
-            apiMock.Verify(a => a.User_UpdateNotificationSettingsAsync(It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+            apiMock.Verify(a => a.User_UpdateNotificationSettingsAsync(It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
             apiMock.Verify(a => a.UserSettings_UpdateImportSplitAsync(It.IsAny<ImportSplitSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
             apiMock.Verify(a => a.Securities_UpdateReturnAnalysisSettingsAsync(It.IsAny<ReturnAnalysisSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);
             apiMock.Verify(a => a.Updates_UpdateSettingsAsync(It.IsAny<UpdateSettingsUpdateRequest>(), It.IsAny<CancellationToken>()), Times.Once);

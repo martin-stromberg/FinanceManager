@@ -17,4 +17,6 @@ public sealed class NotificationSettingsDto
     public string? HolidayCountryCode { get; set; }
     /// <summary>Optional region/subdivision code for holidays.</summary>
     public string? HolidaySubdivisionCode { get; set; }
+    /// <summary>Enables or disables golden cross notifications on the home page (default: enabled).</summary>
+    public bool GoldenCrossNotificationsEnabled { get; set; } = true;
 }

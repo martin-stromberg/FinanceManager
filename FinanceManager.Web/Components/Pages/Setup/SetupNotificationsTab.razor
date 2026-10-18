@@ -34,6 +34,14 @@
               </div>
           </div>
 
+          <div class="form-row setup-checkbox-row">
+              <label class="setup-checkbox-row-title" for="notif-golden-cross">@Localizer["Notifications_GoldenCross"]</label>
+              <div class="setup-checkbox-control">
+                  <input id="notif-golden-cross" type="checkbox" @bind="_vm.Model.GoldenCrossNotificationsEnabled" @bind:after="(()=> _vm.OnChanged())" />
+                  <label class="setup-checkbox-label" for="notif-golden-cross">@Localizer["Notifications_GoldenCross_Help"]</label>
+              </div>
+          </div>
+
           <div class="form-row" style="display:flex;align-items:center;gap:.4rem;justify-content:flex-start;">
               <label style="min-width:10rem;">@Localizer["Notifications_Holidays_Provider"]</label>
               <select @bind="_vm.Model.HolidayProvider" @bind:after="(()=> _vm.OnProviderChanged())" style="width:12rem;">
