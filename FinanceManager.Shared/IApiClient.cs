@@ -695,9 +695,10 @@ public interface IApiClient
     /// <param name="country">Holiday country ISO code.</param>
     /// <param name="subdivision">Holiday subdivision code.</param>
     /// <param name="goldenCrossEnabled">Whether golden cross notifications are enabled (default: true).</param>
+    /// <param name="trendReversalEnabled">Whether trend reversal notifications are enabled (default: true).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True on success.</returns>
-    Task<bool> User_UpdateNotificationSettingsAsync(bool monthlyEnabled, int? hour, int? minute, string? provider, string? country, string? subdivision, bool goldenCrossEnabled = true, CancellationToken ct = default);
+    Task<bool> User_UpdateNotificationSettingsAsync(bool monthlyEnabled, int? hour, int? minute, string? provider, string? country, string? subdivision, bool goldenCrossEnabled = true, bool trendReversalEnabled = true, CancellationToken ct = default);
 
     // Notifications
 
@@ -1046,6 +1047,11 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The <see cref="GoldenCrossDto"/> when found; otherwise null.</returns>
     Task<GoldenCrossDto?> Securities_GetGoldenCrossAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Gets the trend reversal (bearish signal) analysis for a security.</summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="TrendReversalDto"/> when found; otherwise null.</returns>
+    Task<TrendReversalDto?> Securities_GetTrendReversalAsync(Guid id, CancellationToken ct = default);
     /// <summary>Gets detailed return metrics for a security. Returns null when not found.</summary>
     /// <param name="id">Identifier of the entity.</param>
     /// <param name="ct">Cancellation token.</param>

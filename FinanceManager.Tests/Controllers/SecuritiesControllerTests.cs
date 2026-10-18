@@ -5,6 +5,7 @@ using FinanceManager.Application.Reports;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
+using FinanceManager.Application.Securities.TrendReversal;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Web.Controllers;
@@ -35,7 +36,8 @@ public sealed class SecuritiesControllerTests
         SecuritiesController controller,
         Mock<ISecurityService> service,
         Mock<IParentAssignmentService> parentAssign,
-        TestCurrentUserService currentUser)
+        TestCurrentUserService currentUser,
+        Mock<ITrendReversalService> trendReversal)
         Create()
     {
         var service = new Mock<ISecurityService>();
@@ -50,6 +52,7 @@ public sealed class SecuritiesControllerTests
         var localizer = new Mock<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();
         var returnAnalysis = new Mock<IReturnAnalysisService>();
         var goldenCross = new Mock<IGoldenCrossService>();
+        var trendReversal = new Mock<ITrendReversalService>();
 
         localizer
             .Setup(l => l[It.IsAny<string>()])
@@ -72,14 +75,15 @@ public sealed class SecuritiesControllerTests
             parentAssign.Object,
             localizer.Object,
             returnAnalysis.Object,
-            goldenCross.Object);
+            goldenCross.Object,
+            trendReversal.Object);
 
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
         };
 
-        return (controller, service, parentAssign, currentUser);
+        return (controller, service, parentAssign, currentUser, trendReversal);
     }
 
     private static SecurityDto CreateDto(Guid id, string? region, string? sector) => new()
@@ -100,7 +104,7 @@ public sealed class SecuritiesControllerTests
     [Fact]
     public async Task CreateAsync_Controller_PassesThroughRegionAndSector()
     {
-        var (controller, service, _, currentUser) = Create();
+        var (controller, service, _, currentUser, _) = Create();
         var securityId = Guid.NewGuid();
         var request = new SecurityRequest
         {
@@ -130,7 +134,7 @@ public sealed class SecuritiesControllerTests
     [Fact]
     public async Task CreateAsync_Controller_ReturnsBadRequest_WhenModelStateInvalid()
     {
-        var (controller, service, _, _) = Create();
+        var (controller, service, _, _, _) = Create();
         controller.ModelState.AddModelError("Region", "Region must not exceed 255 characters");
         var request = new SecurityRequest { Name = "Apple", Identifier = "US0378331005", CurrencyCode = "USD" };
 
@@ -146,7 +150,7 @@ public sealed class SecuritiesControllerTests
     [Fact]
     public async Task CreateAsync_Controller_ReturnsBadRequest_WhenServiceThrowsArgumentException()
     {
-        var (controller, service, _, currentUser) = Create();
+        var (controller, service, _, currentUser, _) = Create();
         var request = new SecurityRequest { Name = "Apple", Identifier = "US0378331005", CurrencyCode = "USD" };
 
         service
@@ -164,7 +168,7 @@ public sealed class SecuritiesControllerTests
     [Fact]
     public async Task UpdateAsync_Controller_PassesThroughRegionAndSector()
     {
-        var (controller, service, _, currentUser) = Create();
+        var (controller, service, _, currentUser, _) = Create();
         var securityId = Guid.NewGuid();
         var request = new SecurityRequest
         {
@@ -193,7 +197,7 @@ public sealed class SecuritiesControllerTests
     [Fact]
     public async Task UpdateAsync_Controller_ReturnsNotFound_WhenServiceReturnsNull()
     {
-        var (controller, service, _, currentUser) = Create();
+        var (controller, service, _, currentUser, _) = Create();
         var securityId = Guid.NewGuid();
         var request = new SecurityRequest { Name = "Apple", Identifier = "US0378331005", CurrencyCode = "USD" };
 
@@ -204,5 +208,24 @@ public sealed class SecuritiesControllerTests
         var result = await controller.UpdateAsync(securityId, request, CancellationToken.None);
 
         result.Should().BeOfType<NotFoundResult>();
+    }
+
+    /// <summary>
+    /// GetTrendReversalAsync returns 404 NotFound when the service reports the security as unknown or foreign.
+    /// </summary>
+    [Fact]
+    public async Task GetTrendReversal_UnknownOrForeign_ReturnsNotFound()
+    {
+        var (controller, _, _, currentUser, trendReversal) = Create();
+        var securityId = Guid.NewGuid();
+
+        trendReversal
+            .Setup(t => t.GetAsync(securityId, currentUser.UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TrendReversalDto?)null);
+
+        var result = await controller.GetTrendReversalAsync(securityId, CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundResult>();
+        trendReversal.Verify(t => t.GetAsync(securityId, currentUser.UserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

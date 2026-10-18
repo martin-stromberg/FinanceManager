@@ -1,0 +1,173 @@
+@rendermode InteractiveServer
+@using FinanceManager.Shared
+@using FinanceManager.Shared.Dtos.Securities
+@inject IApiClient ApiClient
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Shared.TrendReversalWidget> Localizer
+
+@if (_loading || _data == null || _data.Signals is not { Count: > 0 })
+{
+    @* Only shown when at least one bearish reversal signal exists; hidden otherwise (intact trend, insufficient data, errors). *@
+}
+else
+{
+    var reversal = _data.Status == TrendStatusDto.ReversalLikely;
+    <div class="return-summary-widget trend-reversal-widget @(reversal ? "trw-reversal" : "trw-weakened")" title="@Localizer["Widget_Title"]">
+        <div class="rsw-row rsw-header">
+            <span class="rsw-label">
+                @Localizer["Widget_Title"]
+                <button class="rsw-info-btn" @onclick="OpenPanel" title="@Localizer["Aria_Info"]" aria-label="@Localizer["Aria_Info"]">ⓘ</button>
+            </span>
+            <span class="rsw-value trw-status">@(reversal ? "▼" : "↘") @Localizer[$"Status_{_data.Status}"]</span>
+        </div>
+        @if (_data.DistancePercent.HasValue)
+        {
+            <div class="rsw-row">
+                <span class="rsw-label">@string.Format(Localizer["Label_Averages"], _data.ShortWindow, _data.LongWindow)</span>
+                <span class="rsw-value @(_data.DistancePercent.Value >= 0 ? "positive" : "negative")">@FormatPercent(_data.DistancePercent.Value)</span>
+            </div>
+        }
+        @foreach (var signal in _data.Signals)
+        {
+            <div class="rsw-row trw-signal">
+                <span class="rsw-label">@Localizer[$"Signal_{signal.Type}"]</span>
+                <span class="rsw-value">
+                    @Localizer[$"Strength_{signal.Strength}"]@(signal.Date.HasValue ? $" · {signal.Date.Value.ToString("d")}" : string.Empty)
+                </span>
+            </div>
+        }
+        <div class="rsw-row trw-hint" role="status">
+            <span>@Localizer[reversal ? "Hint_ReversalLikely" : "Hint_Weakened"]</span>
+        </div>
+        @if (_data.AsOfDate.HasValue)
+        {
+            <div class="rsw-row trw-asof">
+                <span class="rsw-label">@Localizer["Label_AsOf"]</span>
+                <span class="rsw-value">@_data.AsOfDate.Value.ToString("d")</span>
+            </div>
+        }
+    </div>
+
+    @* ── Info Side Panel (same pattern as ReturnSummaryWidget) ───── *@
+    @if (_panelOpen)
+    {
+        <div class="rsw-backdrop" @onclick="ClosePanel" aria-hidden="true"></div>
+        <aside class="rsw-panel rsw-panel--open trend-reversal-panel" role="dialog" aria-modal="true" aria-label="@Localizer["Widget_Title"]">
+            <div class="rsw-panel-header">
+                <span class="rsw-panel-title">@Localizer["Widget_Title"]</span>
+                <button class="rsw-panel-close" @onclick="ClosePanel" title="@Localizer["Panel_Close"]" aria-label="@Localizer["Panel_Close"]">✕</button>
+            </div>
+            <div class="rsw-panel-body">
+                <div class="rsw-formula-box">
+                    <div class="rsw-formula-label">@Localizer["Panel_Formula"]</div>
+                    <div class="rsw-formula-text">@string.Format(Localizer["Formula_Text"], _data.ShortWindow, _data.LongWindow)</div>
+                </div>
+                <div class="trw-section">
+                    <div class="trw-section-title">@Localizer["Section_Status"]</div>
+                    <div class="rsw-row">
+                        <span class="rsw-label">@Localizer["Label_TrendStatus"]</span>
+                        <span class="rsw-value">@Localizer[$"Status_{_data.Status}"]</span>
+                    </div>
+                    <div class="rsw-row">
+                        <span class="rsw-label">@Localizer["Label_SignalScore"]</span>
+                        <span class="rsw-value">@_data.SignalScore</span>
+                    </div>
+                    <p class="rsw-panel-desc">@Localizer[$"Status_{_data.Status}_Text"]</p>
+                </div>
+                <div class="trw-section">
+                    <div class="trw-section-title">@Localizer["Section_Signals"]</div>
+                    @foreach (var signal in _data.Signals)
+                    {
+                        <div class="trw-signal-detail trw-strength-@signal.Strength.ToString().ToLowerInvariant()">
+                            <div class="rsw-row">
+                                <span class="rsw-label">@Localizer[$"Signal_{signal.Type}"]</span>
+                                <span class="rsw-value">@(signal.Date?.ToString("d") ?? "–") · @Localizer[$"Strength_{signal.Strength}"]</span>
+                            </div>
+                            <p class="rsw-panel-desc">@Localizer[$"Signal_{signal.Type}_Text"]</p>
+                            @switch (signal.Type)
+                            {
+                                case TrendReversalSignalTypeDto.DeathCross when _data.DeathCross is { } dc:
+                                    <div class="rsw-row trw-detail">
+                                        <span class="rsw-label">@Localizer["Label_CrossDate"]</span>
+                                        <span class="rsw-value">@dc.CrossDate?.ToString("d")@(dc.DaysSinceCross.HasValue ? $" ({string.Format(Localizer["DaysAgo"], dc.DaysSinceCross.Value)})" : string.Empty)</span>
+                                    </div>
+                                    break;
+                                case TrendReversalSignalTypeDto.LongTermLineBreak when _data.LineBreak is { } lb:
+                                    <div class="rsw-row trw-detail">
+                                        <span class="rsw-label">@Localizer["Label_Classification"]</span>
+                                        <span class="rsw-value">@Localizer[$"Break_{lb.Classification}"]</span>
+                                    </div>
+                                    <div class="rsw-row trw-detail">
+                                        <span class="rsw-label">@Localizer["Label_BreakDays"]</span>
+                                        <span class="rsw-value">@lb.ConsecutiveDaysBelow@(lb.PercentBelow.HasValue ? $" ({FormatPercent(lb.PercentBelow.Value)})" : string.Empty)</span>
+                                    </div>
+                                    break;
+                                case TrendReversalSignalTypeDto.BearishMarketStructure when _data.MarketStructure is { } ms:
+                                    <div class="rsw-row trw-detail">
+                                        <span class="rsw-label">@Localizer["Label_Classification"]</span>
+                                        <span class="rsw-value">@Localizer[$"Structure_{ms.Classification}"]</span>
+                                    </div>
+                                    <div class="rsw-row trw-detail">
+                                        <span class="rsw-label">@Localizer["Label_Swings"]</span>
+                                        <span class="rsw-value">@string.Format(Localizer["Detail_Swings"], ms.LowerHighs, ms.SwingHighs, ms.LowerLows, ms.SwingLows)</span>
+                                    </div>
+                                    break;
+                                case TrendReversalSignalTypeDto.MacdBearishCrossover when _data.Macd is { } m:
+                                    <div class="rsw-row trw-detail">
+                                        <span class="rsw-label">@Localizer["Label_Macd"]</span>
+                                        <span class="rsw-value">@m.Macd?.ToString("N3") / @m.Signal?.ToString("N3")</span>
+                                    </div>
+                                    break;
+                                case TrendReversalSignalTypeDto.RsiBearishDivergence when _data.Rsi is { } r:
+                                    <div class="rsw-row trw-detail">
+                                        <span class="rsw-label">@Localizer["Label_Rsi"]</span>
+                                        <span class="rsw-value">@r.Rsi?.ToString("N1")@(r.DivergenceDate.HasValue ? $" · {r.DivergenceDate.Value.ToString("d")}" : string.Empty)</span>
+                                    </div>
+                                    break;
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="trw-section">
+                    <div class="trw-section-title">@Localizer["Section_Meaning"]</div>
+                    <p class="rsw-panel-desc">@Localizer["Meaning_Score"]</p>
+                    <p class="rsw-panel-desc trw-disclaimer">@Localizer["Meaning_Disclaimer"]</p>
+                </div>
+            </div>
+        </aside>
+    }
+}
+
+@code {
+    /// <summary>Security identifier to show trend reversal statistics for.</summary>
+    [Parameter, EditorRequired] public Guid SecurityId { get; set; }
+
+    private TrendReversalDto? _data;
+    private bool _loading = true;
+    private bool _panelOpen;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SecurityId == Guid.Empty) { _loading = false; return; }
+        _loading = true;
+        _data = null;
+        _panelOpen = false;
+        try
+        {
+            _data = await ApiClient.Securities_GetTrendReversalAsync(SecurityId, CancellationToken.None);
+        }
+        catch
+        {
+            // Non-critical statistics box: stay hidden on errors.
+            _data = null;
+        }
+        finally { _loading = false; }
+    }
+
+    private void OpenPanel() => _panelOpen = true;
+
+    private void ClosePanel() => _panelOpen = false;
+
+    private static string FormatPercent(decimal value)
+        => (value >= 0 ? "+" : string.Empty) + value.ToString("N2") + " %";
+}

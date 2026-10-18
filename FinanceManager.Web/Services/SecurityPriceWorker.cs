@@ -1,5 +1,6 @@
 ﻿using FinanceManager.Application.Notifications; // NEW
 using FinanceManager.Application.Securities.GoldenCross;
+using FinanceManager.Application.Securities.TrendReversal;
 using FinanceManager.Application.Securities;
 using FinanceManager.Domain.Notifications;    // NEW
 using FinanceManager.Infrastructure;
@@ -94,6 +95,7 @@ public sealed class SecurityPriceWorker : BackgroundService
         var priceService = scope.ServiceProvider.GetRequiredService<ISecurityPriceService>();
         var notifier = scope.ServiceProvider.GetRequiredService<INotificationWriter>(); // NEW
         var goldenCross = scope.ServiceProvider.GetRequiredService<IGoldenCrossService>();
+        var trendReversal = scope.ServiceProvider.GetRequiredService<ITrendReversalService>();
         var resolver = scope.ServiceProvider.GetRequiredService<IAlphaVantageKeyResolver>();
 
         // Check for shared admin key configured
@@ -181,6 +183,15 @@ public sealed class SecurityPriceWorker : BackgroundService
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     _logger.LogWarning(ex, "Golden cross evaluation failed for security {SecurityId}.", sec.Id);
+                }
+
+                try
+                {
+                    await trendReversal.EvaluateAndNotifyAsync(sec.Id, ct);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogWarning(ex, "Trend reversal evaluation failed for security {SecurityId}.", sec.Id);
                 }
             }
             catch (RequestLimitExceededException ex)

@@ -287,6 +287,7 @@ public sealed class SecurityPriceErrorRecoveryTests
         services.AddSingleton(securityService ?? Mock.Of<ISecurityService>());
         services.AddSingleton(priceService ?? Mock.Of<ISecurityPriceService>());
         services.AddSingleton(Mock.Of<IGoldenCrossService>());
+        services.AddSingleton(Mock.Of<FinanceManager.Application.Securities.TrendReversal.ITrendReversalService>());
         services.AddSingleton(localizer ?? CreateLocalizer());
         return services.BuildServiceProvider();
     }

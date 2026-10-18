@@ -303,6 +303,21 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Gets the trend reversal (bearish signal) analysis for a security.
+    /// </summary>
+    /// <param name="id">Security identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The <see cref="TrendReversalDto"/> when found; otherwise null.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<TrendReversalDto?> Securities_GetTrendReversalAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/securities/{id}/trend-reversal", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<TrendReversalDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
     /// Gets detailed return metrics for a security.
     /// </summary>
     /// <param name="id">Security identifier.</param>
