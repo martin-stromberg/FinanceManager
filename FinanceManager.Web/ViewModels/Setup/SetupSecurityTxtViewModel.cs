@@ -232,12 +232,12 @@ public sealed class SetupSecurityTxtViewModel : BaseViewModel
     {
         Dirty = Model.Contact != _original.Contact
             || Model.Expires != _original.Expires
-            || Model.Encryption != _original.Encryption
-            || Model.Acknowledgments != _original.Acknowledgments
-            || Model.PreferredLanguages != _original.PreferredLanguages
-            || Model.Policy != _original.Policy
-            || Model.Hiring != _original.Hiring
-            || Model.Canonical != _original.Canonical;
+            || (Model.Encryption ?? "") != (_original.Encryption ?? "")
+            || (Model.Acknowledgments ?? "") != (_original.Acknowledgments ?? "")
+            || (Model.PreferredLanguages ?? "") != (_original.PreferredLanguages ?? "")
+            || (Model.Policy ?? "") != (_original.Policy ?? "")
+            || (Model.Hiring ?? "") != (_original.Hiring ?? "")
+            || (Model.Canonical ?? "") != (_original.Canonical ?? "");
     }
 
     private static SecurityTxtSettingsDto Clone(SecurityTxtSettingsDto src) => new()

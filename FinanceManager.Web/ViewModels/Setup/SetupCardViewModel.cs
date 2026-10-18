@@ -148,8 +148,9 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
             // Intentionally not registered as a child view model via CreateSubViewModel<T>:
             // The sections resolved here at runtime (attachments, security, returnanalysis) do not
             // contribute ribbon actions, so omitting them from _childViewModels is by design.
-            // Sections that do contribute ribbon actions (profile, notifications, backup, statements, update)
-            // are pre-created in LoadAsync using CreateSubViewModel<T> which registers them properly.
+            // Event forwarding is still required: dirty changes in these sections (e.g. returnanalysis)
+            // must propagate so HasPendingChanges updates the global Save action.
+            baseVm.StateChanged += (_, __) => RaiseStateChanged();
             _sectionViewModels[key] = baseVm;
             return baseVm;
         }

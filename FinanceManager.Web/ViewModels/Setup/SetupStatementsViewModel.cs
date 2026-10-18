@@ -166,12 +166,26 @@ public sealed class SetupStatementsViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Called when an editable field without validation rules changed. Clears save state and recomputes
+    /// the dirty flag so the setup card can enable the global Save action.
+    /// </summary>
+    public void OnChanged()
+    {
+        SavedOk = false;
+        SaveError = null;
+        RecomputeDirty();
+        RaiseStateChanged();
+    }
+
+    /// <summary>
     /// Validates the current model and sets <see cref="ValidationMessage"/> and <see cref="HasValidationError"/> accordingly.
     /// </summary>
     public void Validate()
     {
         ValidationMessage = null; HasValidationError = false;
         if (Model is null) { return; }
+        RecomputeDirty();
+        RaiseStateChanged();
         if (Model.MaxEntriesPerDraft < 20)
         {
             ValidationMessage = "ImportSplit_InvalidMaxMin20"; HasValidationError = true; return;
@@ -195,7 +209,6 @@ public sealed class SetupStatementsViewModel : BaseViewModel
                 ValidationMessage = "ImportSplit_InvalidThreshold"; HasValidationError = true; return;
             }
         }
-        RecomputeDirty();
     }
 
     private void RecomputeDirty()

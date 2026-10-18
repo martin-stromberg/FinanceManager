@@ -6,6 +6,7 @@
 
 ## What's New
 
+- Bugfix: Settings page — the Save button now activates for changes in all fields of the "Kontoauszüge" and "Renditeanalyse" sections and deactivates again when the saved value is restored (issue #431).
 - Bugfix: ING CSV account statements can be imported again — the new export layout with an additional "Referenz" column is now supported; older exports remain readable.
 - Mass import review dialog: files that cannot be imported are now shown with the reason; the "cannot be undone" confirmation only appears when at least one file will actually be imported.
 - Bugfix: Attachments can be deleted again — the delete confirmation dialog was previously hidden behind the open attachment overlay.
@@ -19,6 +20,7 @@
 
 ## Neuerungen
 
+- Behoben: Einstellungsseite — die Schaltfläche „Speichern" aktiviert sich jetzt bei Änderungen in allen Feldern der Sektionen „Kontoauszüge" und „Renditeanalyse" und deaktiviert sich wieder, sobald der gespeicherte Wert wiederhergestellt ist (Issue #431).
 - Behoben: ING-CSV-Kontoauszüge können wieder importiert werden — das neue Exportlayout mit zusätzlicher Spalte „Referenz" wird unterstützt; ältere Exporte bleiben lesbar.
 - Massenimport-Prüfdialog: nicht importierbare Dateien werden jetzt mit Grund angezeigt; die Warnung „Die Aktion kann nicht rückgängig gemacht werden." erscheint nur noch, wenn mindestens eine Datei tatsächlich importiert wird.
 - Behoben: Anhänge lassen sich wieder löschen — der Lösch-Bestätigungsdialog wurde zuvor vom geöffneten Anhang-Overlay verdeckt.
