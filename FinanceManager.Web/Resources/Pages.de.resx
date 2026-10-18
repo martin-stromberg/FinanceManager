@@ -1425,6 +1425,12 @@
   <data name="Notifications_GoldenCross_Help" xml:space="preserve">
     <value>Auf der Startseite einen Hinweis anzeigen, wenn sich der kurzfristige Kursdurchschnitt eines Wertpapiers dem langfristigen annähert oder ihn überschreitet (Goldenes Kreuz). Pro Zyklus nur einmal.</value>
   </data>
+  <data name="Notifications_TrendReversal" xml:space="preserve">
+    <value>Trendwende-Hinweise aktivieren</value>
+  </data>
+  <data name="Notifications_TrendReversal_Help" xml:space="preserve">
+    <value>Auf der Startseite einen Hinweis anzeigen, wenn bei einem Wertpapier bärische Umkehrsignale erkannt werden (z. B. Todeskreuz, Bruch der langfristigen Linie) und der Trend geschwächt wirkt oder eine Trendwende wahrscheinlich ist. Pro Status und Zyklus nur einmal.</value>
+  </data>
   <data name="Notifications_MonthlyReminder_Time" xml:space="preserve">
     <value>Uhrzeit (lokal)</value>
   </data>

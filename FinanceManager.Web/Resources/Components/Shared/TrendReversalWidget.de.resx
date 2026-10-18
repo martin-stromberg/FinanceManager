@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Widget_Title" xml:space="preserve"><value>Umkehrsignale</value></data>
+  <data name="Status_InsufficientData" xml:space="preserve"><value>Zu wenig Daten</value></data>
+  <data name="Status_Intact" xml:space="preserve"><value>Trend intakt</value></data>
+  <data name="Status_Weakened" xml:space="preserve"><value>Trend geschwächt</value></data>
+  <data name="Status_ReversalLikely" xml:space="preserve"><value>Trendwende wahrscheinlich</value></data>
+  <data name="Label_Averages" xml:space="preserve"><value>Abstand {0}/{1}-Tage-Durchschnitt</value></data>
+  <data name="Label_TrendStatus" xml:space="preserve"><value>Trendstatus</value></data>
+  <data name="Label_SignalScore" xml:space="preserve"><value>Signal-Score</value></data>
+  <data name="Label_AsOf" xml:space="preserve"><value>Stand</value></data>
+  <data name="Signal_DeathCross" xml:space="preserve"><value>Todeskreuz</value></data>
+  <data name="Signal_LongTermLineBreak" xml:space="preserve"><value>Bruch der langfristigen Linie</value></data>
+  <data name="Signal_BearishMarketStructure" xml:space="preserve"><value>Bärische Marktstruktur</value></data>
+  <data name="Signal_MacdBearishCrossover" xml:space="preserve"><value>Bärisches MACD-Crossover</value></data>
+  <data name="Signal_RsiBearishDivergence" xml:space="preserve"><value>Bärische RSI-Divergenz</value></data>
+  <data name="Signal_DeathCross_Text" xml:space="preserve"><value>Der kurzfristige Kursdurchschnitt ist unter den langfristigen gefallen (Todeskreuz) – ein starkes Signal für eine mögliche Trendwende nach unten.</value></data>
+  <data name="Signal_LongTermLineBreak_Text" xml:space="preserve"><value>Der Kurs notiert unter der langfristigen Durchschnittslinie. Je länger der Kurs darunter bleibt, desto eher ist der Bruch strukturell statt nur eine kurzfristige Schwäche.</value></data>
+  <data name="Signal_BearishMarketStructure_Text" xml:space="preserve"><value>Die Kursentwicklung bildet niedrigere Hochs und/oder niedrigere Tiefs – die klassische Struktur eines entstehenden Abwärtstrends.</value></data>
+  <data name="Signal_MacdBearishCrossover_Text" xml:space="preserve"><value>Die MACD-Linie hat die Signallinie von oben nach unten gekreuzt – die kurzfristige Dynamik schwächelt gegenüber dem laufenden Trend.</value></data>
+  <data name="Signal_RsiBearishDivergence_Text" xml:space="preserve"><value>Der Kurs erreicht ein höheres Hoch, der RSI dagegen ein niedrigeres – die Stärke hinter dem Anstieg lässt nach (Momentumverlust).</value></data>
+  <data name="Strength_Weak" xml:space="preserve"><value>schwach</value></data>
+  <data name="Strength_Moderate" xml:space="preserve"><value>mittel</value></data>
+  <data name="Strength_Strong" xml:space="preserve"><value>stark</value></data>
+  <data name="Hint_Weakened" xml:space="preserve"><value>Einzelne Umkehrsignale liegen vor – der Aufwärtstrend wirkt geschwächt.</value></data>
+  <data name="Hint_ReversalLikely" xml:space="preserve"><value>Mehrere bzw. starke Umkehrsignale liegen vor – eine Trendwende nach unten ist wahrscheinlich.</value></data>
+  <data name="Section_Status" xml:space="preserve"><value>Trendstatus</value></data>
+  <data name="Section_Signals" xml:space="preserve"><value>Erkannte Signale</value></data>
+  <data name="Section_Meaning" xml:space="preserve"><value>Bedeutung und Grenzen</value></data>
+  <data name="Status_InsufficientData_Text" xml:space="preserve"><value>Es liegen zu wenige Kursdaten für eine Auswertung vor.</value></data>
+  <data name="Status_Intact_Text" xml:space="preserve"><value>Es wurden keine bärischen Umkehrsignale erkannt.</value></data>
+  <data name="Status_Weakened_Text" xml:space="preserve"><value>Die Summe der Signalstärken erreicht noch nicht die Schwelle für eine wahrscheinliche Trendwende. Die Signale können auch Fehlsignale oder eine normale Korrektur sein.</value></data>
+  <data name="Status_ReversalLikely_Text" xml:space="preserve"><value>Die Summe der Signalstärken erreicht die Schwelle für eine wahrscheinliche Trendwende – mehrere unabhängige Indikatoren deuten gleichzeitig nach unten.</value></data>
+  <data name="Meaning_Score" xml:space="preserve"><value>Jedes Signal trägt je nach Stärke 1 (schwach), 2 (mittel) oder 3 (stark) Punkte zum Signal-Score bei. Ab einem Score von 4 gilt die Trendwende als wahrscheinlich.</value></data>
+  <data name="Meaning_Disclaimer" xml:space="preserve"><value>Umkehrsignale sind statistische Hinweise, keine Garantie für fallende Kurse. Insbesondere in Seitwärtsphasen und bei geringer Liquidität sind Fehlsignale möglich.</value></data>
+  <data name="Aria_Info" xml:space="preserve"><value>Erläuterungen zu den Umkehrsignalen anzeigen</value></data>
+  <data name="Panel_Close" xml:space="preserve"><value>Schließen</value></data>
+  <data name="Panel_Formula" xml:space="preserve"><value>Berechnung</value></data>
+  <data name="Formula_Text" xml:space="preserve"><value>SMA{0}/SMA{1} = Ø Schlusskurs der letzten {0}/{1} Tage; MACD = EMA12 − EMA26, Signal = EMA9; RSI = Wilder-RSI(14); Marktstruktur = Swing-Hochs/-Tiefs der letzten Handelstage</value></data>
+  <data name="Label_CrossDate" xml:space="preserve"><value>Kreuzungsdatum</value></data>
+  <data name="DaysAgo" xml:space="preserve"><value>vor {0} Tagen</value></data>
+  <data name="Label_Classification" xml:space="preserve"><value>Einordnung</value></data>
+  <data name="Break_None" xml:space="preserve"><value>kein Bruch</value></data>
+  <data name="Break_ShortTermWeakness" xml:space="preserve"><value>kurzfristige Schwäche</value></data>
+  <data name="Break_StructuralReversal" xml:space="preserve"><value>strukturelle Trendwende</value></data>
+  <data name="Label_BreakDays" xml:space="preserve"><value>Tage unter der Linie</value></data>
+  <data name="Structure_Unknown" xml:space="preserve"><value>nicht bewertbar</value></data>
+  <data name="Structure_Intact" xml:space="preserve"><value>intakte Struktur</value></data>
+  <data name="Structure_SidewaysBearish" xml:space="preserve"><value>Seitwärtsphase mit Abwärtstendenz</value></data>
+  <data name="Structure_TrendLoss" xml:space="preserve"><value>Trendverlust</value></data>
+  <data name="Structure_EmergingDowntrend" xml:space="preserve"><value>beginnender Abwärtstrend</value></data>
+  <data name="Label_Swings" xml:space="preserve"><value>Zwischenhochs/-tiefs</value></data>
+  <data name="Detail_Swings" xml:space="preserve"><value>{0} von {1} Hochs und {2} von {3} Tiefs niedriger als ihr Vorgänger</value></data>
+  <data name="Label_Macd" xml:space="preserve"><value>MACD / Signal</value></data>
+  <data name="Label_Rsi" xml:space="preserve"><value>RSI</value></data>
+</root>

@@ -19,4 +19,6 @@ public sealed class NotificationSettingsDto
     public string? HolidaySubdivisionCode { get; set; }
     /// <summary>Enables or disables golden cross notifications on the home page (default: enabled).</summary>
     public bool GoldenCrossNotificationsEnabled { get; set; } = true;
+    /// <summary>Enables or disables trend reversal (bearish signal) notifications on the home page (default: enabled).</summary>
+    public bool TrendReversalNotificationsEnabled { get; set; } = true;
 }

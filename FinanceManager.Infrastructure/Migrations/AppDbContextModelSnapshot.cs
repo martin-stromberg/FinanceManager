@@ -1087,6 +1087,11 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid?>("SymbolAttachmentId")
                         .HasColumnType("TEXT");
 
+                    b.Property<short>("TrendReversalNotifiedStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue((short)1);
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
@@ -1624,6 +1629,11 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.Property<string>("TimeZoneId")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("TrendReversalNotificationsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("INTEGER");

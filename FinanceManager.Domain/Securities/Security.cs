@@ -139,6 +139,22 @@ public sealed class Security : Entity
     }
 
     /// <summary>
+    /// Highest trend status for which a bearish reversal notification has been raised in the current cycle.
+    /// Reset to <see cref="TrendStatus.Intact"/> once the trend is intact again.
+    /// </summary>
+    /// <value>The last notified status; <see cref="TrendStatus.Intact"/> when nothing has been notified in the current cycle.</value>
+    public TrendStatus TrendReversalNotifiedStatus { get; private set; } = TrendStatus.Intact;
+
+    /// <summary>
+    /// Records the trend status that has been notified to the owner.
+    /// </summary>
+    /// <param name="status">The status that was notified (or <see cref="TrendStatus.Intact"/> to reset the cycle).</param>
+    public void SetTrendReversalNotifiedStatus(TrendStatus status)
+    {
+        TrendReversalNotifiedStatus = status;
+    }
+
+    /// <summary>
     /// Updates core metadata for the security.
     /// </summary>
     /// <param name="name">Display name. Must not be null or whitespace.</param>

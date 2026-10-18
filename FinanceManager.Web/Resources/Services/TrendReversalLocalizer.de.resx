@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- {0}=Name, {1}=Identifier, {2}=Signal count, {3}=Signal names -->
+  <data name="TrendReversal_Weakened_Title" xml:space="preserve"><value>Trend geschwächt: {0}</value></data>
+  <data name="TrendReversal_Weakened_Message" xml:space="preserve"><value>Bei '{0}' ({1}) wurden {2} Umkehrsignal(e) erkannt ({3}). Der Aufwärtstrend wirkt geschwächt.</value></data>
+  <data name="TrendReversal_ReversalLikely_Title" xml:space="preserve"><value>Trendwende wahrscheinlich: {0}</value></data>
+  <data name="TrendReversal_ReversalLikely_Message" xml:space="preserve"><value>Bei '{0}' ({1}) wurden {2} Umkehrsignale erkannt ({3}). Eine Trendwende nach unten ist wahrscheinlich.</value></data>
+  <data name="TrendReversal_Signal_DeathCross" xml:space="preserve"><value>Todeskreuz</value></data>
+  <data name="TrendReversal_Signal_LongTermLineBreak" xml:space="preserve"><value>Bruch der langfristigen Linie</value></data>
+  <data name="TrendReversal_Signal_BearishMarketStructure" xml:space="preserve"><value>Bärische Marktstruktur</value></data>
+  <data name="TrendReversal_Signal_MacdBearishCrossover" xml:space="preserve"><value>Bärisches MACD-Crossover</value></data>
+  <data name="TrendReversal_Signal_RsiBearishDivergence" xml:space="preserve"><value>Bärische RSI-Divergenz</value></data>
+</root>

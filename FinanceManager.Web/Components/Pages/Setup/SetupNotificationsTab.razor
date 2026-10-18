@@ -42,6 +42,14 @@
               </div>
           </div>
 
+          <div class="form-row setup-checkbox-row">
+              <label class="setup-checkbox-row-title" for="notif-trend-reversal">@Localizer["Notifications_TrendReversal"]</label>
+              <div class="setup-checkbox-control">
+                  <input id="notif-trend-reversal" type="checkbox" @bind="_vm.Model.TrendReversalNotificationsEnabled" @bind:after="(()=> _vm.OnChanged())" />
+                  <label class="setup-checkbox-label" for="notif-trend-reversal">@Localizer["Notifications_TrendReversal_Help"]</label>
+              </div>
+          </div>
+
           <div class="form-row" style="display:flex;align-items:center;gap:.4rem;justify-content:flex-start;">
               <label style="min-width:10rem;">@Localizer["Notifications_Holidays_Provider"]</label>
               <select @bind="_vm.Model.HolidayProvider" @bind:after="(()=> _vm.OnProviderChanged())" style="width:12rem;">
