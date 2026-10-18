@@ -51,14 +51,14 @@
                 </div>
                 <div class="form-row">
                     <label>@Localizer["MassImport_DialogPolicy_Label"]</label>
-                    <select @bind="_vm.Model.MassImportDialogPolicy">
+                    <select @bind="_vm.Model.MassImportDialogPolicy" @bind:after="(()=> _vm.OnChanged())">
                         <option value="@MassImportDialogPolicy.AlwaysConfirm">@Localizer["MassImport_DialogPolicy_AlwaysConfirm"]</option>
                         <option value="@MassImportDialogPolicy.OnMissingInformation">@Localizer["MassImport_DialogPolicy_OnMissingInformation"]</option>
                     </select>
                 </div>
                 <div class="form-row">
                     <label>@Localizer["KnownContacts_AutoCreate_Label"]</label>
-                    <input type="checkbox" @bind="_vm.Model.KnownContactAutoCreateEnabled" />
+                    <input type="checkbox" @bind="_vm.Model.KnownContactAutoCreateEnabled" @bind:after="(()=> _vm.OnChanged())" />
                 </div>
             </div>
 

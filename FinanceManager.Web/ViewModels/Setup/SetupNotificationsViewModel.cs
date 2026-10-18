@@ -230,8 +230,8 @@ public sealed class SetupNotificationsViewModel : BaseViewModel
              || (Hour ?? 9) != (_original.MonthlyReminderHour ?? 9)
              || (Minute ?? 0) != (_original.MonthlyReminderMinute ?? 0)
              || Model.HolidayProvider != _original.HolidayProvider
-             || Model.HolidayCountryCode != _original.HolidayCountryCode
-             || Model.HolidaySubdivisionCode != _original.HolidaySubdivisionCode;
+             || (Model.HolidayCountryCode ?? "") != (_original.HolidayCountryCode ?? "")
+             || (Model.HolidaySubdivisionCode ?? "") != (_original.HolidaySubdivisionCode ?? "");
     }
 
     private static NotificationSettingsDto Clone(NotificationSettingsDto src) => new()
