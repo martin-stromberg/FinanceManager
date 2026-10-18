@@ -442,7 +442,7 @@ public static class TrendReversalAnalyzer
         for (var i = 1; i < macdLen; i++)
         {
             if (signalLine[i].HasValue && signalLine[i - 1].HasValue
-                && macdLine[i - 1] >= signalLine[i - 1]!.Value && macdLine[i] < signalLine[i].Value)
+                && macdLine[i - 1] >= signalLine[i - 1]!.Value && macdLine[i] < signalLine[i]!.Value)
             {
                 crossoverIdx = i;
             }
