@@ -212,7 +212,7 @@ public sealed class SetupSectionsDirtyDetectionTests : BunitContext
             case IHtmlSelectElement select:
                 return select.Options
                     .Select(o => o.GetAttribute("value") ?? o.Value)
-                    .FirstOrDefault(v => v != current);
+                    .FirstOrDefault(v => !Equals(v, current));
             default:
                 return null;
         }
