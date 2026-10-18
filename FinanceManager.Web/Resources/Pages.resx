@@ -1425,6 +1425,12 @@
   <data name="Notifications_GoldenCross_Help" xml:space="preserve">
     <value>Show a notification on the home page when the short-term moving average of a security approaches or crosses above the long-term moving average (golden cross). Shown once per cycle.</value>
   </data>
+  <data name="Notifications_TrendReversal" xml:space="preserve">
+    <value>Enable trend reversal notifications</value>
+  </data>
+  <data name="Notifications_TrendReversal_Help" xml:space="preserve">
+    <value>Show a notification on the home page when bearish reversal signals are detected for a security (e.g. death cross, break of the long-term average) and its trend appears weakened or a reversal is likely. Shown once per status and cycle.</value>
+  </data>
   <data name="Notifications_MonthlyReminder_Time" xml:space="preserve">
     <value>Time (local)</value>
   </data>

@@ -354,6 +354,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.CacheKpisInLocalStorage).HasDefaultValue(false).IsRequired();
             b.Property(x => x.ShowConfirmations).HasDefaultValue(true).IsRequired();
             b.Property(x => x.GoldenCrossNotificationsEnabled).HasDefaultValue(true).IsRequired();
+            b.Property(x => x.TrendReversalNotificationsEnabled).HasDefaultValue(true).IsRequired();
             // Return analysis settings
             b.Property(x => x.BenchmarkSecurityId);
             b.Property(x => x.ShowSharpeRatio).HasDefaultValue(false).IsRequired();
@@ -520,6 +521,11 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
                 .HasConversion<short>()
                 .HasDefaultValue(FinanceManager.Domain.Securities.GoldenCrossPhase.Far)
                 .HasSentinel(FinanceManager.Domain.Securities.GoldenCrossPhase.Far)
+                .IsRequired();
+            b.Property(x => x.TrendReversalNotifiedStatus)
+                .HasConversion<short>()
+                .HasDefaultValue(FinanceManager.Domain.Securities.TrendStatus.Intact)
+                .HasSentinel(FinanceManager.Domain.Securities.TrendStatus.Intact)
                 .IsRequired();
             b.HasOne<SecurityCategory>()
                 .WithMany()

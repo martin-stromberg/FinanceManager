@@ -2,6 +2,7 @@ using FinanceManager.Application;
 using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
+using FinanceManager.Application.Securities.TrendReversal;
 using FinanceManager.Domain.Users;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Auth;
@@ -81,6 +82,8 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<IReturnAnalysisLocalizer, ReturnAnalysisLocalizer>();
             builder.Services.AddScoped<IGoldenCrossLocalizer, GoldenCrossLocalizer>();
             builder.Services.Configure<GoldenCrossOptions>(builder.Configuration.GetSection(GoldenCrossOptions.SectionName));
+            builder.Services.AddScoped<ITrendReversalLocalizer, TrendReversalLocalizer>();
+            builder.Services.Configure<TrendReversalOptions>(builder.Configuration.GetSection(TrendReversalOptions.SectionName));
 
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
