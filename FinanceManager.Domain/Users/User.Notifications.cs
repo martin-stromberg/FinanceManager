@@ -62,6 +62,23 @@ public sealed partial class User
     }
 
     /// <summary>
+    /// Whether home page notifications about weakening or likely reversing trends of the user's securities are enabled.
+    /// Enabled by default.
+    /// </summary>
+    /// <value><c>true</c> when trend reversal notifications are enabled; otherwise <c>false</c>.</value>
+    public bool TrendReversalNotificationsEnabled { get; private set; } = true;
+
+    /// <summary>
+    /// Enables or disables trend reversal notifications on the home page.
+    /// </summary>
+    /// <param name="enabled">True to enable trend reversal notifications; false to disable.</param>
+    public void SetTrendReversalNotificationsEnabled(bool enabled)
+    {
+        TrendReversalNotificationsEnabled = enabled;
+        Touch();
+    }
+
+    /// <summary>
     /// Sets the preferred local time (hour and minute) for the monthly reminder notification.
     /// </summary>
     /// <param name="hour">Hour of day in the range 0..23, or <c>null</c> to use the default hour (09).</param>

@@ -392,3 +392,26 @@
 .golden-cross-panel .gcw-entry { margin: 0.35rem 0; padding: 0.3rem 0.5rem; border-left: 3px solid var(--border-color, #c8c8c8); background: rgba(127, 127, 127, 0.08); }
 .golden-cross-panel .gcw-entry-open { border-left-color: #b7700a; }
 .golden-cross-panel .gcw-entry-confirmed { border-left-color: #2e7d32; }
+
+/* ── Trend Reversal widget ─────────────────────────── */
+.trend-reversal-widget.trw-weakened { border-left: 4px solid #b7700a; }
+.trend-reversal-widget.trw-reversal { border-left: 4px solid #c94040; }
+.trend-reversal-widget .trw-status { font-weight: 600; }
+.trend-reversal-widget.trw-weakened .trw-status { color: #b7700a; }
+.trend-reversal-widget.trw-reversal .trw-status { color: #c94040; }
+.trend-reversal-widget .trw-hint {
+    justify-content: flex-start;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.trend-reversal-widget.trw-weakened .trw-hint { color: #b7700a; }
+.trend-reversal-widget.trw-reversal .trw-hint { color: #c94040; }
+.trend-reversal-widget .trw-asof { font-size: 0.8rem; }
+
+.trend-reversal-panel .trw-section { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color, #e3e3e3); }
+.trend-reversal-panel .trw-section-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+.trend-reversal-panel .trw-disclaimer { font-style: italic; }
+.trend-reversal-panel .trw-signal-detail { margin: 0.35rem 0; padding: 0.3rem 0.5rem; border-left: 3px solid var(--border-color, #c8c8c8); background: rgba(127, 127, 127, 0.08); }
+.trend-reversal-panel .trw-signal-detail.trw-strength-weak { border-left-color: #b7700a; }
+.trend-reversal-panel .trw-signal-detail.trw-strength-moderate { border-left-color: #c9702a; }
+.trend-reversal-panel .trw-signal-detail.trw-strength-strong { border-left-color: #c94040; }

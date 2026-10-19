@@ -14,8 +14,8 @@ Die Anwendung bündelt Stammdatenverwaltung, Kontoauszugsimport, Budget- und Rep
 Die Anwendung bietet unter anderem:
 
 - **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity, inklusive Selbstbedienungs-Seite zum Ändern des eigenen Passworts (`/change-password`)
-- **Konten, Kontakte, Sparpläne und Wertpapiere** mit Listen-, Detail- und Bearbeitungsbereichen sowie Verteilungen in der Bankübersicht
-- **Kontoauszugsverarbeitung** mit Upload, Massenimport, Klassifizierung, Schnellbearbeitung und Buchung
+- **Konten, Kontakte, Sparpläne und Wertpapiere** mit Listen-, Detail- und Bearbeitungsbereichen sowie Verteilungen in der Bankübersicht; Kursstatistiken pro Wertpapier (Goldenes Kreuz, bärische Umkehrsignale mit Trendstatus) inkl. optionaler Startseiten-Benachrichtigungen
+- **Kontoauszugsverarbeitung** mit Upload, Massenimport, Klassifizierung, Schnellbearbeitung und Buchung sowie CSV-/Excel-Export der Einträge eines Kontoauszugs
 - **Budget- und Reporting-Funktionen** inklusive Budget-Kategorien, -Zwecken, -Regeln und Berichten
 - **Portfolio-Analyse** mit Bericht und benutzerspezifischer KPI-Konfiguration
 - **Betriebsfunktionen** wie Backups, Update-Steuerung, Help-System und Well-Known-Endpunkte (`security.txt`, `/.well-known/change-password` mit administrierbarem Weiterleitungsziel)

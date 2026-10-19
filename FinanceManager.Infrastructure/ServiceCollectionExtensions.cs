@@ -13,6 +13,7 @@ using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
+using FinanceManager.Application.Securities.TrendReversal;
 using FinanceManager.Application.Security; // new
 using FinanceManager.Application.Setup;
 using FinanceManager.Application.Statements;
@@ -31,6 +32,7 @@ using FinanceManager.Infrastructure.Savings;
 using FinanceManager.Infrastructure.Securities;
 using FinanceManager.Infrastructure.Securities.GoldenCross;
 using FinanceManager.Infrastructure.Securities.ReturnAnalysis;
+using FinanceManager.Infrastructure.Securities.TrendReversal;
 using FinanceManager.Infrastructure.Security; // new
 using FinanceManager.Infrastructure.Setup;
 using FinanceManager.Infrastructure.Statements;
@@ -121,9 +123,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddScoped<IAttachmentCategoryService, AttachmentCategoryService>();
         services.AddScoped<IPostingExportService, PostingExportService>();
+        services.AddScoped<IStatementDraftExportService, StatementDraftExportService>();
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
         services.AddScoped<IGoldenCrossService, GoldenCrossService>();
+        services.AddScoped<ITrendReversalService, TrendReversalService>();
         services.AddScoped<ISecurityPriceImportService, IngSecurityPriceImportService>();
         services.AddScoped<ISecurityPriceImportServiceFactory, SecurityPriceImportServiceFactory>();
         services.AddScoped<IStatementFile, Barclays_PDF_StatementFile>();

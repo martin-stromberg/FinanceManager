@@ -54,7 +54,13 @@ Auf mobilen Geräten erscheinen die Kontoauszugseinträge als Karten. Prüfen Si
 - Zugeordnete Wertpapiere werden zusammen mit der Buchungsart in Klammern angezeigt.
 - Lange Dateinamen und lange Textwerte brechen innerhalb der Karte um.
 
-### 6. Verbuchen
+### 6. Einträge exportieren
+
+Öffnen Sie in der Detailansicht eines Kontoauszugs die Ribbon-Gruppe „Export" und wählen Sie „CSV exportieren" oder „Excel exportieren". Der Download startet direkt im Browser; die Datei enthält alle Einträge des Entwurfs in der Reihenfolge des Auszugs.
+
+> **Hinweis:** Haben Sie in der Eintragsliste eine Suche oder einen Datumsbereich gesetzt, werden nur die gefilterten Zeilen exportiert. Der Export enthält grundsätzlich auch bereits gebuchte und angekündigte Zeilen sowie den Verarbeitungsstatus und die zugeordneten Kontakte, Sparpläne und Wertpapiere als lesbare Namen. Bei sehr großen Entwürfen kann der Server den Export wegen einer Mengenbeschränkung ablehnen.
+
+### 7. Verbuchen
 
 Starten Sie die Verbuchung für den gesamten Entwurf oder einzelne Zeilen.
 

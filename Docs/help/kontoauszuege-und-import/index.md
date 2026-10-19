@@ -10,3 +10,4 @@ Dieser Bereich verarbeitet Kontoauszüge von der Datei bis zur verbuchten Buchun
 - [API](api.md)
 - [Datenmodell](datenmodell.md)
 - [Business Rules](business-rules.md)
+- [Fehlerbehebung](troubleshooting.md)

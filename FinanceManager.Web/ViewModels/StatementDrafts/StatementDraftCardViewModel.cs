@@ -405,6 +405,14 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Statement"].Value, stmtItems));
 
+        // Export group (CSV / XLSX download of draft entries)
+        var exportItems = new List<UiRibbonAction>
+        {
+            new UiRibbonAction("ExportCsv", localizer["Ribbon_ExportCsv"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ExportCsv"); return Task.CompletedTask; })),
+            new UiRibbonAction("ExportXlsx", localizer["Ribbon_ExportExcel"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ExportXlsx"); return Task.CompletedTask; }))
+        };
+        tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Export"].Value, exportItems));
+
         // Linked information group
         var linkedItems = new List<UiRibbonAction>
         {

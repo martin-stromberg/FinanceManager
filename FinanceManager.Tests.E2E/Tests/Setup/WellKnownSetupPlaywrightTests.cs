@@ -82,7 +82,11 @@ public sealed class WellKnownSetupPlaywrightTests
 
         try
         {
-            using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var handler = new HttpClientHandler
+            {
+                AllowAutoRedirect = false,
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
             using var client = new HttpClient(handler) { BaseAddress = new Uri(_fixture.BaseUrl) };
             var response = await client.GetAsync("/.well-known/change-password", TestContext.Current.CancellationToken);
 

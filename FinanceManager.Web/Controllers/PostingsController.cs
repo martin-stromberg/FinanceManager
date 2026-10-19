@@ -440,18 +440,13 @@ public sealed class PostingsController : ControllerBase
     /// <exception cref="UnauthorizedAccessException">Thrown by the export service when the context is not accessible.</exception>
     private async Task<IActionResult> ExportAsync(PostingKind kind, Guid contextId, PostingExportRequest req, CancellationToken ct)
     {
-        if (!TryParseFormat(req.Format, out var exportFormat))
+        if (!ExportRequestHelper.TryParseFormat(req.Format, out var exportFormat))
         {
             return Problem(title: "Invalid format", detail: "Supported formats are 'csv' and 'xlsx'.", statusCode: StatusCodes.Status400BadRequest);
         }
 
         // Max rows config
-        var maxRowsStr = _config["Exports:MaxRows"];
-        var maxRows = DefaultMaxRows;
-        if (!string.IsNullOrWhiteSpace(maxRowsStr) && int.TryParse(maxRowsStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var cfgMax))
-        {
-            maxRows = Math.Max(1, cfgMax);
-        }
+        var maxRows = ExportRequestHelper.GetMaxRows(_config, DefaultMaxRows);
 
         // Ownership + entity display name for filename
         string displayName;
@@ -495,7 +490,7 @@ public sealed class PostingsController : ControllerBase
         try
         {
             var safeContext = kind.ToString();
-            var safeName = SanitizeFileName(displayName);
+            var safeName = ExportRequestHelper.SanitizeFileName(displayName);
 
             if (exportFormat == PostingExportFormat.Csv)
             {
@@ -534,25 +529,6 @@ public sealed class PostingsController : ControllerBase
         {
             return Problem(title: "Export limit exceeded", detail: $"Maximum rows {maxRows} exceeded.", statusCode: StatusCodes.Status400BadRequest);
         }
-    }
-
-    private static bool TryParseFormat(string? format, out PostingExportFormat result)
-    {
-        result = PostingExportFormat.Csv;
-        if (string.IsNullOrWhiteSpace(format)) { return true; }
-        var f = format.Trim().ToLowerInvariant();
-        if (f == "csv") { result = PostingExportFormat.Csv; return true; }
-        if (f == "xlsx") { result = PostingExportFormat.Xlsx; return true; }
-        return false;
-    }
-
-    private static string SanitizeFileName(string value)
-    {
-        var invalid = Path.GetInvalidFileNameChars();
-        var cleaned = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
-        if (cleaned.Length > 60) { cleaned = cleaned.Substring(0, 60); }
-        if (string.IsNullOrWhiteSpace(cleaned)) { cleaned = "_"; }
-        return cleaned.Replace(' ', '_');
     }
 
     /// <summary>

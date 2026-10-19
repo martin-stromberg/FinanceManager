@@ -4,16 +4,19 @@ using FinanceManager.Application.Attachments;
 using FinanceManager.Application.Common;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Exceptions;
+using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Statements;
+using FinanceManager.Web.Infrastructure;
 using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using System.Net.Mime;
@@ -32,6 +35,7 @@ namespace FinanceManager.Web.Controllers;
 public sealed class StatementDraftsController : ControllerBase
 {
     private const string Origin = "API_StatementDraft";
+    private const int DefaultMaxRows = 50_000;
 
     private readonly IStatementDraftService _drafts;
     private readonly ICurrentUserService _current;
@@ -39,6 +43,8 @@ public sealed class StatementDraftsController : ControllerBase
     private readonly IStringLocalizer<Controller> _localizer;
     private readonly IBackgroundTaskManager _taskManager; // unified background task system
     private readonly IAttachmentService _attachments; // new
+    private readonly IStatementDraftExportService _exportService;
+    private readonly IConfiguration _config;
     private readonly IBudgetImpactEvaluationService? _budgetImpact;
     private readonly IMassImportOrchestrator? _massImportOrchestrator;
 
@@ -51,6 +57,8 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="localizer">Localizer for i18n support.</param>
     /// <param name="taskManager">Background task manager used to enqueue/inspect background jobs.</param>
     /// <param name="attachments">Attachment service used to list and download attachments.</param>
+    /// <param name="exportService">Service used to export draft entries as CSV/XLSX.</param>
+    /// <param name="config">Application configuration used to read export limits.</param>
     /// <param name="budgetImpact">Optional service used to evaluate the budget impact of bookings; may be null when the feature is disabled.</param>
     /// <param name="massImportOrchestrator">Optional orchestrator used to coordinate mass import of statement drafts; may be null when the feature is disabled.</param>
     public StatementDraftsController(
@@ -60,6 +68,8 @@ public sealed class StatementDraftsController : ControllerBase
         IStringLocalizer<Controller> localizer,
         IBackgroundTaskManager taskManager,
         IAttachmentService attachments,
+        IStatementDraftExportService exportService,
+        IConfiguration config,
         IBudgetImpactEvaluationService? budgetImpact = null,
         IMassImportOrchestrator? massImportOrchestrator = null)
     {
@@ -69,6 +79,8 @@ public sealed class StatementDraftsController : ControllerBase
         _localizer = localizer;
         _taskManager = taskManager;
         _attachments = attachments;
+        _exportService = exportService;
+        _config = config;
         _massImportOrchestrator = massImportOrchestrator;
         _budgetImpact = budgetImpact;
     }
@@ -688,6 +700,87 @@ public sealed class StatementDraftsController : ControllerBase
         var fileName = downloaded.Item2;
         var contentType = downloaded.Item3;
         return File(content, string.IsNullOrWhiteSpace(contentType) ? MediaTypeNames.Application.Octet : contentType, fileName);
+    }
+
+    /// <summary>
+    /// Exports the entries of a statement draft in CSV or XLSX format.
+    /// </summary>
+    /// <param name="draftId">The draft id.</param>
+    /// <param name="req">Export request containing format and optional filters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 OK with the export file, 400 Bad Request for invalid format or exceeded limits, or 404 Not Found when the draft is missing.</returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="400">The HTTP 400 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpGet("{draftId:guid}/export")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ExportAsync(Guid draftId, [FromQuery] StatementDraftExportRequest req, CancellationToken ct)
+    {
+        if (!ExportRequestHelper.TryParseFormat(req.Format, out var exportFormat))
+        {
+            return Problem(title: "Invalid format", detail: "Supported formats are 'csv' and 'xlsx'.", statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        // Max rows config
+        var maxRows = ExportRequestHelper.GetMaxRows(_config, DefaultMaxRows);
+
+        // Ownership + draft display name for filename
+        var draft = await _drafts.GetDraftHeaderAsync(draftId, _current.UserId, ct);
+        if (draft == null) { return NotFound(); }
+        var displayName = !string.IsNullOrWhiteSpace(draft.Description) ? draft.Description! : draft.OriginalFileName;
+
+        var query = new StatementDraftExportQuery(
+            OwnerUserId: _current.UserId,
+            DraftId: draftId,
+            Format: exportFormat,
+            MaxRows: maxRows,
+            From: req.From,
+            To: req.To,
+            Q: req.Q);
+
+        try
+        {
+            var safeName = ExportRequestHelper.SanitizeFileName(displayName);
+
+            if (exportFormat == PostingExportFormat.Csv)
+            {
+                var total = await _exportService.CountAsync(query, ct);
+                if (total > maxRows)
+                {
+                    return Problem(title: "Export limit exceeded", detail: $"Maximum rows {maxRows} exceeded.", statusCode: StatusCodes.Status400BadRequest);
+                }
+
+                var fileName = $"StatementDraft_{safeName}_{DateTime.UtcNow:yyyyMMddHHmm}.csv";
+                var result = new StreamCallbackResult("text/csv; charset=utf-8", async (stream, token) =>
+                {
+                    await _exportService.StreamCsvAsync(query, stream, token);
+                })
+                {
+                    FileDownloadName = fileName
+                };
+                return result;
+            }
+            else
+            {
+                var (contentType, _, stream) = await _exportService.GenerateAsync(query, ct);
+                var fileName = $"StatementDraft_{safeName}_{DateTime.UtcNow:yyyyMMddHHmm}.xlsx";
+                return File(stream, contentType, fileName);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return NotFound();
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return Problem(title: "Invalid format", statusCode: StatusCodes.Status400BadRequest);
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "MaxRowsExceeded")
+        {
+            return Problem(title: "Export limit exceeded", detail: $"Maximum rows {maxRows} exceeded.", statusCode: StatusCodes.Status400BadRequest);
+        }
     }
 
     /// <summary>
