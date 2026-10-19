@@ -728,4 +728,81 @@ public class ApiClientStatementDraftsTests : IClassFixture<TestWebApplicationFac
             result.BudgetImpactSummary.HighestSeverity.Should().Be(BudgetImpactHintType.Neutral);
         }
     }
+
+    /// <summary>
+    /// Exercises the CSV export endpoint end to end: a draft with entries created through the real API is
+    /// exported via <c>GET /api/statement-drafts/{id}/export?format=csv</c>, returning 200 with a
+    /// <c>text/csv</c> download whose body contains the header row and the entry values.
+    /// </summary>
+    [Fact]
+    public async Task StatementDrafts_ExportCsv_ShouldReturnFileWithEntries()
+    {
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var api = new FinanceManager.Shared.ApiClient(http);
+        await EnsureAuthenticatedAsync(api);
+
+        var draft = await api.StatementDrafts_CreateAsync("export.csv", TestContext.Current.CancellationToken);
+        draft.Should().NotBeNull();
+        await api.StatementDrafts_AddEntryAsync(draft!.DraftId, new StatementDraftAddEntryRequest(new DateTime(2026, 1, 5), -42.5m, "Alpha"), TestContext.Current.CancellationToken);
+        await api.StatementDrafts_AddEntryAsync(draft.DraftId, new StatementDraftAddEntryRequest(new DateTime(2026, 1, 10), 17m, "Beta"), TestContext.Current.CancellationToken);
+
+        var resp = await http.GetAsync($"/api/statement-drafts/{draft.DraftId}/export?format=csv", TestContext.Current.CancellationToken);
+
+        resp.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        resp.Content.Headers.ContentType!.MediaType.Should().Be("text/csv");
+        var disposition = resp.Content.Headers.ContentDisposition?.ToString()
+            ?? (resp.Headers.TryGetValues("Content-Disposition", out var cds) ? string.Join(";", cds) : string.Empty);
+        disposition.Should().Contain("StatementDraft_");
+        disposition.Should().Contain(".csv");
+        var body = await resp.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        body.Should().Contain("EntryNumber;BookingDate;ValutaDate;Amount;Currency;Subject");
+        body.Should().Contain("\"Alpha\"");
+        body.Should().Contain("\"Beta\"");
+    }
+
+    /// <summary>
+    /// Exercises the XLSX export endpoint end to end, asserting a 200 response with the spreadsheet content
+    /// type and an <c>.xlsx</c> download file name.
+    /// </summary>
+    [Fact]
+    public async Task StatementDrafts_ExportXlsx_ShouldReturnSpreadsheet()
+    {
+        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var api = new FinanceManager.Shared.ApiClient(http);
+        await EnsureAuthenticatedAsync(api);
+
+        var draft = await api.StatementDrafts_CreateAsync("export.xlsx.csv", TestContext.Current.CancellationToken);
+        draft.Should().NotBeNull();
+        await api.StatementDrafts_AddEntryAsync(draft!.DraftId, new StatementDraftAddEntryRequest(new DateTime(2026, 1, 5), -10m, "Alpha"), TestContext.Current.CancellationToken);
+
+        var resp = await http.GetAsync($"/api/statement-drafts/{draft.DraftId}/export?format=xlsx", TestContext.Current.CancellationToken);
+
+        resp.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        resp.Content.Headers.ContentType!.MediaType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        var disposition = resp.Content.Headers.ContentDisposition?.ToString()
+            ?? (resp.Headers.TryGetValues("Content-Disposition", out var cds) ? string.Join(";", cds) : string.Empty);
+        disposition.Should().Contain(".xlsx");
+    }
+
+    /// <summary>
+    /// Verifies that a draft owned by one user cannot be exported through the API by a different authenticated
+    /// user - the endpoint must answer 404 so foreign drafts are indistinguishable from missing ones.
+    /// </summary>
+    [Fact]
+    public async Task StatementDrafts_Export_ShouldReturn404_ForForeignDraft()
+    {
+        var ownerHttp = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var ownerApi = new FinanceManager.Shared.ApiClient(ownerHttp);
+        await EnsureAuthenticatedAsync(ownerApi);
+        var draft = await ownerApi.StatementDrafts_CreateAsync("foreign.csv", TestContext.Current.CancellationToken);
+        draft.Should().NotBeNull();
+
+        var otherHttp = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var otherApi = new FinanceManager.Shared.ApiClient(otherHttp);
+        await EnsureAuthenticatedAsync(otherApi);
+
+        var resp = await otherHttp.GetAsync($"/api/statement-drafts/{draft!.DraftId}/export?format=csv", TestContext.Current.CancellationToken);
+
+        resp.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+    }
 }
