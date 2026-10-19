@@ -24,6 +24,8 @@ Auf mobilen Geräten werden Kontoauszugseinträge als Karten dargestellt. Datum 
 
 Die mobile Karte zeigt die fachlich relevanten Zuordnungen direkt am Eintrag: einen abweichenden Kontakt oder, falls kein Kontakt gesetzt ist, den Empfänger, außerdem einen zugeordneten Sparplan und ein zugeordnetes Wertpapier. Bei Wertpapierzeilen steht die Buchungsart direkt neben dem Wertpapier in Klammern.
 
+Über die Ribbon-Gruppe „Export" in der Detailansicht eines Kontoauszugs können die Entwurfszeilen als CSV- oder Excel-Datei (`.xlsx`) heruntergeladen werden. Der Export enthält alle Einträge des Entwurfs — einschließlich bereits gebuchter und angekündigter Zeilen — in der Reihenfolge des Auszugs. Zugeordnete Kontakte, Sparpläne und Wertpapiere werden dabei zu lesbaren Namen aufgelöst; Verarbeitungsstatus und Wertpapierdetails werden als eigene Spalten ausgegeben. Gesetzte Such- und Datumsfilter der Eintragsliste werden in den Export übernommen.
+
 ## Beispiele
 
 - Ein CSV-Kontoauszug wird importiert und automatisch klassifiziert.
@@ -33,9 +35,11 @@ Die mobile Karte zeigt die fachlich relevanten Zuordnungen direkt am Eintrag: ei
 - Mehrere Entwurfszeilen werden in einer Massenänderung bearbeitet, einzelne Zeilen zum Löschen vorgemerkt und neue Zeilen ergänzt.
 - Mehrere Dateien werden als Massenimport mit Sicherheitszuordnung verarbeitet.
 - Auf dem Smartphone zeigt eine Entwurfszeile Datum und Betrag nebeneinander sowie Kontakt, Sparplan und Wertpapier inklusive Buchungsart untereinander.
+- Die Einträge eines Kontoauszug-Entwurfs werden als CSV- oder Excel-Datei exportiert, um sie extern auszuwerten.
 
 ## Einschränkungen
 
 - Verbuchung ist an den Benutzer- und Kontokontext gebunden.
 - Mehrdeutige Treffer in der bekannten-Kontakte-Liste erzeugen keine automatische Kontaktanlage.
 - Validierungswarnungen können das Buchen blockieren, wenn nicht explizit freigegeben.
+- Die Anzahl exportierbarer Entwurfszeilen ist serverseitig begrenzt (Konfigurationsschlüssel `Exports:MaxRows`, Standard 50.000 Zeilen); bei Überschreitung wird der Export abgelehnt.

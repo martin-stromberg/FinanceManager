@@ -1,10 +1,6 @@
-using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Spreadsheet;
 using FinanceManager.Application.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Buffers;
 using System.Globalization;
 using System.Text;
 
@@ -16,6 +12,9 @@ namespace FinanceManager.Infrastructure.Reports;
 /// </summary>
 public sealed class PostingExportService : IPostingExportService
 {
+    private const string CsvHeader = "BookingDate;ValutaDate;Amount;Kind;Subject;RecipientName;Description;Account;Contact;SavingsPlan;Security;SecuritySubType;Quantity";
+    private static readonly string[] XlsxHeaders = CsvHeader.Split(';');
+
     private readonly AppDbContext _db;
     private readonly ILogger<PostingExportService> _logger;
 
@@ -164,6 +163,21 @@ public sealed class PostingExportService : IPostingExportService
     }
 
     /// <summary>
+    /// Holds the resolved display name lookups for the entity types referenced by export rows.
+    /// </summary>
+    private sealed record ResolvedEntityNames
+    {
+        /// <summary>Mapping of account ids to display names.</summary>
+        public required Dictionary<Guid, string> Accounts { get; init; }
+        /// <summary>Mapping of contact ids to display names.</summary>
+        public required Dictionary<Guid, string> Contacts { get; init; }
+        /// <summary>Mapping of savings plan ids to display names.</summary>
+        public required Dictionary<Guid, string> SavingsPlans { get; init; }
+        /// <summary>Mapping of security ids to display names.</summary>
+        public required Dictionary<Guid, string> Securities { get; init; }
+    }
+
+    /// <summary>
     /// Internal projection type used by the export queries to combine postings with optional statement entry fields.
     /// </summary>
     private sealed class Joined
@@ -197,34 +211,7 @@ public sealed class PostingExportService : IPostingExportService
         }
 
         // Resolve entity names for referenced IDs to make export human-readable
-        var accountIds = rows.Where(r => r.AccountId.HasValue).Select(r => r.AccountId!.Value).Distinct().ToList();
-        var contactIds = rows.Where(r => r.ContactId.HasValue).Select(r => r.ContactId!.Value).Distinct().ToList();
-        var savingsIds = rows.Where(r => r.SavingsPlanId.HasValue).Select(r => r.SavingsPlanId!.Value).Distinct().ToList();
-        var securityIds = rows.Where(r => r.SecurityId.HasValue).Select(r => r.SecurityId!.Value).Distinct().ToList();
-
-        var accountNames = accountIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _db.Accounts.AsNoTracking()
-                .Where(a => accountIds.Contains(a.Id) && a.OwnerUserId == query.OwnerUserId)
-                .ToDictionaryAsync(a => a.Id, a => a.Name, ct);
-
-        var contactNames = contactIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _db.Contacts.AsNoTracking()
-                .Where(c => contactIds.Contains(c.Id) && c.OwnerUserId == query.OwnerUserId)
-                .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
-
-        var savingsNames = savingsIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _db.SavingsPlans.AsNoTracking()
-                .Where(s => savingsIds.Contains(s.Id) && s.OwnerUserId == query.OwnerUserId)
-                .ToDictionaryAsync(s => s.Id, s => s.Name, ct);
-
-        var securityNames = securityIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _db.Securities.AsNoTracking()
-                .Where(s => securityIds.Contains(s.Id) && s.OwnerUserId == query.OwnerUserId)
-                .ToDictionaryAsync(s => s.Id, s => s.Name, ct);
+        var names = await ResolveEntityNamesAsync(rows, query.OwnerUserId, ct);
 
         Stream stream;
         string contentType;
@@ -232,7 +219,12 @@ public sealed class PostingExportService : IPostingExportService
         if (query.Format == PostingExportFormat.Csv)
         {
             stream = new MemoryStream();
-            await WriteCsvAsync(stream, rows, accountNames, contactNames, savingsNames, securityNames, ct);
+            await ExportFileHelper.WriteCsvAsync(stream, CsvHeader,
+                rows.Select(r => CreateCsvColumns(r,
+                    ResolveName(r.AccountId, names.Accounts),
+                    ResolveName(r.ContactId, names.Contacts),
+                    ResolveName(r.SavingsPlanId, names.SavingsPlans),
+                    ResolveName(r.SecurityId, names.Securities))), ct);
             stream.Position = 0;
             contentType = "text/csv";
             ext = "csv";
@@ -240,7 +232,8 @@ public sealed class PostingExportService : IPostingExportService
         else if (query.Format == PostingExportFormat.Xlsx)
         {
             stream = new MemoryStream();
-            WriteXlsx(stream, rows, accountNames, contactNames, savingsNames, securityNames);
+            ExportFileHelper.WriteXlsx(stream, "Postings", XlsxHeaders,
+                rows.Select(r => CreateXlsxValues(r, names.Accounts, names.Contacts, names.SavingsPlans, names.Securities)));
             stream.Position = 0;
             contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             ext = "xlsx";
@@ -256,6 +249,29 @@ public sealed class PostingExportService : IPostingExportService
         // Filename responsibility of caller (needs entity name). Use generic fallback here
         var fileName = $"Postings_{query.ContextKind}_{DateTime.UtcNow:yyyyMMddHHmm}.{ext}";
         return (contentType, fileName, stream);
+    }
+
+    /// <summary>
+    /// Resolves the display names of the accounts, contacts, savings plans and securities referenced by the
+    /// provided rows, restricted to entities owned by the exporting user.
+    /// </summary>
+    /// <param name="rows">Export rows whose referenced ids are resolved.</param>
+    /// <param name="ownerUserId">Owner user id used to scope the lookups.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="ResolvedEntityNames"/> containing dictionaries that map entity ids to display names.</returns>
+    private async Task<ResolvedEntityNames> ResolveEntityNamesAsync(
+        IReadOnlyList<PostingExportRow> rows, Guid ownerUserId, CancellationToken ct)
+    {
+        var accountIds = rows.Where(r => r.AccountId.HasValue).Select(r => r.AccountId!.Value).Distinct().ToList();
+        var contactIds = rows.Where(r => r.ContactId.HasValue).Select(r => r.ContactId!.Value).Distinct().ToList();
+        var savingsIds = rows.Where(r => r.SavingsPlanId.HasValue).Select(r => r.SavingsPlanId!.Value).Distinct().ToList();
+        var securityIds = rows.Where(r => r.SecurityId.HasValue).Select(r => r.SecurityId!.Value).Distinct().ToList();
+
+        var accountNames = await ExportFileHelper.ResolveAccountNamesAsync(_db, ownerUserId, accountIds, ct);
+        var contactNames = await ExportFileHelper.ResolveContactNamesAsync(_db, ownerUserId, contactIds, ct);
+        var savingsNames = await ExportFileHelper.ResolveSavingsPlanNamesAsync(_db, ownerUserId, savingsIds, ct);
+        var securityNames = await ExportFileHelper.ResolveSecurityNamesAsync(_db, ownerUserId, securityIds, ct);
+        return new ResolvedEntityNames { Accounts = accountNames, Contacts = contactNames, SavingsPlans = savingsNames, Securities = securityNames };
     }
 
     /// <summary>
@@ -322,6 +338,10 @@ public sealed class PostingExportService : IPostingExportService
                     Subject = p.Subject ?? seOpt.Subject,
                     Recipient = p.RecipientName ?? seOpt.RecipientName,
                     Description = p.Description ?? seOpt.BookingDescription,
+                    p.AccountId,
+                    p.ContactId,
+                    p.SavingsPlanId,
+                    p.SecurityId,
                     AccountName = acOpt != null ? acOpt.Name : null,
                     ContactName = coOpt != null ? coOpt.Name : null,
                     SavingsName = spOpt != null ? spOpt.Name : null,
@@ -359,27 +379,15 @@ public sealed class PostingExportService : IPostingExportService
         {
             AutoFlush = false
         };
-        await writer.WriteLineAsync("BookingDate;ValutaDate;Amount;Kind;Subject;RecipientName;Description;Account;Contact;SavingsPlan;Security;SecuritySubType;Quantity");
+        await writer.WriteLineAsync(CsvHeader);
 
         await foreach (var r in q.AsAsyncEnumerable().WithCancellation(ct))
         {
             ct.ThrowIfCancellationRequested();
-            string[] cols = new[]
-            {
-                r.BookingDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                r.ValutaDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                r.Amount.ToString(CultureInfo.InvariantCulture),
-                r.Kind.ToString(),
-                CsvEscape(r.Subject),
-                CsvEscape(r.Recipient),
-                CsvEscape(r.Description),
-                CsvEscape(r.AccountName),
-                CsvEscape(r.ContactName),
-                CsvEscape(r.SavingsName),
-                CsvEscape(r.SecurityName),
-                r.SecuritySubType?.ToString() ?? string.Empty,
-                r.Quantity?.ToString(CultureInfo.InvariantCulture) ?? string.Empty
-            };
+            var row = new PostingExportRow(
+                r.BookingDate, r.ValutaDate, r.Amount, r.Kind, r.Subject, r.Recipient, r.Description,
+                r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId, r.SecuritySubType, r.Quantity);
+            var cols = CreateCsvColumns(row, r.AccountName, r.ContactName, r.SavingsName, r.SecurityName);
             await writer.WriteLineAsync(string.Join(';', cols));
         }
         await writer.FlushAsync();
@@ -390,161 +398,81 @@ public sealed class PostingExportService : IPostingExportService
     }
 
     /// <summary>
-    /// Writes CSV content for an in-memory set of rows to the provided stream. The stream is left open.
+    /// Resolves the display name for an optional entity id using the provided name mapping.
     /// </summary>
-    /// <param name="output">Output stream to write to.</param>
-    /// <param name="rows">Rows to write.</param>
-    /// <param name="accountNames">Mapping of account ids to names.</param>
-    /// <param name="contactNames">Mapping of contact ids to names.</param>
-    /// <param name="savingsNames">Mapping of savings plan ids to names.</param>
-    /// <param name="securityNames">Mapping of security ids to names.</param>
-    /// <param name="ct">Cancellation token.</param>
-    private static async Task WriteCsvAsync(Stream output, IReadOnlyList<PostingExportRow> rows,
-        IReadOnlyDictionary<Guid, string> accountNames,
-        IReadOnlyDictionary<Guid, string> contactNames,
-        IReadOnlyDictionary<Guid, string> savingsNames,
-        IReadOnlyDictionary<Guid, string> securityNames,
-        CancellationToken ct)
+    /// <param name="id">Optional entity id to resolve.</param>
+    /// <param name="names">Mapping of entity ids to display names.</param>
+    /// <returns>The resolved display name, or an empty string when the id is missing or unknown.</returns>
+    private static string ResolveName(Guid? id, IReadOnlyDictionary<Guid, string> names)
+        => id.HasValue && names.TryGetValue(id.Value, out var name) ? name : string.Empty;
+
+    /// <summary>
+    /// Builds the CSV column values for a single export row using already resolved display names.
+    /// </summary>
+    /// <param name="r">The export row.</param>
+    /// <param name="accountName">Resolved account display name, or null when none.</param>
+    /// <param name="contactName">Resolved contact display name, or null when none.</param>
+    /// <param name="savingsName">Resolved savings plan display name, or null when none.</param>
+    /// <param name="securityName">Resolved security display name, or null when none.</param>
+    /// <returns>The escaped CSV column values in header order.</returns>
+    private static string[] CreateCsvColumns(PostingExportRow r,
+        string? accountName,
+        string? contactName,
+        string? savingsName,
+        string? securityName)
     {
-        using var writer = new StreamWriter(output, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true), 1024, leaveOpen: true);
-        // Header
-        await writer.WriteLineAsync("BookingDate;ValutaDate;Amount;Kind;Subject;RecipientName;Description;Account;Contact;SavingsPlan;Security;SecuritySubType;Quantity");
-        // Rows
-        foreach (var r in rows)
+        return new[]
         {
-            ct.ThrowIfCancellationRequested();
-            var acc = r.AccountId.HasValue && accountNames.TryGetValue(r.AccountId.Value, out var an) ? an : string.Empty;
-            var con = r.ContactId.HasValue && contactNames.TryGetValue(r.ContactId.Value, out var cn) ? cn : string.Empty;
-            var sav = r.SavingsPlanId.HasValue && savingsNames.TryGetValue(r.SavingsPlanId.Value, out var sn) ? sn : string.Empty;
-            var sec = r.SecurityId.HasValue && securityNames.TryGetValue(r.SecurityId.Value, out var scn) ? scn : string.Empty;
-            string[] cols = new[]
-            {
-                r.BookingDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                r.ValutaDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                r.Amount.ToString(CultureInfo.InvariantCulture),
-                r.Kind.ToString(),
-                CsvEscape(r.Subject),
-                CsvEscape(r.RecipientName),
-                CsvEscape(r.Description),
-                CsvEscape(acc),
-                CsvEscape(con),
-                CsvEscape(sav),
-                CsvEscape(sec),
-                r.SecuritySubType?.ToString() ?? string.Empty,
-                r.Quantity?.ToString(CultureInfo.InvariantCulture) ?? string.Empty
-            };
-            await writer.WriteLineAsync(string.Join(';', cols));
-        }
-        await writer.FlushAsync();
+            r.BookingDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            r.ValutaDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            r.Amount.ToString(CultureInfo.InvariantCulture),
+            r.Kind.ToString(),
+            ExportFileHelper.CsvEscape(r.Subject),
+            ExportFileHelper.CsvEscape(r.RecipientName),
+            ExportFileHelper.CsvEscape(r.Description),
+            ExportFileHelper.CsvEscape(accountName),
+            ExportFileHelper.CsvEscape(contactName),
+            ExportFileHelper.CsvEscape(savingsName),
+            ExportFileHelper.CsvEscape(securityName),
+            r.SecuritySubType?.ToString() ?? string.Empty,
+            r.Quantity?.ToString(CultureInfo.InvariantCulture) ?? string.Empty
+        };
     }
 
     /// <summary>
-    /// Escapes a string value for inclusion in a CSV field by removing newlines and quoting double-quotes.
+    /// Builds the XLSX cell values for a single export row, resolving referenced ids to display names.
     /// </summary>
-    /// <param name="value">Input string value to escape.</param>
-    /// <returns>CSV-safe quoted string, or empty string when input is null or empty.</returns>
-    private static string CsvEscape(string? value)
-    {
-        if (string.IsNullOrEmpty(value)) { return string.Empty; }
-        var v = value.Replace("\r", string.Empty).Replace("\n", " ").Replace("\"", "\"\"");
-        return $"\"{v}\"";
-    }
-
-    /// <summary>
-    /// Writes an XLSX workbook to the provided stream containing the provided rows.
-    /// The method uses OpenXML to construct a simple sheet with stringified values.
-    /// </summary>
-    /// <param name="output">Output stream where the XLSX file will be written. The stream is left open.</param>
-    /// <param name="rows">Rows to include in the workbook.</param>
+    /// <param name="r">The export row.</param>
     /// <param name="accountNames">Mapping of account ids to names.</param>
     /// <param name="contactNames">Mapping of contact ids to names.</param>
     /// <param name="savingsNames">Mapping of savings plan ids to names.</param>
     /// <param name="securityNames">Mapping of security ids to names.</param>
-    private static void WriteXlsx(Stream output, IReadOnlyList<PostingExportRow> rows,
+    /// <returns>The cell values in header order.</returns>
+    private static object[] CreateXlsxValues(PostingExportRow r,
         IReadOnlyDictionary<Guid, string> accountNames,
         IReadOnlyDictionary<Guid, string> contactNames,
         IReadOnlyDictionary<Guid, string> savingsNames,
         IReadOnlyDictionary<Guid, string> securityNames)
     {
-        using var doc = SpreadsheetDocument.Create(output, SpreadsheetDocumentType.Workbook, autoSave: true);
-        var wbPart = doc.AddWorkbookPart();
-        wbPart.Workbook = new Workbook();
-        var wsPart = wbPart.AddNewPart<WorksheetPart>();
-        var sheetData = new SheetData();
-        wsPart.Worksheet = new Worksheet(sheetData);
-
-        var sheets = wbPart.Workbook.AppendChild(new Sheets());
-        var sheet = new Sheet() { Id = wbPart.GetIdOfPart(wsPart), SheetId = 1, Name = "Postings" };
-        sheets.Append(sheet);
-
-        // Header
-        string[] headers = new[] { "BookingDate", "ValutaDate", "Amount", "Kind", "Subject", "RecipientName", "Description", "Account", "Contact", "SavingsPlan", "Security", "SecuritySubType", "Quantity" };
-        sheetData.AppendChild(CreateRow(headers.Select(h => (object)h).ToArray()));
-
-        foreach (var r in rows)
+        var acc = r.AccountId.HasValue && accountNames.TryGetValue(r.AccountId.Value, out var an) ? an : string.Empty;
+        var con = r.ContactId.HasValue && contactNames.TryGetValue(r.ContactId.Value, out var cn) ? cn : string.Empty;
+        var sav = r.SavingsPlanId.HasValue && savingsNames.TryGetValue(r.SavingsPlanId.Value, out var sn) ? sn : string.Empty;
+        var sec = r.SecurityId.HasValue && securityNames.TryGetValue(r.SecurityId.Value, out var scn) ? scn : string.Empty;
+        return new object[]
         {
-            var acc = r.AccountId.HasValue && accountNames.TryGetValue(r.AccountId.Value, out var an) ? an : string.Empty;
-            var con = r.ContactId.HasValue && contactNames.TryGetValue(r.ContactId.Value, out var cn) ? cn : string.Empty;
-            var sav = r.SavingsPlanId.HasValue && savingsNames.TryGetValue(r.SavingsPlanId.Value, out var sn) ? sn : string.Empty;
-            var sec = r.SecurityId.HasValue && securityNames.TryGetValue(r.SecurityId.Value, out var scn) ? scn : string.Empty;
-            sheetData.AppendChild(CreateRow(new object[]
-            {
-                r.BookingDate,
-                r.ValutaDate,
-                r.Amount,
-                r.Kind.ToString(),
-                r.Subject ?? string.Empty,
-                r.RecipientName ?? string.Empty,
-                r.Description ?? string.Empty,
-                acc,
-                con,
-                sav,
-                sec,
-                r.SecuritySubType?.ToString() ?? string.Empty,
-                r.Quantity ?? (object)string.Empty
-            }));
-        }
-
-        wbPart.Workbook.Save();
-    }
-
-    /// <summary>
-    /// Creates an OpenXML row for the supplied values. Dates are formatted as ISO strings and decimals as invariant numbers.
-    /// </summary>
-    /// <param name="values">Array of cell values. Supported types: DateTime, decimal, string, Enum; other types are written via ToString().</param>
-    /// <returns>An OpenXML <see cref="Row"/> representing the provided values.</returns>
-    private static Row CreateRow(object[] values)
-    {
-        var row = new Row();
-        foreach (var v in values)
-        {
-            if (v is DateTime dt)
-            {
-                // Excel stores dates as serial numbers from 1899-12-30 by default
-                // For simplicity write as string ISO-8601 to avoid styles
-                row.Append(new Cell { DataType = CellValues.String, CellValue = new CellValue(dt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) });
-            }
-            else if (v is decimal dec)
-            {
-                row.Append(new Cell { DataType = CellValues.Number, CellValue = new CellValue(dec.ToString(CultureInfo.InvariantCulture)) });
-            }
-            else if (v is string s)
-            {
-                row.Append(new Cell { DataType = CellValues.String, CellValue = new CellValue(s) });
-            }
-            else if (v is Enum e)
-            {
-                row.Append(new Cell { DataType = CellValues.String, CellValue = new CellValue(e.ToString()) });
-            }
-            else if (v == null)
-            {
-                row.Append(new Cell { DataType = CellValues.String, CellValue = new CellValue(string.Empty) });
-            }
-            else
-            {
-                row.Append(new Cell { DataType = CellValues.String, CellValue = new CellValue(v.ToString() ?? string.Empty) });
-            }
-        }
-        return row;
+            r.BookingDate,
+            r.ValutaDate,
+            r.Amount,
+            r.Kind.ToString(),
+            r.Subject ?? string.Empty,
+            r.RecipientName ?? string.Empty,
+            r.Description ?? string.Empty,
+            acc,
+            con,
+            sav,
+            sec,
+            r.SecuritySubType?.ToString() ?? string.Empty,
+            r.Quantity ?? (object)string.Empty
+        };
     }
 }

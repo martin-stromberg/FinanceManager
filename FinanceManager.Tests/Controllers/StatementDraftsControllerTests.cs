@@ -77,8 +77,10 @@ public sealed class StatementDraftsControllerTests
         var taskManager = new DummyBackgroundTaskManager();
         var attachment = sp.GetRequiredService<IAttachmentService>();
         var localizer = sp.GetRequiredService<IStringLocalizer<FinanceManager.Web.Controllers.Controller>>();
+        var exportService = new FinanceManager.Infrastructure.Reports.StatementDraftExportService(db, NullLogger<FinanceManager.Infrastructure.Reports.StatementDraftExportService>.Instance);
+        var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
 
-        var controller = new StatementDraftsController(draftService, current, logger, localizer, taskManager, attachment, null, massImportOrchestrator);
+        var controller = new StatementDraftsController(draftService, current, logger, localizer, taskManager, attachment, exportService, config, null, massImportOrchestrator);
         return (controller, db, current.UserId);
     }
 
@@ -410,5 +412,112 @@ public sealed class StatementDraftsControllerTests
         orchestrator.Verify(
             x => x.ProcessAsync(userId, request, "trace-mass-import", It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that exporting a draft as CSV returns a streaming file result whose download name follows the
+    /// <c>StatementDraft_{Name}_{timestamp}.csv</c> pattern and whose streamed body contains the CSV header and
+    /// the seeded entry values.
+    /// </summary>
+    [Fact]
+    public async Task ExportAsync_ShouldReturnCsvFile_WithEntries()
+    {
+        var (controller, db, user) = Create();
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(user, "export.csv", null, "My Export");
+        draft.AddEntry(new DateTime(2026, 1, 5), -42.5m, "Alpha", "Shop A", new DateTime(2026, 1, 6), "EUR", null, false);
+        draft.AddEntry(new DateTime(2026, 1, 10), 17m, "Beta", null, null, null, null, false);
+        db.StatementDrafts.Add(draft);
+        db.StatementDraftEntries.AddRange(draft.Entries);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await controller.ExportAsync(draft.Id, new StatementDraftExportRequest("csv"), TestContext.Current.CancellationToken);
+
+        var csv = Assert.IsType<FinanceManager.Web.Infrastructure.StreamCallbackResult>(result);
+        Assert.StartsWith("StatementDraft_My_Export_", csv.FileDownloadName);
+        Assert.EndsWith(".csv", csv.FileDownloadName);
+
+        var http = new DefaultHttpContext();
+        http.Response.Body = new MemoryStream();
+        await csv.ExecuteResultAsync(new ActionContext(http, new Microsoft.AspNetCore.Routing.RouteData(), new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()));
+        http.Response.Body.Position = 0;
+        var text = await new StreamReader(http.Response.Body, Encoding.UTF8).ReadToEndAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains("EntryNumber;BookingDate;ValutaDate;Amount;Currency;Subject;RecipientName;Description", text);
+        Assert.Contains("\"Alpha\"", text);
+        Assert.Contains("\"Beta\"", text);
+        Assert.Contains("-42.5", text);
+    }
+
+    /// <summary>
+    /// Verifies that exporting a draft as XLSX returns a file result with the spreadsheet content type and an
+    /// <c>.xlsx</c> download name.
+    /// </summary>
+    [Fact]
+    public async Task ExportAsync_ShouldReturnXlsxFile()
+    {
+        var (controller, db, user) = Create();
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(user, "export.csv", null, "Xlsx Draft");
+        draft.AddEntry(new DateTime(2026, 1, 5), -10m, "Alpha", null, null, null, null, false);
+        db.StatementDrafts.Add(draft);
+        db.StatementDraftEntries.AddRange(draft.Entries);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await controller.ExportAsync(draft.Id, new StatementDraftExportRequest("xlsx"), TestContext.Current.CancellationToken);
+
+        var file = Assert.IsType<FileStreamResult>(result);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", file.ContentType);
+        Assert.StartsWith("StatementDraft_Xlsx_Draft_", file.FileDownloadName);
+        Assert.EndsWith(".xlsx", file.FileDownloadName);
+    }
+
+    /// <summary>
+    /// Verifies that the export endpoint returns 404 for a draft id that does not exist.
+    /// </summary>
+    [Fact]
+    public async Task ExportAsync_ShouldReturnNotFound_ForUnknownDraft()
+    {
+        var (controller, _, _) = Create();
+
+        var unknown = await controller.ExportAsync(Guid.NewGuid(), new StatementDraftExportRequest("csv"), TestContext.Current.CancellationToken);
+        Assert.IsType<NotFoundResult>(unknown);
+    }
+
+    /// <summary>
+    /// Verifies that the export endpoint returns 404 for a draft owned by a different user, keeping drafts
+    /// invisible across user boundaries.
+    /// </summary>
+    [Fact]
+    public async Task ExportAsync_ShouldReturnNotFound_ForForeignDraft()
+    {
+        var (controller, db, _) = Create();
+
+        var other = new FinanceManager.Domain.Users.User("other", "hash", true);
+        db.Users.Add(other);
+        var foreignDraft = new FinanceManager.Domain.Statements.StatementDraft(other.Id, "foreign.csv", null, null);
+        foreignDraft.AddEntry(new DateTime(2026, 1, 5), -10m, "Alpha", null, null, null, null, false);
+        db.StatementDrafts.Add(foreignDraft);
+        db.StatementDraftEntries.AddRange(foreignDraft.Entries);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var foreign = await controller.ExportAsync(foreignDraft.Id, new StatementDraftExportRequest("csv"), TestContext.Current.CancellationToken);
+        Assert.IsType<NotFoundResult>(foreign);
+    }
+
+    /// <summary>
+    /// Verifies that an unsupported <c>format</c> query value is rejected with a 400 problem response instead
+    /// of silently falling back to a default format.
+    /// </summary>
+    [Fact]
+    public async Task ExportAsync_ShouldReturnBadRequest_ForInvalidFormat()
+    {
+        var (controller, db, user) = Create();
+        var draft = new FinanceManager.Domain.Statements.StatementDraft(user, "export.csv", null, null);
+        db.StatementDrafts.Add(draft);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await controller.ExportAsync(draft.Id, new StatementDraftExportRequest("bogus"), TestContext.Current.CancellationToken);
+
+        var problem = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, problem.StatusCode);
     }
 }

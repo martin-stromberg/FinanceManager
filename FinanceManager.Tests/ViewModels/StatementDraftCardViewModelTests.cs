@@ -577,4 +577,44 @@ public sealed class StatementDraftCardViewModelTests
         var record = Assert.Single(entriesVm.Records.Where(r => ((StatementDraftEntryItem)r.Item!).Id == placeholder.Id));
         Assert.False(string.IsNullOrWhiteSpace(record.Hint));
     }
+
+    private static IEnumerable<UiRibbonAction> RibbonActions(StatementDraftCardViewModel vm)
+    {
+        var localizer = new DummyLocalizer();
+        return ((FinanceManager.Web.ViewModels.Common.BaseViewModel)vm).GetRibbonRegisters(localizer)!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
+            .SelectMany(t => t.Items ?? Enumerable.Empty<UiRibbonAction>());
+    }
+
+    /// <summary>
+    /// Verifies that the ribbon of a loaded draft card contains an Export group with the <c>ExportCsv</c> and
+    /// <c>ExportXlsx</c> actions and that both are enabled once a draft is loaded.
+    /// </summary>
+    [Fact]
+    public async Task Ribbon_ShouldContainExportCsvAndXlsx_WhenDraftLoaded()
+    {
+        var cardVm = await CreateLoadedCardAsync(new[] { Entry(Guid.NewGuid()) });
+
+        var actions = RibbonActions(cardVm).ToList();
+        var csv = Assert.Single(actions.Where(a => a.Action == "ExportCsv"));
+        var xlsx = Assert.Single(actions.Where(a => a.Action == "ExportXlsx"));
+        Assert.False(csv.Disabled);
+        Assert.False(xlsx.Disabled);
+    }
+
+    /// <summary>
+    /// Verifies that both export ribbon actions are disabled while no draft is loaded (new/empty card state),
+    /// so an export cannot be triggered without a persisted draft.
+    /// </summary>
+    [Fact]
+    public void Ribbon_ShouldDisableExportActions_WhenNoDraft()
+    {
+        var (vm, _) = CreateVm();
+
+        var actions = RibbonActions(vm).ToList();
+        var csv = Assert.Single(actions.Where(a => a.Action == "ExportCsv"));
+        var xlsx = Assert.Single(actions.Where(a => a.Action == "ExportXlsx"));
+        Assert.True(csv.Disabled);
+        Assert.True(xlsx.Disabled);
+    }
 }

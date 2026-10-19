@@ -123,6 +123,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddScoped<IAttachmentCategoryService, AttachmentCategoryService>();
         services.AddScoped<IPostingExportService, PostingExportService>();
+        services.AddScoped<IStatementDraftExportService, StatementDraftExportService>();
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
         services.AddScoped<IGoldenCrossService, GoldenCrossService>();

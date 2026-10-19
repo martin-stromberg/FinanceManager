@@ -84,6 +84,22 @@
 
 **Umsetzung:** `Home.razor` (Dialog-Listendarstellung) und `HomeViewModel.ConfirmMassImportAsync` (konditionale Bestätigung).
 
+## Export umfasst alle Entwurfszeilen
+
+**Beschreibung:** Der CSV-/XLSX-Export eines Kontoauszug-Entwurfs dient der externen Analyse und enthält alle Einträge — auch bereits gebuchte und angekündigte Zeilen, die in den Summen der Kartenansicht nicht berücksichtigt werden.
+
+**Bedingungen:**
+- Der Entwurf gehört zum anfragenden Benutzer.
+- Die Anzahl der exportierten Zeilen darf das konfigurierte Limit `Exports:MaxRows` (Standard 50.000) nicht überschreiten.
+
+**Verhalten:**
+- Aktive Filter der Eintragsliste (`q`-Suchbegriff, `from`/`to`-Datumsbereich) werden auf den Export angewendet; ohne Filter werden alle Einträge exportiert.
+- Die Zeilen werden in der Reihenfolge des Auszugs (`EntryNumber`) sortiert.
+- Zugeordnete Kontakte, Sparpläne und Wertpapiere werden zu lesbaren Namen aufgelöst; der `Status` wird als eigene Spalte exportiert.
+- Bei Überschreitung des Zeilenlimits wird der Export mit HTTP 400 (`Export limit exceeded`) abgelehnt.
+
+**Umsetzung:** `StatementDraftsController.ExportAsync` sowie `StatementDraftExportService` (`StreamCsvAsync`/`GenerateAsync`); das Format wird über `ExportRequestHelper.TryParseFormat` geprüft.
+
 ## Sammelauszüge erzeugen mehrere Entwürfe
 
 **Beschreibung:** Wenn ein Import mehrere Auszüge für unterschiedliche IBANs enthält, wird für jede IBAN ein eigener Entwurf erzeugt.

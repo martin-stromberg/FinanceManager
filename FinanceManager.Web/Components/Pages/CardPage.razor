@@ -269,6 +269,31 @@ else
                         }
                         break;
                     }
+                case "ExportCsv":
+                case "ExportXlsx":
+                    {
+                        // Export entries of the statement draft as CSV/XLSX download (incl. embedded list filters)
+                        if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.DraftId != Guid.Empty)
+                        {
+                            var fmt = action == "ExportCsv" ? "csv" : "xlsx";
+                            var exportParts = new List<string> { $"format={Uri.EscapeDataString(fmt)}" };
+                            var embedded = sd.EmbeddedList as IListProvider;
+                            if (!string.IsNullOrWhiteSpace(embedded?.Search)) exportParts.Add($"q={Uri.EscapeDataString(embedded.Search)}");
+                            if (embedded?.RangeFrom != null) exportParts.Add($"from={Uri.EscapeDataString(embedded.RangeFrom.Value.ToString("O", System.Globalization.CultureInfo.InvariantCulture))}");
+                            if (embedded?.RangeTo != null) exportParts.Add($"to={Uri.EscapeDataString(embedded.RangeTo.Value.ToString("O", System.Globalization.CultureInfo.InvariantCulture))}");
+                            var exportUrl = $"/api/statement-drafts/{sd.DraftId}/export?{string.Join('&', exportParts)}";
+                            var js = $"(function(){{var a=document.createElement('a'); a.href={System.Text.Json.JsonSerializer.Serialize(exportUrl)}; a.download=''; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),200);}})()";
+                            try
+                            {
+                                await JS.InvokeVoidAsync("eval", js);
+                            }
+                            catch
+                            {
+                                NavigationManager.NavigateTo(exportUrl, forceLoad: true);
+                            }
+                        }
+                        break;
+                    }
                 case "ViewOriginal":
                     {
                         // Open original in a new tab/window so browser can display inline when supported
