@@ -121,6 +121,15 @@ internal static class ExportFileHelper
     }
 
     /// <summary>
+    /// Resolves the display name for an optional entity id using the provided name mapping.
+    /// </summary>
+    /// <param name="id">Optional entity id to resolve.</param>
+    /// <param name="names">Mapping of entity ids to display names.</param>
+    /// <returns>The resolved display name, or an empty string when the id is missing or unknown.</returns>
+    public static string ResolveName(Guid? id, IReadOnlyDictionary<Guid, string> names)
+        => id.HasValue && names.TryGetValue(id.Value, out var name) ? name : string.Empty;
+
+    /// <summary>
     /// Resolves the display names of the given account ids, restricted to entities owned by the user.
     /// </summary>
     /// <param name="db">Database context.</param>

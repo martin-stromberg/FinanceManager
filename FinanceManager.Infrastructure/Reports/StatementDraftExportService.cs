@@ -170,9 +170,9 @@ public sealed class StatementDraftExportService : IStatementDraftExportService
             stream = new MemoryStream();
             await ExportFileHelper.WriteCsvAsync(stream, CsvHeader,
                 rows.Select(r => CreateCsvColumns(r,
-                    ResolveName(r.ContactId, names.Contacts),
-                    ResolveName(r.SavingsPlanId, names.SavingsPlans),
-                    ResolveName(r.SecurityId, names.Securities))), ct);
+                    ExportFileHelper.ResolveName(r.ContactId, names.Contacts),
+                    ExportFileHelper.ResolveName(r.SavingsPlanId, names.SavingsPlans),
+                    ExportFileHelper.ResolveName(r.SecurityId, names.Securities))), ct);
             stream.Position = 0;
             contentType = "text/csv";
             ext = "csv";
@@ -311,15 +311,6 @@ public sealed class StatementDraftExportService : IStatementDraftExportService
     }
 
     /// <summary>
-    /// Resolves the display name for an optional entity id using the provided name mapping.
-    /// </summary>
-    /// <param name="id">Optional entity id to resolve.</param>
-    /// <param name="names">Mapping of entity ids to display names.</param>
-    /// <returns>The resolved display name, or an empty string when the id is missing or unknown.</returns>
-    private static string ResolveName(Guid? id, IReadOnlyDictionary<Guid, string> names)
-        => id.HasValue && names.TryGetValue(id.Value, out var name) ? name : string.Empty;
-
-    /// <summary>
     /// Builds the CSV column values for a single export row using already resolved display names.
     /// </summary>
     /// <param name="r">The export row.</param>
@@ -368,9 +359,9 @@ public sealed class StatementDraftExportService : IStatementDraftExportService
         IReadOnlyDictionary<Guid, string> savingsNames,
         IReadOnlyDictionary<Guid, string> securityNames)
     {
-        var con = r.ContactId.HasValue && contactNames.TryGetValue(r.ContactId.Value, out var cn) ? cn : string.Empty;
-        var sav = r.SavingsPlanId.HasValue && savingsNames.TryGetValue(r.SavingsPlanId.Value, out var sn) ? sn : string.Empty;
-        var sec = r.SecurityId.HasValue && securityNames.TryGetValue(r.SecurityId.Value, out var scn) ? scn : string.Empty;
+        var con = ExportFileHelper.ResolveName(r.ContactId, contactNames);
+        var sav = ExportFileHelper.ResolveName(r.SavingsPlanId, savingsNames);
+        var sec = ExportFileHelper.ResolveName(r.SecurityId, securityNames);
         return new object[]
         {
             r.EntryNumber,
