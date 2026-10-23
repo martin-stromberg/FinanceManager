@@ -1,0 +1,36 @@
+using System.Reflection;
+using FinanceManager.Tests.E2E;
+using Microsoft.Playwright;
+
+foreach (var minutes in new[] { 30, 2 })
+{
+    var ctor = typeof(PlaywrightWebAppFixture).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
+        null, new[] { typeof(string), typeof(IReadOnlyDictionary<string, string>) }, null)!;
+    var fixture = (PlaywrightWebAppFixture)ctor.Invoke(new object?[] { null, new Dictionary<string,string> { ["Jwt__LifetimeMinutes"] = minutes.ToString(), ["Logging__LogLevel__FinanceManager.Web.Infrastructure.RequestLoggingMiddleware"] = "Debug" } });
+    try
+    {
+        await fixture.InitializeAsync();
+        await using var session = await fixture.CreateSessionAsync();
+        var page = session.Page;
+        page.Console += (_, e) => { if (e.Type == "error") Console.WriteLine($"BROWSER {minutes}: {e.Text}"); };
+        var username = $"fidelity-{minutes}-{Guid.NewGuid():N}";
+        await new TestUserSeeder(fixture.DatabasePath).EnsureUserAsync(username, "Secret123");
+        await new AuthGateway(page, fixture.BaseUrl).LoginThroughUiAsync(username, "Secret123");
+        await Task.Delay(3000);
+        Console.WriteLine($"RESULT lifetime={minutes} stage=home url={page.Url} signedOut={await page.Locator(".signed-out").CountAsync()} notifications={await page.Locator(".home-notifications").CountAsync()}");
+        await page.Locator("a[href='/list/accounts']").First.ClickAsync();
+        await Task.Delay(3000);
+        Console.WriteLine($"RESULT lifetime={minutes} stage=accounts url={page.Url}");
+        await page.Locator("a[href='/']").First.ClickAsync();
+        await Task.Delay(2000);
+        Console.WriteLine($"RESULT lifetime={minutes} stage=return-home url={page.Url}");
+    }
+    catch (Exception ex) { Console.WriteLine($"EXCEPTION lifetime={minutes}: {ex.GetType().Name}: {ex.Message}"); }
+    finally
+    {
+        var output = (System.Text.StringBuilder)typeof(PlaywrightWebAppFixture).GetField("_serverOutput",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(fixture)!;
+        var logs = output.ToString().Split('\n');
+        foreach (var line in logs.Where(l => l.Contains("401") || l.Contains("HTTP GET /api/") || l.Contains("Hosting environment") || l.Contains("Content root"))) Console.WriteLine($"SERVER {minutes}: {line.Trim()}");
+        await fixture.DisposeAsync();
+    }
+}

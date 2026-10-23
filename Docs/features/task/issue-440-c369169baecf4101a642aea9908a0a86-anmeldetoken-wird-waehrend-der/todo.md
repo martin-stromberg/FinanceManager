@@ -30,3 +30,17 @@ Branch: task/issue-440-c369169baecf4101a642aea9908a0a86-anmeldetoken-wird-waehre
 
 
 
+
+
+## Unterbrechung am 2026-10-23
+
+Schritt 6 gemäß Implementierungsworkflow abgebrochen: Planwiderspruch beim Hintergrund-Polling. Nutzerentscheidung zur Planergänzung ausstehend. Siehe implementation-blocker.md, reproduction.md und continue.md. Keine Produktivänderung, keine nachfolgenden Reviews. Testläufe beendet.
+
+
+## Fortsetzung nach Nutzerentscheidung
+
+Hintergrund-Polling wird in den Plan aufgenommen. Nutzerkorrektur: Produktiver Login, Notifications und Navigation funktionieren vor Tokenablauf. Sofortige 401 im neuen Testhost sind kein anerkannter Original-Rotnachweis. Einstieg: Testtreue gezielt prüfen, dann Plan korrigieren und erneut prüfen; vor Produktivänderungen den Ablauf bei aktiver Nutzung über ursprünglichen Tokenablauf real reproduzieren.
+
+
+
+

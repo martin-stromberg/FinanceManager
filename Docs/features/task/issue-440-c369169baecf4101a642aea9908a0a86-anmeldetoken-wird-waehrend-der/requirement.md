@@ -29,3 +29,11 @@ Es ist keine zusätzliche Konfiguration gefordert. Die bestehende Tokenlaufzeit 
 - Welche Bedienereignisse gelten neben Navigation und Quick-Edit-Eingaben als Aktivität (z. B. Scrollen, Mausbewegung oder Fokuswechsel)?
 - Soll die Erneuerung bei jeder Aktivität erfolgen oder gedrosselt beziehungsweise nur vor einer drohenden Tokenablaufzeit? Die Anforderung verlangt keine Anfrage ohne Aktivität, legt aber die konkrete Frequenz nicht fest.
 - Welche geschützte Aktion nach Inaktivität dient im E2E-Test als Nachweis, dass eine abgelaufene Sitzung anschließend korrekt zum Login führt?
+
+## Nutzerklarstellung (2026-10-23)
+
+Der normale Produktivbetrieb funktioniert nach dem Formularlogin zunächst: Home, Notifications und Navigation bleiben vor Ablauf des Tokens funktionsfähig. Der beobachtete Logout tritt erst nach längerer Nutzung auf. Der 401 unmittelbar nach Login bei einer Zweiminuten-Testlaufzeit ist ein Testartefakt: Die Anwendung hat ein Erneuerungsfenster von mindestens fünf Minuten. Der erste anerkannte Rotnachweis muss daher den normalen Host und die reguläre Tokenlaufzeit von 30 Minuten verwenden und einen Fehler erst im zeitlichen Verlauf nachweisen.
+
+Ein Lauf mit verkürzter Laufzeit ist für spätere Iterationen erlaubt, sofern die Laufzeit mindestens zehn Minuten beträgt und die unveränderten Erneuerungsfenster-Verhältnisse erhalten bleiben. Die einmalige 30-Minuten-Referenz ist verpflichtend. Nach zunächst erfolgreichem Normalstart zählt ein späterer echter Fehler auch dann als Diagnosebefund, wenn er im Refreshfenster vor dem ursprünglichen `exp` eintritt. Es sind keine Token-/Cookie-Manipulation, Browseruhr-Verstellung oder Login-API-Abkürzung als Ersatz für echte Serverzeit und Formularlogin zulässig.
+
+`BackgroundTaskStatusPanel` darf durch passives Polling bei abgelaufener Sitzung keinen Login-Redirect auslösen. Eine spätere geschützte Nutzeraktion darf weiterhin den vorhandenen 401-/Redirectpfad auslösen. Produktivursache und kleinstmöglicher Fix sind erst nach der zeitlichen Reproduktion festzulegen; der frühere Sofort-401 begründet keine neue Authentifizierungsarchitektur.
