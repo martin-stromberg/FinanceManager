@@ -1,0 +1,38 @@
+BASELINE COMMAND: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --results-directory Docs/features/task/issue-440-c369169baecf4101a642aea9908a0a86-anmeldetoken-wird-waehrend-der/inventory/test-results -- --filter-not-trait "Category=OsInterface" --report-xunit-trx --report-xunit-trx-filename baseline-unit.trx
+Ausführen von Tests von D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests\bin\Debug\net10.0\FinanceManager.Tests.dll (net10.0|x64)
+fehlerhaft FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.BuildManifest_CoversAndHashesAllDeliveredHelpAssets (300ms)
+  von D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests\bin\Debug\net10.0\FinanceManager.Tests.dll (net10.0|x64)
+  Assert.Equal() Failure: Strings differ
+             ↓ (pos 0)
+  Expected: "3B6E1E8B59629F70A793946A6C4AED244759707F5AF42E6229"···
+  Actual:   "D22C4C5BCE7D0C9E70A0C5CD41346F842372683DBF39D3816A"···
+             ↑ (pos 0)
+    um FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.BuildManifest_CoversAndHashesAllDeliveredHelpAssets() in D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests\Web\Help\HelpAssetIntegrityValidatorTests.cs:170
+    um System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+    um System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests\bin\Debug\net10.0\FinanceManager.Tests.dll (net10.0|x64) fehlerhaft mit 1 Fehler(n) (39s 597ms)
+Exitcode: 2
+  Standardausgabe:      Warning:
+       The component "Fluent Assertions" is governed by the rules defined in the Xceed License Agreement and
+       the Xceed Fluent Assertions Community License. You may use Fluent Assertions free of charge for
+       non-commercial use only. An active subscription is required to use Fluent Assertions for commercial use.
+  
+       Please contact Xceed Sales mailto:sales@xceed.com to acquire a subscription at a very low cost.
+  
+       A paid commercial license supports the development and continued increasing support of
+       Fluent Assertions users under both commercial and community licenses. Help us
+       keep Fluent Assertions at the forefront of unit testing.
+  
+       For more information, visit https://xceed.com/products/unit-testing/fluent-assertions/
+
+  In Bearbeitung Dateiartefakte erstellt:
+    - D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\Docs\features\task\issue-440-c369169baecf4101a642aea9908a0a86-anmeldetoken-wird-waehrend-der\inventory\test-results\baseline-unit.trx
+
+Testlaufzusammenfassung: Fehler!
+  gesamt: 1468
+  fehlgeschlagen: 1
+  erfolgreich: 1467
+  übersprungen: 0
+  Dauer: 40s 663ms
+Der Testlauf wurde mit einem nicht erfolgreichen Exitcode abgeschlossen: 2 (siehe: https://aka.ms/testingplatform/exitcodes)
+EXIT_CODE=2

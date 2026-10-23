@@ -1,0 +1,4 @@
+COMMAND: dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -c Debug --results-directory Docs/features/task/issue-440-c369169baecf4101a642aea9908a0a86-anmeldetoken-wird-waehrend-der/inventory/test-results -- --filter-not-trait 'Category=OsInterface' --report-xunit-trx --report-xunit-trx-filename baseline-unit-after-build.trx
+WORKDIR: D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86
+
+Ausführen von Tests von D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests\bin\Debug\net10.0\FinanceManager.Tests.dll (net10.0|x64)
