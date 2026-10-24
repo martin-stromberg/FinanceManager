@@ -59,9 +59,14 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
                 var handler = new JwtSecurityTokenHandler();
                 JwtSecurityToken? jwt;
+                ClaimsPrincipal principal;
                 try
                 {
-                    jwt = handler.ReadJwtToken(token);
+                    var parameters = context.RequestServices.GetRequiredService<JwtTokenValidationParametersFactory>().Create();
+                    principal = handler.ValidateToken(token, parameters, out var validatedToken);
+                    jwt = (JwtSecurityToken)validatedToken;
+                    context.RequestServices.GetRequiredService<JwtCookieAuthTokenProvider>()
+                        .PrimeCache(token, new DateTimeOffset(jwt.ValidTo, TimeSpan.Zero));
                 }
                 catch
                 {
@@ -83,11 +88,15 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
                 if (exp - renewalWindow > now)
                 {
+                    if (HttpMethods.IsGet(context.Request.Method) && context.Request.Path == "/api/auth/keepalive")
+                    {
+                        SetTokenResponseHeaders(context, token, exp);
+                    }
                     return;
                 }
 
                 var refreshService = context.RequestServices.GetRequiredService<IJwtRefreshService>();
-                var refresh = await refreshService.RefreshAsync(context.User, context.RequestAborted);
+                var refresh = await refreshService.RefreshAsync(principal, context.RequestAborted);
                 if (!refresh.Succeeded || refresh.Token is null || refresh.ExpiresUtc is null)
                 {
                     if (!context.Response.HasStarted)
@@ -104,6 +113,8 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
                 if (!context.Response.HasStarted)
                 {
+                    context.RequestServices.GetRequiredService<JwtCookieAuthTokenProvider>()
+                        .PrimeCache(refresh.Token, new DateTimeOffset(refresh.ExpiresUtc.Value));
                     context.Response.Cookies.Append(AuthCookieName, refresh.Token, new CookieOptions
                     {
                         HttpOnly = true,
@@ -114,13 +125,20 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     });
                 }
 
-                context.Response.Headers[RefreshHeaderName] = refresh.Token;
-                context.Response.Headers[RefreshExpiresHeaderName] = refresh.ExpiresUtc.Value.ToString("o");
+                SetTokenResponseHeaders(context, refresh.Token, new DateTimeOffset(refresh.ExpiresUtc.Value));
             }
             finally
             {
                 await _next(context);
             }
+        }
+
+        private static void SetTokenResponseHeaders(HttpContext context, string token, DateTimeOffset expires)
+        {
+            if (context.Response.HasStarted) return;
+            context.Response.Headers[RefreshHeaderName] = token;
+            context.Response.Headers[RefreshExpiresHeaderName] = expires.UtcDateTime.ToString("o");
+            context.Response.Headers.CacheControl = "no-store";
         }
 
         /// <summary>

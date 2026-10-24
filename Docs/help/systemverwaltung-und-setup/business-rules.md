@@ -22,6 +22,22 @@ Identity-`SecurityStamp` des Benutzers gebunden.
 **Umsetzung:** JWT-Validierung in `ProgramExtensions`, Refresh ueber
 `JwtRefreshService`, Tokenausgabe ueber `JwtTokenService`.
 
+## Sitzungen werden durch aktive Nutzung erhalten
+
+**Beschreibung:** Die Anwendung verlängert eine Sitzung bei aktiver Nutzung geschützter Seiten. Echte Inaktivität verlängert die Sitzung nicht automatisch.
+
+**Bedingungen:**
+- Der Browser befindet sich auf einer geschützten Seite.
+- Eine Benutzerinteraktion löst die Keepalive-Verarbeitung aus; Texteingaben in Quick-Edit-Feldern zählen auch dann, wenn der Fokus im Feld bleibt.
+
+**Verhalten:**
+- Bei aktiver Nutzung kann ein Token innerhalb des Erneuerungsfensters verlängert werden.
+- Bei Inaktivität werden keine Keepalive-Anfragen und keine passiven Statusabfragen zur Sitzungserneuerung gestartet.
+- Ist das Token abgelaufen, wird der Benutzer bei der nächsten geschützten Aktion zur Anmeldung geführt.
+- Die produktive Token-Laufzeit bleibt standardmäßig 30 Minuten.
+
+**Umsetzung:** `financeManager.js` löst Keepalives durch Interaktionen aus; `JwtRefreshMiddleware` prüft das Erneuerungsfenster und delegiert die Erneuerung an `JwtRefreshService`.
+
 ## Sicherheitsrelevante Benutzeränderungen invalidieren Tokens
 
 **Beschreibung:** Deaktivierung, Aktivierung, Rollenwechsel und Passwortreset

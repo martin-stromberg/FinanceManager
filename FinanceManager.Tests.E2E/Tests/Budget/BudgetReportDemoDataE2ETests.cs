@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 using System.Globalization;
+using FinanceManager.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Tests.E2E;
 
@@ -8,7 +10,7 @@ namespace FinanceManager.Tests.E2E;
 /// register first user with demo-data generation, wait for background task completion, open budget report,
 /// move to previous month, and verify expected budget/actual values.
 /// </summary>
-[Collection(PlaywrightCollection.CollectionName)]
+[Collection(BudgetDemoDataCollection.Name)]
 public sealed class BudgetReportDemoDataE2ETests
 {
     private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
@@ -27,9 +29,16 @@ public sealed class BudgetReportDemoDataE2ETests
     /// Registers a fresh first user, triggers demo-data creation, waits until the background task panel
     /// disappears, then validates that the previous-month budget report contains expected positions and values.
     /// </summary>
-    [Fact]
-    public async Task DemoDataBudgetReport_PreviousMonth_ShouldContainAllExpectedRows()
+    /// <param name="clickDispatchDelayMilliseconds">The delay before forwarding the month-navigation click.</param>
+    [Theory]
+    [InlineData(750)]
+    public async Task DemoDataBudgetReport_PreviousMonth_ShouldContainAllExpectedRows(int clickDispatchDelayMilliseconds)
     {
+        await using (var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={_fixture.DatabasePath}").Options))
+        {
+            (await db.Users.AnyAsync()).Should().BeFalse("the demo-data registration flow requires the first user in an isolated database");
+        }
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
@@ -52,8 +61,23 @@ public sealed class BudgetReportDemoDataE2ETests
         await page.WaitForURLAsync("**/reports/budget");
 
         await WaitForBudgetReportReadyAsync(page);
+        var previousMonthEnd = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddDays(-1);
+        if (clickDispatchDelayMilliseconds > 0)
+        {
+            await page.EvaluateAsync("""
+                delay => {
+                    const button = document.querySelector('#PrevMonth');
+                    button.addEventListener('click', event => {
+                        event.stopImmediatePropagation();
+                        event.preventDefault();
+                        setTimeout(() => button.click(), delay);
+                    }, { capture: true, once: true });
+                }
+                """, clickDispatchDelayMilliseconds);
+        }
         await page.Locator("#PrevMonth").ClickAsync();
-        await WaitForBudgetReportReadyAsync(page);
+        await WaitForBudgetReportReadyAsync(page, previousMonthEnd.ToString("d", GermanCulture));
+        (await page.Locator(".budget-report-period").InnerTextAsync()).Should().Contain(previousMonthEnd.ToString("d", GermanCulture));
 
         var detailsRows = await ReadDetailsRowsAsync(page);
         var names = detailsRows
@@ -109,8 +133,13 @@ public sealed class BudgetReportDemoDataE2ETests
         await AssertShowPostingsMatchesActualAsync(page, "Nicht budgetiert");
     }
 
-    private static async Task WaitForBudgetReportReadyAsync(IPage page)
+    private static async Task WaitForBudgetReportReadyAsync(IPage page, string? expectedPeriodEnd = null)
     {
+        if (expectedPeriodEnd != null)
+        {
+            await Assertions.Expect(page.Locator(".budget-report-period"))
+                .ToContainTextAsync(expectedPeriodEnd, new() { Timeout = 60_000 });
+        }
         await page.Locator(".budget-report-table").First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 60_000 });
         await page.Locator(".budget-report-loading").WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 60_000 });
     }

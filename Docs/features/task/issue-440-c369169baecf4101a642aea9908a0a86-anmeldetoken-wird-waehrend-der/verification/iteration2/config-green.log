@@ -1,7 +1,0 @@
-xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
-  Discovering: FinanceManager.Tests.E2E
-  Discovered:  FinanceManager.Tests.E2E
-  Starting:    FinanceManager.Tests.E2E
-  Finished:    FinanceManager.Tests.E2E (ID = '6c33a67566cc4c74b02e6b16163821f13609393971b2e5ef66a4502c936f4cb2')
-=== TEST EXECUTION SUMMARY ===
-   FinanceManager.Tests.E2E  Total: 3, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0,100s
