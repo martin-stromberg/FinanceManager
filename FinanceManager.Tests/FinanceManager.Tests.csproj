@@ -35,7 +35,7 @@
     </PackageReference>
     <PackageReference Include="Moq" Version="4.21.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.13" />
-    <PackageReference Include="bunit" Version="2.11.3" />
+    <PackageReference Include="bunit" Version="2.12.5" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.13" />
     <PackageReference Include="FluentAssertions" Version="8.11.0" />
