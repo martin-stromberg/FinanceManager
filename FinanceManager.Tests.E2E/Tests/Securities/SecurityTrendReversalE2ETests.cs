@@ -92,6 +92,14 @@ public sealed class SecurityTrendReversalE2ETests
         var saveButton = page.Locator("#Save");
         await Microsoft.Playwright.Assertions.Expect(saveButton).ToBeEnabledAsync(new LocatorAssertionsToBeEnabledOptions { Timeout = 5000 });
         await saveButton.ClickAsync();
+        await page.WaitForFunctionAsync("""
+            async expected => {
+                const response = await fetch('/api/user/settings/notifications', { credentials: 'include' });
+                if (!response.ok) throw new Error(`Reading persisted notifications failed: ${response.status}`);
+                const settings = await response.json();
+                return settings.trendReversalNotificationsEnabled === expected;
+            }
+            """, !original);
         await Microsoft.Playwright.Assertions.Expect(saveButton).ToBeDisabledAsync(new LocatorAssertionsToBeDisabledOptions { Timeout = 5000 });
 
         await page.ReloadAsync();

@@ -524,6 +524,9 @@ public sealed class StatementDraftQuickEditValueTakeoverE2ETests
         (await subject.InputValueAsync()).Should().Be(expectedSubject);
 
         await cookies.SetNearExpiryCookieAsync(page, username);
+        var injectedCookie = (await page.Context.CookiesAsync()).Single(cookie => cookie.Name == "FinanceManager.Auth");
+        var injectedToken = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(injectedCookie.Value);
+        injectedToken.ValidTo.Should().BeAfter(DateTime.UtcNow);
         await PlaywrightTestTiming.WaitForForcedKeepaliveThrottleAsync(page);
         var response = await page.RunAndWaitForResponseAsync(async () =>
         {

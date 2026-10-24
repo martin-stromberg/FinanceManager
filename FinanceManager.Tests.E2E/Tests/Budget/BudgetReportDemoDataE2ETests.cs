@@ -39,13 +39,31 @@ public sealed class BudgetReportDemoDataE2ETests
         {
             (await db.Users.AnyAsync(TestContext.Current.CancellationToken)).Should().BeFalse("the demo-data registration flow requires the first user in an isolated database");
         }
-        await using var session = await _fixture.CreateSessionAsync();
+        await using var session = await _fixture.CreateSessionAsync(new() { Locale = "de-DE" });
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
 
         var username = $"demo-budget-e2e-{Guid.NewGuid():N}";
         const string password = "Secret123";
-        await page.GotoAsync("/register");
+        var negotiationStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allowNegotiation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await page.RouteAsync("**/_blazor/negotiate*", async route =>
+        {
+            negotiationStarted.TrySetResult();
+            await allowNegotiation.Task;
+            await route.ContinueAsync();
+        });
+        try
+        {
+            await page.GotoAsync("/register");
+            await negotiationStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+            await Assertions.Expect(page.Locator("#username")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator("button[type=submit]")).ToBeDisabledAsync();
+        }
+        finally
+        {
+            allowNegotiation.TrySetResult();
+        }
         await SubmitRegisterFormAsync(page, username, password);
 
         var backgroundPanel = page.Locator(".bgt-panel");
@@ -152,52 +170,14 @@ public sealed class BudgetReportDemoDataE2ETests
 
         await demoCheckbox.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
 
-        for (var attempt = 0; attempt < 3; attempt++)
-        {
-            await usernameInput.FillAsync(username);
-            await passwordInput.FillAsync(password);
-            await demoCheckbox.CheckAsync();
-            await page.EvaluateAsync(
-                """
-                ({ user, pass }) => {
-                    const usernameInput = document.querySelector("#username");
-                    const passwordInput = document.querySelector("#password");
-                    const demoCheckbox = document.querySelector("#create-demo-data");
-                    if (usernameInput) {
-                        usernameInput.value = user;
-                        usernameInput.dispatchEvent(new Event("input", { bubbles: true }));
-                        usernameInput.dispatchEvent(new Event("change", { bubbles: true }));
-                    }
-
-                    if (passwordInput) {
-                        passwordInput.value = pass;
-                        passwordInput.dispatchEvent(new Event("input", { bubbles: true }));
-                        passwordInput.dispatchEvent(new Event("change", { bubbles: true }));
-                    }
-
-                    if (demoCheckbox instanceof HTMLInputElement) {
-                        demoCheckbox.checked = true;
-                        demoCheckbox.dispatchEvent(new Event("input", { bubbles: true }));
-                        demoCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
-                    }
-                }
-                """,
-                new { user = username, pass = password });
-            await page.Locator("button[type=submit]").ClickAsync();
-            try
-            {
-                await page.WaitForFunctionAsync("() => location.pathname !== '/register'", null, new() { Timeout = 5_000 });
-                await page.Locator("body").WaitForAsync();
-                return;
-            }
-            catch (TimeoutException)
-            {
-                // Blazor event handlers may still be attaching immediately after first render.
-            }
-        }
-
-        var bodyText = await page.Locator("body").InnerTextAsync();
-        throw new TimeoutException($"Register form did not navigate away from /register. Url: {page.Url}. Body: {bodyText}");
+        await Assertions.Expect(page.Locator("button[type=submit]")).ToBeEnabledAsync();
+        await usernameInput.FillAsync(username);
+        await usernameInput.PressAsync("Tab");
+        await passwordInput.FillAsync(password);
+        await passwordInput.PressAsync("Tab");
+        await demoCheckbox.CheckAsync();
+        await page.Locator("button[type=submit]").ClickAsync();
+        await page.WaitForURLAsync(url => new Uri(url).AbsolutePath != "/register");
     }
 
     private static string NormalizeWhitespace(string input)
