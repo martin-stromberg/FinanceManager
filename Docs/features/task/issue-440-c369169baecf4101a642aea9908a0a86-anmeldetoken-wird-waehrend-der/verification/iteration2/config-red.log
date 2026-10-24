@@ -1,0 +1,15 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: FinanceManager.Tests.E2E
+  Discovered:  FinanceManager.Tests.E2E
+  Starting:    FinanceManager.Tests.E2E
+    FinanceManager.Tests.E2E.SessionExpiryFixtureConfigurationTests.ResolveLifetimeMinutes_Default_UsesTenMinutes [FAIL]
+      Assert.Equal() Failure: Values differ
+      Expected: 10
+      Actual:   30
+      Stack Trace:
+        FinanceManager.Tests.E2E\Infrastructure\SessionExpiryFixtureConfigurationTests.cs(8,0): at FinanceManager.Tests.E2E.SessionExpiryFixtureConfigurationTests.ResolveLifetimeMinutes_Default_UsesTenMinutes()
+           at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+           at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Finished:    FinanceManager.Tests.E2E (ID = '6c33a67566cc4c74b02e6b16163821f13609393971b2e5ef66a4502c936f4cb2')
+=== TEST EXECUTION SUMMARY ===
+   FinanceManager.Tests.E2E  Total: 3, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 0,123s

@@ -1,0 +1,9 @@
+MTP dotnet test setup attempts (no tests executed; preserved separately from the final E2E result)
+
+Attempt 1: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --results-directory <verification/e2e-regression> --logger "console;verbosity=normal" -- --filter-not-class '*SessionExpiryPlaywrightTests' --filter-not-class '*QuickEditSessionExpiryPlaywrightTests' --report-xunit-trx --report-xunit-trx-filename e2e-regression.trx
+Result: exit code 5, total 0, failed 0, passed 0, skipped 0. MTP reported a handshake failure for FinanceManager.Tests.E2E.dll.
+
+Attempt 2: dotnet test FinanceManager.Tests.E2E/FinanceManager.Tests.E2E.csproj --no-build -c Debug --results-directory <verification/e2e-regression> -- --method- 'FinanceManager.Tests.E2E.SessionExpiryPlaywrightTests.*' --method- 'FinanceManager.Tests.E2E.QuickEditSessionExpiryPlaywrightTests.*' --report-xunit-trx --report-xunit-trx-filename e2e-regression.trx --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
+Result: exit code 5, total 0, failed 0, passed 0, skipped 0. MTP reported a handshake failure for FinanceManager.Tests.E2E.dll.
+
+The assembly's xUnit v3 runner confirmed the exact fully qualified method filters during discovery. The same built assembly then ran the filtered remaining suite directly and produced e2e-regression.trx. The initial MTP command attempts are setup/runner failures, not test outcomes.

@@ -1,0 +1,25 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: FinanceManager.Tests.E2E
+  Discovered:  FinanceManager.Tests.E2E
+  Starting:    FinanceManager.Tests.E2E
+    FinanceManager.Tests.E2E.SessionExpiryPlaywrightTests.UiLogin_FirstHomeApiAndInteractiveNavigationRemainAuthenticated [STARTING]
+     Warning:
+     The component "Fluent Assertions" is governed by the rules defined in the Xceed License Agreement and
+     the Xceed Fluent Assertions Community License. You may use Fluent Assertions free of charge for
+     non-commercial use only. An active subscription is required to use Fluent Assertions for commercial use.
+
+     Please contact Xceed Sales mailto:sales@xceed.com to acquire a subscription at a very low cost.
+
+     A paid commercial license supports the development and continued increasing support of
+     Fluent Assertions users under both commercial and community licenses. Help us
+     keep Fluent Assertions at the forefront of unit testing.
+
+     For more information, visit https://xceed.com/products/unit-testing/fluent-assertions/
+    FinanceManager.Tests.E2E.SessionExpiryPlaywrightTests.UiLogin_FirstHomeApiAndInteractiveNavigationRemainAuthenticated [FINISHED] Time: 3,663s
+    FinanceManager.Tests.E2E.QuickEditSessionExpiryPlaywrightTests.QuickEdit_SaveAndReopen_PreservesLiveInputValues(newRow: False) [STARTING]
+    FinanceManager.Tests.E2E.QuickEditSessionExpiryPlaywrightTests.QuickEdit_SaveAndReopen_PreservesLiveInputValues(newRow: False) [FINISHED] Time: 3,736s
+    FinanceManager.Tests.E2E.QuickEditSessionExpiryPlaywrightTests.QuickEdit_SaveAndReopen_PreservesLiveInputValues(newRow: True) [STARTING]
+    FinanceManager.Tests.E2E.QuickEditSessionExpiryPlaywrightTests.QuickEdit_SaveAndReopen_PreservesLiveInputValues(newRow: True) [FINISHED] Time: 3,206s
+  Finished:    FinanceManager.Tests.E2E (ID = '6c33a67566cc4c74b02e6b16163821f13609393971b2e5ef66a4502c936f4cb2')
+=== TEST EXECUTION SUMMARY ===
+   FinanceManager.Tests.E2E  Total: 3, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 15,597s

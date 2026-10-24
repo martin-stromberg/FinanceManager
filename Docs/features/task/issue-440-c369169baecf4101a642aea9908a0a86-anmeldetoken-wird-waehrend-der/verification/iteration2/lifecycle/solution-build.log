@@ -1,0 +1,27 @@
+  FinanceManager.Shared -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Shared\bin\Debug\net10.0\FinanceManager.Shared.dll
+  FinanceManager.Domain -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Domain\bin\Debug\net10.0\FinanceManager.Domain.dll
+  FinanceManager.Application -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Application\bin\Debug\net10.0\FinanceManager.Application.dll
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.AspNetCore.Cryptography.KeyDerivation wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Caching.Memory wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Hosting.Abstractions wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Http wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Identity.Core wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+  FinanceManager.HelpSearchIndexGenerator -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\tools\FinanceManager.HelpSearchIndexGenerator\bin\Debug\net10.0\FinanceManager.HelpSearchIndexGenerator.dll
+  FinanceManager.Infrastructure -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Infrastructure\bin\Debug\net10.0\FinanceManager.Infrastructure.dll
+  Generating help search indexes for de,en
+  FinanceManager.Web -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\bin\Debug\net10.0\FinanceManager.Web.dll
+  FinanceManager.Tests -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests\bin\Debug\net10.0\FinanceManager.Tests.dll
+  FinanceManager.Tests.Integration -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests.Integration\bin\Debug\net10.0\FinanceManager.Tests.Integration.dll
+  FinanceManager.Tests.E2E -> D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Tests.E2E\bin\Debug\net10.0\FinanceManager.Tests.E2E.dll
+
+Der Buildvorgang wurde erfolgreich ausgeführt.
+
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.AspNetCore.Cryptography.KeyDerivation wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Caching.Memory wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Hosting.Abstractions wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Http wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+D:\Repositories\softwareschmiede\c369169b-aecf-4101-a642-aea9908a0a86\FinanceManager.Web\FinanceManager.Web.csproj : warning NU1510: PackageReference Microsoft.Extensions.Identity.Core wird nicht gekürzt. Dieses Paket ist automatisch verfügbar und muss nicht explizit referenziert werden. Entfernen Sie das PackageReference-Element.
+    5 Warnung(en)
+    0 Fehler
+
+Verstrichene Zeit 00:00:05.12

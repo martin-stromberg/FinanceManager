@@ -1,0 +1,49 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: FinanceManager.Tests
+  Discovered:  FinanceManager.Tests
+  Starting:    FinanceManager.Tests
+    FinanceManager.Tests.Infrastructure.Auth.ApiClientTests_PassivePolling.BackgroundTasks_GetActiveAsync_Unauthorized_RequestsLogin [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.BuildManifest_CoversAndHashesAllDeliveredHelpAssets [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.Topics_ContainsReviewedUserHelpTopicsOnly [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.Topics_ContainsReviewedUserHelpTopicsOnly [FINISHED] Time: 0,073s
+    FinanceManager.Tests.Infrastructure.Auth.ApiClientTests_PassivePolling.BackgroundTasks_GetActiveAsync_Unauthorized_RequestsLogin [FINISHED] Time: 0,08s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.CatalogDocuments_DoNotContainTechnicalImplementationMarkers [STARTING]
+    FinanceManager.Tests.Infrastructure.Auth.ApiClientTests_PassivePolling.BackgroundTasks_GetActiveForPollingAsync_Unauthorized_DoesNotRequestLogin [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.CatalogDocuments_DoNotContainTechnicalImplementationMarkers [FINISHED] Time: 0,002s
+    FinanceManager.Tests.Infrastructure.Auth.ApiClientTests_PassivePolling.BackgroundTasks_GetActiveForPollingAsync_Unauthorized_DoesNotRequestLogin [FINISHED] Time: 0,002s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "api") [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "api") [FINISHED] Time: 0s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "datenmodell") [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "datenmodell") [FINISHED] Time: 0s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "business-rules") [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "business-rules") [FINISHED] Time: 0s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "ablauf-technisch") [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "ablauf-technisch") [FINISHED] Time: 0s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "bereitstellung") [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_RejectsTechnicalOnlyDocuments(document: "bereitstellung") [FINISHED] Time: 0s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.HelpSearchIndexBuilder_UsesCatalogTopicsAndPrimaryDocuments [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.BuildManifest_CoversAndHashesAllDeliveredHelpAssets [FINISHED] Time: 0,095s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_ReturnsFalseWhenAssetIsNotListed [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.HelpSearchIndexBuilder_UsesCatalogTopicsAndPrimaryDocuments [FINISHED] Time: 0,012s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.CatalogDocuments_ExistAndDoNotPublishTechnicalOnlyFiles [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.CatalogDocuments_ExistAndDoNotPublishTechnicalOnlyFiles [FINISHED] Time: 0s
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_MapsTopicRouteToReviewedPrimaryDocument [STARTING]
+    FinanceManager.Tests.Web.Help.HelpContentCatalogTests.TryResolveDocument_MapsTopicRouteToReviewedPrimaryDocument [FINISHED] Time: 0,001s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_ReturnsFalseWhenAssetIsNotListed [FINISHED] Time: 0,011s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_ReturnsFalseWhenHashDiffers [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_ReturnsFalseWhenHashDiffers [FINISHED] Time: 0,002s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.HelpSearchIndexGenerator_ReturnsFailureWhenDocsSourceIsMissing [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.HelpSearchIndexGenerator_ReturnsFailureWhenDocsSourceIsMissing [FINISHED] Time: 0,001s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.HelpSearchIndexGenerator_ReturnsFailureAndRemovesEmptyLanguageIndex [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.HelpSearchIndexGenerator_ReturnsFailureAndRemovesEmptyLanguageIndex [FINISHED] Time: 0,018s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_TrustsDocsHelpPathFromBuildManifest [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_TrustsDocsHelpPathFromBuildManifest [FINISHED] Time: 0,003s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_RehashesAfterSuccessfulValidation [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_RehashesAfterSuccessfulValidation [FINISHED] Time: 0,003s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_ReturnsFalseWhenManifestIsMissing [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.IsTrustedHelpFile_ReturnsFalseWhenManifestIsMissing [FINISHED] Time: 0,002s
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.HelpBuildContract_UsesSharedLanguagesAndOutputManifestPaths [STARTING]
+    FinanceManager.Tests.Web.Help.HelpAssetIntegrityValidatorTests.HelpBuildContract_UsesSharedLanguagesAndOutputManifestPaths [FINISHED] Time: 0,005s
+  Finished:    FinanceManager.Tests (ID = 'e6001992caa48905df4107a26cd68140e1234bcdf55b310714fe23521a93e906')
+=== TEST EXECUTION SUMMARY ===
+   FinanceManager.Tests  Total: 21, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0,231s

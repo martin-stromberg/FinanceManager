@@ -1,0 +1,254 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: FinanceManager.Tests.E2E
+  Discovered:  FinanceManager.Tests.E2E
+  Starting:    FinanceManager.Tests.E2E
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.EditConfigurationScenario_ShouldHideDeactivatedTileAfterSave [STARTING]
+     Warning:
+     The component "Fluent Assertions" is governed by the rules defined in the Xceed License Agreement and
+     the Xceed Fluent Assertions Community License. You may use Fluent Assertions free of charge for
+     non-commercial use only. An active subscription is required to use Fluent Assertions for commercial use.
+
+     Please contact Xceed Sales mailto:sales@xceed.com to acquire a subscription at a very low cost.
+
+     A paid commercial license supports the development and continued increasing support of
+     Fluent Assertions users under both commercial and community licenses. Help us
+     keep Fluent Assertions at the forefront of unit testing.
+
+     For more information, visit https://xceed.com/products/unit-testing/fluent-assertions/
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.EditConfigurationScenario_ShouldHideDeactivatedTileAfterSave [FINISHED] Time: 3,778s
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.RibbonNavigationScenario_ShouldNavigateFromSecuritiesList [STARTING]
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.RibbonNavigationScenario_ShouldNavigateFromSecuritiesList [FINISHED] Time: 1,883s
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.MultiUserIsolationScenario_ShouldNotLeakConfigurationBetweenUsers [STARTING]
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.MultiUserIsolationScenario_ShouldNotLeakConfigurationBetweenUsers [FINISHED] Time: 3,69s
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.LoadReportScenario_ShouldRenderTileGrid [STARTING]
+    FinanceManager.Tests.E2E.PortfolioAnalysisReportE2ETests.LoadReportScenario_ShouldRenderTileGrid [FINISHED] Time: 1,832s
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadStatementFile_ShouldShowSuccess_WhenImportCompletes [STARTING]
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadStatementFile_ShouldShowSuccess_WhenImportCompletes [FINISHED] Time: 2,402s
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadUnrecognizedFile_ViaUi_ShouldShowReasonInReviewDialog_WithoutFinalizeWarning [STARTING]
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadUnrecognizedFile_ViaUi_ShouldShowReasonInReviewDialog_WithoutFinalizeWarning [FINISHED] Time: 2,519s
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadIngCsvNewFormat_ViaUi_ShouldImportWithoutReviewDialog [STARTING]
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadIngCsvNewFormat_ViaUi_ShouldImportWithoutReviewDialog [FINISHED] Time: 1,859s
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.Booking_WithErrorsWarnings_AndWithOrWithoutSavingsSecurity_ShouldCreateExpectedPostings [STARTING]
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.Booking_WithErrorsWarnings_AndWithOrWithoutSavingsSecurity_ShouldCreateExpectedPostings [FINISHED] Time: 1,891s
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadStatementFile_ShouldShowSuccess_WhenImportCompletes_OnMobileViewport [STARTING]
+    FinanceManager.Tests.E2E.HomeMassImportPlaywrightTests.UploadStatementFile_ShouldShowSuccess_WhenImportCompletes_OnMobileViewport [FINISHED] Time: 1,772s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowUpAtFirstRow_ShouldKeepFocus [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowUpAtFirstRow_ShouldKeepFocus [FINISHED] Time: 1,867s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowDown_ShouldSkipHiddenDeletedAndLockedRows [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowDown_ShouldSkipHiddenDeletedAndLockedRows [FINISHED] Time: 1,954s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_RegularInputAndF8_ShouldRemainUnaffected [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_RegularInputAndF8_ShouldRemainUnaffected [FINISHED] Time: 1,896s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_BookingDateChange_ShouldCopyToEmptyOrMatchedValutaDateOnly [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_BookingDateChange_ShouldCopyToEmptyOrMatchedValutaDateOnly [FINISHED] Time: 1,849s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowUp_ShouldFocusSameFieldInPreviousVisibleRow [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowUp_ShouldFocusSameFieldInPreviousVisibleRow [FINISHED] Time: 1,839s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.CtrlArrowNavigation_OutsideQuickEdit_ShouldNotChangeFocus [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.CtrlArrowNavigation_OutsideQuickEdit_ShouldNotChangeFocus [FINISHED] Time: 1,791s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowDownAtLastRow_ShouldKeepFocus [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowDownAtLastRow_ShouldKeepFocus [FINISHED] Time: 1,825s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowOnDateFields_ShouldMoveFocusWithoutChangingDate [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowOnDateFields_ShouldMoveFocusWithoutChangingDate [FINISHED] Time: 1,864s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_PressesCtrlF8_ShouldCopyAllFieldsFromRowAboveAndOverwriteExisting [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_PressesCtrlF8_ShouldCopyAllFieldsFromRowAboveAndOverwriteExisting [FINISHED] Time: 1,881s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_Blur_ShouldSendKeepaliveAndKeepLocalInputValue [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_Blur_ShouldSendKeepaliveAndKeepLocalInputValue [FINISHED] Time: 7,123s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_Blur_ShouldCoalesceKeepaliveRequests [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_Blur_ShouldCoalesceKeepaliveRequests [FINISHED] Time: 7,26s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_SaveButton_IsEnabledWhenAllRowsComplete [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_SaveButton_IsEnabledWhenAllRowsComplete [FINISHED] Time: 1,855s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowDown_ShouldFocusSameFieldInNextVisibleRow [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_CtrlArrowDown_ShouldFocusSameFieldInNextVisibleRow [FINISHED] Time: 1,836s
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_PressesF8_ShouldCopySingleFieldFromRowAbove [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftQuickEditValueTakeoverE2ETests.QuickEdit_PressesF8_ShouldCopySingleFieldFromRowAbove [FINISHED] Time: 1,822s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.LoadingBar_ShouldUseSingleDomNodeAndRestartSameInstance [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.LoadingBar_ShouldUseSingleDomNodeAndRestartSameInstance [FINISHED] Time: 1,148s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.InternalLinkClick_ShouldStartLoadingBarAutomatically [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.InternalLinkClick_ShouldStartLoadingBarAutomatically [FINISHED] Time: 1,197s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.BudgetReportApplySettings_ShouldStartAndStopGlobalLoadingBar [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.BudgetReportApplySettings_ShouldStartAndStopGlobalLoadingBar [FINISHED] Time: 1,92s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.FormSubmit_WithValidationMessage_ShouldNotLeaveLoadingBarVisible [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.FormSubmit_WithValidationMessage_ShouldNotLeaveLoadingBarVisible [FINISHED] Time: 0,522s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.LoadingBar_ShouldBeFixedToViewportTop_OnDesktop [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.LoadingBar_ShouldBeFixedToViewportTop_OnDesktop [FINISHED] Time: 1,083s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.LoadingBar_ShouldSitBelowMobileTopbar_OnMobile [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.LoadingBar_ShouldSitBelowMobileTopbar_OnMobile [FINISHED] Time: 1,067s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.BudgetReportInitialLoad_ShouldStartGlobalLoadingBar [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.BudgetReportInitialLoad_ShouldStartGlobalLoadingBar [FINISHED] Time: 1,275s
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.SetupStatementSubmit_ShouldStopLoadingBarAfterNonNavigatingSave [STARTING]
+    FinanceManager.Tests.E2E.LoadingBarPlaywrightTests.SetupStatementSubmit_ShouldStopLoadingBarAfterNonNavigatingSave [FINISHED] Time: 1,866s
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.ChangeLanguage_ToAutomatic_RespectsBrowserLanguage [STARTING]
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.ChangeLanguage_ToAutomatic_RespectsBrowserLanguage [FINISHED] Time: 3,083s
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.LanguagePreference_PersistedAcrossSessions [STARTING]
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.LanguagePreference_PersistedAcrossSessions [FINISHED] Time: 4,198s
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.ChangeLanguage_ToEnglish_SavesAndApplies [STARTING]
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.ChangeLanguage_ToEnglish_SavesAndApplies [FINISHED] Time: 2,405s
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.ChangeLanguage_UpdatesAuthCookie_WithNewJwtToken [STARTING]
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.ChangeLanguage_UpdatesAuthCookie_WithNewJwtToken [FINISHED] Time: 2,509s
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.NewUser_WithoutLanguagePreference_UsesBrowserLanguage [STARTING]
+    FinanceManager.Tests.E2E.ProfileSettingsLanguageTests.NewUser_WithoutLanguagePreference_UsesBrowserLanguage [FINISHED] Time: 1,641s
+    FinanceManager.Tests.E2E.UpdateSetupPlaywrightTests.Admin_SavesSettings_PersistsAcrossReload [STARTING]
+    FinanceManager.Tests.E2E.UpdateSetupPlaywrightTests.Admin_SavesSettings_PersistsAcrossReload [FINISHED] Time: 1,829s
+    FinanceManager.Tests.E2E.UpdateSetupPlaywrightTests.Admin_OpensUpdateTab_ShowsStatus [STARTING]
+    FinanceManager.Tests.E2E.UpdateSetupPlaywrightTests.Admin_OpensUpdateTab_ShowsStatus [FINISHED] Time: 1,32s
+    FinanceManager.Tests.E2E.UpdateSetupPlaywrightTests.Admin_TriggersCheck_ShowsAvailableUpdate [STARTING]
+    FinanceManager.Tests.E2E.UpdateSetupPlaywrightTests.Admin_TriggersCheck_ShowsAvailableUpdate [FINISHED] Time: 1,576s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_Mobile_RendersStatisticsWithoutHidingList [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_Mobile_RendersStatisticsWithoutHidingList [FINISHED] Time: 1,292s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ShowsTotalYearChangeAndMonthChange [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ShowsTotalYearChangeAndMonthChange [FINISHED] Time: 1,338s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ShowsAccountTypeAndBankContactDonuts [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ShowsAccountTypeAndBankContactDonuts [FINISHED] Time: 1,265s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ClearSearch_RestoresTableAndStatistics [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ClearSearch_RestoresTableAndStatistics [FINISHED] Time: 1,388s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ClickingAccountRow_StillNavigatesToCard [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ClickingAccountRow_StillNavigatesToCard [FINISHED] Time: 1,268s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_Empty_ShowsZeroKpisEmptyChartsAndUsableRibbon [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_Empty_ShowsZeroKpisEmptyChartsAndUsableRibbon [FINISHED] Time: 1,256s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_StatisticsFailure_ShowsErrorAndLeavesTableUsable [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_StatisticsFailure_ShowsErrorAndLeavesTableUsable [FINISHED] Time: 1,419s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_Search_UpdatesTableAndStatisticsTogether [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_Search_UpdatesTableAndStatisticsTogether [FINISHED] Time: 1,864s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_UnknownAndLongBankContact_RemainsReadable [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_UnknownAndLongBankContact_RemainsReadable [FINISHED] Time: 2,504s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_MixedBalances_ShowsLosslessSignedDistribution [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_MixedBalances_ShowsLosslessSignedDistribution [FINISHED] Time: 1,266s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_InfiniteScroll_DoesNotChangeStatisticsTotal [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_InfiniteScroll_DoesNotChangeStatisticsTotal [FINISHED] Time: 1,705s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ShowsStatisticsAlongsideTable [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_ShowsStatisticsAlongsideTable [FINISHED] Time: 1,299s
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_OtherUsersAccountsRemainInvisibleEverywhere [STARTING]
+    FinanceManager.Tests.E2E.AccountsOverviewStatisticsPlaywrightTests.AccountsOverview_OtherUsersAccountsRemainInvisibleEverywhere [FINISHED] Time: 1,294s
+    FinanceManager.Tests.E2E.SetupDirtyDetectionPlaywrightTests.ReturnAnalysis_Fields_ToggleSaveButton [STARTING]
+    FinanceManager.Tests.E2E.SetupDirtyDetectionPlaywrightTests.ReturnAnalysis_Fields_ToggleSaveButton [FINISHED] Time: 2s
+    FinanceManager.Tests.E2E.SetupDirtyDetectionPlaywrightTests.Statements_Fields_ToggleSaveButton [STARTING]
+    FinanceManager.Tests.E2E.SetupDirtyDetectionPlaywrightTests.Statements_Fields_ToggleSaveButton [FINISHED] Time: 2,362s
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.CreatePreliminaryDraft_ViaRibbon_ShouldCreateAndOpenDraftWithQuickEdit [STARTING]
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.CreatePreliminaryDraft_ViaRibbon_ShouldCreateAndOpenDraftWithQuickEdit [FINISHED] Time: 1,869s
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.BookPreliminaryDraft_ShouldCreatePreliminaryPostings [STARTING]
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.BookPreliminaryDraft_ShouldCreatePreliminaryPostings [FINISHED] Time: 1,841s
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.BookRealStatement_ShouldReversePreliminaryPostings [STARTING]
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.BookRealStatement_ShouldReversePreliminaryPostings [FINISHED] Time: 1,903s
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.OpenPreliminaryDraft_Card_ShouldShowPreliminaryIndicator [STARTING]
+    FinanceManager.Tests.E2E.PreliminaryStatementDraftE2ETests.OpenPreliminaryDraft_Card_ShouldShowPreliminaryIndicator [FINISHED] Time: 1,776s
+    FinanceManager.Tests.E2E.WellKnownSetupPlaywrightTests.NonAdmin_SeesSectionButAdminOnlyMessage [STARTING]
+    FinanceManager.Tests.E2E.WellKnownSetupPlaywrightTests.NonAdmin_SeesSectionButAdminOnlyMessage [FINISHED] Time: 2,414s
+    FinanceManager.Tests.E2E.WellKnownSetupPlaywrightTests.Admin_ConfiguresChangePasswordUrl_PublicEndpointRedirects [STARTING]
+    FinanceManager.Tests.E2E.WellKnownSetupPlaywrightTests.Admin_ConfiguresChangePasswordUrl_PublicEndpointRedirects [FINISHED] Time: 2,611s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_Security_AndImportPrices_OnPricesPage_ShouldWork [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_Security_AndImportPrices_OnPricesPage_ShouldWork [FINISHED] Time: 2,597s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_BankAccount_ShouldWork_OnMobileViewport [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_BankAccount_ShouldWork_OnMobileViewport [FINISHED] Time: 1,963s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_SavingsPlan_ShouldWork [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_SavingsPlan_ShouldWork [FINISHED] Time: 1,968s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_AndAliasContact_FromContactsPage_ShouldWork [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_AndAliasContact_FromContactsPage_ShouldWork [FINISHED] Time: 2,013s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_BankAccount_ShouldWork [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.Create_Edit_Delete_BankAccount_ShouldWork [FINISHED] Time: 1,907s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.MobileRibbonShortcuts_ShouldShowShortcutOnlyWhenGroupIsClosed_OnRepresentativePages [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.MobileRibbonShortcuts_ShouldShowShortcutOnlyWhenGroupIsClosed_OnRepresentativePages [FINISHED] Time: 7,539s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.ClickAccountRow_ShouldNavigateToDetailPage_OnMobileViewport [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.ClickAccountRow_ShouldNavigateToDetailPage_OnMobileViewport [FINISHED] Time: 1,314s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.CreateContact_FromStatementEntryPage_ShouldAssignContactDirectly [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.CreateContact_FromStatementEntryPage_ShouldAssignContactDirectly [FINISHED] Time: 1,74s
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.ClickAccountRow_ShouldNavigateToDetailPage [STARTING]
+    FinanceManager.Tests.E2E.ListNavigationPlaywrightTests.ClickAccountRow_ShouldNavigateToDetailPage [FINISHED] Time: 1,291s
+    FinanceManager.Tests.E2E.SecurityTrendReversalE2ETests.CardPage_BearishPrices_ShowsTrendReversalWidgetWithSignals [STARTING]
+    FinanceManager.Tests.E2E.SecurityTrendReversalE2ETests.CardPage_BearishPrices_ShowsTrendReversalWidgetWithSignals [FINISHED] Time: 1,833s
+    FinanceManager.Tests.E2E.SecurityTrendReversalE2ETests.SetupNotificationsTab_TrendReversalCheckbox_PersistsToggle [STARTING]
+    FinanceManager.Tests.E2E.SecurityTrendReversalE2ETests.SetupNotificationsTab_TrendReversalCheckbox_PersistsToggle [FINISHED] Time: 2,612s
+    FinanceManager.Tests.E2E.SecurityTrendReversalE2ETests.CardPage_BullishPrices_HidesTrendReversalWidget [STARTING]
+    FinanceManager.Tests.E2E.SecurityTrendReversalE2ETests.CardPage_BullishPrices_HidesTrendReversalWidget [FINISHED] Time: 3,786s
+    FinanceManager.Tests.E2E.StatementDraftExportE2ETests.ExportXlsx_ViaRibbon_ShouldDownloadXlsx [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftExportE2ETests.ExportXlsx_ViaRibbon_ShouldDownloadXlsx [FINISHED] Time: 2,332s
+    FinanceManager.Tests.E2E.StatementDraftExportE2ETests.ExportCsv_ViaRibbon_ShouldDownloadCsvWithEntries [STARTING]
+    FinanceManager.Tests.E2E.StatementDraftExportE2ETests.ExportCsv_ViaRibbon_ShouldDownloadCsvWithEntries [FINISHED] Time: 1,898s
+    FinanceManager.Tests.E2E.BudgetReportDemoDataE2ETests.DemoDataBudgetReport_PreviousMonth_ShouldContainAllExpectedRows [STARTING]
+    FinanceManager.Tests.E2E.BudgetReportDemoDataE2ETests.DemoDataBudgetReport_PreviousMonth_ShouldContainAllExpectedRows [FAIL]
+      System.TimeoutException : Timeout 15000ms exceeded.
+Call log:
+  - waiting for Locator("#create-demo-data") to be visible
+      Stack Trace:
+        /_/src/Playwright/Transport/Connection.cs(230,0): at Microsoft.Playwright.Transport.Connection.InnerSendMessageToServerAsync[T](ChannelOwner object, String method, Dictionary`2 dictionary, Boolean keepNulls, Nullable`1 timeout)
+        /_/src/Playwright/Transport/Connection.cs(539,0): at Microsoft.Playwright.Transport.Connection.WrapApiCallAsync[T](Func`1 action, Boolean isInternal, String title)
+        FinanceManager.Tests.E2E\Tests\Budget\BudgetReportDemoDataE2ETests.cs(124,0): at FinanceManager.Tests.E2E.BudgetReportDemoDataE2ETests.SubmitRegisterFormAsync(IPage page, String username, String password)
+        FinanceManager.Tests.E2E\Tests\Budget\BudgetReportDemoDataE2ETests.cs(40,0): at FinanceManager.Tests.E2E.BudgetReportDemoDataE2ETests.DemoDataBudgetReport_PreviousMonth_ShouldContainAllExpectedRows()
+        FinanceManager.Tests.E2E\Tests\Budget\BudgetReportDemoDataE2ETests.cs(109,0): at FinanceManager.Tests.E2E.BudgetReportDemoDataE2ETests.DemoDataBudgetReport_PreviousMonth_ShouldContainAllExpectedRows()
+        --- End of stack trace from previous location ---
+    FinanceManager.Tests.E2E.BudgetReportDemoDataE2ETests.DemoDataBudgetReport_PreviousMonth_ShouldContainAllExpectedRows [FINISHED] Time: 15,373s
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.UploadCollectionAccountCsv_ViaUi_ShouldShowMultipleDraftsInList [STARTING]
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.UploadCollectionAccountCsv_ViaUi_ShouldShowMultipleDraftsInList [FINISHED] Time: 2,34s
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.ManualAccountAssignment_ViaUi_ShouldAddIbanToLinkedPanelAfterBooking [STARTING]
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.ManualAccountAssignment_ViaUi_ShouldAddIbanToLinkedPanelAfterBooking [FINISHED] Time: 2,191s
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.BookCollectionAccountDraft_WithKnownLinkedIban_ViaUi_ShouldAutoAssignAndBook [STARTING]
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.BookCollectionAccountDraft_WithKnownLinkedIban_ViaUi_ShouldAutoAssignAndBook [FINISHED] Time: 2,875s
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.UploadWithLinkedIban_ViaUi_DraftShouldShowAutoAssignedAccount [STARTING]
+    FinanceManager.Tests.E2E.CollectionAccountImportPlaywrightTests.UploadWithLinkedIban_ViaUi_DraftShouldShowAutoAssignedAccount [FINISHED] Time: 1,78s
+    FinanceManager.Tests.E2E.KpiLocalStorageE2ETests.EnableCache_HomeKpiDataIsPersistedInLocalStorage [STARTING]
+    FinanceManager.Tests.E2E.KpiLocalStorageE2ETests.EnableCache_HomeKpiDataIsPersistedInLocalStorage [FINISHED] Time: 1,809s
+    FinanceManager.Tests.E2E.KpiLocalStorageE2ETests.DisableCache_RemovesKpiDataFromLocalStorage [STARTING]
+    FinanceManager.Tests.E2E.KpiLocalStorageE2ETests.DisableCache_RemovesKpiDataFromLocalStorage [FINISHED] Time: 2,527s
+    FinanceManager.Tests.E2E.ReportingFlowPlaywrightTests.SaveFavorite_ShouldPersistAndReload [STARTING]
+    FinanceManager.Tests.E2E.ReportingFlowPlaywrightTests.SaveFavorite_ShouldPersistAndReload [FINISHED] Time: 1,937s
+    FinanceManager.Tests.E2E.ReportingFlowPlaywrightTests.CreateBackup_EditMasterData_AndRestoreBackup_ShouldRestoreOriginalState [STARTING]
+    FinanceManager.Tests.E2E.ReportingFlowPlaywrightTests.CreateBackup_EditMasterData_AndRestoreBackup_ShouldRestoreOriginalState [FINISHED] Time: 2,134s
+    FinanceManager.Tests.E2E.ReportingFlowPlaywrightTests.SaveFavorite_ShouldPersistAndReload_OnMobileViewport [STARTING]
+    FinanceManager.Tests.E2E.ReportingFlowPlaywrightTests.SaveFavorite_ShouldPersistAndReload_OnMobileViewport [FINISHED] Time: 1,876s
+    FinanceManager.Tests.E2E.VersionDisplayPlaywrightTests.Login_ShowsVersionText_InsteadOfUserId [STARTING]
+    FinanceManager.Tests.E2E.VersionDisplayPlaywrightTests.Login_ShowsVersionText_InsteadOfUserId [FINISHED] Time: 1,024s
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AttachmentDelete_OverlayOpen_CancelKeepsAttachmentAndOverlay [STARTING]
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AttachmentDelete_OverlayOpen_CancelKeepsAttachmentAndOverlay [FINISHED] Time: 1,474s
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AttachmentDelete_OverlayOpen_BackdropClickCancelsOnlyConfirmation [STARTING]
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AttachmentDelete_OverlayOpen_BackdropClickCancelsOnlyConfirmation [FINISHED] Time: 1,464s
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AccountDelete_RibbonAction_ShowsConfirmationAndDeletesOnConfirm [STARTING]
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AccountDelete_RibbonAction_ShowsConfirmationAndDeletesOnConfirm [FINISHED] Time: 1,644s
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AttachmentDelete_OverlayOpen_ShowsConfirmationAboveOverlayAndDeletes [STARTING]
+    FinanceManager.Tests.E2E.ConfirmationDialogE2ETests.AttachmentDelete_OverlayOpen_ShowsConfirmationAboveOverlayAndDeletes [FINISHED] Time: 1,457s
+    FinanceManager.Tests.E2E.CollectionAccountPlaywrightTests.RemoveLinkedIban_ViaUi_ShouldDisappearFromPanel [STARTING]
+    FinanceManager.Tests.E2E.CollectionAccountPlaywrightTests.RemoveLinkedIban_ViaUi_ShouldDisappearFromPanel [FINISHED] Time: 1,819s
+    FinanceManager.Tests.E2E.CollectionAccountPlaywrightTests.AddLinkedIban_ViaUi_ShouldAppearInPanel [STARTING]
+    FinanceManager.Tests.E2E.CollectionAccountPlaywrightTests.AddLinkedIban_ViaUi_ShouldAppearInPanel [FINISHED] Time: 1,817s
+    FinanceManager.Tests.E2E.CollectionAccountPlaywrightTests.CreateCollectionAccount_ViaUi_ShouldNavigateToDetailPage [STARTING]
+    FinanceManager.Tests.E2E.CollectionAccountPlaywrightTests.CreateCollectionAccount_ViaUi_ShouldNavigateToDetailPage [FINISHED] Time: 1,954s
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.PublicSecurityTxt_ContainsConfiguredCanonical [STARTING]
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.PublicSecurityTxt_ContainsConfiguredCanonical [FINISHED] Time: 1,875s
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.PublicSecurityTxt_UsesApiBaseAddressFallback_WhenCanonicalEmpty [STARTING]
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.PublicSecurityTxt_UsesApiBaseAddressFallback_WhenCanonicalEmpty [FINISHED] Time: 1,858s
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.Admin_EditsCanonical_EnableSaveAndPersist [STARTING]
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.Admin_EditsCanonical_EnableSaveAndPersist [FINISHED] Time: 2,602s
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.Admin_EditsSecurityTxtSettings_EnableSaveAndPersist [STARTING]
+    FinanceManager.Tests.E2E.SecurityTxtSetupPlaywrightTests.Admin_EditsSecurityTxtSettings_EnableSaveAndPersist [FINISHED] Time: 2,607s
+    FinanceManager.Tests.E2E.HelpPagePlaywrightTests.HelpHub_ShouldShowDocumentationContent [STARTING]
+    FinanceManager.Tests.E2E.HelpPagePlaywrightTests.HelpHub_ShouldShowDocumentationContent [FINISHED] Time: 1,384s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.ExpiredSession_OnProtectedRoute_ShouldRedirectToLoginWithReturnUrl_AndReturnAfterLogin [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.ExpiredSession_OnProtectedRoute_ShouldRedirectToLoginWithReturnUrl_AndReturnAfterLogin [FINISHED] Time: 2,522s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.Register_Login_Logout_Flow_ShouldWork [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.Register_Login_Logout_Flow_ShouldWork [FINISHED] Time: 1,888s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.Keepalive_FailedRefresh_ShouldNotTriggerLoginRedirect [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.Keepalive_FailedRefresh_ShouldNotTriggerLoginRedirect [FINISHED] Time: 6,799s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.ActiveNavigationAndInteraction_ShouldRefreshNearExpirySessionWithoutLoginRedirect [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.ActiveNavigationAndInteraction_ShouldRefreshNearExpirySessionWithoutLoginRedirect [FINISHED] Time: 6,538s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.MultipleAuthenticationFailures_ShouldNavigateToLoginOnlyOnce [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.MultipleAuthenticationFailures_ShouldNavigateToLoginOnlyOnce [FINISHED] Time: 1,357s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.Register_Login_Logout_Flow_ShouldWork_OnMobileViewport [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.Register_Login_Logout_Flow_ShouldWork_OnMobileViewport [FINISHED] Time: 1,883s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "https://example.invalid/reports/dashboard") [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "https://example.invalid/reports/dashboard") [FINISHED] Time: 1,6s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "//example.invalid/reports/dashboard") [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "//example.invalid/reports/dashboard") [FINISHED] Time: 1,618s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "/login") [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "/login") [FINISHED] Time: 1,621s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "%252Freports%252Fdashboard") [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithInvalidOrExternalReturnUrl_ShouldNavigateToHome(returnUrl: "%252Freports%252Fdashboard") [FINISHED] Time: 1,623s
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithoutReturnUrl_ShouldNavigateToHome [STARTING]
+    FinanceManager.Tests.E2E.AuthenticationFlowPlaywrightTests.LoginWithoutReturnUrl_ShouldNavigateToHome [FINISHED] Time: 1,617s
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.LoginStatus_ChangePasswordLink_NavigatesToChangePassword [STARTING]
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.LoginStatus_ChangePasswordLink_NavigatesToChangePassword [FINISHED] Time: 1,107s
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.AnonymousWellKnown_RedirectsThroughLoginToChangePassword [STARTING]
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.AnonymousWellKnown_RedirectsThroughLoginToChangePassword [FINISHED] Time: 1,77s
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.AuthenticatedUser_ChangesPassword_ViaUi [STARTING]
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.AuthenticatedUser_ChangesPassword_ViaUi [FINISHED] Time: 2,861s
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.ChangePassword_WrongCurrent_ShowsError [STARTING]
+    FinanceManager.Tests.E2E.ChangePasswordWellKnownPlaywrightTests.ChangePassword_WrongCurrent_ShowsError [FINISHED] Time: 2,768s
+  Finished:    FinanceManager.Tests.E2E (ID = '6c33a67566cc4c74b02e6b16163821f13609393971b2e5ef66a4502c936f4cb2')
+=== TEST EXECUTION SUMMARY ===
+   FinanceManager.Tests.E2E  Total: 112, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 259,714s

@@ -1,0 +1,127 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: FinanceManager.Tests.Integration
+  Discovered:  FinanceManager.Tests.Integration
+  Starting:    FinanceManager.Tests.Integration
+     Warning:
+     The component "Fluent Assertions" is governed by the rules defined in the Xceed License Agreement and
+     the Xceed Fluent Assertions Community License. You may use Fluent Assertions free of charge for
+     non-commercial use only. An active subscription is required to use Fluent Assertions for commercial use.
+
+     Please contact Xceed Sales mailto:sales@xceed.com to acquire a subscription at a very low cost.
+
+     A paid commercial license supports the development and continued increasing support of
+     Fluent Assertions users under both commercial and community licenses. Help us
+     keep Fluent Assertions at the forefront of unit testing.
+
+     For more information, visit https://xceed.com/products/unit-testing/fluent-assertions/
+warn: Microsoft.AspNetCore.DataProtection.Repositories.EphemeralXmlRepository[50]
+      Using an in-memory repository. Keys will not be persisted to storage.
+warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[59]
+      Neither user profile nor HKLM registry available. Using an ephemeral key repository. Protected data will be unavailable when application exits.
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "ImportSplitMode" INTEGER NOT NULL DEFAULT 2;
+info: SchemaPatcher[0]
+      Column ImportSplitMode already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "ImportMaxEntriesPerDraft" INTEGER NOT NULL DEFAULT 250;
+info: SchemaPatcher[0]
+      Column ImportMaxEntriesPerDraft already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "ImportMinEntriesPerDraft" INTEGER NOT NULL DEFAULT 8;
+info: SchemaPatcher[0]
+      Column ImportMinEntriesPerDraft already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "ImportMonthlySplitThreshold" INTEGER;
+info: SchemaPatcher[0]
+      Column ImportMonthlySplitThreshold already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "BenchmarkSecurityId" TEXT NULL;
+info: SchemaPatcher[0]
+      Column BenchmarkSecurityId already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "RiskFreeRate" TEXT NOT NULL DEFAULT '0.0';
+info: SchemaPatcher[0]
+      Column RiskFreeRate already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "ShowSharpeRatio" INTEGER NOT NULL DEFAULT 0;
+info: SchemaPatcher[0]
+      Column ShowSharpeRatio already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "SymbolAttachmentId" TEXT NULL;
+info: SchemaPatcher[0]
+      Column SymbolAttachmentId already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "MassImportDialogPolicy" INTEGER NOT NULL DEFAULT 1;
+info: SchemaPatcher[0]
+      Column MassImportDialogPolicy already exists on AspNetUsers
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE "AspNetUsers" ADD COLUMN "KnownContactAutoCreateEnabled" INTEGER NOT NULL DEFAULT 1;
+info: SchemaPatcher[0]
+      Column KnownContactAutoCreateEnabled already exists on AspNetUsers
+info: SchemaPatcher[0]
+      Enqueued RebuildAggregates task fb09c327-f0ef-42e8-8071-e7e18b7ebb69 for user e2c19088-b308-4e87-b7b0-1a192d9d0e97
+warn: Microsoft.AspNetCore.DataProtection.Repositories.EphemeralXmlRepository[50]
+      Using an in-memory repository. Keys will not be persisted to storage.
+warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[59]
+      Neither user profile nor HKLM registry available. Using an ephemeral key repository. Protected data will be unavailable when application exits.
+info: FinanceManager.Infrastructure.Setup.AutoInitializationService[0]
+      AutoInit: Kein 'init'-Verzeichnis gefunden – nichts zu tun.
+warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
+      No XML encryptor configured. Key {508a812d-21a6-49f5-b48e-f84696c6b324} may be persisted to storage in unencrypted form.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Registering user user_38febaaeb0d545ce929da234c780688e
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      User e2fcb5d8-d82f-4679-9176-01a29df85bc0 (user_38febaaeb0d545ce929da234c780688e) registered (IsAdmin=False)
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP GET /api/auth/keepalive responded 401 in 47 ms (TraceId: 0HNPHFE5DM3S9)
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Registering user user_6a94d4185e004f92b964d441ff15cea2
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      User 1c65bc76-b8ca-4219-b35c-2f7c599fdf01 (user_6a94d4185e004f92b964d441ff15cea2) registered (IsAdmin=False)
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Registering user user_7af1741cbe334805809d2a916657e442
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      User b38f0b85-7a69-4d8a-9e7f-434b74aef95e (user_7af1741cbe334805809d2a916657e442) registered (IsAdmin=False)
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Login attempt for user_7af1741cbe334805809d2a916657e442 from *hidden*
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Login success for b38f0b85-7a69-4d8a-9e7f-434b74aef95e (user_7af1741cbe334805809d2a916657e442) from (null)
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Login attempt for user_7af1741cbe334805809d2a916657e442 from *hidden*
+warn: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Login failed (invalid credentials) for user_7af1741cbe334805809d2a916657e442 (Ip=(null))
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP POST /api/auth/login responded 401 in 30 ms (TraceId: 0HNPHFE5DM3SF)
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP GET /api/admin/users responded 401 in 1 ms (TraceId: 0HNPHFE5DM3SH)
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP GET /api/user/settings/profile responded 401 in 0 ms (TraceId: 0HNPHFE5DM3SI)
+info: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Login attempt for inactive_ba85fe4c69de45fbae4a7213ed991bd6 from *hidden*
+warn: FinanceManager.Infrastructure.Auth.UserAuthService[0]
+      Login failed: user inactive_ba85fe4c69de45fbae4a7213ed991bd6 is inactive (Ip=(null))
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP POST /api/auth/login responded 401 in 1 ms (TraceId: 0HNPHFE5DM3SJ)
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP GET /api/user/settings/profile responded 401 in 0 ms (TraceId: 0HNPHFE5DM3SK)
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP GET /api/user/settings/profile responded 401 in 2 ms (TraceId: 0HNPHFE5DM3SL)
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP GET /api/user/settings/profile responded 401 in 0 ms (TraceId: 0HNPHFE5DM3SN)
+warn: FinanceManager.Web.Infrastructure.RequestLoggingMiddleware[0]
+      HTTP GET /api/auth/keepalive responded 401 in 0 ms (TraceId: 0HNPHFE5DM3SO)
+  Finished:    FinanceManager.Tests.Integration (ID = '1494f6f59f3ab4dd95bf61f66e6a950547433f21aa6d6b35b11f38b08872f6f6')
+=== TEST EXECUTION SUMMARY ===
+   FinanceManager.Tests.Integration  Total: 17, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 3,529s
