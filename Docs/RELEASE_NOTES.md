@@ -6,6 +6,7 @@
 
 ## What's New
 
+- Active navigation and Quick Edit input keep the session current. Passive background-task polling does not trigger an unsolicited login redirect after expiration; the next protected user action leads to login.
 - New "Umkehrsignale" (reversal signals) statistic on the security card: detects death cross (with cross date), breaks of the 200-day line (short-term weakness vs. structural reversal), bearish market structure, bearish MACD crossover and RSI divergence, and summarizes them into a trend status ("Trend intakt" / "Trend geschwächt" / "Trendwende wahrscheinlich") (issue #406).
 - New home page notifications when a security's trend status worsens; can be toggled per user via a new checkbox in the "Benachrichtigungen" setup tab.
 - Bugfix: Settings page — the Save button now activates for changes in all fields of the "Kontoauszüge" and "Renditeanalyse" sections and deactivates again when the saved value is restored (issue #431).
@@ -22,6 +23,7 @@
 
 ## Neuerungen
 
+- Aktive Navigation und Eingaben in Quick Edit halten die Sitzung aktuell. Passives Polling von Hintergrundaufgaben löst nach Sitzungsablauf keine ungefragte Login-Weiterleitung aus; die nächste geschützte Nutzeraktion führt zum Login.
 - Neue Statistik „Umkehrsignale" auf der Wertpapierkarte: erkennt Todeskreuz (mit Kreuzungsdatum), Brüche der 200-Tage-Linie (kurzfristige Schwäche vs. strukturelle Trendwende), bärische Marktstruktur, bärisches MACD-Crossover und RSI-Divergenz und fasst sie zu einem Trendstatus zusammen („Trend intakt" / „Trend geschwächt" / „Trendwende wahrscheinlich") (Issue #406).
 - Neue Startseiten-Benachrichtigungen, wenn sich der Trendstatus eines Wertpapiers verschlechtert; pro Benutzer über eine neue Checkbox im Setup-Tab „Benachrichtigungen" abschaltbar.
 - Behoben: Einstellungsseite — die Schaltfläche „Speichern" aktiviert sich jetzt bei Änderungen in allen Feldern der Sektionen „Kontoauszüge" und „Renditeanalyse" und deaktiviert sich wieder, sobald der gespeicherte Wert wiederhergestellt ist (Issue #431).

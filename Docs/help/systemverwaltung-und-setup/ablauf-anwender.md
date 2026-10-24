@@ -9,9 +9,9 @@
 
 ## Automatische Sitzungserhaltung
 
-Wenn Sie auf geschützten Seiten aktiv sind, bleibt Ihre Anmeldung für Sie weitgehend unsichtbar erhalten. Mausklicks, Tastatureingaben und Quick-Edit-Felder lösen im Hintergrund einen Keepalive-Request aus; dadurch wird das vorhandene Anmeldetoken verlängert, ohne dass Sie erneut auf `/login` geleitet werden.
+Wenn Sie auf geschützten Seiten weiterarbeiten, bleibt Ihre Anmeldung im Hintergrund erhalten. Das gilt auch, wenn Sie in einem Quick-Edit-Feld tippen, ohne den Fokus zu verlieren.
 
-Nur wenn die Sitzung fachlich ungültig wird (zum Beispiel durch Deaktivierung des Benutzers, Wechsel des `security_stamp` oder abgelaufenes Token) oder wenn Sie wirklich nicht mehr authentifiziert sind, erscheint der normale Login-Fluss.
+Während längerer Inaktivität wird die Sitzung nicht im Hintergrund verlängert. Wenn Sie danach eine geschützte Seite oder Aktion aufrufen und Ihre Anmeldung abgelaufen ist, werden Sie zur Anmeldung geführt. Nach erfolgreicher Anmeldung können Sie die angeforderte Seite erneut aufrufen.
 
 ## Schritt-für-Schritt-Anleitung
 

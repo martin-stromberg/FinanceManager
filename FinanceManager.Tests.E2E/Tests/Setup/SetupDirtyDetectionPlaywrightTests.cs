@@ -26,21 +26,24 @@ public sealed class SetupDirtyDetectionPlaywrightTests
     /// Verifies that editing every field of the "Kontoauszüge" (statements) section toggles the
     /// Save button: each change enables it, restoring the saved value disables it again.
     /// </summary>
-    [Fact]
-    public async Task Statements_Fields_ToggleSaveButton()
+    /// <param name="locale">The browser language used for setup section titles.</param>
+    [Theory]
+    [InlineData("de-DE")]
+    [InlineData("en-US")]
+    public async Task Statements_Fields_ToggleSaveButton(string locale)
     {
-        var session = await LoginAsAdminAsync();
+        var session = await LoginAsAdminAsync(locale);
         await using var sessionGuard = session;
         var page = session.Page;
 
         await page.GotoAsync("/card/setup");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        var toggle = page.Locator("button.setup-section-toggle").Filter(new LocatorFilterOptions { HasText = "Kontoauszüge" });
+        var toggle = page.Locator("button.setup-section-toggle").Filter(new LocatorFilterOptions { HasTextRegex = new System.Text.RegularExpressions.Regex("^(Kontoauszüge|Statements)") });
         (await toggle.CountAsync()).Should().Be(1);
         await ExpandSectionAsync(page, toggle);
 
-        var section = page.Locator("section.setup-section-accordion-item").Filter(new LocatorFilterOptions { HasText = "Kontoauszüge" });
+        var section = page.Locator("section.setup-section-accordion-item").Filter(new LocatorFilterOptions { Has = toggle });
         var saveButton = page.Locator("#Save");
 
         await section.Locator(".setup-statement-tab select").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
@@ -103,21 +106,24 @@ public sealed class SetupDirtyDetectionPlaywrightTests
     /// Verifies that editing every field of the "Renditeanalyse" (return analysis) section toggles
     /// the Save button: each change enables it, restoring the saved value disables it again.
     /// </summary>
-    [Fact]
-    public async Task ReturnAnalysis_Fields_ToggleSaveButton()
+    /// <param name="locale">The browser language used for setup section titles.</param>
+    [Theory]
+    [InlineData("de-DE")]
+    [InlineData("en-US")]
+    public async Task ReturnAnalysis_Fields_ToggleSaveButton(string locale)
     {
-        var session = await LoginAsAdminAsync();
+        var session = await LoginAsAdminAsync(locale);
         await using var sessionGuard = session;
         var page = session.Page;
 
         await page.GotoAsync("/card/setup");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        var toggle = page.Locator("button.setup-section-toggle").Filter(new LocatorFilterOptions { HasText = "Renditeanalyse" });
+        var toggle = page.Locator("button.setup-section-toggle").Filter(new LocatorFilterOptions { HasTextRegex = new System.Text.RegularExpressions.Regex("^(Renditeanalyse|Return analysis)", System.Text.RegularExpressions.RegexOptions.IgnoreCase) });
         (await toggle.CountAsync()).Should().Be(1);
         await ExpandSectionAsync(page, toggle);
 
-        var section = page.Locator("section.setup-section-accordion-item").Filter(new LocatorFilterOptions { HasText = "Renditeanalyse" });
+        var section = page.Locator("section.setup-section-accordion-item").Filter(new LocatorFilterOptions { Has = toggle });
         var saveButton = page.Locator("#Save");
         await section.Locator("#benchmark-select").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
         await Microsoft.Playwright.Assertions.Expect(saveButton).ToBeDisabledAsync(new LocatorAssertionsToBeDisabledOptions { Timeout = 5000 });
@@ -179,9 +185,9 @@ public sealed class SetupDirtyDetectionPlaywrightTests
         (await toggle.GetAttributeAsync("aria-expanded")).Should().NotBeNull("the section must expand after clicking the toggle");
     }
 
-    private async Task<PlaywrightBrowserSession> LoginAsAdminAsync()
+    private async Task<PlaywrightBrowserSession> LoginAsAdminAsync(string locale)
     {
-        var session = await _fixture.CreateSessionAsync();
+        var session = await _fixture.CreateSessionAsync(new() { Locale = locale });
         var page = session.Page;
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var seed = new TestUserSeeder(_fixture.DatabasePath);

@@ -29,4 +29,13 @@ public sealed class JwtOptions
     /// Token lifetime in minutes.
     /// </summary>
     public int LifetimeMinutes { get; set; } = 30;
+
+    /// <summary>Minimum renewal window in minutes; defaults to five minutes for regular deployments.</summary>
+    public int MinimumRenewalWindowMinutes { get; set; } = 5;
+
+    /// <summary>Gets the shared renewal window: at least the configured minimum, otherwise half the token lifetime.</summary>
+    public TimeSpan RenewalWindow
+    {
+        get => TimeSpan.FromMinutes(Math.Max(MinimumRenewalWindowMinutes, LifetimeMinutes / 2.0));
+    }
 }

@@ -16,6 +16,15 @@ namespace FinanceManager.Tests.E2E;
 /// </summary>
 public sealed class PlaywrightWebAppFixture : IAsyncLifetime
 {
+    private readonly IReadOnlyDictionary<string, string> _serverEnvironment;
+
+    /// <summary>Creates the standard shared application fixture.</summary>
+    public PlaywrightWebAppFixture() : this(new Dictionary<string, string>()) { }
+
+    internal PlaywrightWebAppFixture(IReadOnlyDictionary<string, string> serverEnvironment)
+    {
+        _serverEnvironment = serverEnvironment;
+    }
     /// <summary>
     /// Optional per-session browser context overrides (viewport, mobile emulation, locale) passed to
     /// <see cref="CreateSessionAsync"/>, so individual tests can opt into e.g. a mobile viewport without
@@ -331,6 +340,10 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         startInfo.Environment["Updates__EnableAutomaticInstallation"] = "false";
         startInfo.Environment["Updates__HostedServicesEnabled"] = "false";
         startInfo.Environment["Updates__WorkingDirectory"] = _updatesWorkingDir;
+        foreach (var setting in _serverEnvironment)
+        {
+            startInfo.Environment[setting.Key] = setting.Value;
+        }
 
         _server = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start the Playwright test server.");
         _server.OutputDataReceived += (_, e) =>
@@ -396,7 +409,7 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         throw new TimeoutException($"The Playwright test server did not become ready at {BaseUrl}. Logs: {GetServerLogs()}", lastError);
     }
 
-    private string GetServerLogs()
+    internal string GetServerLogs()
     {
         lock (_serverOutput)
             lock (_serverError)

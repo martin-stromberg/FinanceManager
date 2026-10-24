@@ -22,10 +22,13 @@ public sealed class AccountsOverviewStatisticsPlaywrightTests
     /// <summary>
     /// Shows total/year/month statistics, lossless signed group details and the account table together.
     /// </summary>
-    [Fact]
-    public async Task AccountsOverview_ShowsStatisticsAlongsideTable()
+    /// <param name="locale">The browser locale used to render signed currency amounts.</param>
+    [Theory]
+    [InlineData("de-DE")]
+    [InlineData("en-US")]
+    public async Task AccountsOverview_ShowsStatisticsAlongsideTable(string locale)
     {
-        await using var session = await _fixture.CreateSessionAsync();
+        await using var session = await _fixture.CreateSessionAsync(new() { Locale = locale });
         var page = session.Page;
         var user = await LoginNewUserAsync(page, "accounts-stats-overview");
         var seed = new AccountsApiSeedHelper(page, _fixture.DatabasePath, user.Id);
@@ -127,10 +130,13 @@ public sealed class AccountsOverviewStatisticsPlaywrightTests
     /// <summary>
     /// KPI details show total, current year and current month changes with known amounts.
     /// </summary>
-    [Fact]
-    public async Task AccountsOverview_ShowsTotalYearChangeAndMonthChange()
+    /// <param name="locale">The browser locale used to render signed currency amounts.</param>
+    [Theory]
+    [InlineData("de-DE")]
+    [InlineData("en-US")]
+    public async Task AccountsOverview_ShowsTotalYearChangeAndMonthChange(string locale)
     {
-        await using var session = await _fixture.CreateSessionAsync();
+        await using var session = await _fixture.CreateSessionAsync(new() { Locale = locale });
         var page = session.Page;
         var user = await LoginNewUserAsync(page, "accounts-stats-kpis");
         var seed = new AccountsApiSeedHelper(page, _fixture.DatabasePath, user.Id);
@@ -410,6 +416,11 @@ public sealed class AccountsOverviewStatisticsPlaywrightTests
         var list = new ListPageGateway(page);
         await list.OpenAccountsAsync();
         await list.WaitForStatisticsStateAsync("Loaded");
+        await page.WaitForFunctionAsync("""
+            name => Array.from(document.querySelectorAll('tbody tr, .generic-list-mobile-card'))
+                .some(row => row.textContent.includes(name)
+                    && Object.keys(row).some(key => key.startsWith('_blazorEvents_')))
+            """, accountName);
         await list.OpenRowAsync(accountName);
 
         await page.WaitForURLAsync($"**/card/accounts/{account.AccountId}");
@@ -467,8 +478,8 @@ public sealed class AccountsOverviewStatisticsPlaywrightTests
     private static async Task ExpectAmountAsync(ILocator locator, int wholeAmount)
     {
         var pattern = wholeAmount < 0
-            ? $@"-\s*{Math.Abs(wholeAmount)}([,.]00)?"
-            : $@"{wholeAmount}([,.]00)?";
+            ? $@"-\s*[$€£¥¤]?\s*{Math.Abs(wholeAmount)}([,.]00)?(?![\d,.])"
+            : $@"(?<![\d,.]){wholeAmount}([,.]00)?(?![\d,.])";
         await Microsoft.Playwright.Assertions.Expect(locator).ToContainTextAsync(new Regex(pattern));
     }
 

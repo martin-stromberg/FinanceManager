@@ -63,6 +63,7 @@ Die wichtigsten Standardwerte stammen aus `FinanceManager.Web/appsettings.json`,
 | `Jwt:Issuer` | `financemanager` | JWT-Issuer |
 | `Jwt:Audience` | `financemanager` | JWT-Audience |
 | `Jwt:LifetimeMinutes` | `30` | Gültigkeitsdauer der JWT-/Auth-Sitzung |
+| `Jwt:MinimumRenewalWindowMinutes` | `5` | Positive Untergrenze des Erneuerungsfensters; effektiv gilt das Maximum aus Untergrenze und halber Tokenlaufzeit |
 | `DataProtection:KeysPath` | leer | Optionaler persistenter Speicherort für Data-Protection-Keys |
 | `Api:BaseAddress` | leer | Basisadresse für API-/Security.txt-bezogene Fallbacks |
 | `BackgroundTasks:Enabled` | `true` | Aktiviert den Background-Task-Runner |
@@ -109,6 +110,7 @@ Wichtige Punkte aus dem aktuellen Code:
 
 - Das Auth-Cookie heißt **`FinanceManager.Auth`**.
 - Die konfigurierte Standardlaufzeit beträgt **30 Minuten** (`Jwt:LifetimeMinutes`).
+- Beide Refreshpfade verwenden dasselbe Fenster: `max(Jwt:MinimumRenewalWindowMinutes, Jwt:LifetimeMinutes / 2.0)`, standardmäßig 15 Minuten bei einer Untergrenze von 5 Minuten.
 - `JwtRefreshMiddleware` erneuert Tokens automatisch, sobald sie in ihr Renewal-Fenster kommen.
 - `JwtRefreshService` validiert vor einem Refresh den Benutzerzustand, den `security_stamp` und die aktuelle Admin-Rolle erneut gegen die Datenbank.
 - `MainLayout.razor` und `wwwroot/js/financeManager.js` triggern Keepalive-Aufrufe bei Navigation sowie bei Benutzerinteraktionen wie `pointerdown`, `keydown`, `focusin`, `input` und Quick-Edit-`blur`.
@@ -143,6 +145,10 @@ Eine Auswahl konkreter, im Repository vorhandener Einstiegspunkte:
 Die Controller liegen unter `FinanceManager.Web/Controllers/`.
 
 ## Tests
+
+Die Session-Ablauftests laufen mit echtem Formularlogin und unveränderter Uhr standardmäßig mit **3 Minuten** Tokenlaufzeit. Nur ihr isolierter Webhost setzt `Jwt:MinimumRenewalWindowMinutes=1`; dadurch beträgt das effektive Fenster 1,5 Minuten. Der unveränderte Browser-Throttle von 60 Sekunden lässt innerhalb dieses Fensters eine Erneuerung zu. Navigation, Idle und beide Quick-Edit-Fälle überschreiten weiterhin das ursprüngliche `exp` samt zehn Sekunden ClockSkew. Die vier Pflichtfälle benötigen zusammen ungefähr 14 Minuten statt über 40 Minuten; weitere Tests und Hoststarts kommen hinzu.
+
+`E2E_SESSION_LIFETIME_MINUTES=30` wählt weiterhin den regulären 30-Minuten-Referenzlauf. Ab zehn Minuten Laufzeit verwendet die Fixture die produktive Untergrenze von fünf Minuten; bei drei bis neun Minuten beträgt sie eine Minute. Laufzeiten unter drei Minuten werden abgelehnt. Ohne explizite Konfiguration bleiben sämtliche produktiven JWT-Standardwerte unverändert.
 
 Die Testprojekte in der Solution sind:
 
