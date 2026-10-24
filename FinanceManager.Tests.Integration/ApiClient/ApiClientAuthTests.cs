@@ -210,11 +210,11 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         var response = await browser.GetAsync("/api/auth/keepalive", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        response.Headers.TryGetValues("X-Auth-Token", out var synchronized).Should().BeTrue();
-        synchronized!.Single().Should().Be(currentToken);
+        var synchronizedToken = Assert.Single(response.Headers.GetValues("X-Auth-Token"));
+        synchronizedToken.Should().Be(currentToken);
         response.Headers.Contains("Set-Cookie").Should().BeFalse("a fresh token must not be rotated again");
         response.Headers.CacheControl!.NoStore.Should().BeTrue();
-        provider.AcceptBrowserToken(synchronized.Single());
+        provider.AcceptBrowserToken(synchronizedToken);
         using var circuit = new HttpClient(new AuthenticatedHttpClientHandler(provider) { InnerHandler = _factory.Server.CreateHandler() })
         { BaseAddress = new Uri("http://localhost") };
         var api = new FinanceManager.Shared.ApiClient(circuit);
