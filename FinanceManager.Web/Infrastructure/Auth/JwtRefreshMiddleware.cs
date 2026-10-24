@@ -83,8 +83,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 var now = DateTimeOffset.UtcNow;
 
                 // Determine renewal window dynamically based on configured lifetime
-                var lifetimeMinutes = _options.Value.LifetimeMinutes;
-                var renewalWindow = TimeSpan.FromMinutes(Math.Max(5, lifetimeMinutes / 2)); // renew when half of lifetime has passed
+                var renewalWindow = _options.Value.RenewalWindow;
 
                 if (exp - renewalWindow > now)
                 {

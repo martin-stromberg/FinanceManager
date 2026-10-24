@@ -87,6 +87,8 @@ Entwicklungsprofile aus `FinanceManager.Web/Properties/launchSettings.json`:
 
 Details zu Demodaten, Konfiguration, Authentifizierung, API-Endpunkten, Tests und Git-Hooks finden sich in [Docs/development.md](Docs/development.md).
 
+Die zeitabhängigen Session-E2E-Tests verwenden regulär drei Minuten Tokenlaufzeit mit proportionalem Erneuerungsfenster; die vier langen Pflichtfälle benötigen zusammen etwa 14 Minuten statt über 40 Minuten. Mit `E2E_SESSION_LIFETIME_MINUTES=30` bleibt der Referenzlauf mit produktiven Zeitwerten verfügbar. Details stehen in der [Testdokumentation](Docs/development.md#tests).
+
 ## Weitere Informationen
 
 - [Entwickler- und Betriebsdokumentation](Docs/development.md) — Lokale Entwicklung, Demodaten, Konfiguration, Authentifizierung, API-Endpunkte, Tests und Git-Hooks

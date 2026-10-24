@@ -21,6 +21,7 @@
 | `Jwt:Issuer` | string | `financemanager` | Erwarteter Token-Issuer fuer Ausstellung und Validierung. Bereitstellung per `Jwt__Issuer` ist moeglich. |
 | `Jwt:Audience` | string | `financemanager` | Erwartete Token-Audience fuer Ausstellung und Validierung. Bereitstellung per `Jwt__Audience` ist moeglich. |
 | `Jwt:LifetimeMinutes` | int | `30` | JWT- und Cookie-Lebensdauer in Minuten. Betriebsstandard ist `30`; produktionsnah muss der Wert groesser als `0` sein und darf maximal `1440` betragen. Bereitstellung per `Jwt__LifetimeMinutes` ist moeglich. |
+| `Jwt:MinimumRenewalWindowMinutes` | int | `5` | Positive Untergrenze des Erneuerungsfensters in Minuten. Beide Refreshpfade verwenden das Maximum aus dieser Untergrenze und halber Tokenlaufzeit. Bereitstellung per `Jwt__MinimumRenewalWindowMinutes` ist moeglich. |
 | `DataProtection:KeysPath` | string | leer | Optionaler Dateisystempfad fuer den ASP.NET-Core-Data-Protection-Key-Ring. Fuer produktionsnahe Deployments mit persistent verschluesselten AlphaVantage API Keys sollte der Pfad auf ein dauerhaftes, gesichertes Volume zeigen. |
 | `Api:BaseAddress` | string | leer | Basisadresse der API. Wird als Fallback für `security.txt`-`Canonical` verwendet, wenn im Setup kein eigener Canonical-Wert gepflegt ist. Muss dann als absolute URI konfiguriert sein. |
 | `Updates:Enabled` | bool | `false` | Aktiviert die automatische Suche nach Updates. |

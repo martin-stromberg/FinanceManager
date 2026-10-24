@@ -48,7 +48,7 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
             _ = await probe.ReadBrowserTokenAsync();
             new Uri(page.Url).AbsolutePath.Should().Be(route);
             accounts = !accounts;
-            await Task.Delay(TimeSpan.FromSeconds(10));
+            await Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         }
         var renewed = await probe.ReadBrowserTokenAsync();
         renewed.Expires.Should().BeAfter(login.Expires);
@@ -73,14 +73,14 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
         page.Request += (_, request) => { if (IsKeepalive(request.Url)) Interlocked.Increment(ref pings); };
         while (DateTimeOffset.UtcNow < lastToken.Expires.AddSeconds(12))
         {
-            await Task.Delay(1000);
+            await Task.Delay(1000, TestContext.Current.CancellationToken);
             new Uri(page.Url).AbsolutePath.Should().Be("/");
             pings.Should().Be(0, "idle time must never trigger a keepalive");
         }
         var polls = fixture.ReadObservations().Where(e => e.Path == "/api/background-tasks/active").ToArray();
         polls.Should().Contain(e => e.Status == 401);
         var pollCount = polls.Length;
-        await Task.Delay(5000);
+        await Task.Delay(5000, TestContext.Current.CancellationToken);
         fixture.ReadObservations().Count(e => e.Path == "/api/background-tasks/active").Should().Be(pollCount);
         var sequence = fixture.ReadObservations().Max(e => e.Sequence);
         await page.Locator("a[href='/list/accounts']").First.ClickAsync();
@@ -99,11 +99,11 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
         var login = await probe.LoginAsync("revoked");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await new TestUserSeeder(fixture.DatabasePath).InvalidateSecurityStampAsync(login.Username);
-        await Task.Delay(61_000);
+        await Task.Delay(61_000, TestContext.Current.CancellationToken);
         var ping = page.WaitForResponseAsync(response => IsKeepalive(response.Url));
         await page.Locator("body").PressAsync("x");
         (await ping).Status.Should().Be(401);
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         new Uri(page.Url).AbsolutePath.Should().Be("/");
         var sequence = fixture.ReadObservations().Max(e => e.Sequence);
         await page.Locator("a[href='/list/accounts']").First.ClickAsync();
@@ -120,13 +120,13 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
         await InitializationVisibilityProbe.InstallAsync(page.Context);
         await page.RouteAsync("**/_framework/blazor.web.js", async route =>
         {
-            await Task.Delay(750);
+            await Task.Delay(750, TestContext.Current.CancellationToken);
             await route.ContinueAsync();
         });
         var probe = new SessionExpiryProbe(fixture, page);
         var login = await probe.LoginAsync("visible");
         await probe.ExpectApiAsync("/api/notifications", 0, login.UserId);
-        await Task.Delay(1000);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
         await InitializationVisibilityProbe.AssertVisibleAsync(page);
     }
 

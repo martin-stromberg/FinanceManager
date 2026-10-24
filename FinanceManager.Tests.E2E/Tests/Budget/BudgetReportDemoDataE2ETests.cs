@@ -37,7 +37,7 @@ public sealed class BudgetReportDemoDataE2ETests
         await using (var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite($"Data Source={_fixture.DatabasePath}").Options))
         {
-            (await db.Users.AnyAsync()).Should().BeFalse("the demo-data registration flow requires the first user in an isolated database");
+            (await db.Users.AnyAsync(TestContext.Current.CancellationToken)).Should().BeFalse("the demo-data registration flow requires the first user in an isolated database");
         }
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;

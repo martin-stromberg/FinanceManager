@@ -21,7 +21,6 @@ namespace FinanceManager.Web.Infrastructure.Auth
         private string? _cachedToken;
         private DateTimeOffset _cachedExpiry;
 
-        private static readonly TimeSpan MinRenewalWindow = TimeSpan.FromMinutes(5);
         private const string AuthCookieName = "FinanceManager.Auth"; // <- zentraler Name
 
         /// <summary>The validated token transferred by protected Interactive Server prerender persistence.</summary>
@@ -80,8 +79,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
             var now = DateTimeOffset.UtcNow;
 
             // Determine renewal window from configured lifetime (half of it)
-            var lifetimeMinutes = _options.Value.LifetimeMinutes;
-            var renewalWindow = TimeSpan.FromMinutes(Math.Max(MinRenewalWindow.TotalMinutes, lifetimeMinutes / 2.0));
+            var renewalWindow = _options.Value.RenewalWindow;
 
             // Prefer request cookie over cache when a request context is available.
             // This prevents serving stale tokens from a different browser tab/user session.

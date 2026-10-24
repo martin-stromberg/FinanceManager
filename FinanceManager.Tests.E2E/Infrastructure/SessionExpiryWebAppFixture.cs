@@ -7,7 +7,7 @@ public sealed class SessionExpiryWebAppFixture : IAsyncLifetime
 {
     private readonly PlaywrightWebAppFixture _application;
 
-    /// <summary>Creates an isolated regular web server; shortened runs must preserve the five-minute refresh window.</summary>
+    /// <summary>Creates an isolated regular web server with proportional renewal timing for shortened runs.</summary>
     public SessionExpiryWebAppFixture()
     {
         LifetimeMinutes = ResolveLifetimeMinutes(Environment.GetEnvironmentVariable("E2E_SESSION_LIFETIME_MINUTES"));
@@ -17,6 +17,7 @@ public sealed class SessionExpiryWebAppFixture : IAsyncLifetime
         _application = new PlaywrightWebAppFixture(new Dictionary<string, string>
         {
             ["Jwt__LifetimeMinutes"] = LifetimeMinutes.ToString(),
+            ["Jwt__MinimumRenewalWindowMinutes"] = ResolveMinimumRenewalWindowMinutes(LifetimeMinutes).ToString(),
             ["Logging__LogLevel__FinanceManager.Web.Infrastructure.RequestLoggingMiddleware"] = "Debug",
             ["Logging__Console__FormatterOptions__TimestampFormat"] = "yyyy-MM-ddTHH:mm:ss.fffZ "
         });
@@ -24,10 +25,12 @@ public sealed class SessionExpiryWebAppFixture : IAsyncLifetime
 
     internal static int ResolveLifetimeMinutes(string? configuredLifetime)
     {
-        var minutes = int.TryParse(configuredLifetime, out var value) ? value : 10;
-        if (minutes < 10) throw new InvalidOperationException("Session expiry scenarios require at least ten minutes.");
+        var minutes = int.TryParse(configuredLifetime, out var value) ? value : 3;
+        if (minutes < 3) throw new InvalidOperationException("Session expiry scenarios require at least three minutes to preserve the sixty-second activity throttle.");
         return minutes;
     }
+
+    internal static int ResolveMinimumRenewalWindowMinutes(int lifetimeMinutes) => lifetimeMinutes < 10 ? 1 : 5;
 
     /// <summary>Gets the configured real token lifetime.</summary>
     public int LifetimeMinutes { get; }
