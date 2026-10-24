@@ -194,6 +194,56 @@ public class ApiClientAuthTests : IClassFixture<TestWebApplicationFactory>
         cookies!.Should().Contain(cookie => cookie.StartsWith("FinanceManager.Auth=", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>A fresh shared browser cookie resynchronizes an older circuit without another rotation.</summary>
+    [Fact]
+    public async Task Keepalive_CurrentCookieWithoutRotation_ResynchronizesExpiredCircuit()
+    {
+        var currentToken = await CreateBearerTokenAsync(includeAdminRole: true);
+        var oldToken = await CreateBearerTokenAsync(includeAdminRole: true, expiresUtc: DateTime.UtcNow.AddSeconds(-30));
+        using var scope = _factory.Services.CreateScope();
+        var provider = scope.ServiceProvider.GetRequiredService<FinanceManager.Web.Infrastructure.Auth.JwtCookieAuthTokenProvider>();
+        provider.PrimeCache(oldToken, DateTimeOffset.UtcNow.AddSeconds(-30));
+        (await provider.GetAccessTokenAsync(CancellationToken.None)).Should().BeNull();
+        using var browser = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = false });
+        browser.DefaultRequestHeaders.Add("Cookie", $"FinanceManager.Auth={currentToken}");
+
+        var response = await browser.GetAsync("/api/auth/keepalive", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var synchronizedToken = Assert.Single(response.Headers.GetValues("X-Auth-Token"));
+        synchronizedToken.Should().Be(currentToken);
+        response.Headers.Contains("Set-Cookie").Should().BeFalse("a fresh token must not be rotated again");
+        response.Headers.CacheControl!.NoStore.Should().BeTrue();
+        provider.AcceptBrowserToken(synchronizedToken);
+        using var circuit = new HttpClient(new AuthenticatedHttpClientHandler(provider) { InnerHandler = _factory.Server.CreateHandler() })
+        { BaseAddress = new Uri("http://localhost") };
+        var api = new FinanceManager.Shared.ApiClient(circuit);
+        var authenticationRequired = false;
+        api.AuthenticationRequired += (_, _) => authenticationRequired = true;
+        (await api.GetAccountStatisticsAsync(ct: TestContext.Current.CancellationToken)).Should().NotBeNull();
+        authenticationRequired.Should().BeFalse();
+    }
+
+    /// <summary>Rejecting a fresh but revoked cookie must not leak a successful synchronization header.</summary>
+    [Fact]
+    public async Task Keepalive_RevokedCurrentCookie_DoesNotReturnSynchronizationToken()
+    {
+        var token = await CreateBearerTokenAsync(includeAdminRole: true);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var user = await users.FindByNameAsync(TestWebApplicationFactory.BootstrapAdminUsername);
+            (await users.UpdateSecurityStampAsync(user!)).Succeeded.Should().BeTrue();
+        }
+        using var browser = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = false });
+        browser.DefaultRequestHeaders.Add("Cookie", $"FinanceManager.Auth={token}");
+
+        var response = await browser.GetAsync("/api/auth/keepalive", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.Headers.Contains("X-Auth-Token").Should().BeFalse();
+    }
+
     /// <summary>
     /// Verifies that keepalive rejects a token whose security stamp no longer matches the user record
     /// (e.g. after a password change) with 401 and does not hand out a refreshed token in the response

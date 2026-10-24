@@ -52,7 +52,7 @@
         </div>
     }
     <div style="margin-top:1.25rem;display:flex;gap:.5rem;align-items:center;">
-        <button type="submit" disabled="@_busy">
+        <button type="submit" disabled="@(_busy || !RendererInfo.IsInteractive)">
             @(_busy ? L["Button_Wait"] : L["Button_Register"]) 
         </button>
     </div>

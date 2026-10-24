@@ -33,6 +33,15 @@ public partial class ApiClient
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BackgroundTaskInfo>>(cancellationToken: ct) ?? Array.Empty<BackgroundTaskInfo>();
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<BackgroundTaskInfo>> BackgroundTasks_GetActiveForPollingAsync(CancellationToken ct = default)
+    {
+        using var response = await _http.GetAsync("/api/background-tasks/active", ct);
+        await TrySetErrorFromResponseAsync(response, requestAuthentication: response.StatusCode != System.Net.HttpStatusCode.Unauthorized);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<IReadOnlyList<BackgroundTaskInfo>>(cancellationToken: ct) ?? Array.Empty<BackgroundTaskInfo>();
+    }
+
     /// <summary>
     /// Gets details for a specific background task or null when not found.
     /// </summary>

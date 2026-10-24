@@ -1,6 +1,7 @@
 using FinanceManager.Infrastructure.Auth;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.Infrastructure.Auth
 {
@@ -20,8 +21,25 @@ namespace FinanceManager.Web.Infrastructure.Auth
         private string? _cachedToken;
         private DateTimeOffset _cachedExpiry;
 
-        private static readonly TimeSpan MinRenewalWindow = TimeSpan.FromMinutes(5);
         private const string AuthCookieName = "FinanceManager.Auth"; // <- zentraler Name
+
+        /// <summary>The validated token transferred by protected Interactive Server prerender persistence.</summary>
+        [PersistentState]
+        public string? PersistedToken
+        {
+            get => _cachedToken;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value)) { InvalidateCache(); return; }
+                try
+                {
+                    new JwtSecurityTokenHandler().ValidateToken(value, _validationParametersFactory.Create(), out var validated);
+                    Cache(value, new DateTimeOffset(validated.ValidTo, TimeSpan.Zero));
+                }
+                catch (Microsoft.IdentityModel.Tokens.SecurityTokenException) { InvalidateCache(); }
+                catch (ArgumentException) { InvalidateCache(); }
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JwtCookieAuthTokenProvider"/> class.
@@ -61,12 +79,11 @@ namespace FinanceManager.Web.Infrastructure.Auth
             var now = DateTimeOffset.UtcNow;
 
             // Determine renewal window from configured lifetime (half of it)
-            var lifetimeMinutes = _options.Value.LifetimeMinutes;
-            var renewalWindow = TimeSpan.FromMinutes(Math.Max(MinRenewalWindow.TotalMinutes, lifetimeMinutes / 2.0));
+            var renewalWindow = _options.Value.RenewalWindow;
 
             // Prefer request cookie over cache when a request context is available.
             // This prevents serving stale tokens from a different browser tab/user session.
-            if (ctx != null)
+            if (ctx != null && !ctx.Response.HasStarted)
             {
                 var cookie = ctx.Request.Cookies[AuthCookieName];
                 if (string.IsNullOrEmpty(cookie))
@@ -87,12 +104,34 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
             // When no request context is available (for example within a running Blazor circuit),
             // fall back to a still-valid cached token.
-            if (_cachedToken != null && _cachedExpiry - renewalWindow > now)
+            if (_cachedToken != null && _cachedExpiry > now)
             {
                 return _cachedToken;
             }
 
             return null;
+        }
+
+        /// <summary>Accepts an activity-renewed browser token for this circuit without changing UI state.</summary>
+        /// <param name="token">JWT supplied by the authenticated browser keepalive response.</param>
+        public void AcceptBrowserToken(string token)
+        {
+            lock (_sync)
+            {
+                if (_cachedToken is null) return;
+                var handler = new JwtSecurityTokenHandler();
+                try
+                {
+                    var principal = handler.ValidateToken(token, _validationParametersFactory.Create(), out var validated);
+                    var current = handler.ReadJwtToken(_cachedToken);
+                    var subject = principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                    if (subject != current.Subject || validated.ValidTo < _cachedExpiry.UtcDateTime) return;
+                    Cache(token, new DateTimeOffset(validated.ValidTo, TimeSpan.Zero));
+                }
+                catch (Microsoft.IdentityModel.Tokens.SecurityTokenException) { }
+                catch (ArgumentException) { }
+            }
         }
 
         private async Task<string?> ValidateAndRefreshTokenAsync(

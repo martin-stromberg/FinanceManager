@@ -86,7 +86,8 @@ namespace FinanceManager.Web
             builder.Services.Configure<TrendReversalOptions>(builder.Configuration.GetSection(TrendReversalOptions.SectionName));
 
             builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
+                .AddInteractiveServerComponents()
+                .RegisterPersistentService<JwtCookieAuthTokenProvider>(Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer);
 
             builder.Services.AddControllers();
             builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("Default"));
@@ -169,7 +170,8 @@ namespace FinanceManager.Web
 
             // HttpClient
             builder.Services.AddTransient<AuthenticatedHttpClientHandler>();
-            builder.Services.AddScoped<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
+            builder.Services.AddScoped<JwtCookieAuthTokenProvider>();
+            builder.Services.AddScoped<IAuthTokenProvider>(sp => sp.GetRequiredService<JwtCookieAuthTokenProvider>());
             builder.Services.AddScoped<ISecurityTxtSettingsService, SecurityTxtSettingsService>();
             builder.Services.AddScoped<IWellKnownSettingsService, WellKnownSettingsService>();
             builder.Services.AddHttpClient("Api", (sp, client) =>
@@ -193,10 +195,15 @@ namespace FinanceManager.Web
                     // subsequent requests of other users/circuits, where it could shadow the
                     // intended bearer token.
                     UseCookies = false
-                })
-                .AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
-            builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
-            builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
+                });
+            builder.Services.AddScoped(sp =>
+            {
+                using var configured = sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api");
+                var handler = sp.GetRequiredService<AuthenticatedHttpClientHandler>();
+                handler.InnerHandler = sp.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler("Api");
+                return new HttpClient(handler) { BaseAddress = configured.BaseAddress };
+            });
+            builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<HttpClient>()));
             builder.Services.AddScoped<IConfirmationService, ConfirmationService>();
             builder.Services.AddScoped<IKpiLocalStorageCache, KpiLocalStorageCache>();
 

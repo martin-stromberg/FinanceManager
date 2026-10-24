@@ -1,0 +1,5 @@
+## 2026-10-24 — Aktive Sitzungserhaltung
+
+- Aktive Nutzung geschützter Seiten und Eingaben in Quick-Edit-Feldern erhalten die Anmeldung im Hintergrund.
+- Echte Inaktivität löst keine Keepalive- oder passiven Erneuerungsabfragen aus; eine spätere geschützte Aktion führt bei abgelaufener Sitzung zur Anmeldung.
+- Die technische Dokumentation hält fest, dass der Produktivstandard von 30 Minuten unverändert bleibt.
