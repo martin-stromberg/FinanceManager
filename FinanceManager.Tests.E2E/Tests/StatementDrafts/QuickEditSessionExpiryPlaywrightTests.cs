@@ -44,7 +44,8 @@ public sealed class QuickEditSessionExpiryPlaywrightTests(SessionExpiryWebAppFix
                 ["BookingDate"] = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 ["Amount"] = 12m, ["Subject"] = "Original", ["RecipientName"] = "Original recipient", ["BookingDescription"] = "Original description"
             } } },
-            creates = Array.Empty<object>(), deletes = Array.Empty<Guid>()
+            creates = Array.Empty<object>(),
+            deletes = Array.Empty<Guid>()
         });
         await page.GotoAsync($"/card/statement-drafts/{draft.DraftId}?quickEdit=true");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);

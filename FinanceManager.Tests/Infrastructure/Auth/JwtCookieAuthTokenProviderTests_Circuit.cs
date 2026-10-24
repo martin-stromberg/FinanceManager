@@ -15,7 +15,10 @@ public sealed class JwtCookieAuthTokenProviderTests_Circuit
 {
     private static readonly IOptions<JwtOptions> Options = Microsoft.Extensions.Options.Options.Create(new JwtOptions
     {
-        Key = "test-signing-key-with-sufficient-length-1234567890", Issuer = "financemanager", Audience = "financemanager", LifetimeMinutes = 30
+        Key = "test-signing-key-with-sufficient-length-1234567890",
+        Issuer = "financemanager",
+        Audience = "financemanager",
+        LifetimeMinutes = 30
     });
 
     /// <summary>A valid circuit token remains usable inside the renewal window.</summary>
