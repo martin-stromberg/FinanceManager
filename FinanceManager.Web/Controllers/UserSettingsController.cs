@@ -144,7 +144,7 @@ public sealed class UserSettingsController : ControllerBase
                 }
             }
 
-            await _db.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(CancellationToken.None);
 
             // Re-issue the auth cookie whenever language or timezone changed so the new pref_lang/tz
             // claims are picked up immediately by the request culture provider without requiring re-login.
@@ -228,7 +228,9 @@ public sealed class UserSettingsController : ControllerBase
         user.SetMonthlyReminderTime(req.MonthlyReminderHour, req.MonthlyReminderMinute);
         user.SetHolidayProvider(kind);
         user.SetHolidayRegion(req.HolidayCountryCode, req.HolidaySubdivisionCode);
-        await _db.SaveChangesAsync(ct);
+        // The write was already validated - finish it even if the client disconnected mid-request.
+        // Using RequestAborted here would silently drop the user's settings change.
+        await _db.SaveChangesAsync(CancellationToken.None);
         return NoContent();
     }
 
@@ -300,7 +302,7 @@ public sealed class UserSettingsController : ControllerBase
             user.SetImportSplitSettings(req.Mode, req.MaxEntriesPerDraft, req.MonthlySplitThreshold, req.MinEntriesPerDraft);
             user.SetMassImportDialogPolicy(req.MassImportDialogPolicy);
             user.SetKnownContactAutoCreateEnabled(req.KnownContactAutoCreateEnabled);
-            await _db.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(CancellationToken.None);
             return NoContent();
         }
         catch (ArgumentOutOfRangeException ex)
