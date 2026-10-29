@@ -346,7 +346,7 @@ namespace FinanceManager.Web
                 options.Cookie.Path = "/"; // keep app-wide; could be app-specific path if you host under same domain/path
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 
                 options.LoginPath = "/Login";
                 options.AccessDeniedPath = "/AccessDenied";
@@ -365,7 +365,7 @@ namespace FinanceManager.Web
                 options.Cookie.Name = "FinanceManager.Antiforgery";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             });
 
             builder.Services.AddAuthorization();

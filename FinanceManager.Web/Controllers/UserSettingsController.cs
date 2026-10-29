@@ -356,7 +356,7 @@ public sealed class UserSettingsController : ControllerBase
         Response.Cookies.Append(AuthCookieName, newToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             IsEssential = true,
