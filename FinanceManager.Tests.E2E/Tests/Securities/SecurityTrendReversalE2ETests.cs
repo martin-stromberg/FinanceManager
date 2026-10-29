@@ -109,7 +109,8 @@ public sealed class SecurityTrendReversalE2ETests
         await ExpandSectionAsync(page, toggleAfter);
         await page.Locator("#notif-trend-reversal").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
-        (await page.Locator("#notif-trend-reversal").IsCheckedAsync()).Should().Be(!original);
+        await Microsoft.Playwright.Assertions.Expect(page.Locator("#notif-trend-reversal"))
+            .ToBeCheckedAsync(new LocatorAssertionsToBeCheckedOptions { Checked = !original, Timeout = 10000 });
     }
 
     /// <summary>Rising series then collapse: death cross, structural line break and bearish structure.</summary>
