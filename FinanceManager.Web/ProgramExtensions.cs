@@ -28,6 +28,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -254,7 +255,7 @@ namespace FinanceManager.Web
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.RequireHttpsMetadata = false;
+                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
                     options.SaveToken = false;
                     options.Events = new JwtBearerEvents
                     {
@@ -345,7 +346,7 @@ namespace FinanceManager.Web
                 options.Cookie.Path = "/"; // keep app-wide; could be app-specific path if you host under same domain/path
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // or Always in prod
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 
                 options.LoginPath = "/Login";
                 options.AccessDeniedPath = "/AccessDenied";
@@ -364,7 +365,7 @@ namespace FinanceManager.Web
                 options.Cookie.Name = "FinanceManager.Antiforgery";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             });
 
             builder.Services.AddAuthorization();
@@ -428,12 +429,22 @@ namespace FinanceManager.Web
         /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
         public static void ConfigureMiddleware(this WebApplication app)
         {
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
             app.UseMiddleware<RequestLoggingMiddleware>();
             app.UseMiddleware<IpBlockMiddleware>();
+
+            if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
+            {
+                app.UseHttpsRedirection();
+            }
 
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error", createScopeForErrors: true);
+                app.UseHsts();
             }
             else
             {
@@ -441,11 +452,6 @@ namespace FinanceManager.Web
                 // bodyless 500, which otherwise made unhandled exceptions during local development and
                 // integration tests (both run with Environment=Development) impossible to diagnose.
                 app.UseDeveloperExceptionPage();
-
-                if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
-                {
-                    app.UseHttpsRedirection();
-                }
             }
 
             if (app.Configuration.GetValue<bool>("E2E:AccountStatisticsFaultInjectionEnabled"))

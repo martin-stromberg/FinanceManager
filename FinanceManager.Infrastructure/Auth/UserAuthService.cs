@@ -107,7 +107,7 @@ public sealed class UserAuthService : IUserAuthService
 
         bool isFirst = !await _db.Users.AsNoTracking().AnyAsync(ct);
         var user = new User(command.Username, _passwordHasher.Hash(command.Password), isFirst);
-        user.LockoutEnabled = !isFirst;
+        user.LockoutEnabled = true;
         if (string.IsNullOrEmpty(user.SecurityStamp)) user.SecurityStamp = Guid.NewGuid().ToString("N");
         if (string.IsNullOrEmpty(user.ConcurrencyStamp)) user.ConcurrencyStamp = Guid.NewGuid().ToString("N");
 

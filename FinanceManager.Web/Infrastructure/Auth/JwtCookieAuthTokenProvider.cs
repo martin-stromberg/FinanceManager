@@ -223,7 +223,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
             ctx.Response.Cookies.Append(AuthCookieName, token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = ctx.Request.IsHttps,
+                Secure = true,
                 SameSite = SameSiteMode.Lax,
                 Expires = expiry,
                 Path = "/"
@@ -234,7 +234,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
         {
             ctx.Response.Cookies.Delete(AuthCookieName, new CookieOptions
             {
-                Secure = ctx.Request.IsHttps,
+                Secure = true,
                 SameSite = SameSiteMode.Lax,
                 Path = "/"
             });

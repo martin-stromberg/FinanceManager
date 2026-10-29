@@ -3,6 +3,8 @@ using FinanceManager.Application.Users;
 using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Web.Infrastructure.ApiErrors;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using System.Net.Mime;
@@ -17,11 +19,13 @@ namespace FinanceManager.Web.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces(MediaTypeNames.Application.Json)]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public sealed class UsersController : ControllerBase
 {
     private const string Origin = "API_Users";
 
     private readonly IUserReadService _userReadService;
+    private readonly ICurrentUserService _current;
     private readonly IDemoDataService _demoDataService;
     private readonly ILogger<UsersController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
@@ -30,13 +34,15 @@ public sealed class UsersController : ControllerBase
     /// Initializes a new instance of the <see cref="UsersController"/> class.
     /// </summary>
     /// <param name="userReadService">Service used to read user information.</param>
+    /// <param name="current">Service providing the current authenticated user context.</param>
     /// <param name="demoDataService">Service responsible for creating demo data for a user.</param>
     /// <param name="logger">Logger instance for this controller.</param>
     /// <param name="localizer">Localizer for error messages.</param>
-    public UsersController(IUserReadService userReadService, IDemoDataService demoDataService, ILogger<UsersController> logger, IStringLocalizer<Controller> localizer)
+    public UsersController(IUserReadService userReadService, IDemoDataService demoDataService, ICurrentUserService current, ILogger<UsersController> logger, IStringLocalizer<Controller> localizer)
     {
         _userReadService = userReadService;
         _demoDataService = demoDataService;
+        _current = current;
         _logger = logger;
         _localizer = localizer;
     }
@@ -59,6 +65,7 @@ public sealed class UsersController : ControllerBase
     /// <response code="429">The HTTP 429 response.</response>
     /// <response code="500">The HTTP 500 response.</response>
     [HttpGet("exists")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(AnyUsersResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -108,6 +115,11 @@ public sealed class UsersController : ControllerBase
         {
             var ex = new ArgumentException("userId required", nameof(userId));
             return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+
+        if (userId != _current.UserId && !_current.IsAdmin)
+        {
+            return Forbid();
         }
 
         try

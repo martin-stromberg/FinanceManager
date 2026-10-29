@@ -268,7 +268,7 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
                 new ListCell(ListCellKind.Text, Text: balanceText),
                 new ListCell(ListCellKind.Text, Text: remainingText),
                 new ListCell(ListCellKind.Text, Text: dateText),
-                new ListCell(ListCellKind.Text, Text: statusSvg)
+                new ListCell(ListCellKind.Text, Text: statusSvg, AllowHtml: true)
             };
 
             return new ListRecord(cells, i);

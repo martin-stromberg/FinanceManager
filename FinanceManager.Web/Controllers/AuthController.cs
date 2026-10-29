@@ -68,7 +68,7 @@ public sealed class AuthController : ControllerBase
         Response.Cookies.Append(AuthCookieName, result.Value!.Token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
+            Secure = true,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             IsEssential = true,
@@ -111,7 +111,7 @@ public sealed class AuthController : ControllerBase
         Response.Cookies.Append(AuthCookieName, result.Value!.Token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
+            Secure = true,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             IsEssential = true,
@@ -134,7 +134,7 @@ public sealed class AuthController : ControllerBase
             Response.Cookies.Delete(AuthCookieName, new CookieOptions
             {
                 Path = "/",
-                Secure = Request.IsHttps,
+                Secure = true,
                 HttpOnly = true,
                 SameSite = SameSiteMode.Lax
             });

@@ -102,7 +102,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     {
                         context.Response.Cookies.Delete(AuthCookieName, new CookieOptions
                         {
-                            Secure = context.Request.IsHttps,
+                            Secure = true,
                             SameSite = SameSiteMode.Lax,
                             Path = "/"
                         });
@@ -117,7 +117,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     context.Response.Cookies.Append(AuthCookieName, refresh.Token, new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = context.Request.IsHttps, // vorher: true
+                        Secure = true, // vorher: true
                         SameSite = SameSiteMode.Lax,
                         Expires = new DateTimeOffset(refresh.ExpiresUtc.Value),
                         Path = "/"
