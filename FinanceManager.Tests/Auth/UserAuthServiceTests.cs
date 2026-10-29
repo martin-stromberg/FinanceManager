@@ -177,6 +177,7 @@ public sealed class UserAuthServiceTests
         Assert.True(result.Value!.IsAdmin);
         Assert.Equal(1, db.Users.Count());
         Assert.True(db.Users.Single().IsAdmin);
+        Assert.True(db.Users.Single().LockoutEnabled);
     }
 
     /// <summary>
