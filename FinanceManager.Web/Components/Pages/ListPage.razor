@@ -255,8 +255,14 @@ else
                         if (_provider.RangeTo.HasValue) parts.Add($"to={_provider.RangeTo.Value:O}");
                         var qs = parts.Count > 0 ? ("?" + string.Join('&', parts)) : string.Empty;
                         var url = $"/api/postings/{apiSub}/{cid}/export{qs}";
-                        var js = $"(function(){{var a=document.createElement('a'); a.href={System.Text.Json.JsonSerializer.Serialize(url)}; a.download=''; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),200);}})()";
-                        try { await JS.InvokeVoidAsync("eval", js); } catch { Nav.NavigateTo(url, forceLoad: true); }
+                        // The download runs inside a named script function: JS eval is blocked by the
+                        // Content-Security-Policy (no 'unsafe-eval'), so dynamic scripts cannot be used here.
+                        try
+                        {
+                            var started = await JS.InvokeAsync<bool>("financeManager.downloadFromUrl", url);
+                            if (!started) { Nav.NavigateTo(url, forceLoad: true); }
+                        }
+                        catch { Nav.NavigateTo(url, forceLoad: true); }
                     }
                 }
                 break;

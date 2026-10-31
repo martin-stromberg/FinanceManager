@@ -66,8 +66,44 @@ public sealed class JwtRenewalTimingTests
         using var services = new ServiceCollection().AddSingleton(validation).AddSingleton(provider)
             .AddSingleton(refresh.Object).BuildServiceProvider();
         context.RequestServices = services;
+        context.Request.Method = HttpMethods.Get;
+        context.Request.Path = "/api/auth/keepalive";
         await new JwtRefreshMiddleware(_ => Task.CompletedTask, options).InvokeAsync(context);
 
         refresh.Verify(r => r.RefreshAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()), shouldRefresh ? Times.Once() : Times.Never());
+    }
+
+    /// <summary>Passive non-keepalive traffic never renews the token, even inside the renewal window.</summary>
+    [Fact]
+    public async Task Middleware_DoesNotRenewOnNonKeepaliveRequests()
+    {
+        var options = Options.Create(new JwtOptions
+        {
+            Key = "test-signing-key-with-sufficient-length-1234567890",
+            LifetimeMinutes = 3,
+            MinimumRenewalWindowMinutes = 1
+        });
+        var validation = new JwtTokenValidationParametersFactory(options);
+        var credentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(
+            validation.Create().IssuerSigningKey, Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            options.Value.Issuer, options.Value.Audience,
+            [new Claim(JwtRegisteredClaimNames.Sub, "timing-user")],
+            DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddSeconds(60), credentials));
+        var context = new DefaultHttpContext();
+        context.Request.Headers.Cookie = $"FinanceManager.Auth={token}";
+        context.Request.Method = HttpMethods.Get;
+        context.Request.Path = "/api/background-tasks/active";
+        context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "timing-user")], "test"));
+        var refresh = new Mock<IJwtRefreshService>();
+        var provider = new JwtCookieAuthTokenProvider(new HttpContextAccessor { HttpContext = context }, options, validation, refresh.Object,
+            new CircuitAuthTokenStore(new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions())));
+        using var services = new ServiceCollection().AddSingleton(validation).AddSingleton(provider)
+            .AddSingleton(refresh.Object).BuildServiceProvider();
+        context.RequestServices = services;
+
+        await new JwtRefreshMiddleware(_ => Task.CompletedTask, options).InvokeAsync(context);
+
+        refresh.Verify(r => r.RefreshAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()), Times.Never());
     }
 }

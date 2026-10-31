@@ -85,12 +85,24 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 // Determine renewal window dynamically based on configured lifetime
                 var renewalWindow = _options.Value.RenewalWindow;
 
+                var isKeepaliveRequest = HttpMethods.IsGet(context.Request.Method)
+                    && context.Request.Path == "/api/auth/keepalive";
+
                 if (exp - renewalWindow > now)
                 {
-                    if (HttpMethods.IsGet(context.Request.Method) && context.Request.Path == "/api/auth/keepalive")
+                    if (isKeepaliveRequest)
                     {
                         context.Response.Headers.CacheControl = "no-store";
                     }
+                    return;
+                }
+
+                // Renewal is deliberately limited to the explicit keepalive endpoint: any other
+                // authenticated request (for example the circuit's passive background-task
+                // polling) must not extend the session, otherwise an idle session would slide
+                // forever and never actually expire.
+                if (!isKeepaliveRequest)
+                {
                     return;
                 }
 

@@ -276,6 +276,32 @@ window.financeManager = window.financeManager || {};
     } catch { }
   };
 
+  fm.downloadFromUrl = function (url) {
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      window.setTimeout(function () {
+        document.body.removeChild(a);
+      }, 200);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  fm.localStorage = {
+    removeByPrefix: function (prefix) {
+      if (!prefix) return;
+      Object.keys(localStorage)
+        .filter(function (k) { return k.indexOf(prefix) === 0; })
+        .forEach(function (k) { localStorage.removeItem(k); });
+    }
+  };
+
   fm.quickEdit = {
     applyValues: function (values) {
       if (!Array.isArray(values)) return;

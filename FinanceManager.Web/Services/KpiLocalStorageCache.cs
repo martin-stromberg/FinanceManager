@@ -156,13 +156,9 @@ public sealed class KpiLocalStorageCache : IKpiLocalStorageCache
         try
         {
             var prefixToClear = _context.UserId is { } uid ? $"{KeyPrefix}{uid}." : KeyPrefix;
-            var script = $"Object.keys(localStorage).filter(k => k.startsWith('{prefixToClear.Replace("'", "\\'")}'))";
-            var keys = await _js.InvokeAsync<string[]>("eval", ct, script);
-
-            foreach (var k in keys)
-            {
-                await _js.InvokeVoidAsync("localStorage.removeItem", ct, k);
-            }
+            // The removal runs inside a named script function: JS eval is blocked by the
+            // Content-Security-Policy (no 'unsafe-eval'), so dynamic scripts cannot be used here.
+            await _js.InvokeVoidAsync("financeManager.localStorage.removeByPrefix", ct, prefixToClear);
         }
         catch
         {
