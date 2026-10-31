@@ -1,4 +1,6 @@
 using FinanceManager.Application;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
 using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
@@ -19,6 +21,7 @@ using FinanceManager.Web.Infrastructure;
 using FinanceManager.Web.Infrastructure.Attachments;
 using FinanceManager.Web.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Logging;
+using FinanceManager.Web.Infrastructure.MassImport;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Help;
 using FinanceManager.Web.Services.Updates;
@@ -28,6 +31,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +40,7 @@ using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Globalization;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 namespace FinanceManager.Web
 {
@@ -86,7 +91,8 @@ namespace FinanceManager.Web
             builder.Services.Configure<TrendReversalOptions>(builder.Configuration.GetSection(TrendReversalOptions.SectionName));
 
             builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
+                .AddInteractiveServerComponents()
+                .RegisterPersistentService<JwtCookieAuthTokenProvider>(Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer);
 
             builder.Services.AddControllers();
             builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("Default"));
@@ -104,6 +110,22 @@ namespace FinanceManager.Web
             builder.Services.Configure<AttachmentUploadOptions>(builder.Configuration.GetSection("Attachments"));
             builder.Services.AddSingleton<IAttachmentContentPolicy, AttachmentContentPolicy>();
             builder.Services.Configure<BackupSecurityOptions>(builder.Configuration.GetSection(BackupSecurityOptions.SectionName));
+            builder.Services.Configure<MassImportOptions>(builder.Configuration.GetSection(MassImportOptions.SectionName));
+            builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
+            builder.Services.AddSingleton<CircuitAuthTokenStore>();
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy(RateLimitPolicies.AuthSensitive, httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = builder.Configuration.GetValue("RateLimiting:AuthSensitive:PermitLimit", 20),
+                            Window = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimiting:AuthSensitive:WindowSeconds", 10)),
+                            QueueLimit = 0
+                        }));
+            });
             builder.Services.Configure<UpdateOptions>(builder.Configuration.GetSection(UpdateOptions.SectionName));
             var dataProtectionBuilder = builder.Services.AddDataProtection();
             var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
@@ -169,7 +191,8 @@ namespace FinanceManager.Web
 
             // HttpClient
             builder.Services.AddTransient<AuthenticatedHttpClientHandler>();
-            builder.Services.AddScoped<IAuthTokenProvider, JwtCookieAuthTokenProvider>();
+            builder.Services.AddScoped<JwtCookieAuthTokenProvider>();
+            builder.Services.AddScoped<IAuthTokenProvider>(sp => sp.GetRequiredService<JwtCookieAuthTokenProvider>());
             builder.Services.AddScoped<ISecurityTxtSettingsService, SecurityTxtSettingsService>();
             builder.Services.AddScoped<IWellKnownSettingsService, WellKnownSettingsService>();
             builder.Services.AddHttpClient("Api", (sp, client) =>
@@ -193,10 +216,15 @@ namespace FinanceManager.Web
                     // subsequent requests of other users/circuits, where it could shadow the
                     // intended bearer token.
                     UseCookies = false
-                })
-                .AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
-            builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
-            builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api")));
+                });
+            builder.Services.AddScoped(sp =>
+            {
+                using var configured = sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api");
+                var handler = sp.GetRequiredService<AuthenticatedHttpClientHandler>();
+                handler.InnerHandler = sp.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler("Api");
+                return new HttpClient(handler) { BaseAddress = configured.BaseAddress };
+            });
+            builder.Services.AddScoped<IApiClient>(sp => new ApiClient(sp.GetRequiredService<HttpClient>()));
             builder.Services.AddScoped<IConfirmationService, ConfirmationService>();
             builder.Services.AddScoped<IKpiLocalStorageCache, KpiLocalStorageCache>();
 
@@ -247,7 +275,7 @@ namespace FinanceManager.Web
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.RequireHttpsMetadata = false;
+                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
                     options.SaveToken = false;
                     options.Events = new JwtBearerEvents
                     {
@@ -338,7 +366,7 @@ namespace FinanceManager.Web
                 options.Cookie.Path = "/"; // keep app-wide; could be app-specific path if you host under same domain/path
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // or Always in prod
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 
                 options.LoginPath = "/Login";
                 options.AccessDeniedPath = "/AccessDenied";
@@ -421,12 +449,62 @@ namespace FinanceManager.Web
         /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
         public static void ConfigureMiddleware(this WebApplication app)
         {
+            // Forwarded headers are only honored from explicitly trusted proxies and only for the
+            // right-most hop (ForwardLimit = 1). Without a trust boundary, a client that can reach
+            // the server directly could spoof X-Forwarded-For per request and bypass the per-IP
+            // rate-limit partitions (#456) as well as IpBlockMiddleware.
+            // Deployments behind a reverse proxy must list its IPs in "ReverseProxy:KnownProxies"
+            // and/or its subnets in "ReverseProxy:KnownNetworks" (semicolon-separated values,
+            // e.g. "10.0.0.5;10.0.0.6" resp. "10.0.0.0/24;fd00::/8"). With neither configured, no
+            // forwarded headers are honored at all - the secure default for a directly reachable host.
+            var forwardedHeadersOptions = new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+                ForwardLimit = 1
+            };
+            forwardedHeadersOptions.KnownProxies.Clear();
+            forwardedHeadersOptions.KnownIPNetworks.Clear();
+            foreach (var proxy in (app.Configuration["ReverseProxy:KnownProxies"] ?? string.Empty)
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (System.Net.IPAddress.TryParse(proxy, out var proxyAddress))
+                {
+                    forwardedHeadersOptions.KnownProxies.Add(proxyAddress);
+                }
+                else
+                {
+                    app.Logger.LogWarning("Ignoring unparsable ReverseProxy:KnownProxies entry '{Entry}'", proxy);
+                }
+            }
+            foreach (var network in (app.Configuration["ReverseProxy:KnownNetworks"] ?? string.Empty)
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var parts = network.Split('/', StringSplitOptions.TrimEntries);
+                if (parts.Length == 2
+                    && System.Net.IPAddress.TryParse(parts[0], out var networkPrefix)
+                    && int.TryParse(parts[1], out var prefixLength))
+                {
+                    forwardedHeadersOptions.KnownIPNetworks.Add(new System.Net.IPNetwork(networkPrefix, prefixLength));
+                }
+                else
+                {
+                    app.Logger.LogWarning("Ignoring unparsable ReverseProxy:KnownNetworks entry '{Entry}'", network);
+                }
+            }
+            app.UseForwardedHeaders(forwardedHeadersOptions);
             app.UseMiddleware<RequestLoggingMiddleware>();
             app.UseMiddleware<IpBlockMiddleware>();
+            app.UseRateLimiter();
+
+            if (!(app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection")))
+            {
+                app.UseHttpsRedirection();
+            }
 
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error", createScopeForErrors: true);
+                app.UseHsts();
             }
             else
             {
@@ -434,14 +512,9 @@ namespace FinanceManager.Web
                 // bodyless 500, which otherwise made unhandled exceptions during local development and
                 // integration tests (both run with Environment=Development) impossible to diagnose.
                 app.UseDeveloperExceptionPage();
-
-                if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
-                {
-                    app.UseHttpsRedirection();
-                }
             }
 
-            if (app.Configuration.GetValue<bool>("E2E:AccountStatisticsFaultInjectionEnabled"))
+            if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("E2E:AccountStatisticsFaultInjectionEnabled"))
             {
                 var accountStatisticsFaultFile = app.Configuration["E2E:AccountStatisticsFaultFile"];
                 app.Use(async (context, next) =>
@@ -461,10 +534,21 @@ namespace FinanceManager.Web
 
             app.Use(async (context, next) =>
             {
-                if (HelpSecurityPolicy.IsHelpPath(context.Request.Path))
+                // Blazor Server appends its own "frame-ancestors 'self'" Content-Security-Policy
+                // value while rendering interactive prerendered pages. Applying the headers in
+                // OnStarting - after the endpoint has written its headers - replaces that value
+                // instead of producing a duplicate CSP header, so a single policy wins.
+                var isHelpPath = HelpSecurityPolicy.IsHelpPath(context.Request.Path);
+                context.Response.OnStarting(() =>
                 {
-                    context.Response.Headers.ContentSecurityPolicy = HelpSecurityPolicy.ContentSecurityPolicy;
-                }
+                    SecurityHeadersPolicy.Apply(context.Response);
+                    if (isHelpPath)
+                    {
+                        context.Response.Headers.ContentSecurityPolicy = HelpSecurityPolicy.ContentSecurityPolicy;
+                    }
+
+                    return Task.CompletedTask;
+                });
 
                 await next();
             });
@@ -508,10 +592,11 @@ namespace FinanceManager.Web
                     }
                 }
             });
-            app.UseAntiforgery();
 
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseAntiforgery();
+            app.UseMiddleware<CookieCsrfProtectionMiddleware>();
 
             // Localization must run AFTER authentication so that HttpContext.User is populated
             // when UserPreferenceRequestCultureProvider reads the pref_lang JWT claim.
@@ -524,6 +609,17 @@ namespace FinanceManager.Web
 
             // Blazor routing comes last (catches everything else)
             app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+            // Issues a fresh antiforgery request token bound to the currently authenticated
+            // user. The prerendered fm-xsrf-token meta tag is only valid for the principal
+            // that was present at prerender time; after an in-circuit login the page is not
+            // rerendered and the stale token would fail validation. Clients fetch this
+            // endpoint right before unsafe requests instead of trusting the meta tag.
+            app.MapGet("/api/antiforgery", (HttpContext context, IAntiforgery antiforgery) =>
+            {
+                var tokens = antiforgery.GetAndStoreTokens(context);
+                return Results.Ok(new { tokens.RequestToken });
+            }).RequireAuthorization();
+
             app.MapControllers();
         }
 

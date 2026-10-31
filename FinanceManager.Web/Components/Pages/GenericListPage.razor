@@ -73,7 +73,7 @@ else
                                         case ListCellKind.Text:
                                             {
                                                 var txt = cell.Text ?? string.Empty;
-                                                if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                                if (cell.AllowHtml)
                                                 {
                                                     @((MarkupString)txt)
                                                 }
@@ -154,7 +154,7 @@ else
                                                     case ListCellKind.Text:
                                                         {
                                                             var txt = cell.Text ?? string.Empty;
-                                                            if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                                            if (cell.AllowHtml)
                                                             {
                                                                 @((MarkupString)txt)
                                                             }
@@ -201,7 +201,7 @@ else
                                                 case ListCellKind.Text:
                                                     {
                                                         var txt = cell.Text ?? string.Empty;
-                                                        if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                                        if (cell.AllowHtml)
                                                         {
                                                             @((MarkupString)txt)
                                                         }
@@ -250,7 +250,7 @@ else
                                         case ListCellKind.Text:
                                             {
                                                 var txt = cell.Text ?? string.Empty;
-                                                if (txt.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+                                                if (cell.AllowHtml)
                                                 {
                                                     @((MarkupString)txt)
                                                 }

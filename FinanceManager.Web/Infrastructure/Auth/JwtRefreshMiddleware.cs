@@ -8,15 +8,13 @@ namespace FinanceManager.Web.Infrastructure.Auth
     /// <summary>
     /// Middleware that automatically renews short-lived JWTs for authenticated requests when they approach expiry.
     /// When a token is eligible for renewal the middleware generates a fresh token via <see cref="IJwtRefreshService"/>,
-    /// appends it as a secure cookie and also sets response headers with the refreshed token and expiry.
+    /// appends it as a secure cookie and publishes it server-side for active circuits.
     /// </summary>
     public sealed class JwtRefreshMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly IOptions<JwtOptions> _options;
 
-        private const string RefreshHeaderName = "X-Auth-Token";
-        private const string RefreshExpiresHeaderName = "X-Auth-Token-Expires";
         private const string AuthCookieName = "FinanceManager.Auth";
 
         /// <summary>
@@ -34,7 +32,9 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// <summary>
         /// Invokes the middleware to inspect the incoming JWT and refresh it when appropriate.
         /// If the current user is not authenticated or no token is present the middleware simply continues the pipeline.
-        /// When a refreshed token is issued it is set as a secure HTTP cookie and also exposed via response headers.
+        /// When a refreshed token is issued it is set as a secure HTTP-only cookie and published to the
+        /// server-side token registry for active circuits; it is deliberately never exposed via response
+        /// headers so the token cannot leak into caches or client-side scripts.
         /// </summary>
         /// <param name="context">The current <see cref="HttpContext"/> for the request.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
@@ -59,9 +59,14 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
                 var handler = new JwtSecurityTokenHandler();
                 JwtSecurityToken? jwt;
+                ClaimsPrincipal principal;
                 try
                 {
-                    jwt = handler.ReadJwtToken(token);
+                    var parameters = context.RequestServices.GetRequiredService<JwtTokenValidationParametersFactory>().Create();
+                    principal = handler.ValidateToken(token, parameters, out var validatedToken);
+                    jwt = (JwtSecurityToken)validatedToken;
+                    context.RequestServices.GetRequiredService<JwtCookieAuthTokenProvider>()
+                        .PrimeCache(token, new DateTimeOffset(jwt.ValidTo, TimeSpan.Zero));
                 }
                 catch
                 {
@@ -78,16 +83,31 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 var now = DateTimeOffset.UtcNow;
 
                 // Determine renewal window dynamically based on configured lifetime
-                var lifetimeMinutes = _options.Value.LifetimeMinutes;
-                var renewalWindow = TimeSpan.FromMinutes(Math.Max(5, lifetimeMinutes / 2)); // renew when half of lifetime has passed
+                var renewalWindow = _options.Value.RenewalWindow;
+
+                var isKeepaliveRequest = HttpMethods.IsGet(context.Request.Method)
+                    && context.Request.Path == "/api/auth/keepalive";
 
                 if (exp - renewalWindow > now)
+                {
+                    if (isKeepaliveRequest)
+                    {
+                        context.Response.Headers.CacheControl = "no-store";
+                    }
+                    return;
+                }
+
+                // Renewal is deliberately limited to the explicit keepalive endpoint: any other
+                // authenticated request (for example the circuit's passive background-task
+                // polling) must not extend the session, otherwise an idle session would slide
+                // forever and never actually expire.
+                if (!isKeepaliveRequest)
                 {
                     return;
                 }
 
                 var refreshService = context.RequestServices.GetRequiredService<IJwtRefreshService>();
-                var refresh = await refreshService.RefreshAsync(context.User, context.RequestAborted);
+                var refresh = await refreshService.RefreshAsync(principal, context.RequestAborted);
                 if (!refresh.Succeeded || refresh.Token is null || refresh.ExpiresUtc is null)
                 {
                     if (!context.Response.HasStarted)
@@ -104,6 +124,8 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
                 if (!context.Response.HasStarted)
                 {
+                    context.RequestServices.GetRequiredService<JwtCookieAuthTokenProvider>()
+                        .PrimeCache(refresh.Token, new DateTimeOffset(refresh.ExpiresUtc.Value));
                     context.Response.Cookies.Append(AuthCookieName, refresh.Token, new CookieOptions
                     {
                         HttpOnly = true,
@@ -114,8 +136,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     });
                 }
 
-                context.Response.Headers[RefreshHeaderName] = refresh.Token;
-                context.Response.Headers[RefreshExpiresHeaderName] = refresh.ExpiresUtc.Value.ToString("o");
+                context.Response.Headers.CacheControl = "no-store";
             }
             finally
             {

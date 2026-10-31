@@ -22,8 +22,7 @@ namespace FinanceManager.Web.Services
 {
     /// <summary>
     /// Minimal fallback implementation of <see cref="IBudgetReportExportService"/> used
-    /// when no dedicated exporter is registered. Returns a small CSV stream.
-    /// Production should replace this with a proper XLSX generator.
+    /// when no dedicated exporter is registered. Generates the budget report as an XLSX stream.
     /// </summary>
     internal sealed class BudgetReportExportService : IBudgetReportExportService
     {

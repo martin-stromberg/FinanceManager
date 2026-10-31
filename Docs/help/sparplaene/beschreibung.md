@@ -23,4 +23,5 @@ Die Detailansicht eines bestehenden Sparplans zeigt neben den Stammdaten den akt
 
 - Intervallbasierte Fortschreibung gilt nur für wiederkehrende Pläne.
 - Archivierte Pläne sind nicht mehr aktiv.
+- Symbol-Uploads sind auf die Anhang-Größenbegrenzung (`Attachments:MaxSizeBytes`, Standard 10 MB) beschränkt.
 - Der benötigte Monatsbetrag wird nicht für wiederkehrende Sparpläne, erledigte Einmalziele oder Ziele mit heutigem beziehungsweise vergangenem Zieldatum angezeigt.

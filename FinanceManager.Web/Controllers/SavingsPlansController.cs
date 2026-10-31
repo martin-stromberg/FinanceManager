@@ -5,6 +5,7 @@ using FinanceManager.Application.Savings;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Web.Infrastructure.ApiErrors;
+using FinanceManager.Web.Infrastructure.Attachments;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -321,7 +322,7 @@ public sealed class SavingsPlansController : ControllerBase
     /// <response code="400">The HTTP 400 response.</response>
     /// <response code="500">The HTTP 500 response.</response>
     [HttpPost("{id:guid}/symbol")]
-    [RequestSizeLimit(long.MaxValue)]
+    [AttachmentUploadSizeLimit]
     [ProducesResponseType(typeof(AttachmentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

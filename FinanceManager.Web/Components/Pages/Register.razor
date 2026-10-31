@@ -12,6 +12,7 @@
 @inject IJSRuntime JS
 @inject FinanceManager.Shared.IApiClient Api // use typed ApiClient
 @inject ILogger<Register> Logger
+@inject Microsoft.Extensions.Options.IOptions<FinanceManager.Infrastructure.Auth.AuthOptions> AuthOptions
 
 <PageTitle>@L["PageTitle"]</PageTitle>
 
@@ -52,7 +53,7 @@
         </div>
     }
     <div style="margin-top:1.25rem;display:flex;gap:.5rem;align-items:center;">
-        <button type="submit" disabled="@_busy">
+        <button type="submit" disabled="@(_busy || !RendererInfo.IsInteractive)">
             @(_busy ? L["Button_Wait"] : L["Button_Register"]) 
         </button>
     </div>
@@ -82,6 +83,11 @@
             _isFirstUser = false;
             _error = L["Error_FirstUserCheckFailed"];
             Logger.LogError(ex, "Failed to determine first-user state on register page.");
+        }
+
+        if (!_isFirstUser && !AuthOptions.Value.AllowSelfRegistration)
+        {
+            Nav.NavigateTo("/login");
         }
     }
 

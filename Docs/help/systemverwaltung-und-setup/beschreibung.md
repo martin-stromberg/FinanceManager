@@ -15,7 +15,18 @@ Administratoren können Benutzer verwalten, Backups erstellen oder wiederherstel
 Updates prüfen und Sicherheitsinformationen für die öffentliche Kontaktaufnahme
 pflegen.
 
-Backups werden als Archivdateien verwaltet. Eine Wiederherstellung ersetzt
+Die Registrierung über die öffentliche Registrierungsseite ist auf den ersten
+Benutzer beschränkt. Solange noch kein Konto existiert, leitet die Anwendung auf
+die Registrierungsseite um; der erste Benutzer wird automatisch Administrator.
+Sobald ein Konto vorhanden ist, führt `/register` auf die Anmeldeseite — weitere
+Benutzer legt ein Administrator in der Benutzerverwaltung an. Betreiber können die
+offene Selbstregistrierung über die Konfiguration `Auth:AllowSelfRegistration`
+wieder aktivieren. Registrierung und die anonyme Abfrage `GET /api/users/exists`
+sind pro Quelladresse ratenlimitiert.
+
+Backups werden als Archivdateien verwaltet und pro Benutzer in einem eigenen
+Ablagebereich auf dem Server gespeichert; Dateien anderer Benutzer sind weder
+sichtbar noch erreichbar. Eine Wiederherstellung ersetzt
 vorhandene Daten und ist deshalb eine besonders riskante Aktion. Vor dem Start
 muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog
 eingeben. Bei falscher oder fehlender Bestätigung wird keine Wiederherstellung
@@ -33,11 +44,11 @@ Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie b
 
 Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel angezeigt. Dieses Panel fragt laufende und wartende Tasks nur ab, wenn ein authentifizierter Benutzerkontext vorhanden ist. Nicht angemeldete Benutzer starten keine wiederkehrende Statusabfrage gegen `/api/background-tasks/active`. Falls ein bereits gestartetes Panel vom API-Client dennoch `401 Unauthorized` erhält, beendet es seine Polling-Schleife für die aktuelle Komponenteninstanz und blendet die Task-Anzeige aus.
 
-## Aktive Sitzungsverlängerung und Token-Refresh
+## Sitzung bei aktiver Nutzung
 
-Die Anwendung hält aktive Sitzungen für authentifizierte Browser automatisch aufrecht. Wenn ein Anmeldetoken kurz vor dem Ablauf steht, startet der Client einen Keepalive-Request auf `/api/auth/keepalive`, und das Backend erneuert das Token als neues `FinanceManager.Auth`-Cookie, ohne dass der Benutzer manuell erneut anmelden muss.
+Bei aktiver Arbeit auf geschützten Seiten bleibt die Anmeldung im Hintergrund erhalten. Das gilt auch, wenn Sie in einem Quick-Edit-Feld weiterarbeiten, ohne den Fokus zu verlieren.
 
-Diese Validierung erfolgt serverseitig im zentralen Erneuerungsablauf: Nur aktive Benutzer mit gültigem `security_stamp`, unveränderter Admin-Rolle und aktuellem Benutzerstatus werden berücksichtigt. Ein veralteter oder fachlich invalidierter Token führt nicht zu einem absichtlichen Redirect auf aktiven Seiten, sondern wird sauber verworfen und erst bei einem echten Auth-Verlust als Login-Redirect behandelt.
+Während echter Inaktivität werden keine automatischen Keepalive-Anfragen oder passiven Abfragen zur Sitzungserneuerung ausgeführt. Wird danach eine geschützte Aktion aufgerufen, für die keine gültige Anmeldung mehr besteht, führt die Anwendung zur Anmeldung.
 
 ## Beispiele
 
@@ -50,11 +61,13 @@ Diese Validierung erfolgt serverseitig im zentralen Erneuerungsablauf: Nur aktiv
 - Ein Administrator gibt seinen AlphaVantage API Key frei; andere Benutzer
   koennen Kursabrufe darueber ausfuehren, sehen den Key aber nicht im Klartext.
 - Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
+- Ein Benutzer lädt ein Backup hoch, dessen Dateiname ein anderer Benutzer ebenfalls verwendet hat; beide Sicherungen bleiben unabhängig voneinander erhalten.
 - Ein Administrator prueft auf ein Self-Update, kontrolliert Paketmetadaten und
   startet die Installation nach Downtime-Bestaetigung.
 - Ein angemeldeter Benutzer startet einen Hintergrundtask und sieht Fortschritt, Warteschlange sowie Abbrechen- oder Entfernen-Aktionen im Statuspanel.
-- Ein Benutzer arbeitet weiter auf geschützten Seiten; Tastatur-, Mausklick- und Quick-Edit-Interaktionen lösen automatische Keepalive-Requests aus und verlängern die Session ohne sichtbaren Login.
-- Ein Benutzer wird deaktiviert oder erhält einen neuen `security_stamp`; der nächste Refresh wird abgelehnt und die Sitzung endet fachlich sauber.
+- Ein Benutzer arbeitet auf einer geschützten Seite oder tippt weiter in einem Quick-Edit-Feld; die Anmeldung bleibt erhalten, auch wenn das Feld den Fokus nicht verliert.
+- Ein Benutzer lässt die Anwendung längere Zeit ungenutzt und ruft danach eine geschützte Seite oder Aktion auf; falls die Anmeldung inzwischen abgelaufen ist, wird die Anmeldeseite angezeigt.
+- Ein Benutzer wird deaktiviert oder eine administrative Berechtigung wird geändert; die Anmeldung wird danach nicht weitergeführt.
 - Ein Benutzer ändert sein eigenes Passwort über die Seite **Passwort ändern**; die aktuelle Sitzung bleibt angemeldet, andere Sitzungen werden beendet.
 
 Die Update-Sektion zeigt Quelle, Status, Release Notes und die Metadaten der
@@ -158,6 +171,9 @@ Ist keine gültige Ziel-Adresse konfiguriert, leitet die öffentliche Adresse au
 ## Einschränkungen
 
 - Administrative Bereiche erfordern entsprechende Berechtigungen.
+- Die Selbstregistrierung steht nur dem ersten Benutzer offen; Folgekonten werden administrativ angelegt, sofern `Auth:AllowSelfRegistration` nicht aktiviert ist.
+- Registrierung und die anonyme Existenz-Abfrage sind pro Quelladresse ratenlimitiert; bei Überschreitung antwortet die API mit `429`.
+- Backup-Dateien liegen benutzerbezogen unter `backups/{userId}`; beim ersten Start nach dem Update werden vorhandene Dateien automatisch in die Benutzerverzeichnisse verschoben.
 - Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen; die automatische Statusabfrage erfolgt nur für authentifizierte Benutzer.
 - Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.
 - Die Lesbarkeit verschluesselt gespeicherter AlphaVantage API Keys haengt vom

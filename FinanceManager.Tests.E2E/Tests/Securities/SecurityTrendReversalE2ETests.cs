@@ -92,6 +92,14 @@ public sealed class SecurityTrendReversalE2ETests
         var saveButton = page.Locator("#Save");
         await Microsoft.Playwright.Assertions.Expect(saveButton).ToBeEnabledAsync(new LocatorAssertionsToBeEnabledOptions { Timeout = 5000 });
         await saveButton.ClickAsync();
+        await page.WaitForFunctionAsync("""
+            async expected => {
+                const response = await fetch('/api/user/settings/notifications', { credentials: 'include' });
+                if (!response.ok) throw new Error(`Reading persisted notifications failed: ${response.status}`);
+                const settings = await response.json();
+                return settings.trendReversalNotificationsEnabled === expected;
+            }
+            """, !original);
         await Microsoft.Playwright.Assertions.Expect(saveButton).ToBeDisabledAsync(new LocatorAssertionsToBeDisabledOptions { Timeout = 5000 });
 
         await page.ReloadAsync();
@@ -101,7 +109,35 @@ public sealed class SecurityTrendReversalE2ETests
         await ExpandSectionAsync(page, toggleAfter);
         await page.Locator("#notif-trend-reversal").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
-        (await page.Locator("#notif-trend-reversal").IsCheckedAsync()).Should().Be(!original);
+        try
+        {
+            await Microsoft.Playwright.Assertions.Expect(page.Locator("#notif-trend-reversal"))
+                .ToBeCheckedAsync(new LocatorAssertionsToBeCheckedOptions { Checked = !original, Timeout = 10000 });
+        }
+        catch
+        {
+            DumpServerLog();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Writes non-GET HTTP requests and AspNetUsers UPDATE statements from the captured server log
+    /// to the test output. Activate via the <c>E2E_DUMP_SERVER_LOG</c> environment variable.
+    /// </summary>
+    private void DumpServerLog()
+    {
+        Console.WriteLine("[E2E-DUMP] server log follows:");
+        foreach (var l in _fixture.GetServerLogs().Split('\n'))
+        {
+            var keep = l.Contains("[E2E-TRACE", StringComparison.Ordinal)
+                || l.Contains("UPDATE \"AspNetUsers\"", StringComparison.Ordinal)
+                || l.Contains("circuit", StringComparison.OrdinalIgnoreCase)
+                || l.Contains("Unhandled", StringComparison.OrdinalIgnoreCase)
+                || l.Contains("Exception", StringComparison.Ordinal)
+                || (l.Contains("HTTP request", StringComparison.Ordinal) && !l.Contains("GET ", StringComparison.Ordinal));
+            if (keep) Console.WriteLine("[E2E-DUMP] " + l.Trim());
+        }
     }
 
     /// <summary>Rising series then collapse: death cross, structural line break and bearish structure.</summary>
