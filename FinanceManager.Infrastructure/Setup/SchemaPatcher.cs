@@ -16,13 +16,10 @@ public static class SchemaPatcher
     /// <summary>
     /// Apply runtime fixes after migrations have been applied. This is executed from ProgramExtensions after
     /// calling <c>db.Database.Migrate()</c>. It may enqueue background tasks to rebuild aggregates if needed.
-        /// </summary>
-    /// <param name="serviceProvider">The serviceProvider argument.</param>
-    /// <param name="db">The db argument.</param>
-    /// <param name="logger">The logger argument.</param>
- /// <param name="serviceProvider">Service provider.</param>
-    /// <param name="db">The db.</param>
-    /// <param name="logger">Logger instance.</param>
+    /// </summary>
+    /// <param name="serviceProvider">The service provider used to resolve required services.</param>
+    /// <param name="db">The application database context.</param>
+    /// <param name="logger">The logger for patch diagnostics.</param>
     public static void RunPostMigrationPatches(IServiceProvider serviceProvider, AppDbContext db, ILogger logger)
     {
         // Run synchronously but perform async DB operations internally
