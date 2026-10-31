@@ -53,7 +53,7 @@ public sealed class RegistrationGatePlaywrightTests
                 const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': 'e2e' },
                     body: JSON.stringify({ username: 'blocked-user', password: 'Secret123' })
                 });
                 return { status: response.status, body: await response.text() };
