@@ -463,7 +463,7 @@ namespace FinanceManager.Web
                 ForwardLimit = 1
             };
             forwardedHeadersOptions.KnownProxies.Clear();
-            forwardedHeadersOptions.KnownNetworks.Clear();
+            forwardedHeadersOptions.KnownIPNetworks.Clear();
             foreach (var proxy in (app.Configuration["ReverseProxy:KnownProxies"] ?? string.Empty)
                 .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
@@ -484,7 +484,7 @@ namespace FinanceManager.Web
                     && System.Net.IPAddress.TryParse(parts[0], out var networkPrefix)
                     && int.TryParse(parts[1], out var prefixLength))
                 {
-                    forwardedHeadersOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(networkPrefix, prefixLength));
+                    forwardedHeadersOptions.KnownIPNetworks.Add(new System.Net.IPNetwork(networkPrefix, prefixLength));
                 }
                 else
                 {
