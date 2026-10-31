@@ -16,16 +16,14 @@ public static class SecurityHeadersPolicy
     /// <summary>
     /// Restrictive Permissions-Policy disabling browser features the application does not use.
     /// </summary>
-    /// <param name="camera">Camera feature directive.</param>
-    /// <param name="geolocation">Geolocation feature directive.</param>
-    /// <param name="gyroscope">Gyroscope feature directive.</param>
-    /// <param name="magnetometer">Magnetometer feature directive.</param>
-    /// <param name="microphone">Microphone feature directive.</param>
-    /// <param name="payment">Payment feature directive.</param>
-    /// <param name="usb">USB feature directive.</param>
     /// <returns>The Permissions-Policy header value.</returns>
     public static string GetPermissionsPolicy() =>
-        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
+        string.Join(", ", DisabledFeatures.Select(name => name + "=()"));
+
+    private static readonly string[] DisabledFeatures =
+    {
+        "accelerometer", "camera", "geolocation", "gyroscope", "magnetometer", "microphone", "payment", "usb"
+    };
 
     /// <summary>
     /// Applies the global security headers to the response.
