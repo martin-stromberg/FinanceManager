@@ -41,10 +41,13 @@ public static class BrowserApiHelper
         var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
         var json = await page.EvaluateAsync<string>("""
             async ({ path, payloadJson }) => {
+                const xsrf = document.querySelector('meta[name="fm-xsrf-token"]')?.getAttribute('content');
+                const headers = { 'Content-Type': 'application/json' };
+                if (xsrf) { headers['RequestVerificationToken'] = xsrf; }
                 const response = await fetch(path, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: payloadJson
                 });
 
@@ -173,7 +176,9 @@ public static class BrowserApiHelper
     {
         var status = await page.EvaluateAsync<int>("""
             async (path) => {
-                const response = await fetch(path, { method: 'POST', credentials: 'include' });
+                const xsrf = document.querySelector('meta[name="fm-xsrf-token"]')?.getAttribute('content');
+                const headers = xsrf ? { 'RequestVerificationToken': xsrf } : {};
+                const response = await fetch(path, { method: 'POST', credentials: 'include', headers });
                 return response.status;
             }
             """, path);
@@ -221,9 +226,12 @@ public static class BrowserApiHelper
                     }
                 }
 
+                const xsrf = document.querySelector('meta[name="fm-xsrf-token"]')?.getAttribute('content');
+                const headers = xsrf ? { 'RequestVerificationToken': xsrf } : {};
                 const response = await fetch(path, {
                     method: 'POST',
                     credentials: 'include',
+                    headers,
                     body: form
                 });
 
