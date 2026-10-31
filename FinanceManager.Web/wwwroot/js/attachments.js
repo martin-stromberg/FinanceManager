@@ -28,7 +28,14 @@ export function registerDropArea(elementId, uploadUrl, dotnet){
         form.append('file', f, f.name);
         const categoryId = el.getAttribute('data-category');
         if (categoryId) { form.append('categoryId', categoryId); }
-        const xsrfToken = document.querySelector('meta[name="fm-xsrf-token"]')?.getAttribute('content');
+        let xsrfToken = document.querySelector('meta[name="fm-xsrf-token"]')?.getAttribute('content');
+        try {
+            const tokenResponse = await fetch('/api/antiforgery', { credentials: 'include' });
+            if (tokenResponse.ok) {
+                const data = await tokenResponse.json();
+                xsrfToken = data.requestToken || xsrfToken;
+            }
+        } catch { /* fall back to meta tag token */ }
         const headers = {};
         if (xsrfToken) { headers['RequestVerificationToken'] = xsrfToken; }
         const resp = await fetch(ctx.uploadUrl, { method:'POST', body: form, headers });

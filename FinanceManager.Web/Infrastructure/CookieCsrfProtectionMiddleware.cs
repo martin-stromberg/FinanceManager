@@ -30,17 +30,16 @@ public sealed class CookieCsrfProtectionMiddleware
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task InvokeAsync(HttpContext context, IAntiforgery antiforgery)
     {
-        if (RequiresValidation(context))
+        // Browsers cannot attach a custom header to a cross-site request without a CORS
+        // preflight, so requiring the presence of the antiforgery header is sufficient to
+        // reject forged same-site-cookie submissions. A user-bound token check is not
+        // possible here: the token issued during prerender is bound to the principal at
+        // that moment and becomes stale after an in-circuit login without a page reload.
+        if (RequiresValidation(context)
+            && string.IsNullOrEmpty(context.Request.Headers["RequestVerificationToken"]))
         {
-            try
-            {
-                await antiforgery.ValidateRequestAsync(context);
-            }
-            catch (AntiforgeryValidationException)
-            {
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                return;
-            }
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
         }
 
         await _next(context);

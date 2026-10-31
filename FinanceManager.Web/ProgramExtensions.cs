@@ -1,4 +1,6 @@
 using FinanceManager.Application;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
 using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
@@ -607,6 +609,17 @@ namespace FinanceManager.Web
 
             // Blazor routing comes last (catches everything else)
             app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+            // Issues a fresh antiforgery request token bound to the currently authenticated
+            // user. The prerendered fm-xsrf-token meta tag is only valid for the principal
+            // that was present at prerender time; after an in-circuit login the page is not
+            // rerendered and the stale token would fail validation. Clients fetch this
+            // endpoint right before unsafe requests instead of trusting the meta tag.
+            app.MapGet("/api/antiforgery", (HttpContext context, IAntiforgery antiforgery) =>
+            {
+                var tokens = antiforgery.GetAndStoreTokens(context);
+                return Results.Ok(new { tokens.RequestToken });
+            }).RequireAuthorization();
+
             app.MapControllers();
         }
 
