@@ -38,6 +38,110 @@ Identity-`SecurityStamp` des Benutzers gebunden.
 
 **Umsetzung:** `financeManager.js` löst Keepalives durch Interaktionen aus; `JwtRefreshMiddleware` prüft das Erneuerungsfenster und delegiert die Erneuerung an `JwtRefreshService`.
 
+## Selbstregistrierung ist auf den ersten Benutzer begrenzt
+
+**Beschreibung:** Der öffentliche Registrierungspfad dient der Ersteinrichtung; danach werden Konten administrativ angelegt.
+
+**Bedingungen:**
+- `UserAuthService.RegisterAsync` ermittelt `isFirst` unter einer prozessweiten Sperre.
+- `Auth:AllowSelfRegistration` steuert, ob die Registrierung für Folgekonten offen ist.
+
+**Verhalten:**
+- `isFirst = true`: Registrierung wird angenommen, der Benutzer wird Administrator.
+- `isFirst = false` und `AllowSelfRegistration = false`: Ablehnung mit `Err_RegistrationDisabled` → HTTP `403`; die Seite `/register` leitet auf `/login` um.
+- `isFirst = false` und `AllowSelfRegistration = true`: Registrierung wird angenommen.
+- Doppelte Benutzernamen werden weiterhin mit `409` (`Err_Conflict_UserAlreadyExists`) beantwortet; alle übrigen Fehler liefern ein generisches `400` (`Err_InvalidRegistration`).
+
+**Umsetzung:** `UserAuthService.RegisterAsync`, `AuthOptions`, `AuthController.RegisterAsync`, `AuthErrorCodes`, `Register.razor`.
+
+## Erstbenutzer-Admin-Zuweisung ist atomar
+
+**Beschreibung:** Die Sequenz „kein Benutzer vorhanden → Erstbenutzer anlegen → Admin-Flag und Admin-Rolle zuweisen" läuft unter einer prozessweiten Sperre, damit parallele Registrierungen nicht beide als Erstbenutzer gewertet werden.
+
+**Bedingungen:**
+- Zwei oder mehr Registrierungen laufen zeitgleich gegen eine leere Benutzertabelle.
+
+**Verhalten:**
+- Genau eine Registrierung wird als Erstbenutzer gewertet und erhält `IsAdmin` sowie die Rolle `Admin`.
+- Verlierer werden als normale Benutzer angelegt oder je nach Gate-Einstellung abgelehnt.
+- Ein verbindlicher Re-Check nach dem Einfügen setzt das Admin-Flag zurück, falls zwischenzeitlich ein anderer Benutzer entstanden ist.
+
+**Umsetzung:** `UserAuthService.RegisterAsync` (statisches `SemaphoreSlim`), `EnsureAdminRole` (unveränderte Start-Korrektur).
+
+## Anonyme Authentifizierungs-Endpunkte werden ratenlimitiert
+
+**Beschreibung:** Registrierung und die anonyme Existenz-Abfrage sind pro Quelladresse begrenzt, damit sie im Login-Fluss verfügbar bleiben, aber nicht unbegrenzt abfragbar sind.
+
+**Bedingungen:**
+- Request an `POST /api/auth/register` oder `GET /api/users/exists`.
+- Partitionierung erfolgt über die Quell-IP-Adresse.
+
+**Verhalten:**
+- Innerhalb des Fensters (Standard 20 Aufrufe je 10 Sekunden): normale Verarbeitung.
+- Bei Überschreitung: HTTP `429` ohne weitere Verarbeitung.
+
+**Umsetzung:** `AddRateLimiter`/`UseRateLimiter`, Policy `RateLimitPolicies.AuthSensitive`, `[EnableRateLimiting]` auf `AuthController.RegisterAsync` und `UsersController.HasAnyUsersAsync`.
+
+## Backup-Dateien liegen in benutzerbezogenen Verzeichnissen
+
+**Beschreibung:** Physische Backup-Dateien werden pro Benutzer unter `backups/{userId}` abgelegt; Zugriff erfolgt ausschließlich über den Besitzer-Bezug des Backup-Eintrags.
+
+**Bedingungen:**
+- `BackupRecord.OwnerUserId` bestimmt das Ablageverzeichnis.
+- `StoragePath` darf nur ein schlichter Dateiname sein (kein Pfad, kein `..`).
+
+**Verhalten:**
+- Erstellte Backups erhalten servergenerierte Dateinamen (`backup-{zeitstempel}-{8hex}.zip`), Uploads eine servergenerierte Ablagekennung (`upload-{guid}.zip`); der angezeigte Name bleibt der vom Benutzer gewählte `FileName`.
+- Download, Restore und Löschen lösen `StoragePath` nur innerhalb des Besitzer-Verzeichnisses auf.
+- Beim ersten Start nach dem Update verschiebt `SchemaPatcher.MigrateBackupStorageAsync` vorhandene Dateien aus dem gemeinsamen `backups`-Ordner in die Benutzerverzeichnisse (idempotent, non-fatal).
+
+**Umsetzung:** `BackupService.GetRoot(userId)`, `BackupService.ResolveStoragePath`, `SchemaPatcher.MigrateBackupStorageAsync`.
+
+## Alle Antworten tragen globale Sicherheits-Header
+
+**Beschreibung:** Jede HTTP-Antwort erhält eine Basis-Sicherheitsausstattung; Help-Pfade behalten ihre strengere Richtlinie.
+
+**Bedingungen:**
+- Jeder Request durchläuft den Header-Block in `ConfigureMiddleware`.
+
+**Verhalten:**
+- Gesetzt werden `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: SAMEORIGIN`, eine restriktive `Permissions-Policy` und die `Content-Security-Policy` aus `SecurityHeadersPolicy`.
+- Auf `/help`-Pfaden ersetzt `HelpSecurityPolicy.ContentSecurityPolicy` die globale CSP.
+- Die globale CSP enthält bewusst kein `upgrade-insecure-requests`, damit direkter HTTP-Zugriff im LAN weiterhin funktioniert.
+
+**Umsetzung:** `SecurityHeadersPolicy.Apply`, `HelpSecurityPolicy`, `ProgramExtensions.ConfigureMiddleware`.
+
+## Zustandsändernde Cookie-Requests benötigen ein Antiforgery-Token
+
+**Beschreibung:** Requests mit unsicheren Methoden (`POST`/`PUT`/`DELETE`/`PATCH`), die per Auth-Cookie authentifiziert sind und einen autorisierten Endpunkt treffen, werden per Antiforgery-Validierung gegen CSRF abgesichert.
+
+**Bedingungen:**
+- Unsafe HTTP-Methode auf einem Endpunkt mit `[Authorize]`-Metadaten.
+- Die Anfrage trägt kein `Authorization: Bearer`-Token.
+- Der Endpunkt ist nicht per `[AllowAnonymous]` ausgenommen.
+
+**Verhalten:**
+- Mit gültigem Token: normale Verarbeitung.
+- Ohne oder mit ungültigem Token: HTTP `403`.
+- Bearer-authentifizierte Aufrufe (API-Clients, Blazor-Circuit-HttpClient) und anonyme Endpunkte (Login, Logout, Registrierung) sind ausgenommen.
+- Das Token wird beim Prerender über `<meta name="fm-xsrf-token">` bereitgestellt; `attachments.js` sendet es beim Upload im `RequestVerificationToken`-Header.
+
+**Umsetzung:** `CookieCsrfProtectionMiddleware`, `App.razor`, `attachments.js`, `AddAntiforgery` (Cookie `FinanceManager.Antiforgery`).
+
+## Forwarded-Headers werden nur von vertrauenswürdigen Proxies berücksichtigt
+
+**Beschreibung:** `X-Forwarded-For`/`X-Forwarded-Proto` gelten nur, wenn der unmittelbare Peer als vertrauenswürdiger Proxy konfiguriert ist.
+
+**Bedingungen:**
+- `ReverseProxy:KnownProxies` (IPs) und/oder `ReverseProxy:KnownNetworks` (CIDR) sind gesetzt; es wird nur der rechteste Hop ausgewertet (`ForwardLimit = 1`).
+
+**Verhalten:**
+- Peer ist vertrauenswürdig: Client-IP und Protokoll werden aus den Forwarded-Headers übernommen (Rate-Limit-Partitionen, IP-Sperren und `Secure`-Cookie-Markierung arbeiten mit den echten Werten).
+- Peer ist nicht vertrauenswürdig oder keine Konfiguration: Forwarded-Headers werden ignoriert; die direkte Verbindung zählt.
+- Direkter HTTP-Zugriff im LAN ist ohne Konfiguration funktionsfähig.
+
+**Umsetzung:** `ProgramExtensions.ConfigureMiddleware` (`UseForwardedHeaders` mit leeren `KnownProxies`/`KnownNetworks`, befüllt aus `ReverseProxy:*`).
+
 ## Sicherheitsrelevante Benutzeränderungen invalidieren Tokens
 
 **Beschreibung:** Deaktivierung, Aktivierung, Rollenwechsel und Passwortreset

@@ -28,7 +28,10 @@ export function registerDropArea(elementId, uploadUrl, dotnet){
         form.append('file', f, f.name);
         const categoryId = el.getAttribute('data-category');
         if (categoryId) { form.append('categoryId', categoryId); }
-        const resp = await fetch(ctx.uploadUrl, { method:'POST', body: form });
+        const xsrfToken = document.querySelector('meta[name="fm-xsrf-token"]')?.getAttribute('content');
+        const headers = {};
+        if (xsrfToken) { headers['RequestVerificationToken'] = xsrfToken; }
+        const resp = await fetch(ctx.uploadUrl, { method:'POST', body: form, headers });
         if (!resp.ok){ error = await resp.text(); }
         done = i+1;
         if (ctx.dotnet){

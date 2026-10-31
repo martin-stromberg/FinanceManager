@@ -22,3 +22,4 @@ Anhänge können als Datei, Link oder Referenz zu Buchungen und anderen Einträg
 - Ein Anhang benötigt Inhalt, URL oder eine Referenz auf einen anderen Anhang.
 - Zugriff ist an Entität und Benutzerkontext gebunden.
 - Unsichere SVG-Inhalte werden beim Upload serverseitig abgelehnt.
+- Uploads sind größenbegrenzt (`Attachments:MaxSizeBytes`, Standard 10 MB); dasselbe Limit gilt für Symbol-Uploads und den Kurs-CSV-Import bei Wertpapieren und Sparplänen.

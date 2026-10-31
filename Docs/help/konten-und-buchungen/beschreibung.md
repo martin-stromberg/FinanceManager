@@ -22,3 +22,4 @@ Konten werden als Stammdaten gepflegt und bilden die Grundlage für Buchungslist
 
 - Kontobezogene Aktionen sind benutzergebunden.
 - Stornierung ist nur möglich, wenn keine fachlichen Sperrgründe vorliegen.
+- Im CSV-Export werden Zellwerte, die Tabellenprogramme als Formel interpretieren würden (z. B. führendes `=`, `+`, `-`, `@`), mit einem führenden Apostroph entschärft; der Text bleibt lesbar.

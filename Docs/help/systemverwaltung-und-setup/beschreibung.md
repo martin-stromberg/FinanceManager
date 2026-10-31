@@ -15,7 +15,18 @@ Administratoren können Benutzer verwalten, Backups erstellen oder wiederherstel
 Updates prüfen und Sicherheitsinformationen für die öffentliche Kontaktaufnahme
 pflegen.
 
-Backups werden als Archivdateien verwaltet. Eine Wiederherstellung ersetzt
+Die Registrierung über die öffentliche Registrierungsseite ist auf den ersten
+Benutzer beschränkt. Solange noch kein Konto existiert, leitet die Anwendung auf
+die Registrierungsseite um; der erste Benutzer wird automatisch Administrator.
+Sobald ein Konto vorhanden ist, führt `/register` auf die Anmeldeseite — weitere
+Benutzer legt ein Administrator in der Benutzerverwaltung an. Betreiber können die
+offene Selbstregistrierung über die Konfiguration `Auth:AllowSelfRegistration`
+wieder aktivieren. Registrierung und die anonyme Abfrage `GET /api/users/exists`
+sind pro Quelladresse ratenlimitiert.
+
+Backups werden als Archivdateien verwaltet und pro Benutzer in einem eigenen
+Ablagebereich auf dem Server gespeichert; Dateien anderer Benutzer sind weder
+sichtbar noch erreichbar. Eine Wiederherstellung ersetzt
 vorhandene Daten und ist deshalb eine besonders riskante Aktion. Vor dem Start
 muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog
 eingeben. Bei falscher oder fehlender Bestätigung wird keine Wiederherstellung
@@ -50,6 +61,7 @@ Während echter Inaktivität werden keine automatischen Keepalive-Anfragen oder 
 - Ein Administrator gibt seinen AlphaVantage API Key frei; andere Benutzer
   koennen Kursabrufe darueber ausfuehren, sehen den Key aber nicht im Klartext.
 - Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
+- Ein Benutzer lädt ein Backup hoch, dessen Dateiname ein anderer Benutzer ebenfalls verwendet hat; beide Sicherungen bleiben unabhängig voneinander erhalten.
 - Ein Administrator prueft auf ein Self-Update, kontrolliert Paketmetadaten und
   startet die Installation nach Downtime-Bestaetigung.
 - Ein angemeldeter Benutzer startet einen Hintergrundtask und sieht Fortschritt, Warteschlange sowie Abbrechen- oder Entfernen-Aktionen im Statuspanel.
@@ -159,6 +171,9 @@ Ist keine gültige Ziel-Adresse konfiguriert, leitet die öffentliche Adresse au
 ## Einschränkungen
 
 - Administrative Bereiche erfordern entsprechende Berechtigungen.
+- Die Selbstregistrierung steht nur dem ersten Benutzer offen; Folgekonten werden administrativ angelegt, sofern `Auth:AllowSelfRegistration` nicht aktiviert ist.
+- Registrierung und die anonyme Existenz-Abfrage sind pro Quelladresse ratenlimitiert; bei Überschreitung antwortet die API mit `429`.
+- Backup-Dateien liegen benutzerbezogen unter `backups/{userId}`; beim ersten Start nach dem Update werden vorhandene Dateien automatisch in die Benutzerverzeichnisse verschoben.
 - Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen; die automatische Statusabfrage erfolgt nur für authentifizierte Benutzer.
 - Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.
 - Die Lesbarkeit verschluesselt gespeicherter AlphaVantage API Keys haengt vom

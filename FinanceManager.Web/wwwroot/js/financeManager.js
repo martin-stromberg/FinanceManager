@@ -13,7 +13,6 @@ window.financeManager = window.financeManager || {};
   let keepaliveLastForcedStart = 0;
   let keepaliveAbortController = null;
   let keepaliveListenersAttached = false;
-  let tokenReceiver = null;
 
   function getLoadingBar() {
     return document.querySelector("[data-mst-loading-bar]") || document.getElementById(loadingBarId);
@@ -185,12 +184,8 @@ window.financeManager = window.financeManager || {};
       headers: { "X-Requested-With": "fetch" },
       signal: keepaliveAbortController ? keepaliveAbortController.signal : undefined
     })
-      .then(async function (response) {
+      .then(function (response) {
         if (response.ok) {
-          const token = response.headers.get("X-Auth-Token");
-          if (token && tokenReceiver) {
-            await tokenReceiver.invokeMethodAsync("ReceiveTokenAsync", token);
-          }
           keepaliveLastSuccess = Date.now();
           return true;
         }
@@ -305,8 +300,7 @@ window.financeManager = window.financeManager || {};
   fm.keepalive = {
     ping: triggerKeepalive,
     register: registerKeepalive,
-    unregister: unregisterKeepalive,
-    setTokenReceiver: function (receiver) { tokenReceiver = receiver; }
+    unregister: unregisterKeepalive
   };
 
   fm.loadingBar = {

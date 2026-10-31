@@ -24,7 +24,7 @@ namespace FinanceManager.Tests.Auth;
 /// </summary>
 public sealed class UserAuthServiceTests
 {
-    private static (UserAuthService sut, AppDbContext db, Mock<UserManager<User>> userManager, Mock<SignInManager<User>> signInManager, Mock<IJwtTokenService> jwt, TimeProvider timeProvider) Create(IBackgroundTaskManager? backgroundTaskManager = null)
+    private static (UserAuthService sut, AppDbContext db, Mock<UserManager<User>> userManager, Mock<SignInManager<User>> signInManager, Mock<IJwtTokenService> jwt, TimeProvider timeProvider) Create(IBackgroundTaskManager? backgroundTaskManager = null, AuthOptions? authOptions = null, Action<User>? onUserManagerCreate = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -52,7 +52,8 @@ public sealed class UserAuthServiceTests
             .ReturnsAsync((User user, string pwd) => pwd == "pw");
 
         userManagerMock.Setup(u => u.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
-            .ReturnsAsync(IdentityResult.Success);
+            .ReturnsAsync(IdentityResult.Success)
+            .Callback<User, string>((created, _) => onUserManagerCreate?.Invoke(created));
 
         var jwt = new Mock<IJwtTokenService>();
         var timeProvider = TimeProvider.System;
@@ -157,7 +158,8 @@ public sealed class UserAuthServiceTests
             logger.Object,
             new FinanceManager.Infrastructure.Auth.UserAuthService.NoopIpBlockService(),
             roleManager,
-            backgroundTaskManager);
+            backgroundTaskManager,
+            Options.Create(authOptions ?? new AuthOptions { AllowSelfRegistration = true }));
         return (sut, db, userManagerMock, signInManagerMock, jwt, timeProvider);
     }
 
@@ -213,9 +215,9 @@ public sealed class UserAuthServiceTests
     }
 
     /// <summary>
-    /// Verifies that registration rejects a missing username and, separately, a missing password,
-    /// each with an error explaining the field is required, rather than proceeding with an
-    /// incomplete account.
+    /// Verifies that registration rejects a missing username and, separately, a missing password
+    /// with the stable <see cref="AuthErrorCodes.InvalidRegistration"/> code, so the controller
+    /// maps it to a generic 400 response rather than a misleading conflict.
     /// </summary>
     [Fact]
     public async Task RegisterAsync_ShouldFail_WhenUsernameOrPasswordMissing()
@@ -227,8 +229,8 @@ public sealed class UserAuthServiceTests
 
         Assert.False(res1.Success);
         Assert.False(res2.Success);
-        Assert.Contains("required", res1.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("required", res2.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(AuthErrorCodes.InvalidRegistration, res1.Error);
+        Assert.Equal(AuthErrorCodes.InvalidRegistration, res2.Error);
     }
 
     /// <summary>
@@ -525,6 +527,107 @@ public sealed class UserAuthServiceTests
         Assert.False(result.Success);
         Assert.Equal("Err_UserNotFound", result.Error);
         userManager.Verify(u => u.ChangePasswordAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that two concurrent first registrations on an empty database yield exactly one
+    /// admin: the serialized first-user decision lets only the gate winner keep the admin flag
+    /// and role, while the loser registers as an ordinary user.
+    /// </summary>
+    [Fact]
+    public async Task RegisterAsync_ConcurrentCalls_OnlyOneBecomesAdmin()
+    {
+        var (sut, db, _, _, _, _) = Create();
+
+        var results = await Task.WhenAll(
+            sut.RegisterAsync(new RegisterUserCommand("first-a", "Password123", null, null), CancellationToken.None),
+            sut.RegisterAsync(new RegisterUserCommand("first-b", "Password123", null, null), CancellationToken.None));
+
+        Assert.All(results, r => Assert.True(r.Success));
+        Assert.Equal(1, results.Count(r => r.Value!.IsAdmin));
+        Assert.Equal(1, db.Users.Count(u => u.IsAdmin));
+        Assert.Equal(2, db.Users.Count());
+    }
+
+    /// <summary>
+    /// Verifies the post-insert re-check: when another user materializes in the database before
+    /// the first-user decision is persisted, the new user's admin flag is stripped, no admin
+    /// role is assigned and no demo data is queued.
+    /// </summary>
+    [Fact]
+    public async Task RegisterAsync_RevokesAdmin_WhenOtherUserAppearsBeforeRecheck()
+    {
+        var backgroundTaskManager = new BackgroundTaskManager();
+        AppDbContext? capturedDb = null;
+        var (sut, db, _, _, _, _) = Create(
+            backgroundTaskManager,
+            authOptions: new AuthOptions { AllowSelfRegistration = true },
+            onUserManagerCreate: _ =>
+            {
+                capturedDb!.Users.Add(new User("bypass-writer", "HASH::x", false));
+                capturedDb!.SaveChanges();
+            });
+        capturedDb = db;
+
+        var result = await sut.RegisterAsync(new RegisterUserCommand("late-first", "Password123", null, null, true), CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.False(result.Value!.IsAdmin);
+        var created = db.Users.Single(u => u.UserName == "late-first");
+        Assert.False(created.IsAdmin);
+        Assert.Empty(backgroundTaskManager.GetAll());
+    }
+
+    /// <summary>
+    /// Verifies that with self-registration disabled, a registration attempt for a non-first
+    /// user is rejected before any account is created.
+    /// </summary>
+    [Fact]
+    public async Task RegisterAsync_Blocked_WhenNotFirstAndSelfRegistrationDisabled()
+    {
+        var (sut, db, userManager, _, _, _) = Create(authOptions: new AuthOptions { AllowSelfRegistration = false });
+        db.Users.Add(new User("existing", "HASH::x", false));
+        db.SaveChanges();
+
+        var result = await sut.RegisterAsync(new RegisterUserCommand("second", "Password123", null, null), CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(1, db.Users.Count());
+        userManager.Verify(u => u.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that with self-registration disabled, a registration for a non-first user
+    /// succeeds when the flag explicitly allows it.
+    /// </summary>
+    [Fact]
+    public async Task RegisterAsync_Allowed_WhenSelfRegistrationFlagEnabled()
+    {
+        var (sut, db, _, _, _, _) = Create(authOptions: new AuthOptions { AllowSelfRegistration = true });
+        db.Users.Add(new User("existing", "HASH::x", false));
+        db.SaveChanges();
+
+        var result = await sut.RegisterAsync(new RegisterUserCommand("second", "Password123", null, null), CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.False(result.Value!.IsAdmin);
+        Assert.Equal(2, db.Users.Count());
+    }
+
+    /// <summary>
+    /// Verifies that the very first registration always succeeds and becomes admin even when
+    /// self-registration is disabled - the bootstrap path must stay open.
+    /// </summary>
+    [Fact]
+    public async Task RegisterAsync_FirstUser_AlwaysAllowed()
+    {
+        var (sut, db, _, _, _, _) = Create(authOptions: new AuthOptions { AllowSelfRegistration = false });
+
+        var result = await sut.RegisterAsync(new RegisterUserCommand("bootstrap", "Password123", null, null), CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.True(result.Value!.IsAdmin);
+        Assert.True(db.Users.Single().IsAdmin);
     }
 
 }

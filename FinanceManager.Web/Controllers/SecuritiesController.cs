@@ -17,6 +17,7 @@ using System.Net.Mime;
 using FinanceManager.Application.Common;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Web.Infrastructure.ApiErrors;
+using FinanceManager.Web.Infrastructure.Attachments;
 using Microsoft.Extensions.Localization;
 using FinanceManager.Web.Controllers;
 
@@ -322,7 +323,7 @@ public sealed class SecuritiesController : ControllerBase
     /// <response code="400">The HTTP 400 response.</response>
     /// <response code="500">The HTTP 500 response.</response>
     [HttpPost("{id:guid}/symbol")]
-    [RequestSizeLimit(long.MaxValue)]
+    [AttachmentUploadSizeLimit]
     [ProducesResponseType(typeof(AttachmentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -424,7 +425,7 @@ public sealed class SecuritiesController : ControllerBase
     /// <response code="404">The HTTP 404 response.</response>
     /// <response code="500">The HTTP 500 response.</response>
     [HttpPost("{id:guid}/prices/import")]
-    [RequestSizeLimit(long.MaxValue)]
+    [AttachmentUploadSizeLimit]
     [ProducesResponseType(typeof(SecurityPriceImportResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

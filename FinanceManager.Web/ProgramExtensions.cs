@@ -19,6 +19,7 @@ using FinanceManager.Web.Infrastructure;
 using FinanceManager.Web.Infrastructure.Attachments;
 using FinanceManager.Web.Infrastructure.Auth;
 using FinanceManager.Web.Infrastructure.Logging;
+using FinanceManager.Web.Infrastructure.MassImport;
 using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Help;
 using FinanceManager.Web.Services.Updates;
@@ -37,6 +38,7 @@ using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Globalization;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 namespace FinanceManager.Web
 {
@@ -106,6 +108,22 @@ namespace FinanceManager.Web
             builder.Services.Configure<AttachmentUploadOptions>(builder.Configuration.GetSection("Attachments"));
             builder.Services.AddSingleton<IAttachmentContentPolicy, AttachmentContentPolicy>();
             builder.Services.Configure<BackupSecurityOptions>(builder.Configuration.GetSection(BackupSecurityOptions.SectionName));
+            builder.Services.Configure<MassImportOptions>(builder.Configuration.GetSection(MassImportOptions.SectionName));
+            builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
+            builder.Services.AddSingleton<CircuitAuthTokenStore>();
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy(RateLimitPolicies.AuthSensitive, httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = builder.Configuration.GetValue("RateLimiting:AuthSensitive:PermitLimit", 20),
+                            Window = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimiting:AuthSensitive:WindowSeconds", 10)),
+                            QueueLimit = 0
+                        }));
+            });
             builder.Services.Configure<UpdateOptions>(builder.Configuration.GetSection(UpdateOptions.SectionName));
             var dataProtectionBuilder = builder.Services.AddDataProtection();
             var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
@@ -429,14 +447,54 @@ namespace FinanceManager.Web
         /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
         public static void ConfigureMiddleware(this WebApplication app)
         {
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            // Forwarded headers are only honored from explicitly trusted proxies and only for the
+            // right-most hop (ForwardLimit = 1). Without a trust boundary, a client that can reach
+            // the server directly could spoof X-Forwarded-For per request and bypass the per-IP
+            // rate-limit partitions (#456) as well as IpBlockMiddleware.
+            // Deployments behind a reverse proxy must list its IPs in "ReverseProxy:KnownProxies"
+            // and/or its subnets in "ReverseProxy:KnownNetworks" (semicolon-separated values,
+            // e.g. "10.0.0.5;10.0.0.6" resp. "10.0.0.0/24;fd00::/8"). With neither configured, no
+            // forwarded headers are honored at all - the secure default for a directly reachable host.
+            var forwardedHeadersOptions = new ForwardedHeadersOptions
             {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-            });
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+                ForwardLimit = 1
+            };
+            forwardedHeadersOptions.KnownProxies.Clear();
+            forwardedHeadersOptions.KnownNetworks.Clear();
+            foreach (var proxy in (app.Configuration["ReverseProxy:KnownProxies"] ?? string.Empty)
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (System.Net.IPAddress.TryParse(proxy, out var proxyAddress))
+                {
+                    forwardedHeadersOptions.KnownProxies.Add(proxyAddress);
+                }
+                else
+                {
+                    app.Logger.LogWarning("Ignoring unparsable ReverseProxy:KnownProxies entry '{Entry}'", proxy);
+                }
+            }
+            foreach (var network in (app.Configuration["ReverseProxy:KnownNetworks"] ?? string.Empty)
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var parts = network.Split('/', StringSplitOptions.TrimEntries);
+                if (parts.Length == 2
+                    && System.Net.IPAddress.TryParse(parts[0], out var networkPrefix)
+                    && int.TryParse(parts[1], out var prefixLength))
+                {
+                    forwardedHeadersOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(networkPrefix, prefixLength));
+                }
+                else
+                {
+                    app.Logger.LogWarning("Ignoring unparsable ReverseProxy:KnownNetworks entry '{Entry}'", network);
+                }
+            }
+            app.UseForwardedHeaders(forwardedHeadersOptions);
             app.UseMiddleware<RequestLoggingMiddleware>();
             app.UseMiddleware<IpBlockMiddleware>();
+            app.UseRateLimiter();
 
-            if (!app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection"))
+            if (!(app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection")))
             {
                 app.UseHttpsRedirection();
             }
@@ -454,7 +512,7 @@ namespace FinanceManager.Web
                 app.UseDeveloperExceptionPage();
             }
 
-            if (app.Configuration.GetValue<bool>("E2E:AccountStatisticsFaultInjectionEnabled"))
+            if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("E2E:AccountStatisticsFaultInjectionEnabled"))
             {
                 var accountStatisticsFaultFile = app.Configuration["E2E:AccountStatisticsFaultFile"];
                 app.Use(async (context, next) =>
@@ -474,10 +532,21 @@ namespace FinanceManager.Web
 
             app.Use(async (context, next) =>
             {
-                if (HelpSecurityPolicy.IsHelpPath(context.Request.Path))
+                // Blazor Server appends its own "frame-ancestors 'self'" Content-Security-Policy
+                // value while rendering interactive prerendered pages. Applying the headers in
+                // OnStarting - after the endpoint has written its headers - replaces that value
+                // instead of producing a duplicate CSP header, so a single policy wins.
+                var isHelpPath = HelpSecurityPolicy.IsHelpPath(context.Request.Path);
+                context.Response.OnStarting(() =>
                 {
-                    context.Response.Headers.ContentSecurityPolicy = HelpSecurityPolicy.ContentSecurityPolicy;
-                }
+                    SecurityHeadersPolicy.Apply(context.Response);
+                    if (isHelpPath)
+                    {
+                        context.Response.Headers.ContentSecurityPolicy = HelpSecurityPolicy.ContentSecurityPolicy;
+                    }
+
+                    return Task.CompletedTask;
+                });
 
                 await next();
             });
@@ -521,10 +590,11 @@ namespace FinanceManager.Web
                     }
                 }
             });
-            app.UseAntiforgery();
 
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseAntiforgery();
+            app.UseMiddleware<CookieCsrfProtectionMiddleware>();
 
             // Localization must run AFTER authentication so that HttpContext.User is populated
             // when UserPreferenceRequestCultureProvider reads the pref_lang JWT claim.

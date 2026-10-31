@@ -327,6 +327,8 @@ public sealed class PlaywrightWebAppFixture : IAsyncLifetime
         startInfo.Environment["Kestrel__Endpoints__Https__Url"] = $"https://127.0.0.1:{port}";
         startInfo.Environment["Api__BaseAddress"] = $"http://127.0.0.1:{port + 1}/";
         startInfo.Environment["E2E__DisableHttpsRedirection"] = "true";
+        startInfo.Environment["Auth__AllowSelfRegistration"] = "true";
+        startInfo.Environment["RateLimiting__AuthSensitive__PermitLimit"] = "100000";
         startInfo.Environment["Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command"] = "Information";
         startInfo.Environment["Logging__LogLevel__Microsoft.Extensions.Http"] = "Information";
         startInfo.Environment["E2E__AccountStatisticsFaultInjectionEnabled"] = "true";

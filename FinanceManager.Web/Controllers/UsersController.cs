@@ -2,10 +2,12 @@ using FinanceManager.Application;
 using FinanceManager.Application.Users;
 using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure;
 using FinanceManager.Web.Infrastructure.ApiErrors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 using FinanceManager.Application.Demo;
@@ -66,6 +68,7 @@ public sealed class UsersController : ControllerBase
     /// <response code="500">The HTTP 500 response.</response>
     [HttpGet("exists")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
     [ProducesResponseType(typeof(AnyUsersResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

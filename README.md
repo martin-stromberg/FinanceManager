@@ -22,6 +22,8 @@ Die Anwendung bietet unter anderem:
 
 Bei der Erstregistrierung, wenn noch kein Benutzer vorhanden ist, wird der Start auf die Registrierungsseite umgeleitet. Nur der erste Benutzer sieht dort die Checkbox `Demodaten anlegen`; ist sie aktiviert, erstellt ein Hintergrundtask nach der Registrierung den vollständigen Demo-Datenbestand. Der Fortschritt ist auf der Startseite in der Background-Task-Anzeige sichtbar.
 
+Die Selbstregistrierung ist auf den ersten Benutzer beschränkt: Sobald ein Konto existiert, werden weitere Benutzer von einem Administrator angelegt. Über die Konfiguration `Auth:AllowSelfRegistration` lässt sich die offene Registrierung wieder aktivieren.
+
 ## Screenshots
 
 Die Screenshots zeigen die Anwendung nach einer Erstregistrierung mit aktivierter Demodaten-Option:

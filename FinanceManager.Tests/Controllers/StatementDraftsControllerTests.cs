@@ -35,7 +35,7 @@ namespace FinanceManager.Tests.Controllers;
 /// </summary>
 public sealed class StatementDraftsControllerTests
 {
-    private static (StatementDraftsController controller, AppDbContext db, Guid userId) Create(IMassImportOrchestrator? massImportOrchestrator = null)
+    private static (StatementDraftsController controller, AppDbContext db, Guid userId) Create(IMassImportOrchestrator? massImportOrchestrator = null, FinanceManager.Web.Infrastructure.MassImport.MassImportOptions? massImportOptions = null)
     {
         var conn = new SqliteConnection("DataSource=:memory:");
         conn.Open();
@@ -80,7 +80,8 @@ public sealed class StatementDraftsControllerTests
         var exportService = new FinanceManager.Infrastructure.Reports.StatementDraftExportService(db, NullLogger<FinanceManager.Infrastructure.Reports.StatementDraftExportService>.Instance);
         var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
 
-        var controller = new StatementDraftsController(draftService, current, logger, localizer, taskManager, attachment, exportService, config, null, massImportOrchestrator);
+        var controller = new StatementDraftsController(draftService, current, logger, localizer, taskManager, attachment, exportService, config, null, massImportOrchestrator,
+            massImportOptions == null ? null : Microsoft.Extensions.Options.Options.Create(massImportOptions));
         return (controller, db, current.UserId);
     }
 
@@ -361,6 +362,80 @@ public sealed class StatementDraftsControllerTests
 
         var error = Assert.IsType<ObjectResult>(action);
         Assert.Equal(StatusCodes.Status500InternalServerError, error.StatusCode);
+    }
+
+    /// <summary>
+    /// Verifies that a mass-import batch exceeding the configured file-count limit is rejected
+    /// with 400 and the <c>Err_MassImport_TooManyFiles</c> error code.
+    /// </summary>
+    [Fact]
+    public async Task ProcessMassImportAsync_ShouldReturnBadRequest_WhenTooManyFiles()
+    {
+        var options = new FinanceManager.Web.Infrastructure.MassImport.MassImportOptions { MaxFiles = 1 };
+        var (controller, _, _) = Create(massImportOrchestrator: new Mock<IMassImportOrchestrator>().Object, massImportOptions: options);
+        var request = new MassImportBatchRequestDto
+        {
+            Files = new[]
+            {
+                new MassImportFileUploadDto { FileId = Guid.NewGuid(), FileName = "a.csv", Content = [1] },
+                new MassImportFileUploadDto { FileId = Guid.NewGuid(), FileName = "b.csv", Content = [2] }
+            }
+        };
+
+        var action = await controller.ProcessMassImportAsync(request, CancellationToken.None);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(action);
+        var error = Assert.IsType<ApiErrorDto>(badRequest.Value);
+        Assert.Equal("Err_MassImport_TooManyFiles", error.code);
+    }
+
+    /// <summary>
+    /// Verifies that a mass-import batch containing a file above the configured per-file size
+    /// limit is rejected with 400 and the <c>Err_MassImport_FileTooLarge</c> error code.
+    /// </summary>
+    [Fact]
+    public async Task ProcessMassImportAsync_ShouldReturnBadRequest_WhenFileTooLarge()
+    {
+        var options = new FinanceManager.Web.Infrastructure.MassImport.MassImportOptions { MaxBytesPerFile = 4 };
+        var (controller, _, _) = Create(massImportOrchestrator: new Mock<IMassImportOrchestrator>().Object, massImportOptions: options);
+        var request = new MassImportBatchRequestDto
+        {
+            Files = new[]
+            {
+                new MassImportFileUploadDto { FileId = Guid.NewGuid(), FileName = "a.csv", Content = [1, 2, 3, 4, 5] }
+            }
+        };
+
+        var action = await controller.ProcessMassImportAsync(request, CancellationToken.None);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(action);
+        var error = Assert.IsType<ApiErrorDto>(badRequest.Value);
+        Assert.Equal("Err_MassImport_FileTooLarge", error.code);
+    }
+
+    /// <summary>
+    /// Verifies that a mass-import batch whose summed content bytes exceed the configured total
+    /// limit is rejected with 400 and the <c>Err_MassImport_BatchTooLarge</c> error code.
+    /// </summary>
+    [Fact]
+    public async Task ProcessMassImportAsync_ShouldReturnBadRequest_WhenBatchTooLarge()
+    {
+        var options = new FinanceManager.Web.Infrastructure.MassImport.MassImportOptions { MaxTotalContentBytes = 8 };
+        var (controller, _, _) = Create(massImportOrchestrator: new Mock<IMassImportOrchestrator>().Object, massImportOptions: options);
+        var request = new MassImportBatchRequestDto
+        {
+            Files = new[]
+            {
+                new MassImportFileUploadDto { FileId = Guid.NewGuid(), FileName = "a.csv", Content = [1, 2, 3, 4, 5] },
+                new MassImportFileUploadDto { FileId = Guid.NewGuid(), FileName = "b.csv", Content = [6, 7, 8, 9] }
+            }
+        };
+
+        var action = await controller.ProcessMassImportAsync(request, CancellationToken.None);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(action);
+        var error = Assert.IsType<ApiErrorDto>(badRequest.Value);
+        Assert.Equal("Err_MassImport_BatchTooLarge", error.code);
     }
 
     /// <summary>

@@ -100,6 +100,7 @@ Kachel-Konfiguration verworfen werden.
 ## Einschränkungen
 
 - Fehlerhafte Kursabfragen markieren das Wertpapier als Preisfehlerzustand.
+- Symbol-Uploads und der Kurs-CSV-Import sind auf die Anhang-Größenbegrenzung (`Attachments:MaxSizeBytes`, Standard 10 MB) beschränkt.
 - Renditeberechnungen hängen von vorhandenen Buchungs- und Kursdaten ab.
 - AlphaVantage-Abrufe benötigen entweder einen persönlichen API Key oder
   einen durch einen Administrator freigegebenen Key.

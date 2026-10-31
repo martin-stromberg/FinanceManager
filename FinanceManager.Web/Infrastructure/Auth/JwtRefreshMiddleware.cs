@@ -8,15 +8,13 @@ namespace FinanceManager.Web.Infrastructure.Auth
     /// <summary>
     /// Middleware that automatically renews short-lived JWTs for authenticated requests when they approach expiry.
     /// When a token is eligible for renewal the middleware generates a fresh token via <see cref="IJwtRefreshService"/>,
-    /// appends it as a secure cookie and also sets response headers with the refreshed token and expiry.
+    /// appends it as a secure cookie and publishes it server-side for active circuits.
     /// </summary>
     public sealed class JwtRefreshMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly IOptions<JwtOptions> _options;
 
-        private const string RefreshHeaderName = "X-Auth-Token";
-        private const string RefreshExpiresHeaderName = "X-Auth-Token-Expires";
         private const string AuthCookieName = "FinanceManager.Auth";
 
         /// <summary>
@@ -34,7 +32,9 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// <summary>
         /// Invokes the middleware to inspect the incoming JWT and refresh it when appropriate.
         /// If the current user is not authenticated or no token is present the middleware simply continues the pipeline.
-        /// When a refreshed token is issued it is set as a secure HTTP cookie and also exposed via response headers.
+        /// When a refreshed token is issued it is set as a secure HTTP-only cookie and published to the
+        /// server-side token registry for active circuits; it is deliberately never exposed via response
+        /// headers so the token cannot leak into caches or client-side scripts.
         /// </summary>
         /// <param name="context">The current <see cref="HttpContext"/> for the request.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
@@ -89,7 +89,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
                 {
                     if (HttpMethods.IsGet(context.Request.Method) && context.Request.Path == "/api/auth/keepalive")
                     {
-                        SetTokenResponseHeaders(context, token, exp);
+                        context.Response.Headers.CacheControl = "no-store";
                     }
                     return;
                 }
@@ -124,20 +124,12 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     });
                 }
 
-                SetTokenResponseHeaders(context, refresh.Token, new DateTimeOffset(refresh.ExpiresUtc.Value));
+                context.Response.Headers.CacheControl = "no-store";
             }
             finally
             {
                 await _next(context);
             }
-        }
-
-        private static void SetTokenResponseHeaders(HttpContext context, string token, DateTimeOffset expires)
-        {
-            if (context.Response.HasStarted) return;
-            context.Response.Headers[RefreshHeaderName] = token;
-            context.Response.Headers[RefreshExpiresHeaderName] = expires.UtcDateTime.ToString("o");
-            context.Response.Headers.CacheControl = "no-store";
         }
 
         /// <summary>

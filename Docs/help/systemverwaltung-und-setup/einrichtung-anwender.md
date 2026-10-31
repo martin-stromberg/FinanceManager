@@ -8,7 +8,7 @@ Diese Seite hilft Administratoren, die wichtigsten Setup-Bereiche nach der erste
 
 ## Empfohlene Reihenfolge
 
-1. Benutzer anlegen oder vorhandene Benutzer prüfen.
+1. Benutzer anlegen oder vorhandene Benutzer prüfen. Der erste Benutzer registriert sich selbst über die Registrierungsseite und wird Administrator; weitere Konten werden hier in der Benutzerverwaltung angelegt.
 2. Rollen und Berechtigungen vergeben.
 3. Profil- und Spracheinstellungen kontrollieren.
 4. Benachrichtigungen einrichten.

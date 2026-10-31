@@ -55,7 +55,8 @@ public sealed class JwtRenewalTimingTests
         var refresh = new Mock<IJwtRefreshService>();
         refresh.Setup(r => r.RefreshAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(JwtRefreshResult.Success("renewed-token", DateTime.UtcNow.AddMinutes(lifetimeMinutes)));
-        var provider = new JwtCookieAuthTokenProvider(new HttpContextAccessor { HttpContext = context }, options, validation, refresh.Object);
+        var provider = new JwtCookieAuthTokenProvider(new HttpContextAccessor { HttpContext = context }, options, validation, refresh.Object,
+            new CircuitAuthTokenStore(new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions())));
 
         var result = await provider.GetAccessTokenAsync(TestContext.Current.CancellationToken);
         Assert.Equal(shouldRefresh ? "renewed-token" : token, result);

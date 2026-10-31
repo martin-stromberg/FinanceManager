@@ -72,6 +72,51 @@
 
 > **Hinweis:** Die Sitzung, in der die Passwortänderung erfolgte, bleibt ohne Neueingabe angemeldet.
 
+## Registrierungsseite leitet auf die Anmeldung um
+
+**Symptom:** Der Aufruf von `/register` führt auf die Anmeldeseite, obwohl ein neues Konto benötigt wird.
+
+**Ursache:** Die Selbstregistrierung ist auf den ersten Benutzer beschränkt und es existiert bereits mindestens ein Konto.
+
+**Lösung:**
+1. Als Administrator anmelden.
+2. Das neue Konto über die Benutzerverwaltung anlegen.
+3. Alternativ die offene Selbstregistrierung per Konfiguration `Auth:AllowSelfRegistration = true` aktivieren (Neustart erforderlich).
+
+## API antwortet mit HTTP 429 auf Registrierung oder `users/exists`
+
+**Symptom:** `POST /api/auth/register` oder `GET /api/users/exists` liefern `429 Too Many Requests`.
+
+**Ursache:** Das Rate-Limit der Policy `auth-sensitive` (Standard: 20 Aufrufe je 10 Sekunden pro Quelladresse) wurde überschritten.
+
+**Lösung:**
+1. Das Zeitfenster abwarten und den Aufruf wiederholen.
+2. Bei legitimen Engpässen (z. B. viele Clients hinter derselben Adresse) die Grenzen über `RateLimiting:AuthSensitive:PermitLimit` und `RateLimiting:AuthSensitive:WindowSeconds` anheben.
+
+> **Hinweis:** Läuft die Anwendung hinter einem Reverse-Proxy ohne konfigurierte `ReverseProxy:KnownProxies`/`KnownNetworks`, teilen alle Clients die Partition der Proxy-Adresse — siehe nächster Abschnitt.
+
+## Hinter einem Reverse-Proxy stimmen Client-IP oder Protokoll nicht
+
+**Symptom:** Rate-Limits oder IP-Sperren greifen auf die Proxy-Adresse statt auf die Client-Adresse, oder das Schema wird als HTTP statt HTTPS erkannt.
+
+**Ursache:** Forwarded-Headers werden nur von vertrauenswürdigen Proxies berücksichtigt; ohne Eintrag werden sie ignoriert.
+
+**Lösung:**
+1. Die Adresse(n) des Reverse-Proxys unter `ReverseProxy:KnownProxies` (IPs) oder `ReverseProxy:KnownNetworks` (CIDR-Subnetze, semikolongetrennt) eintragen.
+2. Anwendung neu starten und die übernommene Client-Adresse prüfen.
+
+> **Hinweis:** Direkter HTTP-Zugriff im LAN benötigt keine Konfiguration und bleibt funktionsfähig.
+
+## Backup-Datei kann nach dem Update nicht heruntergeladen werden
+
+**Symptom:** Ein vor dem Update erstelltes Backup lässt sich nicht herunterladen oder wiederherstellen (`404`).
+
+**Ursache:** Beim ersten Start werden Dateien aus dem früheren gemeinsamen `backups`-Ordner in die benutzerbezogenen Verzeichnisse `backups/{userId}` verschoben. Konnte eine Datei nicht verschoben werden (z. B. fehlende Datei oder Dateisystemfehler), zeigt der Eintrag auf einen nicht auflösbaren Pfad.
+
+**Lösung:**
+1. Die Anwendungslogs nach dem Start auf Warnungen der Backup-Storage-Migration prüfen.
+2. Die Datei manuell aus `backups/` in das Verzeichnis `backups/{userId}` des Besitzers verschieben und die Anwendung neu starten (die Migration ist idempotent).
+
 ## `/.well-known/change-password` leitet nicht auf das gewünschte Ziel weiter
 
 **Symptom:** Der Aufruf von `/.well-known/change-password` landet auf einer anderen Seite als erwartet.

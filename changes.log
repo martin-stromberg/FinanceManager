@@ -1,3 +1,18 @@
+## 2026-10-31 — Sicherheitshärtung (Issues #450–#461)
+
+- Die Selbstregistrierung ist jetzt opt-in: nur der erste Benutzer registriert sich selbst, weitere Konten legt ein Administrator an; `Auth:AllowSelfRegistration` öffnet die Registrierung wieder.
+- Registrierung und die anonyme Benutzer-Existenz-Abfrage werden pro Quelladresse ratenlimitiert (Policy `auth-sensitive`, Antwort HTTP 429).
+- Backup-Dateien werden benutzerbezogen unter `backups/{userId}` abgelegt; ein idempotenter Start-Patch in `SchemaPatcher` migriert vorhandene Dateien automatisch.
+- Massenimport und Upload-Endpunkte erzwingen jetzt konfigurierbare Größenlimits (`MassImport:*`, `Attachments:MaxSizeBytes`, `Backups:Security:*`); zuvor unbegrenzte Stellen sind entfernt.
+- Alle Antworten tragen globale Sicherheits-Header (`Content-Security-Policy`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Content-Type-Options`); `/help` behält die strengere Richtlinie, und direkter HTTP-Zugriff im LAN bleibt funktionsfähig.
+- Forwarded-Headers werden nur noch von konfigurierten vertrauenswürdigen Proxies berücksichtigt (`ReverseProxy:KnownProxies`/`ReverseProxy:KnownNetworks`).
+- Zustandsändernde, per Cookie authentifizierte Requests benötigen ein Antiforgery-Token (`CookieCsrfProtectionMiddleware`); Bearer-Aufrufe und anonyme Endpunkte bleiben unberührt.
+- Anmeldetoken werden nicht mehr über Response-Header oder im gerenderten HTML ausgeliefert; die Circuit-Tokenversorgung läuft serverseitig über `CircuitAuthTokenStore`.
+- `DetailedErrors` und die E2E-Testschalter wirken nur noch in der Entwicklungsumgebung.
+- `AllowedHosts` bleibt für den LAN-Betrieb `*`, ist aber mit einem Hinweis zur Einschränkung dokumentiert.
+- CSV-Exporte entschärfen Zellwerte, die Tabellenprogramme als Formel interpretieren würden.
+- Die Erstbenutzer-Admin-Zuweisung läuft unter einer prozessweiten Sperre mit verbindlichem Re-Check, sodass nur genau ein Erstbenutzer Admin wird.
+
 ## 2026-10-24 — Aktive Sitzungserhaltung
 
 - Aktive Nutzung geschützter Seiten und Eingaben in Quick-Edit-Feldern erhalten die Anmeldung im Hintergrund.
