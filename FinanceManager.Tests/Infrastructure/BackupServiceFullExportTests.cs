@@ -238,7 +238,7 @@ namespace FinanceManager.Tests.Infrastructure
 
             var rec = db.Backups.FirstOrDefault(b => b.Id == backupDto.Id);
             Assert.NotNull(rec);
-            var full = Path.Combine(backupsDir, rec.StoragePath);
+            var full = Path.Combine(backupsDir, owner.ToString("N"), rec.StoragePath);
             Assert.True(File.Exists(full));
 
             using var fs = File.OpenRead(full);

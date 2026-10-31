@@ -7,6 +7,7 @@ using FinanceManager.Domain.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Infrastructure.Auth;
 
@@ -26,6 +27,11 @@ public sealed class UserAuthService : IUserAuthService
     private readonly IIpBlockService _ipBlocks;
     private readonly RoleManager<IdentityRole<Guid>>? _roleManager;
     private readonly IBackgroundTaskManager? _backgroundTaskManager;
+    private readonly AuthOptions _authOptions;
+
+    // Serializes the first-user decision (probe -> create -> admin role) process-wide so a
+    // concurrent registration cannot win the same "first user" determination.
+    private static readonly SemaphoreSlim s_registrationGate = new(1, 1);
 
     /// <summary>
     /// Backwards-compatible constructor overload for tests and legacy callers.
@@ -54,6 +60,7 @@ public sealed class UserAuthService : IUserAuthService
     /// <param name="ipBlocks">IP block service used for rate-limiting / blocking decisions.</param>
     /// <param name="roleManager">Optional RoleManager used to create initial roles.</param>
     /// <param name="backgroundTaskManager">Optional background task manager to enqueue demo-data generation.</param>
+    /// <param name="authOptions">Optional authentication options; defaults are used when not configured.</param>
     public UserAuthService(
         AppDbContext db,
         UserManager<User> userManager,
@@ -64,7 +71,8 @@ public sealed class UserAuthService : IUserAuthService
         ILogger<UserAuthService> logger,
         IIpBlockService ipBlocks,
         RoleManager<IdentityRole<Guid>>? roleManager = null,
-        IBackgroundTaskManager? backgroundTaskManager = null)
+        IBackgroundTaskManager? backgroundTaskManager = null,
+        IOptions<AuthOptions>? authOptions = null)
     {
         _db = db;
         _userManager = userManager;
@@ -76,6 +84,7 @@ public sealed class UserAuthService : IUserAuthService
         _ipBlocks = ipBlocks;
         _roleManager = roleManager;
         _backgroundTaskManager = backgroundTaskManager;
+        _authOptions = authOptions?.Value ?? new AuthOptions();
     }
 
     /// <summary>
@@ -95,105 +104,142 @@ public sealed class UserAuthService : IUserAuthService
         if (string.IsNullOrWhiteSpace(command.Username) || string.IsNullOrWhiteSpace(command.Password))
         {
             _logger.LogWarning("Registration failed for {Username}: missing username or password", command.Username);
-            return Result<AuthResult>.Fail("Username and password required");
+            return Result<AuthResult>.Fail(AuthErrorCodes.InvalidRegistration);
         }
 
-        var exists = await _db.Users.AsNoTracking().AnyAsync(u => u.UserName == command.Username, ct);
-        if (exists)
+        await s_registrationGate.WaitAsync(ct);
+        try
         {
-            _logger.LogWarning("Registration failed for {Username}: username already exists", command.Username);
-            return Result<AuthResult>.Fail("Username already exists");
-        }
+            var exists = await _db.Users.AsNoTracking().AnyAsync(u => u.UserName == command.Username, ct);
+            if (exists)
+            {
+                _logger.LogWarning("Registration failed for {Username}: username already exists", command.Username);
+                return Result<AuthResult>.Fail(AuthErrorCodes.UserAlreadyExists);
+            }
 
-        bool isFirst = !await _db.Users.AsNoTracking().AnyAsync(ct);
-        var user = new User(command.Username, _passwordHasher.Hash(command.Password), isFirst);
-        user.LockoutEnabled = true;
-        if (string.IsNullOrEmpty(user.SecurityStamp)) user.SecurityStamp = Guid.NewGuid().ToString("N");
-        if (string.IsNullOrEmpty(user.ConcurrencyStamp)) user.ConcurrencyStamp = Guid.NewGuid().ToString("N");
+            bool isFirst = !await _db.Users.AsNoTracking().AnyAsync(ct);
+            if (!isFirst && !_authOptions.AllowSelfRegistration)
+            {
+                _logger.LogWarning("Registration rejected for {Username}: self-registration is disabled", command.Username);
+                return Result<AuthResult>.Fail(AuthErrorCodes.RegistrationDisabled);
+            }
 
-        if (!string.IsNullOrWhiteSpace(command.PreferredLanguage))
-        {
-            user.SetPreferredLanguage(command.PreferredLanguage);
-        }
-        if (!string.IsNullOrWhiteSpace(command.TimeZoneId))
-        {
-            user.SetTimeZoneId(command.TimeZoneId);
-        }
+            var user = new User(command.Username, _passwordHasher.Hash(command.Password), isFirst);
+            user.LockoutEnabled = true;
+            if (string.IsNullOrEmpty(user.SecurityStamp)) user.SecurityStamp = Guid.NewGuid().ToString("N");
+            if (string.IsNullOrEmpty(user.ConcurrencyStamp)) user.ConcurrencyStamp = Guid.NewGuid().ToString("N");
 
-        var createResult = await _user_manager_create_wrapper(user, command.Password);
-        if (!createResult.Succeeded)
-        {
-            _logger.LogWarning("Registration failed for {Username}: Identity errors: {Errors}", command.Username, string.Join(';', createResult.Errors.Select(e => e.Description)));
-            return Result<AuthResult>.Fail("Registration failed");
-        }
+            if (!string.IsNullOrWhiteSpace(command.PreferredLanguage))
+            {
+                user.SetPreferredLanguage(command.PreferredLanguage);
+            }
+            if (!string.IsNullOrWhiteSpace(command.TimeZoneId))
+            {
+                user.SetTimeZoneId(command.TimeZoneId);
+            }
 
+            var createResult = await _user_manager_create_wrapper(user, command.Password);
+            if (!createResult.Succeeded)
+            {
+                _logger.LogWarning("Registration failed for {Username}: Identity errors: {Errors}", command.Username, string.Join(';', createResult.Errors.Select(e => e.Description)));
+                // A DuplicateUserName identity error can surface here when the pre-check above raced
+                // with a concurrent registration; keep it mapped to the conflict code so the controller
+                // still answers 409 instead of the generic 400.
+                var duplicateUser = createResult.Errors.Any(e => string.Equals(e.Code, "DuplicateUserName", StringComparison.OrdinalIgnoreCase));
+                return Result<AuthResult>.Fail(duplicateUser ? AuthErrorCodes.UserAlreadyExists : AuthErrorCodes.InvalidRegistration);
+            }
 
-        // Ensure user is persisted/tracked in AppDbContext in case UserManager is mocked or uses a different store
-        if (user.Id == Guid.Empty)
-        {
-            user.Id = Guid.NewGuid();
-        }
+            // From here on the Identity user already exists: all follow-up persistence must
+            // complete even when the client aborted the request - otherwise an orphaned
+            // Identity user without a domain record/self contact is left behind (same
+            // failure class as #463/#465 for settings writes).
+            var commit = CancellationToken.None;
 
-        var tracked = await _db.Users.AsNoTracking().AnyAsync(u => u.Id == user.Id, ct);
-        if (!tracked)
-        {
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync(ct);
-        }
-        else
-        {
-            // make sure any domain changes are applied to tracked entity
-            var trackedUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, ct);
-            if (trackedUser == null)
+            // Ensure user is persisted/tracked in AppDbContext in case UserManager is mocked or uses a different store
+            if (user.Id == Guid.Empty)
+            {
+                user.Id = Guid.NewGuid();
+            }
+
+            var tracked = await _db.Users.AsNoTracking().AnyAsync(u => u.Id == user.Id, commit);
+            if (!tracked)
             {
                 _db.Users.Add(user);
-                await _db.SaveChangesAsync(ct);
+                await _db.SaveChangesAsync(commit);
             }
-        }
-
-        // Assign AspNet Identity Role if first user
-        if (isFirst)
-        {
-            try
+            else
             {
-                if (_roleManager != null)
+                // make sure any domain changes are applied to tracked entity
+                var trackedUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, commit);
+                if (trackedUser == null)
                 {
-                    var roleName = "Admin";
-                    if (!await _roleManager.RoleExistsAsync(roleName))
+                    _db.Users.Add(user);
+                    await _db.SaveChangesAsync(commit);
+                }
+            }
+
+            // Re-check inside the gate: if another user materialized before this insert committed
+            // (e.g. a writer bypassing this service), strip the admin flag again before it persists.
+            if (isFirst && await _db.Users.AsNoTracking().AnyAsync(u => u.Id != user.Id, commit))
+            {
+                isFirst = false;
+                user.SetAdmin(false);
+                var persistedUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == user.Id, commit);
+                if (persistedUser != null && !ReferenceEquals(persistedUser, user))
+                {
+                    persistedUser.SetAdmin(false);
+                }
+                await _db.SaveChangesAsync(commit);
+            }
+
+            // Assign AspNet Identity Role if first user
+            if (isFirst)
+            {
+                try
+                {
+                    if (_roleManager != null)
                     {
-                        await _roleManager.CreateAsync(new IdentityRole<Guid> { Name = roleName, NormalizedName = roleName.ToUpperInvariant() });
+                        var roleName = "Admin";
+                        if (!await _roleManager.RoleExistsAsync(roleName))
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole<Guid> { Name = roleName, NormalizedName = roleName.ToUpperInvariant() });
+                        }
+                    }
+
+                    var addToRoleResult = await _userManager.AddToRoleAsync(user, "Admin");
+                    if (!addToRoleResult.Succeeded)
+                    {
+                        _logger.LogWarning("Failed to add user {UserId} to role Admin: {Errors}", user.Id, string.Join(';', addToRoleResult.Errors.Select(e => e.Description)));
                     }
                 }
-
-                var addToRoleResult = await _userManager.AddToRoleAsync(user, "Admin");
-                if (!addToRoleResult.Succeeded)
+                catch (Exception ex)
                 {
-                    _logger.LogWarning("Failed to add user {UserId} to role Admin: {Errors}", user.Id, string.Join(';', addToRoleResult.Errors.Select(e => e.Description)));
+                    _logger.LogWarning(ex, "Assigning Admin role to first user failed (non-fatal)");
                 }
             }
-            catch (Exception ex)
+
+            bool hasSelfContact = await _db.Contacts.AsNoTracking().AnyAsync(c => c.OwnerUserId == user.Id && c.Type == ContactType.Self, commit);
+            if (!hasSelfContact)
             {
-                _logger.LogWarning(ex, "Assigning Admin role to first user failed (non-fatal)");
+                _db.Contacts.Add(new Contact(user.Id, user.UserName!, ContactType.Self, null));
+                await _db.SaveChangesAsync(commit);
             }
-        }
 
-        bool hasSelfContact = await _db.Contacts.AsNoTracking().AnyAsync(c => c.OwnerUserId == user.Id && c.Type == ContactType.Self, ct);
-        if (!hasSelfContact)
+            if (ShouldCreateDemoDataForFirstUser(command.CreateDemoData, isFirst))
+            {
+                var taskInfo = _backgroundTaskManager!.Enqueue(BackgroundTaskType.CreateDemoData, user.Id, allowDuplicate: false);
+                _logger.LogInformation("Queued demo-data task {TaskId} for first user {UserId}", taskInfo.Id, user.Id);
+            }
+
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            var token = _jwt.CreateToken(user.Id, user.UserName!, isAdmin, user.SecurityStamp!, out var expires, user.PreferredLanguage, user.TimeZoneId);
+            _logger.LogInformation("User {UserId} ({Username}) registered (IsAdmin={IsAdmin})", user.Id, user.UserName, isAdmin);
+            return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName!, isAdmin, token, expires));
+        }
+        finally
         {
-            _db.Contacts.Add(new Contact(user.Id, user.UserName!, ContactType.Self, null));
-            await _db.SaveChangesAsync(ct);
+            s_registrationGate.Release();
         }
-
-        if (ShouldCreateDemoDataForFirstUser(command.CreateDemoData, isFirst))
-        {
-            var taskInfo = _backgroundTaskManager!.Enqueue(BackgroundTaskType.CreateDemoData, user.Id, allowDuplicate: false);
-            _logger.LogInformation("Queued demo-data task {TaskId} for first user {UserId}", taskInfo.Id, user.Id);
-        }
-
-        var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-        var token = _jwt.CreateToken(user.Id, user.UserName!, isAdmin, user.SecurityStamp!, out var expires, user.PreferredLanguage, user.TimeZoneId);
-        _logger.LogInformation("User {UserId} ({Username}) registered (IsAdmin={IsAdmin})", user.Id, user.UserName, isAdmin);
-        return Result<AuthResult>.Ok(new AuthResult(user.Id, user.UserName!, isAdmin, token, expires));
     }
 
     /// <summary>

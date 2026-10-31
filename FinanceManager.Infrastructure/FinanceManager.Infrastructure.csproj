@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="FinanceManager.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\FinanceManager.Domain\FinanceManager.Domain.csproj" />
     <ProjectReference Include="..\FinanceManager.Application\FinanceManager.Application.csproj" />
   </ItemGroup>

@@ -46,6 +46,17 @@
 | `ImportMonthlySplitThreshold` | int? | `250` | Schwellwert für Monats-Split |
 | `ImportMinEntriesPerDraft` | int | `8` | Min. Entwurfszeilen pro Draft |
 | `MassImportDialogPolicy` | Enum | `OnMissingInformation` | Dialogverhalten im Massenimport |
+| `Auth:AllowSelfRegistration` | bool | `false` | Öffnet die Selbstregistrierung für weitere Benutzer. Im Standard (`false`) kann sich nur der allererste Benutzer selbst registrieren; weitere Konten legt ein Administrator an. Bereitstellung per `Auth__AllowSelfRegistration` ist möglich. |
+| `MassImport:MaxRequestBytes` | long | `150000000` | Maximale Request-Body-Größe des Massenimport-Endpunkts (ca. 143 MB; deckt die Base64-Inflation von `MaxTotalContentBytes` ab). |
+| `MassImport:MaxFiles` | int | `50` | Maximale Dateianzahl pro Massenimport-Batch. |
+| `MassImport:MaxBytesPerFile` | long | `10485760` | Maximale Rohbytes pro Datei im Massenimport (10 MB). |
+| `MassImport:MaxTotalContentBytes` | long | `104857600` | Maximale Summe aller Dateiinhalte pro Batch (100 MB). |
+| `Attachments:MaxSizeBytes` | long | `10485760` | Upload-Größenlimit für Anhänge sowie Symbol- und Kursimport-Uploads (10 MB). |
+| `RateLimiting:AuthSensitive:PermitLimit` | int | `20` | Zulässige Aufrufe je Zeitfenster für die `auth-sensitive`-Endpunkte (Registrierung, `users/exists`) pro Quelladresse. |
+| `RateLimiting:AuthSensitive:WindowSeconds` | int | `10` | Fenstergröße des Rate-Limits in Sekunden. |
+| `ReverseProxy:KnownProxies` | string | leer | Semikolongetrennte IPs vertrauenswürdiger Reverse-Proxies, deren `X-Forwarded-For`-/`X-Forwarded-Proto`-Header berücksichtigt werden. |
+| `ReverseProxy:KnownNetworks` | string | leer | Semikolongetrennte CIDR-Netze vertrauenswürdiger Proxies (z. B. `10.0.0.0/24;fd00::/8`). |
+| `AllowedHosts` | string | `*` | Host-Header-Filterung. `*` lässt direkten HTTP-Zugriff per LAN-IP/Hostname und Zugriff hinter einem Reverse-Proxy zu; kann deployment-spezifisch auf eine semikolongetrennte Liste erlaubter Hostnamen/IPs eingeschränkt werden. |
 
 ## JWT-Konfiguration
 
@@ -82,6 +93,49 @@ geladen. Inaktive Benutzer, fehlende Benutzer, abweichende SecurityStamps oder
 abweichende Rollen fuehren zur Ablehnung des Tokens. Deaktivierung,
 Aktivierung, Rollenwechsel und Passwortreset aktualisieren den SecurityStamp;
 dadurch werden bereits ausgegebene Tokens dieses Benutzers ungueltig.
+
+## Registrierung und Benutzeranlage
+
+Die Selbstregistrierung ist auf den ersten Benutzer beschränkt. Solange noch
+kein Konto existiert, leitet die Anwendung auf die Registrierungsseite um;
+sobald ein Benutzer vorhanden ist, führt `/register` stattdessen auf die
+Anmeldeseite. Weitere Konten werden über die Benutzerverwaltung durch einen
+Administrator angelegt.
+
+Für Installationen, in denen sich Benutzer weiterhin selbst registrieren
+sollen, lässt sich das Verhalten per Konfiguration öffnen:
+
+```powershell
+$env:Auth__AllowSelfRegistration = "true"
+```
+
+Registrierung und die anonyme Abfrage `GET /api/users/exists` unterliegen
+einem Rate-Limit pro Quelladresse (Policy `auth-sensitive`, Standard 20
+Aufrufe je 10 Sekunden, Antwort `429`). Grenzen lassen sich über
+`RateLimiting:AuthSensitive:PermitLimit` und
+`RateLimiting:AuthSensitive:WindowSeconds` anpassen.
+
+## Reverse-Proxy und Host-Header
+
+Forwarded-Headers (`X-Forwarded-For`, `X-Forwarded-Proto`) werden nur von
+konfigurierten vertrauenswürdigen Proxies berücksichtigt. Läuft die Anwendung
+hinter einem Reverse-Proxy, sind dessen Adressen einzutragen, damit Client-IP
+und Protokoll korrekt übernommen werden:
+
+```powershell
+$env:ReverseProxy__KnownProxies = "10.0.0.5;10.0.0.6"
+$env:ReverseProxy__KnownNetworks = "10.0.0.0/24;fd00::/8"
+```
+
+Ohne Einträge werden Forwarded-Headers ignoriert — die Anwendung sieht dann
+die Proxy-Adresse als Quelladresse. Direkter HTTP-Zugriff im LAN erfordert
+keine Konfiguration.
+
+`AllowedHosts` bleibt im Standard `*`, damit direkter Zugriff per LAN-IP oder
+Hostname ohne Zusatzkonfiguration funktioniert. Zur Einschränkung kann eine
+semikolongetrennte Liste der tatsächlich verwendeten Hostnamen/IPs gesetzt
+werden (z. B. `"myserver;myserver.local;192.168.1.10"`); Anfragen mit anderen
+Host-Headern werden dann mit `400` abgelehnt.
 
 ## Data Protection und AlphaVantage API Keys
 
@@ -203,6 +257,9 @@ des externen Installationsskripts (Standardwert: `false`, Host bleibt laufen).
 ## Überprüfung
 
 - Login/Logout funktioniert.
+- Nach der Erstregistrierung leitet `/register` auf die Anmeldeseite um;
+  weitere Konten können nur über die Benutzerverwaltung angelegt werden
+  (außer `Auth:AllowSelfRegistration` ist aktiviert).
 - Der produktionsnahe Start bricht ohne `Jwt__Key` oder mit unsicherem
   `Jwt__Key` ab.
 - Geschuetzte API-Aufrufe akzeptieren nur Tokens mit passendem Issuer,

@@ -3,7 +3,6 @@
 @inject FinanceManager.Application.Users.IUserReadService UserRead
 @inject FinanceManager.Shared.IApiClient ApiClient
 @inject IJSRuntime JS
-@inject JwtCookieAuthTokenProvider TokenProvider
 @using FinanceManager.Shared
 @using FinanceManager.Web.Infrastructure.Auth
 @implements IDisposable
@@ -13,7 +12,6 @@
     private bool _initialized;
     private string _lastPath = string.Empty;
     private bool _redirecting;
-    private DotNetObjectReference<AuthRedirect>? _tokenReceiver;
 
     protected override void OnInitialized()
     {
@@ -36,19 +34,8 @@
         if (firstRender && !_initialized)
         {
             _initialized = true;
-            _tokenReceiver = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("financeManager.keepalive.setTokenReceiver", _tokenReceiver);
             await CheckRedirectAsync(Nav.Uri);
         }
-    }
-
-    /// <summary>Updates this circuit from the authenticated browser activity response.</summary>
-    /// <param name="token">Validated again by the scoped token provider.</param>
-    [JSInvokable]
-    public Task ReceiveTokenAsync(string token)
-    {
-        TokenProvider.AcceptBrowserToken(token);
-        return Task.CompletedTask;
     }
 
     private async Task CheckRedirectAsync(string uri)
@@ -171,7 +158,6 @@
 
     public void Dispose()
     {
-        _tokenReceiver?.Dispose();
         Nav.LocationChanged -= OnLocationChanged;
         ApiClient.AuthenticationRequired -= OnAuthenticationRequired;
     }

@@ -24,3 +24,7 @@ python "$repo_root/.githooks/razor-usage-check.py" --all --strict
 # --- Enum Coverage Check (ganzes Repo, blockierend) ---
 echo "Running enum coverage check..."
 python "$repo_root/.githooks/enum-coverage-check.py" --all --strict
+
+# --- dotnet format Whitespace-Check (spiegelt CI "static checks", blockierend) ---
+echo "Running dotnet format verification..."
+dotnet format "$repo_root/FinanceManager.sln" --verify-no-changes --no-restore --severity error

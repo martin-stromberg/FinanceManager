@@ -13,7 +13,6 @@ window.financeManager = window.financeManager || {};
   let keepaliveLastForcedStart = 0;
   let keepaliveAbortController = null;
   let keepaliveListenersAttached = false;
-  let tokenReceiver = null;
 
   function getLoadingBar() {
     return document.querySelector("[data-mst-loading-bar]") || document.getElementById(loadingBarId);
@@ -185,12 +184,8 @@ window.financeManager = window.financeManager || {};
       headers: { "X-Requested-With": "fetch" },
       signal: keepaliveAbortController ? keepaliveAbortController.signal : undefined
     })
-      .then(async function (response) {
+      .then(function (response) {
         if (response.ok) {
-          const token = response.headers.get("X-Auth-Token");
-          if (token && tokenReceiver) {
-            await tokenReceiver.invokeMethodAsync("ReceiveTokenAsync", token);
-          }
           keepaliveLastSuccess = Date.now();
           return true;
         }
@@ -281,6 +276,32 @@ window.financeManager = window.financeManager || {};
     } catch { }
   };
 
+  fm.downloadFromUrl = function (url) {
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      window.setTimeout(function () {
+        document.body.removeChild(a);
+      }, 200);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  fm.localStorage = {
+    removeByPrefix: function (prefix) {
+      if (!prefix) return;
+      Object.keys(localStorage)
+        .filter(function (k) { return k.indexOf(prefix) === 0; })
+        .forEach(function (k) { localStorage.removeItem(k); });
+    }
+  };
+
   fm.quickEdit = {
     applyValues: function (values) {
       if (!Array.isArray(values)) return;
@@ -305,8 +326,7 @@ window.financeManager = window.financeManager || {};
   fm.keepalive = {
     ping: triggerKeepalive,
     register: registerKeepalive,
-    unregister: unregisterKeepalive,
-    setTokenReceiver: function (receiver) { tokenReceiver = receiver; }
+    unregister: unregisterKeepalive
   };
 
   fm.loadingBar = {

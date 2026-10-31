@@ -544,6 +544,23 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             var body = await response.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Admin login failed with {(int)response.StatusCode} {response.StatusCode}: {body}");
         }
+
+        // Mirror the issued auth cookie as a bearer token - the same way the production
+        // AuthenticatedHttpClientHandler authenticates API calls. Unsafe endpoints enforce
+        // antiforgery validation for ambient-cookie callers, which a pure API client never has.
+        if (response.Headers.TryGetValues("Set-Cookie", out var setCookies))
+        {
+            const string authCookiePrefix = "FinanceManager.Auth=";
+            var token = setCookies
+                .Select(v => v.Split(';')[0])
+                .Where(v => v.StartsWith(authCookiePrefix, StringComparison.Ordinal))
+                .Select(v => v[authCookiePrefix.Length..])
+                .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+        }
     }
 
     private sealed class ThrowingUpdateOrchestrator : IUpdateOrchestrator

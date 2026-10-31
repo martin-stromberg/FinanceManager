@@ -5,6 +5,7 @@ using FinanceManager.Application.Reports;
 using FinanceManager.Shared.Dtos.Admin;
 using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Web.Infrastructure.ApiErrors;
+using FinanceManager.Web.Infrastructure.Backups;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -80,8 +81,7 @@ public sealed class BackupsController : ControllerBase
     /// <response code="200">The HTTP 200 response.</response>
     /// <response code="400">The HTTP 400 response.</response>
     [HttpPost("upload")]
-    [RequestSizeLimit(1_024_000_000)]
-    [RequestFormLimits(MultipartBodyLengthLimit = 1_024_000_000)]
+    [BackupUploadSizeLimit]
     [ProducesResponseType(typeof(BackupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UploadAsync([FromForm] IFormFile file, CancellationToken ct)

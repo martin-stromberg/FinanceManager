@@ -351,7 +351,7 @@ internal sealed class SetupProfileTabPageObject
                 const response = await fetch('/api/user/settings/profile', {
                     method: 'PUT',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': 'e2e' },
                     body: payloadJson
                 });
                 return response.status;

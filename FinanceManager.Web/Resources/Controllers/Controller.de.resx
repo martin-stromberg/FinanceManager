@@ -104,8 +104,14 @@
 	<data name="API_Auth_Err_InvalidCredentials" xml:space="preserve">
 		<value>Benutzername oder Passwort ist ungültig.</value>
 	</data>
+	<data name="API_Auth_Err_RegistrationDisabled" xml:space="preserve">
+		<value>Die Registrierung ist nicht verfügbar.</value>
+	</data>
 	<data name="API_Auth_Err_Conflict_UserAlreadyExists" xml:space="preserve">
 		<value>Ein Benutzer mit diesem Namen existiert bereits.</value>
+	</data>
+	<data name="API_Auth_Err_InvalidRegistration" xml:space="preserve">
+		<value>Die Registrierung ist fehlgeschlagen. Bitte Eingaben prüfen und erneut versuchen.</value>
 	</data>
 	<data name="API_BackgroundTask_Err_CancelFailed" xml:space="preserve">
 		<value>Der laufende Task konnte nicht abgebrochen werden.</value>
