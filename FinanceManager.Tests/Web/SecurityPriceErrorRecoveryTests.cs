@@ -160,8 +160,16 @@ public sealed class SecurityPriceErrorRecoveryTests
             .Setup(x => x.GetLatestDateAsync(ownerId, securityId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((DateTime?)null);
         priceService
-            .Setup(x => x.CreateAsync(ownerId, securityId, It.IsAny<DateTime>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .Setup(x => x.UpsertDailyPricesAsync(ownerId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+            .Returns((Guid _, Guid sid, IReadOnlyList<SecurityPriceImportItem> items, CancellationToken _) =>
+            {
+                foreach (var item in items)
+                {
+                    db.SecurityPrices.Add(new SecurityPrice(sid, item.Date, item.Close));
+                }
+                db.SaveChanges();
+                return Task.FromResult(new SecurityPriceImportResultDto(items.Count, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
+            });
         priceService
             .Setup(x => x.ClearPriceErrorAsync(ownerId, securityId, It.IsAny<CancellationToken>()))
             .Returns(() =>
@@ -186,7 +194,7 @@ public sealed class SecurityPriceErrorRecoveryTests
         await executor.ExecuteAsync(context, CancellationToken.None);
 
         Assert.Equal(1, spyPriceService.ClearPriceErrorCallCount);
-        Assert.Equal(1, spyPriceService.CreateCallCount);
+        Assert.Single(db.SecurityPrices.Where(x => x.SecurityId == securityId));
 
         var security = db.Securities.Single(x => x.Id == securityId);
         Assert.False(security.HasPriceError);
@@ -288,6 +296,14 @@ public sealed class SecurityPriceErrorRecoveryTests
         services.AddSingleton(priceService ?? Mock.Of<ISecurityPriceService>());
         services.AddSingleton(Mock.Of<IGoldenCrossService>());
         services.AddSingleton(Mock.Of<FinanceManager.Application.Securities.TrendReversal.ITrendReversalService>());
+        services.AddScoped<ISecurityPriceUpdateService>(sp => new SecurityPriceUpdateService(
+            db,
+            sp.GetRequiredService<IPriceProvider>(),
+            sp.GetRequiredService<ISecurityPriceService>(),
+            sp.GetRequiredService<INotificationWriter>(),
+            sp.GetRequiredService<IGoldenCrossService>(),
+            sp.GetRequiredService<FinanceManager.Application.Securities.TrendReversal.ITrendReversalService>(),
+            Mock.Of<ILogger<SecurityPriceUpdateService>>()));
         services.AddSingleton(localizer ?? CreateLocalizer());
         return services.BuildServiceProvider();
     }
@@ -314,6 +330,17 @@ public sealed class SecurityPriceErrorRecoveryTests
                 security.ClearPriceError();
                 db.SaveChanges();
                 return Task.CompletedTask;
+            });
+        mock
+            .Setup(x => x.UpsertDailyPricesAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+            .Returns((Guid _, Guid securityId, IReadOnlyList<SecurityPriceImportItem> items, CancellationToken _) =>
+            {
+                foreach (var item in items)
+                {
+                    db.SecurityPrices.Add(new SecurityPrice(securityId, item.Date, item.Close));
+                }
+                db.SaveChanges();
+                return Task.FromResult(new SecurityPriceImportResultDto(items.Count, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
             });
         return mock;
     }

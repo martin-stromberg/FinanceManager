@@ -1,9 +1,13 @@
 using FinanceManager.Application.Attachments;
+using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities;
+using FinanceManager.Application.Securities.GoldenCross;
+using FinanceManager.Application.Securities.TrendReversal;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Securities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace FinanceManager.Tests.Infrastructure;
 
@@ -22,6 +26,11 @@ public sealed class ServiceCollectionExtensionsTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        // Ports whose implementations are provided by the web host layer.
+        services.AddSingleton(Mock.Of<IPriceProvider>());
+        services.AddSingleton(Mock.Of<INotificationWriter>());
+        services.AddSingleton(Mock.Of<IGoldenCrossLocalizer>());
+        services.AddSingleton(Mock.Of<ITrendReversalLocalizer>());
 
         services.AddInfrastructure("Data Source=:memory:");
         using var provider = services.BuildServiceProvider();
@@ -30,6 +39,7 @@ public sealed class ServiceCollectionExtensionsTests
         var scopedProvider = scope.ServiceProvider;
         Assert.NotNull(scopedProvider.GetService<IAttachmentService>());
         Assert.NotNull(scopedProvider.GetService<ISecurityPriceImportServiceFactory>());
+        Assert.NotNull(scopedProvider.GetService<ISecurityPriceUpdateService>());
         Assert.NotNull(scopedProvider.GetService<IDbContextFactory<AppDbContext>>());
 
         var importServices = scopedProvider.GetServices<ISecurityPriceImportService>().ToList();

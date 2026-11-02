@@ -13,19 +13,19 @@ public sealed class IngSecurityPriceImportService : ISecurityPriceImportService,
 {
     private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
 
-    private readonly ISecurityPriceService _priceService;
+    private readonly ISecurityPriceUpdateService _priceUpdates;
     private readonly ILogger<IngSecurityPriceImportService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IngSecurityPriceImportService"/> class.
     /// </summary>
-    /// <param name="priceService">Service used to upsert parsed daily prices.</param>
+    /// <param name="priceUpdates">Service used to store parsed daily prices and run the signal evaluations.</param>
     /// <param name="logger">Logger used for diagnostic messages.</param>
     public IngSecurityPriceImportService(
-        ISecurityPriceService priceService,
+        ISecurityPriceUpdateService priceUpdates,
         ILogger<IngSecurityPriceImportService> logger)
     {
-        _priceService = priceService;
+        _priceUpdates = priceUpdates;
         _logger = logger;
     }
 
@@ -59,13 +59,13 @@ public sealed class IngSecurityPriceImportService : ISecurityPriceImportService,
             return new SecurityPriceImportResultDto(0, 0, 0, 0, errors);
         }
 
-        var upsertResult = await _priceService.UpsertDailyPricesAsync(
+        var result = await _priceUpdates.StoreAndEvaluateAsync(
             ownerUserId,
             securityId,
             parse.Items.Values.OrderBy(x => x.Date).ToList(),
             ct);
 
-        return upsertResult;
+        return result;
     }
 
     internal static bool TryInspectContent(byte[] content, out string securityName, out string? validationMessage)

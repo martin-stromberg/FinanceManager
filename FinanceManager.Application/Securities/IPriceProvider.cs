@@ -1,4 +1,4 @@
-namespace FinanceManager.Web.Services;
+namespace FinanceManager.Application.Securities;
 
 /// <summary>
 /// Provides historical price data for financial symbols.

@@ -1,3 +1,4 @@
+using FinanceManager.Application.Securities;
 using FinanceManager.Application;
 using System.Net;
 

@@ -74,9 +74,9 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
 
         using var scope = _scopeFactory.CreateScope();
         var securityService = scope.ServiceProvider.GetRequiredService<ISecurityService>();
-        var priceProvider = scope.ServiceProvider.GetRequiredService<IPriceProvider>();
         var keyResolver = scope.ServiceProvider.GetRequiredService<IAlphaVantageKeyResolver>();
         var priceService = scope.ServiceProvider.GetRequiredService<ISecurityPriceService>();
+        var priceUpdates = scope.ServiceProvider.GetRequiredService<ISecurityPriceUpdateService>();
 
         // Ensure shared key (worker context)
         var shared = await keyResolver.GetSharedAsync(ct);
@@ -161,30 +161,14 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
                 var startExclusive = fromInclusive.AddDays(-1);
                 var endInclusive = toInclusive;
 
-                var data = await priceProvider.GetDailyPricesAsync(s.AlphaVantageCode!, startExclusive, endInclusive, ct);
-                await priceService.ClearPriceErrorAsync(s.OwnerUserId, s.Id, ct);
+                var result = await priceUpdates.RefreshFromProviderAsync(
+                    new SecurityPriceRefreshRequest(s.OwnerUserId, s.Id, s.AlphaVantageCode!, s.Name, s.Identifier, startExclusive, endInclusive),
+                    ct);
 
-                int inserts = 0;
-                foreach ((DateTime date, decimal close) tuple in data)
+                if (result.Status == SecurityPriceRefreshStatus.ProviderError)
                 {
-                    if (tuple.date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) { continue; }
-                    try
-                    {
-                        // use price service to persist each price (validates ownership)
-                        await priceService.CreateAsync(s.OwnerUserId, s.Id, tuple.date, tuple.close, ct);
-                        inserts++;
-                    }
-                    catch (ArgumentOutOfRangeException ex)
-                    {
-                        _logger.LogWarning(ex, "Invalid price for {Security} on {Date}: {Message}", s.Name, tuple.date, ex.Message);
-                        // skip this price and continue
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        // unexpected ownership/validation issue - log and break for this security
-                        _logger.LogWarning(ex, "Skipping price insert for {Security} on {Date}: {Message}", s.Name, tuple.date, ex.Message);
-                        break;
-                    }
+                    context.ReportProgress(processed, total, s.Name + ": " + result.ErrorMessage, 0, 1);
+                    continue;
                 }
                 context.ReportProgress(++processed, total, s.Name, 0, 0);
             }
@@ -194,20 +178,6 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
                 context.ReportProgress(processed, total, _localizer["RateLimited"], 0, 1);
                 // Stop the whole backfill; user can rerun later
                 throw;
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Invalid symbol for {Security}", s.Name);
-                // mark error via service and continue others
-                try
-                {
-                    await priceService.SetPriceErrorAsync(s.OwnerUserId, s.Id, ex.Message, ct);
-                }
-                catch (Exception setEx)
-                {
-                    _logger.LogWarning(setEx, "Failed to set price error flag for {Security}", s.Name);
-                }
-                context.ReportProgress(processed, total, s.Name + ": " + ex.Message, 0, 1);
             }
             catch (Exception ex)
             {
