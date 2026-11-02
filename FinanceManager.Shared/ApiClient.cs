@@ -58,7 +58,8 @@ public partial class ApiClient : IApiClient
     /// </summary>
     /// <param name="resp">The HTTP response message to inspect.</param>
     /// <returns><c>true</c> when the response indicates success; otherwise <c>false</c>.</returns>
-    private async Task<bool> TrySetErrorFromResponseAsync(HttpResponseMessage resp)
+    /// <param name="requestAuthentication">Whether authentication failures request login navigation.</param>
+    private async Task<bool> TrySetErrorFromResponseAsync(HttpResponseMessage resp, bool requestAuthentication = true)
     {
         LastError = null;
         LastErrorCode = null;
@@ -124,7 +125,7 @@ public partial class ApiClient : IApiClient
             LastError = resp.ReasonPhrase ?? $"HTTP {(int)resp.StatusCode}";
         }
 
-        if (IsAuthenticationFailure(resp))
+        if (requestAuthentication && IsAuthenticationFailure(resp))
         {
             AuthenticationRequired?.Invoke(this, new ApiAuthenticationRequiredEventArgs(resp.StatusCode, LastErrorCode, LastError));
         }

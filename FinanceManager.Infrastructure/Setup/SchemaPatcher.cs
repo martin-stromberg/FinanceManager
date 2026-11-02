@@ -1,6 +1,7 @@
 using FinanceManager.Application;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace FinanceManager.Infrastructure.Setup;
@@ -16,9 +17,9 @@ public static class SchemaPatcher
     /// Apply runtime fixes after migrations have been applied. This is executed from ProgramExtensions after
     /// calling <c>db.Database.Migrate()</c>. It may enqueue background tasks to rebuild aggregates if needed.
     /// </summary>
-    /// <param name="serviceProvider">Service provider.</param>
-    /// <param name="db">The db.</param>
-    /// <param name="logger">Logger instance.</param>
+    /// <param name="serviceProvider">The service provider used to resolve required services.</param>
+    /// <param name="db">The application database context.</param>
+    /// <param name="logger">The logger for patch diagnostics.</param>
     public static void RunPostMigrationPatches(IServiceProvider serviceProvider, AppDbContext db, ILogger logger)
     {
         // Run synchronously but perform async DB operations internally
@@ -31,6 +32,7 @@ public static class SchemaPatcher
         try
         {
             await EnsureAspNetUsersColumnsAsync(db, logger);
+            await MigrateBackupStorageAsync(serviceProvider, db, logger);
 
             var taskManager = serviceProvider.GetService(typeof(IBackgroundTaskManager)) as IBackgroundTaskManager;
             if (taskManager == null)
@@ -88,6 +90,86 @@ public static class SchemaPatcher
         catch (Exception ex)
         {
             logger.LogError(ex, "Post-migration patching failed");
+        }
+    }
+
+    /// <summary>
+    /// Moves legacy backup files stored flat under the shared <c>backups</c> directory into the
+    /// per-user subdirectory of their record's owner. Renames on collision and updates the
+    /// record's <c>StoragePath</c> accordingly. Idempotent and non-fatal.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider used to resolve the backup service.</param>
+    /// <param name="db">The application database context.</param>
+    /// <param name="logger">The logger for migration diagnostics.</param>
+    private static async Task MigrateBackupStorageAsync(IServiceProvider serviceProvider, AppDbContext db, ILogger logger)
+    {
+        try
+        {
+            var env = serviceProvider.GetService(typeof(IHostEnvironment)) as IHostEnvironment;
+            if (env == null || string.IsNullOrWhiteSpace(env.ContentRootPath))
+            {
+                return;
+            }
+
+            var backupsRoot = Path.Combine(env.ContentRootPath, "backups");
+            if (!Directory.Exists(backupsRoot))
+            {
+                return;
+            }
+
+            var records = await db.Backups.ToListAsync();
+            var changed = false;
+            foreach (var record in records)
+            {
+                try
+                {
+                    var storagePath = record.StoragePath;
+                    if (string.IsNullOrWhiteSpace(storagePath)
+                        || !string.Equals(storagePath, Path.GetFileName(storagePath), StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    var legacyPath = Path.Combine(backupsRoot, storagePath);
+                    if (!File.Exists(legacyPath))
+                    {
+                        continue;
+                    }
+
+                    var userDir = Path.Combine(backupsRoot, record.OwnerUserId.ToString("N"));
+                    Directory.CreateDirectory(userDir);
+
+                    var targetName = storagePath;
+                    var targetPath = Path.Combine(userDir, targetName);
+                    if (File.Exists(targetPath))
+                    {
+                        targetName = $"{Path.GetFileNameWithoutExtension(storagePath)}-{Guid.NewGuid().ToString("N")[..8]}{Path.GetExtension(storagePath)}";
+                        targetPath = Path.Combine(userDir, targetName);
+                    }
+
+                    File.Move(legacyPath, targetPath);
+                    if (!string.Equals(targetName, storagePath, StringComparison.Ordinal))
+                    {
+                        record.StoragePath = targetName;
+                        changed = true;
+                    }
+
+                    logger.LogInformation("Migrated backup file {StoragePath} for record {BackupId} into owner directory {OwnerUserId}", storagePath, record.Id, record.OwnerUserId);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to migrate backup file for record {BackupId}", record.Id);
+                }
+            }
+
+            if (changed)
+            {
+                await db.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Backup storage migration failed; continuing startup");
         }
     }
 

@@ -74,14 +74,35 @@ public sealed class BackupService : IBackupService
     }
 
     /// <summary>
-    /// Resolves the root folder where backup files are stored on the host file system and ensures it exists.
+    /// Resolves the per-user root folder where backup files are stored on the host file system
+    /// and ensures it exists.
     /// </summary>
-    /// <returns>Absolute path to the backups directory.</returns>
-    private string GetRoot()
+    /// <param name="userId">Owner user identifier.</param>
+    /// <returns>Absolute path to the user's backups directory.</returns>
+    private string GetRoot(Guid userId)
     {
-        var root = Path.Combine(_env.ContentRootPath, "backups");
+        var root = Path.Combine(_env.ContentRootPath, "backups", userId.ToString("N"));
         if (!Directory.Exists(root)) Directory.CreateDirectory(root);
         return root;
+    }
+
+    /// <summary>
+    /// Resolves the absolute storage path of a backup record inside the owning user's backup
+    /// directory, or <c>null</c> when the stored relative path is not a plain file name.
+    /// </summary>
+    /// <param name="rec">The backup record whose storage path should be resolved.</param>
+    /// <returns>The absolute file path, or <c>null</c> when the record is not resolvable.</returns>
+    private string? ResolveStoragePath(BackupRecord rec)
+    {
+        var storagePath = rec.StoragePath;
+        if (string.IsNullOrWhiteSpace(storagePath)
+            || !string.Equals(storagePath, Path.GetFileName(storagePath), StringComparison.Ordinal)
+            || storagePath.Contains("..", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return Path.Combine(GetRoot(rec.OwnerUserId), storagePath);
     }
 
     /// <summary>
@@ -100,9 +121,9 @@ public sealed class BackupService : IBackupService
         var ndjsonBytes = new UTF8Encoding(false).GetBytes(ndjson);
 
         var backupName = $"backup-{DateTime.UtcNow:yyyyMMddHHmmss}";
-        var fileName = $"{backupName}.zip";
+        var fileName = $"{backupName}-{Guid.NewGuid().ToString("N")[..8]}.zip";
         var dataFileName = $"{backupName}.ndjson";
-        var path = Path.Combine(GetRoot(), fileName);
+        var path = Path.Combine(GetRoot(userId), fileName);
 
         // Write zip with single entry backup.ndjson
         await using (var fs = File.Create(path))
@@ -149,7 +170,8 @@ public sealed class BackupService : IBackupService
         }
 
         var targetName = safeName;
-        var target = Path.Combine(GetRoot(), targetName);
+        var storageName = $"upload-{Guid.NewGuid():N}.zip";
+        var target = Path.Combine(GetRoot(userId), storageName);
 
         if (await _db.Backups.AnyAsync(b => b.OwnerUserId == userId && b.FileName == targetName, ct))
             throw new FileLoadException("Eine Sicherung mit diesem Dateinamen existiert bereits.");
@@ -170,10 +192,10 @@ public sealed class BackupService : IBackupService
         {
             OwnerUserId = userId,
             CreatedUtc = DateTime.UtcNow,
-            FileName = Path.GetFileName(target),
+            FileName = targetName,
             SizeBytes = size,
             Source = "Upload",
-            StoragePath = Path.GetFileName(target)
+            StoragePath = storageName
         };
         _db.Backups.Add(rec);
         await _db.SaveChangesAsync(ct);
@@ -216,8 +238,11 @@ public sealed class BackupService : IBackupService
     {
         var rec = await _db.Backups.FirstOrDefaultAsync(b => b.Id == id && b.OwnerUserId == userId, ct);
         if (rec == null) return false;
-        var full = Path.Combine(GetRoot(), rec.StoragePath);
-        try { if (File.Exists(full)) File.Delete(full); } catch { }
+        var full = ResolveStoragePath(rec);
+        if (full != null)
+        {
+            try { if (File.Exists(full)) File.Delete(full); } catch { }
+        }
         _db.Backups.Remove(rec);
         await _db.SaveChangesAsync(ct);
         return true;
@@ -234,8 +259,8 @@ public sealed class BackupService : IBackupService
     {
         var rec = await _db.Backups.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id && b.OwnerUserId == userId, ct);
         if (rec == null) return null;
-        var full = Path.Combine(GetRoot(), rec.StoragePath);
-        if (!File.Exists(full)) return null;
+        var full = ResolveStoragePath(rec);
+        if (full == null || !File.Exists(full)) return null;
         return File.OpenRead(full);
     }
 
@@ -280,8 +305,8 @@ public sealed class BackupService : IBackupService
             return BackupApplyResult.ConfirmationRequired("Restore confirmation must match the backup file name.");
         }
 
-        var full = Path.Combine(GetRoot(), rec.StoragePath);
-        if (!File.Exists(full)) return BackupApplyResult.NotFound("Backup file not found.");
+        var full = ResolveStoragePath(rec);
+        if (full == null || !File.Exists(full)) return BackupApplyResult.NotFound("Backup file not found.");
 
         BackupValidationResult validation;
         try

@@ -14,6 +14,8 @@ internal static class ExportFileHelper
 {
     /// <summary>
     /// Escapes a string value for inclusion in a CSV field by removing newlines and quoting double-quotes.
+    /// Values that would be interpreted as a spreadsheet formula or command by common CSV consumers are
+    /// additionally neutralized with a leading apostrophe.
     /// </summary>
     /// <param name="value">Input string value to escape.</param>
     /// <returns>CSV-safe quoted string, or empty string when input is null or empty.</returns>
@@ -21,6 +23,10 @@ internal static class ExportFileHelper
     {
         if (string.IsNullOrEmpty(value)) { return string.Empty; }
         var v = value.Replace("\r", string.Empty).Replace("\n", " ").Replace("\"", "\"\"");
+        if (v.Length > 0 && v[0] is '=' or '+' or '-' or '@' or '\t')
+        {
+            v = "'" + v;
+        }
         return $"\"{v}\"";
     }
 

@@ -71,6 +71,23 @@
 
 **Umsetzung:** `StatementDraftEntriesListViewModel` liefert die mobilen Listenzeilen; `GenericListPage` rendert die mobile Kartenstruktur.
 
+## Massenimport-Batches sind größenbegrenzt
+
+**Beschreibung:** Der Massenimport-Endpunkt erzwingt konfigurierbare Obergrenzen für Anzahl und Größe der hochgeladenen Dateien.
+
+**Bedingungen:**
+- `Files.Count` muss zwischen 1 und `MassImport:MaxFiles` (Standard 50) liegen.
+- Jede Datei darf höchstens `MassImport:MaxBytesPerFile` (Standard 10 MB) Rohbytes enthalten.
+- Die Summe aller Dateiinhalte darf `MassImport:MaxTotalContentBytes` (Standard 100 MB) nicht überschreiten.
+- Der gesamte Request-Body ist über `MassImport:MaxRequestBytes` (Standard ca. 143 MB) begrenzt.
+
+**Verhalten:**
+- Verstoß gegen Dateianzahl, Einzelgröße oder Gesamtinhalt: `400 ApiErrorDto` mit `Err_MassImport_TooManyFiles`, `Err_MassImport_FileTooLarge` bzw. `Err_MassImport_BatchTooLarge`.
+- Überschreitung des Body-Limits: `413` noch vor dem Einlesen des Requests.
+- Gültige Batches werden unverändert an den Orchestrierer übergeben.
+
+**Umsetzung:** `MassImportRequestSizeLimitAttribute`/`-Filter` setzt `IHttpMaxRequestBodySizeFeature`; die applikativen Checks liegen in `StatementDraftsController.ProcessMassImportAsync` über `MassImportOptions`.
+
 ## Massenimport-Prüfdialog zeigt nicht importierbare Dateien
 
 **Beschreibung:** Dateien, die beim Massenimport nicht zugeordnet oder nicht importiert werden können, werden im Prüfdialog sichtbar mit Grund angezeigt.

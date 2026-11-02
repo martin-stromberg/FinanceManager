@@ -64,7 +64,7 @@ namespace FinanceManager.Tests.Infrastructure
             // record persisted
             var rec = db.Backups.FirstOrDefault(b => b.Id == dto.Id);
             Assert.NotNull(rec);
-            var full = Path.Combine(backupsDir, rec.StoragePath);
+            var full = Path.Combine(backupsDir, userId.ToString("N"), rec.StoragePath);
             Assert.True(File.Exists(full));
 
             // Check zip contains ndjson
@@ -143,7 +143,59 @@ namespace FinanceManager.Tests.Infrastructure
             var dto = await svc.UploadAsync(userId, zip, "custom.zip", CancellationToken.None);
 
             Assert.Equal("custom.zip", dto.FileName);
-            Assert.True(File.Exists(Path.Combine(backupsDir, "custom.zip")));
+            var rec = db.Backups.Single(b => b.Id == dto.Id);
+            Assert.True(File.Exists(Path.Combine(backupsDir, userId.ToString("N"), rec.StoragePath)));
+
+            try { Directory.Delete(temp, true); } catch { }
+        }
+
+        /// <summary>
+        /// Verifies that two users uploading a file with the same name both succeed because the
+        /// server-generated storage names live in per-user directories.
+        /// </summary>
+        [Fact]
+        public async Task UploadAsync_SameFileNameTwoUsers_BothSucceed()
+        {
+            var svc = CreateService(out var db, out var temp);
+            await using (db)
+            {
+                var userA = Guid.NewGuid();
+                var userB = Guid.NewGuid();
+
+                await using var zipA = CreateZip(("backup.ndjson", CreateValidNdjson()));
+                await using var zipB = CreateZip(("backup.ndjson", CreateValidNdjson()));
+                var dtoA = await svc.UploadAsync(userA, zipA, "same.zip", CancellationToken.None);
+                var dtoB = await svc.UploadAsync(userB, zipB, "same.zip", CancellationToken.None);
+
+                Assert.Equal("same.zip", dtoA.FileName);
+                Assert.Equal("same.zip", dtoB.FileName);
+                var recA = db.Backups.Single(b => b.Id == dtoA.Id);
+                var recB = db.Backups.Single(b => b.Id == dtoB.Id);
+                Assert.NotEqual(recA.StoragePath, recB.StoragePath);
+                Assert.True(File.Exists(Path.Combine(temp, "backups", userA.ToString("N"), recA.StoragePath)));
+                Assert.True(File.Exists(Path.Combine(temp, "backups", userB.ToString("N"), recB.StoragePath)));
+            }
+
+            try { Directory.Delete(temp, true); } catch { }
+        }
+
+        /// <summary>
+        /// Verifies that a record whose <c>StoragePath</c> contains a directory separator is not
+        /// resolved outside the per-user backup directory: download yields null.
+        /// </summary>
+        [Fact]
+        public async Task OpenDownloadAsync_StoragePathTraversal_IsRejected()
+        {
+            var svc = CreateService(out var db, out var temp);
+            await using (db)
+            {
+                var userId = Guid.NewGuid();
+                var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = "evil.zip", SizeBytes = 0, Source = "Test", StoragePath = "../evil.zip" };
+                db.Backups.Add(rec);
+                await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+                Assert.Null(await svc.OpenDownloadAsync(userId, rec.Id, CancellationToken.None));
+            }
 
             try { Directory.Delete(temp, true); } catch { }
         }
@@ -261,7 +313,9 @@ namespace FinanceManager.Tests.Infrastructure
 
             // create a manual file and record
             var filename = "manual.zip";
-            var filepath = Path.Combine(temp, "backups", filename);
+            var userDir = Path.Combine(temp, "backups", userId.ToString("N"));
+            Directory.CreateDirectory(userDir);
+            var filepath = Path.Combine(userDir, filename);
             using (var fs = File.Create(filepath)) { }
             var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = filename, SizeBytes = new FileInfo(filepath).Length, Source = "Test", StoragePath = filename };
             db.Backups.Add(rec);
@@ -296,7 +350,9 @@ namespace FinanceManager.Tests.Infrastructure
             var userId = Guid.NewGuid();
 
             var filename = "todelete.zip";
-            var filepath = Path.Combine(temp, "backups", filename);
+            var userDir = Path.Combine(temp, "backups", userId.ToString("N"));
+            Directory.CreateDirectory(userDir);
+            var filepath = Path.Combine(userDir, filename);
             await using (var fs = File.Create(filepath)) { }
             var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = filename, SizeBytes = new FileInfo(filepath).Length, Source = "Test", StoragePath = filename };
             db.Backups.Add(rec);
@@ -334,7 +390,9 @@ namespace FinanceManager.Tests.Infrastructure
             var userId = Guid.NewGuid();
 
             var filename = "todownload.zip";
-            var filepath = Path.Combine(temp, "backups", filename);
+            var userDir = Path.Combine(temp, "backups", userId.ToString("N"));
+            Directory.CreateDirectory(userDir);
+            var filepath = Path.Combine(userDir, filename);
             await using (var fs = File.Create(filepath)) { var b = new byte[] { 1, 2, 3 }; await fs.WriteAsync(b, TestContext.Current.CancellationToken); }
             var rec = new BackupRecord { OwnerUserId = userId, CreatedUtc = DateTime.UtcNow, FileName = filename, SizeBytes = new FileInfo(filepath).Length, Source = "Test", StoragePath = filename };
             db.Backups.Add(rec);
@@ -376,7 +434,7 @@ namespace FinanceManager.Tests.Infrastructure
 
             var rec = db.Backups.FirstOrDefault(b => b.Id == dto.Id);
             Assert.NotNull(rec);
-            var full = Path.Combine(temp, "backups", rec.StoragePath);
+            var full = Path.Combine(temp, "backups", userId.ToString("N"), rec.StoragePath);
             Assert.True(File.Exists(full));
 
             using var fs = File.OpenRead(full);

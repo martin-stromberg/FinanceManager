@@ -41,15 +41,19 @@ public static class BrowserApiHelper
         var payloadJson = JsonSerializer.Serialize(payload, JsonOptions);
         var json = await page.EvaluateAsync<string>("""
             async ({ path, payloadJson }) => {
+                let xsrf;
+                try { const r = await fetch('/api/antiforgery', { credentials: 'include' }); if (r.ok) { xsrf = (await r.json()).requestToken; } } catch {}
+                const headers = { 'Content-Type': 'application/json' };
+                if (xsrf) { headers['RequestVerificationToken'] = xsrf; }
                 const response = await fetch(path, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: payloadJson
                 });
 
                 if (!response.ok) {
-                    throw new Error(await response.text());
+                    throw new Error(response.status + ':' + await response.text());
                 }
 
                 return JSON.stringify(await response.json());
@@ -173,7 +177,10 @@ public static class BrowserApiHelper
     {
         var status = await page.EvaluateAsync<int>("""
             async (path) => {
-                const response = await fetch(path, { method: 'POST', credentials: 'include' });
+                let xsrf;
+                try { const r = await fetch('/api/antiforgery', { credentials: 'include' }); if (r.ok) { xsrf = (await r.json()).requestToken; } } catch {}
+                const headers = xsrf ? { 'RequestVerificationToken': xsrf } : {};
+                const response = await fetch(path, { method: 'POST', credentials: 'include', headers });
                 return response.status;
             }
             """, path);
@@ -221,14 +228,18 @@ public static class BrowserApiHelper
                     }
                 }
 
+                let xsrf;
+                try { const r = await fetch('/api/antiforgery', { credentials: 'include' }); if (r.ok) { xsrf = (await r.json()).requestToken; } } catch {}
+                const headers = xsrf ? { 'RequestVerificationToken': xsrf } : {};
                 const response = await fetch(path, {
                     method: 'POST',
                     credentials: 'include',
+                    headers,
                     body: form
                 });
 
                 if (!response.ok) {
-                    throw new Error(await response.text());
+                    throw new Error(response.status + ':' + await response.text());
                 }
 
                 return JSON.stringify(await response.json());
@@ -272,11 +283,14 @@ public static class BrowserApiHelper
     {
         var json = await page.EvaluateAsync<string>("""
             async ({ method, path, payloadJson }) => {
+                let xsrf;
+                try { const r = await fetch('/api/antiforgery', { credentials: 'include' }); if (r.ok) { xsrf = (await r.json()).requestToken; } } catch {}
                 const options = {
                     method,
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' }
                 };
+                if (xsrf) { options.headers['RequestVerificationToken'] = xsrf; }
 
                 if (payloadJson !== null) {
                     options.body = payloadJson;

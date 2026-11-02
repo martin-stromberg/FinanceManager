@@ -40,6 +40,7 @@ public sealed class TestAuthCookieHelper
     /// </summary>
     /// <param name="page">Browser context to inject the cookie into.</param>
     /// <param name="username">Username the minted token is issued for.</param>
+    /// <remarks>The browser cookie is session-scoped because Playwright's float expiry can round current Unix seconds into the past. The signed JWT still expires in one minute.</remarks>
     public async Task SetNearExpiryCookieAsync(IPage page, string username)
     {
         var expiresUtc = DateTimeOffset.UtcNow.AddMinutes(1);
@@ -53,8 +54,7 @@ public sealed class TestAuthCookieHelper
                 Url = _baseUrl,
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteAttribute.Lax,
-                Expires = expiresUtc.ToUnixTimeSeconds()
+                SameSite = SameSiteAttribute.Lax
             }
         });
     }

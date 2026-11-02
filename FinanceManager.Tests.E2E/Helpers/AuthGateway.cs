@@ -101,18 +101,21 @@ public sealed class AuthGateway
             }
             """);
 
+        var loginResponse = _page.WaitForResponseAsync(response =>
+            Uri.TryCreate(response.Url, UriKind.Absolute, out var uri)
+            && uri.AbsolutePath.Equals("/api/auth/login", StringComparison.OrdinalIgnoreCase)
+            && response.Request.Method == "POST");
         for (var attempt = 0; attempt < 3; attempt++)
         {
             await _page.Locator("button[type=submit]").ClickAsync();
-            try
+            if (await Task.WhenAny(loginResponse, Task.Delay(2_000)) == loginResponse)
             {
-                await _page.WaitForFunctionAsync("() => window.__fmAuthLoginCalls > 0", null, new() { Timeout = 2_000 });
-                await _page.Locator("body").WaitForAsync();
+                var response = await loginResponse;
+                if (!response.Ok)
+                    throw new InvalidOperationException($"Login form returned HTTP {response.Status}.");
+                await _page.WaitForURLAsync(url => !new Uri(url).AbsolutePath.Equals("/login", StringComparison.OrdinalIgnoreCase));
+                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                 return;
-            }
-            catch (TimeoutException)
-            {
-                // Blazor Server may still be attaching handlers immediately after navigation.
             }
         }
 

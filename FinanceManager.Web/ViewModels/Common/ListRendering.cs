@@ -62,8 +62,9 @@ namespace FinanceManager.Web.ViewModels.Common
     /// <param name="Amount">Optional currency amount for currency cells.</param>
     /// <param name="IconUrl">Optional URL to an icon to display instead of a symbol attachment.</param>
     /// <param name="Muted">When true the cell should be rendered in a muted (grayed-out) style.</param>
+    /// <param name="AllowHtml">When true the text is rendered as raw HTML. Must only be set for server-generated, trusted markup.</param>
     /// <returns>The result.</returns>
-    public sealed record ListCell(ListCellKind Kind, string? Text = null, System.Guid? SymbolId = null, decimal? Amount = null, string? IconUrl = null, bool Muted = false);
+    public sealed record ListCell(ListCellKind Kind, string? Text = null, System.Guid? SymbolId = null, decimal? Amount = null, string? IconUrl = null, bool Muted = false, bool AllowHtml = false);
 
     /// <summary>
     /// Describes how a row inside a mobile list card is rendered.

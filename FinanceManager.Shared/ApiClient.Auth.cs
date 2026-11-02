@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace FinanceManager.Shared;
@@ -17,6 +18,7 @@ public partial class ApiClient
     {
         var resp = await _http.PostAsJsonAsync("/api/auth/login", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
+        CaptureAuthCookieAsBearer(resp);
         return (await resp.Content.ReadFromJsonAsync<AuthOkResponse>(cancellationToken: ct))!;
     }
 
@@ -30,6 +32,7 @@ public partial class ApiClient
     {
         var resp = await _http.PostAsJsonAsync("/api/auth/register", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
+        CaptureAuthCookieAsBearer(resp);
         return (await resp.Content.ReadFromJsonAsync<AuthOkResponse>(cancellationToken: ct))!;
     }
 
@@ -42,7 +45,36 @@ public partial class ApiClient
     {
         var resp = await _http.PostAsync("/api/auth/logout", content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
+        // The mirrored bearer credential must die with the cookie session: without clearing it, a
+        // still-valid JWT would keep authorizing unsafe calls after logout.
+        _http.DefaultRequestHeaders.Authorization = null;
         return true;
+    }
+
+    /// <summary>
+    /// Mirrors the freshly issued <c>FinanceManager.Auth</c> cookie into an
+    /// <c>Authorization: Bearer</c> default header, so non-browser clients authenticate the same way
+    /// the Blazor circuit does (bearer token instead of ambient cookie). This also keeps
+    /// cookie-authenticated CSRF enforcement from applying to pure API clients.
+    /// </summary>
+    /// <param name="resp">The login/register response that carries the <c>Set-Cookie</c> header.</param>
+    private void CaptureAuthCookieAsBearer(HttpResponseMessage resp)
+    {
+        const string authCookiePrefix = "FinanceManager.Auth=";
+        if (!resp.Headers.TryGetValues("Set-Cookie", out var setCookies))
+        {
+            return;
+        }
+
+        var token = setCookies
+            .Select(v => v.Split(';')[0])
+            .Where(v => v.StartsWith(authCookiePrefix, StringComparison.Ordinal))
+            .Select(v => v[authCookiePrefix.Length..])
+            .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
     }
 
     #endregion Auth

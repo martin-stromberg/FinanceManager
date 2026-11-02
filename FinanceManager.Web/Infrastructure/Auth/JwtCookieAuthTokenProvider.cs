@@ -1,6 +1,8 @@
 using FinanceManager.Infrastructure.Auth;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Components;
 
 namespace FinanceManager.Web.Infrastructure.Auth
 {
@@ -15,13 +17,48 @@ namespace FinanceManager.Web.Infrastructure.Auth
         private readonly IOptions<JwtOptions> _options;
         private readonly JwtTokenValidationParametersFactory _validationParametersFactory;
         private readonly IJwtRefreshService _refreshService;
+        private readonly CircuitAuthTokenStore _tokenStore;
 
         private readonly object _sync = new();
         private string? _cachedToken;
         private DateTimeOffset _cachedExpiry;
 
-        private static readonly TimeSpan MinRenewalWindow = TimeSpan.FromMinutes(5);
         private const string AuthCookieName = "FinanceManager.Auth"; // <- zentraler Name
+
+        /// <summary>
+        /// Opaque single-use key transferred through the persistent component state between the
+        /// prerendered request and the interactive circuit. The key resolves the cached token
+        /// server-side via <see cref="CircuitAuthTokenStore"/> so no token is embedded in the page.
+        /// </summary>
+        [PersistentState]
+        public string? PersistedTokenKey
+        {
+            get => _cachedToken is null ? null : _tokenStore.StoreForHandoff(_cachedToken, _cachedExpiry);
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value)) { InvalidateCache(); return; }
+                if (!_tokenStore.TryTakeHandoff(value, out var token, out _) || string.IsNullOrWhiteSpace(token))
+                {
+                    InvalidateCache();
+                    return;
+                }
+
+                try
+                {
+                    var principal = new JwtSecurityTokenHandler().ValidateToken(token, _validationParametersFactory.Create(), out var validated);
+                    var expiry = new DateTimeOffset(validated.ValidTo, TimeSpan.Zero);
+                    Cache(token, expiry);
+                    var subject = principal.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                    if (Guid.TryParse(subject, out var userId))
+                    {
+                        _tokenStore.SetCurrent(userId, token, expiry);
+                    }
+                }
+                catch (Microsoft.IdentityModel.Tokens.SecurityTokenException) { InvalidateCache(); }
+                catch (ArgumentException) { InvalidateCache(); }
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JwtCookieAuthTokenProvider"/> class.
@@ -30,17 +67,20 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// <param name="options">Validated JWT settings.</param>
         /// <param name="validationParametersFactory">Factory for shared JWT validation parameters.</param>
         /// <param name="refreshService">Service that validates and renews JWTs against current user state.</param>
+        /// <param name="tokenStore">Process-wide store used for the prerender handoff and the per-user latest-token registry.</param>
         /// <exception cref="ArgumentNullException">Thrown when either argument is <c>null</c>.</exception>
         public JwtCookieAuthTokenProvider(
             IHttpContextAccessor httpContextAccessor,
             IOptions<JwtOptions> options,
             JwtTokenValidationParametersFactory validationParametersFactory,
-            IJwtRefreshService refreshService)
+            IJwtRefreshService refreshService,
+            CircuitAuthTokenStore tokenStore)
         {
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _validationParametersFactory = validationParametersFactory ?? throw new ArgumentNullException(nameof(validationParametersFactory));
             _refreshService = refreshService ?? throw new ArgumentNullException(nameof(refreshService));
+            _tokenStore = tokenStore ?? throw new ArgumentNullException(nameof(tokenStore));
         }
 
         /// <summary>
@@ -61,12 +101,11 @@ namespace FinanceManager.Web.Infrastructure.Auth
             var now = DateTimeOffset.UtcNow;
 
             // Determine renewal window from configured lifetime (half of it)
-            var lifetimeMinutes = _options.Value.LifetimeMinutes;
-            var renewalWindow = TimeSpan.FromMinutes(Math.Max(MinRenewalWindow.TotalMinutes, lifetimeMinutes / 2.0));
+            var renewalWindow = _options.Value.RenewalWindow;
 
             // Prefer request cookie over cache when a request context is available.
             // This prevents serving stale tokens from a different browser tab/user session.
-            if (ctx != null)
+            if (ctx != null && !ctx.Response.HasStarted)
             {
                 var cookie = ctx.Request.Cookies[AuthCookieName];
                 if (string.IsNullOrEmpty(cookie))
@@ -87,9 +126,32 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
             // When no request context is available (for example within a running Blazor circuit),
             // fall back to a still-valid cached token.
-            if (_cachedToken != null && _cachedExpiry - renewalWindow > now)
+            if (_cachedToken != null && _cachedExpiry > now)
             {
+                if (_cachedExpiry - renewalWindow <= now)
+                {
+                    var currentSubject = TryGetSubject(_cachedToken);
+                    if (currentSubject != null
+                        && _tokenStore.TryGetCurrent(currentSubject.Value, out var currentToken, out var currentExpiry)
+                        && currentExpiry > _cachedExpiry)
+                    {
+                        Cache(currentToken!, currentExpiry);
+                        return currentToken;
+                    }
+                }
+
                 return _cachedToken;
+            }
+
+            // Cached token missing or expired: adopt the latest registry token issued for the
+            // same subject (for example a browser-side renewal published via PrimeCache).
+            var subject = TryGetSubject(_cachedToken);
+            if (subject != null
+                && _tokenStore.TryGetCurrent(subject.Value, out var registryToken, out var registryExpiry)
+                && registryExpiry > now)
+            {
+                Cache(registryToken!, registryExpiry);
+                return registryToken;
             }
 
             return null;
@@ -159,6 +221,7 @@ namespace FinanceManager.Web.Infrastructure.Auth
 
         /// <summary>
         /// Stores a known-valid token for later use when no request context is available, for example in a Blazor circuit.
+        /// Also publishes it as the latest token for the token's subject in the shared registry.
         /// </summary>
         /// <param name="token">Serialized JWT token.</param>
         /// <param name="expiry">Token expiry timestamp.</param>
@@ -171,6 +234,11 @@ namespace FinanceManager.Web.Infrastructure.Auth
             }
 
             Cache(token, expiry);
+            var subject = TryGetSubject(token);
+            if (subject != null)
+            {
+                _tokenStore.SetCurrent(subject.Value, token, expiry);
+            }
         }
 
         /// <summary>
@@ -215,5 +283,28 @@ namespace FinanceManager.Web.Infrastructure.Auth
             }
         }
 
+        private static Guid? TryGetSubject(string? token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return null;
+            }
+
+            try
+            {
+                var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+                var subject = jwt.Subject;
+                if (string.IsNullOrEmpty(subject))
+                {
+                    subject = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                return Guid.TryParse(subject, out var userId) ? userId : null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
     }
 }

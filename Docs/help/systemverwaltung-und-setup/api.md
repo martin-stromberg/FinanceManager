@@ -6,6 +6,12 @@
 
 Dieser Bereich nutzt mehrere Controller für Authentifizierung, Administration, Benutzerpräferenzen, Benachrichtigungen und Betrieb.
 
+Alle Antworten tragen globale Sicherheits-Header (`Content-Security-Policy`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Content-Type-Options`). Zustandsändernde Requests (`POST`/`PUT`/`DELETE`/`PATCH`), die per Auth-Cookie authentifiziert sind und einen autorisierten Endpunkt aufrufen, benötigen zusätzlich ein Antiforgery-Token im `RequestVerificationToken`-Header; Bearer-authentifizierte und anonyme Aufrufe sind davon ausgenommen.
+
+## Rate Limiting
+
+Die anonymen Endpunkte `POST /api/auth/register` und `GET /api/users/exists` unterliegen der Policy `auth-sensitive` (Fixed-Window pro Quelladresse, Standard 20 Aufrufe je 10 Sekunden). Bei Überschreitung antwortet die API mit `429 Too Many Requests`. Grenzen: `RateLimiting:AuthSensitive:PermitLimit`, `RateLimiting:AuthSensitive:WindowSeconds`.
+
 ## Endpunkte / Methoden
 
 ### `POST /api/auth/login`
@@ -14,7 +20,22 @@ Dieser Bereich nutzt mehrere Controller für Authentifizierung, Administration, 
 
 ### `POST /api/auth/register`
 
-**Beschreibung:** Registrierung.
+**Beschreibung:** Registrierung. Standardmäßig nur für den ersten Benutzer geöffnet (`Auth:AllowSelfRegistration`).
+
+**Antworten:**
+- `200 OK` bei erfolgreicher Registrierung (Set-Cookie `FinanceManager.Auth`).
+- `403 ApiErrorDto` mit `Err_RegistrationDisabled`, wenn die Selbstregistrierung deaktiviert ist und bereits ein Benutzer existiert.
+- `409 ApiErrorDto` mit `Err_Conflict_UserAlreadyExists` bei vergebenem Benutzernamen.
+- `400 ApiErrorDto` mit `Err_InvalidRegistration` bei allen übrigen Fehlern (generische Meldung).
+- `429 Too Many Requests` bei Überschreitung des Rate-Limits.
+
+### `GET /api/users/exists`
+
+**Beschreibung:** Anonyme Abfrage, ob mindestens ein Benutzer existiert (`AnyUsersResponse`). Wird für die Login-/Register-Umleitung benötigt und bleibt anonym erreichbar.
+
+**Antworten:**
+- `200 OK` mit `AnyUsersResponse(bool)`.
+- `429 Too Many Requests` bei Überschreitung des Rate-Limits.
 
 ### `GET /api/user-settings/profile`
 
@@ -86,7 +107,9 @@ nicht ueber die API aus.
 
 **Request:** `multipart/form-data` mit Datei.
 
-**Validierung:** Es werden nur ZIP-Dateien mit genau einem zulässigen NDJSON-Eintrag (`backup.ndjson` oder `backup-*.ndjson`) akzeptiert. Die Standardlimits sind 100 MB komprimiert, 250 MB entpackt, maximal ein ZIP-Entry und Kompressionsverhältnis höchstens 25. Die Backup-Metadaten müssen `Type = "Backup"` und `Version = 3` enthalten.
+**Validierung:** Es werden nur ZIP-Dateien mit genau einem zulässigen NDJSON-Eintrag (`backup.ndjson` oder `backup-*.ndjson`) akzeptiert. Die Standardlimits sind 100 MB komprimiert, 250 MB entpackt, maximal ein ZIP-Entry und Kompressionsverhältnis höchstens 25. Die Backup-Metadaten müssen `Type = "Backup"` und `Version = 3` enthalten. Die Request-Größe ist über `Backups:Security:MaxUploadBytes` begrenzt (plus Multipart-Overhead).
+
+Die Datei wird unter einer servergenerierten Ablagekennung im benutzerbezogenen Verzeichnis `backups/{userId}` gespeichert; der angezeigte `FileName` bleibt der übergebene Name.
 
 **Antworten:**
 - `200 OK` mit `BackupDto` bei erfolgreichem Upload.

@@ -115,7 +115,7 @@
                 var elId = $"qe_booking_{id}";
                 // allow render to complete
                 await Task.Yield();
-                await JS.InvokeVoidAsync("eval", $"document.getElementById('{elId}')?.focus()");
+                await JS.InvokeVoidAsync("financeManager.quickEdit.focusById", elId);
             }
             catch { }
         }
@@ -309,7 +309,7 @@
     {
         try
         {
-            _ = JS.InvokeVoidAsync("eval", $"document.getElementById('qe_booking_{focusId}')?.focus()");
+            _ = JS.InvokeVoidAsync("financeManager.quickEdit.focusById", $"qe_booking_{focusId}");
         }
         catch { }
     }
@@ -527,7 +527,7 @@ else
                 try
                 {
                     await Task.Yield();
-                    await JS.InvokeVoidAsync("eval", $"document.getElementById('qe_booking_{focusId}')?.focus()");
+                    await JS.InvokeVoidAsync("financeManager.quickEdit.focusById", $"qe_booking_{focusId}");
                 }
                 catch { }
             }

@@ -87,6 +87,19 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
     public string HelpWebRootPath => _isolatedWebRoot;
 
     /// <summary>
+    /// ASP.NET Core environment name the test host runs under. Set before the first
+    /// <see cref="WebApplicationFactory{T}.CreateClient()"/> call to take effect.
+    /// </summary>
+    public string HostEnvironment { get; set; } = "Development";
+
+    /// <summary>
+    /// Additional configuration values merged over the built-in test overrides.
+    /// Set entries before the first <see cref="WebApplicationFactory{T}.CreateClient()"/> call.
+    /// </summary>
+    /// <returns>The mutable dictionary of configuration overrides.</returns>
+    public IDictionary<string, string?> ConfigurationOverrides { get; } = new Dictionary<string, string?>();
+
+    /// <summary>
     /// Configures the test web host: points it at an isolated SQLite in-memory database and web root,
     /// disables background hosted services and file logging that would otherwise run unpredictably during
     /// tests, optionally installs a fixed <see cref="TimeProvider"/>, and seeds the bootstrap admin user.
@@ -100,7 +113,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             options.ValidateScopes = true;
         });
 
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment(HostEnvironment);
         builder.UseContentRoot(WebProjectRoot);
         builder.UseWebRoot(_isolatedWebRoot);
         // Disable background hosted services for integration tests via configuration flags
@@ -114,8 +127,19 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["Updates:SourceType"] = "LocalFolder",
                 ["Updates:LocalFolderPath"] = Path.Combine(Path.GetTempPath(), $"updates-source-{Guid.NewGuid():N}"),
                 ["Updates:WorkingDirectory"] = _isolatedUpdatesWorkspace,
-                ["FileLogging:Enabled"] = "false"
+                ["FileLogging:Enabled"] = "false",
+                // Integration tests register non-first users in almost every suite; keep the
+                // production-closed self-registration gate open for the test host.
+                ["Auth:AllowSelfRegistration"] = "true",
+                // Anonymous-endpoint rate limiting shares an in-memory partition per host;
+                // keep the limit far above what serial test runs issue to avoid 429 flakes.
+                ["RateLimiting:AuthSensitive:PermitLimit"] = "100000",
+                ["RateLimiting:AuthSensitive:WindowSeconds"] = "10"
             };
+            foreach (var entry in ConfigurationOverrides)
+            {
+                overrides[entry.Key] = entry.Value;
+            }
             cfg.AddInMemoryCollection(overrides);
         });
 

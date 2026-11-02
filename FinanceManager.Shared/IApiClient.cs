@@ -168,6 +168,11 @@ public interface IApiClient
     /// <returns>List of active background tasks.</returns>
     Task<IReadOnlyList<BackgroundTaskInfo>> BackgroundTasks_GetActiveAsync(CancellationToken ct = default);
 
+    /// <summary>Gets active tasks for passive polling without requesting a login redirect.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The active background tasks.</returns>
+    Task<IReadOnlyList<BackgroundTaskInfo>> BackgroundTasks_GetActiveForPollingAsync(CancellationToken ct = default);
+
     /// <summary>
     /// Gets details for a background task.
     /// </summary>

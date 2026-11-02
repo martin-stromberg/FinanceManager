@@ -82,6 +82,7 @@ public sealed class SecurityTxtSetupPlaywrightTests
         var saveButton = page.Locator("#Save");
         await page.Locator("#securitytxt-contact").FillAsync("mailto:security+canonical@example.org");
         await page.Locator("#securitytxt-canonical").FillAsync("https://security-canonical.example.org/.well-known/security.txt");
+        await page.Locator("#securitytxt-canonical").PressAsync("Tab");
 
         await Microsoft.Playwright.Assertions.Expect(saveButton).ToBeEnabledAsync(new LocatorAssertionsToBeEnabledOptions { Timeout = 5000 });
         await saveButton.ClickAsync();

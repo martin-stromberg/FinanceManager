@@ -54,6 +54,11 @@ public sealed class JwtOptionsValidator : IValidateOptions<JwtOptions>
             failures.Add("Jwt:LifetimeMinutes must be greater than 0.");
         }
 
+        if (options.MinimumRenewalWindowMinutes <= 0)
+        {
+            failures.Add("Jwt:MinimumRenewalWindowMinutes must be greater than 0.");
+        }
+
         if (isProductionLike && options.LifetimeMinutes > MaximumProductionLifetimeMinutes)
         {
             failures.Add($"Jwt:LifetimeMinutes must not exceed {MaximumProductionLifetimeMinutes} in production-like environments.");

@@ -40,6 +40,8 @@ Die mobile Karte zeigt die fachlich relevanten Zuordnungen direkt am Eintrag: ei
 ## Einschränkungen
 
 - Verbuchung ist an den Benutzer- und Kontokontext gebunden.
+- Der Massenimport ist größenbegrenzt (Konfiguration `MassImport`): maximal 50 Dateien pro Batch, maximal 10 MB pro Datei und maximal 100 MB Gesamtinhalt; der Request-Body ist auf ca. 143 MB begrenzt.
 - Mehrdeutige Treffer in der bekannten-Kontakte-Liste erzeugen keine automatische Kontaktanlage.
 - Validierungswarnungen können das Buchen blockieren, wenn nicht explizit freigegeben.
 - Die Anzahl exportierbarer Entwurfszeilen ist serverseitig begrenzt (Konfigurationsschlüssel `Exports:MaxRows`, Standard 50.000 Zeilen); bei Überschreitung wird der Export abgelehnt.
+- Im CSV-Export werden Zellwerte, die Tabellenprogramme als Formel interpretieren würden (z. B. führendes `=`, `+`, `-`, `@`), mit einem führenden Apostroph entschärft; der Text bleibt lesbar.

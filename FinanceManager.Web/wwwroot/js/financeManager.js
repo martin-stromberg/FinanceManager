@@ -208,14 +208,6 @@ window.financeManager = window.financeManager || {};
   }
 
   function handleKeepaliveInteraction(event) {
-    if (event
-      && event.type === "input"
-      && event.target
-      && event.target.matches
-      && event.target.matches("[data-fm-quickedit-keepalive]")) {
-      return;
-    }
-
     triggerKeepalive();
   }
 
@@ -282,6 +274,32 @@ window.financeManager = window.financeManager || {};
       var el = document.getElementById(id);
       if (el) el.click();
     } catch { }
+  };
+
+  fm.downloadFromUrl = function (url) {
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      window.setTimeout(function () {
+        document.body.removeChild(a);
+      }, 200);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  fm.localStorage = {
+    removeByPrefix: function (prefix) {
+      if (!prefix) return;
+      Object.keys(localStorage)
+        .filter(function (k) { return k.indexOf(prefix) === 0; })
+        .forEach(function (k) { localStorage.removeItem(k); });
+    }
   };
 
   fm.quickEdit = {

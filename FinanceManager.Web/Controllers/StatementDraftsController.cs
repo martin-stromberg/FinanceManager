@@ -13,12 +13,14 @@ using FinanceManager.Shared.Dtos.Common;
 using FinanceManager.Shared.Dtos.Statements;
 using FinanceManager.Web.Infrastructure;
 using FinanceManager.Web.Infrastructure.ApiErrors;
+using FinanceManager.Web.Infrastructure.MassImport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using System.Net.Mime;
 
 namespace FinanceManager.Web.Controllers;
@@ -47,6 +49,7 @@ public sealed class StatementDraftsController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IBudgetImpactEvaluationService? _budgetImpact;
     private readonly IMassImportOrchestrator? _massImportOrchestrator;
+    private readonly MassImportOptions _massImportOptions;
 
     /// <summary>
     /// Initializes a new instance of <see cref="StatementDraftsController"/>.
@@ -61,6 +64,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="config">Application configuration used to read export limits.</param>
     /// <param name="budgetImpact">Optional service used to evaluate the budget impact of bookings; may be null when the feature is disabled.</param>
     /// <param name="massImportOrchestrator">Optional orchestrator used to coordinate mass import of statement drafts; may be null when the feature is disabled.</param>
+    /// <param name="massImportOptions">Optional mass-import limit options; defaults are used when not configured.</param>
     public StatementDraftsController(
         IStatementDraftService drafts,
         ICurrentUserService current,
@@ -71,7 +75,8 @@ public sealed class StatementDraftsController : ControllerBase
         IStatementDraftExportService exportService,
         IConfiguration config,
         IBudgetImpactEvaluationService? budgetImpact = null,
-        IMassImportOrchestrator? massImportOrchestrator = null)
+        IMassImportOrchestrator? massImportOrchestrator = null,
+        IOptions<MassImportOptions>? massImportOptions = null)
     {
         _drafts = drafts;
         _current = current;
@@ -82,6 +87,7 @@ public sealed class StatementDraftsController : ControllerBase
         _exportService = exportService;
         _config = config;
         _massImportOrchestrator = massImportOrchestrator;
+        _massImportOptions = massImportOptions?.Value ?? new MassImportOptions();
         _budgetImpact = budgetImpact;
     }
 
@@ -211,7 +217,7 @@ public sealed class StatementDraftsController : ControllerBase
     /// <response code="200">The HTTP 200 response.</response>
     /// <response code="400">The HTTP 400 response.</response>
     [HttpPost("mass-import")]
-    [RequestSizeLimit(long.MaxValue)]
+    [MassImportRequestSizeLimit]
     [ProducesResponseType(typeof(MassImportBatchResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ProcessMassImportAsync([FromBody] MassImportBatchRequestDto? request, CancellationToken ct)
@@ -219,6 +225,18 @@ public sealed class StatementDraftsController : ControllerBase
         if (request == null || request.Files == null || request.Files.Count == 0)
         {
             return BadRequest(ApiErrorDto.Create(Origin, "Err_Invalid_File", "At least one file is required."));
+        }
+        if (request.Files.Count > _massImportOptions.MaxFiles)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_MassImport_TooManyFiles", $"At most {_massImportOptions.MaxFiles} files are allowed per batch."));
+        }
+        if (request.Files.Any(f => f.Content != null && f.Content.Length > _massImportOptions.MaxBytesPerFile))
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_MassImport_FileTooLarge", $"A file exceeds the maximum size of {_massImportOptions.MaxBytesPerFile} bytes."));
+        }
+        if (request.Files.Sum(f => (long)(f.Content?.Length ?? 0)) > _massImportOptions.MaxTotalContentBytes)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_MassImport_BatchTooLarge", $"The batch exceeds the maximum total content size of {_massImportOptions.MaxTotalContentBytes} bytes."));
         }
         if (_massImportOrchestrator == null)
         {

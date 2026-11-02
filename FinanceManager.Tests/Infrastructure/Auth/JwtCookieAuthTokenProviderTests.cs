@@ -175,15 +175,36 @@ public sealed class JwtCookieAuthTokenProviderTests
     }
 
     /// <summary>
+    /// Verifies that priming the provider cache publishes the token into the shared registry
+    /// under the token's subject, so a running circuit of the same user can adopt it.
+    /// </summary>
+    [Fact]
+    public void PrimeCache_PublishesTokenToRegistry()
+    {
+        var store = new CircuitAuthTokenStore(new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
+        var accessor = new HttpContextAccessor();
+        var sut = CreateProvider(accessor, tokenStore: store);
+        var userId = Guid.NewGuid();
+        var expiry = DateTime.UtcNow.AddMinutes(30);
+        var token = CreateToken(userId.ToString(), expiry);
+
+        sut.PrimeCache(token, new DateTimeOffset(expiry));
+
+        Assert.True(store.TryGetCurrent(userId, out var current, out _));
+        Assert.Equal(token, current);
+    }
+
+    /// <summary>
     /// Builds a <see cref="JwtCookieAuthTokenProvider"/> configured with the fixed signing key, issuer, and
     /// audience that <see cref="CreateToken"/> uses, so tokens created by that helper validate successfully
     /// against the provider under test. Accepts an optional refresh service mock so scenarios that depend on
     /// refresh outcomes (success, rejection) can be exercised without a real refresh implementation.
     /// </summary>
     /// <param name="accessor">HTTP context accessor supplying (or withholding) the current request.</param>
+    /// <param name="tokenStore">The circuit token store to inject.</param>
     /// <param name="refreshService">Optional refresh service; a permissive mock is used when omitted.</param>
     /// <returns>A provider instance ready to be exercised by the test.</returns>
-    private static JwtCookieAuthTokenProvider CreateProvider(HttpContextAccessor accessor, IJwtRefreshService? refreshService = null)
+    private static JwtCookieAuthTokenProvider CreateProvider(HttpContextAccessor accessor, IJwtRefreshService? refreshService = null, CircuitAuthTokenStore? tokenStore = null)
     {
         var options = Options.Create(new JwtOptions
         {
@@ -194,7 +215,8 @@ public sealed class JwtCookieAuthTokenProviderTests
         });
         var validationParametersFactory = new JwtTokenValidationParametersFactory(options);
         refreshService ??= Mock.Of<IJwtRefreshService>();
-        return new JwtCookieAuthTokenProvider(accessor, options, validationParametersFactory, refreshService);
+        tokenStore ??= new CircuitAuthTokenStore(new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
+        return new JwtCookieAuthTokenProvider(accessor, options, validationParametersFactory, refreshService, tokenStore);
     }
 
     /// <summary>

@@ -271,7 +271,7 @@ Generated_Code/
 # to a newer Visual Studio version. Backup files are not needed,
 # because we have git ;-)
 _UpgradeReport_Files/
-Backup*/
+/Backup*/
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
@@ -420,6 +420,11 @@ FodyWeavers.xsd
 /FinanceManager.Web/financemanager.db-wal
 /FinanceManager.Web/updates/
 /FinanceManager.Web/release-metadata.json
+
+# Runtime backup storage created under the web content root by BackupService - contains
+# real user data and must never be committed. Anchored to the exact lowercase runtime
+# directory so the source folder FinanceManager.Web/Infrastructure/Backups/ stays tracked.
+/FinanceManager.Web/backups/
 /init
 /FinanceManager.Web/init
 /FinanceManager.Web/.config/dotnet-tools.json

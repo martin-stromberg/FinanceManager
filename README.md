@@ -13,7 +13,7 @@ Die Anwendung bündelt Stammdatenverwaltung, Kontoauszugsimport, Budget- und Rep
 
 Die Anwendung bietet unter anderem:
 
-- **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity, inklusive Selbstbedienungs-Seite zum Ändern des eigenen Passworts (`/change-password`)
+- **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity, inklusive Selbstbedienungs-Seite zum Ändern des eigenen Passworts (`/change-password`); aktive Navigation und Eingaben in Quick Edit halten die Sitzung, bei echter Inaktivität darf sie auslaufen (ohne periodischen Keepalive)
 - **Konten, Kontakte, Sparpläne und Wertpapiere** mit Listen-, Detail- und Bearbeitungsbereichen sowie Verteilungen in der Bankübersicht; Kursstatistiken pro Wertpapier (Goldenes Kreuz, bärische Umkehrsignale mit Trendstatus) inkl. optionaler Startseiten-Benachrichtigungen
 - **Kontoauszugsverarbeitung** mit Upload, Massenimport, Klassifizierung, Schnellbearbeitung und Buchung sowie CSV-/Excel-Export der Einträge eines Kontoauszugs
 - **Budget- und Reporting-Funktionen** inklusive Budget-Kategorien, -Zwecken, -Regeln und Berichten
@@ -21,6 +21,8 @@ Die Anwendung bietet unter anderem:
 - **Betriebsfunktionen** wie Backups, Update-Steuerung, Help-System und Well-Known-Endpunkte (`security.txt`, `/.well-known/change-password` mit administrierbarem Weiterleitungsziel)
 
 Bei der Erstregistrierung, wenn noch kein Benutzer vorhanden ist, wird der Start auf die Registrierungsseite umgeleitet. Nur der erste Benutzer sieht dort die Checkbox `Demodaten anlegen`; ist sie aktiviert, erstellt ein Hintergrundtask nach der Registrierung den vollständigen Demo-Datenbestand. Der Fortschritt ist auf der Startseite in der Background-Task-Anzeige sichtbar.
+
+Die Selbstregistrierung ist auf den ersten Benutzer beschränkt: Sobald ein Konto existiert, werden weitere Benutzer von einem Administrator angelegt. Über die Konfiguration `Auth:AllowSelfRegistration` lässt sich die offene Registrierung wieder aktivieren.
 
 ## Screenshots
 
@@ -86,6 +88,8 @@ Entwicklungsprofile aus `FinanceManager.Web/Properties/launchSettings.json`:
 - `https://localhost:7013`
 
 Details zu Demodaten, Konfiguration, Authentifizierung, API-Endpunkten, Tests und Git-Hooks finden sich in [Docs/development.md](Docs/development.md).
+
+Die zeitabhängigen Session-E2E-Tests verwenden regulär drei Minuten Tokenlaufzeit mit proportionalem Erneuerungsfenster; die vier langen Pflichtfälle benötigen zusammen etwa 14 Minuten statt über 40 Minuten. Mit `E2E_SESSION_LIFETIME_MINUTES=30` bleibt der Referenzlauf mit produktiven Zeitwerten verfügbar. Details stehen in der [Testdokumentation](Docs/development.md#tests).
 
 ## Weitere Informationen
 

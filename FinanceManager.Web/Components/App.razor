@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-culture="@CultureInfo.CurrentUICulture.Name">
 
-@{
-    var currentPath = Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath;
-    var isHelpSurface = currentPath.Equals("/help", StringComparison.OrdinalIgnoreCase)
-        || currentPath.StartsWith("/help/", StringComparison.OrdinalIgnoreCase);
-}
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -68,7 +62,11 @@
 
     <link rel="stylesheet" href="FinanceManager.Web.styles.css" />
     <link rel="manifest" href="/manifest.json">
-    @if (!isHelpSurface)
+    @if (_xsrfToken is not null)
+    {
+        <meta name="fm-xsrf-token" content="@_xsrfToken" />
+    }
+    @if (!_isHelpSurface)
     {
         <ImportMap />
     }
@@ -76,13 +74,13 @@
 </head>
 
 <body class="dark-mode">
-    @if (!isHelpSurface)
+    @if (!_isHelpSurface)
     {
         <LoadingBar />
         <AuthRedirect />
     }
     <Routes />
-    @if (!isHelpSurface)
+    @if (!_isHelpSurface)
     {
         <script src="auth.js"></script>
         <script src="scroll.js"></script>
@@ -97,4 +95,44 @@
 </html>
 
 @using System.Globalization
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.JwtBearer
 @inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private bool _isHelpSurface;
+    private string? _xsrfToken;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var currentPath = Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath;
+        _isHelpSurface = currentPath.Equals("/help", StringComparison.OrdinalIgnoreCase)
+            || currentPath.StartsWith("/help/", StringComparison.OrdinalIgnoreCase);
+        if (_isHelpSurface || HttpContext is null)
+        {
+            return;
+        }
+
+        // The JWT carried by the FinanceManager.Auth cookie is validated through the bearer
+        // scheme, which is not the default authentication scheme (Identity.Application is),
+        // so HttpContext.User stays anonymous during prerender even for authenticated users.
+        // An antiforgery request token is bound to the claims identity it is issued for, so
+        // a token issued to the anonymous principal would never validate for the real user
+        // on a later cookie-authenticated POST. Authenticate the bearer scheme explicitly so
+        // the issued token binds to the actual user.
+        if (HttpContext.User?.Identity?.IsAuthenticated != true)
+        {
+            var bearerResult = await HttpContext.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+            if (bearerResult.Succeeded && bearerResult.Principal is not null)
+            {
+                HttpContext.User = bearerResult.Principal;
+            }
+        }
+
+        _xsrfToken = Antiforgery.GetAndStoreTokens(HttpContext).RequestToken;
+    }
+}

@@ -33,7 +33,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
 
         Render<BackgroundTaskStatusPanel>();
 
-        apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Never);
+        apiMock.Verify(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
     public void LoadsTasks_WhenCircuitAuthFallbackIsAuthenticated()
     {
         var apiMock = new Mock<IApiClient>();
-        apiMock.Setup(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()))
+        apiMock.Setup(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { CreateTask(BackgroundTaskStatus.Running) });
         RegisterServices(apiMock, isAuthenticated: false, jsAuthenticated: true);
 
@@ -54,7 +54,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
 
         cut.WaitForAssertion(() =>
         {
-            apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
+            apiMock.Verify(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()), Times.Once);
             Assert.NotNull(cut.Find(".bgt-panel"));
         });
     }
@@ -67,7 +67,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
     public void LoadsAndRendersTasks_WhenUserIsAuthenticated()
     {
         var apiMock = new Mock<IApiClient>();
-        apiMock.Setup(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()))
+        apiMock.Setup(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { CreateTask(BackgroundTaskStatus.Running) });
         RegisterServices(apiMock, isAuthenticated: true);
 
@@ -75,7 +75,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
 
         cut.WaitForAssertion(() =>
         {
-            apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
+            apiMock.Verify(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()), Times.Once);
             Assert.NotNull(cut.Find(".bgt-panel"));
         });
     }
@@ -88,7 +88,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
     public void RendersDemoDataTaskProgress_WhenCreateDemoDataTaskIsRunning()
     {
         var apiMock = new Mock<IApiClient>();
-        apiMock.Setup(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()))
+        apiMock.Setup(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { CreateTask(BackgroundTaskStatus.Running, BackgroundTaskType.CreateDemoData, 2, 5, "Demo-Daten werden angelegt...") });
         RegisterServices(apiMock, isAuthenticated: true);
 
@@ -112,18 +112,18 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
     public void StopsPolling_WhenActiveTasksRequestReturnsUnauthorized()
     {
         var apiMock = new Mock<IApiClient>();
-        apiMock.Setup(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()))
+        apiMock.Setup(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Unauthorized", null, HttpStatusCode.Unauthorized));
         RegisterServices(apiMock, isAuthenticated: true);
 
         var cut = Render<BackgroundTaskStatusPanel>(parameters => parameters.Add(p => p.PollInterval, 10));
 
         cut.WaitForAssertion(() =>
-            apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once));
+            apiMock.Verify(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()), Times.Once));
 
         Task.Delay(75, Xunit.TestContext.Current.CancellationToken).GetAwaiter().GetResult();
 
-        apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
+        apiMock.Verify(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
@@ -136,7 +136,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
     public void KeepsPolling_WhenActiveTasksRequestFailsTransiently()
     {
         var apiMock = new Mock<IApiClient>();
-        apiMock.SetupSequence(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()))
+        apiMock.SetupSequence(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Temporary failure"))
             .ReturnsAsync(new[] { CreateTask(BackgroundTaskStatus.Queued) });
         RegisterServices(apiMock, isAuthenticated: true);
@@ -145,7 +145,7 @@ public sealed class BackgroundTaskStatusPanelTests : BunitContext
 
         cut.WaitForAssertion(() =>
         {
-            apiMock.Verify(x => x.BackgroundTasks_GetActiveAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2));
+            apiMock.Verify(x => x.BackgroundTasks_GetActiveForPollingAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2));
             Assert.NotNull(cut.Find(".bgt-panel"));
         });
     }

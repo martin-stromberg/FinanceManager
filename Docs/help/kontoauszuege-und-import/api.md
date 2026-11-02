@@ -16,6 +16,25 @@ Die Schnittstelle wird über `StatementDraftsController` und `StatementDraftEntr
 
 **Beschreibung:** Massenimport mehrerer Dateien.
 
+**Größenlimits (Konfiguration `MassImport`):**
+
+|| Schlüssel | Standard | Begrenzung |
+|---|-----------|----------|-------------|
+|| `MassImport:MaxRequestBytes` | `150000000` | Gesamte Request-Body-Größe (ca. 143 MB) |
+|| `MassImport:MaxFiles` | `50` | Dateianzahl pro Batch |
+|| `MassImport:MaxBytesPerFile` | `10485760` | Rohbytes pro Datei (10 MB) |
+|| `MassImport:MaxTotalContentBytes` | `104857600` | Summe aller Dateiinhalte (100 MB) |
+
+**Fehler:**
+
+|| Code | Ursache |
+||------|---------|
+|| 400 | Keine Datei im Request (`Err_Invalid_File`) |
+|| 400 | Zu viele Dateien (`Err_MassImport_TooManyFiles`) |
+|| 400 | Einzeldatei zu groß (`Err_MassImport_FileTooLarge`) |
+|| 400 | Gesamtgröße überschritten (`Err_MassImport_BatchTooLarge`) |
+|| 413 | Request-Body überschreitet `MassImport:MaxRequestBytes` |
+
 ### `POST /api/statement-drafts/{draftId}/classify`
 
 **Beschreibung:** Startet Klassifikation für einen Entwurf.

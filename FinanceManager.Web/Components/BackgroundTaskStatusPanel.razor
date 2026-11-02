@@ -1,4 +1,5 @@
 @using System.Net
+@implements IDisposable
 @using FinanceManager.Application
 @using FinanceManager.Shared.Dtos
 @using FinanceManager.Shared.Dtos.Admin
@@ -92,7 +93,7 @@
 
         try
         {
-            var result = (await Api.BackgroundTasks_GetActiveAsync(ct)).ToList();
+            var result = (await Api.BackgroundTasks_GetActiveForPollingAsync(ct)).ToList();
 
             // Determine visibility using AllowedTypes filter, but always keep full list for display
             if (AllowedTypes != null && AllowedTypes.Length > 0)

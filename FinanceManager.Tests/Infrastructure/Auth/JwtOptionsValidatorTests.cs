@@ -14,6 +14,23 @@ namespace FinanceManager.Tests.Infrastructure.Auth;
 /// </summary>
 public sealed class JwtOptionsValidatorTests
 {
+    /// <summary>A positive minimum renewal window supports regular and shortened hosts.</summary>
+    /// <param name="minimumMinutes">The configured minimum window.</param>
+    /// <param name="valid">Whether startup should accept the configuration.</param>
+    [Theory]
+    [InlineData(5, true)]
+    [InlineData(1, true)]
+    [InlineData(0, false)]
+    [InlineData(-1, false)]
+    public void Validate_MinimumRenewalWindow_RequiresPositiveMinutes(int minimumMinutes, bool valid)
+    {
+        var options = CreateValidOptions(lifetimeMinutes: 3);
+        options.MinimumRenewalWindowMinutes = minimumMinutes;
+        var result = CreateProductionValidator().Validate(null, options);
+        Assert.Equal(valid, result.Succeeded);
+        if (!valid) Assert.Contains("Jwt:MinimumRenewalWindowMinutes", result.FailureMessage);
+    }
+
     /// <summary>
     /// Verifies that a missing signing key is rejected in production-like environments, since an empty key would
     /// let <see cref="JwtTokenService"/> throw at runtime (or worse, silently sign with a weak/default key

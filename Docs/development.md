@@ -63,6 +63,7 @@ Die wichtigsten Standardwerte stammen aus `FinanceManager.Web/appsettings.json`,
 | `Jwt:Issuer` | `financemanager` | JWT-Issuer |
 | `Jwt:Audience` | `financemanager` | JWT-Audience |
 | `Jwt:LifetimeMinutes` | `30` | Gültigkeitsdauer der JWT-/Auth-Sitzung |
+| `Jwt:MinimumRenewalWindowMinutes` | `5` | Positive Untergrenze des Erneuerungsfensters; effektiv gilt das Maximum aus Untergrenze und halber Tokenlaufzeit |
 | `DataProtection:KeysPath` | leer | Optionaler persistenter Speicherort für Data-Protection-Keys |
 | `Api:BaseAddress` | leer | Basisadresse für API-/Security.txt-bezogene Fallbacks |
 | `BackgroundTasks:Enabled` | `true` | Aktiviert den Background-Task-Runner |
@@ -78,6 +79,17 @@ Die wichtigsten Standardwerte stammen aus `FinanceManager.Web/appsettings.json`,
 | `FileLogging:Enabled` | `false` in `appsettings.json`, `true` in `appsettings.Production.json` | Schaltet Dateilogging ein/aus |
 | `Identity:Lockout:MaxFailedAccessAttempts` | `3` | Maximale Fehlversuche bis zum Lockout |
 | `Identity:Password:RequiredLength` | `8` | Minimale Passwortlänge |
+| `Auth:AllowSelfRegistration` | `false` | Öffnet die Selbstregistrierung für weitere Benutzer; Standard: nur der erste Benutzer registriert sich selbst |
+| `MassImport:MaxRequestBytes` | `150000000` | Request-Body-Limit des Massenimport-Endpunkts (deckt die Base64-Inflation von `MaxTotalContentBytes` ab) |
+| `MassImport:MaxFiles` | `50` | Maximale Dateianzahl pro Massenimport-Batch |
+| `MassImport:MaxBytesPerFile` | `10485760` | Maximale Rohbytes pro Datei im Massenimport (10 MB) |
+| `MassImport:MaxTotalContentBytes` | `104857600` | Maximale Summe aller Dateiinhalte pro Batch (100 MB) |
+| `Attachments:MaxSizeBytes` | `10485760` | Upload-Größenlimit für Anhänge, Symbol- und Kursimport-Uploads (10 MB) |
+| `RateLimiting:AuthSensitive:PermitLimit` | `20` | Zulässige Aufrufe je Zeitfenster für die `auth-sensitive`-Endpunkte (Registrierung, `users/exists`) |
+| `RateLimiting:AuthSensitive:WindowSeconds` | `10` | Fenstergröße des Rate-Limits in Sekunden |
+| `ReverseProxy:KnownProxies` | leer | Semikolongetrennte IPs vertrauenswürdiger Reverse-Proxies, deren Forwarded-Headers berücksichtigt werden |
+| `ReverseProxy:KnownNetworks` | leer | Semikolongetrennte CIDR-Netze vertrauenswürdiger Proxies |
+| `AllowedHosts` | `*` | Host-Header-Filterung; `*` lässt LAN-Zugriff per IP/Hostname zu — deployment-spezifisch einschränkbar |
 
 ### Wichtige Hinweise zur Produktionskonfiguration
 
@@ -85,6 +97,8 @@ Die wichtigsten Standardwerte stammen aus `FinanceManager.Web/appsettings.json`,
 - `Jwt:Key` darf dort nicht leer sein, kein Platzhalterwert sein und muss mindestens **32 UTF-8-Bytes** enthalten.
 - Wenn `security.txt` keinen expliziten `Canonical`-Wert hat, erwartet der Fallback `Api:BaseAddress` eine gültige absolute URI.
 - Für geschützte persistierte Secrets, z. B. AlphaVantage-Zugangsdaten, sollte `DataProtection:KeysPath` auf einen persistenten Speicher zeigen.
+- Läuft die Anwendung hinter einem Reverse-Proxy, müssen dessen Adressen über `ReverseProxy:KnownProxies`/`ReverseProxy:KnownNetworks` eingetragen werden — sonst werden Forwarded-Headers ignoriert und Client-IP sowie Schema fallen auf die direkte Verbindung zurück. Direkter HTTP-Zugriff im LAN funktioniert ohne diese Konfiguration.
+- `DetailedErrors` und die `E2E:*`-Testschalter werden nur noch unter `Development` ausgewertet und sind in produktiven Konfigurationen wirkungslos.
 
 Typische Environment-Variablen sind beispielsweise:
 
@@ -95,6 +109,8 @@ Typische Environment-Variablen sind beispielsweise:
 - `Jwt__LifetimeMinutes`
 - `DataProtection__KeysPath`
 - `Api__BaseAddress`
+- `Auth__AllowSelfRegistration`
+- `ReverseProxy__KnownProxies` / `ReverseProxy__KnownNetworks`
 
 ## Authentifizierung und Sitzungserhaltung
 
@@ -109,10 +125,13 @@ Wichtige Punkte aus dem aktuellen Code:
 
 - Das Auth-Cookie heißt **`FinanceManager.Auth`**.
 - Die konfigurierte Standardlaufzeit beträgt **30 Minuten** (`Jwt:LifetimeMinutes`).
-- `JwtRefreshMiddleware` erneuert Tokens automatisch, sobald sie in ihr Renewal-Fenster kommen.
+- Beide Refreshpfade verwenden dasselbe Fenster: `max(Jwt:MinimumRenewalWindowMinutes, Jwt:LifetimeMinutes / 2.0)`, standardmäßig 15 Minuten bei einer Untergrenze von 5 Minuten.
+- `JwtRefreshMiddleware` erneuert Tokens automatisch, sobald sie in ihr Renewal-Fenster kommen; erneuerte Tokens werden ausschließlich über das HttpOnly-Cookie und serverseitig an den Circuit weitergegeben (`CircuitAuthTokenStore`) — es werden keine Token in Response-Headern oder im gerenderten HTML ausgeliefert.
 - `JwtRefreshService` validiert vor einem Refresh den Benutzerzustand, den `security_stamp` und die aktuelle Admin-Rolle erneut gegen die Datenbank.
 - `MainLayout.razor` und `wwwroot/js/financeManager.js` triggern Keepalive-Aufrufe bei Navigation sowie bei Benutzerinteraktionen wie `pointerdown`, `keydown`, `focusin`, `input` und Quick-Edit-`blur`.
 - Ein fehlgeschlagener Keepalive-Aufruf führt nicht selbst direkt zu einer Umleitung; die Umleitung auf geschützten Routen erfolgt über die reguläre Authentifizierungsprüfung.
+- `POST /api/auth/register` akzeptiert standardmäßig nur den ersten Benutzer (`Auth:AllowSelfRegistration`); Registrierung und `GET /api/users/exists` unterliegen der Rate-Limit-Policy `auth-sensitive`.
+- Zustandsändernde Requests, die über das Auth-Cookie authentifiziert sind, benötigen ein Antiforgery-Token (`RequestVerificationToken`-Header); Bearer-authentifizierte Aufrufe sind davon ausgenommen.
 
 Damit ist die in den Feature-Unterlagen beschriebene Sitzungserhaltung für aktive Benutzer explizit im aktuellen Codepfad abgebildet.
 
@@ -143,6 +162,10 @@ Eine Auswahl konkreter, im Repository vorhandener Einstiegspunkte:
 Die Controller liegen unter `FinanceManager.Web/Controllers/`.
 
 ## Tests
+
+Die Session-Ablauftests laufen mit echtem Formularlogin und unveränderter Uhr standardmäßig mit **3 Minuten** Tokenlaufzeit. Nur ihr isolierter Webhost setzt `Jwt:MinimumRenewalWindowMinutes=1`; dadurch beträgt das effektive Fenster 1,5 Minuten. Der unveränderte Browser-Throttle von 60 Sekunden lässt innerhalb dieses Fensters eine Erneuerung zu. Navigation, Idle und beide Quick-Edit-Fälle überschreiten weiterhin das ursprüngliche `exp` samt zehn Sekunden ClockSkew. Die vier Pflichtfälle benötigen zusammen ungefähr 14 Minuten statt über 40 Minuten; weitere Tests und Hoststarts kommen hinzu.
+
+`E2E_SESSION_LIFETIME_MINUTES=30` wählt weiterhin den regulären 30-Minuten-Referenzlauf. Ab zehn Minuten Laufzeit verwendet die Fixture die produktive Untergrenze von fünf Minuten; bei drei bis neun Minuten beträgt sie eine Minute. Laufzeiten unter drei Minuten werden abgelehnt. Ohne explizite Konfiguration bleiben sämtliche produktiven JWT-Standardwerte unverändert.
 
 Die Testprojekte in der Solution sind:
 

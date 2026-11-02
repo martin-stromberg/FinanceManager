@@ -26,7 +26,7 @@ public sealed class KpiLocalStorageCacheTests
                 "localStorage.getItem" => GetItem<TValue>(args),
                 "localStorage.setItem" => SetItem<TValue>(args),
                 "localStorage.removeItem" => RemoveItem<TValue>(args),
-                "eval" => Eval<TValue>(args),
+                "financeManager.localStorage.removeByPrefix" => RemoveByPrefix<TValue>(args),
                 _ => new ValueTask<TValue>(default(TValue)!)
             };
         }
@@ -64,25 +64,15 @@ public sealed class KpiLocalStorageCacheTests
             return new ValueTask<TValue>(default(TValue)!);
         }
 
-        private ValueTask<TValue> Eval<TValue>(object?[]? args)
+        private ValueTask<TValue> RemoveByPrefix<TValue>(object?[]? args)
         {
-            var script = args?.FirstOrDefault() as string;
-            var prefix = script is not null ? ExtractPrefix(script) : string.Empty;
-            var matches = _store.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
-            return new ValueTask<TValue>((TValue)(object)matches!);
-        }
-
-        private static string ExtractPrefix(string script)
-        {
-            var start = script.IndexOf("startsWith('", StringComparison.Ordinal);
-            if (start < 0)
+            var prefix = args?.FirstOrDefault() as string ?? string.Empty;
+            foreach (var key in _store.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)).ToArray())
             {
-                return string.Empty;
+                _store.Remove(key);
             }
 
-            start += "startsWith('".Length;
-            var end = script.IndexOf("'))", start, StringComparison.Ordinal);
-            return end >= 0 ? script[start..end] : string.Empty;
+            return new ValueTask<TValue>(default(TValue)!);
         }
     }
 

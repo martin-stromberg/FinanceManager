@@ -1,7 +1,10 @@
 using FinanceManager.Application.Users;
+using FinanceManager.Infrastructure.Auth;
 using FinanceManager.Shared.Dtos.Common;
+using FinanceManager.Web.Infrastructure;
 using FinanceManager.Web.Infrastructure.Auth;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using System.Net.Mime;
 
@@ -92,6 +95,7 @@ public sealed class AuthController : ControllerBase
     /// <exception cref="ArgumentException">Thrown when the request contains invalid or malformed data.</exception>
     /// <exception cref="InvalidOperationException">Thrown when registration cannot proceed due to a conflicting existing user.</exception>
     [HttpPost("register")]
+    [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
     public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -102,10 +106,27 @@ public sealed class AuthController : ControllerBase
         var result = await _auth.RegisterAsync(new RegisterUserCommand(request.Username, request.Password, request.PreferredLanguage, request.TimeZoneId, request.CreateDemoData), ct);
         if (!result.Success)
         {
-            const string code = "Err_Conflict_UserAlreadyExists";
+            // Map the stable service codes to HTTP semantics: a disabled self-registration gate is
+            // forbidden, a duplicate username conflicts, and every other failure (missing fields,
+            // password-policy or identity validation errors) is a bad request reported with a
+            // generic message so no detail usable for user enumeration leaks to clients.
+            var (code, statusCode) = result.Error switch
+            {
+                AuthErrorCodes.RegistrationDisabled => (AuthErrorCodes.RegistrationDisabled, StatusCodes.Status403Forbidden),
+                AuthErrorCodes.UserAlreadyExists => (AuthErrorCodes.UserAlreadyExists, StatusCodes.Status409Conflict),
+                _ => (AuthErrorCodes.InvalidRegistration, StatusCodes.Status400BadRequest)
+            };
             var entry = _localizer[$"{Origin}_{code}"];
-            var message = entry.ResourceNotFound ? result.Error! : entry.Value;
-            return Conflict(ApiErrorDto.Create(Origin, code, message));
+            var message = entry.ResourceNotFound
+                ? code switch
+                {
+                    AuthErrorCodes.RegistrationDisabled => "Registration is not available.",
+                    AuthErrorCodes.UserAlreadyExists => "A user with this name already exists.",
+                    _ => "Registration failed."
+                }
+                : entry.Value;
+            var payload = ApiErrorDto.Create(Origin, code, message);
+            return StatusCode(statusCode, payload);
         }
 
         Response.Cookies.Append(AuthCookieName, result.Value!.Token, new CookieOptions

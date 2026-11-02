@@ -26,14 +26,17 @@ Beteiligte Komponenten: `ProgramExtensions`, `UserManager<User>`,
 
 ### 2a. Keepalive-Request für aktive Sitzungen
 
-1. `window.financeManager.keepalive` registriert für die geschützten Seiten Listener auf `pointerdown`, `keydown`, `focusin`, `input` und für den Quick-Edit-Blur-Flow. Dabei werden öffentliche Pfade wie `/login`, `/register`, `/help` und `/error` ausdrücklich übersprungen.
-2. Bei aktiver Nutzung ruft `triggerKeepalive()` ein `fetch("/api/auth/keepalive", { credentials: "include" })` auf; doppelte oder zu nahe hintereinander liegende Requests werden durch `keepaliveRequest` und Timeouts coalesced, damit keine Request-Stürme entstehen.
+1. `window.financeManager.keepalive` registriert Listener für `pointerdown`, `keydown`, `focusin` und `input` sowie einen `blur`-Listener für Quick-Edit-Felder. Öffentliche Pfade wie `/login`, `/register`, `/help` und `/error` werden übersprungen. Es gibt keinen periodischen Client-Timer, der bei Inaktivität selbstständig Keepalives sendet.
+2. Eine Benutzerinteraktion löst `triggerKeepalive()` aus, das bei Bedarf `fetch("/api/auth/keepalive", { credentials: "include" })` verwendet. Requests werden zusammengeführt und normale Anfragen nach erfolgreichem Aufruf für 60 Sekunden gedrosselt. Der Quick-Edit-`blur`-Pfad kann eine Anfrage erzwingen; Eingaben selbst halten auch ohne Fokusverlust den aktiven Nutzungsfluss aufrecht.
 3. `AuthKeepaliveController.Get()` antwortet mit `204 No Content`, sobald der Benutzer im JWT-Auth-Kontext authentifiziert ist und der Request den Middleware-Pfad erreicht.
 4. `JwtRefreshMiddleware.InvokeAsync(HttpContext)` liest das Token aus dem `Authorization`-Header oder dem `FinanceManager.Auth`-Cookie, prüft das Ablaufdatum und entscheidet anhand der konfigurierten Laufzeit, ob das Token in einem Renewal-Window liegt.
 5. Wenn das Token im Window liegt, ruft das Middleware `IJwtRefreshService.RefreshAsync(context.User, ...)` auf. `JwtRefreshService` lädt den aktuellen Benutzer, prüft `Active`, `security_stamp` und Admin-Rolle erneut gegen den aktuellen ASP.NET-Identity-Status und erzeugt bei Erfolg ein neues JWT.
-6. Bei erfolgreichem Refresh setzt das Middleware das neue Cookie `FinanceManager.Auth` mit `Secure`, `HttpOnly` und `Expires` sowie die Response-Header `X-Auth-Token` und `X-Auth-Token-Expires`. Bei Ablehnung löscht es das Cookie und beendet den Refresh-Pfad sauber, ohne die Antwort zu blockieren.
+6. Bei erfolgreichem Keepalive antwortet die Middleware mit `204 No Content` und `Cache-Control: no-store`. Das JWT wird dabei nicht an den Browser ausgeliefert — weder in Response-Headern noch im gerenderten HTML. Stattdessen schreibt sie das validierte Token serverseitig über `PrimeCache` in die benutzerbezogene Latest-Token-Registry (`CircuitAuthTokenStore.SetCurrent`). Nur bei Rotation setzt sie zusätzlich das neue Cookie `FinanceManager.Auth` mit `Secure`, `HttpOnly` und `Expires`. Bei abgelehntem Refresh löscht sie das Cookie und beendet den Refresh-Pfad sauber, ohne die Antwort zu blockieren.
+7. Der laufende Blazor-Circuit synchronisiert sein Token ohne Browser-Roundtrip: `JwtCookieAuthTokenProvider.GetAccessTokenAsync` liefert das gecachte Token und adoptiert bei auslaufendem oder fehlendem Cache-Token ein neueres Token desselben Benutzers aus `CircuitAuthTokenStore.TryGetCurrent`. Der Übergang vom Prerender in den Circuit erfolgt über einen einmalig nutzbaren Zufalls-Key (`PersistedTokenKey` via `StoreForHandoff`/`TryTakeHandoff`), nicht über das Token selbst.
 
-Beteiligte Komponenten: `window.financeManager.keepalive`, `AuthKeepaliveController`, `JwtRefreshMiddleware`, `IJwtRefreshService`, `JwtRefreshService`, `FinanceManager.Auth`
+Passive API-Abfragen zur Statusanzeige lösen für sich allein keine Keepalive-Aktivität aus. Läuft die Sitzung während Inaktivität ab, bleibt der Benutzer bis zu einer geschützten Folgeaktion auf der aktuellen Oberfläche; erst dann greift der normale Auth-Redirect.
+
+Beteiligte Komponenten: `window.financeManager.keepalive`, `AuthKeepaliveController`, `JwtRefreshMiddleware`, `IJwtRefreshService`, `JwtRefreshService`, `CircuitAuthTokenStore`, `JwtCookieAuthTokenProvider`, `FinanceManager.Auth`
 
 ---
 
