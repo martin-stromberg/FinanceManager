@@ -32,7 +32,7 @@ public sealed class DemoDataService : IDemoDataService
     private readonly ISavingsPlanService _savingsPlanService;
     private readonly ISecurityService _securityService;
     private readonly ISecurityCategoryService _securityCategoryService;
-    private readonly ISecurityPriceImportServiceFactory _securityPriceImportServiceFactory;
+    private readonly ISecurityPriceService _priceService;
     private readonly IStatementDraftService _statementDraftService;
     private readonly IBudgetCategoryService _budgetCategoryService;
     private readonly IBudgetPurposeService _budgetPurposeService;
@@ -51,7 +51,7 @@ public sealed class DemoDataService : IDemoDataService
     /// <param name="savingsPlanService">Service used to create savings plans.</param>
     /// <param name="securityService">Service used to create securities.</param>
     /// <param name="securityCategoryService">Service used to create security categories.</param>
-    /// <param name="securityPriceImportServiceFactory">Factory used to resolve the security price import service.</param>
+    /// <param name="priceService">Service used to upsert generated demo security prices.</param>
     /// <param name="statementDraftService">Service used to create and book statement drafts.</param>
     /// <param name="budgetCategoryService">Service used to create budget categories.</param>
     /// <param name="budgetPurposeService">Service used to create budget purposes.</param>
@@ -67,7 +67,7 @@ public sealed class DemoDataService : IDemoDataService
         ISavingsPlanService savingsPlanService,
         ISecurityService securityService,
         ISecurityCategoryService securityCategoryService,
-        ISecurityPriceImportServiceFactory securityPriceImportServiceFactory,
+        ISecurityPriceService priceService,
         IStatementDraftService statementDraftService,
         IBudgetCategoryService budgetCategoryService,
         IBudgetPurposeService budgetPurposeService,
@@ -83,7 +83,7 @@ public sealed class DemoDataService : IDemoDataService
         _savingsPlanService = savingsPlanService ?? throw new ArgumentNullException(nameof(savingsPlanService));
         _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
         _securityCategoryService = securityCategoryService ?? throw new ArgumentNullException(nameof(securityCategoryService));
-        _securityPriceImportServiceFactory = securityPriceImportServiceFactory ?? throw new ArgumentNullException(nameof(securityPriceImportServiceFactory));
+        _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
         _statementDraftService = statementDraftService ?? throw new ArgumentNullException(nameof(statementDraftService));
         _budgetCategoryService = budgetCategoryService ?? throw new ArgumentNullException(nameof(budgetCategoryService));
         _budgetPurposeService = budgetPurposeService ?? throw new ArgumentNullException(nameof(budgetPurposeService));
@@ -980,7 +980,6 @@ public sealed class DemoDataService : IDemoDataService
         CancellationToken ct,
         IReadOnlyList<(decimal UntilFraction, decimal Drift)>? trendProfile = null)
     {
-        var culture = CultureInfo.GetCultureInfo("de-DE");
         var priceHistory = new Dictionary<DateTime, decimal>();
         var firstDate = referenceMonthStart.AddYears(-2);
         var lastDate = referenceMonthStart;
@@ -1015,20 +1014,12 @@ public sealed class DemoDataService : IDemoDataService
             firstPriceCreated = true;
         }
 
-        var csv = new StringBuilder();
-        csv.AppendLine("Wertpapierhistorie");
-        csv.AppendLine($"Zeit;{security.Name}");
-        foreach (var item in priceHistory.OrderBy(x => x.Key))
-        {
-            csv.Append(item.Key.ToString("dd.MM.yyyy HH:mm:ss", culture));
-            csv.Append(';');
-            csv.AppendLine(item.Value.ToString("0.00", culture));
-        }
-
-        var context = new SecurityPriceImportContext("ing", $"demo-{security.Identifier}.csv", "text/csv");
-        var importService = _securityPriceImportServiceFactory.Resolve(context);
-        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
-        var importResult = await importService.ImportAsync(userId, security.Id, stream, context, ct);
+        // Synthetic demo data is seeded via the plain store path; the import pass
+        // (incl. signal evaluation) is reserved for real price sources.
+        var items = priceHistory.OrderBy(x => x.Key)
+            .Select(x => new SecurityPriceImportItem(x.Key, x.Value, 0))
+            .ToList();
+        var importResult = await _priceService.UpsertDailyPricesAsync(userId, security.Id, items, ct);
         if (importResult.Errors.Count > 0)
         {
             var error = string.Join("; ", importResult.Errors.Select(x => $"L{x.LineNumber}: {x.Message}"));
