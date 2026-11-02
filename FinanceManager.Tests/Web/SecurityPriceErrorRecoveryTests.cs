@@ -296,13 +296,17 @@ public sealed class SecurityPriceErrorRecoveryTests
         services.AddSingleton(priceService ?? Mock.Of<ISecurityPriceService>());
         services.AddSingleton(Mock.Of<IGoldenCrossService>());
         services.AddSingleton(Mock.Of<FinanceManager.Application.Securities.TrendReversal.ITrendReversalService>());
+        services.AddScoped<ISecurityPriceStoreAndEvaluateService>(sp => new SecurityPriceStoreAndEvaluateService(
+            sp.GetRequiredService<ISecurityPriceService>(),
+            sp.GetRequiredService<IGoldenCrossService>(),
+            sp.GetRequiredService<FinanceManager.Application.Securities.TrendReversal.ITrendReversalService>(),
+            Mock.Of<ILogger<SecurityPriceStoreAndEvaluateService>>()));
         services.AddScoped<ISecurityPriceUpdateService>(sp => new SecurityPriceUpdateService(
             db,
             sp.GetRequiredService<IPriceProvider>(),
             sp.GetRequiredService<ISecurityPriceService>(),
             sp.GetRequiredService<INotificationWriter>(),
-            sp.GetRequiredService<IGoldenCrossService>(),
-            sp.GetRequiredService<FinanceManager.Application.Securities.TrendReversal.ITrendReversalService>(),
+            sp.GetRequiredService<ISecurityPriceStoreAndEvaluateService>(),
             Mock.Of<ILogger<SecurityPriceUpdateService>>()));
         services.AddSingleton(localizer ?? CreateLocalizer());
         return services.BuildServiceProvider();

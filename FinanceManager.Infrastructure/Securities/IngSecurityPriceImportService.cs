@@ -13,19 +13,19 @@ public sealed class IngSecurityPriceImportService : ISecurityPriceImportService,
 {
     private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
 
-    private readonly ISecurityPriceUpdateService _priceUpdates;
+    private readonly ISecurityPriceStoreAndEvaluateService _storeAndEvaluate;
     private readonly ILogger<IngSecurityPriceImportService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IngSecurityPriceImportService"/> class.
     /// </summary>
-    /// <param name="priceUpdates">Service used to store parsed daily prices and run the signal evaluations.</param>
+    /// <param name="storeAndEvaluate">Service used to store parsed daily prices and run the signal evaluations.</param>
     /// <param name="logger">Logger used for diagnostic messages.</param>
     public IngSecurityPriceImportService(
-        ISecurityPriceUpdateService priceUpdates,
+        ISecurityPriceStoreAndEvaluateService storeAndEvaluate,
         ILogger<IngSecurityPriceImportService> logger)
     {
-        _priceUpdates = priceUpdates;
+        _storeAndEvaluate = storeAndEvaluate;
         _logger = logger;
     }
 
@@ -59,7 +59,7 @@ public sealed class IngSecurityPriceImportService : ISecurityPriceImportService,
             return new SecurityPriceImportResultDto(0, 0, 0, 0, errors);
         }
 
-        var result = await _priceUpdates.StoreAndEvaluateAsync(
+        var result = await _storeAndEvaluate.StoreAndEvaluateAsync(
             ownerUserId,
             securityId,
             parse.Items.Values.OrderBy(x => x.Date).ToList(),

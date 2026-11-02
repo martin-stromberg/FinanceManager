@@ -128,7 +128,7 @@ public sealed class SecurityPriceWorker : BackgroundService
         var rpm = _quota.Value.RequestsPerMinute;
         var delayPerRequest = rpm > 0 ? TimeSpan.FromMilliseconds(Math.Ceiling(60000.0 / rpm)) : TimeSpan.Zero;
 
-        int processed = 0, inserted = 0;
+        int processed = 0, upserted = 0;
         foreach (var item in batch)
         {
             ct.ThrowIfCancellationRequested();
@@ -136,12 +136,7 @@ public sealed class SecurityPriceWorker : BackgroundService
 
             try
             {
-                var last = await db.SecurityPrices.AsNoTracking()
-                    .Where(p => p.SecurityId == sec.Id)
-                    .OrderByDescending(p => p.Date)
-                    .Select(p => p.Date)
-                    .FirstOrDefaultAsync(ct);
-
+                var last = item.LastDate ?? default;
                 var startExclusive = last == default ? endInclusive.AddYears(-2) : last;
                 var requiresValidation = sec.HasPriceError;
                 if (endInclusive <= startExclusive && !requiresValidation)
@@ -156,7 +151,7 @@ public sealed class SecurityPriceWorker : BackgroundService
                 if (result.Status == SecurityPriceRefreshStatus.Stored)
                 {
                     processed++;
-                    inserted += (result.StoreResult?.Inserted ?? 0) + (result.StoreResult?.Updated ?? 0);
+                    upserted += (result.StoreResult?.Inserted ?? 0) + (result.StoreResult?.Updated ?? 0);
                 }
             }
             catch (RequestLimitExceededException ex)
@@ -176,7 +171,7 @@ public sealed class SecurityPriceWorker : BackgroundService
             }
         }
 
-        _logger.LogInformation("SecurityPriceWorker: Processed {Processed} securities, inserted {Inserted} prices (limit {Limit}, rpm {Rpm}).",
-            processed, inserted, maxSymbols, rpm);
+        _logger.LogInformation("SecurityPriceWorker: Processed {Processed} securities, upserted {Upserted} prices (limit {Limit}, rpm {Rpm}).",
+            processed, upserted, maxSymbols, rpm);
     }
 }

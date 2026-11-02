@@ -40,6 +40,7 @@ public sealed class ServiceCollectionExtensionsTests
         Assert.NotNull(scopedProvider.GetService<IAttachmentService>());
         Assert.NotNull(scopedProvider.GetService<ISecurityPriceImportServiceFactory>());
         Assert.NotNull(scopedProvider.GetService<ISecurityPriceUpdateService>());
+        Assert.NotNull(scopedProvider.GetService<ISecurityPriceStoreAndEvaluateService>());
         Assert.NotNull(scopedProvider.GetService<IDbContextFactory<AppDbContext>>());
 
         var importServices = scopedProvider.GetServices<ISecurityPriceImportService>().ToList();

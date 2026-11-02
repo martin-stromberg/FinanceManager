@@ -127,7 +127,7 @@ public sealed class SecurityPricesBackfillExecutor : IBackgroundTaskExecutor
 
                 if (lastStored == default)
                 {
-                    // No data yet ? fetch from payload (or default) up to endInclusiveBase
+                    // No data yet -> fetch from payload (or default) up to endInclusiveBase
                     fromInclusive = (fromUtc?.Date ?? defaultFromInclusive);
                     toInclusive = endInclusiveBase;
                 }

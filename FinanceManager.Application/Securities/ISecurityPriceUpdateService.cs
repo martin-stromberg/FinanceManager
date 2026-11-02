@@ -69,15 +69,4 @@ public interface ISecurityPriceUpdateService
     /// <returns>The refresh result describing stored data or the provider error.</returns>
     /// <exception cref="RequestLimitExceededException">Propagated so the caller can stop or abort its run.</exception>
     Task<SecurityPriceRefreshResult> RefreshFromProviderAsync(SecurityPriceRefreshRequest request, CancellationToken ct);
-
-    /// <summary>
-    /// Executes the store-and-evaluate part of the pass for already provided price items
-    /// (for example from a file import): persists them via upsert and runs the signal evaluations.
-    /// </summary>
-    /// <param name="ownerUserId">Owner of the security.</param>
-    /// <param name="securityId">Target security identifier.</param>
-    /// <param name="items">Price items to store.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>Counters for inserted, updated and unchanged records.</returns>
-    Task<SecurityPriceImportResultDto> StoreAndEvaluateAsync(Guid ownerUserId, Guid securityId, IReadOnlyList<SecurityPriceImportItem> items, CancellationToken ct);
 }

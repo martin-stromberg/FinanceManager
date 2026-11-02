@@ -25,7 +25,7 @@ public sealed class IngSecurityPriceImportServiceTests
     [InlineData("InG")]
     public void CanHandle_ShouldReturnTrue_WhenProviderIsIngIgnoringCaseAndWhitespace(string provider)
     {
-        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceUpdateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceStoreAndEvaluateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext(provider, "prices.txt", "text/plain");
 
         var canHandle = sut.CanHandle(context);
@@ -39,7 +39,7 @@ public sealed class IngSecurityPriceImportServiceTests
     [Fact]
     public void CanHandle_ShouldReturnFalse_WhenProviderMissing()
     {
-        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceUpdateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceStoreAndEvaluateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext(null, "prices.csv", "text/csv");
 
         var canHandle = sut.CanHandle(context);
@@ -53,7 +53,7 @@ public sealed class IngSecurityPriceImportServiceTests
     [Fact]
     public void CanHandle_ShouldReturnFalse_WhenProviderNotIngAndFileIsNotCsv()
     {
-        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceUpdateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceStoreAndEvaluateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("other", "prices.txt", "text/plain");
 
         var canHandle = sut.CanHandle(context);
@@ -70,7 +70,7 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceUpdates = new Mock<ISecurityPriceUpdateService>();
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
         priceUpdates
             .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(2, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
@@ -105,7 +105,7 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceUpdates = new Mock<ISecurityPriceUpdateService>();
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
         priceUpdates
             .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
@@ -136,7 +136,7 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceUpdates = new Mock<ISecurityPriceUpdateService>();
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
         priceUpdates
             .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
@@ -168,7 +168,7 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceUpdates = new Mock<ISecurityPriceUpdateService>();
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
         priceUpdates
             .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
@@ -200,7 +200,7 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceUpdates = new Mock<ISecurityPriceUpdateService>();
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
         priceUpdates
             .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(2, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));

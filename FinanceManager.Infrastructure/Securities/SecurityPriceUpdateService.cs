@@ -1,7 +1,5 @@
 using FinanceManager.Application.Notifications;
 using FinanceManager.Application.Securities;
-using FinanceManager.Application.Securities.GoldenCross;
-using FinanceManager.Application.Securities.TrendReversal;
 using FinanceManager.Domain.Notifications;
 using FinanceManager.Shared.Dtos.Securities;
 using Microsoft.EntityFrameworkCore;
@@ -11,8 +9,8 @@ namespace FinanceManager.Infrastructure.Securities;
 
 /// <summary>
 /// Implementation of <see cref="ISecurityPriceUpdateService"/>: the single pass entry point
-/// for the security price maintenance process used by the scheduled worker, the manual
-/// backfill task and file-based imports.
+/// for the provider-based security price maintenance process used by the scheduled worker
+/// and the manual backfill task.
 /// </summary>
 public sealed class SecurityPriceUpdateService : ISecurityPriceUpdateService
 {
@@ -20,8 +18,7 @@ public sealed class SecurityPriceUpdateService : ISecurityPriceUpdateService
     private readonly IPriceProvider _priceProvider;
     private readonly ISecurityPriceService _priceService;
     private readonly INotificationWriter _notifier;
-    private readonly IGoldenCrossService _goldenCross;
-    private readonly ITrendReversalService _trendReversal;
+    private readonly ISecurityPriceStoreAndEvaluateService _storeAndEvaluate;
     private readonly ILogger<SecurityPriceUpdateService> _logger;
 
     /// <summary>
@@ -29,26 +26,23 @@ public sealed class SecurityPriceUpdateService : ISecurityPriceUpdateService
     /// </summary>
     /// <param name="db">Application database context used to inspect the security error state.</param>
     /// <param name="priceProvider">Provider used to fetch daily prices.</param>
-    /// <param name="priceService">Service used to persist prices and manage the price error state.</param>
+    /// <param name="priceService">Service used to manage the price error state.</param>
     /// <param name="notifier">Writer used to notify the owner about persistent provider errors.</param>
-    /// <param name="goldenCross">Service used for the golden cross signal evaluation.</param>
-    /// <param name="trendReversal">Service used for the trend reversal signal evaluation.</param>
+    /// <param name="storeAndEvaluate">Service used to persist fetched prices and run the signal evaluations.</param>
     /// <param name="logger">Logger used for diagnostic messages.</param>
     public SecurityPriceUpdateService(
         AppDbContext db,
         IPriceProvider priceProvider,
         ISecurityPriceService priceService,
         INotificationWriter notifier,
-        IGoldenCrossService goldenCross,
-        ITrendReversalService trendReversal,
+        ISecurityPriceStoreAndEvaluateService storeAndEvaluate,
         ILogger<SecurityPriceUpdateService> logger)
     {
         _db = db;
         _priceProvider = priceProvider;
         _priceService = priceService;
         _notifier = notifier;
-        _goldenCross = goldenCross;
-        _trendReversal = trendReversal;
+        _storeAndEvaluate = storeAndEvaluate;
         _logger = logger;
     }
 
@@ -82,34 +76,8 @@ public sealed class SecurityPriceUpdateService : ISecurityPriceUpdateService
             .Select(p => new SecurityPriceImportItem(p.date.Date, p.close, 0))
             .ToList();
 
-        var storeResult = await StoreAndEvaluateAsync(request.OwnerUserId, request.SecurityId, items, ct);
+        var storeResult = await _storeAndEvaluate.StoreAndEvaluateAsync(request.OwnerUserId, request.SecurityId, items, ct);
         return new SecurityPriceRefreshResult(SecurityPriceRefreshStatus.Stored, storeResult);
-    }
-
-    /// <inheritdoc />
-    public async Task<SecurityPriceImportResultDto> StoreAndEvaluateAsync(Guid ownerUserId, Guid securityId, IReadOnlyList<SecurityPriceImportItem> items, CancellationToken ct)
-    {
-        var result = await _priceService.UpsertDailyPricesAsync(ownerUserId, securityId, items, ct);
-
-        try
-        {
-            await _goldenCross.EvaluateAndNotifyAsync(securityId, ct);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _logger.LogWarning(ex, "Golden cross evaluation failed for security {SecurityId}.", securityId);
-        }
-
-        try
-        {
-            await _trendReversal.EvaluateAndNotifyAsync(securityId, ct);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _logger.LogWarning(ex, "Trend reversal evaluation failed for security {SecurityId}.", securityId);
-        }
-
-        return result;
     }
 
     private async Task MarkProviderErrorAsync(SecurityPriceRefreshRequest request, string message, CancellationToken ct)
@@ -120,15 +88,17 @@ public sealed class SecurityPriceUpdateService : ISecurityPriceUpdateService
             return;
         }
 
-        var wasAlreadyRaised = entity.HasPriceError && string.Equals(entity.PriceErrorMessage, message, StringComparison.Ordinal);
-        await _priceService.SetPriceErrorAsync(request.OwnerUserId, request.SecurityId, message, ct);
+        // Security.SetPriceError normalizes null/whitespace to "Unknown error"; compare the normalized value.
+        var normalized = string.IsNullOrWhiteSpace(message) ? "Unknown error" : message;
+        var wasAlreadyRaised = entity.HasPriceError && string.Equals(entity.PriceErrorMessage, normalized, StringComparison.Ordinal);
+        await _priceService.SetPriceErrorAsync(request.OwnerUserId, request.SecurityId, normalized, ct);
         if (wasAlreadyRaised)
         {
             return;
         }
 
         var title = "Kursabruf fehlgeschlagen";
-        var msg = $"Für '{request.SecurityName}' ({request.Identifier}) ist beim Kursabruf ein Fehler aufgetreten: {message}\nAndere Abrufe laufen weiter. Das Wertpapier bleibt als fehlerhaft markiert, bis ein Abruf erfolgreich ist.";
+        var msg = $"Für '{request.SecurityName}' ({request.Identifier}) ist beim Kursabruf ein Fehler aufgetreten: {normalized}\nAndere Abrufe laufen weiter. Das Wertpapier bleibt als fehlerhaft markiert, bis ein Abruf erfolgreich ist.";
         var trigger = $"security:error:{request.SecurityId}";
         await _notifier.CreateForUserAsync(request.OwnerUserId, title, msg, NotificationType.SystemAlert, NotificationTarget.HomePage, DateTime.UtcNow.Date, trigger, ct);
     }
