@@ -25,6 +25,7 @@
 - Security fix: session cookies are marked `Secure` when the app is served via HTTPS (including TLS-terminating reverse proxies via forwarded headers); HSTS is enabled outside development.
 - Active navigation and Quick Edit input keep the session current. Passive background-task polling does not trigger an unsolicited login redirect after expiration; the next protected user action leads to login.
 
+- Bugfix: scheduled price updates, the manual price backfill and the ING CSV price import now run the same unified maintenance pass — prices are upserted with validation, the portfolio report cache is invalidated consistently, golden-cross/trend-reversal signal evaluations run after every price store, and persistent provider errors notify the owner (issue #472).
 - New "Umkehrsignale" (reversal signals) statistic on the security card: detects death cross (with cross date), breaks of the 200-day line (short-term weakness vs. structural reversal), bearish market structure, bearish MACD crossover and RSI divergence, and summarizes them into a trend status ("Trend intakt" / "Trend geschwächt" / "Trendwende wahrscheinlich") (issue #406).
 - New home page notifications when a security's trend status worsens; can be toggled per user via a new checkbox in the "Benachrichtigungen" setup tab.
 - Bugfix: Settings page — the Save button now activates for changes in all fields of the "Kontoauszüge" and "Renditeanalyse" sections and deactivates again when the saved value is restored (issue #431).

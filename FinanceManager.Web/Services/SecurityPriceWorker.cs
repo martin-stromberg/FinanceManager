@@ -1,8 +1,4 @@
-﻿using FinanceManager.Application.Notifications; // NEW
-using FinanceManager.Application.Securities.GoldenCross;
-using FinanceManager.Application.Securities.TrendReversal;
 using FinanceManager.Application.Securities;
-using FinanceManager.Domain.Notifications;    // NEW
 using FinanceManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -14,7 +10,10 @@ namespace FinanceManager.Web.Services;
 /// (AlphaVantage) and persists them into the application's database.
 /// </summary>
 /// <remarks>
-/// The worker creates a new scope per run to resolve scoped services (DbContext, providers, notification writer).
+/// The worker creates a new scope per run to resolve scoped services (DbContext, update service).
+/// It selects the securities and the fetch window for each run; the actual maintenance pass
+/// (fetch → error state → persist → signal evaluation → notification) is executed by
+/// <see cref="ISecurityPriceUpdateService"/>.
 /// It respects configured quota options (<see cref="AlphaVantageQuotaOptions"/>) and handles rate limits and provider errors.
 /// </remarks>
 public sealed class SecurityPriceWorker : BackgroundService
@@ -74,28 +73,22 @@ public sealed class SecurityPriceWorker : BackgroundService
     }
 
     /// <summary>
-    /// Executes a single run: selects eligible securities, queries prices from the provider,
-    /// writes new price entries and handles provider errors (including marking securities as errored
-    /// and emitting notifications to users).
+    /// Executes a single run: selects eligible securities and their fetch windows and executes the
+    /// shared price maintenance pass (<see cref="ISecurityPriceUpdateService.RefreshFromProviderAsync"/>)
+    /// for each of them.
     /// </summary>
     /// <param name="ct">Cancellation token to cancel the run and all IO operations.</param>
     /// <returns>A task that completes when the run has finished.</returns>
     /// <remarks>
     /// - Symbols without an AlphaVantage code or that are inactive are skipped.
-    /// - Weekend dates are ignored when persisting prices.
     /// - The method respects quota settings from <see cref="AlphaVantageQuotaOptions"/>.
-    /// - Fatal provider errors (here surfaced as <see cref="InvalidOperationException"/>) mark the security as errored
-    ///   and create a system notification for the owner.
+    /// - Provider domain errors are handled inside the pass (error flag plus owner notification).
     /// </remarks>
     private async Task RunOnceAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var prices = scope.ServiceProvider.GetRequiredService<IPriceProvider>();
-        var priceService = scope.ServiceProvider.GetRequiredService<ISecurityPriceService>();
-        var notifier = scope.ServiceProvider.GetRequiredService<INotificationWriter>(); // NEW
-        var goldenCross = scope.ServiceProvider.GetRequiredService<IGoldenCrossService>();
-        var trendReversal = scope.ServiceProvider.GetRequiredService<ITrendReversalService>();
+        var priceUpdates = scope.ServiceProvider.GetRequiredService<ISecurityPriceUpdateService>();
         var resolver = scope.ServiceProvider.GetRequiredService<IAlphaVantageKeyResolver>();
 
         // Check for shared admin key configured
@@ -135,7 +128,7 @@ public sealed class SecurityPriceWorker : BackgroundService
         var rpm = _quota.Value.RequestsPerMinute;
         var delayPerRequest = rpm > 0 ? TimeSpan.FromMilliseconds(Math.Ceiling(60000.0 / rpm)) : TimeSpan.Zero;
 
-        int processed = 0, inserted = 0;
+        int processed = 0, upserted = 0;
         foreach (var item in batch)
         {
             ct.ThrowIfCancellationRequested();
@@ -143,12 +136,7 @@ public sealed class SecurityPriceWorker : BackgroundService
 
             try
             {
-                var last = await db.SecurityPrices.AsNoTracking()
-                    .Where(p => p.SecurityId == sec.Id)
-                    .OrderByDescending(p => p.Date)
-                    .Select(p => p.Date)
-                    .FirstOrDefaultAsync(ct);
-
+                var last = item.LastDate ?? default;
                 var startExclusive = last == default ? endInclusive.AddYears(-2) : last;
                 var requiresValidation = sec.HasPriceError;
                 if (endInclusive <= startExclusive && !requiresValidation)
@@ -156,70 +144,20 @@ public sealed class SecurityPriceWorker : BackgroundService
                     continue;
                 }
 
-                var pricesList = await prices.GetDailyPricesAsync(sec.AlphaVantageCode!, startExclusive, endInclusive, ct);
-                await priceService.ClearPriceErrorAsync(sec.OwnerUserId, sec.Id, ct);
+                var result = await priceUpdates.RefreshFromProviderAsync(
+                    new SecurityPriceRefreshRequest(sec.OwnerUserId, sec.Id, sec.AlphaVantageCode!, sec.Name, sec.Identifier, startExclusive, endInclusive),
+                    ct);
 
-                if (pricesList.Count == 0)
+                if (result.Status == SecurityPriceRefreshStatus.Stored)
                 {
-                    continue;
-                }
-
-                foreach (var (date, close) in pricesList)
-                {
-                    if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-                    {
-                        continue;
-                    }
-                    db.SecurityPrices.Add(new FinanceManager.Domain.Securities.SecurityPrice(sec.Id, date, close));
-                    inserted++;
-                }
-                await db.SaveChangesAsync(ct);
-                processed++;
-
-                try
-                {
-                    await goldenCross.EvaluateAndNotifyAsync(sec.Id, ct);
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    _logger.LogWarning(ex, "Golden cross evaluation failed for security {SecurityId}.", sec.Id);
-                }
-
-                try
-                {
-                    await trendReversal.EvaluateAndNotifyAsync(sec.Id, ct);
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    _logger.LogWarning(ex, "Trend reversal evaluation failed for security {SecurityId}.", sec.Id);
+                    processed++;
+                    upserted += (result.StoreResult?.Inserted ?? 0) + (result.StoreResult?.Updated ?? 0);
                 }
             }
             catch (RequestLimitExceededException ex)
             {
                 _logger.LogWarning(ex, "AlphaVantage rate limit reached while processing {Code}. Stopping this run.", sec.AlphaVantageCode);
                 break; // stop run on rate limit
-            }
-            catch (InvalidOperationException ex)
-            {
-                // Domain error (e.g. invalid symbol): mark security as errored and notify user
-                _logger.LogWarning(ex, "Price fetch error for security {SecurityId} ({Code}).", sec.Id, sec.AlphaVantageCode);
-
-                var entity = await db.Securities.FirstOrDefaultAsync(s => s.Id == sec.Id, ct);
-                if (entity != null)
-                {
-                    var previousMessage = entity.PriceErrorMessage;
-                    var wasAlreadyRaised = entity.HasPriceError && string.Equals(previousMessage, ex.Message, StringComparison.Ordinal);
-                    entity.SetPriceError(ex.Message);
-                    await db.SaveChangesAsync(ct);
-
-                    if (!wasAlreadyRaised)
-                    {
-                        var title = "Kursabruf fehlgeschlagen";
-                        var msg = $"Für '{sec.Name}' ({sec.Identifier}) ist beim Kursabruf ein Fehler aufgetreten: {ex.Message}\nAndere Abrufe laufen weiter. Das Wertpapier bleibt als fehlerhaft markiert, bis ein Abruf erfolgreich ist.";
-                        var trigger = $"security:error:{sec.Id}";
-                        await notifier.CreateForUserAsync(sec.OwnerUserId, title, msg, NotificationType.SystemAlert, NotificationTarget.HomePage, DateTime.UtcNow.Date, trigger, ct);
-                    }
-                }
             }
             catch (Exception ex)
             {
@@ -233,7 +171,7 @@ public sealed class SecurityPriceWorker : BackgroundService
             }
         }
 
-        _logger.LogInformation("SecurityPriceWorker: Processed {Processed} securities, inserted {Inserted} prices (limit {Limit}, rpm {Rpm}).",
-            processed, inserted, maxSymbols, rpm);
+        _logger.LogInformation("SecurityPriceWorker: Processed {Processed} securities, upserted {Upserted} prices (limit {Limit}, rpm {Rpm}).",
+            processed, upserted, maxSymbols, rpm);
     }
 }

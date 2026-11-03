@@ -87,8 +87,9 @@ Bedarf ein ereignisgesteuerter Hinweis auf der Startseite erzeugt.
 - Ist die Benutzereinstellung deaktiviert, wird die Phase gespeichert, aber
   kein Hinweis erzeugt.
 
-**Umsetzung:** `GoldenCrossService.EvaluateAndNotifyAsync`, aufgerufen aus
-`SecurityPriceWorker`.
+**Umsetzung:** `GoldenCrossService.EvaluateAndNotifyAsync`, aufgerufen im
+Kurs-Pflegepass `ISecurityPriceUpdateService` (ausgelöst u. a. durch
+`SecurityPriceWorker`, Kurs-Backfill und Kursimport).
 
 ## Depot-Analysebericht: Kachel-Konfiguration muss konsistent sein
 
