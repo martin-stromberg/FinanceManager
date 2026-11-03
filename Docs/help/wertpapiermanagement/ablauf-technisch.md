@@ -194,7 +194,7 @@ flowchart TD
     C --> D[Bis zu LongWindow*3 Schlusskurse laden]
     D --> E[GoldenCrossAnalyzer.Analyze]
     E --> F[GoldenCrossDto: Phase, SMA50/200, Kreuzungsdatum, Einstiegsfenster, Retest, Trend]
-    G[SecurityPriceWorker nach Kursabruf] --> H[GoldenCrossService.EvaluateAndNotifyAsync]
+    G[ISecurityPriceUpdateService nach Kursabruf] --> H[GoldenCrossService.EvaluateAndNotifyAsync]
     H --> E
     H --> I{Phase > GoldenCrossNotifiedPhase?}
     I -- ja --> J[Notification HomePage, Trigger security:golden-cross:{id}]

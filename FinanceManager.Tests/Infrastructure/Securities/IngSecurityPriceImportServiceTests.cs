@@ -25,7 +25,7 @@ public sealed class IngSecurityPriceImportServiceTests
     [InlineData("InG")]
     public void CanHandle_ShouldReturnTrue_WhenProviderIsIngIgnoringCaseAndWhitespace(string provider)
     {
-        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceStoreAndEvaluateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext(provider, "prices.txt", "text/plain");
 
         var canHandle = sut.CanHandle(context);
@@ -39,7 +39,7 @@ public sealed class IngSecurityPriceImportServiceTests
     [Fact]
     public void CanHandle_ShouldReturnFalse_WhenProviderMissing()
     {
-        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceStoreAndEvaluateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext(null, "prices.csv", "text/csv");
 
         var canHandle = sut.CanHandle(context);
@@ -53,7 +53,7 @@ public sealed class IngSecurityPriceImportServiceTests
     [Fact]
     public void CanHandle_ShouldReturnFalse_WhenProviderNotIngAndFileIsNotCsv()
     {
-        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(Mock.Of<ISecurityPriceStoreAndEvaluateService>(), Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("other", "prices.txt", "text/plain");
 
         var canHandle = sut.CanHandle(context);
@@ -70,12 +70,12 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceService = new Mock<ISecurityPriceService>();
-        priceService
-            .Setup(x => x.UpsertDailyPricesAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
+        priceUpdates
+            .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(2, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
 
-        var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(priceUpdates.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
         var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00;42,48\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
@@ -84,7 +84,7 @@ public sealed class IngSecurityPriceImportServiceTests
 
         Assert.Equal(2, result.Inserted);
         Assert.Empty(result.Errors);
-        priceService.Verify(x => x.UpsertDailyPricesAsync(
+        priceUpdates.Verify(x => x.StoreAndEvaluateAsync(
             ownerUserId,
             securityId,
             It.Is<IReadOnlyList<SecurityPriceImportItem>>(items =>
@@ -105,12 +105,12 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceService = new Mock<ISecurityPriceService>();
-        priceService
-            .Setup(x => x.UpsertDailyPricesAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
+        priceUpdates
+            .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
 
-        var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(priceUpdates.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
         var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\nnot-a-date;42,22\n02.07.2026 02:00:00;invalid\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
@@ -120,7 +120,7 @@ public sealed class IngSecurityPriceImportServiceTests
         Assert.Equal(0, result.Inserted);
         Assert.Equal(0, result.Skipped);
         Assert.Single(result.Errors);
-        priceService.Verify(x => x.UpsertDailyPricesAsync(
+        priceUpdates.Verify(x => x.StoreAndEvaluateAsync(
             ownerUserId,
             securityId,
             It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),
@@ -136,12 +136,12 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceService = new Mock<ISecurityPriceService>();
-        priceService
-            .Setup(x => x.UpsertDailyPricesAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
+        priceUpdates
+            .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
 
-        var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(priceUpdates.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
         var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
@@ -152,7 +152,7 @@ public sealed class IngSecurityPriceImportServiceTests
         Assert.Equal(0, result.Skipped);
         Assert.Single(result.Errors);
         Assert.Equal("Invalid data row. Expected exactly two columns.", result.Errors[0].Message);
-        priceService.Verify(x => x.UpsertDailyPricesAsync(
+        priceUpdates.Verify(x => x.StoreAndEvaluateAsync(
             ownerUserId,
             securityId,
             It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),
@@ -168,12 +168,12 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceService = new Mock<ISecurityPriceService>();
-        priceService
-            .Setup(x => x.UpsertDailyPricesAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
+        priceUpdates
+            .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(1, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
 
-        var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(priceUpdates.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
         var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\n02.07.2026 02:00:00;-10,00\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
@@ -184,7 +184,7 @@ public sealed class IngSecurityPriceImportServiceTests
         Assert.Equal(0, result.Skipped);
         Assert.Single(result.Errors);
         Assert.Equal("Close value must not be negative.", result.Errors[0].Message);
-        priceService.Verify(x => x.UpsertDailyPricesAsync(
+        priceUpdates.Verify(x => x.StoreAndEvaluateAsync(
             ownerUserId,
             securityId,
             It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),
@@ -200,12 +200,12 @@ public sealed class IngSecurityPriceImportServiceTests
         var ownerUserId = Guid.NewGuid();
         var securityId = Guid.NewGuid();
 
-        var priceService = new Mock<ISecurityPriceService>();
-        priceService
-            .Setup(x => x.UpsertDailyPricesAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
+        var priceUpdates = new Mock<ISecurityPriceStoreAndEvaluateService>();
+        priceUpdates
+            .Setup(x => x.StoreAndEvaluateAsync(ownerUserId, securityId, It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityPriceImportResultDto(2, 0, 0, 0, Array.Empty<SecurityPriceImportErrorDto>()));
 
-        var sut = new IngSecurityPriceImportService(priceService.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
+        var sut = new IngSecurityPriceImportService(priceUpdates.Object, Mock.Of<ILogger<IngSecurityPriceImportService>>());
         var context = new SecurityPriceImportContext("ing", "prices.csv", "text/csv");
         var content = "sep=;\nZeit;Test Security\n01.07.2026 02:00:00;42,61\nmissing-column\n02.07.2026 02:00:00;-10,00\n03.07.2026 02:00:00;44,00\n";
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
@@ -215,7 +215,7 @@ public sealed class IngSecurityPriceImportServiceTests
         Assert.Equal(0, result.Inserted);
         Assert.Equal(0, result.Skipped);
         Assert.Single(result.Errors);
-        priceService.Verify(x => x.UpsertDailyPricesAsync(
+        priceUpdates.Verify(x => x.StoreAndEvaluateAsync(
             ownerUserId,
             securityId,
             It.IsAny<IReadOnlyList<SecurityPriceImportItem>>(),

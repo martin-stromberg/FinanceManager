@@ -126,6 +126,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatementDraftExportService, StatementDraftExportService>();
         services.AddScoped<IDemoDataService, FinanceManager.Infrastructure.Demo.DemoDataService>();
         services.AddScoped<ISecurityPriceService, SecurityPriceService>();
+        services.AddScoped<ISecurityPriceUpdateService, SecurityPriceUpdateService>();
+        services.AddScoped<ISecurityPriceStoreAndEvaluateService, SecurityPriceStoreAndEvaluateService>();
         services.AddScoped<IGoldenCrossService, GoldenCrossService>();
         services.AddScoped<ITrendReversalService, TrendReversalService>();
         services.AddScoped<ISecurityPriceImportService, IngSecurityPriceImportService>();

@@ -2,6 +2,7 @@ using FinanceManager.Application;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using FinanceManager.Application.Notifications;
+using FinanceManager.Application.Securities;
 using FinanceManager.Application.Securities.GoldenCross;
 using FinanceManager.Application.Securities.ReturnAnalysis;
 using FinanceManager.Application.Securities.TrendReversal;
