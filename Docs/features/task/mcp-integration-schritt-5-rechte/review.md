@@ -1,5 +1,19 @@
 # Review – EP-05 Individuelle Rechte & Filter
 
+## Korrekturen Abnahme 1
+
+- [x] Abw. 1 – F-0504 PreApproved-Bestätigung gegen resultierendes Profil:
+  `McpAccessCardViewModel.SaveAsync` prüft die Critical-Bestätigung nicht mehr gegen
+  `Access.EffectiveScopes` (geladener Zustand), sondern gegen das Profil, das aus dem
+  Save resultiert — neuer Helper `ResultingProfileGrantsBookOrDelete(level)`: Standardstufen
+  via `McpLevelProfiles.GetDefaultScopes(neue Stufe)`, Stufe Individuell über die persistierten
+  Zeilen (Effektiv-Scopes bei bereits-individuellem Zugang, sonst leer). Ein kombinierter Save
+  (z. B. Analyse → Buchhalter + ApprovalMode → PreApproved) löst jetzt die
+  `Confirmation_McpPreApproved_*`-Bestätigung aus. Tests:
+  `McpAccessCardViewModelTests` (`SaveAsync_LevelUpgradeWithPreApproved_RequestsCriticalConfirmation`,
+  `SaveAsync_PreApprovedWithoutWriteRights_NoConfirmation`,
+  `SaveAsync_PreApprovedConfirmationCancelled_SkipsUpdate`).
+
 ## Lieferumfang vs. AK
 
 | AK (Issue #483 / Backlog F-0501…F-0504) | Status | Nachweis |

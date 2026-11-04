@@ -1,3 +1,4 @@
+using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Shared;
@@ -313,11 +314,12 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
 
             // Switching to durably pre-approved while the profile grants booking or deletion
             // skips the per-action approval for the highest-impact actions — critical
-            // confirmation (ui-konzept.md §4.3.3, approval-konzept.md §3.4).
+            // confirmation (ui-konzept.md §4.3.3, approval-konzept.md §3.4). The check runs
+            // against the RESULTING profile: a level change in the same save swaps the
+            // derived default profile, so the loaded effective scopes are not the final state.
             if (approvalMode == (short)McpApprovalMode.PreApproved
                 && Access.ApprovalMode != (short)McpApprovalMode.PreApproved
-                && Access.EffectiveScopes.Any(s =>
-                    s.Right is (short)McpRightKind.Book or (short)McpRightKind.Delete))
+                && ResultingProfileGrantsBookOrDelete(level))
             {
                 var confirmed = await ConfirmationService.ConfirmAsync(new(
                     TitleResourceKey: "Confirmation_McpPreApproved_Title",
@@ -350,6 +352,28 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
             SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Determines whether the scope profile that results from persisting
+    /// <paramref name="level"/> grants booking or deletion. Standard levels derive their
+    /// profile from <see cref="McpLevelProfiles"/> (the server clears persisted rows on the
+    /// update); the individual level keeps its persisted rows — the effective scopes of the
+    /// loaded access when it already is individual, otherwise an empty profile because a
+    /// non-individual access persists no scope rows.
+    /// </summary>
+    /// <param name="level">The access level being saved.</param>
+    /// <returns><c>true</c> when the resulting profile contains Book or Delete tuples.</returns>
+    private bool ResultingProfileGrantsBookOrDelete(short level)
+    {
+        if ((McpAccessLevel)level == McpAccessLevel.Individuell)
+        {
+            return Access!.Level == (short)McpAccessLevel.Individuell
+                && Access.EffectiveScopes.Any(s =>
+                    s.Right is (short)McpRightKind.Book or (short)McpRightKind.Delete);
+        }
+        return McpLevelProfiles.GetDefaultScopes((McpAccessLevel)level)
+            .Any(t => t.Right is McpRightKind.Book or McpRightKind.Delete);
     }
 
     /// <summary>
