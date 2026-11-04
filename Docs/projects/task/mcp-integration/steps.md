@@ -13,8 +13,8 @@ Branch: `task/mcp-integration`
 | 7 | Kontoauszugs-Assistent (EP-07, #485) | 2, 3 | `task/mcp-integration-schritt-7-kontoauszug` | Fertig |
 | 8 | Stammdaten-Pflege (EP-08, #486) | 2, 3 | `task/mcp-integration-schritt-8-stammdaten` | Fertig |
 | 9 | Genehmigungsworkflow & persistente Queue (EP-09, #487) | 1, 2, 3 | `task/mcp-integration-schritt-9-approval` | Fertig |
-| 10 | Genehmigungscenter & finale Aktionen (EP-10, #488) | 8, 9 | `task/mcp-integration-schritt-10-center` | In Arbeit |
-| 11 | Agenten-Workflows & Betriebshärtung (EP-11, #489) | 9, 10 | `task/mcp-integration-schritt-11-agenten` | Offen |
+| 10 | Genehmigungscenter & finale Aktionen (EP-10, #488) | 8, 9 | `task/mcp-integration-schritt-10-center` | Fertig |
+| 11 | Agenten-Workflows & Betriebshärtung (EP-11, #489) | 9, 10 | `task/mcp-integration-schritt-11-agenten` | In Arbeit |
 
 Statuswerte: Offen | In Arbeit | Fertig | Blockiert
 
