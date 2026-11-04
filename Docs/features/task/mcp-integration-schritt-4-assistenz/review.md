@@ -1,5 +1,24 @@
 # Review – EP-04 Assistenz- & Vorschlags-Tools
 
+## Korrekturen Abnahme 1
+
+- [x] Abw. 1 – T11 `fm_contacts_suggest`: Datensatzfilter auf die deklarierten
+  `(Kontakte|Kontaktgruppen, Vorschlag)`-Zeilen umgestellt —
+  `McpRecordScopeFilter.ApplyAsync` um `McpRightKind`-Parameter erweitert
+  (Default `Lesen` für Bestandsaufrufer), beide `ApplyAsync`-Aufrufe in
+  `FmContactsSuggestTool.cs` übergeben `McpRightKind.Suggest`; Kommentar korrigiert.
+- [x] Abw. 2 – T12 `fm_budget_rules_suggest`: `McpRecordScopeFilter` injiziert;
+  Primärdaten (Purposes/Regeln/Overrides) werden gegen `(Budgetregeln, Vorschlag)`-
+  Zeilen gefiltert, die Posting-Historie gegen `(Buchungen, Lesen)`-Zeilen (wie T15).
+  Klassifikation über die Actuals-Quelle (`SourceRecordContextAsync`: Kontakt- bzw.
+  Kontaktgruppen-Kategorie, Sparplan-Kategorie); neue Auflösungen nur bei
+  tatsächlich gefilterten Profilzeilen.
+- [x] Abw. 3 – T19 `fm_statement_draft_prepare_booking`: eintragsweiser Record-Filter
+  ergänzt — `EntryVisibleAsync` wertet die `(Kontoauszugsentwürfe, Vorschlag)`-Zeilen
+  je Entry aus (Kontotyp via `DetectedAccountId` + Kategorien verknüpfter
+  Kontakt/Sparplan/Wertpapier), analog T13/T15; `ISavingsPlanService`/
+  `ISecurityService` für die Kategorieauflösung injiziert.
+
 ## Lieferumfang vs. AK
 
 | AK (Issue #482 / Backlog) | Status | Nachweis |

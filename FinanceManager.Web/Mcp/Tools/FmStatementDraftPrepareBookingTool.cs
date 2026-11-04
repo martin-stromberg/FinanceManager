@@ -1,6 +1,8 @@
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Mcp;
+using FinanceManager.Application.Savings;
+using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Shared.Dtos.Statements;
@@ -51,13 +53,18 @@ public sealed class FmStatementDraftPrepareBookingDescriptor : McpToolDescriptor
 /// validation errors) and the expected effect (posting kinds per bookable entry, bank
 /// amount delta, budget impact, <c>forceWarnings</c> recommendation). Contact/account
 /// detail lookups run only when the matching read scopes are granted (degraded otherwise).
-/// Emits the plan as data — the booking itself stays the approval-bound tool T20.
+/// Record-level filtering applies the declared (Kontoauszugsentwürfe, Vorschlag) rows to
+/// the draft and to each entry individually (Kontotyp via <c>DetectedAccountId</c> plus
+/// linked contact/savings-plan/security categories). Emits the plan as data — the booking
+/// itself stays the approval-bound tool T20.
 /// </summary>
 public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
 {
     private readonly IStatementDraftService _drafts;
     private readonly IContactService _contacts;
     private readonly IAccountService _accounts;
+    private readonly ISavingsPlanService _savingsPlans;
+    private readonly ISecurityService _securities;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly McpRecordScopeFilter _recordFilter;
 
@@ -66,12 +73,16 @@ public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
         IStatementDraftService drafts,
         IContactService contacts,
         IAccountService accounts,
+        ISavingsPlanService savingsPlans,
+        ISecurityService securities,
         IMcpScopeEvaluator scopeEvaluator,
         McpRecordScopeFilter recordFilter)
     {
         _drafts = drafts;
         _contacts = contacts;
         _accounts = accounts;
+        _savingsPlans = savingsPlans;
+        _securities = securities;
         _scopeEvaluator = scopeEvaluator;
         _recordFilter = recordFilter;
     }
@@ -147,6 +158,9 @@ public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
             ? allEntries
             : allEntries.Where(e => entryIds.Contains(e.Id)).ToList();
         var excludedCount = allEntries.Count - planEntries.Count;
+        // Per-entry record filter on the same Suggest rows — entries are evaluated
+        // individually like in fm_statement_drafts_read/fm_statement_draft_analyze.
+        var entriesFiltered = McpRecordScopeFilter.RequiresRecordFilter(draftScopes);
 
         var bookable = new List<object>();
         var blockedEntries = new List<object>();
@@ -163,6 +177,12 @@ public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
 
         foreach (var e in planEntries)
         {
+            if (entriesFiltered
+                && !await EntryVisibleAsync(e, header.DetectedAccountId, draftScopes, owner, ct))
+            {
+                continue;
+            }
+
             var blocks = new List<object>();
             if (e.Status == StatementDraftEntryStatus.AlreadyBooked)
             {
@@ -341,6 +361,31 @@ public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
         {
             AccountTypeValue = draft.DetectedAccountId.HasValue
                 ? (short?)(await _accounts.GetAsync(draft.DetectedAccountId.Value, owner, ct))?.Type
+                : null
+        };
+        return McpRecordScopeFilter.IsAllowed(scopes, record);
+    }
+
+    private async Task<bool> EntryVisibleAsync(
+        StatementDraftEntryDto entry, Guid? detectedAccountId,
+        IReadOnlyList<McpAccessScope> scopes, Guid owner, CancellationToken ct)
+    {
+        // Same derivation as fm_statement_drafts_read/fm_statement_draft_analyze:
+        // Kontotyp via DetectedAccountId→Account.Type plus the categories of the linked
+        // contact/savings plan/security, sofern gesetzt (Ableitungstabelle §6).
+        var record = new McpRecordContext
+        {
+            AccountTypeValue = detectedAccountId.HasValue
+                ? (short?)(await _accounts.GetAsync(detectedAccountId.Value, owner, ct))?.Type
+                : null,
+            ContactCategoryId = entry.ContactId.HasValue
+                ? (await _contacts.GetAsync(entry.ContactId.Value, owner, ct))?.CategoryId
+                : null,
+            SavingsPlanCategoryId = entry.SavingsPlanId.HasValue
+                ? (await _savingsPlans.GetAsync(entry.SavingsPlanId.Value, owner, ct))?.CategoryId
+                : null,
+            SecurityCategoryId = entry.SecurityId.HasValue
+                ? (await _securities.GetAsync(entry.SecurityId.Value, owner, ct))?.CategoryId
                 : null
         };
         return McpRecordScopeFilter.IsAllowed(scopes, record);

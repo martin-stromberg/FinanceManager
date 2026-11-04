@@ -109,7 +109,10 @@ public sealed class McpRecordScopeFilter
 
     /// <summary>
     /// Filters a materialized result list. When no matching row carries filters the list is
-    /// returned unchanged (no per-record work).
+    /// returned unchanged (no per-record work). Evaluates the (<paramref name="dataType"/>,
+    /// <paramref name="right"/>) scope rows — suggestion tools (EP-04) pass
+    /// <see cref="McpRightKind.Suggest"/> so their record filter binds to the declared
+    /// Vorschlag rows instead of the Lesen rows.
     /// </summary>
     /// <typeparam name="T">Item type.</typeparam>
     /// <param name="access">The MCP access context.</param>
@@ -117,15 +120,17 @@ public sealed class McpRecordScopeFilter
     /// <param name="items">The service-provided, already owner-scoped items.</param>
     /// <param name="recordContext">Maps an item to its filter classification values.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="right">The exercised right kind (default <see cref="McpRightKind.Read"/>).</param>
     /// <returns>The visible subset.</returns>
     public async Task<IReadOnlyList<T>> ApplyAsync<T>(
         IMcpAccessContext access,
         McpDataType dataType,
         IReadOnlyList<T> items,
         Func<T, McpRecordContext> recordContext,
-        CancellationToken ct)
+        CancellationToken ct,
+        McpRightKind right = McpRightKind.Read)
     {
-        var scopes = await GetReadScopesAsync(access, dataType, ct);
+        var scopes = await GetScopesAsync(access, dataType, right, ct);
         if (!RequiresRecordFilter(scopes))
         {
             return items;

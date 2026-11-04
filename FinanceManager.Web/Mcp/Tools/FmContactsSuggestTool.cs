@@ -111,10 +111,10 @@ public sealed class FmContactsSuggestHandler : IMcpToolHandler
             contacts = loaded.Take(MaxContacts).ToList();
         }
 
-        // Record-level filter on the Suggest rows of the Contacts data type
-        // (Kontaktgruppen dimension via Contact.CategoryId).
+        // Record-level filter on the declared (Kontakte, Vorschlag) scope rows of the
+        // tool — not the Lesen rows (Kontaktgruppen dimension via Contact.CategoryId).
         var visible = await _recordFilter.ApplyAsync(context.Access, McpDataType.Contacts, contacts,
-            c => new McpRecordContext { ContactCategoryId = c.CategoryId }, ct);
+            c => new McpRecordContext { ContactCategoryId = c.CategoryId }, ct, McpRightKind.Suggest);
 
         var aliasLookup = new Dictionary<Guid, IReadOnlyList<AliasNameDto>>(visible.Count);
         foreach (var c in visible)
@@ -131,7 +131,7 @@ public sealed class FmContactsSuggestHandler : IMcpToolHandler
         {
             var cats = await _recordFilter.ApplyAsync(context.Access, McpDataType.ContactCategories,
                 await _categories.ListAsync(owner, ct),
-                cat => new McpRecordContext { ContactCategoryId = cat.Id }, ct);
+                cat => new McpRecordContext { ContactCategoryId = cat.Id }, ct, McpRightKind.Suggest);
             categories = cats.Select(cat => new
             {
                 id = cat.Id,

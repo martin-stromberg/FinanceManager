@@ -268,6 +268,82 @@ public sealed class McpSuggestionToolsTests
             It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task ContactsSuggest_RecordFilter_UsesSuggestScopeRows()
+    {
+        // A filtered (Kontakte, Vorschlag) row must restrict the suggestion source:
+        // the contact outside the whitelist takes no part in duplicate/maintenance
+        // findings (Abweichung 1 — the filter must bind to the Suggest rows).
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpAccessLevel.Individuell);
+        var allowedCat = Guid.NewGuid();
+        var deniedCat = Guid.NewGuid();
+        var keptA = new ContactDto(Guid.NewGuid(), "Dup <inject>", ContactType.Organization, allowedCat, null, false, null);
+        var keptB = new ContactDto(Guid.NewGuid(), "dup <inject>", ContactType.Organization, allowedCat, null, false, null);
+        var dropped = new ContactDto(Guid.NewGuid(), "DUP <inject>", ContactType.Organization, deniedCat, null, false, null);
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.ListAsync(owner, 0, 200, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { keptA, keptB, dropped });
+        contacts.Setup(c => c.ListAliases(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AliasNameDto>());
+        var categories = new Mock<IContactCategoryService>();
+        categories.Setup(c => c.ListAsync(owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new ContactCategoryDto(allowedCat, "A", null),
+                new ContactCategoryDto(deniedCat, "B", null)
+            });
+        var filter = NewFilter(
+            new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Suggest,
+                contactCategoryIdsCsv: allowedCat.ToString()),
+            new McpAccessScope(access.Id, owner, McpDataType.ContactCategories, McpRightKind.Suggest));
+        var handler = new FmContactsSuggestHandler(
+            contacts.Object, categories.Object, Mock.Of<IKnownContactCatalog>(), filter);
+
+        using var doc = Serialize(await handler.InvokeAsync(Args("{}"),
+            NewCallContext(NewAccessContext(owner, access).Object), CancellationToken.None));
+
+        Assert.Equal(2, doc.RootElement.GetProperty("contactCount").GetInt32());
+        var suggestions = doc.RootElement.GetProperty("suggestions");
+        Assert.Contains(suggestions.EnumerateArray(),
+            s => s.GetProperty("kind").GetString() == "duplicate_candidate");
+        Assert.DoesNotContain(dropped.Id.ToString(), suggestions.GetRawText());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task ContactsSuggest_RecordFilter_IgnoresReadScopeRows()
+    {
+        // Regression of Abweichung 1: a filtered (Kontakte, Lesen) row must NOT restrict
+        // the suggestion source — the Suggest rows decide (here unfiltered → visible).
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpAccessLevel.Individuell);
+        var contact = new ContactDto(Guid.NewGuid(), "Visible <inject>", ContactType.Person, null, null, false, null);
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.ListAsync(owner, 0, 200, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { contact });
+        contacts.Setup(c => c.ListAliases(contact.Id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AliasNameDto>());
+        var categories = new Mock<IContactCategoryService>();
+        categories.Setup(c => c.ListAsync(owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ContactCategoryDto>());
+        var filter = NewFilter(
+            new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Read,
+                contactCategoryIdsCsv: Guid.NewGuid().ToString()),
+            new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Suggest),
+            new McpAccessScope(access.Id, owner, McpDataType.ContactCategories, McpRightKind.Suggest));
+        var handler = new FmContactsSuggestHandler(
+            contacts.Object, categories.Object, Mock.Of<IKnownContactCatalog>(), filter);
+
+        using var doc = Serialize(await handler.InvokeAsync(Args("{}"),
+            NewCallContext(NewAccessContext(owner, access).Object), CancellationToken.None));
+
+        Assert.Equal(1, doc.RootElement.GetProperty("contactCount").GetInt32());
+        Assert.Contains(doc.RootElement.GetProperty("suggestions").EnumerateArray(),
+            s => s.GetProperty("kind").GetString() == "missing_category");
+    }
+
     // ----------------------------------------------------------------- T12
 
     /// <summary>Test case.</summary>
@@ -285,7 +361,9 @@ public sealed class McpSuggestionToolsTests
         var purposes = new Mock<IBudgetPurposeService>();
         var handler = new FmBudgetRulesSuggestHandler(
             purposes.Object, Mock.Of<IBudgetRuleService>(), Mock.Of<IBudgetOverrideService>(),
-            Mock.Of<IBudgetCategoryService>(), Mock.Of<IPostingsQueryService>(), evaluator.Object);
+            Mock.Of<IBudgetCategoryService>(), Mock.Of<IPostingsQueryService>(),
+            Mock.Of<IContactService>(), Mock.Of<Application.Savings.ISavingsPlanService>(),
+            evaluator.Object, NewFilter());
 
         using var doc = Serialize(await handler.InvokeAsync(Args("{}"),
             NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
@@ -333,7 +411,8 @@ public sealed class McpSuggestionToolsTests
             .ReturnsAsync(Array.Empty<BudgetCategoryDto>());
         var handler = new FmBudgetRulesSuggestHandler(
             purposes.Object, rules.Object, overrides.Object, categories.Object,
-            postings.Object, AllowAllEvaluator());
+            postings.Object, Mock.Of<IContactService>(),
+            Mock.Of<Application.Savings.ISavingsPlanService>(), AllowAllEvaluator(), NewFilter());
 
         using var doc = Serialize(await handler.InvokeAsync(Args("{}"),
             NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
@@ -347,6 +426,127 @@ public sealed class McpSuggestionToolsTests
         rules.Verify(r => r.CreateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<decimal>(),
             It.IsAny<BudgetIntervalType>(), It.IsAny<int?>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly?>(),
             It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task BudgetRulesSuggest_RecordFilter_HidesOutOfScopePurpose()
+    {
+        // A filtered (Budgetregeln, Vorschlag) row restricts the primary data: the
+        // purpose whose actuals source is a contact outside the whitelist produces
+        // no suggestions (Abweichung 2 — previously no record filter ran at all).
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpAccessLevel.Individuell);
+        var allowedCat = Guid.NewGuid();
+        var deniedCat = Guid.NewGuid();
+        var contactIn = Guid.NewGuid();
+        var contactOut = Guid.NewGuid();
+        var purposeIn = new BudgetPurposeOverviewDto(
+            Guid.NewGuid(), owner, "In", null, BudgetSourceType.Contact, contactIn,
+            0, 0m, 100m, 100m, null, null, null, null);
+        var purposeOut = new BudgetPurposeOverviewDto(
+            Guid.NewGuid(), owner, "Out", null, BudgetSourceType.Contact, contactOut,
+            0, 0m, 200m, 200m, null, null, null, null);
+        var purposes = new Mock<IBudgetPurposeService>();
+        purposes.Setup(p => p.ListOverviewAsync(owner, 0, 50, null, null,
+                It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), null, It.IsAny<CancellationToken>(),
+                It.IsAny<BudgetReportDateBasis>()))
+            .ReturnsAsync(new[] { purposeIn, purposeOut });
+        var rules = new Mock<IBudgetRuleService>();
+        rules.Setup(r => r.ListByPurposeAsync(owner, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetRuleDto>());
+        var overrides = new Mock<IBudgetOverrideService>();
+        overrides.Setup(o => o.ListByPurposeAsync(owner, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetOverrideDto>());
+        var postings = new Mock<IPostingsQueryService>();
+        postings.Setup(p => p.GetContactPostingsAsync(It.IsAny<Guid>(), 0, 200, null,
+                It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Shared.Dtos.Postings.PostingServiceDto>());
+        var categories = new Mock<IBudgetCategoryService>();
+        categories.Setup(c => c.ListAsync(owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetCategoryDto>());
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.GetAsync(contactIn, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(contactIn, "In", ContactType.Organization, allowedCat, null, false, null));
+        contacts.Setup(c => c.GetAsync(contactOut, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(contactOut, "Out", ContactType.Organization, deniedCat, null, false, null));
+        var filter = NewFilter(
+            new McpAccessScope(access.Id, owner, McpDataType.BudgetRules, McpRightKind.Suggest,
+                contactCategoryIdsCsv: allowedCat.ToString()));
+        var handler = new FmBudgetRulesSuggestHandler(
+            purposes.Object, rules.Object, overrides.Object, categories.Object,
+            postings.Object, contacts.Object,
+            Mock.Of<Application.Savings.ISavingsPlanService>(), AllowAllEvaluator(), filter);
+
+        using var doc = Serialize(await handler.InvokeAsync(Args("{}"),
+            NewCallContext(NewAccessContext(owner, access).Object), CancellationToken.None));
+
+        var suggestions = doc.RootElement.GetProperty("suggestions");
+        Assert.NotEmpty(suggestions.EnumerateArray());
+        Assert.All(suggestions.EnumerateArray(), s =>
+            Assert.Equal(purposeIn.Id.ToString(), s.GetProperty("targetBudgetPurposeId").GetString()));
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task BudgetRulesSuggest_RecordFilter_AppliesToPostingHistory()
+    {
+        // The posting history inherits the (Buchungen, Lesen) record filter (like T15):
+        // a scope row whitelisting another contact category drops the loaded postings —
+        // the missing_rule proposal then degrades to "amount not derivable".
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpAccessLevel.Individuell);
+        var allowedCat = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var purpose = new BudgetPurposeOverviewDto(
+            Guid.NewGuid(), owner, "Miete", null, BudgetSourceType.Contact, contactId,
+            0, 0m, 1200m, 1200m, "Vermieter", null, null, null);
+        var purposes = new Mock<IBudgetPurposeService>();
+        purposes.Setup(p => p.ListOverviewAsync(owner, 0, 50, null, null,
+                It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), null, It.IsAny<CancellationToken>(),
+                It.IsAny<BudgetReportDateBasis>()))
+            .ReturnsAsync(new[] { purpose });
+        var rules = new Mock<IBudgetRuleService>();
+        rules.Setup(r => r.ListByPurposeAsync(owner, purpose.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetRuleDto>());
+        var overrides = new Mock<IBudgetOverrideService>();
+        overrides.Setup(o => o.ListByPurposeAsync(owner, purpose.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetOverrideDto>());
+        var postings = new Mock<IPostingsQueryService>();
+        postings.Setup(p => p.GetContactPostingsAsync(contactId, 0, 200, null,
+                It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                Posting(-400m, "MIETE"), Posting(-400m, "MIETE"), Posting(-400m, "MIETE")
+            });
+        var categories = new Mock<IBudgetCategoryService>();
+        categories.Setup(c => c.ListAsync(owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<BudgetCategoryDto>());
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.GetAsync(contactId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(contactId, "Vermieter", ContactType.Organization,
+                allowedCat, null, false, null));
+        var filter = NewFilter(
+            new McpAccessScope(access.Id, owner, McpDataType.BudgetRules, McpRightKind.Suggest,
+                contactCategoryIdsCsv: allowedCat.ToString()),
+            new McpAccessScope(access.Id, owner, McpDataType.Postings, McpRightKind.Read,
+                contactCategoryIdsCsv: Guid.NewGuid().ToString()));
+        var handler = new FmBudgetRulesSuggestHandler(
+            purposes.Object, rules.Object, overrides.Object, categories.Object,
+            postings.Object, contacts.Object,
+            Mock.Of<Application.Savings.ISavingsPlanService>(), AllowAllEvaluator(), filter);
+
+        using var doc = Serialize(await handler.InvokeAsync(Args("{}"),
+            NewCallContext(NewAccessContext(owner, access).Object), CancellationToken.None));
+
+        var suggestion = doc.RootElement.GetProperty("suggestions")
+            .EnumerateArray().Single(s => s.GetProperty("kind").GetString() == "missing_rule");
+        Assert.Equal(JsonValueKind.Null, suggestion.GetProperty("proposedValue").ValueKind);
+        Assert.Equal("low", suggestion.GetProperty("confidence").GetString());
+        // The history was loaded but record-filtered away — not skipped up front.
+        postings.Verify(p => p.GetContactPostingsAsync(contactId, 0, 200, null,
+            It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), owner, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     private static Shared.Dtos.Postings.PostingServiceDto Posting(decimal amount, string subject)
@@ -552,7 +752,10 @@ public sealed class McpSuggestionToolsTests
             .ReturnsAsync(new AccountDto(accountId, "g", AccountType.Giro, null, 100m, Guid.Empty, null,
                 SavingsPlanExpectation.None, false));
         var handler = new FmStatementDraftPrepareBookingHandler(
-            drafts.Object, contacts.Object, accounts.Object, AllowAllEvaluator(), NewFilter());
+            drafts.Object, contacts.Object, accounts.Object,
+            Mock.Of<Application.Savings.ISavingsPlanService>(),
+            Mock.Of<Application.Securities.ISecurityService>(),
+            AllowAllEvaluator(), NewFilter());
 
         using var doc = Serialize(await handler.InvokeAsync(
             Args($"{{\"draftId\":\"{draftId}\"}}"),
@@ -594,6 +797,8 @@ public sealed class McpSuggestionToolsTests
             .ReturnsAsync((StatementDraftDto?)null);
         var handler = new FmStatementDraftPrepareBookingHandler(
             drafts.Object, Mock.Of<IContactService>(), Mock.Of<IAccountService>(),
+            Mock.Of<Application.Savings.ISavingsPlanService>(),
+            Mock.Of<Application.Securities.ISecurityService>(),
             AllowAllEvaluator(), NewFilter());
 
         using var doc = Serialize(await handler.InvokeAsync(
@@ -601,6 +806,95 @@ public sealed class McpSuggestionToolsTests
             NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
 
         Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("plan").ValueKind);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task PrepareBooking_ScopeFilteredDraft_ReturnsNullPlan()
+    {
+        // Same draft-level gate as T15: a (Kontoauszugsentwürfe, Vorschlag) row filtered
+        // to Savings accounts makes a Giro draft invisible — no plan is emitted.
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpAccessLevel.Individuell);
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Header(draftId, accountId));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(accountId, "g", AccountType.Giro, null, 0m, Guid.Empty, null,
+                SavingsPlanExpectation.None, false));
+        var scope = new McpAccessScope(access.Id, owner, McpDataType.StatementDrafts,
+            McpRightKind.Suggest, accountTypesCsv: "1");
+        var handler = new FmStatementDraftPrepareBookingHandler(
+            drafts.Object, Mock.Of<IContactService>(), accounts.Object,
+            Mock.Of<Application.Savings.ISavingsPlanService>(),
+            Mock.Of<Application.Securities.ISecurityService>(),
+            Mock.Of<IMcpScopeEvaluator>(), NewFilter(scope));
+
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"),
+            NewCallContext(NewAccessContext(owner, access).Object), CancellationToken.None));
+
+        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("plan").ValueKind);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task PrepareBooking_RecordFilter_EvaluatesEntriesIndividually()
+    {
+        // Abweichung 3: with a filtered scope row the per-entry filter resolves the
+        // linked-record categories of each entry — the savings-plan lookup proves the
+        // individual evaluation ran (no such call exists outside the filter).
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpAccessLevel.Individuell);
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var plain = new StatementDraftEntryDto(Guid.NewGuid(), 1, DateTime.UtcNow, null, -10m, "EUR",
+            "s1", "r1", null, false, false, StatementDraftEntryStatus.Open,
+            contactId, null, false, null, null, null, null, null, null);
+        var linked = new StatementDraftEntryDto(Guid.NewGuid(), 2, DateTime.UtcNow, null, -20m, "EUR",
+            "s2", "r2", null, false, false, StatementDraftEntryStatus.Open,
+            contactId, planId, false, null, null, null, null, null, null);
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Header(draftId, accountId));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { plain, linked });
+        drafts.Setup(d => d.ValidateAsync(draftId, null, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DraftValidationResultDto(draftId, true,
+                Array.Empty<DraftValidationMessageDto>()));
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.ListAsync(owner, 0, 200, ContactType.Self, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ContactDto>());
+        contacts.Setup(c => c.GetAsync(contactId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(contactId, "C", ContactType.Organization, null, null, false, null));
+        var savings = new Mock<Application.Savings.ISavingsPlanService>();
+        savings.Setup(s => s.GetAsync(planId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Shared.Dtos.SavingsPlans.SavingsPlanDto { Id = planId });
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(accountId, "g", AccountType.Giro, null, 100m, Guid.Empty, null,
+                SavingsPlanExpectation.None, false));
+        var scope = new McpAccessScope(access.Id, owner, McpDataType.StatementDrafts,
+            McpRightKind.Suggest, accountTypesCsv: "0");
+        var handler = new FmStatementDraftPrepareBookingHandler(
+            drafts.Object, contacts.Object, accounts.Object, savings.Object,
+            Mock.Of<Application.Securities.ISecurityService>(),
+            AllowAllEvaluator(), NewFilter(scope));
+
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"),
+            NewCallContext(NewAccessContext(owner, access).Object), CancellationToken.None));
+
+        var plan = doc.RootElement.GetProperty("plan");
+        Assert.Equal(2, plan.GetProperty("bookableEntries").GetArrayLength());
+        // The per-entry record filter classified the linked savings plan (Kategorie
+        // über das Aggregate) — only the filter performs this lookup.
+        savings.Verify(s => s.GetAsync(planId, owner, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private sealed class TestOptionsMonitor : IOptionsMonitor<McpOptions>

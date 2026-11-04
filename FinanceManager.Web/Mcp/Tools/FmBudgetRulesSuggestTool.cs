@@ -1,5 +1,7 @@
 using FinanceManager.Application.Budget;
+using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Mcp;
+using FinanceManager.Application.Savings;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Postings;
@@ -50,9 +52,12 @@ public sealed class FmBudgetRulesSuggestDescriptor : McpToolDescriptorBase
 /// The declared scope stays (Budgetregeln, Vorschlag) as catalogued; the data sources the
 /// suggestions build on are gated at runtime: without (Budgets, Lesen) no purposes are
 /// visible, without (Buchungen, Lesen) no history-derived proposals are produced — the
-/// result then reports the degraded coverage instead of leaking records. Purpose names,
-/// patterns and derived rule texts are untrusted content (<c>untrusted_data</c>); no write
-/// method is invoked.
+/// result then reports the degraded coverage instead of leaking records. Record-level
+/// filtering applies the declared (Budgetregeln, Vorschlag) rows to the primary data
+/// (purposes/rules/overrides) and the (Buchungen, Lesen) rows to the posting history —
+/// classification values derive through the purpose's actuals source (contact/contact-
+/// group category, savings-plan category). Purpose names, patterns and derived rule
+/// texts are untrusted content (<c>untrusted_data</c>); no write method is invoked.
 /// </summary>
 public sealed class FmBudgetRulesSuggestHandler : IMcpToolHandler
 {
@@ -67,7 +72,10 @@ public sealed class FmBudgetRulesSuggestHandler : IMcpToolHandler
     private readonly IBudgetOverrideService _overrides;
     private readonly IBudgetCategoryService _categories;
     private readonly IPostingsQueryService _postings;
+    private readonly IContactService _contacts;
+    private readonly ISavingsPlanService _savingsPlans;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
+    private readonly McpRecordScopeFilter _recordFilter;
 
     /// <summary>Creates the handler.</summary>
     public FmBudgetRulesSuggestHandler(
@@ -76,14 +84,20 @@ public sealed class FmBudgetRulesSuggestHandler : IMcpToolHandler
         IBudgetOverrideService overrides,
         IBudgetCategoryService categories,
         IPostingsQueryService postings,
-        IMcpScopeEvaluator scopeEvaluator)
+        IContactService contacts,
+        ISavingsPlanService savingsPlans,
+        IMcpScopeEvaluator scopeEvaluator,
+        McpRecordScopeFilter recordFilter)
     {
         _purposes = purposes;
         _rules = rules;
         _overrides = overrides;
         _categories = categories;
         _postings = postings;
+        _contacts = contacts;
+        _savingsPlans = savingsPlans;
         _scopeEvaluator = scopeEvaluator;
+        _recordFilter = recordFilter;
     }
 
     /// <inheritdoc />
@@ -123,6 +137,16 @@ public sealed class FmBudgetRulesSuggestHandler : IMcpToolHandler
             return new { suggestions = Array.Empty<object>(), degraded };
         }
 
+        // Record-level filters: the suggestion output binds to the declared
+        // (Budgetregeln, Vorschlag) rows of the tool; the posting history inherits the
+        // record filters of (Buchungen, Lesen) — like T15 on the same source. Both are
+        // only costly when an individual profile actually carries filter CSVs.
+        var ruleScopes = await _recordFilter.GetScopesAsync(
+            context.Access, McpDataType.BudgetRules, McpRightKind.Suggest, ct);
+        var postingScopes = await _recordFilter.GetReadScopesAsync(context.Access, McpDataType.Postings, ct);
+        var purposesFiltered = McpRecordScopeFilter.RequiresRecordFilter(ruleScopes);
+        var postingsFiltered = McpRecordScopeFilter.RequiresRecordFilter(postingScopes);
+
         IReadOnlyList<BudgetPurposeOverviewDto> purposes;
         if (budgetPurposeId.HasValue)
         {
@@ -159,11 +183,31 @@ public sealed class FmBudgetRulesSuggestHandler : IMcpToolHandler
         {
             if (suggestions.Count >= maxSuggestions) { break; }
 
+            // Filter through the actuals source (Kontakt-/Kontaktgruppen- bzw.
+            // Sparplankategorie) — an invisible purpose yields no suggestions at all.
+            McpRecordContext? sourceContext = null;
+            if (purposesFiltered || postingsFiltered)
+            {
+                sourceContext = await SourceRecordContextAsync(p, owner, ct);
+                if (purposesFiltered && !McpRecordScopeFilter.IsAllowed(ruleScopes, sourceContext))
+                {
+                    continue;
+                }
+            }
+
             var rules = await _rules.ListByPurposeAsync(owner, p.Id, ct);
             var overrides = await _overrides.ListByPurposeAsync(owner, p.Id, ct);
             var postings = postingsAllowed
                 ? await LoadSourcePostingsAsync(p, from, to, owner, ct)
                 : Array.Empty<PostingServiceDto>();
+            if (postingsFiltered && postings.Count > 0)
+            {
+                // Same source anchor for the whole batch — contact postings classify
+                // through the contact category, plan postings through the plan category.
+                postings = postings
+                    .Where(post => McpRecordScopeFilter.IsAllowed(postingScopes, sourceContext!))
+                    .ToList();
+            }
 
             // --- Review finding: budget exceeded in the analyzed period ---
             if (p.BudgetSum > 0m && p.Variance > 0m)
@@ -321,6 +365,31 @@ public sealed class FmBudgetRulesSuggestHandler : IMcpToolHandler
             period = new { from, to }
         };
     }
+
+    /// <summary>
+    /// Resolves the record classification of a budget purpose through its actuals source
+    /// (derivation table: filters act through the linked aggregate — contact purposes over
+    /// the contact category, contact-group purposes over the group itself, savings-plan
+    /// purposes over the plan category). The same context classifies the purpose's posting
+    /// history, which is anchored on that aggregate (<c>GetContactPostingsAsync</c> →
+    /// contact postings, <c>GetSavingsPlanPostingsAsync</c> → plan postings).
+    /// </summary>
+    private async Task<McpRecordContext> SourceRecordContextAsync(
+        BudgetPurposeOverviewDto purpose, Guid owner, CancellationToken ct)
+        => purpose.SourceType switch
+        {
+            BudgetSourceType.Contact => new McpRecordContext
+            {
+                ContactCategoryId = (await _contacts.GetAsync(purpose.SourceId, owner, ct))?.CategoryId
+            },
+            // The contact group is the contact category itself — it classifies by its id.
+            BudgetSourceType.ContactGroup => new McpRecordContext { ContactCategoryId = purpose.SourceId },
+            BudgetSourceType.SavingsPlan => new McpRecordContext
+            {
+                SavingsPlanCategoryId = (await _savingsPlans.GetAsync(purpose.SourceId, owner, ct))?.CategoryId
+            },
+            _ => new McpRecordContext()
+        };
 
     private async Task<IReadOnlyList<PostingServiceDto>> LoadSourcePostingsAsync(
         BudgetPurposeOverviewDto purpose, DateTime from, DateTime to, Guid owner, CancellationToken ct)
