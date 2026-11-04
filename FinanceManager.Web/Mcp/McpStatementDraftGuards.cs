@@ -13,6 +13,19 @@ using FinanceManager.Shared.Dtos.Statements;
 namespace FinanceManager.Web.Mcp;
 
 /// <summary>
+/// One fachlicher Befund of the §4.4 Zusatzregeln as emitted by the read tool
+/// <c>fm_statement_draft_validate</c> (T14): same rule family as the throwing
+/// <see cref="McpStatementDraftGuards"/> write guards, but collected as data instead
+/// of aborting the call. <see cref="Code"/> uses the <c>MCP_</c> prefix so tool-level
+/// findings stay distinguishable from pipeline codes of <c>ValidateAsync</c>;
+/// <see cref="Severity"/> reuses the pipeline vocabulary (<c>Error</c>/<c>Warning</c>).
+/// </summary>
+/// <param name="Code">Stable rule code (<c>MCP_*</c>).</param>
+/// <param name="Severity"><c>Error</c> or <c>Warning</c>.</param>
+/// <param name="Message">System-generated finding text.</param>
+internal sealed record McpRuleFinding(string Code, string Severity, string Message);
+
+/// <summary>
 /// MCP-specific fachliche Zusatzvalidierung of the statement-draft write tools (F-0704,
 /// scope-und-toolkatalog.md §4.4): reference checks against owner-scoped master-data
 /// contracts (a foreign id behaves like a missing record and is rejected), plausibility
@@ -132,38 +145,123 @@ internal static class McpStatementDraftGuards
         DateTime bookingDate, DateTime? valutaDate, decimal amount, string subject,
         string? recipientName, string? currencyCode, string? bookingDescription)
     {
+        var findings = CollectEntryCoreFindings(
+            bookingDate, valutaDate, amount, subject, recipientName, currencyCode, bookingDescription);
+        if (findings.Count > 0)
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments", findings[0].Message);
+        }
+    }
+
+    /// <summary>
+    /// Non-throwing variant of <see cref="ValidateEntryCore"/> for the T14 Befundliste
+    /// (F-0704, §4.4): evaluates the same rules in the same order and returns one
+    /// <see cref="McpRuleFinding"/> per violation instead of aborting at the first.
+    /// </summary>
+    /// <param name="bookingDate">Effective booking date.</param>
+    /// <param name="valutaDate">Effective valuta date (may be <see langword="null"/>).</param>
+    /// <param name="amount">Effective amount.</param>
+    /// <param name="subject">Effective subject.</param>
+    /// <param name="recipientName">Effective recipient name.</param>
+    /// <param name="currencyCode">Effective currency code (may be <see langword="null"/>).</param>
+    /// <param name="bookingDescription">Effective booking description.</param>
+    /// <returns>The violated core-field rules (empty when the entry is plausible).</returns>
+    public static IReadOnlyList<McpRuleFinding> CollectEntryCoreFindings(
+        DateTime bookingDate, DateTime? valutaDate, decimal amount, string subject,
+        string? recipientName, string? currencyCode, string? bookingDescription)
+    {
+        var findings = new List<McpRuleFinding>();
         if (amount == 0m)
         {
-            throw new McpToolException("Err_Mcp_InvalidArguments", "Amount must not be zero.");
+            findings.Add(new("MCP_AMOUNT_ZERO", "Error", "Amount must not be zero."));
         }
         if (string.IsNullOrWhiteSpace(subject))
         {
-            throw new McpToolException("Err_Mcp_InvalidArguments", "Subject is required.");
+            findings.Add(new("MCP_SUBJECT_MISSING", "Error", "Subject is required."));
         }
-        if (subject.Length > MaxTextLength)
+        else if (subject.Length > MaxTextLength)
         {
-            throw new McpToolException("Err_Mcp_InvalidArguments", $"Subject must not exceed {MaxTextLength} characters.");
+            findings.Add(new("MCP_SUBJECT_TOO_LONG", "Error", $"Subject must not exceed {MaxTextLength} characters."));
         }
         if (bookingDescription is { Length: > MaxTextLength })
         {
-            throw new McpToolException("Err_Mcp_InvalidArguments", $"BookingDescription must not exceed {MaxTextLength} characters.");
+            findings.Add(new("MCP_DESCRIPTION_TOO_LONG", "Error", $"BookingDescription must not exceed {MaxTextLength} characters."));
         }
         if (recipientName is { Length: > MaxRecipientNameLength })
         {
-            throw new McpToolException("Err_Mcp_InvalidArguments", $"RecipientName must not exceed {MaxRecipientNameLength} characters.");
+            findings.Add(new("MCP_RECIPIENT_TOO_LONG", "Error", $"RecipientName must not exceed {MaxRecipientNameLength} characters."));
         }
         if (currencyCode is not null
             && (currencyCode.Length != 3 || !currencyCode.All(char.IsLetter)))
         {
-            throw new McpToolException("Err_Mcp_InvalidArguments", "CurrencyCode must be a 3-letter ISO-4217 code.");
+            findings.Add(new("MCP_CURRENCY_INVALID", "Error", "CurrencyCode must be a 3-letter ISO-4217 code."));
         }
         // Datumslogik (§4.4): valuta date must not precede the booking date beyond the
         // tolerated booking-week distance.
         if (valutaDate.HasValue && valutaDate.Value.Date < bookingDate.Date - ValutaTolerance)
         {
-            throw new McpToolException("Err_Mcp_InvalidArguments",
-                "ValutaDate must not precede BookingDate by more than the tolerated booking week.");
+            findings.Add(new("MCP_VALUTA_TOO_EARLY", "Error",
+                "ValutaDate must not precede BookingDate by more than the tolerated booking week."));
         }
+        return findings;
+    }
+
+    /// <summary>
+    /// Collects the entry-level §4.4 Zusatzregeln that need no external lookup for the
+    /// T14 Befundliste: fachlich gesperrte Entries (pipeline status
+    /// <see cref="StatementDraftEntryStatus.AlreadyBooked"/>/<see cref="StatementDraftEntryStatus.Announced"/>),
+    /// the Betrags-/Vorzeichen-Plausibilität of the assignment (a savings-plan
+    /// contribution and a security <c>Buy</c> are outflows, <c>Sell</c>/<c>Dividend</c>
+    /// are inflows on the detected account) and the archive-flag side condition
+    /// (<c>ArchiveSavingsPlanOnBooking</c> requires an assigned savings plan).
+    /// </summary>
+    /// <param name="entry">The draft entry to evaluate.</param>
+    /// <returns>The violated rules (empty when the entry raises no finding).</returns>
+    public static IReadOnlyList<McpRuleFinding> CollectEntryFindings(StatementDraftEntryDto entry)
+    {
+        var findings = new List<McpRuleFinding>();
+
+        // Dublettenreste/fachliche Sperren (§4.4): gesperrte Entries werden im Befund
+        // ausgewiesen — nie stillschweigend mitgebucht.
+        if (entry.Status == StatementDraftEntryStatus.AlreadyBooked)
+        {
+            findings.Add(new("MCP_ENTRY_ALREADY_BOOKED", "Error",
+                "Entry is flagged AlreadyBooked by the pipeline duplicate detection — it is blocked for booking (reset via fm_statement_draft_edit)."));
+        }
+        else if (entry.Status == StatementDraftEntryStatus.Announced)
+        {
+            findings.Add(new("MCP_ENTRY_ANNOUNCED", "Warning",
+                "Entry is announced; booking skips announced entries."));
+        }
+
+        // Betrags-/Vorzeichenkonsistenz (§4.4): a savings-plan contribution is an
+        // outflow from the detected account (Einzahlung); a positive amount reads as
+        // a plan payout. Security Buy is an outflow, Sell/Dividend an inflow.
+        if (entry.SavingsPlanId is not null && entry.Amount > 0m)
+        {
+            findings.Add(new("MCP_SIGN_SAVINGSPLAN", "Warning",
+                "Savings-plan assignments normally book as an outflow (negative amount); this positive amount looks like a plan payout — verify the assignment."));
+        }
+        if (entry.SecurityTransactionType == SecurityTransactionType.Buy && entry.Amount > 0m)
+        {
+            findings.Add(new("MCP_SIGN_SECURITY", "Warning",
+                "A security Buy is expected as an outflow (negative amount) on the detected account."));
+        }
+        else if (entry.SecurityTransactionType is SecurityTransactionType.Sell or SecurityTransactionType.Dividend
+                 && entry.Amount < 0m)
+        {
+            findings.Add(new("MCP_SIGN_SECURITY", "Warning",
+                "A security Sell/Dividend is expected as an inflow (positive amount) on the detected account."));
+        }
+
+        // Nebenbedingung (§4.4): the archive flag only makes sense on an assigned plan.
+        if (entry.ArchiveSavingsPlanOnBooking && entry.SavingsPlanId is null)
+        {
+            findings.Add(new("MCP_ARCHIVE_WITHOUT_PLAN", "Warning",
+                "ArchiveSavingsPlanOnBooking is set but no savings plan is assigned — the flag has no effect."));
+        }
+
+        return findings;
     }
 
     /// <summary>

@@ -33,10 +33,9 @@
   `DeleteEntryAsync`, `ResetDuplicateEntryAsync` (protokolliert als Status-Delta).
 - **F-0704**: Schicht `McpStatementDraftGuards` vor jeder Service-Wirkung;
   `Err_Mcp_InvalidArguments`/`Err_Mcp_InvalidState`/`Err_Mcp_ScopeDenied`.
-  Hinweis: Die Backlog-Formulierung „`fm_statement_draft_validate` um Zusatzregeln
-  erweitern" wurde dem Schritt-Auftrag entsprechend als **Vor-Wirkungs-Validierung**
-  umgesetzt; die §4.4-Befundliste lesend liefert weiterhin T14/T19 (fehlende
-  Zuordnungen/AlreadyBooked-Blocker sind dort bereits abgedeckt).
+  Nach Korrektur A1 liefert zusätzlich T14 (`fm_statement_draft_validate`) die
+  §4.4-Zusatzregeln lesend als `additionalFindings`-Befundliste (siehe Abschnitt
+  „Korrekturen Abnahme 1").
 - **Sicherheitsklassen**: alle drei Tools `Schreibvorbereitend` (Dispatcher-Deckel,
   Write-Stop-Lid, Rate-Limit-Tier greifen ohne weiteren Code). Genehmigungspflichtig
   bleibt ausschließlich T20/T21 (EP-10).
@@ -50,6 +49,37 @@ Aufgabenbeschreibung: `fm_statement_import`/`fm_statement_draft_correct` →
 verbindliche Katalognamen `fm_statement_draft_import`/`fm_statement_draft_edit`
 umgesetzt (product-backlog.md + toolkatalog §3.3/§4/§5.2 eindeutig; `fm_statement_import`
 kollidierte begrifflich mit dem vorhandenen `fm_statement_imports_review`).
+
+## Korrekturen Abnahme 1
+
+- [x] **A1 — T14-Zusatzvalidierung (F-0704) nachgeliefert.**
+  `fm_statement_draft_validate` gibt die `McpStatementDraftGuards`-Regelfamilie
+  jetzt zusätzlich lesend als Befundliste aus (`additionalFindings` mit
+  `severity`/`code`/`entryId`/`relatedRecord*`/`untrusted_data.message`,
+  Codes `MCP_*`): Kernfeld-Plausibilität (`CollectEntryCoreFindings`,
+  Betrag≠0/Subject/Textlängen/ISO-Currency/Valuta-Toleranz),
+  Betrags-/Vorzeichen-Konsistenz je Entry (Sparplan-Einzahlung vs. -Auszahlung,
+  Security Buy/Sell/Dividend), fachlich gesperrte Entries
+  (`MCP_ENTRY_ALREADY_BOOKED`/`MCP_ENTRY_ANNOUNCED`), Fremd-/unbrauchbare
+  Referenzen (`MCP_CONTACT_UNRESOLVED`, `MCP_SAVINGSPLAN_UNRESOLVED`/`_ARCHIVED`,
+  `MCP_SECURITY_UNRESOLVED`/`_INACTIVE`, `MCP_SPLIT_UNRESOLVED`), Split-Summen-
+  Konsistenz via `GetSplitGroupSumAsync` (`MCP_SPLIT_SUM_MISMATCH`, gespiegelt zu
+  `SPLIT_AMOUNT_MISMATCH`) und Zeitraum-Überlappung zu gebuchten
+  `StatementImport`-Perioden des erkannten Kontos (`MCP_PERIOD_OVERLAP`, Warnung,
+  via `IStatementImportQueryService`). `ValidateEntryCore` wirft weiterhin über
+  denselben Regelkatalog (Refactoring: Collector ist Single-Source). Referenz- und
+  Überlappungsprüfungen laufen nur bei erteilten Lesescopes der jeweiligen
+  Datentypen (`degraded`-Block im Ergebnis; deklarierter Tool-Scope bleibt
+  (Kontoauszugsentwürfe, Lesen), datensatzscharfe Entry-Filterung wie in
+  `fm_statement_drafts_read`). Die Pre-Service-Guards in T16/T17/T18 bleiben als
+  Write-Schutz unverändert bestehen.
+- [x] **A2 — T17-Deskriptor präzisiert.**
+  `fm_statement_draft_complete`: „Atomic all-or-error" aus Schema-`description`
+  (entries) und Tool-`description` entfernt; dokumentiert jetzt „full
+  pre-validation, then apply successively — no multi-entry transaction frame"
+  mit benanntem Restfenster (Teil-Apply bei Fehlschlag mitten im Apply möglich).
+  Reine Textkorrektur, kein Codeverhalten geändert; Absicherung über
+  Descriptor-Assert im Test.
 
 ## Bekannte Grenzen / Punkte für Folgeschritte
 - **Entry-übergreifende Atomarität von T17** ist „alles-validiert-dann-alles-angewendet":

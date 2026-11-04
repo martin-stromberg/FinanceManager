@@ -30,7 +30,7 @@ public sealed class FmStatementDraftCompleteDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmStatementDraftCompleteDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"draftId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Draft to complete (required).\"},\"accountId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Fill a missing DetectedAccountId.\"},\"description\":{\"type\":\"string\",\"description\":\"Fill a missing draft description.\"},\"entries\":{\"type\":\"array\",\"maxItems\":100,\"items\":{\"type\":\"object\",\"properties\":{\"entryId\":{\"type\":\"string\",\"format\":\"uuid\"},\"contactId\":{\"type\":\"string\",\"format\":\"uuid\"},\"savingsPlanId\":{\"type\":\"string\",\"format\":\"uuid\"},\"archiveSavingsPlanOnBooking\":{\"type\":\"boolean\"},\"securityId\":{\"type\":\"string\",\"format\":\"uuid\"},\"securityTransactionType\":{\"type\":\"string\",\"enum\":[\"Buy\",\"Sell\",\"Dividend\"]},\"securityQuantity\":{\"type\":\"number\"},\"securityFeeAmount\":{\"type\":\"number\"},\"securityTaxAmount\":{\"type\":\"number\"},\"isCostNeutral\":{\"type\":\"boolean\"},\"splitDraftId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"entryId\"],\"additionalProperties\":false},\"description\":\"Gap-only assignment updates per entry (max 100, all-or-error).\"},\"dryRun\":{\"type\":\"boolean\",\"description\":\"Preview the plan without persisting.\"}},\"required\":[\"draftId\"],\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"draftId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Draft to complete (required).\"},\"accountId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Fill a missing DetectedAccountId.\"},\"description\":{\"type\":\"string\",\"description\":\"Fill a missing draft description.\"},\"entries\":{\"type\":\"array\",\"maxItems\":100,\"items\":{\"type\":\"object\",\"properties\":{\"entryId\":{\"type\":\"string\",\"format\":\"uuid\"},\"contactId\":{\"type\":\"string\",\"format\":\"uuid\"},\"savingsPlanId\":{\"type\":\"string\",\"format\":\"uuid\"},\"archiveSavingsPlanOnBooking\":{\"type\":\"boolean\"},\"securityId\":{\"type\":\"string\",\"format\":\"uuid\"},\"securityTransactionType\":{\"type\":\"string\",\"enum\":[\"Buy\",\"Sell\",\"Dividend\"]},\"securityQuantity\":{\"type\":\"number\"},\"securityFeeAmount\":{\"type\":\"number\"},\"securityTaxAmount\":{\"type\":\"number\"},\"isCostNeutral\":{\"type\":\"boolean\"},\"splitDraftId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"entryId\"],\"additionalProperties\":false},\"description\":\"Gap-only assignment updates per entry (max 100; fully pre-validated, then applied successively — no multi-entry transaction frame).\"},\"dryRun\":{\"type\":\"boolean\",\"description\":\"Preview the plan without persisting.\"}},\"required\":[\"draftId\"],\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -38,7 +38,7 @@ public sealed class FmStatementDraftCompleteDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Completes a statement draft by filling gaps only (never overwrites existing values): entry assignments (contact, savings plan + archive flag, security fields, cost-neutral, split draft) and draft-level account/description. Atomic all-or-error batches, optional dryRun preview. Scopes: (Kontoauszugsentwürfe, Vervollständigung) + read on Kontakte/Sparpläne/Wertpapiere/Konten.";
+        => "Completes a statement draft by filling gaps only (never overwrites existing values): entry assignments (contact, savings plan + archive flag, security fields, cost-neutral, split draft) and draft-level account/description. Batches run a full pre-validation first, then apply successively — no multi-entry transaction frame; the documented residual window applies (a failure mid-apply may leave earlier entries committed). Optional dryRun preview. Scopes: (Kontoauszugsentwürfe, Vervollständigung) + read on Kontakte/Sparpläne/Wertpapiere/Konten.";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Schreibvorbereitend;
@@ -275,7 +275,7 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
             plans = refreshed;
         }
 
-        // --- Apply phase 2: entry-level fills (all-or-error via pre-validation) ---
+        // --- Apply phase 2: entry-level fills (pre-validated, then successive per-entry apply — no multi-entry transaction) ---
         var auditEntryLevel = new List<McpAuditFieldChange>();
         foreach (var plan in plans)
         {

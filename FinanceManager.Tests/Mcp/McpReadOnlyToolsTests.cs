@@ -1,7 +1,10 @@
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Attachments;
+using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Postings;
+using FinanceManager.Application.Savings;
+using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Mcp;
@@ -378,7 +381,7 @@ public sealed class McpReadOnlyToolsTests
         var drafts = new Mock<IStatementDraftService>();
         drafts.Setup(d => d.GetDraftHeaderAsync(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
             .ReturnsAsync((StatementDraftDto?)null);
-        var handler = new FmStatementDraftValidateHandler(drafts.Object, NewFilter());
+        var handler = ValidateHandler(drafts);
         using var doc = Serialize(await handler.InvokeAsync(
             Args($"{{\"draftId\":\"{Guid.NewGuid()}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
         Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("validation").ValueKind);
@@ -397,12 +400,171 @@ public sealed class McpReadOnlyToolsTests
         drafts.Setup(d => d.ValidateAsync(draftId, null, owner, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DraftValidationResultDto(draftId, false,
                 new[] { new DraftValidationMessageDto("Err_X", "Error", "entry 'x' <inject>", draftId, Guid.NewGuid()) }));
-        var handler = new FmStatementDraftValidateHandler(drafts.Object, NewFilter());
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StatementDraftEntryDto>());
+        var handler = ValidateHandler(drafts);
         using var doc = Serialize(await handler.InvokeAsync(
             Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
         var msg = doc.RootElement.GetProperty("validation").GetProperty("messages")[0];
         Assert.Equal("Err_X", msg.GetProperty("code").GetString());
         Assert.Equal("entry 'x' <inject>", msg.GetProperty("untrusted_data").GetProperty("message").GetString());
+    }
+
+    // ------------------------------------------------------------------
+    // T14 §4.4 Zusatzregeln (F-0704): the guards' rule family as findings
+    // ------------------------------------------------------------------
+
+    private static IMcpScopeEvaluator AllowAllScopes()
+    {
+        var evaluator = new Mock<IMcpScopeEvaluator>();
+        evaluator.Setup(e => e.IsAllowedAsync(It.IsAny<McpAccess>(), It.IsAny<McpDataType>(),
+                It.IsAny<McpRightKind>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        return evaluator.Object;
+    }
+
+    private static FmStatementDraftValidateHandler ValidateHandler(
+        Mock<IStatementDraftService> drafts,
+        Mock<IContactService>? contacts = null,
+        Mock<ISavingsPlanService>? plans = null,
+        Mock<ISecurityService>? securities = null,
+        Mock<IAccountService>? accounts = null,
+        Mock<IStatementImportQueryService>? imports = null,
+        IMcpScopeEvaluator? evaluator = null)
+        => new(drafts.Object,
+            (contacts ?? new Mock<IContactService>()).Object,
+            (plans ?? new Mock<ISavingsPlanService>()).Object,
+            (securities ?? new Mock<ISecurityService>()).Object,
+            (accounts ?? new Mock<IAccountService>()).Object,
+            (imports ?? new Mock<IStatementImportQueryService>()).Object,
+            evaluator ?? AllowAllScopes(),
+            NewFilter());
+
+    private static Mock<IStatementDraftService> DraftsForValidate(
+        Guid draftId, Guid owner, Guid? accountId, params StatementDraftEntryDto[] entries)
+    {
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(draftId, "f.csv", null, accountId, null, null,
+                StatementDraftStatus.Draft, 0m, false, null, null, null, null,
+                Array.Empty<StatementDraftEntryDto>()));
+        drafts.Setup(d => d.ValidateAsync(draftId, It.IsAny<Guid?>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DraftValidationResultDto(draftId, true,
+                Array.Empty<DraftValidationMessageDto>()));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(entries);
+        return drafts;
+    }
+
+    private static StatementDraftEntryDto NewValidateEntry(
+        decimal amount = -10m, DateTime? bookingDate = null,
+        StatementDraftEntryStatus status = StatementDraftEntryStatus.Open,
+        Guid? contactId = null, Guid? savingsPlanId = null, Guid? splitDraftId = null,
+        bool archive = false)
+        => new(Guid.NewGuid(), 1, bookingDate ?? new DateTime(2026, 1, 10), null, amount,
+            "EUR", "subject", "recipient", null, false, false, status,
+            contactId, savingsPlanId, archive, splitDraftId, null, null, null, null, null);
+
+    private static List<string?> FindingCodes(JsonDocument doc)
+        => doc.RootElement.GetProperty("additionalFindings").EnumerateArray()
+            .Select(f => f.GetProperty("code").GetString()).ToList();
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftValidate_AdditionalFindings_FlagsSavingsPlanSign()
+    {
+        // §4.4 Vorzeichen: a savings-plan contribution books as an outflow — a positive
+        // amount is a payout-shaped inconsistency, not a rejection (Befund, kein Abbruch).
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var entry = NewValidateEntry(amount: +25m, contactId: Guid.NewGuid(), savingsPlanId: Guid.NewGuid());
+        var drafts = DraftsForValidate(draftId, owner, null, entry);
+        var handler = ValidateHandler(drafts);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var codes = FindingCodes(doc);
+        Assert.Contains("MCP_SIGN_SAVINGSPLAN", codes);
+        Assert.All(doc.RootElement.GetProperty("additionalFindings").EnumerateArray(),
+            f => Assert.True(f.TryGetProperty("severity", out _) && f.TryGetProperty("entryId", out _)));
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftValidate_AdditionalFindings_FlagsPeriodOverlap()
+    {
+        // §4.4 Zeitraum-Überlappung: draft entry period intersects an already booked
+        // import period of the same detected account.
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var importId = Guid.NewGuid();
+        var entry = NewValidateEntry(bookingDate: new DateTime(2026, 1, 10), contactId: Guid.NewGuid());
+        var drafts = DraftsForValidate(draftId, owner, accountId, entry);
+        var imports = new Mock<IStatementImportQueryService>();
+        imports.Setup(s => s.ListImportsAsync(owner, accountId, null, null, 0, 200, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new StatementImportListItemDto(importId, accountId, AccountType.Giro,
+                    ImportFormat.Csv, DateTime.UtcNow, "i.csv", 2)
+            });
+        imports.Setup(s => s.ListEntriesAsync(owner, importId, 0, 200, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new StatementImportEntryDto(Guid.NewGuid(), importId, new DateTime(2026, 1, 8),
+                    new DateTime(2026, 1, 8), -5m, "EUR", "s", null, null, false, false,
+                    null, null, null, FinanceManager.Shared.Dtos.Statements.StatementEntryStatus.Booked),
+                new StatementImportEntryDto(Guid.NewGuid(), importId, new DateTime(2026, 1, 15),
+                    new DateTime(2026, 1, 15), -5m, "EUR", "s", null, null, false, false,
+                    null, null, null, FinanceManager.Shared.Dtos.Statements.StatementEntryStatus.Booked)
+            });
+        var handler = ValidateHandler(drafts, imports: imports);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var codes = FindingCodes(doc);
+        Assert.Contains("MCP_PERIOD_OVERLAP", codes);
+        var finding = doc.RootElement.GetProperty("additionalFindings").EnumerateArray()
+            .Single(f => f.GetProperty("code").GetString() == "MCP_PERIOD_OVERLAP");
+        Assert.Equal("Warning", finding.GetProperty("severity").GetString());
+        Assert.Equal(importId, finding.GetProperty("relatedRecordId").GetGuid());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftValidate_AdditionalFindings_FlagsSplitSumMismatch()
+    {
+        // §4.4 Split-Konsistenz: the split-group sum must cover the entry amount
+        // (mirrors the pipeline rule SPLIT_AMOUNT_MISMATCH via GetSplitGroupSumAsync).
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var splitId = Guid.NewGuid();
+        var entry = NewValidateEntry(amount: -30m, contactId: Guid.NewGuid(), splitDraftId: splitId);
+        var drafts = DraftsForValidate(draftId, owner, null, entry);
+        drafts.Setup(d => d.GetSplitGroupSumAsync(splitId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(-20m);
+        var handler = ValidateHandler(drafts);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var codes = FindingCodes(doc);
+        Assert.Contains("MCP_SPLIT_SUM_MISMATCH", codes);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftValidate_AdditionalFindings_FlagsLockedAndUnresolvedEntries()
+    {
+        // §4.4: fachlich gesperrte Entries (AlreadyBooked) are findings, and a contact
+        // that does not resolve owner-scoped is an unresolved reference (Fremd-Bezug).
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var entry = NewValidateEntry(status: StatementDraftEntryStatus.AlreadyBooked,
+            contactId: Guid.NewGuid());
+        var drafts = DraftsForValidate(draftId, owner, null, entry);
+        var handler = ValidateHandler(drafts);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var codes = FindingCodes(doc);
+        Assert.Contains("MCP_ENTRY_ALREADY_BOOKED", codes);
+        Assert.Contains("MCP_CONTACT_UNRESOLVED", codes);
     }
 
     /// <summary>Test case.</summary>

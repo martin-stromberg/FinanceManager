@@ -138,6 +138,19 @@ public sealed class McpStatementWriteToolsTests
             registry.Find("fm_statement_draft_edit")!.RequiredScopes);
     }
 
+    /// <summary>Test case.</summary>
+    [Fact]
+    public void Complete_Descriptor_DocumentsPreValidationThenSuccessiveApply()
+    {
+        // Acceptance fix A2: the apply phase commits per entry — the description must
+        // not promise an atomic multi-entry transaction.
+        var descriptor = new FmStatementDraftCompleteDescriptor();
+        Assert.DoesNotContain("atomic", descriptor.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("all-or-error", descriptor.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("pre-validation", descriptor.Description);
+        Assert.Contains("no multi-entry transaction frame", descriptor.Description);
+    }
+
     // ------------------------------------------------------------------
     // T16 fm_statement_draft_import
     // ------------------------------------------------------------------
