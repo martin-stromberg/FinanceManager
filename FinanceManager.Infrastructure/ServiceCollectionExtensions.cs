@@ -166,6 +166,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPortfolioAnalysisReportCacheService, PortfolioAnalysisReportCacheService>();
         services.AddScoped<IPortfolioKpiConfigurationRepository, PortfolioKpiConfigurationRepository>();
 
+        // MCP foundation: token primitives, access administration, scope evaluation and the
+        // documented no-op audit writer (persistent writer lands with F-0301/F-0302).
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpTokenHasher, FinanceManager.Infrastructure.Mcp.McpTokenHasher>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpTokenIssuer, FinanceManager.Infrastructure.Mcp.McpTokenIssuer>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAccessService, FinanceManager.Infrastructure.Mcp.McpAccessService>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpScopeEvaluator, FinanceManager.Infrastructure.Mcp.McpScopeEvaluator>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditWriter, FinanceManager.Infrastructure.Mcp.NullMcpAuditWriter>();
+
         return services;
     }
 }

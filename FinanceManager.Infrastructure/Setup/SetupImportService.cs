@@ -1202,6 +1202,112 @@ public sealed class SetupImportService : ISetupImportService
 
         ProgressChanged?.Invoke(this, progress.Inc());
 
+        // MCP accesses (optional payload; restored always revoked — a backup never restores
+        // a usable credential; reactivation happens via token rotation in the UI).
+        var mcpAccessMap = new Dictionary<Guid, Guid>();
+        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Accesses"));
+        if (root.TryGetProperty("McpAccesses", out var mcpAccesses) && mcpAccesses.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAccess.McpAccessBackupDto>>(mcpAccesses.GetRawText(), jsonOptions) ?? new();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                try
+                {
+                    // Placeholder credentials: the hint derives from the new id (unique), the
+                    // hash never verifies — the access is usable only after rotation.
+                    var entity = new FinanceManager.Domain.Mcp.McpAccess(
+                        userId, dto.Name, $"rst{Guid.NewGuid():N}"[..12], "pbkdf2|1|AAAA|AAAA",
+                        dto.Level, dto.ApprovalMode, dto.Description, dto.ExpiresUtc, dto.AllowedIpRanges);
+                    entity.AssignBackupDto(dto);
+                    _db.McpAccesses.Add(entity);
+                    await _db.SaveChangesAsync(ct);
+                    mcpAccessMap[dto.Id] = entity.Id;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "ImportVersion3: skipping MCP access {Name}", dto.Name);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Access Scopes"));
+        if (root.TryGetProperty("McpAccessScopes", out var mcpScopes) && mcpScopes.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAccessScope.McpAccessScopeBackupDto>>(mcpScopes.GetRawText(), jsonOptions) ?? new();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                if (mcpAccessMap.TryGetValue(dto.McpAccessId, out var mappedAccess))
+                {
+                    var entity = new FinanceManager.Domain.Mcp.McpAccessScope(
+                        mappedAccess, userId, dto.DataType, dto.Right);
+                    entity.AssignBackupDto(dto);
+                    _db.McpAccessScopes.Add(entity);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // MCP audit trail: entries carry their chain fields verbatim; ids are remapped.
+        var mcpEntryMap = new Dictionary<Guid, Guid>();
+        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Audit Entries"));
+        if (root.TryGetProperty("McpAuditEntries", out var mcpEntries) && mcpEntries.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAuditEntry.McpAuditEntryBackupDto>>(mcpEntries.GetRawText(), jsonOptions) ?? new();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list.OrderBy(d => d.SequenceNo))
+            {
+                try
+                {
+                    var entity = new FinanceManager.Domain.Mcp.McpAuditEntry(
+                        dto.Utc, dto.SequenceNo, dto.Category, dto.EventType, dto.ResultStatus, dto.EntryHash,
+                        ownerUserId: userId,
+                        mcpAccessId: dto.McpAccessId.HasValue && mcpAccessMap.TryGetValue(dto.McpAccessId.Value, out var ma) ? ma : dto.McpAccessId,
+                        mcpAccessName: dto.McpAccessName, toolName: dto.ToolName,
+                        catalogVersion: dto.CatalogVersion, context: dto.Context,
+                        correlationId: dto.CorrelationId, sourceIp: dto.SourceIp,
+                        durationMs: dto.DurationMs, affectedCount: dto.AffectedCount,
+                        payloadJson: dto.PayloadJson, relatedRequestId: dto.RelatedRequestId,
+                        prevHash: dto.PrevHash);
+                    entity.AssignBackupDto(dto);
+                    _db.McpAuditEntries.Add(entity);
+                    await _db.SaveChangesAsync(ct);
+                    mcpEntryMap[dto.Id] = entity.Id;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "ImportVersion3: skipping MCP audit entry Seq={Seq}", dto.SequenceNo);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Audit Entry Changes"));
+        if (root.TryGetProperty("McpAuditEntryChanges", out var mcpChanges) && mcpChanges.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAuditEntryChange.McpAuditEntryChangeBackupDto>>(mcpChanges.GetRawText(), jsonOptions) ?? new();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                if (mcpEntryMap.TryGetValue(dto.EntryId, out var mappedEntry))
+                {
+                    var entity = new FinanceManager.Domain.Mcp.McpAuditEntryChange(
+                        mappedEntry, dto.EntityType, dto.EntityId, dto.Field, dto.OldValue, dto.NewValue);
+                    entity.AssignBackupDto(dto);
+                    _db.McpAuditEntryChanges.Add(entity);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
         ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
         ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
         await _aggregateService.RebuildForUserAsync(userId, (step, count) =>

@@ -888,12 +888,33 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 26;
+        var total = 30;
         var count = 0;
 
         // Notifications
         await Notifications
             .Where(n => n.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // MCP: audit field deltas → audit entries → scope rows → accesses
+        await McpAuditEntryChanges
+            .Where(c => McpAuditEntries.Any(e => e.Id == c.EntryId && e.OwnerUserId == userId))
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await McpAuditEntries
+            .Where(e => e.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await McpAccessScopes
+            .Where(s => s.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await McpAccesses
+            .Where(a => a.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 

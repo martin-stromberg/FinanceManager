@@ -440,4 +440,25 @@ public sealed class EnumCoverageTests
             nameof(FinanceManager.Domain.Mcp.McpAuditCategory.AccessEvent),
             nameof(FinanceManager.Domain.Mcp.McpAuditCategory.ApprovalEvent),
             nameof(FinanceManager.Domain.Mcp.McpAuditCategory.SecurityEvent));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpToolSecurityClass_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpToolSecurityClass>(
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Lesend),
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Vorschlagend),
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Schreibvorbereitend),
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Genehmigungspflichtig));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpAccessVerdict_Values()
+        => AssertValues<FinanceManager.Application.Mcp.McpAccessVerdict>(
+            nameof(FinanceManager.Application.Mcp.McpAccessVerdict.Allowed),
+            nameof(FinanceManager.Application.Mcp.McpAccessVerdict.Denied),
+            nameof(FinanceManager.Application.Mcp.McpAccessVerdict.NotFound));
 }
