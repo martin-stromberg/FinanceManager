@@ -10,12 +10,12 @@ Datum: 2026-11-04
 | [x] | Verzeichnis/Tracking | Projektverzeichnis und todo.md angelegt |
 | [x] | Einstiegspunkt | Neues Projekt, keine vorhandenen Artefakte |
 | [x] | Anforderung | `requirement.md` erstellt |
-| [ ] | Bestandsaufnahme | `inventory.md` + `inventory/` |
-| [ ] | Projektplan | `project-plan.md` |
-| [ ] | Offene Punkte | Klärung/Dokumentation gewählter Annahmen |
-| [ ] | Planprüfung | `project-plan-check.md` mit Status |
-| [ ] | Planungscommit | `plan: ...` |
-| [ ] | Schritte-Tracking | `steps.md` + `status.html` |
+| [x] | Bestandsaufnahme | `inventory.md` + `inventory/` |
+| [x] | Projektplan | `project-plan.md` |
+| [x] | Offene Punkte | 2 Punkte als behandelt dokumentiert (Annahmen im Plan) |
+| [x] | Planprüfung | `project-plan-check.md`: Projektplan vollständig |
+| [x] | Planungscommit | `plan: MCP-Integration Konzept für Issue #470` |
+| [x] | Schritte-Tracking | `steps.md` + `status.html` |
 | [ ] | Entwicklungsschleife | Schritte mit Lifecycle, Abnahme, Merge |
 | [ ] | Aufräumen | Projektverzeichnis entfernen |
 | [ ] | Abschlusscommit | `feat: ...` |
