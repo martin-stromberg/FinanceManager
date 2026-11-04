@@ -76,6 +76,9 @@ public sealed class SetupImportService : ISetupImportService
             return Task.FromResult(new AttachmentDto(Guid.Empty, (short)kind, entityId, name, "text/uri-list", 0L, categoryId, DateTime.UtcNow, true));
         }
 
+        public Task<AttachmentDto?> GetAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
+            => Task.FromResult<AttachmentDto?>(null);
+
         public Task<(Stream Content, string FileName, string ContentType)?> DownloadAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
             => Task.FromResult<(Stream, string, string)?>(null);
 

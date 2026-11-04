@@ -79,6 +79,15 @@ public interface IAttachmentService
     Task<int> CountAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid? categoryId, bool? isUrl, string? q, CancellationToken ct);
 
     /// <summary>
+    /// Gets the metadata of a single attachment of the owner.
+    /// </summary>
+    /// <param name="ownerUserId">The owner user id.</param>
+    /// <param name="attachmentId">The attachment id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="AttachmentDto"/> or <see langword="null"/> when not found or not owned.</returns>
+    Task<AttachmentDto?> GetAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct);
+
+    /// <summary>
     /// Downloads an attachment if available to the owner.
     /// </summary>
     /// <param name="ownerUserId">The owner user id.</param>

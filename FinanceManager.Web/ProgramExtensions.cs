@@ -435,11 +435,40 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpToolRateLimiter>();
             builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpAnomalyTracker>();
             builder.Services.AddScoped<FinanceManager.Web.Mcp.McpToolDispatcher>();
+            // Read-only tool catalog (EP-02): descriptors are singletons (compiled catalog),
+            // handlers are scoped adapters on the I*Service contracts.
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmTaskStatusDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAccountsOverviewDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmPostingsQueryDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmReportingAggregateDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmContactsLookupDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmBudgetOverviewDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSavingsPlanAnalysisDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSecuritiesAnalysisDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementImportsReviewDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAttachmentsReadDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmConfigurationReadDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftsReadDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftValidateDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmPostingReversalCheckDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolRegistry, FinanceManager.Web.Mcp.McpToolRegistry>();
+            builder.Services.AddScoped<FinanceManager.Web.Mcp.McpRecordScopeFilter>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeHandler>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmTaskStatusHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAccountsOverviewHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmPostingsQueryHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmReportingAggregateHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmContactsLookupHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmBudgetOverviewHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSavingsPlanAnalysisHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSecuritiesAnalysisHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementImportsReviewHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAttachmentsReadHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmConfigurationReadHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftsReadHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftValidateHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmPostingReversalCheckHandler>();
         }
 
         private static string? ExtractMcpHint(HttpContext httpContext)

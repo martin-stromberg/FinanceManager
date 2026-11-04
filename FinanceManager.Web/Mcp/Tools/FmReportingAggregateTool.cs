@@ -1,0 +1,174 @@
+using FinanceManager.Application.Mcp;
+using FinanceManager.Application.Reports;
+using FinanceManager.Domain.Mcp;
+using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Reports;
+using System.Text.Json;
+
+namespace FinanceManager.Web.Mcp.Tools;
+
+/// <summary>
+/// Descriptor of the read tool <c>fm_reporting_aggregate</c> (T03): aggregated report
+/// evaluations and time series over postings — either from an inline query or by executing
+/// a stored report favorite. Scopes: (Buchungen, Lesen), (Reports, Lesen).
+/// </summary>
+public sealed class FmReportingAggregateDescriptor : McpToolDescriptorBase
+{
+    /// <summary>Tool name.</summary>
+    public const string ToolName = "fm_reporting_aggregate";
+
+    /// <summary>Creates the descriptor.</summary>
+    public FmReportingAggregateDescriptor() : base(
+        "{\"type\":\"object\",\"properties\":{\"favoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Execute a stored report favorite instead of an inline query.\"},\"postingKind\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"],\"description\":\"Required for inline queries.\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Month\",\"Quarter\",\"HalfYear\",\"Year\",\"Ytd\",\"AllHistory\"]},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":200,\"description\":\"Max periods/groups (clamped to 200).\"},\"includeCategory\":{\"type\":\"boolean\"},\"comparePrevious\":{\"type\":\"boolean\"},\"compareYear\":{\"type\":\"boolean\"},\"compareProjection\":{\"type\":\"boolean\"},\"useValutaDate\":{\"type\":\"boolean\"},\"accountIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securitySubTypes\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"}}},\"additionalProperties\":false}")
+    { }
+
+    /// <inheritdoc />
+    public override string Name => ToolName;
+
+    /// <inheritdoc />
+    public override string Description
+        => "Runs an aggregated posting report (sums per period/group) either inline or from a stored report favorite. Scopes: (Buchungen, Lesen), (Reports, Lesen).";
+
+    /// <inheritdoc />
+    public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Lesend;
+
+    /// <inheritdoc />
+    public override IReadOnlyList<McpToolScope> RequiredScopes => new[]
+    {
+        new McpToolScope(McpDataType.Postings, McpRightKind.Read),
+        new McpToolScope(McpDataType.Reports, McpRightKind.Read)
+    };
+}
+
+/// <summary>
+/// Handler of <c>fm_reporting_aggregate</c>: adapts <see cref="IReportAggregationService"/>
+/// and <see cref="IReportFavoriteService"/>. The aggregation service scopes all filters to
+/// the owner internally, so foreign ids in the filter lists simply match nothing (empty
+/// result, no error). Group/category names derived from master data are untrusted content.
+/// </summary>
+public sealed class FmReportingAggregateHandler : IMcpToolHandler
+{
+    private readonly IReportAggregationService _aggregation;
+    private readonly IReportFavoriteService _favorites;
+
+    /// <summary>Creates the handler.</summary>
+    public FmReportingAggregateHandler(IReportAggregationService aggregation, IReportFavoriteService favorites)
+    {
+        _aggregation = aggregation;
+        _favorites = favorites;
+    }
+
+    /// <inheritdoc />
+    public string ToolName => FmReportingAggregateDescriptor.ToolName;
+
+    /// <inheritdoc />
+    public async Task<object> InvokeAsync(JsonElement arguments, McpToolCallContext context, CancellationToken ct)
+    {
+        var owner = context.Access.OwnerUserId;
+        var favoriteId = McpToolArguments.OptionalGuid(arguments, "favoriteId");
+
+        ReportAggregationQuery query;
+        object? favoriteOut = null;
+        if (favoriteId.HasValue)
+        {
+            var favorite = await _favorites.GetAsync(favoriteId.Value, owner, ct);
+            if (favorite is null)
+            {
+                // Foreign/unknown favorites behave like non-existing ones (no distinction).
+                return new { favorite = (object?)null, result = (object?)null };
+            }
+            favoriteOut = new
+            {
+                id = favorite.Id,
+                postingKind = favorite.PostingKind.ToString(),
+                interval = favorite.Interval.ToString(),
+                useValutaDate = favorite.UseValutaDate,
+                untrusted_data = new { name = favorite.Name }
+            };
+            var f = favorite.Filters;
+            query = new ReportAggregationQuery(
+                owner,
+                favorite.PostingKind,
+                favorite.Interval,
+                Math.Clamp(favorite.Take, 1, McpToolArguments.MaxTake),
+                favorite.IncludeCategory,
+                favorite.ComparePrevious,
+                favorite.CompareYear,
+                favorite.CompareProjection,
+                favorite.PostingKinds,
+                AnalysisDate: null,
+                favorite.UseValutaDate,
+                f is null ? null : new ReportAggregationFilters(
+                    f.AccountIds, f.ContactIds, f.SavingsPlanIds, f.SecurityIds,
+                    f.ContactCategoryIds, f.SavingsPlanCategoryIds, f.SecurityCategoryIds,
+                    f.SecuritySubTypes, f.IncludeDividendRelated));
+        }
+        else
+        {
+            var postingKind = McpToolArguments.OptionalEnum<PostingKind>(arguments, "postingKind")
+                ?? throw new McpToolException("Err_Mcp_InvalidArguments",
+                    "Either 'favoriteId' or 'postingKind' is required.");
+            var interval = McpToolArguments.OptionalEnum<ReportInterval>(arguments, "interval") ?? ReportInterval.Month;
+            var take = Math.Clamp(McpToolArguments.OptionalInt(arguments, "take") ?? 12, 1, McpToolArguments.MaxTake);
+            var includeCategory = McpToolArguments.OptionalBool(arguments, "includeCategory") ?? false;
+            var comparePrevious = McpToolArguments.OptionalBool(arguments, "comparePrevious") ?? false;
+            var compareYear = McpToolArguments.OptionalBool(arguments, "compareYear") ?? false;
+            var compareProjection = McpToolArguments.OptionalBool(arguments, "compareProjection") ?? false;
+            var useValutaDate = McpToolArguments.OptionalBool(arguments, "useValutaDate") ?? false;
+
+            var filters = new ReportAggregationFilters(
+                McpToolArguments.OptionalGuidList(arguments, "accountIds"),
+                McpToolArguments.OptionalGuidList(arguments, "contactIds"),
+                McpToolArguments.OptionalGuidList(arguments, "savingsPlanIds"),
+                McpToolArguments.OptionalGuidList(arguments, "securityIds"),
+                McpToolArguments.OptionalGuidList(arguments, "contactCategoryIds"),
+                McpToolArguments.OptionalGuidList(arguments, "savingsPlanCategoryIds"),
+                McpToolArguments.OptionalGuidList(arguments, "securityCategoryIds"),
+                McpToolArguments.OptionalIntList(arguments, "securitySubTypes"),
+                null);
+
+            query = new ReportAggregationQuery(
+                owner, postingKind, interval, take, includeCategory,
+                comparePrevious, compareYear, compareProjection,
+                new[] { postingKind }, null, useValutaDate, filters);
+        }
+
+        var result = await _aggregation.QueryAsync(query, ct);
+        return new
+        {
+            favorite = favoriteOut,
+            result = new
+            {
+                interval = result.Interval.ToString(),
+                comparedPrevious = result.ComparedPrevious,
+                comparedYear = result.ComparedYear,
+                comparedProjection = result.ComparedProjection,
+                points = result.Points.Select(p => new
+                {
+                    periodStart = p.PeriodStart,
+                    groupKey = p.GroupKey,
+                    amount = p.Amount,
+                    projectionAmount = p.ProjectionAmount,
+                    parentGroupKey = p.ParentGroupKey,
+                    previousAmount = p.PreviousAmount,
+                    yearAgoAmount = p.YearAgoAmount,
+                    expectedDividends = p.ProjectionExpectedDividends?.Select(d => new
+                    {
+                        securityId = d.SecurityId,
+                        expectedDate = d.ExpectedDate,
+                        priorYearDate = d.PriorYearDate,
+                        amount = d.Amount,
+                        untrusted_data = new { securityName = d.SecurityName }
+                    }).ToList(),
+                    // Group/category names are resolved from master data names — untrusted
+                    // content (sicherheitskonzept.md §5.2).
+                    untrusted_data = new
+                    {
+                        groupName = p.GroupName,
+                        categoryName = p.CategoryName
+                    }
+                }).ToList()
+            }
+        };
+    }
+}
