@@ -1,3 +1,4 @@
+using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Shared;
@@ -119,6 +120,166 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     }
 
     /// <summary>
+    /// Whether the loaded access uses the individually configured level — only then is the
+    /// scope matrix editable and are filter rows persisted.
+    /// </summary>
+    public bool IsIndividualLevel
+        => Access is not null && (McpAccessLevel)Access.Level == McpAccessLevel.Individuell;
+
+    private short ResolvePendingApprovalMode()
+    {
+        if (Access is null) return (short)McpApprovalMode.PerAction;
+        if (_pendingFieldValues.TryGetValue("Mcp_Card_ApprovalMode", out var am)
+            && am is string amText
+            && Enum.TryParse<McpApprovalMode>(amText, ignoreCase: true, out var parsed))
+        {
+            return (short)parsed;
+        }
+        return Access.ApprovalMode;
+    }
+
+    private DateTime? ResolvePendingExpiresUtc()
+    {
+        if (Access is null) return null;
+        if (_pendingFieldValues.TryGetValue("Mcp_Card_ExpiresUtc", out var ex) && ex is string exText)
+        {
+            return DateTime.TryParse(exText, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+                out var parsed)
+                ? parsed
+                : null;
+        }
+        return Access.ExpiresUtc;
+    }
+
+    /// <summary>
+    /// Switches a standard-level access to <see cref="McpAccessLevel.Individuell"/> and seeds
+    /// the persisted profile with the previously effective tuples ("Von Vorlage anpassen",
+    /// ui-konzept.md §4.3.2). Pending master-data edits are carried into the same update so
+    /// they are not silently dropped. The effective rights are identical right after the
+    /// switch — the seeded template equals the derived profile.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the access is now individually configured.</returns>
+    public async Task<bool> StartIndividualEditAsync(CancellationToken ct = default)
+    {
+        if (Access is null) return false;
+        if (IsIndividualLevel) return true;
+        try
+        {
+            var request = new McpAccessUpdateRequest(
+                Name: GetPendingText("Mcp_Card_Name", Access.Name),
+                Description: GetPendingText("Mcp_Card_Description", Access.Description),
+                Level: (short)McpAccessLevel.Individuell,
+                ApprovalMode: ResolvePendingApprovalMode(),
+                ExpiresUtc: ResolvePendingExpiresUtc(),
+                AllowedIpRanges: GetPendingText("Mcp_Card_AllowedIpRanges", Access.AllowedIpRanges));
+            if (!await _api.Mcp_UpdateAccessAsync(Access.Id, request, ct))
+            {
+                SetError("Err_NotFound", Localizer?["Err_NotFound"].Value ?? "Not found");
+                return false;
+            }
+
+            // Seed the persisted profile with the previously effective tuples — the matrix
+            // editor starts from the template's profile (berechtigungsmodell.md §3.2).
+            var seed = Access.EffectiveScopes
+                .Select(s => new McpAccessScopeDto(Guid.Empty, s.DataType, s.Right,
+                    s.AccountTypesCsv, s.ContactCategoryIdsCsv, s.SecurityCategoryIdsCsv,
+                    s.SavingsPlanCategoryIdsCsv, s.AttachmentCategoryIdsCsv))
+                .ToList();
+            await _api.Mcp_SetScopesAsync(Access.Id, new McpScopeSetRequest(seed), ct);
+
+            ClearPendingChanges();
+            await LoadAsync(Access.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // The level may already be Individuell while the seeding failed — the access then
+            // grants nothing (restrictive direction). Reload so the card reflects the real
+            // state, then surface the error for a retry.
+            try { await LoadAsync(Access.Id); } catch { /* keep the original error */ }
+            SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Replaces the persisted scope profile of the individually configured access
+    /// (<c>PUT …/scopes</c>). Right-adding changes confirm via
+    /// <see cref="IConfirmationService"/> (warning severity) — the persisted profile can
+    /// never exceed the F3 matrix or the owner's own rights, the confirmation makes the
+    /// expansion visible locally.
+    /// </summary>
+    /// <param name="scopes">The scope rows to persist (tuples with filter CSVs).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the profile was applied.</returns>
+    public async Task<bool> SaveScopesAsync(IReadOnlyList<McpAccessScopeDto> scopes, CancellationToken ct = default)
+    {
+        if (Access is null || !IsIndividualLevel) return false;
+
+        var before = Access.EffectiveScopes
+            .Select(s => $"{s.DataType}:{s.Right}")
+            .ToHashSet(StringComparer.Ordinal);
+        var expands = scopes.Any(s => !before.Contains($"{s.DataType}:{s.Right}"));
+        if (expands)
+        {
+            var confirmed = await ConfirmationService.ConfirmAsync(new(
+                TitleResourceKey: "Confirmation_McpScopeExpand_Title",
+                MessageResourceKey: "Confirmation_McpScopeExpand_Message",
+                Severity: ConfirmationSeverity.Warning), ct);
+            if (!confirmed) return false;
+        }
+
+        try
+        {
+            var ok = await _api.Mcp_SetScopesAsync(Access.Id, new McpScopeSetRequest(scopes), ct);
+            if (!ok)
+            {
+                SetError("Err_NotFound", Localizer?["Err_NotFound"].Value ?? "Not found");
+                return false;
+            }
+            await LoadAsync(Access.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Replaces the five filter dimensions of one persisted scope row
+    /// (<c>PUT …/filters/{scopeId}</c>); the server records the per-dimension delta as a
+    /// <c>FiltersChanged</c> access event.
+    /// </summary>
+    /// <param name="scopeId">Persisted scope row id.</param>
+    /// <param name="request">The filter set request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when applied.</returns>
+    public async Task<bool> SaveScopeFiltersAsync(Guid scopeId, McpFilterSetRequest request, CancellationToken ct = default)
+    {
+        if (Access is null) return false;
+        try
+        {
+            var ok = await _api.Mcp_SetFiltersAsync(Access.Id, scopeId, request, ct);
+            if (!ok)
+            {
+                SetError("Err_NotFound", Localizer?["Err_NotFound"].Value ?? "Not found");
+                return false;
+            }
+            await LoadAsync(Access.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Saves pending master data changes (name, description, level, approval mode, expiry,
     /// IP binding). A level downgrade is confirmed via <see cref="IConfirmationService"/> first
     /// because rights are lost.
@@ -138,22 +299,8 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
                 level = (short)parsedLevel;
             }
 
-            var approvalMode = Access.ApprovalMode;
-            if (_pendingFieldValues.TryGetValue("Mcp_Card_ApprovalMode", out var am)
-                && am is string amText
-                && Enum.TryParse<McpApprovalMode>(amText, ignoreCase: true, out var parsedMode))
-            {
-                approvalMode = (short)parsedMode;
-            }
-
-            DateTime? expiresUtc = Access.ExpiresUtc;
-            if (_pendingFieldValues.TryGetValue("Mcp_Card_ExpiresUtc", out var ex) && ex is string exText)
-            {
-                expiresUtc = DateTime.TryParse(exText, System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out var parsed)
-                    ? parsed
-                    : null;
-            }
+            var approvalMode = ResolvePendingApprovalMode();
+            var expiresUtc = ResolvePendingExpiresUtc();
 
             // Level downgrade loses rights -> confirm before persisting.
             if (level < Access.Level)
@@ -162,6 +309,22 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
                     TitleResourceKey: "Confirmation_McpLevelDowngrade_Title",
                     MessageResourceKey: "Confirmation_McpLevelDowngrade_Message",
                     Severity: ConfirmationSeverity.Warning), ct);
+                if (!confirmed) return false;
+            }
+
+            // Switching to durably pre-approved while the profile grants booking or deletion
+            // skips the per-action approval for the highest-impact actions — critical
+            // confirmation (ui-konzept.md §4.3.3, approval-konzept.md §3.4). The check runs
+            // against the RESULTING profile: a level change in the same save swaps the
+            // derived default profile, so the loaded effective scopes are not the final state.
+            if (approvalMode == (short)McpApprovalMode.PreApproved
+                && Access.ApprovalMode != (short)McpApprovalMode.PreApproved
+                && ResultingProfileGrantsBookOrDelete(level))
+            {
+                var confirmed = await ConfirmationService.ConfirmAsync(new(
+                    TitleResourceKey: "Confirmation_McpPreApproved_Title",
+                    MessageResourceKey: "Confirmation_McpPreApproved_Message",
+                    Severity: ConfirmationSeverity.Critical), ct);
                 if (!confirmed) return false;
             }
 
@@ -189,6 +352,28 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
             SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Determines whether the scope profile that results from persisting
+    /// <paramref name="level"/> grants booking or deletion. Standard levels derive their
+    /// profile from <see cref="McpLevelProfiles"/> (the server clears persisted rows on the
+    /// update); the individual level keeps its persisted rows — the effective scopes of the
+    /// loaded access when it already is individual, otherwise an empty profile because a
+    /// non-individual access persists no scope rows.
+    /// </summary>
+    /// <param name="level">The access level being saved.</param>
+    /// <returns><c>true</c> when the resulting profile contains Book or Delete tuples.</returns>
+    private bool ResultingProfileGrantsBookOrDelete(short level)
+    {
+        if ((McpAccessLevel)level == McpAccessLevel.Individuell)
+        {
+            return Access!.Level == (short)McpAccessLevel.Individuell
+                && Access.EffectiveScopes.Any(s =>
+                    s.Right is (short)McpRightKind.Book or (short)McpRightKind.Delete);
+        }
+        return McpLevelProfiles.GetDefaultScopes((McpAccessLevel)level)
+            .Any(t => t.Right is McpRightKind.Book or McpRightKind.Delete);
     }
 
     /// <summary>

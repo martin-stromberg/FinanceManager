@@ -3079,6 +3079,26 @@
   <data name="McpWizard_AllowedIpRanges" xml:space="preserve"><value>IP binding (optional)</value></data>
   <data name="McpWizard_ApprovalMode" xml:space="preserve"><value>Approval mode</value></data>
   <data name="McpWizard_Create" xml:space="preserve"><value>Create access</value></data>
+  <data name="Mcp_Rights_ApprovalMode" xml:space="preserve"><value>Approval mode:</value></data>
+  <data name="Mcp_Approval_KillSwitchHint" xml:space="preserve"><value>Even durably pre-approved executions can be held back globally by the write-stop (Mcp:WriteAccess:Enabled) - the approval mode never expands rights.</value></data>
+  <data name="Mcp_Matrix_ReadOnly" xml:space="preserve"><value>Profile derived from the level (read-only).</value></data>
+  <data name="Mcp_Matrix_Customize" xml:space="preserve"><value>Customize from template</value></data>
+  <data name="Mcp_Matrix_Reset" xml:space="preserve"><value>Discard changes</value></data>
+  <data name="Mcp_Matrix_Dirty" xml:space="preserve"><value>Unsaved right changes.</value></data>
+  <data name="Mcp_Matrix_EditHint" xml:space="preserve"><value>Check or uncheck cells to compose the rights of this access.</value></data>
+  <data name="Mcp_Matrix_ReadImplication" xml:space="preserve"><value>Every right other than Read requires the Read cell of the same row - it is selected automatically.</value></data>
+  <data name="Mcp_Matrix_Lock_Book" xml:space="preserve"><value>Booking exists only on statement drafts.</value></data>
+  <data name="Mcp_Matrix_Lock_Postings" xml:space="preserve"><value>Postings are write-protected - created via draft booking, removed via reversal.</value></data>
+  <data name="Mcp_Matrix_Lock_Imports" xml:space="preserve"><value>Committed imports are revision-safe documents - no write or delete path.</value></data>
+  <data name="Mcp_Matrix_Lock_AccountTypes" xml:space="preserve"><value>Account types are enum values only - no write path.</value></data>
+  <data name="Mcp_Matrix_Lock_Generic" xml:space="preserve"><value>This combination does not exist in the rights matrix.</value></data>
+  <data name="Mcp_Section_Filters" xml:space="preserve"><value>Restrictions (filters)</value></data>
+  <data name="Mcp_Filters_Hint" xml:space="preserve"><value>No filter = the right applies to all records. Set dimensions restrict further (AND); several rows of the same right combine with OR.</value></data>
+  <data name="Mcp_Filters_Indirect" xml:space="preserve"><value>Filters on account types and categories also restrict dependent data (e.g. postings of these accounts).</value></data>
+  <data name="Mcp_Filters_NeedsIndividual" xml:space="preserve"><value>Filters are stored per scope row - switch to the Custom level to restrict rights by filter.</value></data>
+  <data name="Mcp_Filters_PendingMatrix" xml:space="preserve"><value>Save the rights matrix first.</value></data>
+  <data name="Mcp_Filters_Unclassified" xml:space="preserve"><value>Records without a category are not matched by a set filter.</value></data>
+  <data name="Mcp_Filters_Set" xml:space="preserve"><value>set</value></data>
   <data name="Mcp_Ribbon_RotateToken" xml:space="preserve"><value>Rotate token</value></data>
   <data name="Mcp_Ribbon_Revoke" xml:space="preserve"><value>Revoke access</value></data>
   <data name="Confirmation_McpRotate_Title" xml:space="preserve"><value>Rotate token</value></data>
@@ -3091,6 +3111,10 @@
   <data name="Confirmation_McpRevoke_Message" xml:space="preserve"><value>The access is permanently deleted. All calls are rejected immediately and pending requests are withdrawn. This cannot be undone.</value></data>
   <data name="Confirmation_McpLevelDowngrade_Title" xml:space="preserve"><value>Lower access level</value></data>
   <data name="Confirmation_McpLevelDowngrade_Message" xml:space="preserve"><value>The lower level removes rights of this access. Continue?</value></data>
+  <data name="Confirmation_McpScopeExpand_Title" xml:space="preserve"><value>Extend rights</value></data>
+  <data name="Confirmation_McpScopeExpand_Message" xml:space="preserve"><value>The change grants additional rights to this access. An access can never exceed the limits of your own user rights or of shared accounts. Continue?</value></data>
+  <data name="Confirmation_McpPreApproved_Title" xml:space="preserve"><value>Durably pre-approve</value></data>
+  <data name="Confirmation_McpPreApproved_Message" xml:space="preserve"><value>With 'durably pre-approved', booking and deletion run without a per-action approval - every execution is still logged. Enable?</value></data>
   <data name="Btn_Back" xml:space="preserve"><value>Back</value></data>
   <data name="Btn_Next" xml:space="preserve"><value>Next</value></data>
   <data name="Err_NotFound" xml:space="preserve"><value>Not found.</value></data>

@@ -202,12 +202,13 @@ public sealed class McpAccessServiceTests
         var scopes = new McpScopeSetRequest(new[]
         {
             new McpAccessScopeDto(Guid.Empty, (short)McpDataType.Contacts, (short)McpRightKind.Read, null, null, null, null, null),
+            new McpAccessScopeDto(Guid.Empty, (short)McpDataType.StatementDrafts, (short)McpRightKind.Read, null, null, null, null, null),
             new McpAccessScopeDto(Guid.Empty, (short)McpDataType.StatementDrafts, (short)McpRightKind.Book, null, null, null, null, null)
         });
         Assert.True(await svc.SetScopesAsync(owner, created.Access.Id, scopes, CancellationToken.None));
 
         var persisted = await db.McpAccessScopes.Where(s => s.McpAccessId == created.Access.Id).ToListAsync();
-        Assert.Equal(2, persisted.Count);
+        Assert.Equal(3, persisted.Count);
 
         var scope = persisted.First(s => s.DataType == McpDataType.Contacts);
         var filters = new McpFilterSetRequest("0", Guid.NewGuid().ToString(), null, null, null);
@@ -215,6 +216,109 @@ public sealed class McpAccessServiceTests
         var updated = await db.McpAccessScopes.AsNoTracking().FirstAsync(s => s.Id == scope.Id);
         Assert.Equal("0", updated.AccountTypesCsv);
         Assert.NotNull(updated.ContactCategoryIdsCsv);
+    }
+
+    /// <summary>
+    /// F-0501: <c>PUT …/scopes</c> rejects a tuple outside the F3 matrix with
+    /// <c>Err_Mcp_InvalidScope</c> — the profile may only ever restrict, never extend
+    /// beyond the catalog edges (postings are created via booking only).
+    /// </summary>
+    [Fact]
+    public async Task SetScopes_InvalidTuple_ThrowsInvalidScope()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(
+            () => svc.SetScopesAsync(owner, created.Access.Id, new McpScopeSetRequest(new[]
+            {
+                ScopeDto(McpDataType.Postings, McpRightKind.Create)
+            }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidScope", ex.Code);
+    }
+
+    /// <summary>
+    /// F-0501: persisted scope rows belong to the individual level only — a standard-level
+    /// access derives its profile at runtime and cannot take a scope set.
+    /// </summary>
+    [Fact]
+    public async Task SetScopes_NonIndividualLevel_ThrowsInvalidScope()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Analyse), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(
+            () => svc.SetScopesAsync(owner, created.Access.Id, new McpScopeSetRequest(new[]
+            {
+                ScopeDto(McpDataType.Contacts, McpRightKind.Read)
+            }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidScope", ex.Code);
+    }
+
+    /// <summary>
+    /// F-0501/F-0502: a non-Read right without a Read row on the same data type is the
+    /// fachlich unsinnige Kombination of ui-konzept.md §4.3.2 — rejected with
+    /// <c>Err_Mcp_InvalidScope</c> (the matrix editor auto-selects Read; the API enforces it).
+    /// </summary>
+    [Fact]
+    public async Task SetScopes_WriteWithoutRead_ThrowsInvalidScope()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(
+            () => svc.SetScopesAsync(owner, created.Access.Id, new McpScopeSetRequest(new[]
+            {
+                ScopeDto(McpDataType.StatementDrafts, McpRightKind.Book)
+            }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidScope", ex.Code);
+
+        // A Read row on a *different* data type does not satisfy the implication.
+        ex = await Assert.ThrowsAsync<DomainValidationException>(
+            () => svc.SetScopesAsync(owner, created.Access.Id, new McpScopeSetRequest(new[]
+            {
+                ScopeDto(McpDataType.Contacts, McpRightKind.Read),
+                ScopeDto(McpDataType.StatementDrafts, McpRightKind.Modify)
+            }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidScope", ex.Code);
+    }
+
+    /// <summary>
+    /// F-0501: an out-of-range enum value is rejected before any matrix check —
+    /// <c>Err_Mcp_InvalidScope</c>.
+    /// </summary>
+    [Fact]
+    public async Task SetScopes_UnknownEnumValue_ThrowsInvalidScope()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(
+            () => svc.SetScopesAsync(owner, created.Access.Id, new McpScopeSetRequest(new[]
+            {
+                new McpAccessScopeDto(Guid.Empty, DataType: 99, (short)McpRightKind.Read, null, null, null, null, null)
+            }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidScope", ex.Code);
+    }
+
+    /// <summary>
+    /// F-0501: a foreign owner cannot replace scopes — the access behaves like a
+    /// non-existing record (404 semantics, no information leak).
+    /// </summary>
+    [Fact]
+    public async Task SetScopes_ForeignOwner_ReturnsFalse()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell), CancellationToken.None);
+
+        Assert.False(await svc.SetScopesAsync(Guid.NewGuid(), created.Access.Id,
+            new McpScopeSetRequest(new[] { ScopeDto(McpDataType.Contacts, McpRightKind.Read) }),
+            CancellationToken.None));
     }
 
     /// <summary>

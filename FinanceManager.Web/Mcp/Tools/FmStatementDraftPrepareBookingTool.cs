@@ -167,7 +167,10 @@ public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
         var bankDelta = 0m;
         var postingKindCounts = new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["bank"] = 0, ["contact"] = 0, ["security"] = 0, ["savingsPlan"] = 0
+            ["bank"] = 0,
+            ["contact"] = 0,
+            ["security"] = 0,
+            ["savingsPlan"] = 0
         };
 
         var selfContactId = contactsAllowed

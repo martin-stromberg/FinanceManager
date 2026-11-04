@@ -3079,6 +3079,26 @@
   <data name="McpWizard_AllowedIpRanges" xml:space="preserve"><value>IP-Bindung (optional)</value></data>
   <data name="McpWizard_ApprovalMode" xml:space="preserve"><value>Genehmigungsmodus</value></data>
   <data name="McpWizard_Create" xml:space="preserve"><value>Zugang erzeugen</value></data>
+  <data name="Mcp_Rights_ApprovalMode" xml:space="preserve"><value>Genehmigungsmodus:</value></data>
+  <data name="Mcp_Approval_KillSwitchHint" xml:space="preserve"><value>Auch dauerhaft vorab genehmigte Ausführungen können global durch den Schreib-Stopp (Mcp:WriteAccess:Enabled) zurückgehalten werden – der Genehmigungsmodus erweitert niemals Rechte.</value></data>
+  <data name="Mcp_Matrix_ReadOnly" xml:space="preserve"><value>Profil aus der Stufe abgeleitet (nur Ansicht).</value></data>
+  <data name="Mcp_Matrix_Customize" xml:space="preserve"><value>Von Vorlage anpassen</value></data>
+  <data name="Mcp_Matrix_Reset" xml:space="preserve"><value>Änderungen verwerfen</value></data>
+  <data name="Mcp_Matrix_Dirty" xml:space="preserve"><value>Ungespeicherte Rechteänderungen.</value></data>
+  <data name="Mcp_Matrix_EditHint" xml:space="preserve"><value>Zellen aktivieren oder deaktivieren, um die Rechte dieses Zugangs zusammenzustellen.</value></data>
+  <data name="Mcp_Matrix_ReadImplication" xml:space="preserve"><value>Jede Rechteart außer Lesen setzt die Lesen-Zelle derselben Zeile voraus – sie wird automatisch mit ausgewählt.</value></data>
+  <data name="Mcp_Matrix_Lock_Book" xml:space="preserve"><value>Buchung existiert nur auf Kontoauszugsentwürfen.</value></data>
+  <data name="Mcp_Matrix_Lock_Postings" xml:space="preserve"><value>Buchungen sind schreibgeschützt – Erstellung nur über Entwurfsverbuchung, Entfernung nur über Storno.</value></data>
+  <data name="Mcp_Matrix_Lock_Imports" xml:space="preserve"><value>Verbuchte Importe sind revisionssichere Belege – kein Schreib- oder Löschpfad.</value></data>
+  <data name="Mcp_Matrix_Lock_AccountTypes" xml:space="preserve"><value>Kontotypen sind nur Aufzählwerte – kein Schreibpfad.</value></data>
+  <data name="Mcp_Matrix_Lock_Generic" xml:space="preserve"><value>Diese Kombination existiert in der Rechtematrix nicht.</value></data>
+  <data name="Mcp_Section_Filters" xml:space="preserve"><value>Einschränkungen (Filter)</value></data>
+  <data name="Mcp_Filters_Hint" xml:space="preserve"><value>Kein Filter = das Recht gilt für alle Datensätze. Gesetzte Dimensionen schränken weiter ein (UND); mehrere Zeilen desselben Rechts verknüpfen mit ODER.</value></data>
+  <data name="Mcp_Filters_Indirect" xml:space="preserve"><value>Filter auf Kontotypen und Kategorien schränken auch abhängige Daten ein (z. B. Buchungen dieser Konten).</value></data>
+  <data name="Mcp_Filters_NeedsIndividual" xml:space="preserve"><value>Filter werden pro Scope-Zeile gespeichert – für Filtereinschränkungen auf die Stufe Individuell wechseln.</value></data>
+  <data name="Mcp_Filters_PendingMatrix" xml:space="preserve"><value>Bitte zuerst die Rechtematrix speichern.</value></data>
+  <data name="Mcp_Filters_Unclassified" xml:space="preserve"><value>Datensätze ohne Kategorie werden von einem gesetzten Filter nicht erfasst.</value></data>
+  <data name="Mcp_Filters_Set" xml:space="preserve"><value>gesetzt</value></data>
   <data name="Mcp_Ribbon_RotateToken" xml:space="preserve"><value>Token rotieren</value></data>
   <data name="Mcp_Ribbon_Revoke" xml:space="preserve"><value>Zugang widerrufen</value></data>
   <data name="Confirmation_McpRotate_Title" xml:space="preserve"><value>Token rotieren</value></data>
@@ -3091,6 +3111,10 @@
   <data name="Confirmation_McpRevoke_Message" xml:space="preserve"><value>Der Zugang wird endgültig gelöscht. Alle Aufrufe werden sofort abgelehnt und offene Anfragen zurückgezogen. Dies kann nicht rückgängig gemacht werden.</value></data>
   <data name="Confirmation_McpLevelDowngrade_Title" xml:space="preserve"><value>Freigabestufe verringern</value></data>
   <data name="Confirmation_McpLevelDowngrade_Message" xml:space="preserve"><value>Die niedrigere Stufe entfernt Rechte dieses Zugangs. Fortfahren?</value></data>
+  <data name="Confirmation_McpScopeExpand_Title" xml:space="preserve"><value>Rechte erweitern</value></data>
+  <data name="Confirmation_McpScopeExpand_Message" xml:space="preserve"><value>Die Änderung gewährt diesem Zugang zusätzliche Rechte. Ein Zugang kann niemals über die Grenzen Ihrer eigenen Benutzerrechte oder geteilter Konten hinaus. Fortfahren?</value></data>
+  <data name="Confirmation_McpPreApproved_Title" xml:space="preserve"><value>Dauerhaft vorab genehmigen</value></data>
+  <data name="Confirmation_McpPreApproved_Message" xml:space="preserve"><value>Mit 'dauerhaft vorab genehmigt' laufen Buchung und Löschung ohne Einzelgenehmigung – jede Ausführung wird trotzdem protokolliert. Aktivieren?</value></data>
   <data name="Btn_Back" xml:space="preserve"><value>Zurück</value></data>
   <data name="Btn_Next" xml:space="preserve"><value>Weiter</value></data>
   <data name="Err_NotFound" xml:space="preserve"><value>Nicht gefunden.</value></data>

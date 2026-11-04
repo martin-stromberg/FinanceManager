@@ -500,8 +500,17 @@ public sealed class McpAccessService : IMcpAccessService
     private static string? FormatUtc(DateTime? utc)
         => utc?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// Validates a persisted scope profile: every tuple must be a valid F3-matrix
+    /// combination (berechtigungsmodell.md — an individual profile can only ever restrict,
+    /// never extend beyond the catalog's normative edges), and every non-<see cref="McpRightKind.Read"/>
+    /// right requires a Read row on the same data type within the same profile — the
+    /// implication rule of ui-konzept.md §4.3.2 ("Änderung ohne Lesen ist fachlich unsinnig").
+    /// </summary>
     private static void ValidateScopes(IReadOnlyList<McpAccessScopeDto> scopes)
     {
+        var readableTypes = new HashSet<McpDataType>();
+        var rows = new List<(McpDataType DataType, McpRightKind Right)>(scopes.Count);
         foreach (var scope in scopes)
         {
             var dataType = CheckedEnum<McpDataType>(scope.DataType, nameof(scope.DataType));
@@ -510,6 +519,19 @@ public sealed class McpAccessService : IMcpAccessService
             {
                 throw new DomainValidationException("Err_Mcp_InvalidScope",
                     $"The scope ({dataType}, {right}) is not a valid F3-matrix combination.");
+            }
+            rows.Add((dataType, right));
+            if (right == McpRightKind.Read)
+            {
+                readableTypes.Add(dataType);
+            }
+        }
+        foreach (var (dataType, right) in rows)
+        {
+            if (right != McpRightKind.Read && !readableTypes.Contains(dataType))
+            {
+                throw new DomainValidationException("Err_Mcp_InvalidScope",
+                    $"The scope ({dataType}, {right}) requires a Read scope on {dataType}.");
             }
         }
     }
