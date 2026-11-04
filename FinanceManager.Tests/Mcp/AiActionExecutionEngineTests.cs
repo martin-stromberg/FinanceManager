@@ -38,8 +38,11 @@ public sealed class AiActionExecutionEngineTests
         public IMcpAccessContext? SeenAccess { get; set; }
         public object HandlerResult { get; set; } = new { ok = true };
         public Func<JsonElement, Task<object>>? Invoke { get; set; }
+        public Mock<IMcpRequestStatusPublisher> Publisher { get; } = new();
+        public List<McpRequestStatusEvent> Published { get; } = new();
 
-        public Fixture(bool writeEnabled = true, int claimStaleMinutes = 10, int timeoutSeconds = 60)
+        public Fixture(bool writeEnabled = true, int claimStaleMinutes = 10, int timeoutSeconds = 60,
+            bool withPublisher = false)
         {
             // SQLite in-memory: the atomic conditional claim (ExecuteUpdate) needs a real
             // relational provider — the EF InMemory provider does not translate it.
@@ -79,8 +82,12 @@ public sealed class AiActionExecutionEngineTests
                     MaxExecutionBatchSize = 20
                 }
             });
+            Publisher.Setup(p => p.PublishAsync(It.IsAny<McpRequestStatusEvent>(), It.IsAny<CancellationToken>()))
+                .Callback<McpRequestStatusEvent, CancellationToken>((e, _) => Published.Add(e))
+                .Returns(Task.CompletedTask);
             Engine = new AiActionExecutionEngine(Db, Scopes.Object, audit.Object, Registry.Object,
-                Notifications.Object, sp, options, NullLogger<AiActionExecutionEngine>.Instance);
+                Notifications.Object, sp, options, NullLogger<AiActionExecutionEngine>.Instance,
+                withPublisher ? Publisher.Object : null);
         }
 
         /// <summary>Releases the database context and the in-memory SQLite connection.</summary>
@@ -336,5 +343,62 @@ public sealed class AiActionExecutionEngineTests
         Assert.Equal(AiActionRequestStatus.Rejected, all.Single(x => x.Id == rejected.Id).Status);
         Assert.Equal(AiActionRequestStatus.Pending, all.Single(x => x.Id == future.Id).Status);
         Assert.Equal(2, f.Writes.Count(w => w.EventType == "ApprovalExpired"));
+    }
+
+    /// <summary>ExecuteDue publishes Executing and the terminal status to SSE subscribers (F-1101).</summary>
+    [Fact]
+    public async Task ExecuteDue_WithPublisher_PublishesExecutingAndExecuted()
+    {
+        var f = new Fixture(withPublisher: true);
+        var access = NewAccess(Guid.NewGuid());
+        f.Db.McpAccesses.Add(access);
+        var r = ApprovedRequest(access);
+        f.Db.AiActionRequests.Add(r);
+        await f.Db.SaveChangesAsync(CancellationToken.None);
+
+        var done = await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
+
+        Assert.Equal(1, done);
+        Assert.Equal(
+            new[] { McpRequestStatusEvent.Executing, AiActionRequestStatus.Executed.ToString() },
+            f.Published.Select(e => e.Status));
+        Assert.All(f.Published, e => Assert.Equal(access.Id, e.McpAccessId));
+        Assert.All(f.Published, e => Assert.Equal(r.Id, e.RequestId));
+    }
+
+    /// <summary>A failed execution publishes the Failed status including the classified reason.</summary>
+    [Fact]
+    public async Task ExecuteDue_WithPublisher_PublishesFailed()
+    {
+        var f = new Fixture(withPublisher: true);
+        f.Invoke = _ => throw new FinanceManager.Application.Exceptions.DomainValidationException("Err_TargetGone", "gone");
+        var access = NewAccess(Guid.NewGuid());
+        f.Db.McpAccesses.Add(access);
+        var r = ApprovedRequest(access);
+        f.Db.AiActionRequests.Add(r);
+        await f.Db.SaveChangesAsync(CancellationToken.None);
+
+        await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
+
+        var failed = Assert.Single(f.Published.Where(e => e.Status == AiActionRequestStatus.Failed.ToString()));
+        Assert.Equal("Err_TargetGone", failed.FailureReason);
+    }
+
+    /// <summary>The expiry sweep publishes the Expired transition (F-1101).</summary>
+    [Fact]
+    public async Task ExpireOverdue_WithPublisher_PublishesExpired()
+    {
+        var f = new Fixture(withPublisher: true);
+        var access = NewAccess(Guid.NewGuid());
+        f.Db.McpAccesses.Add(access);
+        var p = PendingRequest(access, DateTime.UtcNow.AddHours(-1));
+        f.Db.AiActionRequests.Add(p);
+        await f.Db.SaveChangesAsync(CancellationToken.None);
+
+        await f.Engine.ExpireOverdueRequestsAsync(DateTime.UtcNow, 10, CancellationToken.None);
+
+        var expired = Assert.Single(f.Published);
+        Assert.Equal(AiActionRequestStatus.Expired.ToString(), expired.Status);
+        Assert.Equal(access.Id, expired.McpAccessId);
     }
 }

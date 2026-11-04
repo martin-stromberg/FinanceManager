@@ -26,7 +26,9 @@ public sealed class McpToolRegistryTests
         public IReadOnlyList<McpToolScope> RequiredScopes { get; init; } = Array.Empty<McpToolScope>();
         public string? MetaScope { get; init; }
         public JsonDocument InputSchema => JsonDocument.Parse("{}");
-        public bool IsDeprecated => false;
+        public bool IsDeprecated { get; init; }
+        public string? SinceVersion { get; init; } = McpToolRegistry.Version;
+        public string? ReplacedBy { get; init; }
     }
 
     private static McpAccess NewAccess(Guid owner, string name)

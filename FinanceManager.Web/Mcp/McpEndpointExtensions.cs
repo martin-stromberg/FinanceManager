@@ -1,14 +1,18 @@
 using FinanceManager.Application.Mcp;
 using FinanceManager.Web.Infrastructure;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace FinanceManager.Web.Mcp;
 
 /// <summary>
-/// Endpoint mapping of the <c>/mcp</c> route (F-0103): a single POST endpoint accepting
-/// JSON-RPC 2.0 messages (<c>initialize</c>, <c>ping</c>, <c>tools/list</c>,
-/// <c>tools/call</c>, notifications), GET → 405, DELETE → session termination.
-/// Authentication runs exclusively via the <c>McpPat</c> scheme — no cookie/JWT path.
+/// Endpoint mapping of the <c>/mcp</c> route (F-0103/F-1101): a single POST endpoint
+/// accepting JSON-RPC 2.0 messages (<c>initialize</c>, <c>ping</c>, <c>tools/list</c>,
+/// <c>tools/call</c>, notifications), GET with <c>Accept: text/event-stream</c> opens the
+/// SSE stream of the streamable-HTTP upgrade (server-initiated request-status
+/// notifications of the calling access; GET without the SSE accept header → 405) and
+/// DELETE terminates the transport session. Authentication runs exclusively via the
+/// <c>McpPat</c> scheme — no cookie/JWT path.
 /// </summary>
 public static class McpEndpointExtensions
 {
@@ -35,7 +39,8 @@ public static class McpEndpointExtensions
             .RequireAuthorization(McpAuthenticationDefaults.Policy)
             .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
 
-        group.MapGet("", () => Results.StatusCode(StatusCodes.Status405MethodNotAllowed))
+        group.MapGet("", HandleGetAsync)
+            .RequireAuthorization(McpAuthenticationDefaults.Policy)
             .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
 
         group.MapDelete("", (HttpContext ctx, McpSessionHub sessions) =>
@@ -46,6 +51,110 @@ public static class McpEndpointExtensions
           .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
 
         return group;
+    }
+
+    /// <summary>
+    /// SSE stream of the streamable-HTTP upgrade (F-1101, architekturkonzept.md §3):
+    /// <c>GET /mcp</c> with <c>Accept: text/event-stream</c> and a live
+    /// <c>Mcp-Session-Id</c> opens a server-sent-events stream that delivers the request
+    /// status changes of the authenticated access (<c>request-status</c> events) plus a
+    /// periodic keep-alive comment. Only the access's own requests are emitted — the
+    /// subscription key is the access id, never the session. The stream is bound to the
+    /// same PAT authentication and kill switch as the POST endpoint;
+    /// <c>fm_task_status</c> polling stays the documented fallback for clients without
+    /// SSE support.
+    /// </summary>
+    private static async Task HandleGetAsync(
+        HttpContext http,
+        McpSessionHub sessions,
+        IMcpAccessContext access,
+        Microsoft.Extensions.Options.IOptionsMonitor<McpOptions> options)
+    {
+        var acceptsSse = http.Request.Headers.Accept
+            .Any(v => v?.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase) == true);
+        if (!acceptsSse)
+        {
+            http.Response.StatusCode = StatusCodes.Status405MethodNotAllowed;
+            return;
+        }
+
+        // The stream belongs to a live transport session (streamable HTTP).
+        var sessionId = http.Request.Headers[McpSessionHub.SessionHeader].ToString();
+        if (string.IsNullOrEmpty(sessionId) || !sessions.Touch(sessionId))
+        {
+            http.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        var accessId = access.McpAccessId;
+        var subscription = sessions.Subscribe(accessId, options.CurrentValue.Sse.MaxSubscribersPerAccess);
+        if (subscription is null)
+        {
+            // Unknown access context or the per-access subscriber cap is reached.
+            http.Response.StatusCode = accessId == Guid.Empty
+                ? StatusCodes.Status401Unauthorized
+                : StatusCodes.Status429TooManyRequests;
+            return;
+        }
+
+        var ct = http.RequestAborted;
+        var heartbeat = TimeSpan.FromSeconds(Math.Max(5, options.CurrentValue.Sse.HeartbeatSeconds));
+        try
+        {
+            http.Response.StatusCode = StatusCodes.Status200OK;
+            http.Response.ContentType = "text/event-stream";
+            http.Response.Headers.CacheControl = "no-cache";
+            http.Response.Headers["X-Accel-Buffering"] = "no"; // disable proxy buffering
+            await http.Response.Body.FlushAsync(ct);
+
+            var eventId = 0L;
+            while (!ct.IsCancellationRequested)
+            {
+                McpRequestStatusEvent? next;
+                try
+                {
+                    next = await subscription.Reader.ReadAsync(ct)
+                        .AsTask().WaitAsync(heartbeat, ct);
+                }
+                catch (TimeoutException)
+                {
+                    await http.Response.WriteAsync(": heartbeat\n\n", ct);
+                    await http.Response.Body.FlushAsync(ct);
+                    continue;
+                }
+                catch (ChannelClosedException)
+                {
+                    break;
+                }
+
+                if (next is null)
+                {
+                    continue;
+                }
+                var payload = JsonSerializer.Serialize(new
+                {
+                    type = "request-status",
+                    requestId = next.RequestId,
+                    status = next.Status,
+                    toolName = next.ToolName,
+                    actionKey = next.ActionKey,
+                    correlationId = next.CorrelationId,
+                    failureReason = next.FailureReason,
+                    utc = next.Utc
+                });
+                await http.Response.WriteAsync(
+                    $"id: {++eventId}\nevent: request-status\ndata: {payload}\n\n", ct);
+                await http.Response.Body.FlushAsync(ct);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnect / server shutdown — clean stream end.
+        }
+        finally
+        {
+            subscription.Dispose();
+        }
     }
 
     private static async Task<IResult> HandlePostAsync(
@@ -163,8 +272,12 @@ public static class McpEndpointExtensions
                         tools = registry.Tools.Select(t => (object)new
                         {
                             name = t.Name,
-                            description = t.Description + (t.IsDeprecated ? " [deprecated]" : string.Empty),
-                            inputSchema = t.InputSchema.RootElement.Clone()
+                            description = t.Description
+                                + (t.IsDeprecated ? $" [deprecated{(t.ReplacedBy is null ? string.Empty : $" — use {t.ReplacedBy}")}]" : string.Empty),
+                            inputSchema = t.InputSchema.RootElement.Clone(),
+                            deprecated = t.IsDeprecated,
+                            replacedBy = t.ReplacedBy,
+                            sinceVersion = t.SinceVersion
                         }).ToList()
                     });
                 case "tools/call":

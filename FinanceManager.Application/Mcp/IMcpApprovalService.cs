@@ -176,4 +176,16 @@ public interface IMcpApprovalService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Number of withdrawn requests.</returns>
     Task<int> WithdrawScopeUncoveredForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct);
+
+    /// <summary>
+    /// Aggregates the agent-monitoring view of one own access over its request workload
+    /// (F-1103): queue depth, pending age and the 24-hour outcome counters — the data of
+    /// the <c>fm_task_status</c> <c>monitoring</c> section and the access-card monitoring
+    /// panel. Owner isolation is strict: a foreign access id behaves like a missing one.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="mcpAccessId">Access identifier (must belong to the owner).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The monitoring DTO, or <see langword="null"/> when the access is not owned.</returns>
+    Task<McpAccessMonitoringDto?> GetAccessMonitoringAsync(Guid ownerUserId, Guid mcpAccessId, CancellationToken ct);
 }

@@ -49,12 +49,33 @@ public interface IMcpToolDescriptor
 
     /// <summary>Whether the tool is deprecated (announced in the listing, still callable).</summary>
     bool IsDeprecated { get; }
+
+    /// <summary>
+    /// Catalog version (<c>katalog-v&lt;n&gt;</c>) the tool was introduced in
+    /// (catalog maintenance, scope-und-toolkatalog.md §6.3). Existing tools of the
+    /// initial catalog report <c>katalog-v1</c>.
+    /// </summary>
+    string? SinceVersion { get; }
+
+    /// <summary>
+    /// <c>fm_*</c> name of the replacement tool for a deprecated tool, or
+    /// <see langword="null"/>. Per the deprecation rule the tool stays callable for at
+    /// least one catalog major version after the marker; the listing surfaces the
+    /// replacement hint so clients can migrate early.
+    /// </summary>
+    string? ReplacedBy { get; }
 }
 
 /// <summary>
-/// Static registry of the compiled MCP tool catalog <c>katalog-v1</c>. The registry is code,
-/// not configuration: descriptors are contributed via DI and the catalog version is a
-/// constant reported by <c>fm_capabilities_describe</c> and the audit entries.
+/// Static registry of the compiled MCP tool catalog (<c>katalog-v&lt;n&gt;</c>). The
+/// registry is code, not configuration: descriptors are contributed via DI and the
+/// catalog version is a constant reported by <c>fm_capabilities_describe</c> and the
+/// audit entries. Versioning follows scope-und-toolkatalog.md §6.3: compatible additions
+/// bump the minor version of the registry constant, a breaking change (removed/renamed
+/// tool, raised scope requirement, changed parameter semantics) bumps the major version
+/// (<c>katalog-v1</c> → <c>katalog-v2</c>); removed tools first ship one major version
+/// deprecated (<see cref="IMcpToolDescriptor.IsDeprecated"/>/<c>ReplacedBy</c>) before
+/// they leave the registry.
 /// </summary>
 public interface IMcpToolRegistry
 {

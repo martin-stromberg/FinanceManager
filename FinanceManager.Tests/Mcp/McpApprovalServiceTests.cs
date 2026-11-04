@@ -138,6 +138,46 @@ public sealed class McpApprovalServiceTests
             It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>GetAccessMonitoring aggregates queue depth and 24h outcomes of the access (F-1103).</summary>
+    [Fact]
+    public async Task GetAccessMonitoring_ShouldAggregateOwnAccess()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner);
+        db.McpAccesses.Add(access);
+        await db.SaveChangesAsync();
+
+        var pending = await svc.EnqueueAsync(access, "fm_contacts_manage", "delete", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "m1", CancellationToken.None);
+        var approved = await svc.EnqueueAsync(access, "fm_contacts_manage", "merge", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "m2", CancellationToken.None);
+        await svc.ApproveAsync(owner, approved.Id, null, CancellationToken.None);
+        var failed = await svc.EnqueueAsync(access, "fm_contacts_manage", "archive", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "m3", CancellationToken.None);
+        var failedRow = await db.AiActionRequests.FindAsync(failed.Id);
+        failedRow!.Approve(owner, null);
+        failedRow.MarkClaimed(Guid.NewGuid(), DateTime.UtcNow);
+        failedRow.MarkFailed("Err_TargetGone");
+        await db.SaveChangesAsync();
+
+        var dto = await svc.GetAccessMonitoringAsync(owner, access.Id, CancellationToken.None);
+
+        Assert.NotNull(dto);
+        Assert.Equal(1, dto!.PendingCount);
+        Assert.Equal(1, dto.ApprovedCount);
+        Assert.NotNull(dto.OldestPendingUtc);
+        Assert.Equal(pending.RequestedUtc, dto.OldestPendingUtc!.Value, TimeSpan.FromSeconds(5));
+        Assert.Equal(3, dto.RequestsLast24h);
+        Assert.Equal(0, dto.ExecutedLast24h);
+        Assert.Equal(1, dto.FailedLast24h);
+        Assert.Equal(1d, dto.FailureRateLast24h);
+        Assert.NotNull(dto.LastRequestUtc);
+
+        Assert.Null(await svc.GetAccessMonitoringAsync(Guid.NewGuid(), access.Id, CancellationToken.None));
+        Assert.Null(await svc.GetAccessMonitoringAsync(owner, Guid.NewGuid(), CancellationToken.None));
+    }
+
     /// <summary>Approve ShouldTransitionAndAudit.</summary>
     [Fact]
     public async Task Approve_ShouldTransitionAndAudit()

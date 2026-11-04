@@ -128,11 +128,14 @@ public sealed class McpAuditWriter : IMcpAuditWriter
 
     /// <inheritdoc />
     /// <remarks>
-    /// The check expects a full chain starting at <c>SequenceNo</c> 1. Once the retention
-    /// executor (EP-11) truncates chain heads, the remaining head keeps its
-    /// <c>PrevHash</c> (datenmodell-erweiterungen.md §8); the audit view will mark that
-    /// case explicitly — for now a head with a dangling <c>PrevHash</c> is reported as a
-    /// breach.
+    /// The check expects a full chain starting at <c>SequenceNo</c> 1 — or a documented
+    /// truncation: sequence gaps that are fully covered by the <c>removedRanges</c>
+    /// payload of <c>RetentionPurged</c> anchor entries (written by the retention
+    /// executor, F-1104) are excused. The first entry after a documented gap anchors the
+    /// remaining chain: its <c>PrevHash</c> references the deleted predecessor by design
+    /// and is accepted as the new anchor ("ab diesem Eintrag" verify mode). A gap without
+    /// covering marker — including a chain that starts above 1 without a marker — is
+    /// still reported as a breach.
     /// </remarks>
     public async Task<McpAuditChainVerificationResult> VerifyAsync(Guid? ownerUserId, CancellationToken ct)
     {
@@ -142,11 +145,13 @@ public sealed class McpAuditWriter : IMcpAuditWriter
             .OrderBy(e => e.SequenceNo)
             .ToListAsync(ct);
 
+        var removedRanges = CollectDocumentedRanges(entries);
         var gaps = new List<McpAuditChainGap>();
         string? failure = null;
         long? brokenAt = null;
         var expected = 1L;
         string? prevHash = null;
+        var anchoredByCut = false;
 
         foreach (var entry in entries)
         {
@@ -158,7 +163,16 @@ public sealed class McpAuditWriter : IMcpAuditWriter
             }
             if (entry.SequenceNo > expected)
             {
-                gaps.Add(new McpAuditChainGap(expected, entry.SequenceNo - 1));
+                if (IsCoveredByDocumentedRanges(expected, entry.SequenceNo - 1, removedRanges))
+                {
+                    // Documented retention truncation: the entry anchors the remaining
+                    // chain — its PrevHash points into the removed range by design.
+                    anchoredByCut = true;
+                }
+                else
+                {
+                    gaps.Add(new McpAuditChainGap(expected, entry.SequenceNo - 1));
+                }
                 expected = entry.SequenceNo + 1;
             }
             else
@@ -166,13 +180,14 @@ public sealed class McpAuditWriter : IMcpAuditWriter
                 expected++;
             }
 
-            if (!string.Equals(entry.PrevHash, prevHash, StringComparison.Ordinal))
+            if (!anchoredByCut && !string.Equals(entry.PrevHash, prevHash, StringComparison.Ordinal))
             {
                 failure = brokenAt is null
                     ? $"Entry {entry.SequenceNo} has a dangling PrevHash (chain head missing or predecessor tampered)."
                     : failure;
                 brokenAt ??= entry.SequenceNo;
             }
+            anchoredByCut = false;
 
             var recomputed = ComputeHash(
                 entry.Utc, entry.SequenceNo, entry.Category, entry.EventType, entry.ResultStatus,
@@ -192,6 +207,97 @@ public sealed class McpAuditWriter : IMcpAuditWriter
         var intact = brokenAt is null && gaps.Count == 0;
         return new McpAuditChainVerificationResult(
             ownerUserId, entries.Count, intact, brokenAt, failure, gaps);
+    }
+
+    /// <summary>
+    /// Collects the union of sequence ranges documented as removed by
+    /// <c>RetentionPurged</c> anchor entries of this chain (merged, ascending).
+    /// Unparseable payloads are ignored — a malformed marker excuses nothing.
+    /// </summary>
+    private static List<(long From, long To)> CollectDocumentedRanges(IReadOnlyList<McpAuditEntry> entries)
+    {
+        var raw = new List<(long From, long To)>();
+        foreach (var entry in entries)
+        {
+            if (!string.Equals(entry.EventType, McpAuditRetentionExecutor.CutEventType, StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(entry.PayloadJson))
+            {
+                continue;
+            }
+            try
+            {
+                using var doc = JsonDocument.Parse(entry.PayloadJson);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object
+                    || !root.TryGetProperty("retentionCut", out var flag)
+                    || flag.ValueKind != JsonValueKind.True
+                    || !root.TryGetProperty("removedRanges", out var ranges)
+                    || ranges.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+                foreach (var range in ranges.EnumerateArray())
+                {
+                    if (range.ValueKind == JsonValueKind.Object
+                        && range.TryGetProperty("from", out var from) && from.ValueKind == JsonValueKind.Number
+                        && range.TryGetProperty("to", out var to) && to.ValueKind == JsonValueKind.Number)
+                    {
+                        var f = from.GetInt64();
+                        var t = to.GetInt64();
+                        if (f <= t)
+                        {
+                            raw.Add((f, t));
+                        }
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // A malformed marker is ignored — it excuses nothing.
+            }
+        }
+
+        // Merge overlapping/adjacent ranges so a gap covered by contiguous markers counts.
+        raw.Sort((a, b) => a.From != b.From ? a.From.CompareTo(b.From) : a.To.CompareTo(b.To));
+        var merged = new List<(long From, long To)>();
+        foreach (var (from, to) in raw)
+        {
+            if (merged.Count > 0 && from <= merged[^1].To + 1)
+            {
+                merged[^1] = (merged[^1].From, Math.Max(merged[^1].To, to));
+            }
+            else
+            {
+                merged.Add((from, to));
+            }
+        }
+        return merged;
+    }
+
+    /// <summary>
+    /// Determines whether the whole closed sequence interval <paramref name="from"/>..
+    /// <paramref name="to"/> is covered by the documented removed ranges.
+    /// </summary>
+    private static bool IsCoveredByDocumentedRanges(long from, long to, IReadOnlyList<(long From, long To)> ranges)
+    {
+        var cursor = from;
+        foreach (var (rf, rt) in ranges)
+        {
+            if (rt < cursor)
+            {
+                continue;
+            }
+            if (rf > cursor)
+            {
+                return false;
+            }
+            if (rt >= to)
+            {
+                return true;
+            }
+            cursor = rt + 1;
+        }
+        return false;
     }
 
     /// <summary>

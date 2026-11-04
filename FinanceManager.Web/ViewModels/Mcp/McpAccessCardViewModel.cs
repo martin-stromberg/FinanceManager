@@ -51,6 +51,12 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     public McpAccessUsageDto? Usage { get; private set; }
 
     /// <summary>
+    /// Agent-monitoring view of this access (F-1103): queue depth, pending age and the
+    /// 24-hour outcome counters of its requests, or <see langword="null"/> when not loaded.
+    /// </summary>
+    public McpAccessMonitoringDto? Monitoring { get; private set; }
+
+    /// <summary>
     /// Indicates whether the management API reported <c>Err_Mcp_Disabled</c>; the card then
     /// shows a friendly hint instead of the access data.
     /// </summary>
@@ -103,6 +109,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
             try { Levels = await _api.Mcp_GetLevelsAsync(); } catch { Levels = Array.Empty<McpAccessLevelDto>(); }
             try { Options = await _api.Mcp_GetOptionsAsync(); } catch { Options = null; }
             try { Usage = Access is null ? null : await _api.Mcp_GetAccessUsageAsync(id); } catch { Usage = null; }
+            try { Monitoring = Access is null ? null : await _api.Mcp_GetAccessMonitoringAsync(id); } catch { Monitoring = null; }
 
             CardRecord = BuildCardRecord(Access);
         }

@@ -132,6 +132,21 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Loads the agent-monitoring view of one own access (F-1103): queue depth, pending
+    /// age and the 24-hour outcome counters of its requests, or null when not found.
+    /// </summary>
+    /// <param name="accessId">Access identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The monitoring DTO or null.</returns>
+    public async Task<McpAccessMonitoringDto?> Mcp_GetAccessMonitoringAsync(Guid accessId, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/mcp-approvals/monitoring/{accessId}", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<McpAccessMonitoringDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
     /// Loads the instance-wide MCP security overview (Admin role only, F-1005):
     /// metadata only — no business content of foreign users.
     /// </summary>

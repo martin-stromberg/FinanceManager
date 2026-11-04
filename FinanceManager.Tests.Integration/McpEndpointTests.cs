@@ -1,4 +1,5 @@
 using FinanceManager.Shared.Dtos.Mcp;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -27,7 +28,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         _factory = factory;
     }
 
-    private async Task<string> CreateAccessTokenAsync(HttpClient client)
+    private async Task<McpAccessCreatedDto> CreateAccessAsync(HttpClient client)
     {
         var jwt = TestJwtTokens.Create(_factory.Services, JwtKey, includeAdminRole: true);
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/mcp-accesses")
@@ -46,8 +47,11 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var created = await response.Content.ReadFromJsonAsync<McpAccessCreatedDto>();
         Assert.NotNull(created);
-        return created!.PlainTextToken;
+        return created!;
     }
+
+    private async Task<string> CreateAccessTokenAsync(HttpClient client)
+        => (await CreateAccessAsync(client)).PlainTextToken;
 
     /// <summary>Test case.</summary>
     [Fact]
@@ -118,11 +122,81 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
 
     /// <summary>Test case.</summary>
     [Fact]
-    public async Task Get_Returns405()
+    public async Task Get_WithoutSseAccept_Returns405()
     {
         using var client = _factory.CreateClient();
+        var pat = await CreateAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat);
         var response = await client.GetAsync("/mcp");
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Get_SseStream_OpensAndDeliversOwnRequestStatus()
+    {
+        using var client = _factory.CreateClient();
+        var created = await CreateAccessAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", created.PlainTextToken);
+
+        // initialize → live session id the stream binds to.
+        var init = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "initialize" });
+        var sessionId = init.Headers.GetValues("Mcp-Session-Id").Single();
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/mcp");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        request.Headers.Add("Mcp-Session-Id", sessionId);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.StartsWith("text/event-stream", response.Content.Headers.ContentType?.ToString());
+
+        // Push a status event of the access through the hub — the stream must deliver it
+        // as a request-status SSE frame.
+        var hub = _factory.Services.GetRequiredService<FinanceManager.Web.Mcp.McpSessionHub>();
+        var requestId = Guid.NewGuid();
+        hub.Publish(new FinanceManager.Application.Mcp.McpRequestStatusEvent(
+            created.Access.Id, Guid.NewGuid(), requestId, "Executed", "fm_test_tool"));
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var reader = new StreamReader(stream);
+        var frame = await ReadFrameAsync(reader, TimeSpan.FromSeconds(15));
+        Assert.Contains("request-status", frame);
+        Assert.Contains(requestId.ToString(), frame);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Get_SseWithoutSession_Returns404()
+    {
+        using var client = _factory.CreateClient();
+        var pat = await CreateAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/mcp");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    /// <summary>Reads one complete SSE frame (until its terminating blank line).</summary>
+    private static async Task<string> ReadFrameAsync(StreamReader reader, TimeSpan timeout)
+    {
+        using var cts = new CancellationTokenSource(timeout);
+        var frame = new System.Text.StringBuilder();
+        while (!cts.IsCancellationRequested)
+        {
+            var line = await reader.ReadLineAsync(cts.Token);
+            if (line is null)
+            {
+                break;
+            }
+            if (line.Length == 0)
+            {
+                return frame.ToString();
+            }
+            frame.AppendLine(line);
+        }
+        throw new Xunit.Sdk.XunitException("No complete SSE frame received within the timeout.");
     }
 
     /// <summary>Test case.</summary>

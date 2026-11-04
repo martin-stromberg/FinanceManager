@@ -3049,6 +3049,14 @@
   <data name="Mcp_Section_Rights" xml:space="preserve"><value>Rechte</value></data>
   <data name="Mcp_Section_StatusActions" xml:space="preserve"><value>Status-Aktionen</value></data>
   <data name="Mcp_Section_Usage" xml:space="preserve"><value>Nutzung</value></data>
+  <data name="Mcp_Section_Monitoring" xml:space="preserve"><value>Laufzeit-Überwachung</value></data>
+  <data name="Mcp_Monitor_Pending" xml:space="preserve"><value>Offene Anfragen</value></data>
+  <data name="Mcp_Monitor_Approved" xml:space="preserve"><value>In Ausführung</value></data>
+  <data name="Mcp_Monitor_OldestPending" xml:space="preserve"><value>Älteste offene Anfrage</value></data>
+  <data name="Mcp_Monitor_Last24h" xml:space="preserve"><value>Letzte 24 h</value></data>
+  <data name="Mcp_Monitor_Empty" xml:space="preserve"><value>Noch keine Anfragen für diesen Zugang.</value></data>
+  <data name="Mcp_PreApproved_Banner" xml:space="preserve"><value>Vorab genehmigte Aktionen aktiv: Dieser Zugang führt passende schreibvorbereitende und genehmigungspflichtige Aktionen ohne Einzelgenehmigung aus. Jede Ausführung wird dennoch vollständig protokolliert.</value></data>
+  <data name="McpApproval_PreApproved_Banner" xml:space="preserve"><value>Hinweis: Mindestens ein eigener Zugang nutzt „Dauerhaft vorab genehmigen“. Dessen Aktionen laufen ohne Einzelgenehmigung und erscheinen hier nur in der Historie.</value></data>
   <data name="Mcp_Token_IssuedUtc" xml:space="preserve"><value>Ausgestellt</value></data>
   <data name="Mcp_Token_Status" xml:space="preserve"><value>Status</value></data>
   <data name="Mcp_Token_NoPlaintext" xml:space="preserve"><value>Das Token wird aus Sicherheitsgründen nicht gespeichert und kann nicht erneut angezeigt werden.</value></data>

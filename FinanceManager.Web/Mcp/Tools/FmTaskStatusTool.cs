@@ -105,7 +105,24 @@ public sealed class FmTaskStatusHandler : IMcpToolHandler
             ? await RequestDetailAsync(ownerUserId, accessId, requestId.Value, ct)
             : await RequestListAsync(ownerUserId, accessId, statusFilter, take, ct);
 
-        return new { tasks, requests };
+        // Agent runbook block (F-1103): the workload counters of the calling access —
+        // queue depth, pending age and the 24h outcome split of its own requests.
+        var m = await _approvals.GetAccessMonitoringAsync(ownerUserId, accessId, ct);
+        var monitoring = m is null ? null : new
+        {
+            pendingCount = m.PendingCount,
+            approvedCount = m.ApprovedCount,
+            oldestPendingUtc = m.OldestPendingUtc,
+            requestsLast24h = m.RequestsLast24h,
+            executedLast24h = m.ExecutedLast24h,
+            failedLast24h = m.FailedLast24h,
+            rejectedLast24h = m.RejectedLast24h,
+            expiredLast24h = m.ExpiredLast24h,
+            failureRateLast24h = m.FailureRateLast24h,
+            lastRequestUtc = m.LastRequestUtc
+        };
+
+        return new { tasks, requests, monitoring };
     }
 
     /// <summary>

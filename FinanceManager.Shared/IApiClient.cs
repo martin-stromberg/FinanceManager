@@ -1801,4 +1801,10 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The security overview DTO or null when the caller is not an admin.</returns>
     Task<FinanceManager.Shared.Dtos.Mcp.McpSecurityOverviewDto?> Admin_McpSecurityOverviewAsync(int recent = 25, CancellationToken ct = default);
+
+    /// <summary>Loads the agent-monitoring view of one own access (queue depth, pending age, 24h outcome counters).</summary>
+    /// <param name="accessId">Access identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The monitoring DTO or null when not found.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessMonitoringDto?> Mcp_GetAccessMonitoringAsync(Guid accessId, CancellationToken ct = default);
 }
