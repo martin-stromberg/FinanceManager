@@ -161,6 +161,20 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                 }))
                 { MobileShortcut = true },
             new UiRibbonAction(
+                "AuditLog",
+                localizer["Mcp_Ribbon_AuditLog"].Value,
+                "<svg><use href='/icons/sprite.svg#list'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                new Func<Task>(() =>
+                {
+                    // /card/mcp-audit — the audit timeline is a card-route view without record id.
+                    ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
+                        .NavigateTo("/card/mcp-audit");
+                    return Task.CompletedTask;
+                })),
+            new UiRibbonAction(
                 "Reload",
                 localizer["Ribbon_Reload"].Value,
                 "<svg><use href='/icons/sprite.svg#refresh'/></svg>",

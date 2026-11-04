@@ -1694,4 +1694,54 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The options DTO.</returns>
     Task<FinanceManager.Shared.Dtos.Mcp.McpAccessOptionsDto?> Mcp_GetOptionsAsync(CancellationToken ct = default);
+
+    /// <summary>Lists the audit entries of the current user (newest first, filters AND-combined).</summary>
+    /// <param name="from">Optional inclusive lower bound (UTC).</param>
+    /// <param name="to">Optional inclusive upper bound (UTC).</param>
+    /// <param name="category">Optional category (McpAuditCategory as short).</param>
+    /// <param name="mcpAccessId">Optional access restriction.</param>
+    /// <param name="correlationId">Optional correlation id.</param>
+    /// <param name="toolName">Optional exact tool name.</param>
+    /// <param name="result">Optional exact result code.</param>
+    /// <param name="skip">Items to skip.</param>
+    /// <param name="take">Items to take.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The list of audit list items.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.McpAuditEntryListItemDto>> Mcp_ListAuditEntriesAsync(
+        DateTime? from = null, DateTime? to = null, short? category = null,
+        Guid? mcpAccessId = null, Guid? correlationId = null, string? toolName = null,
+        string? result = null, int skip = 0, int take = 100, CancellationToken ct = default);
+
+    /// <summary>Gets one audit entry detail incl. payload and field deltas, or null when not found.</summary>
+    /// <param name="id">Entry id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The detail DTO or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAuditEntryDetailDto?> Mcp_GetAuditEntryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Verifies the integrity of the own audit hash chain.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The verification result.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAuditVerifyResultDto> Mcp_VerifyAuditChainAsync(CancellationToken ct = default);
+
+    /// <summary>Loads the usage overview of one own access (aggregated from the audit trail), or null when not found.</summary>
+    /// <param name="accessId">Access id.</param>
+    /// <param name="recent">Optional size of the recent-calls excerpt.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The usage DTO or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessUsageDto?> Mcp_GetAccessUsageAsync(Guid accessId, int recent = 10, CancellationToken ct = default);
+
+    /// <summary>Builds the export download URL of the own audit protocol (browser download uses cookie auth).</summary>
+    /// <param name="format"><c>csv</c> or <c>json</c>.</param>
+    /// <param name="from">Optional inclusive lower bound (UTC).</param>
+    /// <param name="to">Optional inclusive upper bound (UTC).</param>
+    /// <param name="category">Optional category (McpAuditCategory as short).</param>
+    /// <param name="mcpAccessId">Optional access restriction.</param>
+    /// <param name="correlationId">Optional correlation id.</param>
+    /// <param name="toolName">Optional exact tool name.</param>
+    /// <param name="result">Optional exact result code.</param>
+    /// <returns>The relative export URL.</returns>
+    string Mcp_BuildAuditExportUrl(string format,
+        DateTime? from = null, DateTime? to = null, short? category = null,
+        Guid? mcpAccessId = null, Guid? correlationId = null, string? toolName = null,
+        string? result = null);
 }
