@@ -137,24 +137,24 @@ public static class McpEndpointExtensions
             switch (method2)
             {
                 case "initialize":
-                {
-                    var newSession = sessions.Create();
-                    http.Response.Headers[McpSessionHub.SessionHeader] = newSession;
-                    var requested = msg.TryGetProperty("params", out var p)
-                        && p.ValueKind == JsonValueKind.Object
-                        && p.TryGetProperty("protocolVersion", out var pv)
-                            ? pv.GetString()
-                            : null;
-                    var version = requested is not null && SupportedProtocolVersions.Contains(requested)
-                        ? requested
-                        : SupportedProtocolVersions[0];
-                    return Result(id, new
                     {
-                        protocolVersion = version,
-                        capabilities = new { tools = new { listChanged = false } },
-                        serverInfo = new { name = "FinanceManager", version = "1.0", catalogVersion = registry.CatalogVersion }
-                    });
-                }
+                        var newSession = sessions.Create();
+                        http.Response.Headers[McpSessionHub.SessionHeader] = newSession;
+                        var requested = msg.TryGetProperty("params", out var p)
+                            && p.ValueKind == JsonValueKind.Object
+                            && p.TryGetProperty("protocolVersion", out var pv)
+                                ? pv.GetString()
+                                : null;
+                        var version = requested is not null && SupportedProtocolVersions.Contains(requested)
+                            ? requested
+                            : SupportedProtocolVersions[0];
+                        return Result(id, new
+                        {
+                            protocolVersion = version,
+                            capabilities = new { tools = new { listChanged = false } },
+                            serverInfo = new { name = "FinanceManager", version = "1.0", catalogVersion = registry.CatalogVersion }
+                        });
+                    }
                 case "ping":
                     return Result(id, new { });
                 case "tools/list":
@@ -168,38 +168,38 @@ public static class McpEndpointExtensions
                         }).ToList()
                     });
                 case "tools/call":
-                {
-                    if (!msg.TryGetProperty("params", out var callParams)
-                        || callParams.ValueKind != JsonValueKind.Object
-                        || !callParams.TryGetProperty("name", out var nameEl)
-                        || nameEl.GetString() is not { } toolName)
                     {
-                        return Error(id, InvalidParams, "Missing tool name.");
+                        if (!msg.TryGetProperty("params", out var callParams)
+                            || callParams.ValueKind != JsonValueKind.Object
+                            || !callParams.TryGetProperty("name", out var nameEl)
+                            || nameEl.GetString() is not { } toolName)
+                        {
+                            return Error(id, InvalidParams, "Missing tool name.");
+                        }
+                        var arguments = callParams.TryGetProperty("arguments", out var argsEl)
+                            && argsEl.ValueKind == JsonValueKind.Object
+                                ? argsEl.Clone()
+                                : JsonDocument.Parse("{}").RootElement;
+
+                        var outcome = await dispatcher.DispatchAsync(
+                            access, toolName, arguments, http.RequestServices,
+                            http.Connection.RemoteIpAddress?.ToString(), ct);
+
+                        return outcome.Kind switch
+                        {
+                            McpDispatchResultKind.Success => Result(id, new
+                            {
+                                content = new[] { new { type = "text", text = JsonSerializer.Serialize(outcome.Result) } },
+                                structuredContent = outcome.Result
+                            }),
+                            McpDispatchResultKind.ToolError => Result(id, new
+                            {
+                                content = new[] { new { type = "text", text = outcome.ErrorMessage } },
+                                isError = true
+                            }),
+                            _ => Error(id, ProtocolError, outcome.ErrorMessage ?? "MCP error.", outcome.ErrorCode)
+                        };
                     }
-                    var arguments = callParams.TryGetProperty("arguments", out var argsEl)
-                        && argsEl.ValueKind == JsonValueKind.Object
-                            ? argsEl.Clone()
-                            : JsonDocument.Parse("{}").RootElement;
-
-                    var outcome = await dispatcher.DispatchAsync(
-                        access, toolName, arguments, http.RequestServices,
-                        http.Connection.RemoteIpAddress?.ToString(), ct);
-
-                    return outcome.Kind switch
-                    {
-                        McpDispatchResultKind.Success => Result(id, new
-                        {
-                            content = new[] { new { type = "text", text = JsonSerializer.Serialize(outcome.Result) } },
-                            structuredContent = outcome.Result
-                        }),
-                        McpDispatchResultKind.ToolError => Result(id, new
-                        {
-                            content = new[] { new { type = "text", text = outcome.ErrorMessage } },
-                            isError = true
-                        }),
-                        _ => Error(id, ProtocolError, outcome.ErrorMessage ?? "MCP error.", outcome.ErrorCode)
-                    };
-                }
                 default:
                     return Error(id, MethodNotFound, $"Method '{method2}' not found.");
             }

@@ -2971,4 +2971,138 @@
   <data name="Err_UserNotFound" xml:space="preserve">
     <value>The user was not found.</value>
   </data>
+  <data name="Nav_McpAccesses" xml:space="preserve"><value>AI accesses</value></data>
+  <data name="General_Title_McpAccesses" xml:space="preserve"><value>AI accesses</value></data>
+  <data name="McpAccess_Title" xml:space="preserve"><value>AI access</value></data>
+  <data name="McpList_Th_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="McpList_Th_Level" xml:space="preserve"><value>Access level</value></data>
+  <data name="McpList_Th_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="McpList_Th_Expires" xml:space="preserve"><value>Expires</value></data>
+  <data name="McpList_Th_LastUsed" xml:space="preserve"><value>Last used</value></data>
+  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>The AI integration (MCP) is disabled on the server. Accesses can be managed once 'Mcp:Enabled' is turned on.</value></data>
+  <data name="Mcp_Value_NeverUsed" xml:space="preserve"><value>never</value></data>
+  <data name="Mcp_Level_Analyse" xml:space="preserve"><value>Analysis</value></data>
+  <data name="Mcp_Level_Assistent" xml:space="preserve"><value>Assistant</value></data>
+  <data name="Mcp_Level_Sachbearbeiter" xml:space="preserve"><value>Clerk</value></data>
+  <data name="Mcp_Level_Buchhalter" xml:space="preserve"><value>Accountant</value></data>
+  <data name="Mcp_Level_Individuell" xml:space="preserve"><value>Custom</value></data>
+  <data name="Mcp_LevelDesc_Analyse" xml:space="preserve"><value>Can view and analyze all data. Cannot change anything.</value></data>
+  <data name="Mcp_LevelDesc_Assistent" xml:space="preserve"><value>Like Analysis, plus suggestions may be created (e.g. categorization ideas). Changes nothing.</value></data>
+  <data name="Mcp_LevelDesc_Sachbearbeiter" xml:space="preserve"><value>May prepare and complete statement drafts - changes go through your approval. Does not post or delete.</value></data>
+  <data name="Mcp_LevelDesc_Buchhalter" xml:space="preserve"><value>Full process rights incl. posting and reversal - always via your approval (or durably pre-approved).</value></data>
+  <data name="Mcp_LevelDesc_Individuell" xml:space="preserve"><value>Compose rights per data type yourself (expert mode).</value></data>
+  <data name="Mcp_Status_Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Mcp_Status_Deactivated" xml:space="preserve"><value>Deactivated</value></data>
+  <data name="Mcp_Status_Revoked" xml:space="preserve"><value>Revoked</value></data>
+  <data name="Mcp_Status_Expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Mcp_ApprovalMode_PerAction" xml:space="preserve"><value>Approve each action</value></data>
+  <data name="Mcp_ApprovalMode_PreApproved" xml:space="preserve"><value>Durably pre-approve</value></data>
+  <data name="Mcp_ApprovalModeDesc_PerAction" xml:space="preserve"><value>The AI system files requests; you decide in the approval center.</value></data>
+  <data name="Mcp_ApprovalModeDesc_PreApproved" xml:space="preserve"><value>Allowed actions run directly - every execution is still logged.</value></data>
+  <data name="Mcp_Right_Read" xml:space="preserve"><value>Read</value></data>
+  <data name="Mcp_Right_Suggest" xml:space="preserve"><value>Suggest</value></data>
+  <data name="Mcp_Right_Complete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Mcp_Right_Modify" xml:space="preserve"><value>Modify</value></data>
+  <data name="Mcp_Right_Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Mcp_Right_Book" xml:space="preserve"><value>Post</value></data>
+  <data name="Mcp_Right_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Mcp_DataType_Accounts" xml:space="preserve"><value>Accounts</value></data>
+  <data name="Mcp_DataType_AccountTypes" xml:space="preserve"><value>Account types</value></data>
+  <data name="Mcp_DataType_StatementImports" xml:space="preserve"><value>Statement imports</value></data>
+  <data name="Mcp_DataType_StatementDrafts" xml:space="preserve"><value>Statement drafts</value></data>
+  <data name="Mcp_DataType_Postings" xml:space="preserve"><value>Postings</value></data>
+  <data name="Mcp_DataType_Contacts" xml:space="preserve"><value>Contacts</value></data>
+  <data name="Mcp_DataType_ContactCategories" xml:space="preserve"><value>Contact categories</value></data>
+  <data name="Mcp_DataType_SavingsPlans" xml:space="preserve"><value>Savings plans</value></data>
+  <data name="Mcp_DataType_SavingsPlanCategories" xml:space="preserve"><value>Savings plan categories</value></data>
+  <data name="Mcp_DataType_Securities" xml:space="preserve"><value>Securities</value></data>
+  <data name="Mcp_DataType_SecurityCategories" xml:space="preserve"><value>Security categories</value></data>
+  <data name="Mcp_DataType_Budgets" xml:space="preserve"><value>Budgets</value></data>
+  <data name="Mcp_DataType_BudgetCategories" xml:space="preserve"><value>Budget categories</value></data>
+  <data name="Mcp_DataType_BudgetRules" xml:space="preserve"><value>Budget rules</value></data>
+  <data name="Mcp_DataType_Reports" xml:space="preserve"><value>Reports</value></data>
+  <data name="Mcp_DataType_KpiConfigurations" xml:space="preserve"><value>KPI configurations</value></data>
+  <data name="Mcp_DataType_Attachments" xml:space="preserve"><value>Attachments</value></data>
+  <data name="Mcp_DataType_AttachmentCategories" xml:space="preserve"><value>Attachment categories</value></data>
+  <data name="EnumType_McpAccessLevel_Analyse" xml:space="preserve"><value>Analysis</value></data>
+  <data name="EnumType_McpAccessLevel_Assistent" xml:space="preserve"><value>Assistant</value></data>
+  <data name="EnumType_McpAccessLevel_Sachbearbeiter" xml:space="preserve"><value>Clerk</value></data>
+  <data name="EnumType_McpAccessLevel_Buchhalter" xml:space="preserve"><value>Accountant</value></data>
+  <data name="EnumType_McpAccessLevel_Individuell" xml:space="preserve"><value>Custom</value></data>
+  <data name="EnumType_McpApprovalMode_PerAction" xml:space="preserve"><value>Approve each action</value></data>
+  <data name="EnumType_McpApprovalMode_PreApproved" xml:space="preserve"><value>Durably pre-approve</value></data>
+  <data name="Mcp_Card_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Mcp_Card_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Mcp_Card_Description_Hint" xml:space="preserve"><value>What is this access used for (which AI system, which purpose)?</value></data>
+  <data name="Mcp_Card_Level" xml:space="preserve"><value>Access level</value></data>
+  <data name="Mcp_Card_ApprovalMode" xml:space="preserve"><value>Approval mode</value></data>
+  <data name="Mcp_Card_ApprovalMode_Hint" xml:space="preserve"><value>Approve each: every approval-requiring action creates a request. Pre-approved: allowed actions run immediately (logged).</value></data>
+  <data name="Mcp_Card_ExpiresUtc" xml:space="preserve"><value>Expiry date</value></data>
+  <data name="Mcp_Card_ExpiresUtc_Hint" xml:space="preserve"><value>Optional. The token is rejected after this point. Empty = no expiry.</value></data>
+  <data name="Mcp_Card_AllowedIpRanges" xml:space="preserve"><value>IP binding</value></data>
+  <data name="Mcp_Card_AllowedIpRanges_Hint" xml:space="preserve"><value>Optional: comma-separated list of IP addresses or CIDR ranges allowed to use this access.</value></data>
+  <data name="Mcp_Card_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Mcp_Card_LastUsedUtc" xml:space="preserve"><value>Last used</value></data>
+  <data name="Mcp_Card_TokenIssuedUtc" xml:space="preserve"><value>Token issued</value></data>
+  <data name="Mcp_Card_CreatedUtc" xml:space="preserve"><value>Created</value></data>
+  <data name="Mcp_Section_Token" xml:space="preserve"><value>Token</value></data>
+  <data name="Mcp_Section_Rights" xml:space="preserve"><value>Rights</value></data>
+  <data name="Mcp_Section_StatusActions" xml:space="preserve"><value>Status actions</value></data>
+  <data name="Mcp_Section_Usage" xml:space="preserve"><value>Usage</value></data>
+  <data name="Mcp_Token_IssuedUtc" xml:space="preserve"><value>Issued</value></data>
+  <data name="Mcp_Token_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Mcp_Token_NoPlaintext" xml:space="preserve"><value>For security reasons the token is not stored and cannot be shown again.</value></data>
+  <data name="Mcp_Token_TlsWarning" xml:space="preserve"><value>Warning: the connection is not TLS-encrypted - the token is transmitted unencrypted. TLS setup and short expiry dates are recommended.</value></data>
+  <data name="Mcp_Rights_Level" xml:space="preserve"><value>Access level:</value></data>
+  <data name="Mcp_Rights_DataType" xml:space="preserve"><value>Data type</value></data>
+  <data name="Mcp_Rights_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Mcp_Rights_Empty" xml:space="preserve"><value>No rights configured.</value></data>
+  <data name="Mcp_Rights_CapHint" xml:space="preserve"><value>These rights apply only up to the limit of your own user rights - an account shared read-only stays read-only for the AI as well.</value></data>
+  <data name="Mcp_StatusActions_Hint" xml:space="preserve"><value>Deactivation and revocation take effect immediately: running calls of this access are rejected.</value></data>
+  <data name="Mcp_Usage_HistoryPlaceholder" xml:space="preserve"><value>The detailed history (which AI system did what when) follows with the audit view.</value></data>
+  <data name="McpToken_Title_Rotated" xml:space="preserve"><value>New token</value></data>
+  <data name="McpToken_OnceWarning_Title" xml:space="preserve"><value>Token shown only once</value></data>
+  <data name="McpToken_OnceWarning_Message" xml:space="preserve"><value>This token is shown only now and cannot be retrieved again. Store it in a safe place now.</value></data>
+  <data name="McpToken_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="McpToken_Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="McpToken_ConfirmSaved" xml:space="preserve"><value>I have stored the token safely.</value></data>
+  <data name="McpToken_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="McpToken_NoToken" xml:space="preserve"><value>No token available.</value></data>
+  <data name="McpWizard_Title" xml:space="preserve"><value>New AI access</value></data>
+  <data name="McpWizard_Step_MasterData" xml:space="preserve"><value>Master data</value></data>
+  <data name="McpWizard_Step_Level" xml:space="preserve"><value>Access level</value></data>
+  <data name="McpWizard_Step_Token" xml:space="preserve"><value>Token</value></data>
+  <data name="McpWizard_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="McpWizard_Description" xml:space="preserve"><value>Description (optional)</value></data>
+  <data name="McpWizard_Advanced" xml:space="preserve"><value>Advanced settings</value></data>
+  <data name="McpWizard_ExpiresUtc" xml:space="preserve"><value>Expiry date (optional)</value></data>
+  <data name="McpWizard_AllowedIpRanges" xml:space="preserve"><value>IP binding (optional)</value></data>
+  <data name="McpWizard_ApprovalMode" xml:space="preserve"><value>Approval mode</value></data>
+  <data name="McpWizard_Create" xml:space="preserve"><value>Create access</value></data>
+  <data name="Mcp_Ribbon_RotateToken" xml:space="preserve"><value>Rotate token</value></data>
+  <data name="Mcp_Ribbon_Revoke" xml:space="preserve"><value>Revoke access</value></data>
+  <data name="Confirmation_McpRotate_Title" xml:space="preserve"><value>Rotate token</value></data>
+  <data name="Confirmation_McpRotate_Message" xml:space="preserve"><value>The current token becomes invalid immediately. The new token is shown only once.</value></data>
+  <data name="Confirmation_McpActivate_Title" xml:space="preserve"><value>Activate access</value></data>
+  <data name="Confirmation_McpActivate_Message" xml:space="preserve"><value>The token of this access will be accepted again.</value></data>
+  <data name="Confirmation_McpDeactivate_Title" xml:space="preserve"><value>Deactivate access</value></data>
+  <data name="Confirmation_McpDeactivate_Message" xml:space="preserve"><value>All calls of this access will be rejected immediately until it is reactivated.</value></data>
+  <data name="Confirmation_McpRevoke_Title" xml:space="preserve"><value>Revoke access</value></data>
+  <data name="Confirmation_McpRevoke_Message" xml:space="preserve"><value>The access is permanently deleted. All calls are rejected immediately and pending requests are withdrawn. This cannot be undone.</value></data>
+  <data name="Confirmation_McpLevelDowngrade_Title" xml:space="preserve"><value>Lower access level</value></data>
+  <data name="Confirmation_McpLevelDowngrade_Message" xml:space="preserve"><value>The lower level removes rights of this access. Continue?</value></data>
+  <data name="Btn_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Btn_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Err_NotFound" xml:space="preserve"><value>Not found.</value></data>
+  <data name="Err_Mcp_Disabled" xml:space="preserve"><value>The AI integration (MCP) is disabled on the server.</value></data>
+  <data name="Err_Mcp_NameInUse" xml:space="preserve"><value>An access with this name already exists.</value></data>
+  <data name="Err_Mcp_InvalidScope" xml:space="preserve"><value>The given rights profile is invalid.</value></data>
+  <data name="Err_Mcp_InvalidState" xml:space="preserve"><value>The operation is not possible in the current state of the access.</value></data>
+  <data name="Err_Mcp_Unauthorized" xml:space="preserve"><value>Access was denied.</value></data>
+  <data name="Err_Mcp_UnknownTool" xml:space="preserve"><value>The requested tool is unknown.</value></data>
+  <data name="Err_Mcp_ToolNotImplemented" xml:space="preserve"><value>The requested tool is not available yet.</value></data>
+  <data name="Err_Mcp_WriteAccessDisabled" xml:space="preserve"><value>Write access is disabled for MCP.</value></data>
+  <data name="Err_Mcp_RateLimited" xml:space="preserve"><value>Too many requests - please try again later.</value></data>
+  <data name="Err_Mcp_ScopeDenied" xml:space="preserve"><value>The right was denied by the rights profile.</value></data>
+  <data name="Panel_Label_McpAccess" xml:space="preserve"><value>AI access</value></data>
 </root>

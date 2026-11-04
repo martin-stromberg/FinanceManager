@@ -28,5 +28,8 @@ Branch: `task/mcp-integration-schritt-1-fundament`
 | [x] | 22 | Backup-Export/Restore (4 Mcp-Tabellen, Platzhalter-Credentials) + `ClearUserDataAsync` (26→30 Schritte) | `BackupService`, `SetupImportService`, `AppDbContext` |
 | [x] | 23 | Tests: Unit (Token, Service, Evaluator, IP-Matcher) + Integration (`PatFlow`: PAT→`tools/list`→`tools/call`, 401, 405, 503, JWT-Ausschluss); EnumCoverage +2 | `Tests/Mcp`, `Tests.Integration` |
 | [x] | 24 | Build + Tests grün (1582 Unit, 155 Integration), Review-Artefakt aktualisiert | `review.md` |
-| [ ] | 25 | Commit `feat: MCP-Fundament - Endpoint, PAT-Auth, ScopeEvaluator, Registry, Verwaltungs-API` + Push | – |
-| [ ] | 26 | Teil C (folgt): UI-Zugangsverwaltung/Token-Wizard, persistenter `McpAuditWriter` (F-0301/0302), Fach-Tools T01–T31, AiActionRequest/Approval-Ausführung, Session-Rebind bei Rotation | spätere Tasks |
+| [x] | 25 | Commit `feat: MCP-Fundament - Endpoint, PAT-Auth, ScopeEvaluator, Registry, Verwaltungs-API` + Push | `f1624ba2` |
+| [x] | 26 | Teil C — UI-Zugangsverwaltung (F-0108): Nav „KI-Zugänge“, Liste `/list/mcp-accesses`, Karte `/card/mcp-accesses/{id}` mit Sections (Stammdaten/Token/Rechte/Status-Aktionen/Nutzung), dreistufiger Token-Wizard mit Einmalanzeige+Pflicht-Bestätigung, TLS-Hinweis, `Mcp:Enabled=false`-Hinweis, resx de/en (~135 Keys), EnumCoverage +`McpDispatchResultKind` | `ViewModels/Mcp`, `Components/Shared/Mcp*`, `Pages*.resx` |
+| [x] | 27 | Build + Tests grün (1583 Unit), Enum-Check/razor-l10n/translation/razor-usage strikt OK, `dotnet format --verify` OK (Whitespace-Fixes an 3 Teil-B-Dateien) | – |
+| [ ] | 28 | Commit `feat: MCP-Fundament - UI Zugangsverwaltung und Token-Wizard` + Push | – |
+| [ ] | 29 | Teil C Rest (folgt): persistenter `McpAuditWriter` (F-0301/0302), Fach-Tools T01–T31, AiActionRequest/Approval-Ausführung, Session-Rebind bei Rotation, Scope-Matrix-Editor/Filterverwaltung (Expertenmodus), Badge offene Anfragen | spätere Tasks |

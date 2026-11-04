@@ -17,7 +17,8 @@ public sealed class FmTaskStatusDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmTaskStatusDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"taskId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Optional background task id; without it, all own tasks are listed.\"}},\"additionalProperties\":false}") { }
+        "{\"type\":\"object\",\"properties\":{\"taskId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Optional background task id; without it, all own tasks are listed.\"}},\"additionalProperties\":false}")
+    { }
 
     /// <inheritdoc />
     public override string Name => ToolName;

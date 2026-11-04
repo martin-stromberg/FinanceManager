@@ -99,7 +99,9 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         // unknown tool → defined error, not a crash.
         var unknown = await client.PostAsJsonAsync("/mcp", new
         {
-            jsonrpc = "2.0", id = 4, method = "tools/call",
+            jsonrpc = "2.0",
+            id = 4,
+            method = "tools/call",
             @params = new { name = "fm_no_such_tool", arguments = new { } }
         });
         var unknownDoc = await unknown.Content.ReadFromJsonAsync<JsonElement>();

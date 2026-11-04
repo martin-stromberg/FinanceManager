@@ -1,0 +1,140 @@
+@using FinanceManager.Domain.Mcp
+@using FinanceManager.Web.ViewModels.Mcp
+@implements IDisposable
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+
+@if (Provider?.Access is { } access)
+{
+    <div class="mcp-access-extras" style="display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;">
+
+        <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+            <h4 style="margin:0 0 .5rem 0;">@L["Mcp_Section_Token"]</h4>
+            @if (Provider.Options is not null && !Provider.Options.IsTlsRequest)
+            {
+                <div style="padding:.5rem .75rem;margin-bottom:.5rem;border:1px solid rgba(230,160,60,.35);background:rgba(230,160,60,.05);border-radius:6px;">
+                    @L["Mcp_Token_TlsWarning"]
+                </div>
+            }
+            <div style="display:flex;flex-wrap:wrap;gap:1rem;font-size:.95rem;">
+                <div>
+                    <span style="color:var(--muted);">@L["Mcp_Token_IssuedUtc"]</span>
+                    <div>@access.TokenIssuedUtc.ToString("u")</div>
+                </div>
+                <div>
+                    <span style="color:var(--muted);">@L["Mcp_Token_Status"]</span>
+                    <div>@McpAccessText.Status(L, access.Status, access.IsExpired)</div>
+                </div>
+            </div>
+            <div style="margin-top:.5rem;color:var(--muted);font-size:.9rem;">@L["Mcp_Token_NoPlaintext"]</div>
+            @if ((McpAccessStatus)access.Status != McpAccessStatus.Revoked)
+            {
+                <div style="margin-top:.5rem;">
+                    <button type="button" class="btn" @onclick="RotateAsync">@L["Mcp_Ribbon_RotateToken"]</button>
+                </div>
+            }
+        </section>
+
+        <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+            <h4 style="margin:0 0 .5rem 0;">@L["Mcp_Section_Rights"]</h4>
+            <div style="margin-bottom:.4rem;">
+                <span style="color:var(--muted);">@L["Mcp_Rights_Level"]</span>
+                <strong> @McpAccessText.Level(L, access.Level)</strong>
+            </div>
+            <div style="color:var(--muted);font-size:.9rem;margin-bottom:.5rem;">
+                @McpAccessText.LevelDescription(L, access.Level)
+            </div>
+            @if (access.EffectiveScopes.Count > 0)
+            {
+                <table class="fm-table" style="width:100%;font-size:.9rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;padding:.25rem .4rem;">@L["Mcp_Rights_DataType"]</th>
+                            <th style="text-align:left;padding:.25rem .4rem;">@L["Mcp_Rights_Right"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var scope in access.EffectiveScopes)
+                        {
+                            <tr>
+                                <td style="padding:.25rem .4rem;">@McpAccessText.DataType(L, scope.DataType)</td>
+                                <td style="padding:.25rem .4rem;">@McpAccessText.RightKind(L, scope.Right)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="color:var(--muted);font-size:.9rem;">@L["Mcp_Rights_Empty"]</div>
+            }
+            <div style="margin-top:.5rem;color:var(--muted);font-size:.85rem;">@L["Mcp_Rights_CapHint"]</div>
+        </section>
+
+        <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+            <h4 style="margin:0 0 .5rem 0;">@L["Mcp_Section_StatusActions"]</h4>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                @if ((McpAccessStatus)access.Status == McpAccessStatus.Active)
+                {
+                    <button type="button" class="btn" @onclick="DeactivateAsync">@L["Ribbon_Deactivate"]</button>
+                }
+                else if ((McpAccessStatus)access.Status == McpAccessStatus.Deactivated)
+                {
+                    <button type="button" class="btn" @onclick="ActivateAsync">@L["Ribbon_Activate"]</button>
+                }
+                @if ((McpAccessStatus)access.Status != McpAccessStatus.Revoked)
+                {
+                    <button type="button" class="btn btn-danger" @onclick="RevokeAsync">@L["Mcp_Ribbon_Revoke"]</button>
+                }
+            </div>
+            <div style="margin-top:.5rem;color:var(--muted);font-size:.85rem;">@L["Mcp_StatusActions_Hint"]</div>
+        </section>
+
+        <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+            <h4 style="margin:0 0 .5rem 0;">@L["Mcp_Section_Usage"]</h4>
+            <div>
+                <span style="color:var(--muted);">@L["Mcp_Card_LastUsedUtc"]</span>
+                <div>@(access.LastUsedUtc?.ToString("u") ?? L["Mcp_Value_NeverUsed"].Value)</div>
+            </div>
+            <div style="margin-top:.5rem;color:var(--muted);font-size:.85rem;">@L["Mcp_Usage_HistoryPlaceholder"]</div>
+        </section>
+    </div>
+}
+
+@code {
+    /// <summary>The owning card view model.</summary>
+    [Parameter] public McpAccessCardViewModel? Provider { get; set; }
+
+    private McpAccessCardViewModel? _subscribed;
+
+    protected override void OnParametersSet()
+    {
+        if (_subscribed != Provider)
+        {
+            if (_subscribed is not null)
+            {
+                _subscribed.StateChanged -= OnStateChanged;
+            }
+            _subscribed = Provider;
+            if (_subscribed is not null)
+            {
+                _subscribed.StateChanged += OnStateChanged;
+            }
+        }
+    }
+
+    private void OnStateChanged(object? sender, EventArgs e) => InvokeAsync(StateHasChanged);
+
+    private Task RotateAsync() => Provider is null ? Task.CompletedTask : Provider.RotateTokenAsync();
+    private Task ActivateAsync() => Provider is null ? Task.CompletedTask : Provider.ActivateAsync();
+    private Task DeactivateAsync() => Provider is null ? Task.CompletedTask : Provider.DeactivateAsync();
+    private Task RevokeAsync() => Provider is null ? Task.CompletedTask : Provider.RevokeAsync();
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_subscribed is not null)
+        {
+            _subscribed.StateChanged -= OnStateChanged;
+        }
+    }
+}

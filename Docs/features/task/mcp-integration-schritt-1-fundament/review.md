@@ -140,3 +140,71 @@
    akzeptiert (Statistikfeld, kein Sicherheitszustand).
 6. **Approval-Modus `PerAction`** ist deklariert, aber ohne AiActionRequest-Feature noch ohne
    Wirkung (keine schreibenden Tools live) — Konzept-Verweis für Schritt 3.
+
+---
+
+# Review – Teil C: UI-Zugangsverwaltung und Token-Wizard (F-0108)
+
+## Status: umgesetzt, bereit für Commit/Push
+
+### Geliefert
+- **Navigation:** Eintrag „KI-Zugänge" (`Nav_McpAccesses`) in `MainLayout.razor` nach
+  „Setup" und vor den Admin-Einträgen → `/list/mcp-accesses` (alle authentifizierten
+  Benutzer, kein Admin-Gate — jeder verwaltet eigene Zugänge).
+- **Liste `/list/mcp-accesses`:** `McpAccessListViewModel : BaseListViewModel<McpAccessListItem>`
+  + `case "mcp-accesses"` in `ListViewModelFactory`. Spalten Name, Freigabestufe (Klartext),
+  Status (aktiv/deaktiviert/abgelaufen/widerrufen lokalisiert), Ablaufdatum, `LastUsedUtc`
+  („nie" bei Neu); deaktivierte/abgelaufene Zeilen `muted`; Suchfilter serverseitig (`q`),
+  Paging via `skip`/`take`. Ribbon: „Neu" (öffnet Anlage-Assistent-Overlay), „Aktualisieren".
+  `IListItemNavigation` → `/card/mcp-accesses/{id}`.
+- **Karte `/card/mcp-accesses/{id}`:** `McpAccessCardViewModel : BaseCardViewModel` mit
+  `[CardRoute("mcp-accesses")]`. CardRecord-Stammdaten editierbar (Name, Beschreibung,
+  Stufe als `Enum:McpAccessLevel`-Lookup mit `levels`-Klartext-Hint, Genehmigungsmodus,
+  Ablaufdatum, IP-Bindung) + readonly Status/Letzte-Nutzung/TokenIssued/Erstellt.
+  Sections via `GetEmbeddedPanelSpecs(AfterCard)` → `McpAccessExtrasPanel`:
+  Token (Issued/Status, TLS-Warnung bei `!IsTlsRequest`, „Token rotieren"),
+  Rechte (Stufe + effektives Profil + Deckel-Hinweistext), Status-Aktionen
+  (Aktivieren/Deaktivieren/Widerrufen), Nutzung (`LastUsedUtc` + Platzhalter für
+  Verlauf/Audit-Ansicht EP-06). Alle kritischen Aktionen via `IConfirmationService`
+  (Rotation+Widerruf+Deaktivierung `Critical`, Stufen-Downgrade `Warning`, Aktivierung
+  `Default`). Ribbon spiegelt: Back, Save, Rotate, Activate/Deactivate, Revoke.
+- **Token-Wizard:** `McpAccessCreateWizard.razor` (UiOverlaySpec, läuft auf Listen- und
+  Karten-OverlayHost): Schritt 1 Stammdaten (+„Erweiterte Einstellungen" Ablaufdatum/
+  IP-Bindung), Schritt 2 Freigabestufe als Auswahlkarten mit Klartext-Erklärung
+  (`levels`-Endpunkt + `Mcp_LevelDesc_*`) + Genehmigungsmodus-Auswahl ab Sachbearbeiter,
+  Schritt 3 Einmalanzeige via `McpTokenDisplayPanel` (Copy-Box + `financeManager.copyText`,
+  „nur einmal sichtbar"-Warnung, Pflicht-Checkbox „gespeichert" vor Schließen). Danach
+  Navigation auf die neue Karte. Klartext nur in Dialog-Instanz, kein Caching/LocalStorage.
+- **`Mcp:Enabled=false`:** `Err_Mcp_Disabled` wird zu freundlichem lokalisiertem Hinweis —
+  Liste rendert dedizierte Hint-Row, Karte zeigt `LastError`-Banner (SetError→resx).
+- **Lokalisierung:** 134 neue Keys je `Pages.resx`/`Pages.de.resx`/`Pages.en.resx`
+  (Stufen-Klartexte, 7 Rechtearten, 18 Datentypen, Status/Genehmigungsmodus, Wizard,
+  Token-Panel, Sections, 6 Confirmations, `EnumType_Mcp*` für Lookup-Dropdowns,
+  `Err_Mcp_*` ×10, `Btn_Back`/`Btn_Next`/`Err_NotFound` ergänzt). Kein hartkodierter
+  UI-String in .razor (razor-l10n-check OK).
+- **Enum-Coverage:** `McpDispatchResultKind` (Success/DefinedError/ProtocolError/ToolError)
+  in `EnumCoverageTests` ergänzt — `--all --strict` OK.
+- **Format:** `dotnet format --verify-no-changes --severity error` war durch Teil-B-Reste
+  rot → Whitespace-Normalisierung `McpEndpointExtensions.cs`, `FmTaskStatusTool.cs`,
+  `McpEndpointTests.cs` (nur Formatierung).
+
+### Abweichungen/Entscheidungen
+- **Erstellung ausschließlich über Wizard-Overlay** (nicht `/card/.../new`): entspricht
+  UI-Konzept „Standardfall in einer Minute"; die Karte ist reine Bestands-Verwaltung.
+- **Genehmigungsmodus-Auswahl** im Wizard erst ab Stufe Sachbearbeiter (darunter ohne
+  Wirkung); Karte erlaubt Bearbeitung immer (Server validiert).
+- **Scope-Matrix-Editor/Filterverwaltung (Expertenmodus)** bewusst auf späteren Task
+  verschoben — Rechte-Section zeigt das effektive Profil lesend (Endpoints
+  `/scopes`/`/filters` existieren bereits in API+ApiClient).
+- **`McpAccessExtrasPanel`/`McpAccessCreateWizard`** werden über `typeof(...)` in den
+  Title-/Label-Maps von `OverlayHost`/`ListPage`/`EmbeddedPanelHost` referenziert
+  (razor-usage-check --strict verlangt .razor-Verweis, `DynamicComponent` zählt nicht).
+
+## Risiken / offene Punkte für Folge-Tasks
+1. **Expertenmodus fehlt:** individuelle Rechte/Filter (Matrix-Editor, Kategorie-Picker)
+   — Section „Rechte" ist aktuell lesend.
+2. **Offene-Anfragen-Badge** am Nav-Eintrag + Genehmigungscenter fehlen (Approval-Feature).
+3. **Audit-/Verlaufsansicht** ist Platzhalter-Text (EP-06 / F-0301/0302).
+4. **`copyText`-Fallback** (`execCommand`) für Nicht-Clipboard-Kontexte; modern.
+5. **Kein E2E-Test** für die neuen Seiten — manuelle Abnahme empfohlen (Wizard→Token→
+   Rotation→Widerruf).
