@@ -474,6 +474,11 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmCategoriesManageDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAttachmentsManageDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmReportsConfigurationManageDescriptor>();
+            // EP-10: approval-bound final actions — booking/discard of statement drafts and
+            // posting reversal always run via the persistent AiActionRequest queue.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftBookDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftDiscardDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmPostingReverseDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolRegistry, FinanceManager.Web.Mcp.McpToolRegistry>();
             builder.Services.AddScoped<FinanceManager.Web.Mcp.McpRecordScopeFilter>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeHandler>();
@@ -506,6 +511,9 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCategoriesManageHandler>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAttachmentsManageHandler>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmReportsConfigurationManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftBookHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftDiscardHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmPostingReverseHandler>();
         }
 
         private static string? ExtractMcpHint(HttpContext httpContext)

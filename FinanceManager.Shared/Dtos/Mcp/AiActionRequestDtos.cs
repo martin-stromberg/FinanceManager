@@ -60,6 +60,9 @@ public sealed record AiActionRequestListItemDto(
 /// <param name="CorrelationId">Correlation id of the effect chain.</param>
 /// <param name="IdempotencyKey">Deduplication key.</param>
 /// <param name="AttemptCount">Execution attempt counter.</param>
+/// <param name="EffectPreview">Server-side effect preview derived from the frozen parameter
+/// snapshot (approval-konzept.md §7.2 / ui-konzept.md §4.6), or <see langword="null"/> when
+/// the snapshot cannot be classified.</param>
 public sealed record AiActionRequestDetailDto(
     Guid Id,
     Guid McpAccessId,
@@ -80,7 +83,56 @@ public sealed record AiActionRequestDetailDto(
     string? FailureReason,
     Guid CorrelationId,
     string IdempotencyKey,
-    int AttemptCount);
+    int AttemptCount,
+    AiActionRequestEffectPreviewDto? EffectPreview);
+
+/// <summary>
+/// Server-side effect preview of one approval request (F-1001): a stable classification of
+/// the requested effect (<see cref="Kind"/>), the destruktiv flag driving the critical
+/// confirmation step of the approval center, and the relevant scalar fields of the frozen
+/// parameter snapshot so the UI can render a concrete "what would happen" view without
+/// interpreting raw JSON.
+/// </summary>
+/// <param name="Kind">Stable effect kind: <c>book</c>, <c>bookAll</c>, <c>commit</c>,
+/// <c>discard</c>, <c>discardAll</c>, <c>reverse</c>, <c>merge</c>, <c>delete</c>,
+/// <c>archive</c> or <c>generic</c>.</param>
+/// <param name="IsDestructive"><see langword="true"/> for final/irreversible effects —
+/// the approval center confirms these via the critical severity of the
+/// <c>IConfirmationService</c>.</param>
+/// <param name="Fields">Relevant scalar snapshot parameters (name/value pairs, untrusted
+/// content — display as data).</param>
+public sealed record AiActionRequestEffectPreviewDto(
+    string Kind,
+    bool IsDestructive,
+    IReadOnlyList<AiActionRequestEffectFieldDto> Fields);
+
+/// <summary>
+/// One scalar field of the effect preview (a flattened parameter-snapshot entry).
+/// </summary>
+/// <param name="Name">Snapshot property name.</param>
+/// <param name="Value">Scalar value rendered as text (untrusted content).</param>
+public sealed record AiActionRequestEffectFieldDto(string Name, string? Value);
+
+/// <summary>
+/// Request body of <c>POST /api/mcp-approvals/batch</c>: a multi decision over own pending
+/// requests. Every request keeps its own state transition — partial success is reported
+/// per item (approval-konzept.md §7.4, F-1001).
+/// </summary>
+/// <param name="RequestIds">Requests to decide (server-clamped).</param>
+/// <param name="Approve"><see langword="true"/> approves, <see langword="false"/> rejects.</param>
+/// <param name="DecisionComment">Optional decision note applied to every decided request.</param>
+public sealed record AiActionRequestBatchRequest(
+    IReadOnlyList<Guid> RequestIds,
+    bool Approve,
+    string? DecisionComment);
+
+/// <summary>
+/// Per-request outcome of a batch decision.
+/// </summary>
+/// <param name="RequestId">The addressed request.</param>
+/// <param name="Succeeded"><see langword="true"/> when the transition was applied.</param>
+/// <param name="ErrorCode">Stable <c>Err_*</c> code of a failed item, or <see langword="null"/>.</param>
+public sealed record AiActionRequestBatchItemDto(Guid RequestId, bool Succeeded, string? ErrorCode);
 
 /// <summary>
 /// Request body of the owner decision endpoints (<c>approve</c>/<c>reject</c>): the optional

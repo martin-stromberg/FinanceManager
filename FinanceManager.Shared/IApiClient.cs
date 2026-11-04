@@ -1744,4 +1744,60 @@ public interface IApiClient
         DateTime? from = null, DateTime? to = null, short? category = null,
         Guid? mcpAccessId = null, Guid? correlationId = null, string? toolName = null,
         string? result = null);
+
+    /// <summary>Lists the approval requests of the current user (inbox and history), newest first.</summary>
+    /// <param name="status">Optional status filter (AiActionRequestStatus as short).</param>
+    /// <param name="accessId">Optional requesting-access filter.</param>
+    /// <param name="skip">Items to skip.</param>
+    /// <param name="take">Items to take.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching request list items.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.AiActionRequestListItemDto>> Mcp_ListActionRequestsAsync(
+        short? status = null, Guid? accessId = null, int skip = 0, int take = 100, CancellationToken ct = default);
+
+    /// <summary>Gets one approval request detail or null when not found.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The detail DTO or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.AiActionRequestDetailDto?> Mcp_GetActionRequestAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Approves a pending request. Returns false when not found/not owned.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="decisionComment">Optional decision comment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when approved.</returns>
+    Task<bool> Mcp_ApproveRequestAsync(Guid id, string? decisionComment = null, CancellationToken ct = default);
+
+    /// <summary>Rejects a pending request. Returns false when not found/not owned.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="decisionComment">Optional rejection reason (played back to the client).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when rejected.</returns>
+    Task<bool> Mcp_RejectRequestAsync(Guid id, string? decisionComment = null, CancellationToken ct = default);
+
+    /// <summary>Withdraws a still-pending request of the owner. Returns false when not found/not owned.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when withdrawn.</returns>
+    Task<bool> Mcp_CancelRequestAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Returns the number of currently pending approval requests of the current user (badge counter).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The pending request count.</returns>
+    Task<int> Mcp_GetPendingApprovalCountAsync(CancellationToken ct = default);
+
+    /// <summary>Applies one decision to a set of own pending requests; returns per-item outcomes.</summary>
+    /// <param name="requestIds">Requests to decide.</param>
+    /// <param name="approve">True approves, false rejects.</param>
+    /// <param name="decisionComment">Optional decision comment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Per-request outcome rows.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.AiActionRequestBatchItemDto>> Mcp_DecideActionRequestsBatchAsync(
+        IReadOnlyList<Guid> requestIds, bool approve, string? decisionComment = null, CancellationToken ct = default);
+
+    /// <summary>Loads the instance-wide MCP security overview (Admin role only; metadata only).</summary>
+    /// <param name="recent">Optional size of the security-events excerpt.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The security overview DTO or null when the caller is not an admin.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpSecurityOverviewDto?> Admin_McpSecurityOverviewAsync(int recent = 25, CancellationToken ct = default);
 }

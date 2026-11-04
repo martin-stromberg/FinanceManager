@@ -93,7 +93,7 @@ public sealed class AiActionRequestsControllerTests
 
         var dto = new AiActionRequestDetailDto(id, Guid.NewGuid(), "acc", "fm_x", "delete",
             "katalog-v1", "{}", null, 0, DateTime.UtcNow, DateTime.UtcNow.AddHours(72),
-            null, null, null, null, null, null, Guid.NewGuid(), "key", 0);
+            null, null, null, null, null, null, Guid.NewGuid(), "key", 0, null);
         svc.Setup(s => s.GetAsync(user.UserId, id, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         var ok = Assert.IsType<OkObjectResult>(await c.GetAsync(id, CancellationToken.None));
         Assert.Same(dto, ok.Value);

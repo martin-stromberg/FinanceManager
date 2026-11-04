@@ -276,14 +276,30 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
     {
         var purposeId = McpToolArguments.RequiredGuid(arguments, "purposeId");
         var existing = await _purposes.GetAsync(purposeId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { entity = "purpose", operation = "delete", purpose = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
             _scopeEvaluator, context, McpDataType.Budgets, "delete",
             "Deletes the budget purpose including its rules and overrides; the deletion is final.",
-            new { entity = "purpose", purposeId }, ct);
+            new { entity = "purpose", purposeId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityPurpose, purposeId, "Deleted", existing!.Name, null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "BudgetPurposeDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { entity = "purpose", operation = "delete", purposeId }), ct2);
+                if (!await _purposes.DeleteAsync(purposeId, owner, ct2))
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The budget purpose no longer exists.");
+                }
+                return (object)new { entity = "purpose", operation = "delete", applied = true, purposeId };
+            });
     }
 
     // ------------------------------------------------------------------
@@ -438,14 +454,30 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
     {
         var ruleId = McpToolArguments.RequiredGuid(arguments, "ruleId");
         var existing = await _rules.GetAsync(ruleId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { entity = "rule", operation = "delete", rule = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
             _scopeEvaluator, context, McpDataType.BudgetRules, "delete",
             "Deletes the budget rule permanently; future budget periods lose this rule.",
-            new { entity = "rule", ruleId }, ct);
+            new { entity = "rule", ruleId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityRule, ruleId, "Deleted", ruleId.ToString(), null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "BudgetRuleDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { entity = "rule", operation = "delete", ruleId }), ct2);
+                if (!await _rules.DeleteAsync(ruleId, owner, ct2))
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The budget rule no longer exists.");
+                }
+                return (object)new { entity = "rule", operation = "delete", applied = true, ruleId };
+            });
     }
 
     // ------------------------------------------------------------------
@@ -551,14 +583,30 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
     {
         var overrideId = McpToolArguments.RequiredGuid(arguments, "overrideId");
         var existing = await _overrides.GetAsync(overrideId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { entity = "override", operation = "delete", @override = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
             _scopeEvaluator, context, McpDataType.Budgets, "delete",
             "Deletes the monthly budget override; the period falls back to the rule amount.",
-            new { entity = "override", overrideId }, ct);
+            new { entity = "override", overrideId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityOverride, overrideId, "Deleted", overrideId.ToString(), null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "BudgetOverrideDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { entity = "override", operation = "delete", overrideId }), ct2);
+                if (!await _overrides.DeleteAsync(overrideId, owner, ct2))
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The budget override no longer exists.");
+                }
+                return (object)new { entity = "override", operation = "delete", applied = true, overrideId };
+            });
     }
 
     // ------------------------------------------------------------------
@@ -650,7 +698,7 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
     {
         var categoryId = McpToolArguments.RequiredGuid(arguments, "categoryId");
         var existing = await _categories.GetAsync(categoryId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { entity = "category", operation = "delete", category = (object?)null };
         }
@@ -658,7 +706,23 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
             _scopeEvaluator, context, McpDataType.BudgetCategories, "delete",
             "Deletes the budget category permanently; assigned purposes lose their " +
             "category link and category-scoped rules are removed.",
-            new { entity = "category", categoryId }, ct);
+            new { entity = "category", categoryId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityCategory, categoryId, "Deleted", existing!.Name, null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "BudgetCategoryDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { entity = "category", operation = "delete", categoryId }), ct2);
+                if (!await _categories.DeleteAsync(categoryId, owner, ct2))
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The budget category no longer exists.");
+                }
+                return (object)new { entity = "category", operation = "delete", applied = true, categoryId };
+            });
     }
 
     // ------------------------------------------------------------------

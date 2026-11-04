@@ -287,7 +287,7 @@ public sealed class FmCategoriesManageHandler : IMcpToolHandler
     {
         var categoryId = McpToolArguments.RequiredGuid(arguments, "categoryId");
         var existing = await GetExistingAsync(dataType, categoryId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { operation = "delete", category = (object?)null };
         }
@@ -295,7 +295,41 @@ public sealed class FmCategoriesManageHandler : IMcpToolHandler
             _scopeEvaluator, context, dataType, "delete",
             $"Deletes the {entityLabel} permanently. References of assigned records lose " +
             "their category link; the deletion is final.",
-            new { categoryType = entityLabel, categoryId }, ct);
+            new { categoryType = entityLabel, categoryId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(entityLabel, categoryId, "Deleted", NameOf(existing), null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, $"{entityLabel}Deleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { categoryType = entityLabel, operation = "delete", categoryId }), ct2);
+                var deleted = await DeleteByTypeAsync(dataType, categoryId, owner, ct2);
+                if (!deleted)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", $"The {entityLabel} no longer exists.");
+                }
+                return (object)new { operation = "delete", applied = true, categoryType = entityLabel, categoryId };
+            });
+    }
+
+    /// <summary>Dispatches the category delete to the typed service contract.</summary>
+    private async Task<bool> DeleteByTypeAsync(McpDataType dataType, Guid id, Guid owner, CancellationToken ct)
+    {
+        switch (dataType)
+        {
+            case McpDataType.ContactCategories:
+                await _contactCategories.DeleteAsync(id, owner, ct);
+                return true; // the contract signals failure via exceptions
+            case McpDataType.SavingsPlanCategories:
+                return await _savingsPlanCategories.DeleteAsync(id, owner, ct);
+            case McpDataType.SecurityCategories:
+                return await _securityCategories.DeleteAsync(id, owner, ct);
+            default:
+                return await _attachmentCategories.DeleteAsync(owner, id, ct);
+        }
     }
 
     private static object CategoryResult(object dto, string entityLabel)

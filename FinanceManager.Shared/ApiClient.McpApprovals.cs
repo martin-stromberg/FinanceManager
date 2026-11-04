@@ -94,5 +94,55 @@ public partial class ApiClient
         return true;
     }
 
+    /// <summary>
+    /// Returns the number of currently pending approval requests of the current user
+    /// (approval-center badge counter, F-1001).
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The pending request count.</returns>
+    public async Task<int> Mcp_GetPendingApprovalCountAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync("/api/mcp-approvals/count", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<int>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Applies one decision (approve or reject) to a set of own pending requests
+    /// (F-1001); the response carries one outcome row per request id.
+    /// </summary>
+    /// <param name="requestIds">Requests to decide.</param>
+    /// <param name="approve">True approves, false rejects.</param>
+    /// <param name="decisionComment">Optional decision comment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Per-request outcome rows.</returns>
+    public async Task<IReadOnlyList<AiActionRequestBatchItemDto>> Mcp_DecideActionRequestsBatchAsync(
+        IReadOnlyList<Guid> requestIds, bool approve, string? decisionComment = null, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync("/api/mcp-approvals/batch",
+            new AiActionRequestBatchRequest(requestIds, approve, decisionComment), ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AiActionRequestBatchItemDto>>(cancellationToken: ct)
+            ?? Array.Empty<AiActionRequestBatchItemDto>();
+    }
+
+    /// <summary>
+    /// Loads the instance-wide MCP security overview (Admin role only, F-1005):
+    /// metadata only — no business content of foreign users.
+    /// </summary>
+    /// <param name="recent">Optional size of the security-events excerpt.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The security overview DTO or null when the caller is not an admin.</returns>
+    public async Task<McpSecurityOverviewDto?> Admin_McpSecurityOverviewAsync(int recent = 25, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/mcp-audit/security-overview?recent={recent}", ct);
+        if (resp.StatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized)
+        {
+            return null;
+        }
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<McpSecurityOverviewDto>(cancellationToken: ct);
+    }
+
     #endregion MCP Approvals (AiActionRequest)
 }

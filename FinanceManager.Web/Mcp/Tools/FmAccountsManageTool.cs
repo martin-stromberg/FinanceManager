@@ -282,7 +282,7 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
     {
         var accountId = McpToolArguments.RequiredGuid(arguments, "accountId");
         var existing = await _accounts.GetAsync(accountId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { operation = "delete", account = (object?)null };
         }
@@ -290,7 +290,33 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
             _scopeEvaluator, context, McpDataType.Accounts, "delete",
             "Deletes the account including its linked sub-IBANs. Postings and statement " +
             "references lose their account link; the deletion is final.",
-            new { accountId }, ct);
+            new { accountId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityType, accountId, "Deleted", existing!.Name, null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "AccountDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { operation = "delete", accountId }), ct2);
+                bool deleted;
+                try
+                {
+                    deleted = await _accounts.DeleteAsync(accountId, owner, ct2);
+                }
+                catch
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw;
+                }
+                if (!deleted)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The account no longer exists.");
+                }
+                return (object)new { operation = "delete", applied = true, accountId };
+            });
     }
 
     private static object Result(AccountDto a)

@@ -77,7 +77,7 @@ public sealed class FmTaskStatusRequestTests
         var detail = new AiActionRequestDetailDto(requestId, accessId, "acc", "fm_contacts_manage",
             "delete", "katalog-v1", "{\"contactId\":\"c1\"}", "please clean", 1,
             DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddHours(70), DateTime.UtcNow.AddHours(-1),
-            owner, "ok", null, null, null, Guid.NewGuid(), "k1", 0);
+            owner, "ok", null, null, null, Guid.NewGuid(), "k1", 0, null);
         var approvals = new Mock<IMcpApprovalService>();
         approvals.Setup(a => a.GetAsync(owner, requestId, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
 
@@ -110,7 +110,7 @@ public sealed class FmTaskStatusRequestTests
         var requestId = Guid.NewGuid();
         var detail = new AiActionRequestDetailDto(requestId, Guid.NewGuid(), "other", "fm_x",
             "delete", "katalog-v1", "{}", null, 0, DateTime.UtcNow, DateTime.UtcNow.AddHours(72),
-            null, null, null, null, null, null, Guid.NewGuid(), "k1", 0);
+            null, null, null, null, null, null, Guid.NewGuid(), "k1", 0, null);
         var approvals = new Mock<IMcpApprovalService>();
         approvals.Setup(a => a.GetAsync(owner, requestId, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
 

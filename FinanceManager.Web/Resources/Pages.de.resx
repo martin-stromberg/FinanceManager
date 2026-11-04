@@ -3205,4 +3205,78 @@
   <data name="Mcp_Usage_OpenHistory" xml:space="preserve"><value>Verlauf öffnen</value></data>
   <data name="Mcp_Ribbon_AuditLog" xml:space="preserve"><value>Protokoll</value></data>
   <data name="Err_Mcp_InvalidArguments" xml:space="preserve"><value>Die Anfrage enthält ungültige Parameter.</value></data>
+  <data name="Nav_McpApprovals" xml:space="preserve"><value>Genehmigungen</value></data>
+  <data name="Nav_McpSecurity" xml:space="preserve"><value>KI-Sicherheit</value></data>
+  <data name="General_Title_McpApprovals" xml:space="preserve"><value>Genehmigungscenter</value></data>
+  <data name="General_Title_McpSecurity" xml:space="preserve"><value>KI-Sicherheit</value></data>
+  <data name="McpApproval_Title" xml:space="preserve"><value>Genehmigungscenter</value></data>
+  <data name="McpSecurity_Title" xml:space="preserve"><value>MCP-Sicherheitsübersicht</value></data>
+  <data name="McpApproval_View_Inbox" xml:space="preserve"><value>Eingang</value></data>
+  <data name="McpApproval_View_History" xml:space="preserve"><value>Historie</value></data>
+  <data name="McpApproval_Filter_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="McpApproval_Filter_AllStatuses" xml:space="preserve"><value>Alle entschiedenen</value></data>
+  <data name="McpApproval_Batch_Selected" xml:space="preserve"><value>{0} markiert</value></data>
+  <data name="McpApproval_Batch_Approve" xml:space="preserve"><value>Markierte freigeben</value></data>
+  <data name="McpApproval_Batch_Reject" xml:space="preserve"><value>Markierte ablehnen</value></data>
+  <data name="McpApproval_Batch_Result" xml:space="preserve"><value>{0} von {1} Anfragen entschieden.</value></data>
+  <data name="McpApproval_Destructive" xml:space="preserve"><value>endgültig</value></data>
+  <data name="McpApproval_ExpiresIn" xml:space="preserve"><value>läuft ab in {0} h {1} min</value></data>
+  <data name="McpApproval_Inbox_Empty" xml:space="preserve"><value>Keine offenen Anfragen – neue Genehmigungsanfragen Ihrer KI-Systeme erscheinen hier.</value></data>
+  <data name="McpApproval_History_Empty" xml:space="preserve"><value>Noch keine entschiedenen Anfragen.</value></data>
+  <data name="McpApproval_Detail_RequestId" xml:space="preserve"><value>Anfrage</value></data>
+  <data name="McpApproval_Detail_Access" xml:space="preserve"><value>Zugang</value></data>
+  <data name="McpApproval_Detail_Kind" xml:space="preserve"><value>Wirkung</value></data>
+  <data name="McpApproval_Detail_DecisionNote" xml:space="preserve"><value>Entscheidungsnotiz</value></data>
+  <data name="McpApproval_Detail_Failure" xml:space="preserve"><value>Fehlergrund</value></data>
+  <data name="McpApproval_Detail_ReasonText" xml:space="preserve"><value>Nachricht des KI-Systems (ungeprüfter Inhalt):</value></data>
+  <data name="McpApproval_Detail_Effect" xml:space="preserve"><value>Wirkungsvorschau (Parameter)</value></data>
+  <data name="McpApproval_Detail_Result" xml:space="preserve"><value>Ausführungsergebnis</value></data>
+  <data name="McpApproval_Action_Approve" xml:space="preserve"><value>Freigeben</value></data>
+  <data name="McpApproval_Action_Reject" xml:space="preserve"><value>Ablehnen</value></data>
+  <data name="McpApproval_Action_Cancel" xml:space="preserve"><value>Zurückziehen</value></data>
+  <data name="McpApproval_Comment_Placeholder" xml:space="preserve"><value>Kommentar (Pflicht bei Ablehnung)</value></data>
+  <data name="McpApproval_Comment_Hint" xml:space="preserve"><value>Der Kommentar wird dem KI-System als Entscheidungsfeedback zurückgespielt.</value></data>
+  <data name="McpApproval_Status_Pending" xml:space="preserve"><value>wartet</value></data>
+  <data name="McpApproval_Status_Approved" xml:space="preserve"><value>freigegeben</value></data>
+  <data name="McpApproval_Status_Rejected" xml:space="preserve"><value>abgelehnt</value></data>
+  <data name="McpApproval_Status_Executed" xml:space="preserve"><value>ausgeführt</value></data>
+  <data name="McpApproval_Status_Failed" xml:space="preserve"><value>fehlgeschlagen</value></data>
+  <data name="McpApproval_Status_Expired" xml:space="preserve"><value>abgelaufen</value></data>
+  <data name="McpApproval_Kind_Book" xml:space="preserve"><value>Entwurf verbuchen</value></data>
+  <data name="McpApproval_Kind_Commit" xml:space="preserve"><value>Entwurf committen</value></data>
+  <data name="McpApproval_Kind_Discard" xml:space="preserve"><value>Entwurf verwerfen</value></data>
+  <data name="McpApproval_Kind_Reverse" xml:space="preserve"><value>Buchung stornieren</value></data>
+  <data name="McpApproval_Kind_Merge" xml:space="preserve"><value>Zusammenführen (irreversibel)</value></data>
+  <data name="McpApproval_Kind_Delete" xml:space="preserve"><value>Endgültig löschen</value></data>
+  <data name="McpApproval_Kind_Archive" xml:space="preserve"><value>Archivieren</value></data>
+  <data name="McpApproval_Kind_Generic" xml:space="preserve"><value>Aktion</value></data>
+  <data name="Confirmation_McpApprove_Title" xml:space="preserve"><value>Aktion freigeben</value></data>
+  <data name="Confirmation_McpApprove_Message" xml:space="preserve"><value>Die angeforderte Aktion wird in die Ausführungswarteschlange gestellt und genau einmal ausgeführt. Fortfahren?</value></data>
+  <data name="Confirmation_McpApproveDestructive_Title" xml:space="preserve"><value>Endgültige Aktion freigeben</value></data>
+  <data name="Confirmation_McpApproveDestructive_Message" xml:space="preserve"><value>Diese Aktion hat eine endgültige, teilweise irreversible Wirkung (Löschen, Archivieren, Merge, Buchung oder Storno). Die Ausführung kann nicht rückgängig gemacht werden. Wirklich freigeben?</value></data>
+  <data name="Confirmation_McpBatchApprove_Title" xml:space="preserve"><value>Mehrere Anfragen freigeben</value></data>
+  <data name="Confirmation_McpBatchApprove_Message" xml:space="preserve"><value>Alle markierten Anfragen werden freigegeben – jede wird einzeln in die Ausführungswarteschlange gestellt. Fortfahren?</value></data>
+  <data name="McpSecurity_NotAuthorized" xml:space="preserve"><value>Diese Übersicht ist nur für Administratoren verfügbar.</value></data>
+  <data name="McpSecurity_Section_Switches" xml:space="preserve"><value>Globale Schalter</value></data>
+  <data name="McpSecurity_Switches_Hint" xml:space="preserve"><value>Die Schalter sind appsettings-Konfiguration (Betreiber-Ebene) und können hier nur angezeigt, nicht geändert werden.</value></data>
+  <data name="McpSecurity_Section_Aggregates" xml:space="preserve"><value>Aggregate (24 h)</value></data>
+  <data name="McpSecurity_Section_Accesses" xml:space="preserve"><value>Zugänge (alle Benutzer, nur Metadaten)</value></data>
+  <data name="McpSecurity_Accesses_Empty" xml:space="preserve"><value>Keine Zugänge konfiguriert.</value></data>
+  <data name="McpSecurity_Section_Events" xml:space="preserve"><value>Sicherheitsereignisse (neueste)</value></data>
+  <data name="McpSecurity_Events_Empty" xml:space="preserve"><value>Keine Sicherheitsereignisse.</value></data>
+  <data name="McpSecurity_State_On" xml:space="preserve"><value>aktiv</value></data>
+  <data name="McpSecurity_State_Off" xml:space="preserve"><value>deaktiviert</value></data>
+  <data name="McpSecurity_Agg_Accesses" xml:space="preserve"><value>Zugänge</value></data>
+  <data name="McpSecurity_Agg_Active" xml:space="preserve"><value>aktiv</value></data>
+  <data name="McpSecurity_Agg_Pending" xml:space="preserve"><value>Offene Anfragen</value></data>
+  <data name="McpSecurity_Agg_Queued" xml:space="preserve"><value>In Ausführung</value></data>
+  <data name="McpSecurity_Agg_Denied24" xml:space="preserve"><value>Verweigerte Aufrufe</value></data>
+  <data name="McpSecurity_Agg_RateLimited24" xml:space="preserve"><value>Rate-Limits</value></data>
+  <data name="McpSecurity_Agg_Failed24" xml:space="preserve"><value>Fehlgeschlagene Aufrufe</value></data>
+  <data name="McpSecurity_Col_Owner" xml:space="preserve"><value>Besitzer</value></data>
+  <data name="McpSecurity_Col_Pending" xml:space="preserve"><value>Offen</value></data>
+  <data name="Err_Mcp_ApprovalRequired" xml:space="preserve"><value>Diese Aktion erfordert Ihre Genehmigung.</value></data>
+  <data name="Err_TargetGone" xml:space="preserve"><value>Das Ziel der Aktion existiert nicht mehr.</value></data>
+  <data name="Err_AlreadyReversed" xml:space="preserve"><value>Die Buchung wurde bereits storniert.</value></data>
+  <data name="Err_ValidationFailed" xml:space="preserve"><value>Die fachliche Prüfung ist fehlgeschlagen.</value></data>
 </root>

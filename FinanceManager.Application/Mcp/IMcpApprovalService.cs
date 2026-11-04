@@ -120,6 +120,32 @@ public interface IMcpApprovalService
     Task<int> CountPendingAsync(Guid mcpAccessId, CancellationToken ct);
 
     /// <summary>
+    /// Counts the currently pending requests of an owner across all own accesses
+    /// (F-1001: the navigation badge of the approval center).
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Number of pending requests of the owner.</returns>
+    Task<int> CountPendingForOwnerAsync(Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
+    /// Applies one decision (approve or reject) to a set of own pending requests — the
+    /// batch operation of the approval center (F-1001, approval-konzept.md §7.4). Every
+    /// request keeps its own state transition and its own
+    /// <see cref="McpAuditCategory.ApprovalEvent"/> record; requests that are not pending,
+    /// not owned or missing are reported per item and do not abort the batch. All applied
+    /// transitions commit atomically in one save.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="requestIds">Requests to decide (server-clamped by the caller).</param>
+    /// <param name="approve"><see langword="true"/> approves, <see langword="false"/> rejects.</param>
+    /// <param name="note">Optional decision note applied to every decided request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>One outcome row per requested id.</returns>
+    Task<IReadOnlyList<AiActionRequestBatchItemDto>> DecideBatchAsync(
+        Guid ownerUserId, IReadOnlyList<Guid> requestIds, bool approve, string? note, CancellationToken ct);
+
+    /// <summary>
     /// System-side withdrawal of all open (pending and approved-not-yet-executing) requests
     /// of one access — the revocation/deactivation transition of approval-konzept.md §6.3.
     /// Approved requests under an active claim are left untouched (a started execution

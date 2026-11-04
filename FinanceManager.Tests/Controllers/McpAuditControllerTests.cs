@@ -36,7 +36,8 @@ public sealed class McpAuditControllerTests
             .Returns((string key) => new LocalizedString(key, key, resourceNotFound: false));
 
         var controller = new McpAuditController(
-            svc.Object, user, NullLogger<McpAuditController>.Instance, localizer.Object)
+            svc.Object, Mock.Of<FinanceManager.Application.Mcp.IMcpSecurityOverviewService>(),
+            user, NullLogger<McpAuditController>.Instance, localizer.Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

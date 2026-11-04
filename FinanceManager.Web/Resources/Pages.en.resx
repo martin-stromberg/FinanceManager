@@ -3205,4 +3205,78 @@
   <data name="Mcp_Usage_OpenHistory" xml:space="preserve"><value>Open history</value></data>
   <data name="Mcp_Ribbon_AuditLog" xml:space="preserve"><value>Audit log</value></data>
   <data name="Err_Mcp_InvalidArguments" xml:space="preserve"><value>The request contains invalid arguments.</value></data>
+  <data name="Nav_McpApprovals" xml:space="preserve"><value>Approvals</value></data>
+  <data name="Nav_McpSecurity" xml:space="preserve"><value>AI security</value></data>
+  <data name="General_Title_McpApprovals" xml:space="preserve"><value>Approval center</value></data>
+  <data name="General_Title_McpSecurity" xml:space="preserve"><value>AI security</value></data>
+  <data name="McpApproval_Title" xml:space="preserve"><value>Approval center</value></data>
+  <data name="McpSecurity_Title" xml:space="preserve"><value>MCP security overview</value></data>
+  <data name="McpApproval_View_Inbox" xml:space="preserve"><value>Inbox</value></data>
+  <data name="McpApproval_View_History" xml:space="preserve"><value>History</value></data>
+  <data name="McpApproval_Filter_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="McpApproval_Filter_AllStatuses" xml:space="preserve"><value>All decided</value></data>
+  <data name="McpApproval_Batch_Selected" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="McpApproval_Batch_Approve" xml:space="preserve"><value>Approve selected</value></data>
+  <data name="McpApproval_Batch_Reject" xml:space="preserve"><value>Reject selected</value></data>
+  <data name="McpApproval_Batch_Result" xml:space="preserve"><value>{0} of {1} requests decided.</value></data>
+  <data name="McpApproval_Destructive" xml:space="preserve"><value>final</value></data>
+  <data name="McpApproval_ExpiresIn" xml:space="preserve"><value>expires in {0} h {1} min</value></data>
+  <data name="McpApproval_Inbox_Empty" xml:space="preserve"><value>No open requests — new approval requests from your AI systems appear here.</value></data>
+  <data name="McpApproval_History_Empty" xml:space="preserve"><value>No decided requests yet.</value></data>
+  <data name="McpApproval_Detail_RequestId" xml:space="preserve"><value>Request</value></data>
+  <data name="McpApproval_Detail_Access" xml:space="preserve"><value>Access</value></data>
+  <data name="McpApproval_Detail_Kind" xml:space="preserve"><value>Effect</value></data>
+  <data name="McpApproval_Detail_DecisionNote" xml:space="preserve"><value>Decision note</value></data>
+  <data name="McpApproval_Detail_Failure" xml:space="preserve"><value>Failure reason</value></data>
+  <data name="McpApproval_Detail_ReasonText" xml:space="preserve"><value>Message from the AI system (untrusted content):</value></data>
+  <data name="McpApproval_Detail_Effect" xml:space="preserve"><value>Effect preview (parameters)</value></data>
+  <data name="McpApproval_Detail_Result" xml:space="preserve"><value>Execution result</value></data>
+  <data name="McpApproval_Action_Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="McpApproval_Action_Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="McpApproval_Action_Cancel" xml:space="preserve"><value>Withdraw</value></data>
+  <data name="McpApproval_Comment_Placeholder" xml:space="preserve"><value>Comment (required for rejection)</value></data>
+  <data name="McpApproval_Comment_Hint" xml:space="preserve"><value>The comment is played back to the AI system as decision feedback.</value></data>
+  <data name="McpApproval_Status_Pending" xml:space="preserve"><value>pending</value></data>
+  <data name="McpApproval_Status_Approved" xml:space="preserve"><value>approved</value></data>
+  <data name="McpApproval_Status_Rejected" xml:space="preserve"><value>rejected</value></data>
+  <data name="McpApproval_Status_Executed" xml:space="preserve"><value>executed</value></data>
+  <data name="McpApproval_Status_Failed" xml:space="preserve"><value>failed</value></data>
+  <data name="McpApproval_Status_Expired" xml:space="preserve"><value>expired</value></data>
+  <data name="McpApproval_Kind_Book" xml:space="preserve"><value>Book draft</value></data>
+  <data name="McpApproval_Kind_Commit" xml:space="preserve"><value>Commit draft</value></data>
+  <data name="McpApproval_Kind_Discard" xml:space="preserve"><value>Discard draft</value></data>
+  <data name="McpApproval_Kind_Reverse" xml:space="preserve"><value>Reverse posting</value></data>
+  <data name="McpApproval_Kind_Merge" xml:space="preserve"><value>Merge (irreversible)</value></data>
+  <data name="McpApproval_Kind_Delete" xml:space="preserve"><value>Delete permanently</value></data>
+  <data name="McpApproval_Kind_Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="McpApproval_Kind_Generic" xml:space="preserve"><value>Action</value></data>
+  <data name="Confirmation_McpApprove_Title" xml:space="preserve"><value>Approve action</value></data>
+  <data name="Confirmation_McpApprove_Message" xml:space="preserve"><value>The requested action enters the execution queue and runs exactly once. Continue?</value></data>
+  <data name="Confirmation_McpApproveDestructive_Title" xml:space="preserve"><value>Approve final action</value></data>
+  <data name="Confirmation_McpApproveDestructive_Message" xml:space="preserve"><value>This action has a final, partly irreversible effect (delete, archive, merge, booking or reversal). The execution cannot be undone. Really approve?</value></data>
+  <data name="Confirmation_McpBatchApprove_Title" xml:space="preserve"><value>Approve multiple requests</value></data>
+  <data name="Confirmation_McpBatchApprove_Message" xml:space="preserve"><value>All selected requests will be approved — each enters the execution queue individually. Continue?</value></data>
+  <data name="McpSecurity_NotAuthorized" xml:space="preserve"><value>This overview is available to administrators only.</value></data>
+  <data name="McpSecurity_Section_Switches" xml:space="preserve"><value>Global switches</value></data>
+  <data name="McpSecurity_Switches_Hint" xml:space="preserve"><value>The switches are appsettings configuration (operator level) and are shown read-only here.</value></data>
+  <data name="McpSecurity_Section_Aggregates" xml:space="preserve"><value>Aggregates (24 h)</value></data>
+  <data name="McpSecurity_Section_Accesses" xml:space="preserve"><value>Accesses (all users, metadata only)</value></data>
+  <data name="McpSecurity_Accesses_Empty" xml:space="preserve"><value>No accesses configured.</value></data>
+  <data name="McpSecurity_Section_Events" xml:space="preserve"><value>Security events (newest)</value></data>
+  <data name="McpSecurity_Events_Empty" xml:space="preserve"><value>No security events.</value></data>
+  <data name="McpSecurity_State_On" xml:space="preserve"><value>on</value></data>
+  <data name="McpSecurity_State_Off" xml:space="preserve"><value>off</value></data>
+  <data name="McpSecurity_Agg_Accesses" xml:space="preserve"><value>Accesses</value></data>
+  <data name="McpSecurity_Agg_Active" xml:space="preserve"><value>active</value></data>
+  <data name="McpSecurity_Agg_Pending" xml:space="preserve"><value>Pending requests</value></data>
+  <data name="McpSecurity_Agg_Queued" xml:space="preserve"><value>In execution</value></data>
+  <data name="McpSecurity_Agg_Denied24" xml:space="preserve"><value>Denied calls</value></data>
+  <data name="McpSecurity_Agg_RateLimited24" xml:space="preserve"><value>Rate limits</value></data>
+  <data name="McpSecurity_Agg_Failed24" xml:space="preserve"><value>Failed calls</value></data>
+  <data name="McpSecurity_Col_Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="McpSecurity_Col_Pending" xml:space="preserve"><value>Open</value></data>
+  <data name="Err_Mcp_ApprovalRequired" xml:space="preserve"><value>This action requires your approval.</value></data>
+  <data name="Err_TargetGone" xml:space="preserve"><value>The target of the action no longer exists.</value></data>
+  <data name="Err_AlreadyReversed" xml:space="preserve"><value>The posting was already reversed.</value></data>
+  <data name="Err_ValidationFailed" xml:space="preserve"><value>The business validation failed.</value></data>
 </root>

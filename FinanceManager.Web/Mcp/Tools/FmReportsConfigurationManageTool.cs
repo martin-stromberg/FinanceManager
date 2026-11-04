@@ -262,7 +262,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
     {
         var favoriteId = McpToolArguments.RequiredGuid(arguments, "favoriteId");
         var existing = await _favorites.GetAsync(favoriteId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { entity = "reportFavorite", operation = "delete", favorite = (object?)null };
         }
@@ -270,7 +270,23 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
             _scopeEvaluator, context, McpDataType.Reports, "delete",
             "Deletes the report favorite permanently; home KPIs referencing it lose " +
             "their favorite link.",
-            new { entity = "reportFavorite", favoriteId }, ct);
+            new { entity = "reportFavorite", favoriteId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityFavorite, favoriteId, "Deleted", existing!.Name, null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "ReportFavoriteDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { entity = "reportFavorite", operation = "delete", favoriteId }), ct2);
+                if (!await _favorites.DeleteAsync(favoriteId, owner, ct2))
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The report favorite no longer exists.");
+                }
+                return (object)new { entity = "reportFavorite", operation = "delete", applied = true, favoriteId };
+            });
     }
 
     // ------------------------------------------------------------------
@@ -401,7 +417,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
     {
         var kpiId = McpToolArguments.RequiredGuid(arguments, "kpiId");
         var existing = (await _kpis.ListAsync(owner, ct)).FirstOrDefault(k => k.Id == kpiId);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { entity = "homeKpi", operation = "delete", homeKpi = (object?)null };
         }
@@ -409,7 +425,23 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
             _scopeEvaluator, context, McpDataType.KpiConfigurations, "delete",
             "Deletes the home KPI configuration entry permanently; it disappears from " +
             "the owner's dashboard.",
-            new { entity = "homeKpi", kpiId }, ct);
+            new { entity = "homeKpi", kpiId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityKpi, kpiId, "Deleted", existing!.Title ?? kpiId.ToString(), null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "HomeKpiDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { entity = "homeKpi", operation = "delete", kpiId }), ct2);
+                if (!await _kpis.DeleteAsync(kpiId, owner, ct2))
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The home KPI no longer exists.");
+                }
+                return (object)new { entity = "homeKpi", operation = "delete", applied = true, kpiId };
+            });
     }
 
     // ------------------------------------------------------------------

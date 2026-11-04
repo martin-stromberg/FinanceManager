@@ -170,6 +170,30 @@ internal static class McpMasterDataGuards
         };
     }
 
+    /// <summary>
+    /// Execution-time existence gate of a destructive operation (approval-konzept.md §5.2):
+    /// a request approved against a record that vanished between approval and queue
+    /// execution must end <c>Failed</c> with the classified reason <c>Err_TargetGone</c>
+    /// instead of answering the silent 404-shaped result of the interactive path.
+    /// </summary>
+    /// <param name="context">The tool call context (carries the execution mode).</param>
+    /// <param name="target">The resolved target record, or <see langword="null"/>.</param>
+    /// <param name="operation">The requested sub-operation (diagnostic).</param>
+    /// <returns><see langword="true"/> when the caller should emit its normal
+    /// target-missing answer (interactive mode with a missing target).</returns>
+    /// <exception cref="McpToolException">
+    /// Approved-execution mode with a missing target — <c>Err_TargetGone</c>.
+    /// </exception>
+    public static bool ThrowIfExecutionTargetGone(McpToolCallContext context, object? target, string operation)
+    {
+        if (target is null && context.Mode == McpToolExecutionMode.ApprovedExecution)
+        {
+            throw new McpToolException("Err_TargetGone",
+                $"The target of operation '{operation}' no longer exists.");
+        }
+        return target is null;
+    }
+
     // ------------------------------------------------------------------
     // Foreign-reference resolution (a foreign id behaves like a missing record)
     // ------------------------------------------------------------------

@@ -183,6 +183,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<FinanceManager.Application.Mcp.IMcpApprovalGate, FinanceManager.Infrastructure.Mcp.McpApprovalGate>();
         services.AddScoped<FinanceManager.Application.Mcp.IMcpApprovalService, FinanceManager.Infrastructure.Mcp.McpApprovalService>();
         services.AddScoped<FinanceManager.Application.Mcp.IAiActionExecutionEngine, FinanceManager.Infrastructure.Mcp.AiActionExecutionEngine>();
+        // Admin security overview (F-1005): metadata-only instance view, Admin-role only.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpSecurityOverviewService, FinanceManager.Infrastructure.Mcp.McpSecurityOverviewService>();
 
         return services;
     }

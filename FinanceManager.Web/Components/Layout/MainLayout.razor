@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
+@inject FinanceManager.Shared.IApiClient Api
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 @inject Microsoft.AspNetCore.Components.NavigationManager Nav
 @inject LoadingBarService LoadingBar
@@ -29,8 +30,18 @@
                 <li><NavLink href="/reports">@L["Nav_Reports"]</NavLink></li>
                 <li><NavLink href="/card/setup">@L["Nav_Setup"]</NavLink></li>
                 <li><NavLink href="/list/mcp-accesses">@L["Nav_McpAccesses"]</NavLink></li>
+                <li>
+                    <NavLink href="/card/mcp-approvals">
+                        @L["Nav_McpApprovals"]
+                        @if (_mcpPendingCount > 0)
+                        {
+                            <span style="display:inline-block;min-width:1.3rem;margin-left:.35rem;padding:0 .3rem;border-radius:8px;background:#e6a03c;color:#1a1a1a;font-size:.75rem;text-align:center;">@_mcpPendingCount</span>
+                        }
+                    </NavLink>
+                </li>
                 @if (CurrentUser.IsAdmin)
                 {
+                    <li><NavLink href="/card/mcp-security">@L["Nav_McpSecurity"]</NavLink></li>
                     <li><NavLink href="/list/users">@L["Nav_Users"]</NavLink></li>
                 }
                 <li><NavLink href="/help">📖 @L["Nav_Help"]</NavLink></li>
@@ -73,12 +84,33 @@
     private bool _useFullWidth;
     private IDisposable? _locationChangingRegistration;
     private bool _keepaliveRegistered;
+    private int _mcpPendingCount;
 
     protected override void OnInitialized()
     {
         UpdateLogo(Nav.Uri);
         _locationChangingRegistration = Nav.RegisterLocationChangingHandler(HandleLocationChanging);
         Nav.LocationChanged += HandleLocationChanged;
+        _ = RefreshMcpPendingBadgeAsync();
+    }
+
+    /// <summary>Refreshes the approval-center pending badge (best effort — failures hide the badge).</summary>
+    private async Task RefreshMcpPendingBadgeAsync()
+    {
+        try
+        {
+            if (!CurrentUser.IsAuthenticated)
+            {
+                _mcpPendingCount = 0;
+                return;
+            }
+            _mcpPendingCount = await Api.Mcp_GetPendingApprovalCountAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            _mcpPendingCount = 0; // badge is informational only
+        }
     }
 
     private async ValueTask HandleLocationChanging(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
@@ -94,6 +126,7 @@
         UpdateLogo(e.Location);
         _ = PingKeepaliveAsync();
         _ = StopLoadingBarAsync();
+        _ = RefreshMcpPendingBadgeAsync();
         _ = InvokeAsync(StateHasChanged);
     }
 
