@@ -48,6 +48,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
     private readonly INotificationWriter _notifications;
     private readonly IServiceProvider _services;
     private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly IMcpRequestStatusPublisher? _statusPublisher;
     private readonly ILogger<AiActionExecutionEngine> _logger;
 
     /// <summary>Creates the engine.</summary>
@@ -59,6 +60,8 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
     /// <param name="services">Scope service provider for handler resolution.</param>
     /// <param name="options">MCP options (write-stop lid, executor timeouts/batch).</param>
     /// <param name="logger">Logger.</param>
+    /// <param name="statusPublisher">Optional SSE status publisher (F-1101) — after-commit,
+    /// best effort; <see langword="null"/> disables the push channel (polling fallback).</param>
     public AiActionExecutionEngine(
         AppDbContext db,
         IMcpScopeEvaluator scopeEvaluator,
@@ -67,7 +70,8 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         INotificationWriter notifications,
         IServiceProvider services,
         IOptionsMonitor<McpOptions> options,
-        ILogger<AiActionExecutionEngine> logger)
+        ILogger<AiActionExecutionEngine> logger,
+        IMcpRequestStatusPublisher? statusPublisher = null)
     {
         _db = db;
         _scopeEvaluator = scopeEvaluator;
@@ -77,6 +81,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         _services = services;
         _options = options;
         _logger = logger;
+        _statusPublisher = statusPublisher;
     }
 
     /// <inheritdoc />
@@ -145,7 +150,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
             }
             var snapshot = await _db.AiActionRequests.AsNoTracking()
                 .Where(r => r.Id == id)
-                .Select(r => new { r.OwnerUserId, r.McpAccessId, r.McpAccessName, r.ToolName, r.CatalogVersion, r.CorrelationId })
+                .Select(r => new { r.OwnerUserId, r.McpAccessId, r.McpAccessName, r.ToolName, r.ActionKey, r.CatalogVersion, r.CorrelationId })
                 .FirstAsync(ct);
             await _auditWriter.WriteAsync(new McpAuditWriteRequest(
                 McpAuditCategory.ApprovalEvent, "ApprovalExpired", "Success",
@@ -154,6 +159,10 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
                 CatalogVersion: snapshot.CatalogVersion, Context: "System/Job",
                 CorrelationId: snapshot.CorrelationId, RelatedRequestId: id,
                 PayloadJson: JsonSerializer.Serialize(new { requestId = id })), ct);
+            await TryPublishEventAsync(new McpRequestStatusEvent(
+                snapshot.McpAccessId, snapshot.OwnerUserId, id,
+                AiActionRequestStatus.Expired.ToString(), snapshot.ToolName,
+                snapshot.ActionKey, snapshot.CorrelationId, FailureReason: null, utcNow), ct);
             expired++;
         }
         return expired;
@@ -199,12 +208,18 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
             return false;
         }
 
+        // Queue progress hint (F-1101): the claim won — subscribers see "Executing" while
+        // the persisted status is still Approved (the pseudo status is documented on
+        // McpRequestStatusEvent.Executing).
+        await TryPublishEventAsync(McpRequestStatusEvent.FromRequest(request, McpRequestStatusEvent.Executing), ct);
+
         // 1) Deadline check — an approved request that passed its expiry is expired, not executed.
         if (request.ExpiresUtc <= now)
         {
             request.Expire(now);
             await StageRequestAuditAsync(request, "ApprovalExpired", "Success", null, ct);
             await _db.SaveChangesAsync(ct);
+            await TryPublishEventAsync(McpRequestStatusEvent.FromRequest(request), ct);
             return true;
         }
 
@@ -217,6 +232,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
             request.WithdrawBySystem("Zugang entzogen oder nicht mehr verwendbar");
             await StageRequestAuditAsync(request, "ApprovalWithdrawn", "Success", null, ct);
             await _db.SaveChangesAsync(ct);
+            await TryPublishEventAsync(McpRequestStatusEvent.FromRequest(request), ct);
             return true;
         }
 
@@ -321,6 +337,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         await StageRequestAuditAsync(request, "ApprovalExecuted", "Success",
             JsonSerializer.Serialize(new { requestId = request.Id }), ct);
         await _db.SaveChangesAsync(ct);
+        await TryPublishEventAsync(McpRequestStatusEvent.FromRequest(request), ct);
         await _notifications.CreateForUserAsync(
             request.OwnerUserId, "MCP-Aktion ausgeführt",
             $"Die genehmigte Aktion '{request.ToolName}' wurde ausgeführt.",
@@ -340,6 +357,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         await StageRequestAuditAsync(request, "ApprovalFailed", "Failed",
             JsonSerializer.Serialize(new { requestId = request.Id, failureReason }), ct);
         await _db.SaveChangesAsync(ct);
+        await TryPublishEventAsync(McpRequestStatusEvent.FromRequest(request), ct);
         await _notifications.CreateForUserAsync(
             request.OwnerUserId, "MCP-Aktion fehlgeschlagen",
             $"Die genehmigte Aktion '{request.ToolName}' ist fehlgeschlagen ({failureReason}).",
@@ -347,6 +365,28 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
             $"mcp-approval-result:{request.Id}", ct);
         _logger.LogWarning("Approval request {RequestId} failed: {Reason}", request.Id, failureReason);
         return true;
+    }
+
+    /// <summary>
+    /// Best-effort push of one request status event to the SSE subscribers of the access
+    /// (F-1101): invoked strictly after the state change so a failing channel can never
+    /// roll back the transition; a failing publisher is logged and swallowed — the
+    /// request row plus <c>fm_task_status</c> polling stay the source of truth.
+    /// </summary>
+    private async Task TryPublishEventAsync(McpRequestStatusEvent statusEvent, CancellationToken ct)
+    {
+        if (_statusPublisher is null)
+        {
+            return;
+        }
+        try
+        {
+            await _statusPublisher.PublishAsync(statusEvent, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish the MCP request status of {RequestId}", statusEvent.RequestId);
+        }
     }
 
     /// <summary>Stages an approval-event record linked to the request.</summary>

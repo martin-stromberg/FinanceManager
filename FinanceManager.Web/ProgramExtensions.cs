@@ -440,6 +440,12 @@ namespace FinanceManager.Web
             // ones. Both are inert while Mcp:Enabled is off.
             builder.Services.AddHostedService<FinanceManager.Web.Services.AiActionExecutorService>();
             builder.Services.AddHostedService<FinanceManager.Web.Services.AiActionExpiryService>();
+            // Agent workflows (EP-11): the SSE status publisher fans request transitions
+            // out to the GET /mcp subscriptions of the owning access (F-1101); the
+            // retention runner sweeps expired audit entries and terminal requests (F-1104).
+            // Both are inert while Mcp:Enabled is off.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpRequestStatusPublisher, FinanceManager.Web.Mcp.McpRequestStatusPublisher>();
+            builder.Services.AddHostedService<FinanceManager.Web.Services.McpAuditRetentionService>();
             // Read-only tool catalog (EP-02): descriptors are singletons (compiled catalog),
             // handlers are scoped adapters on the I*Service contracts.
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeDescriptor>();

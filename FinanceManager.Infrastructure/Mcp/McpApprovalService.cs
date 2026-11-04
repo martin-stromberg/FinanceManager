@@ -38,6 +38,7 @@ public sealed class McpApprovalService : IMcpApprovalService
     private readonly IMcpToolRegistry _registry;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly IMcpRequestStatusPublisher? _statusPublisher;
     private readonly ILogger<McpApprovalService> _logger;
 
     /// <summary>Creates the service.</summary>
@@ -50,6 +51,8 @@ public sealed class McpApprovalService : IMcpApprovalService
     /// coverage check.</param>
     /// <param name="options">MCP options (expiry default, pending limit).</param>
     /// <param name="logger">Logger.</param>
+    /// <param name="statusPublisher">Optional SSE status publisher (F-1101) — after-commit,
+    /// best effort; <see langword="null"/> disables the push channel (polling fallback).</param>
     public McpApprovalService(
         AppDbContext db,
         IMcpAuditWriter auditWriter,
@@ -57,7 +60,8 @@ public sealed class McpApprovalService : IMcpApprovalService
         IMcpToolRegistry registry,
         IMcpScopeEvaluator scopeEvaluator,
         IOptionsMonitor<McpOptions> options,
-        ILogger<McpApprovalService> logger)
+        ILogger<McpApprovalService> logger,
+        IMcpRequestStatusPublisher? statusPublisher = null)
     {
         _db = db;
         _auditWriter = auditWriter;
@@ -66,6 +70,7 @@ public sealed class McpApprovalService : IMcpApprovalService
         _scopeEvaluator = scopeEvaluator;
         _options = options;
         _logger = logger;
+        _statusPublisher = statusPublisher;
     }
 
     /// <inheritdoc />
@@ -131,6 +136,7 @@ public sealed class McpApprovalService : IMcpApprovalService
                 requestId = request.Id,
                 actionKey = request.ActionKey,
                 initialStatus = request.Status.ToString(),
+                approvalMode = access.ApprovalMode.ToString(),
                 expiresUtc = request.ExpiresUtc
             })), ct);
         try
@@ -159,6 +165,12 @@ public sealed class McpApprovalService : IMcpApprovalService
                 NotificationType.EventDriven, NotificationTarget.Dashboard, DateTime.UtcNow,
                 $"mcp-approval-request:{request.Id}", ct);
         }
+        else
+        {
+            // Pre-approved requests start directly Approved — the SSE subscribers of the
+            // access see the queue placement immediately (F-1101).
+            await TryPublishAsync(request, ct);
+        }
         return request;
     }
 
@@ -181,6 +193,7 @@ public sealed class McpApprovalService : IMcpApprovalService
         }
         await StageDecisionAsync(request, "Approved", note, ct);
         await _db.SaveChangesAsync(ct);
+        await TryPublishAsync(request, ct);
         return true;
     }
 
@@ -203,6 +216,7 @@ public sealed class McpApprovalService : IMcpApprovalService
         }
         await StageDecisionAsync(request, "Rejected", note, ct);
         await _db.SaveChangesAsync(ct);
+        await TryPublishAsync(request, ct);
         return true;
     }
 
@@ -225,6 +239,7 @@ public sealed class McpApprovalService : IMcpApprovalService
         }
         await StageDecisionAsync(request, "Withdrawn", null, ct);
         await _db.SaveChangesAsync(ct);
+        await TryPublishAsync(request, ct);
         return true;
     }
 
@@ -320,11 +335,17 @@ public sealed class McpApprovalService : IMcpApprovalService
             changed = true;
         }
 
+        var decided = new List<AiActionRequest>();
         if (changed)
         {
             // One save — every decided request carries its own transition plus its own
             // ApprovalEvent record (approval-konzept.md §7.4).
             await _db.SaveChangesAsync(ct);
+            decided.AddRange(results.Where(r => r.Succeeded).Select(r => byId[r.RequestId]));
+        }
+        foreach (var request in decided)
+        {
+            await TryPublishAsync(request, ct);
         }
         return results;
     }
@@ -349,6 +370,10 @@ public sealed class McpApprovalService : IMcpApprovalService
             await _db.SaveChangesAsync(ct);
             _logger.LogInformation("Withdrew {Count} open approval requests of access {AccessId}: {Reason}",
                 open.Count, mcpAccessId, reason);
+            foreach (var request in open)
+            {
+                await TryPublishAsync(request, ct);
+            }
         }
         return open.Count;
     }
@@ -403,8 +428,76 @@ public sealed class McpApprovalService : IMcpApprovalService
             _logger.LogInformation(
                 "Withdrew {Count} open approval requests of access {AccessId} — required scope no longer covered: {Reason}",
                 withdrawn, mcpAccessId, reason);
+            foreach (var request in open.Where(r => r.Status == AiActionRequestStatus.Rejected))
+            {
+                await TryPublishAsync(request, ct);
+            }
         }
         return withdrawn;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The counters are cheap aggregate reads over the request table — the runbook view of
+    /// agent workloads (F-1103) derived from the same queue the SSE channel notifies about.
+    /// </remarks>
+    public async Task<McpAccessMonitoringDto?> GetAccessMonitoringAsync(
+        Guid ownerUserId, Guid mcpAccessId, CancellationToken ct)
+    {
+        var owns = await _db.McpAccesses.AsNoTracking()
+            .AnyAsync(a => a.Id == mcpAccessId && a.OwnerUserId == ownerUserId, ct);
+        if (!owns)
+        {
+            return null;
+        }
+
+        var now = DateTime.UtcNow;
+        var dayAgo = now.AddHours(-24);
+        var own = _db.AiActionRequests.AsNoTracking().Where(r => r.McpAccessId == mcpAccessId);
+
+        var pendingCount = await own.CountAsync(r => r.Status == AiActionRequestStatus.Pending, ct);
+        var approvedCount = await own.CountAsync(r => r.Status == AiActionRequestStatus.Approved, ct);
+        var oldestPending = await own.Where(r => r.Status == AiActionRequestStatus.Pending)
+            .MinAsync(r => (DateTime?)r.RequestedUtc, ct);
+        var lastRequest = await own.MaxAsync(r => (DateTime?)r.RequestedUtc, ct);
+        var requested24 = await own.CountAsync(r => r.RequestedUtc >= dayAgo, ct);
+        var executed24 = await own.CountAsync(
+            r => r.Status == AiActionRequestStatus.Executed && r.ExecutedUtc >= dayAgo, ct);
+        var failed24 = await own.CountAsync(
+            r => r.Status == AiActionRequestStatus.Failed && r.ExecutedUtc >= dayAgo, ct);
+        var rejected24 = await own.CountAsync(
+            r => r.Status == AiActionRequestStatus.Rejected && r.DecidedUtc >= dayAgo, ct);
+        var expired24 = await own.CountAsync(
+            r => r.Status == AiActionRequestStatus.Expired && r.DecidedUtc >= dayAgo, ct);
+        var finished24 = executed24 + failed24;
+
+        return new McpAccessMonitoringDto(
+            mcpAccessId, pendingCount, approvedCount, oldestPending,
+            requested24, executed24, failed24, rejected24, expired24,
+            finished24 == 0 ? 0d : (double)failed24 / finished24,
+            lastRequest);
+    }
+
+    /// <summary>
+    /// Best-effort push of one request status change to the SSE subscribers of the access
+    /// (F-1101): invoked strictly after the commit so a dropped/slow channel can never
+    /// roll back the transition; a failing publisher is logged and swallowed — the
+    /// request row plus <c>fm_task_status</c> polling stay the source of truth.
+    /// </summary>
+    private async Task TryPublishAsync(AiActionRequest request, CancellationToken ct)
+    {
+        if (_statusPublisher is null)
+        {
+            return;
+        }
+        try
+        {
+            await _statusPublisher.PublishAsync(McpRequestStatusEvent.FromRequest(request), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish the MCP request status of {RequestId}", request.Id);
+        }
     }
 
     /// <summary>Stages the <c>ApprovalWithdrawn</c> audit record of a system withdrawal.</summary>

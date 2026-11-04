@@ -185,6 +185,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<FinanceManager.Application.Mcp.IAiActionExecutionEngine, FinanceManager.Infrastructure.Mcp.AiActionExecutionEngine>();
         // Admin security overview (F-1005): metadata-only instance view, Admin-role only.
         services.AddScoped<FinanceManager.Application.Mcp.IMcpSecurityOverviewService, FinanceManager.Infrastructure.Mcp.McpSecurityOverviewService>();
+        // Retention executor (F-1104): the only deletion path on the audit table; writes
+        // RetentionPurged anchor entries so truncated chains stay verifiable.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditRetention, FinanceManager.Infrastructure.Mcp.McpAuditRetentionExecutor>();
 
         return services;
     }

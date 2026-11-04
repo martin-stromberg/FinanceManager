@@ -32,6 +32,12 @@ public sealed class McpOptions
 
     /// <summary>Anomaly-detection thresholds.</summary>
     public McpAnomalyOptions Anomaly { get; set; } = new();
+
+    /// <summary>SSE subscription options of the <c>GET /mcp</c> stream (F-1101).</summary>
+    public McpSseOptions Sse { get; set; } = new();
+
+    /// <summary>Audit/request retention options (F-1104, audit-konzept.md §5).</summary>
+    public McpRetentionOptions Retention { get; set; } = new();
 }
 
 /// <summary>
@@ -169,4 +175,67 @@ public sealed class McpAnomalyOptions
 
     /// <summary>Cooldown (minutes) between two anomaly notifications of the same access.</summary>
     public int NotificationCooldownMinutes { get; set; } = 30;
+
+    /// <summary>
+    /// Number of failed request executions of one access within
+    /// <see cref="ExecutionFailureWindowMinutes"/> that triggers an owner notification
+    /// (agent workload alert, F-1103).
+    /// </summary>
+    public int ExecutionFailureThreshold { get; set; } = 5;
+
+    /// <summary>Sliding window (minutes) for the execution-failure counter.</summary>
+    public int ExecutionFailureWindowMinutes { get; set; } = 30;
+}
+
+/// <summary>
+/// SSE subscription options of the <c>GET /mcp</c> streamable-HTTP upgrade (F-1101,
+/// architekturkonzept.md §3).
+/// </summary>
+public sealed class McpSseOptions
+{
+    /// <summary>
+    /// Seconds between two keep-alive comments of an open stream (proxy idle timeouts).
+    /// Default 15.
+    /// </summary>
+    public int HeartbeatSeconds { get; set; } = 15;
+
+    /// <summary>
+    /// Maximum number of concurrent SSE subscriptions per access. Additional GET requests
+    /// are rejected with HTTP 429 so one agent cannot exhaust the process memory with
+    /// open streams. Default 4.
+    /// </summary>
+    public int MaxSubscribersPerAccess { get; set; } = 4;
+}
+
+/// <summary>
+/// Retention options of the MCP audit trail and the approval-request queue (F-1104,
+/// audit-konzept.md §5). The retention executor is the only deletion path on the audit
+/// table; chain truncation is documented by <c>RetentionPurged</c> anchor entries so the
+/// hash chain stays verifiable "ab diesem Eintrag".
+/// </summary>
+public sealed class McpRetentionOptions
+{
+    /// <summary>Minutes between two retention passes. Default 720 (twice a day).</summary>
+    public int IntervalMinutes { get; set; } = 720;
+
+    /// <summary>
+    /// Retention (months) of high-frequency event classes: <c>ToolCall</c>,
+    /// <c>AccessEvent</c> and <c>SecurityEvent</c> audit entries. Default 12.
+    /// </summary>
+    public int ToolCallMonths { get; set; } = 12;
+
+    /// <summary>
+    /// Retention (months) of the long-tier event classes: <c>ApprovalEvent</c> and
+    /// <c>DataChange</c> audit entries. Default 36.
+    /// </summary>
+    public int ApprovalMonths { get; set; } = 36;
+
+    /// <summary>
+    /// Retention (months) of terminal <c>AiActionRequest</c> rows (the queue table is
+    /// audit substrate, not part of the hash chain). Default 12.
+    /// </summary>
+    public int RequestMonths { get; set; } = 12;
+
+    /// <summary>Maximum audit entries deleted per chain per pass. Default 5000.</summary>
+    public int BatchSize { get; set; } = 5000;
 }

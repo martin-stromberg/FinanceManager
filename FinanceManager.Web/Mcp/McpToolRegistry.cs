@@ -30,6 +30,12 @@ public abstract class McpToolDescriptorBase : IMcpToolDescriptor
     public virtual bool IsDeprecated => false;
 
     /// <inheritdoc />
+    public virtual string? SinceVersion => McpToolRegistry.Version;
+
+    /// <inheritdoc />
+    public virtual string? ReplacedBy => null;
+
+    /// <inheritdoc />
     public JsonDocument InputSchema => _schema.Value;
     private readonly Lazy<JsonDocument> _schema;
 

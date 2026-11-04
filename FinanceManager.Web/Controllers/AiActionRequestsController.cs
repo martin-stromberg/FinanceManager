@@ -138,6 +138,24 @@ public sealed class AiActionRequestsController : ControllerBase
         catch (Exception ex) { return Error(ex); }
     }
 
+    /// <summary>Returns the agent-monitoring view of one own access (F-1103): queue depth,
+    /// pending age and the 24-hour outcome counters of its requests — the same data the
+    /// <c>fm_task_status</c> <c>monitoring</c> block reports to the agent.</summary>
+    /// <param name="accessId">Access identifier (must belong to the caller).</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpGet("monitoring/{accessId:guid}")]
+    [ProducesResponseType(typeof(McpAccessMonitoringDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MonitoringAsync(Guid accessId, CancellationToken ct)
+    {
+        try
+        {
+            var dto = await _svc.GetAccessMonitoringAsync(_current.UserId, accessId, ct);
+            return dto is null ? NotFound() : Ok(dto);
+        }
+        catch (Exception ex) { return Error(ex); }
+    }
+
     /// <summary>Gets one request detail (404 when not found/not owned). The detail carries the
     /// frozen parameter snapshot, the server-side effect preview, the client reason text and
     /// the decision metadata — the basis of the approval-center detail view (EP-10).</summary>

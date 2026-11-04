@@ -146,3 +146,37 @@ public sealed record AiActionRequestBatchItemDto(Guid RequestId, bool Succeeded,
 /// </summary>
 /// <param name="DecisionComment">Optional decision note / rejection reason.</param>
 public sealed record AiActionRequestDecisionRequest(string? DecisionComment);
+
+/// <summary>
+/// Monitoring overview of one MCP access over its <c>AiActionRequest</c> workload
+/// (F-1103 — the agent runbook view): queue depth, pending age and the 24-hour outcome
+/// counters of the agent's own runs. Owner-scoped; a foreign access id behaves like a
+/// missing record (404 semantics).
+/// </summary>
+/// <param name="McpAccessId">Access identifier.</param>
+/// <param name="PendingCount">Requests currently waiting for a decision.</param>
+/// <param name="ApprovedCount">Requests approved and waiting in the execution queue.</param>
+/// <param name="OldestPendingUtc">Timestamp of the oldest pending request, or
+/// <see langword="null"/> when the inbox is empty (pending-age indicator).</param>
+/// <param name="RequestsLast24h">Requests created within the last 24 hours.</param>
+/// <param name="ExecutedLast24h">Requests that reached <c>Executed</c> within the last 24 hours.</param>
+/// <param name="FailedLast24h">Requests that reached <c>Failed</c> within the last 24 hours.</param>
+/// <param name="RejectedLast24h">Requests decided <c>Rejected</c> within the last 24 hours.</param>
+/// <param name="ExpiredLast24h">Requests that reached <c>Expired</c> within the last 24 hours.</param>
+/// <param name="FailureRateLast24h">Share of failed executions among the requests that
+/// reached a terminal execution state (Executed/Failed) within the last 24 hours
+/// (0 when none).</param>
+/// <param name="LastRequestUtc">Timestamp of the most recent request of the access, or
+/// <see langword="null"/>.</param>
+public sealed record McpAccessMonitoringDto(
+    Guid McpAccessId,
+    int PendingCount,
+    int ApprovedCount,
+    DateTime? OldestPendingUtc,
+    int RequestsLast24h,
+    int ExecutedLast24h,
+    int FailedLast24h,
+    int RejectedLast24h,
+    int ExpiredLast24h,
+    double FailureRateLast24h,
+    DateTime? LastRequestUtc);
