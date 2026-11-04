@@ -13,9 +13,9 @@ public sealed record McpToolScope(McpDataType DataType, McpRightKind Right);
 
 /// <summary>
 /// Static descriptor of one MCP tool of the compiled catalog (<c>katalog-v&lt;n&gt;</c>).
-/// "No tool without a scope" is enforced at compile time: a descriptor either declares
-/// <see cref="RequiredScopes"/> or carries the closed <see cref="MetaScope"/> marker of the
-/// meta tools T32/T33 (scope-und-toolkatalog.md §3.6).
+/// "No tool without a scope" is enforced fail-fast at registry build: a descriptor either
+/// declares <see cref="RequiredScopes"/> or carries the closed <see cref="MetaScope"/>
+/// marker of the meta tools T32/T33 (scope-und-toolkatalog.md §3.6).
 /// </summary>
 public interface IMcpToolDescriptor
 {

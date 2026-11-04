@@ -208,3 +208,30 @@
 4. **`copyText`-Fallback** (`execCommand`) für Nicht-Clipboard-Kontexte; modern.
 5. **Kein E2E-Test** für die neuen Seiten — manuelle Abnahme empfohlen (Wizard→Token→
    Rotation→Widerruf).
+
+---
+
+# Korrekturen Abnahme 1
+
+Gegenstand: `Docs/projects/task/mcp-integration/acceptance-schritt-1.md` (3 Abweichungen).
+
+- [x] **`untrusted_data`-Kennzeichnung in Meta-Tool-Ausgaben** (Abweichung 2):
+  T32 `fm_capabilities_describe` liefert die benutzerbelegten Freitextfelder
+  (`name`, `description`, `allowedIpRanges`) jetzt ausschließlich im markierten
+  `untrusted_data`-Wrapper unter `access`; T33 `fm_task_status` verpackt
+  `message`/`errorDetail`/`warnings`/`errors` je Task in `untrusted_data`.
+  Konvention sicherheitskonzept.md §5.2 (Wrapper-Objekt, Inhaltstrennung:
+  Systemfelder oben, Nutzdaten-Freitext markiert) — verbindlich für die
+  Fach-Adapter ab EP-02.
+- [x] **„Kein Tool ohne Scope" durchgesetzt** (Abweichung 3): `McpToolRegistry`
+  validiert im Konstruktor jeden `IMcpToolDescriptor` — genau eines von
+  `RequiredScopes` (≥1 Tupel) oder `MetaScope` muss deklariert sein, sonst
+  `InvalidOperationException`. Zusätzlich Start-up-Check: `ConfigureMiddleware`
+  löst die Singleton-Registry einmal auf, damit ein ungültiger Katalog den
+  Start abbricht statt erst beim ersten `/mcp`-Aufruf. Tests:
+  `FinanceManager.Tests/Mcp/McpToolRegistryTests.cs`.
+- [ ] **SSE-Upgrade bewusst in EP-11/F-1101** (Abweichung 1): dokumentierte
+  Einschränkung — `GET /mcp` bleibt 405, Request/Response +
+  `fm_task_status`-Polling ist der Frühphasen-Pfad (architekturkonzept.md
+  §3.1/§3.2, eigener Transport-Layer statt MCP-C#-SDK). Das SSE-Upgrade für
+  Server-Benachrichtigungen ist im Backlog-Feature F-1101 (EP-11) eingeplant.

@@ -571,6 +571,11 @@ namespace FinanceManager.Web
             app.UseWhen(context => context.Request.Path.StartsWithSegments("/mcp"),
                 branch => branch.UseMiddleware<FinanceManager.Web.Mcp.McpDisabledMiddleware>());
 
+            // Fail-fast catalog check ("no tool without a scope", F-0106): building the
+            // registry validates every descriptor, so an invalid tool aborts startup
+            // instead of slipping through the scope stage on the first /mcp call.
+            _ = app.Services.GetRequiredService<FinanceManager.Application.Mcp.IMcpToolRegistry>();
+
             if (!(app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection")))
             {
                 app.UseHttpsRedirection();

@@ -75,12 +75,19 @@ public sealed class FmTaskStatusHandler : IMcpToolHandler
                 status = t.Status.ToString(),
                 processed = t.Processed,
                 total = t.Total,
-                message = t.Message,
-                warnings = t.Warnings,
-                errors = t.Errors,
                 enqueuedUtc = t.EnqueuedUtc,
                 startedUtc = t.StartedUtc,
-                finishedUtc = t.FinishedUtc
+                finishedUtc = t.FinishedUtc,
+                // Task texts and counters carry pipeline output that may embed user data
+                // (file names, entry texts) — untrusted content (sicherheitskonzept.md §5.2),
+                // separated into the marked wrapper.
+                untrusted_data = new
+                {
+                    message = t.Message,
+                    errorDetail = t.ErrorDetail,
+                    warnings = t.Warnings,
+                    errors = t.Errors
+                }
             })
             .ToList();
 

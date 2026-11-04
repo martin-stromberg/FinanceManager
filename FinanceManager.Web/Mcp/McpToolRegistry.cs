@@ -5,9 +5,9 @@ using System.Text.Json;
 namespace FinanceManager.Web.Mcp;
 
 /// <summary>
-/// Base class for compiled tool descriptors; "no tool without scope" is enforced because
-/// every concrete descriptor must declare <see cref="IMcpToolDescriptor.RequiredScopes"/> or
-/// <see cref="IMcpToolDescriptor.MetaScope"/>.
+/// Base class for compiled tool descriptors; every concrete descriptor declares
+/// <see cref="IMcpToolDescriptor.RequiredScopes"/> or <see cref="IMcpToolDescriptor.MetaScope"/>.
+/// "No tool without a scope" is enforced fail-fast by <see cref="McpToolRegistry"/>.
 /// </summary>
 public abstract class McpToolDescriptorBase : IMcpToolDescriptor
 {
@@ -53,10 +53,30 @@ public sealed class McpToolRegistry : IMcpToolRegistry
     private readonly IReadOnlyList<IMcpToolDescriptor> _tools;
     private readonly Dictionary<string, IMcpToolDescriptor> _byName;
 
-    /// <summary>Creates the registry from all registered descriptors.</summary>
+    /// <summary>
+    /// Creates the registry from all registered descriptors. Fails fast on an invalid
+    /// descriptor: every tool must declare either at least one
+    /// <see cref="IMcpToolDescriptor.RequiredScopes"/> tuple or a non-empty
+    /// <see cref="IMcpToolDescriptor.MetaScope"/> — exactly one of the two, because the
+    /// dispatcher skips the tuple check once a meta scope is present.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// A descriptor declares neither scopes nor a meta scope ("no tool without a scope")
+    /// or declares both (the scope tuples would be silently ignored).
+    /// </exception>
     public McpToolRegistry(IEnumerable<IMcpToolDescriptor> tools)
     {
         _tools = tools.OrderBy(t => t.Name, StringComparer.Ordinal).ToList();
+        foreach (var tool in _tools)
+        {
+            var hasScopes = tool.RequiredScopes.Count > 0;
+            var hasMetaScope = !string.IsNullOrWhiteSpace(tool.MetaScope);
+            if (hasScopes == hasMetaScope)
+            {
+                throw new InvalidOperationException(
+                    $"Invalid MCP tool descriptor '{tool.Name}': declare either at least one RequiredScopes tuple or a MetaScope, exactly one of the two.");
+            }
+        }
         _byName = _tools.ToDictionary(t => t.Name, StringComparer.Ordinal);
     }
 

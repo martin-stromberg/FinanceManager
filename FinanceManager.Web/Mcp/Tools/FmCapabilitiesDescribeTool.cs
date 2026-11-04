@@ -66,14 +66,21 @@ public sealed class FmCapabilitiesDescribeHandler : IMcpToolHandler
             access = new
             {
                 id = access.Id,
-                name = access.Name,
                 level = access.Level.ToString(),
                 approvalMode = access.ApprovalMode.ToString(),
                 status = access.Status.ToString(),
                 expiresUtc = access.ExpiresUtc,
                 isExpired = access.IsExpired(DateTime.UtcNow),
-                allowedIpRanges = access.AllowedIpRanges,
-                metaScope = "Zugangsprofil"
+                metaScope = "Zugangsprofil",
+                // User-entered free text is untrusted content (sicherheitskonzept.md §5.2):
+                // it is separated into the marked wrapper so the client treats it as data,
+                // never as an instruction.
+                untrusted_data = new
+                {
+                    name = access.Name,
+                    description = access.Description,
+                    allowedIpRanges = access.AllowedIpRanges
+                }
             },
             effectiveScopes = scopes.Select(s => new
             {
