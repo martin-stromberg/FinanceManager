@@ -49,12 +49,31 @@ synthetischer `McpExecutorAccessContext` (frisch geladener, re-validierter
 `McpAccess`); CorrelationId des Requests wird weitergereicht, die Audit-Kette
 bleibt verknüpft (`RelatedRequestId`).
 
-## Teil B (folgt) — Anbindung & API
-- [ ] Dispatcher-Position 8: Gate-Aufruf + Enqueue-Umleitung der tools/call-
-      Antwort `{ aiActionRequestId, status }` (statt direktem Handler-Aufruf).
-- [ ] `AiActionRequestsController` (Liste/Detail+Wirkungsvorschau/approve/reject/batch).
-- [ ] `fm_task_status`-Ausbau auf Request-Zustände.
-- [ ] Widerrufs-Kopplung: `McpAccessService.Revoke/Deactivate` →
-      `WithdrawOpenForAccessAsync` (Methode liegt bereit).
+## Teil B (dieser Commit) — Anbindung & API
+- [x] Dispatcher-Position 8: Gate-Evaluate nach Scope-Prüfung, vor Invoke.
+      `RequiresApproval` → `IMcpApprovalService.EnqueueAsync` (ActionKey aus
+      `operation`-Arg bzw. Toolname; IdempotencyKey aus `idempotencyKey`-Arg oder
+      Content-Hash; ReasonText aus `reasonText`/`reason`) → tools/call-Antwort
+      `{ queued, requestId, status, expiresUtc, correlationId }` + ToolCall-Record
+      `RedirectedToApproval`. `Denied` → DefinedError (`Err_Mcp_*` des Gates).
+      Pending-Limit-Race (TOCTOU) → DefinedError.
+- [x] Fallback: Handler-`requiresApproval`-Result (T22–T29 destruktiv bei
+      Gate=DirectExecution, z. B. PreApproved-Modus) wird vom Dispatcher
+      ebenfalls in einen Queue-Eintrag überführt — kein Approval-Pfad liefert
+      einen synchronen Effekt.
+- [x] `AiActionRequestsController` (`/api/mcp-approvals`, JwtBearer +
+      ICurrentUserService): GET Liste (status/accessId/skip/take, Status-Validierung
+      → `Err_Mcp_InvalidArguments`), GET `{id}` Detail, POST `approve`/`reject`
+      (optionaler `decisionComment`), POST `cancel`; `ApiErrorDto`/`Err_Mcp_*`,
+      resx de/en.
+- [x] `ApiClient.McpApprovals.cs`-Partial + `AiActionRequestDecisionRequest`-DTO;
+      `AiActionRequestListItemDto` um `ExecutionResult` (resultRef) erweitert.
+- [x] `fm_task_status`-Vollausbau (T33): `requests`-Sektion mit eigenen
+      AiActionRequests des Zugangs (Liste + Detail per `requestId`, `status`-
+      Filter, `take`), untrusted_data auf Name/Params/Result-Feldern; bestehende
+      BackgroundTask-Ansicht unverändert.
+- [x] Widerrufs-Kopplung: `McpAccessService.Deactivate/Revoke` →
+      `WithdrawOpenForAccessAsync` (Begründungen „Zugang deaktiviert"/„Zugang
+      entzogen"; Executor-Access-Recheck bleibt Safety-Net).
 - [ ] EP-10: executeApproved-Delegates für merge/delete/archive der T22–T29 sowie
       T20/T21/T31 (genehmigungspflichtige Tools).

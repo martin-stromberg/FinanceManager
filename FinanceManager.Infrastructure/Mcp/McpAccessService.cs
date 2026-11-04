@@ -24,6 +24,7 @@ public sealed class McpAccessService : IMcpAccessService
     private readonly IMcpTokenIssuer _tokenIssuer;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IMcpAuditWriter _auditWriter;
+    private readonly IMcpApprovalService _approvalService;
     private readonly ILogger<McpAccessService> _logger;
 
     /// <summary>
@@ -34,18 +35,23 @@ public sealed class McpAccessService : IMcpAccessService
     /// <param name="scopeEvaluator">Evaluator used to render effective profiles.</param>
     /// <param name="auditWriter">Hash-chained audit write path (F-0301/F-0302); audit bundles are staged
     /// and commit atomically with the access change in one <c>SaveChangesAsync</c>.</param>
+    /// <param name="approvalService">Approval-request queue: deactivation/revocation withdraws the
+    /// still-open requests of the access (approval-konzept.md §6.3; the executor's access re-check
+    /// remains the safety net).</param>
     /// <param name="logger">Logger.</param>
     public McpAccessService(
         AppDbContext db,
         IMcpTokenIssuer tokenIssuer,
         IMcpScopeEvaluator scopeEvaluator,
         IMcpAuditWriter auditWriter,
+        IMcpApprovalService approvalService,
         ILogger<McpAccessService> logger)
     {
         _db = db;
         _tokenIssuer = tokenIssuer;
         _scopeEvaluator = scopeEvaluator;
         _auditWriter = auditWriter;
+        _approvalService = approvalService;
         _logger = logger;
     }
 
@@ -211,13 +217,15 @@ public sealed class McpAccessService : IMcpAccessService
 
     /// <inheritdoc />
     public Task<bool> ActivateAsync(Guid ownerUserId, Guid id, CancellationToken ct)
-        => ChangeStatusAsync(ownerUserId, id, a => a.Activate(), "AccessActivated", ct);
+        => ChangeStatusAsync(ownerUserId, id, a => a.Activate(), "AccessActivated", ct, withdrawReason: null);
 
     /// <inheritdoc />
     public Task<bool> DeactivateAsync(Guid ownerUserId, Guid id, CancellationToken ct)
-        => ChangeStatusAsync(ownerUserId, id, a => a.Deactivate(), "AccessDeactivated", ct);
+        => ChangeStatusAsync(ownerUserId, id, a => a.Deactivate(), "AccessDeactivated", ct,
+            withdrawReason: "Zugang deaktiviert");
 
-    private async Task<bool> ChangeStatusAsync(Guid ownerUserId, Guid id, Action<McpAccess> change, string eventType, CancellationToken ct)
+    private async Task<bool> ChangeStatusAsync(Guid ownerUserId, Guid id, Action<McpAccess> change, string eventType,
+        CancellationToken ct, string? withdrawReason)
     {
         var access = await _db.McpAccesses.FirstOrDefaultAsync(a => a.Id == id && a.OwnerUserId == ownerUserId, ct);
         if (access is null)
@@ -234,6 +242,13 @@ public sealed class McpAccessService : IMcpAccessService
         }
         await StageAuditAsync(access, eventType, ct);
         await _db.SaveChangesAsync(ct);
+        if (withdrawReason is not null)
+        {
+            // approval-konzept.md §6.3: the status change must also stop banked effects —
+            // open (pending / approved-not-yet-started) requests of the access are withdrawn
+            // with a documented system reason, each transition coupling its audit record.
+            await _approvalService.WithdrawOpenForAccessAsync(access.Id, withdrawReason, ct);
+        }
         return true;
     }
 
@@ -279,6 +294,9 @@ public sealed class McpAccessService : IMcpAccessService
         access.Revoke(string.IsNullOrWhiteSpace(reason) ? "Revoked by owner" : reason.Trim());
         await StageAuditAsync(access, "AccessRevoked", ct);
         await _db.SaveChangesAsync(ct);
+        // approval-konzept.md §6.3: revocation withdraws all still-open requests of the
+        // access (system transition before execution start, documented reason).
+        await _approvalService.WithdrawOpenForAccessAsync(access.Id, "Zugang entzogen", ct);
         return true;
     }
 

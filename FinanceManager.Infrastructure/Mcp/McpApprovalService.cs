@@ -323,8 +323,8 @@ public sealed class McpApprovalService : IMcpApprovalService
 
     private static AiActionRequestListItemDto ToListItem(AiActionRequest r)
         => new(r.Id, r.McpAccessId, r.McpAccessName, r.ToolName, r.ActionKey, (short)r.Status,
-            r.RequestedUtc, r.ExpiresUtc, r.DecidedUtc, r.ExecutedUtc, r.FailureReason,
-            r.CorrelationId, r.AttemptCount);
+            r.RequestedUtc, r.ExpiresUtc, r.DecidedUtc, r.ExecutedUtc, r.ExecutionResult,
+            r.FailureReason, r.CorrelationId, r.AttemptCount);
 
     private static AiActionRequestDetailDto ToDetail(AiActionRequest r)
         => new(r.Id, r.McpAccessId, r.McpAccessName, r.ToolName, r.ActionKey, r.CatalogVersion,

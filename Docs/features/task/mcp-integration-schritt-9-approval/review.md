@@ -46,3 +46,49 @@
 - Widerrufs-Verdrahtung in McpAccessService (Teil B; Safety-Net = Executor-Re-Check).
 - IP-Bindungs-Re-Check: serverseitig ohne Client-IP nicht anwendbar — abgedeckt
   über Access-Usability (dokumentiert).
+
+---
+
+# Review – EP-09 Teil B: Gate-Verdrahtung, API, fm_task_status
+
+## Umgesetzte Akzeptanzkriterien
+
+- **F-0902-Dispatcher** (Pos. 8): `IMcpApprovalGate.EvaluateAsync` läuft nach
+  Scope-Prüfung und vor Handler-Auflösung. `RequiresApproval` → `EnqueueAsync`
+  (ActionKey = `operation`-Arg oder Toolname; Snapshot = rohe `arguments`, denn
+  der Executor re-invoked denselben Handler; `idempotencyKey`-Arg oder
+  Content-Hash; `reasonText`/`reason`-Arg) → tools/call-Antwort
+  `{ queued, requestId, toolName, actionKey, status, expiresUtc, correlationId }`.
+  `Denied` → DefinedError mit Gate-Code (`Err_Mcp_WriteAccessDisabled`,
+  `Err_Mcp_PendingLimit`); Pending-Limit-Race am Schreibpunkt → ebenfalls
+  DefinedError. Der WriteStop bleibt an Position 2 (vor Gate), das Gate
+  wiederholt ihn standalone. ToolCall-Audit `RedirectedToApproval` zusätzlich zum
+  `ApprovalRequested`-Event des Service. ✓
+- **Konsistenz Handler-Fallback:** Handler-interne `requiresApproval`-Antworten
+  (T22–T29 destruktiv) werden vom Dispatcher in denselben Queue-Eintrag
+  überführt, wenn das Klassen-Gate DirectExecution erlaubt hat (z. B.
+  PreApproved-Modus → Request startet Approved, §3.4). Kein Approval-Pfad
+  erzeugt einen synchronen Effekt. ✓
+- **F-0904-Widerruf:** `Deactivate`/`Revoke` rufen
+  `WithdrawOpenForAccessAsync` („Zugang deaktiviert"/„Zugang entzogen");
+  geclaimte Requests bleiben unberührt (Executor-Re-Check). ✓
+- **F-0905:** `AiActionRequestsController` `/api/mcp-approvals` — Liste mit
+  status/accessId-Filter + Paging, Detail (ParameterSnapshot, DecisionComment,
+  Result), approve/reject (optionaler decisionComment) + cancel; 404-Semantik
+  für Fremd-Ids; resx de/en. `fm_task_status` meldet `requests` der eigenen
+  Zugangs-Requests (Liste/Detail/Statusfilter) neben der unveränderten
+  Task-Ansicht; untrusted_data-Markierung auf Name/Params/Result. ✓
+
+## Designentscheidungen (Teil B)
+
+1. **Route `/api/mcp-approvals`** statt des in ui-konzept §6.2 skizzierten
+   `/api/ai-action-requests` — verbindliche Vorgabe Teil B; die Konzeptskizze
+   sollte bei EP-10 nachgezogen werden. Batch-Endpunkt folgt mit F-1001.
+2. **Snapshot = rohe arguments** in beiden Enqueue-Pfaden (Gate + Fallback):
+   identisch zum Client-Aufruf, Executor re-validiert vollständig; der
+   `parameters`-Ausschnitt des Handler-Results bleibt nur Anzeigetext.
+3. **`ExecutionResult` ins ListItemDto** aufgenommen, damit fm_task_status den
+   `resultRef` ohne N+1-Detailabrufe liefern kann.
+4. **fm_task_status** filtert Requests über `ListAsync(owner, status, accessId)`
+   und prüft im Detailpfad `McpAccessId == context.McpAccessId` — Fremd-Zugriff
+   verhält sich wie „nicht vorhanden".

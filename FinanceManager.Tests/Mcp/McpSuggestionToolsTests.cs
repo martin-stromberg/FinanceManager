@@ -159,9 +159,13 @@ public sealed class McpSuggestionToolsTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var audit = new Mock<IMcpAuditWriter>();
+        var gate = new Mock<IMcpApprovalGate>();
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(McpApprovalDecision.Direct);
         var opts = new TestOptionsMonitor(new McpOptions());
         var dispatcher = new McpToolDispatcher(
             registry.Object, evaluator.Object, audit.Object,
+            gate.Object, Mock.Of<IMcpApprovalService>(),
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
             opts, NullLogger<McpToolDispatcher>.Instance);

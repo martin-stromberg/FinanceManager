@@ -1,3 +1,4 @@
+using FinanceManager.Application.Exceptions;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Mcp;
 using Microsoft.Extensions.Logging;
@@ -8,16 +9,29 @@ using System.Text.Json;
 namespace FinanceManager.Web.Mcp;
 
 /// <summary>
-/// Dispatcher of <c>tools/call</c> requests (F-0106): routes by tool name, applies the
-/// write-stop lid, the per-class rate limit, the scope evaluation (all declared tuples, AND)
-/// and then invokes the adapter. Order per architecture pipeline: known → WriteStop →
-/// class rate limit → scope → invoke.
+/// Dispatcher of <c>tools/call</c> requests (F-0106/F-0902): routes by tool name, applies the
+/// write-stop lid, the per-class rate limit, the scope evaluation (all declared tuples, AND),
+/// the approval gate (pipeline position 8) and then invokes the adapter. Order per
+/// architecture pipeline: known → WriteStop → class rate limit → scope → approval gate →
+/// invoke.
 /// </summary>
+/// <remarks>
+/// The approval gate only decides; the dispatcher performs the redirect itself:
+/// <see cref="McpApprovalDecisionKind.RequiresApproval"/> parks the call as an
+/// <see cref="AiActionRequest"/> via <see cref="IMcpApprovalService.EnqueueAsync"/> and
+/// answers <c>{ queued: true, requestId, … }</c> instead of a tool result. As the documented
+/// fallback the dispatcher also converts a handler-level <c>requiresApproval</c> result
+/// (final/destructive sub-operations of the pflege tools T22–T29, which the class-level gate
+/// lets through when the access approval mode allows direct execution) into the same queue
+/// entry — an approval path never produces a synchronous effect.
+/// </remarks>
 public sealed class McpToolDispatcher
 {
     private readonly IMcpToolRegistry _registry;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IMcpAuditWriter _auditWriter;
+    private readonly IMcpApprovalGate _approvalGate;
+    private readonly IMcpApprovalService _approvalService;
     private readonly McpToolRateLimiter _rateLimiter;
     private readonly McpAnomalyTracker _anomalyTracker;
     private readonly IOptionsMonitor<McpOptions> _options;
@@ -28,6 +42,8 @@ public sealed class McpToolDispatcher
         IMcpToolRegistry registry,
         IMcpScopeEvaluator scopeEvaluator,
         IMcpAuditWriter auditWriter,
+        IMcpApprovalGate approvalGate,
+        IMcpApprovalService approvalService,
         McpToolRateLimiter rateLimiter,
         McpAnomalyTracker anomalyTracker,
         IOptionsMonitor<McpOptions> options,
@@ -36,6 +52,8 @@ public sealed class McpToolDispatcher
         _registry = registry;
         _scopeEvaluator = scopeEvaluator;
         _auditWriter = auditWriter;
+        _approvalGate = approvalGate;
+        _approvalService = approvalService;
         _rateLimiter = rateLimiter;
         _anomalyTracker = anomalyTracker;
         _options = options;
@@ -101,7 +119,26 @@ public sealed class McpToolDispatcher
             }
         }
 
-        // 5) Invoke adapter.
+        // 5) Approval gate (pipeline position 8, F-0902): security class × approval mode
+        //    decide whether the call runs now or parks as an AiActionRequest; the gate
+        //    additionally caps the per-access pending limit (approval-spam protection).
+        if (entity is not null)
+        {
+            var decision = await _approvalGate.EvaluateAsync(entity, descriptor, ct);
+            if (decision.Kind == McpApprovalDecisionKind.Denied)
+            {
+                await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, arguments, sw, ct);
+                return McpDispatchResult.DefinedError(
+                    decision.ErrorCode ?? "Err_Mcp_ScopeDenied",
+                    decision.ErrorMessage ?? "The approval gate denied this call.");
+            }
+            if (decision.Kind == McpApprovalDecisionKind.RequiresApproval)
+            {
+                return await EnqueueAsync(entity, descriptor, toolName, arguments, correlationId, sourceIp, sw, ct);
+            }
+        }
+
+        // 6) Invoke adapter.
         var handler = services.GetServices<IMcpToolHandler>().FirstOrDefault(h => h.ToolName == toolName);
         if (handler is null)
         {
@@ -112,6 +149,17 @@ public sealed class McpToolDispatcher
         {
             var result = await handler.InvokeAsync(arguments,
                 new McpToolCallContext(access, services, correlationId, sourceIp), ct);
+
+            // 7) Handler-level approval fallback: final/destructive sub-operations of the
+            //    write-preparing tools answer requiresApproval even when the class-level gate
+            //    allowed direct execution (e.g. PreApproved access mode — those requests start
+            //    directly approved, approval-konzept.md §3.4). The dispatcher turns that answer
+            //    into the same queue entry; no approval path yields a synchronous effect.
+            if (entity is not null && IsApprovalRequiredResult(result))
+            {
+                return await EnqueueAsync(entity, descriptor, toolName, arguments, correlationId, sourceIp, sw, ct);
+            }
+
             var audited = await AuditAsync(entity, toolName, "Success", correlationId, sourceIp, arguments, sw, ct);
             // A write-class call without its audit record must fail (F-0301). Write tools
             // additionally couple their DataChange/ApprovalEvent records inside the effect
@@ -130,6 +178,84 @@ public sealed class McpToolDispatcher
             return McpDispatchResult.ToolError(ex.Code, ex.Message);
         }
     }
+
+    /// <summary>
+    /// Enqueues the call as an <see cref="AiActionRequest"/> (gate redirect and handler-level
+    /// fallback share this path) and builds the synchronous queued answer
+    /// <c>{ queued: true, requestId, status, expiresUtc, … }</c> of approval-konzept.md §4 —
+    /// the client polls the outcome via <c>fm_task_status</c>. The frozen parameter snapshot
+    /// is the raw <c>arguments</c> object: the queue executor re-invokes the same tool handler
+    /// on it with all guards re-evaluated. Deduplication (client <c>idempotencyKey</c> or the
+    /// content hash the service derives) makes a retry return the same request id.
+    /// </summary>
+    private async Task<McpDispatchResult> EnqueueAsync(
+        McpAccess entity, IMcpToolDescriptor descriptor, string toolName, JsonElement arguments,
+        Guid correlationId, string? sourceIp, Stopwatch sw, CancellationToken ct)
+    {
+        var snapshot = arguments.ValueKind == JsonValueKind.Object ? arguments.GetRawText() : "{}";
+        // The sub-operation discriminator: the pflege tools carry an "operation" argument
+        // (merge/delete/archive); other tools get a stable per-tool key.
+        var actionKey = LenientString(arguments, "operation") ?? descriptor.Name;
+        var reasonText = LenientString(arguments, "reasonText") ?? LenientString(arguments, "reason");
+        var clientKey = LenientString(arguments, "idempotencyKey");
+
+        AiActionRequest request;
+        try
+        {
+            request = await _approvalService.EnqueueAsync(
+                entity, toolName, actionKey, _registry.CatalogVersion,
+                snapshot, reasonText, correlationId, clientKey, ct);
+        }
+        catch (DomainValidationException ex)
+        {
+            // The pending limit is re-applied at write time — it can lose the race against
+            // the gate's earlier read (defense in depth, TOCTOU).
+            await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, arguments, sw, ct);
+            return McpDispatchResult.DefinedError(ex.Code ?? "Err_Mcp_PendingLimit", ex.Message);
+        }
+
+        await AuditAsync(entity, toolName, "RedirectedToApproval", correlationId, sourceIp, arguments, sw, ct);
+        return McpDispatchResult.Success(new
+        {
+            queued = true,
+            requestId = request.Id,
+            toolName = request.ToolName,
+            actionKey = request.ActionKey,
+            status = request.Status.ToString(),
+            expiresUtc = request.ExpiresUtc,
+            correlationId = request.CorrelationId
+        });
+    }
+
+    /// <summary>
+    /// Detects the structured <c>requiresApproval</c> result of the handler-level guard
+    /// (<see cref="McpMasterDataGuards.ApprovalRequiredAsync"/>): the object carries a
+    /// <c>requiresApproval: true</c> flag. Serialization failures are irrelevant — an
+    /// unclassifiable result is not an approval marker.
+    /// </summary>
+    private static bool IsApprovalRequiredResult(object result)
+    {
+        try
+        {
+            var el = JsonSerializer.SerializeToElement(result);
+            return el.ValueKind == JsonValueKind.Object
+                && el.TryGetProperty("requiresApproval", out var flag)
+                && flag.ValueKind == JsonValueKind.True;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Reads a string argument defensively — never throws (queue extraction is lenient).</summary>
+    private static string? LenientString(JsonElement args, string name)
+        => args.ValueKind == JsonValueKind.Object
+            && args.TryGetProperty(name, out var el)
+            && el.ValueKind == JsonValueKind.String
+            && !string.IsNullOrWhiteSpace(el.GetString())
+                ? el.GetString()
+                : null;
 
     private static bool IsWriteClass(McpToolSecurityClass securityClass)
         => securityClass is McpToolSecurityClass.Schreibvorbereitend or McpToolSecurityClass.Genehmigungspflichtig;

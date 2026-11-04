@@ -13,12 +13,16 @@
 - [x] Backup Export/Restore AiActionRequests
 - [x] 53 Tests, dotnet test grün (1851)
 
-## Teil B (offen)
-- [ ] Dispatcher Pos. 8: Gate-Evaluate + Enqueue-Umleitung tools/call
-- [ ] AiActionRequestsController + DTO-Mapping (List/Detail/approve/reject/batch)
-- [ ] fm_task_status Vollausbau (Request-Zustände + Task-Fortschritt)
-- [ ] WithdrawOpenForAccess an McpAccessService.Revoke/Deactivate koppeln
-- [ ] Notification-Lokalisierung (resx de/en) falls gefordert
+## Teil B (abgeschlossen)
+- [x] Dispatcher Pos. 8: Gate-Evaluate + Enqueue-Umleitung tools/call
+      (`{queued:true, requestId, status, expiresUtc}`) + requiresApproval-Fallback
+- [x] AiActionRequestsController `/api/mcp-approvals` + DTO-Mapping
+      (List/Detail/approve/reject/cancel, DecisionComment)
+- [x] ApiClient.McpApprovals-Partial + DecisionRequest-DTO + ListItem+ExecutionResult
+- [x] fm_task_status Vollausbau (Request-Zustände eigener Zugang + Task-Fortschritt)
+- [x] WithdrawOpenForAccess an McpAccessService.Revoke/Deactivate gekoppelt
+- [x] Controller-resx de/en (API_McpApproval_*)
+- [x] 21 neue Tests, dotnet test grün (1872)
 
 ## EP-10 (offen)
 - [ ] executeApproved-Delegates T22–T29 (merge/delete/archive)

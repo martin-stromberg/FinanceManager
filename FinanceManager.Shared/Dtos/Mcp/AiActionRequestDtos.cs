@@ -15,6 +15,7 @@ namespace FinanceManager.Shared.Dtos.Mcp;
 /// <param name="ExpiresUtc">Decision deadline.</param>
 /// <param name="DecidedUtc">Decision timestamp, or <see langword="null"/>.</param>
 /// <param name="ExecutedUtc">Execution timestamp, or <see langword="null"/>.</param>
+/// <param name="ExecutionResult">JSON result reference of a successful execution, or <see langword="null"/>.</param>
 /// <param name="FailureReason">Classified <c>Err_*</c> failure reason, or <see langword="null"/>.</param>
 /// <param name="CorrelationId">Correlation id of the effect chain.</param>
 /// <param name="AttemptCount">Execution attempt counter.</param>
@@ -29,6 +30,7 @@ public sealed record AiActionRequestListItemDto(
     DateTime ExpiresUtc,
     DateTime? DecidedUtc,
     DateTime? ExecutedUtc,
+    string? ExecutionResult,
     string? FailureReason,
     Guid CorrelationId,
     int AttemptCount);
@@ -79,3 +81,12 @@ public sealed record AiActionRequestDetailDto(
     Guid CorrelationId,
     string IdempotencyKey,
     int AttemptCount);
+
+/// <summary>
+/// Request body of the owner decision endpoints (<c>approve</c>/<c>reject</c>): the optional
+/// decision comment is stored as the request's <c>DecisionNote</c> and played back to the
+/// client as decision feedback (a rejection reason is optional but recommended,
+/// approval-konzept.md §7.3).
+/// </summary>
+/// <param name="DecisionComment">Optional decision note / rejection reason.</param>
+public sealed record AiActionRequestDecisionRequest(string? DecisionComment);
