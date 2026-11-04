@@ -72,7 +72,7 @@ des Projektplans bestanden. Vier deutschsprachige Dokumente unter
   Umsetzungsentscheid, beide Varianten konzeptkonform).
 - Admin-Sicherheitsübersicht in Phase 4 (erste sicherheitsrelevante
   Aggregate); SSE ausschließlich Phase 5.
-- Budget-Kommunikation: Planwert ≈194 PT, konservativ 200–230 PT.
+- Budget-Kommunikation: Planwert ≈192 PT, konservativ 200–230 PT.
 
 ## Offene Punkte
 
@@ -82,3 +82,14 @@ des Projektplans bestanden. Vier deutschsprachige Dokumente unter
   exakte Agenten-Runbook-Ausprägung in Phase 5.
 - Damit liegen alle zwölf geforderten Ergebnisartefakte der Anforderung
   unter `Docs/planung/mcp-integration/` vor (Index: `README.md`).
+
+## Korrekturen Abnahme 1
+
+- [x] `aufwandsschaetzung.md`: Planwert-Summen nachgerechnet und
+  korrigiert. Summe Baustein-Planwerte ≈ **165 PT** (statt ≈168),
+  Phasen-Planwert P4 ≈ **37 PT** (statt ≈39: B1-Teil 3 + B10 12 +
+  B11 6 + B17 8 + B18 3 + Testblock 5), Phasen-Summe und
+  Gesamtempfehlung ≈ **192 PT** (statt ≈194), Planwert ≈ **9,6 PM**
+  (statt 9,7) und P1-Anteil ≈ **49 %** (statt 48 %) analog nachgezogen.
+  Alle Einzel-Planwerte sind korrekt gerundete Band-Mitten; die
+  Band-Summen (136–200 / 157–231 PT) waren bereits exakt.

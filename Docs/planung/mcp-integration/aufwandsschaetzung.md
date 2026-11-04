@@ -67,7 +67,7 @@ Phase-Zuordnung siehe [roadmap.md](roadmap.md); „P" = Roadmap-Phase.
 || B18 | UI: Admin-Sicherheitsübersicht | 4 | `McpSecurityOverviewViewModel` + `GET /api/mcp-audit/security-overview`: Schalter-Zustand, Anomalien, IP-Sperren (keine Fremd-Fachdaten) | 3–4 | 3 | kleine Admin-Ansicht nach Bestandsmuster |
 || B19 | Agenten-Ausbau | 5 | SSE-Upgrade für Server-Benachrichtigungen, Pre-approved-Härtung (Deckel-Empfehlungen, Einrichtungs-Bestätigung), wiederkehrende Verarbeitungsmuster (Runbooks/Monitoring-Sichten aus Audit-Aggregationen), Katalog-Deprecation-Sprung | 8–14 | 11 | stärkste Unschärfe; Umfang hängt davon ab, welche Agenten-Muster konkret gefordert werden |
 
-**Summe Bausteine:** **136–200 PT**, Planwert ≈ **168 PT**.
+**Summe Bausteine:** **136–200 PT**, Planwert ≈ **165 PT**.
 
 ---
 
@@ -81,12 +81,12 @@ phasenbezogener Testblock (A4, ≈15 % der Phase, min. 3 PT):
 || **P1 Read-Only Analyse** | B1-Teil (6–8), B2, B3, B4, B5, B6, B7, B12-Teil (5–7), B13, B14 + Testblock (10–15) | **77–112** | ≈ 94 |
 || **P2 Assistenz/Vorschläge** | B8, B15, B16 + Testblock (3–4) | **22–31** | ≈ 26 |
 || **P3 Kontoauszugs-Assistent** | B9, B12-Teil (1–2) + Testblock (2–3) | **15–22** | ≈ 19 |
-|| **P4 Genehmigungspflichtige Aktionen** | B1-Teil (2–4), B10, B11, B17, B18 + Testblock (4–6) | **31–46** | ≈ 39 |
+|| **P4 Genehmigungspflichtige Aktionen** | B1-Teil (2–4), B10, B11, B17, B18 + Testblock (4–6) | **31–46** | ≈ 37 |
 || **P5 Agenten-Workflows** | B19, B12-Teil (2–3) + Testblock (2–3) | **12–20** | ≈ 16 |
-|| **Summe** | | **157–231 PT** | **≈ 194 PT** |
+|| **Summe** | | **157–231 PT** | **≈ 192 PT** |
 
 In Personenmonaten (20 PT/PM): ≈ **8–11,5 PM** Gesamtband, Planwert
-≈ 9,7 PM. Phase 1 trägt mit ≈ 48 % die Hälfte des Aufwands – sie
+≈ 9,6 PM. Phase 1 trägt mit ≈ 49 % die Hälfte des Aufwands – sie
 finanziert das komplette Fundament (Transport, Auth, Evaluator, Audit,
 Verwaltung), von dem alle Folgephasen profitieren; die Folgephasen sind
 deutlich schmaler, weil kein Infrastruktur-Baustein wiederholt wird.
@@ -120,7 +120,7 @@ deutlich schmaler, weil kein Infrastruktur-Baustein wiederholt wird.
 || Lokalisierung de/en über alle neuen Oberflächen/Tool-Texte | B14–B18 | +2–4 PT (resx-Umfang) |
 || E2E-/Sec-Durchspielung über mehrere Rollen/Zugänge | Testblöcke | in Testblöcken enthalten; +2–3 PT Reserve |
 
-**Gesamtempfehlung:** Planwert ≈ **194 PT**; für Roadmap-/Budget-
+**Gesamtempfehlung:** Planwert ≈ **192 PT**; für Roadmap-/Budget-
 Kommunikation konservativ **200–230 PT** (inkl. Zuschläge) ansagen –
 das entspricht dem oberen Bandende und deckt die genannten Risiken
 ohne weitere Pufferlogik ab.
