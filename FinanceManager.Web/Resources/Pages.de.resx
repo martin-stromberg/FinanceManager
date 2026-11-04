@@ -3231,6 +3231,7 @@
   <data name="McpApproval_Detail_ReasonText" xml:space="preserve"><value>Nachricht des KI-Systems (ungeprüfter Inhalt):</value></data>
   <data name="McpApproval_Detail_Effect" xml:space="preserve"><value>Wirkungsvorschau (Parameter)</value></data>
   <data name="McpApproval_Detail_Result" xml:space="preserve"><value>Ausführungsergebnis</value></data>
+  <data name="McpApproval_Detail_Tool" xml:space="preserve"><value>Werkzeug (technisch)</value></data>
   <data name="McpApproval_Action_Approve" xml:space="preserve"><value>Freigeben</value></data>
   <data name="McpApproval_Action_Reject" xml:space="preserve"><value>Ablehnen</value></data>
   <data name="McpApproval_Action_Cancel" xml:space="preserve"><value>Zurückziehen</value></data>
@@ -3250,6 +3251,17 @@
   <data name="McpApproval_Kind_Delete" xml:space="preserve"><value>Endgültig löschen</value></data>
   <data name="McpApproval_Kind_Archive" xml:space="preserve"><value>Archivieren</value></data>
   <data name="McpApproval_Kind_Generic" xml:space="preserve"><value>Aktion</value></data>
+  <data name="McpApproval_ToolLabel_fm_statement_draft_book" xml:space="preserve"><value>Kontoauszugsentwurf</value></data>
+  <data name="McpApproval_ToolLabel_fm_statement_draft_discard" xml:space="preserve"><value>Kontoauszugsentwurf</value></data>
+  <data name="McpApproval_ToolLabel_fm_posting_reverse" xml:space="preserve"><value>Buchung</value></data>
+  <data name="McpApproval_ToolLabel_fm_contacts_manage" xml:space="preserve"><value>Kontakte</value></data>
+  <data name="McpApproval_ToolLabel_fm_accounts_manage" xml:space="preserve"><value>Konten</value></data>
+  <data name="McpApproval_ToolLabel_fm_savings_plans_manage" xml:space="preserve"><value>Sparpläne</value></data>
+  <data name="McpApproval_ToolLabel_fm_securities_manage" xml:space="preserve"><value>Wertpapiere</value></data>
+  <data name="McpApproval_ToolLabel_fm_budgets_manage" xml:space="preserve"><value>Budgets</value></data>
+  <data name="McpApproval_ToolLabel_fm_categories_manage" xml:space="preserve"><value>Kategorien</value></data>
+  <data name="McpApproval_ToolLabel_fm_attachments_manage" xml:space="preserve"><value>Anhänge</value></data>
+  <data name="McpApproval_ToolLabel_fm_reports_configuration_manage" xml:space="preserve"><value>Berichtskonfiguration</value></data>
   <data name="Confirmation_McpApprove_Title" xml:space="preserve"><value>Aktion freigeben</value></data>
   <data name="Confirmation_McpApprove_Message" xml:space="preserve"><value>Die angeforderte Aktion wird in die Ausführungswarteschlange gestellt und genau einmal ausgeführt. Fortfahren?</value></data>
   <data name="Confirmation_McpApproveDestructive_Title" xml:space="preserve"><value>Endgültige Aktion freigeben</value></data>
@@ -3279,4 +3291,8 @@
   <data name="Err_TargetGone" xml:space="preserve"><value>Das Ziel der Aktion existiert nicht mehr.</value></data>
   <data name="Err_AlreadyReversed" xml:space="preserve"><value>Die Buchung wurde bereits storniert.</value></data>
   <data name="Err_ValidationFailed" xml:space="preserve"><value>Die fachliche Prüfung ist fehlgeschlagen.</value></data>
+  <data name="Err_RightsRevoked" xml:space="preserve"><value>Das erforderliche Recht wurde dem Zugang inzwischen entzogen.</value></data>
+  <data name="Err_ExecutionTimeout" xml:space="preserve"><value>Die Ausführung hat das Zeitlimit überschritten.</value></data>
+  <data name="Err_Internal" xml:space="preserve"><value>Ein interner Fehler ist aufgetreten.</value></data>
+  <data name="Err_Mcp_PendingLimit" xml:space="preserve"><value>Das Limit offener Genehmigungsanfragen ist erreicht.</value></data>
 </root>

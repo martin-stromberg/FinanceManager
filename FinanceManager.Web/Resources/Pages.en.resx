@@ -3231,6 +3231,7 @@
   <data name="McpApproval_Detail_ReasonText" xml:space="preserve"><value>Message from the AI system (untrusted content):</value></data>
   <data name="McpApproval_Detail_Effect" xml:space="preserve"><value>Effect preview (parameters)</value></data>
   <data name="McpApproval_Detail_Result" xml:space="preserve"><value>Execution result</value></data>
+  <data name="McpApproval_Detail_Tool" xml:space="preserve"><value>Tool (technical)</value></data>
   <data name="McpApproval_Action_Approve" xml:space="preserve"><value>Approve</value></data>
   <data name="McpApproval_Action_Reject" xml:space="preserve"><value>Reject</value></data>
   <data name="McpApproval_Action_Cancel" xml:space="preserve"><value>Withdraw</value></data>
@@ -3250,6 +3251,17 @@
   <data name="McpApproval_Kind_Delete" xml:space="preserve"><value>Delete permanently</value></data>
   <data name="McpApproval_Kind_Archive" xml:space="preserve"><value>Archive</value></data>
   <data name="McpApproval_Kind_Generic" xml:space="preserve"><value>Action</value></data>
+  <data name="McpApproval_ToolLabel_fm_statement_draft_book" xml:space="preserve"><value>Statement draft</value></data>
+  <data name="McpApproval_ToolLabel_fm_statement_draft_discard" xml:space="preserve"><value>Statement draft</value></data>
+  <data name="McpApproval_ToolLabel_fm_posting_reverse" xml:space="preserve"><value>Posting</value></data>
+  <data name="McpApproval_ToolLabel_fm_contacts_manage" xml:space="preserve"><value>Contacts</value></data>
+  <data name="McpApproval_ToolLabel_fm_accounts_manage" xml:space="preserve"><value>Accounts</value></data>
+  <data name="McpApproval_ToolLabel_fm_savings_plans_manage" xml:space="preserve"><value>Savings plans</value></data>
+  <data name="McpApproval_ToolLabel_fm_securities_manage" xml:space="preserve"><value>Securities</value></data>
+  <data name="McpApproval_ToolLabel_fm_budgets_manage" xml:space="preserve"><value>Budgets</value></data>
+  <data name="McpApproval_ToolLabel_fm_categories_manage" xml:space="preserve"><value>Categories</value></data>
+  <data name="McpApproval_ToolLabel_fm_attachments_manage" xml:space="preserve"><value>Attachments</value></data>
+  <data name="McpApproval_ToolLabel_fm_reports_configuration_manage" xml:space="preserve"><value>Report configuration</value></data>
   <data name="Confirmation_McpApprove_Title" xml:space="preserve"><value>Approve action</value></data>
   <data name="Confirmation_McpApprove_Message" xml:space="preserve"><value>The requested action enters the execution queue and runs exactly once. Continue?</value></data>
   <data name="Confirmation_McpApproveDestructive_Title" xml:space="preserve"><value>Approve final action</value></data>
@@ -3279,4 +3291,8 @@
   <data name="Err_TargetGone" xml:space="preserve"><value>The target of the action no longer exists.</value></data>
   <data name="Err_AlreadyReversed" xml:space="preserve"><value>The posting was already reversed.</value></data>
   <data name="Err_ValidationFailed" xml:space="preserve"><value>The business validation failed.</value></data>
+  <data name="Err_RightsRevoked" xml:space="preserve"><value>The required right has since been revoked from the access.</value></data>
+  <data name="Err_ExecutionTimeout" xml:space="preserve"><value>The execution exceeded the time limit.</value></data>
+  <data name="Err_Internal" xml:space="preserve"><value>An internal error occurred.</value></data>
+  <data name="Err_Mcp_PendingLimit" xml:space="preserve"><value>The limit of open approval requests is reached.</value></data>
 </root>

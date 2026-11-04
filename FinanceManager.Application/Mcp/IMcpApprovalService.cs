@@ -99,17 +99,20 @@ public interface IMcpApprovalService
     Task<AiActionRequestDetailDto?> GetAsync(Guid ownerUserId, Guid requestId, CancellationToken ct);
 
     /// <summary>
-    /// Lists requests of the owner, optionally filtered by status and/or requesting access.
+    /// Lists requests of the owner, optionally filtered by status, requesting access and/or
+    /// tool name (ui-konzept.md §6.2 — the endpoint filter „Zugang/Tool/Zustand").
     /// </summary>
     /// <param name="ownerUserId">Owner user id.</param>
     /// <param name="status">Optional status filter.</param>
     /// <param name="accessId">Optional access filter.</param>
+    /// <param name="toolName">Optional exact <c>fm_*</c> tool name filter.</param>
     /// <param name="skip">Items to skip (≥ 0).</param>
     /// <param name="take">Items to take (server-clamped).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The matching requests ordered by <see cref="AiActionRequest.RequestedUtc"/> descending.</returns>
     Task<IReadOnlyList<AiActionRequestListItemDto>> ListAsync(
-        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, int skip, int take, CancellationToken ct);
+        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, string? toolName,
+        int skip, int take, CancellationToken ct);
 
     /// <summary>
     /// Counts the currently pending requests of one access (pending-limit evaluation).

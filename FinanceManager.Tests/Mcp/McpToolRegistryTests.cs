@@ -200,7 +200,7 @@ public sealed class McpToolRegistryTests
     {
         var approvals = new Mock<IMcpApprovalService>();
         approvals.Setup(a => a.ListAsync(It.IsAny<Guid>(), It.IsAny<AiActionRequestStatus?>(),
-                It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<FinanceManager.Shared.Dtos.Mcp.AiActionRequestListItemDto>());
         approvals.Setup(a => a.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((FinanceManager.Shared.Dtos.Mcp.AiActionRequestDetailDto?)null);

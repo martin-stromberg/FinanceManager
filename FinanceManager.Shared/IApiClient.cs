@@ -1748,12 +1748,13 @@ public interface IApiClient
     /// <summary>Lists the approval requests of the current user (inbox and history), newest first.</summary>
     /// <param name="status">Optional status filter (AiActionRequestStatus as short).</param>
     /// <param name="accessId">Optional requesting-access filter.</param>
+    /// <param name="toolName">Optional exact <c>fm_*</c> tool name filter (server-side).</param>
     /// <param name="skip">Items to skip.</param>
     /// <param name="take">Items to take.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The matching request list items.</returns>
     Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.AiActionRequestListItemDto>> Mcp_ListActionRequestsAsync(
-        short? status = null, Guid? accessId = null, int skip = 0, int take = 100, CancellationToken ct = default);
+        short? status = null, Guid? accessId = null, string? toolName = null, int skip = 0, int take = 100, CancellationToken ct = default);
 
     /// <summary>Gets one approval request detail or null when not found.</summary>
     /// <param name="id">Request id.</param>

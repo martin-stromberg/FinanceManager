@@ -32,7 +32,7 @@ public sealed class FmTaskStatusRequestTests
     private static AiActionRequestListItemDto ListItem(Guid accessId, short status = 0)
         => new(Guid.NewGuid(), accessId, "acc", "fm_contacts_manage", "delete", status,
             DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddHours(71), null, null,
-            "{\"postingIds\":[\"x\"]}", null, Guid.NewGuid(), 0);
+            "{\"postingIds\":[\"x\"]}", null, Guid.NewGuid(), 0, null);
 
     /// <summary>The list path forwards the access id and status filter and reports the rows.</summary>
     [Fact]
@@ -41,7 +41,7 @@ public sealed class FmTaskStatusRequestTests
         var owner = Guid.NewGuid();
         var accessId = Guid.NewGuid();
         var approvals = new Mock<IMcpApprovalService>();
-        approvals.Setup(a => a.ListAsync(owner, AiActionRequestStatus.Pending, accessId, 0, 100,
+        approvals.Setup(a => a.ListAsync(owner, AiActionRequestStatus.Pending, accessId, null, 0, 100,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { ListItem(accessId) });
 

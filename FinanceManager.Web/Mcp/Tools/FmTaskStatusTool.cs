@@ -158,7 +158,7 @@ public sealed class FmTaskStatusHandler : IMcpToolHandler
     private async Task<IReadOnlyList<object>> RequestListAsync(
         Guid ownerUserId, Guid accessId, AiActionRequestStatus? status, int take, CancellationToken ct)
     {
-        var items = await _approvals.ListAsync(ownerUserId, status, accessId, 0, take, ct);
+        var items = await _approvals.ListAsync(ownerUserId, status, accessId, null, 0, take, ct);
         return items.Select(r => (object)new
         {
             requestId = r.Id,

@@ -238,7 +238,8 @@ public sealed class McpApprovalService : IMcpApprovalService
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<AiActionRequestListItemDto>> ListAsync(
-        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, int skip, int take, CancellationToken ct)
+        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, string? toolName,
+        int skip, int take, CancellationToken ct)
     {
         var query = _db.AiActionRequests.AsNoTracking().Where(r => r.OwnerUserId == ownerUserId);
         if (status.HasValue)
@@ -248,6 +249,11 @@ public sealed class McpApprovalService : IMcpApprovalService
         if (accessId.HasValue)
         {
             query = query.Where(r => r.McpAccessId == accessId.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(toolName))
+        {
+            var tool = toolName.Trim();
+            query = query.Where(r => r.ToolName == tool);
         }
         var list = await query
             .OrderByDescending(r => r.RequestedUtc)
@@ -453,7 +459,8 @@ public sealed class McpApprovalService : IMcpApprovalService
     private static AiActionRequestListItemDto ToListItem(AiActionRequest r)
         => new(r.Id, r.McpAccessId, r.McpAccessName, r.ToolName, r.ActionKey, (short)r.Status,
             r.RequestedUtc, r.ExpiresUtc, r.DecidedUtc, r.ExecutedUtc, r.ExecutionResult,
-            r.FailureReason, r.CorrelationId, r.AttemptCount);
+            r.FailureReason, r.CorrelationId, r.AttemptCount,
+            McpApprovalEffectPreview.Build(r.ToolName, r.ActionKey, r.ParameterSnapshot));
 
     private static AiActionRequestDetailDto ToDetail(AiActionRequest r)
         => new(r.Id, r.McpAccessId, r.McpAccessName, r.ToolName, r.ActionKey, r.CatalogVersion,

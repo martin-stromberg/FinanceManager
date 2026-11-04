@@ -49,7 +49,7 @@ public sealed class AiActionRequestsControllerTests
     private static AiActionRequestListItemDto ListItem(Guid accessId)
         => new(Guid.NewGuid(), accessId, "acc", "fm_contacts_manage", "delete", 0,
             DateTime.UtcNow, DateTime.UtcNow.AddHours(72), null, null, null, null,
-            Guid.NewGuid(), 0);
+            Guid.NewGuid(), 0, null);
 
     /// <summary>The list endpoint scopes to the current user and forwards status/access filters.</summary>
     [Fact]
@@ -57,15 +57,32 @@ public sealed class AiActionRequestsControllerTests
     {
         var (c, svc, user) = Create();
         var access = Guid.NewGuid();
-        svc.Setup(s => s.ListAsync(user.UserId, AiActionRequestStatus.Pending, access, 5, 50,
+        svc.Setup(s => s.ListAsync(user.UserId, AiActionRequestStatus.Pending, access, null, 5, 50,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { ListItem(access) });
 
-        var result = await c.ListAsync((short)AiActionRequestStatus.Pending, access, 5, 50, CancellationToken.None);
+        var result = await c.ListAsync((short)AiActionRequestStatus.Pending, access, null, 5, 50, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var items = Assert.IsAssignableFrom<IReadOnlyList<AiActionRequestListItemDto>>(ok.Value);
         Assert.Single(items);
+        svc.VerifyAll();
+    }
+
+    /// <summary>The tool filter is forwarded to the service — server-side filtering
+    /// (ui-konzept.md §6.2), not a client-side page filter.</summary>
+    [Fact]
+    public async Task List_PassesToolNameFilter()
+    {
+        var (c, svc, user) = Create();
+        svc.Setup(s => s.ListAsync(user.UserId, AiActionRequestStatus.Pending, null,
+                "fm_posting_reverse", 0, 50, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AiActionRequestListItemDto>());
+
+        var result = await c.ListAsync((short)AiActionRequestStatus.Pending, null,
+            "fm_posting_reverse", 0, 50, CancellationToken.None);
+
+        Assert.IsType<OkObjectResult>(result);
         svc.VerifyAll();
     }
 
@@ -75,7 +92,7 @@ public sealed class AiActionRequestsControllerTests
     {
         var (c, svc, _) = Create();
         var bad = Assert.IsType<BadRequestObjectResult>(
-            await c.ListAsync(99, null, 0, 50, CancellationToken.None));
+            await c.ListAsync(99, null, null, 0, 50, CancellationToken.None));
         var err = Assert.IsType<ApiErrorDto>(bad.Value);
         Assert.Equal("Err_Mcp_InvalidArguments", err.code);
         svc.VerifyNoOtherCalls();

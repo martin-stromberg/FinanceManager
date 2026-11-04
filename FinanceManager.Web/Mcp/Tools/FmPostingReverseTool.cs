@@ -39,16 +39,17 @@ public sealed class FmPostingReverseDescriptor : McpToolDescriptorBase
 
 /// <summary>
 /// Handler of <c>fm_posting_reverse</c> (F-1003): runs <see cref="IPostingReversalService.CanReverseAsync"/>
-/// in both phases — the request creation (interactive fallback path) and, normatively, the
-/// queue execution — so a posting whose situation changed between approval and execution
-/// fails classified (<c>Err_AlreadyReversed</c>/<c>Err_ValidationFailed</c>) instead of a
-/// double reversal. Missing/foreign postings collapse to <c>Err_TargetGone</c> at execution
-/// (404 semantics). The reversal itself uses the regular
-/// <see cref="IPostingReversalService.ReversePostingAsync"/> path and commits atomically
-/// with its staged <c>DataChange</c> record (F-0301); the client reason text is kept as
-/// untrusted audit-field content only.
+/// in both phases — the request creation (<see cref="IMcpEnqueueValidator"/> hook, invoked
+/// by the dispatcher before the queue entry is persisted, plus the interactive fallback
+/// path) and, normatively, the queue execution — so a posting whose situation changed
+/// between approval and execution fails classified
+/// (<c>Err_AlreadyReversed</c>/<c>Err_ValidationFailed</c>) instead of a double reversal.
+/// Missing/foreign postings collapse to <c>Err_TargetGone</c> (404 semantics). The reversal
+/// itself uses the regular <see cref="IPostingReversalService.ReversePostingAsync"/> path
+/// and commits atomically with its staged <c>DataChange</c> record (F-0301); the client
+/// reason text is kept as untrusted audit-field content only.
 /// </summary>
-public sealed class FmPostingReverseHandler : IMcpToolHandler
+public sealed class FmPostingReverseHandler : IMcpToolHandler, IMcpEnqueueValidator
 {
     private const string EntityType = "Posting";
 
@@ -66,22 +67,35 @@ public sealed class FmPostingReverseHandler : IMcpToolHandler
     public string ToolName => FmPostingReverseDescriptor.ToolName;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Enqueue-time pre-check (F-1003): the dispatcher calls this hook before persisting the
+    /// queue entry, so a request on an already reversed or vanished posting is rejected
+    /// classified (<c>Err_AlreadyReversed</c>/<c>Err_TargetGone</c>) at creation instead of
+    /// failing only after approval at execution.
+    /// </remarks>
+    public async Task ValidateRequestAsync(JsonElement arguments, McpToolCallContext context, CancellationToken ct)
+    {
+        var owner = context.Access.OwnerUserId;
+        var postingId = McpToolArguments.RequiredGuid(arguments, "postingId");
+        var validation = await _reversals.CanReverseAsync(postingId, owner, ct);
+        if (!validation.IsValid)
+        {
+            ThrowClassified(postingId, validation.Errors);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<object> InvokeAsync(JsonElement arguments, McpToolCallContext context, CancellationToken ct)
     {
         var owner = context.Access.OwnerUserId;
         var postingId = McpToolArguments.RequiredGuid(arguments, "postingId");
         var reasonText = McpToolArguments.OptionalString(arguments, "reasonText", 500);
 
-        // CanReverseAsync pre-check (F-1003): runs at request creation on the interactive
-        // path and again at queue execution — a changed situation fails classified.
+        // CanReverseAsync pre-check (F-1003): also runs at queue execution — a changed
+        // situation fails classified (the enqueue-time hook alone is not atomic).
         var validation = await _reversals.CanReverseAsync(postingId, owner, ct);
         if (!validation.IsValid)
         {
-            if (context.Mode == McpToolExecutionMode.ApprovedExecution)
-            {
-                ThrowClassified(postingId, validation.Errors);
-            }
-            // Interactive path: the pre-check already failed — a request would be futile.
             ThrowClassified(postingId, validation.Errors);
         }
 

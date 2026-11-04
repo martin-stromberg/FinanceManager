@@ -222,14 +222,51 @@ public sealed class McpApprovalServiceTests
         Assert.NotNull(await svc.GetAsync(owner, r1.Id, CancellationToken.None));
         Assert.Null(await svc.GetAsync(foreign, r1.Id, CancellationToken.None));
 
-        var all = await svc.ListAsync(owner, null, null, 0, 50, CancellationToken.None);
+        var all = await svc.ListAsync(owner, null, null, null, 0, 50, CancellationToken.None);
         Assert.Equal(2, all.Count);
-        var pending = await svc.ListAsync(owner, AiActionRequestStatus.Pending, null, 0, 50, CancellationToken.None);
+        var pending = await svc.ListAsync(owner, AiActionRequestStatus.Pending, null, null, 0, 50, CancellationToken.None);
         Assert.Equal(2, pending.Count);
-        var byAccess = await svc.ListAsync(owner, null, access.Id, 0, 50, CancellationToken.None);
+        var byAccess = await svc.ListAsync(owner, null, access.Id, null, 0, 50, CancellationToken.None);
         Assert.Equal(2, byAccess.Count);
-        var empty = await svc.ListAsync(owner, AiActionRequestStatus.Executed, null, 0, 50, CancellationToken.None);
+        var empty = await svc.ListAsync(owner, AiActionRequestStatus.Executed, null, null, 0, 50, CancellationToken.None);
         Assert.Empty(empty);
+    }
+
+    /// <summary>The tool filter narrows the list server-side (ui-konzept.md §6.2 —
+    /// „Zugang/Tool/Zustand"): requests of other tools stay out of the page.</summary>
+    [Fact]
+    public async Task ListAsync_ToolNameFilter_ShouldReturnOnlyMatchingTool()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner);
+        await svc.EnqueueAsync(access, "fm_contacts_manage", "delete", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "a", CancellationToken.None);
+        await svc.EnqueueAsync(access, "fm_posting_reverse", "fm_posting_reverse", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "b", CancellationToken.None);
+
+        var filtered = await svc.ListAsync(owner, null, null, "fm_posting_reverse", 0, 50, CancellationToken.None);
+        var other = await svc.ListAsync(owner, null, null, "fm_unknown_tool", 0, 50, CancellationToken.None);
+
+        var item = Assert.Single(filtered);
+        Assert.Equal("fm_posting_reverse", item.ToolName);
+        Assert.Empty(other);
+    }
+
+    /// <summary>The list item carries the server-side effect preview of the request
+    /// (inbox-row effect statement of the approval center).</summary>
+    [Fact]
+    public async Task ListAsync_ShouldIncludeEffectPreview()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        await svc.EnqueueAsync(NewAccess(owner), "fm_contacts_manage", "delete", "katalog-v1",
+            "{\"contactId\":\"x\"}", null, Guid.NewGuid(), "p", CancellationToken.None);
+
+        var item = Assert.Single(await svc.ListAsync(owner, null, null, null, 0, 50, CancellationToken.None));
+        Assert.NotNull(item.EffectPreview);
+        Assert.Equal("delete", item.EffectPreview!.Kind);
+        Assert.True(item.EffectPreview.IsDestructive);
     }
 
     /// <summary>CountPendingAsync ShouldCountPerAccess.</summary>

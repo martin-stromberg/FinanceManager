@@ -65,7 +65,7 @@ public sealed class McpApprovalCenterViewModel : BaseCardViewModel<(string Key, 
     /// <summary>Pending access filter.</summary>
     public Guid? FilterAccessId { get; private set; }
 
-    /// <summary>Pending client-side tool filter (exact <c>fm_*</c> name).</summary>
+    /// <summary>Pending tool filter (exact <c>fm_*</c> name, applied server-side).</summary>
     public string? FilterToolName { get; private set; }
 
     /// <summary>Ids of pending requests selected for the batch decision.</summary>
@@ -172,25 +172,21 @@ public sealed class McpApprovalCenterViewModel : BaseCardViewModel<(string Key, 
     /// </summary>
     private async Task<IReadOnlyList<AiActionRequestListItemDto>> LoadPageAsync(int skip)
     {
+        // Status, access and tool filters are server-side (ui-konzept.md §6.2); only the
+        // "all decided states" union of the history view is folded client-side.
         if (ShowHistory)
         {
             if (FilterStatus.HasValue && FilterStatus.Value != (short)AiActionRequestStatus.Pending)
             {
-                return Filter(await _api.Mcp_ListActionRequestsAsync(FilterStatus, FilterAccessId, skip, PageSize));
+                return await _api.Mcp_ListActionRequestsAsync(FilterStatus, FilterAccessId, FilterToolName, skip, PageSize);
             }
             // No single status filter for "decided" — fetch and filter client-side.
-            var all = await _api.Mcp_ListActionRequestsAsync(null, FilterAccessId, skip, PageSize);
-            return Filter(all.Where(r => r.Status != (short)AiActionRequestStatus.Pending).ToList());
+            var all = await _api.Mcp_ListActionRequestsAsync(null, FilterAccessId, FilterToolName, skip, PageSize);
+            return all.Where(r => r.Status != (short)AiActionRequestStatus.Pending).ToList();
         }
-        return Filter(await _api.Mcp_ListActionRequestsAsync(
-            FilterStatus ?? (short)AiActionRequestStatus.Pending, FilterAccessId, skip, PageSize));
+        return await _api.Mcp_ListActionRequestsAsync(
+            FilterStatus ?? (short)AiActionRequestStatus.Pending, FilterAccessId, FilterToolName, skip, PageSize);
     }
-
-    /// <summary>Applies the client-side tool filter.</summary>
-    private List<AiActionRequestListItemDto> Filter(IReadOnlyList<AiActionRequestListItemDto> page)
-        => string.IsNullOrWhiteSpace(FilterToolName)
-            ? page.ToList()
-            : page.Where(r => string.Equals(r.ToolName, FilterToolName, StringComparison.OrdinalIgnoreCase)).ToList();
 
     /// <summary>Expands a request (loads its detail incl. effect preview) or collapses it.</summary>
     public async Task ToggleDetailsAsync(Guid requestId)

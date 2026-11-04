@@ -35,6 +35,34 @@
 - Bestehende Tests an erweiterte `AiActionRequestDetailDto`- und
   `McpAuditController`-Signaturen angepasst.
 
+## Korrekturen Abnahme 1
+- [x] **F-1003 T31-Vorprüfung bei Anlage:** neuer optionaler Hook `IMcpEnqueueValidator`
+  (Application/Mcp). Der Dispatcher ruft ihn in `EnqueueAsync` vor dem Persistieren des
+  Queue-Eintrags auf (Gate-Redirect und Handler-Fallback teilen den Pfad);
+  `FmPostingReverseHandler` implementiert ihn über `CanReverseAsync` — ein bereits
+  storniertes/verschwundenes Posting wird direkt mit `Err_AlreadyReversed`/`Err_TargetGone`
+  als Tool-Fehler beantwortet statt als Pending-Request zu parken. Die Ausführungs-
+  Re-Prüfung bleibt normativ (kein Atomaritäts-Anspruch der Vorab-Prüfung).
+- [x] **F-1001 Inbox-Zeile:** lokalisierte Prozessbezeichnung je Tool/Familie
+  (`McpApproval_ToolLabel_<tool>`, resx de/en, Fallback = ToolName) + kompakte
+  Wirkungsangabe aus der serverseitigen `EffectPreview` (Kind-Text + bis zu zwei
+  Snapshot-Werte). Das List-DTO `AiActionRequestListItemDto` trägt die Preview nun
+  ebenfalls (`ToListItem` nutzt dasselbe `McpApprovalEffectPreview.Build` wie das Detail);
+  der „endgültig"-Badge nutzt `EffectPreview.IsDestructive` mit bisherigem Fallback.
+  Technischer `fm_*`-Name + ActionKey stehen jetzt in der Detailansicht
+  (`McpApproval_Detail_Tool`).
+- [x] **F-1001 toolName-Filter serverseitig:** `GET /api/mcp-approvals?toolName=` durch
+  die ganze Kette — `AiActionRequestsController.ListAsync`, `IMcpApprovalService.ListAsync`
+  (EF-Where auf `ToolName`), `ApiClient`/`IApiClient.Mcp_ListActionRequestsAsync` und das
+  Panel-Filterfeld (clientseitiger Seitenfilter entfernt; nur die „alle entschiedenen
+  Stati"-Union der Historie bleibt clientseitig). `fm_task_status` ruft den Service
+  unverändert ohne Tool-Filter.
+- [x] **F-1001 FailureReason lokalisiert:** `ErrText`-Helper im Panel mappt `Err_*`-Codes
+  über `L[code]` auf resx-Texte (Fallback = Rohcode), angewendet auf Detail-FailureReason
+  und Batch-Fehlercodes. Fehlende resx-Schlüssel für vom Executor tatsächlich schreibbare
+  Codes ergänzt (`Err_RightsRevoked`, `Err_ExecutionTimeout`, `Err_Internal`,
+  `Err_Mcp_PendingLimit`, de/en).
+
 ## Offene Punkte
 - `Err_ValidationFailed` bei `BookingResult.Success=false` ist ein konsolidierter Code;
   eine feinere Unterscheidung (Warnungen vs. Fehler) wäre möglich, aber nicht gefordert.

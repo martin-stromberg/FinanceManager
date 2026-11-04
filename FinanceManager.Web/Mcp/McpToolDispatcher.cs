@@ -23,7 +23,10 @@ namespace FinanceManager.Web.Mcp;
 /// fallback the dispatcher also converts a handler-level <c>requiresApproval</c> result
 /// (final/destructive sub-operations of the pflege tools T22–T29, which the class-level gate
 /// lets through when the access approval mode allows direct execution) into the same queue
-/// entry — an approval path never produces a synchronous effect.
+/// entry — an approval path never produces a synchronous effect. Before the request row is
+/// persisted the dispatcher offers the handler an optional enqueue-time validation hook
+/// (<see cref="IMcpEnqueueValidator"/>): a classified rejection (<see cref="McpToolException"/>)
+/// is answered directly instead of a queued request id (F-1003).
 /// </remarks>
 public sealed class McpToolDispatcher
 {
@@ -134,7 +137,7 @@ public sealed class McpToolDispatcher
             }
             if (decision.Kind == McpApprovalDecisionKind.RequiresApproval)
             {
-                return await EnqueueAsync(entity, descriptor, toolName, arguments, correlationId, sourceIp, sw, ct);
+                return await EnqueueAsync(access, entity, descriptor, toolName, arguments, correlationId, sourceIp, sw, services, ct);
             }
         }
 
@@ -157,7 +160,7 @@ public sealed class McpToolDispatcher
             //    into the same queue entry; no approval path yields a synchronous effect.
             if (entity is not null && IsApprovalRequiredResult(result))
             {
-                return await EnqueueAsync(entity, descriptor, toolName, arguments, correlationId, sourceIp, sw, ct);
+                return await EnqueueAsync(access, entity, descriptor, toolName, arguments, correlationId, sourceIp, sw, services, ct);
             }
 
             var audited = await AuditAsync(entity, toolName, "Success", correlationId, sourceIp, arguments, sw, ct);
@@ -189,9 +192,31 @@ public sealed class McpToolDispatcher
     /// content hash the service derives) makes a retry return the same request id.
     /// </summary>
     private async Task<McpDispatchResult> EnqueueAsync(
-        McpAccess entity, IMcpToolDescriptor descriptor, string toolName, JsonElement arguments,
-        Guid correlationId, string? sourceIp, Stopwatch sw, CancellationToken ct)
+        IMcpAccessContext access, McpAccess entity, IMcpToolDescriptor descriptor, string toolName,
+        JsonElement arguments, Guid correlationId, string? sourceIp, Stopwatch sw,
+        IServiceProvider services, CancellationToken ct)
     {
+        // Enqueue-time pre-validation (F-1003): a handler implementing IMcpEnqueueValidator
+        // (e.g. fm_posting_reverse with its CanReverseAsync check) rejects a futile request
+        // classified before the queue entry is persisted — the request must not park as
+        // Pending only to fail after approval at execution. GetService (not GetServices) so
+        // providers that cannot resolve the enumerable degrade to "no validator".
+        var enqueueHandler = services.GetService<IEnumerable<IMcpToolHandler>>()
+            ?.FirstOrDefault(h => h.ToolName == toolName);
+        if (enqueueHandler is IMcpEnqueueValidator validator)
+        {
+            try
+            {
+                await validator.ValidateRequestAsync(arguments,
+                    new McpToolCallContext(access, services, correlationId, sourceIp), ct);
+            }
+            catch (McpToolException ex)
+            {
+                await AuditAsync(entity, toolName, "Failed", correlationId, sourceIp, arguments, sw, ct);
+                return McpDispatchResult.ToolError(ex.Code, ex.Message);
+            }
+        }
+
         var snapshot = arguments.ValueKind == JsonValueKind.Object ? arguments.GetRawText() : "{}";
         // The sub-operation discriminator: the pflege tools carry an "operation" argument
         // (merge/delete/archive); other tools get a stable per-tool key.

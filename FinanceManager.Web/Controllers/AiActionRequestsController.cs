@@ -73,6 +73,8 @@ public sealed class AiActionRequestsController : ControllerBase
     /// <summary>Lists the own approval requests (inbox and history), newest first.</summary>
     /// <param name="status">Optional status filter (AiActionRequestStatus as short).</param>
     /// <param name="accessId">Optional requesting-access filter.</param>
+    /// <param name="toolName">Optional exact <c>fm_*</c> tool name filter
+    /// (ui-konzept.md §6.2 — „Zugang/Tool/Zustand" serverseitig).</param>
     /// <param name="skip">Items to skip.</param>
     /// <param name="take">Items to take (clamped ≤ 200).</param>
     /// <param name="ct">Cancellation token.</param>
@@ -80,7 +82,7 @@ public sealed class AiActionRequestsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<AiActionRequestListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ListAsync(
-        [FromQuery] short? status, [FromQuery] Guid? accessId,
+        [FromQuery] short? status, [FromQuery] Guid? accessId, [FromQuery] string? toolName,
         [FromQuery] int skip = 0, [FromQuery] int take = 100,
         CancellationToken ct = default)
     {
@@ -92,7 +94,7 @@ public sealed class AiActionRequestsController : ControllerBase
         {
             return Ok(await _svc.ListAsync(_current.UserId,
                 status.HasValue ? (AiActionRequestStatus)status.Value : null,
-                accessId, skip, take, ct));
+                accessId, toolName, skip, take, ct));
         }
         catch (Exception ex) { return Error(ex); }
     }

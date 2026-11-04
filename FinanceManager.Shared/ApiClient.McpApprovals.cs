@@ -12,12 +12,13 @@ public partial class ApiClient
     /// </summary>
     /// <param name="status">Optional status filter (AiActionRequestStatus as short).</param>
     /// <param name="accessId">Optional requesting-access filter.</param>
+    /// <param name="toolName">Optional exact <c>fm_*</c> tool name filter (server-side).</param>
     /// <param name="skip">Items to skip.</param>
     /// <param name="take">Items to take.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The matching request list items.</returns>
     public async Task<IReadOnlyList<AiActionRequestListItemDto>> Mcp_ListActionRequestsAsync(
-        short? status = null, Guid? accessId = null, int skip = 0, int take = 100, CancellationToken ct = default)
+        short? status = null, Guid? accessId = null, string? toolName = null, int skip = 0, int take = 100, CancellationToken ct = default)
     {
         var url = $"/api/mcp-approvals?skip={skip}&take={take}";
         if (status.HasValue)
@@ -27,6 +28,10 @@ public partial class ApiClient
         if (accessId.HasValue)
         {
             url += $"&accessId={accessId.Value}";
+        }
+        if (!string.IsNullOrWhiteSpace(toolName))
+        {
+            url += $"&toolName={Uri.EscapeDataString(toolName.Trim())}";
         }
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);

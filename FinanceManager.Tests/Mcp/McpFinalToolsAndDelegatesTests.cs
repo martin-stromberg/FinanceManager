@@ -269,6 +269,35 @@ public sealed class McpFinalToolsAndDelegatesTests
         reversals.Verify(r => r.ReversePostingAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>The enqueue-time hook (F-1003): the request-creation validation of T31 —
+    /// an already reversed posting is rejected before the queue entry exists.</summary>
+    [Fact]
+    public async Task Reverse_EnqueueValidation_AlreadyReversed_Classified()
+    {
+        var owner = Guid.NewGuid(); var postingId = Guid.NewGuid();
+        var reversals = new Mock<IPostingReversalService>();
+        reversals.Setup(r => r.CanReverseAsync(postingId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReversalValidationDto(false, new List<string> { "Posting already reversed" }));
+        var handler = new FmPostingReverseHandler(reversals.Object, NullAudit().Object);
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.ValidateRequestAsync(
+            Args($"{{\"postingId\":\"{postingId}\"}}"), Ctx(owner, approved: false), CancellationToken.None));
+        Assert.Equal("Err_AlreadyReversed", ex.Code);
+    }
+
+    /// <summary>The enqueue-time hook lets a reversible posting pass.</summary>
+    [Fact]
+    public async Task Reverse_EnqueueValidation_Reversible_Passes()
+    {
+        var owner = Guid.NewGuid(); var postingId = Guid.NewGuid();
+        var reversals = new Mock<IPostingReversalService>();
+        reversals.Setup(r => r.CanReverseAsync(postingId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReversalValidationDto(true, new List<string>()));
+        var handler = new FmPostingReverseHandler(reversals.Object, NullAudit().Object);
+        await handler.ValidateRequestAsync(
+            Args($"{{\"postingId\":\"{postingId}\"}}"), Ctx(owner, approved: false), CancellationToken.None);
+        reversals.Verify(r => r.CanReverseAsync(postingId, owner, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // -------------------------------------------------------------- effect preview
 
     /// <summary>The server-side preview classifies final tools as destructive.</summary>

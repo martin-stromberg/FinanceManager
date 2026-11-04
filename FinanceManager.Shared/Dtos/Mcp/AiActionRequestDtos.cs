@@ -19,6 +19,9 @@ namespace FinanceManager.Shared.Dtos.Mcp;
 /// <param name="FailureReason">Classified <c>Err_*</c> failure reason, or <see langword="null"/>.</param>
 /// <param name="CorrelationId">Correlation id of the effect chain.</param>
 /// <param name="AttemptCount">Execution attempt counter.</param>
+/// <param name="EffectPreview">Server-side effect preview of the request (same classification
+/// as the detail projection) — the approval center renders the compact localized effect
+/// statement and the destructive badge of the inbox row from it (ui-konzept.md §4.6).</param>
 public sealed record AiActionRequestListItemDto(
     Guid Id,
     Guid McpAccessId,
@@ -33,7 +36,8 @@ public sealed record AiActionRequestListItemDto(
     string? ExecutionResult,
     string? FailureReason,
     Guid CorrelationId,
-    int AttemptCount);
+    int AttemptCount,
+    AiActionRequestEffectPreviewDto? EffectPreview);
 
 /// <summary>
 /// Detail projection of one approval request: everything of the list item plus the frozen

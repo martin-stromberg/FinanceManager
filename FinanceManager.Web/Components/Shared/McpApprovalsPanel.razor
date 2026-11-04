@@ -72,7 +72,7 @@
                     @string.Format(L["McpApproval_Batch_Result"].Value, batch.Count(b => b.Succeeded), batch.Count)
                     @foreach (var item in batch.Where(b => !b.Succeeded))
                     {
-                        <div style="color:#e66;"><code>@item.RequestId</code>: @item.ErrorCode</div>
+                        <div style="color:#e66;"><code>@item.RequestId</code>: @ErrText(item.ErrorCode)</div>
                     }
                 </section>
             }
@@ -104,11 +104,14 @@
                                 <span style="font-size:.75rem;padding:.05rem .4rem;border:1px solid var(--border,#555);border-radius:10px;color:@StatusColor(r.Status);">
                                     @StatusText(r.Status)
                                 </span>
-                                @if (McpApprovalCenterViewModel.IsDestructive(r.ToolName, r.ActionKey))
+                                @if ((r.EffectPreview?.IsDestructive) ?? McpApprovalCenterViewModel.IsDestructive(r.ToolName, r.ActionKey))
                                 {
                                     <span style="font-size:.75rem;padding:.05rem .4rem;border:1px solid #a33;border-radius:10px;color:#e88;">@L["McpApproval_Destructive"]</span>
                                 }
-                                <span>@r.McpAccessName · <code>@r.ToolName</code> @r.ActionKey</span>
+                                @* Localized process label + compact effect from the server-side
+                                   EffectPreview (ui-konzept.md §4.6) — the technical fm_* name
+                                   stays in the detail view. *@
+                                <span>@r.McpAccessName · @ToolText(r.ToolName): <span style="color:var(--muted);">@EffectText(r)</span></span>
                                 @if (isPending)
                                 {
                                     <span style="font-size:.8rem;color:@(remaining < TimeSpan.FromHours(24) ? "#e6a03c" : "var(--muted)");">
@@ -129,6 +132,7 @@
                                             <tbody>
                                                 <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_RequestId"]</td><td><code>@d.Id</code></td></tr>
                                                 <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Access"]</td><td>@d.McpAccessName</td></tr>
+                                                <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Tool"]</td><td><code>@d.ToolName</code> · @d.ActionKey</td></tr>
                                                 <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Kind"]</td><td>@KindText(d.EffectPreview?.Kind ?? "generic")</td></tr>
                                                 @if (d.ExpiresUtc != default)
                                                 {
@@ -140,7 +144,7 @@
                                                 }
                                                 @if (d.FailureReason is not null)
                                                 {
-                                                    <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Failure"]</td><td><code>@d.FailureReason</code></td></tr>
+                                                    <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Failure"]</td><td>@ErrText(d.FailureReason)</td></tr>
                                                 }
                                                 <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_CorrelationId"]</td>
                                                     <td><a href="/card/mcp-audit?correlationId=@d.CorrelationId"><code>@d.CorrelationId</code></a></td></tr>
@@ -269,6 +273,44 @@
         (short)AiActionRequestStatus.Failed or (short)AiActionRequestStatus.Rejected => "#e66",
         _ => "var(--muted)"
     };
+
+    /// <summary>Localized process label of a tool (McpApproval_ToolLabel_*), fallback = tool name.</summary>
+    private string ToolText(string toolName)
+    {
+        var value = L[$"McpApproval_ToolLabel_{toolName}"];
+        return value.ResourceNotFound || string.IsNullOrWhiteSpace(value.Value) ? toolName : value.Value;
+    }
+
+    /// <summary>
+    /// Compact effect statement of a request derived from the server-side
+    /// <see cref="AiActionRequestEffectPreviewDto"/> of the list item: the localized effect
+    /// kind plus up to two identifying snapshot values.
+    /// </summary>
+    private string EffectText(AiActionRequestListItemDto r)
+    {
+        var preview = r.EffectPreview;
+        var text = KindText(preview?.Kind ?? "generic");
+        if (preview?.Fields is { Count: > 0 } fields)
+        {
+            var parts = fields.Take(2).Select(f => $"{f.Name}={TrimFieldValue(f.Value)}");
+            text += " (" + string.Join(", ", parts) + ")";
+        }
+        return text;
+    }
+
+    private static string TrimFieldValue(string? value)
+        => value is null ? "—" : value.Length > 24 ? value[..24] + "…" : value;
+
+    /// <summary>Maps a classified <c>Err_*</c> code to its localized text; fallback = raw code.</summary>
+    private string ErrText(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return string.Empty;
+        }
+        var value = L[code];
+        return value.ResourceNotFound || string.IsNullOrWhiteSpace(value.Value) ? code : value.Value;
+    }
 
     private string KindText(string kind) => kind switch
     {
