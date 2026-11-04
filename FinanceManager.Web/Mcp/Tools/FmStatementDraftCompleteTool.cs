@@ -689,7 +689,7 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
     private static List<EntryUpdateRequest> ParseEntryRequests(JsonElement arguments)
     {
         var list = new List<EntryUpdateRequest>();
-        if (!McpToolArguments.Has(arguments, "entries"))
+        if (!McpToolArguments.HasNonNull(arguments, "entries"))
         {
             return list;
         }
@@ -747,7 +747,7 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
 
     private static decimal? OptionalDecimal(JsonElement args, string name)
     {
-        if (!McpToolArguments.Has(args, name))
+        if (!McpToolArguments.HasNonNull(args, name))
         {
             return null;
         }
