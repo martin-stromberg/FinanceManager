@@ -7,8 +7,8 @@ Branch: `task/mcp-integration`
 | 1 | MCP-Fundament & Zugangsverwaltung (EP-01, #479) | Keine | `task/mcp-integration-schritt-1-fundament` | Fertig |
 | 2 | Read-Only-Toolkatalog (EP-02, #480) | 1 | `task/mcp-integration-schritt-2-toolkatalog` | Fertig |
 | 3 | Audit-Grundlage & Revisionssicherheit (EP-03, #481) | 1 | `task/mcp-integration-schritt-3-audit` | Fertig |
-| 4 | Assistenz- & Vorschlags-Tools (EP-04, #482) | 2, 3 | `task/mcp-integration-schritt-4-assistenz` | In Arbeit |
-| 5 | Individuelle Rechte & Filter (EP-05, #483) | 1 | `task/mcp-integration-schritt-5-rechte` | Offen |
+| 4 | Assistenz- & Vorschlags-Tools (EP-04, #482) | 2, 3 | `task/mcp-integration-schritt-4-assistenz` | Fertig |
+| 5 | Individuelle Rechte & Filter (EP-05, #483) | 1 | `task/mcp-integration-schritt-5-rechte` | In Arbeit |
 | 6 | Audit-Ansicht & Nutzungsprotokoll (EP-06, #484) | 3, 5 | `task/mcp-integration-schritt-6-audit-ui` | Offen |
 | 7 | Kontoauszugs-Assistent (EP-07, #485) | 2, 3 | `task/mcp-integration-schritt-7-kontoauszug` | Offen |
 | 8 | Stammdaten-Pflege (EP-08, #486) | 2, 3 | `task/mcp-integration-schritt-8-stammdaten` | Offen |
