@@ -3166,6 +3166,7 @@
   <data name="McpAudit_Detail_Hash" xml:space="preserve"><value>Entry hash</value></data>
   <data name="McpAudit_Detail_Changes" xml:space="preserve"><value>Field changes (before/after)</value></data>
   <data name="McpAudit_Detail_Payload" xml:space="preserve"><value>Parameters (raw data)</value></data>
+  <data name="McpAudit_Detail_References" xml:space="preserve"><value>Linked records</value></data>
   <data name="McpAudit_Changes_EntityType" xml:space="preserve"><value>Entity</value></data>
   <data name="McpAudit_Changes_EntityId" xml:space="preserve"><value>Record</value></data>
   <data name="McpAudit_Changes_Field" xml:space="preserve"><value>Field</value></data>

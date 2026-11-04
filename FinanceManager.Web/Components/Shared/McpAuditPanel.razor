@@ -163,7 +163,18 @@
                                                     }
                                                     @if (d.McpAccessName is not null)
                                                     {
-                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Filter_Access"]</td><td>@d.McpAccessName</td></tr>
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Filter_Access"]</td>
+                                                            <td>
+                                                                @if (d.McpAccessId is Guid accessRef)
+                                                                {
+                                                                    <a href="/card/mcp-accesses/@accessRef">@d.McpAccessName</a>
+                                                                }
+                                                                else
+                                                                {
+                                                                    @d.McpAccessName
+                                                                }
+                                                            </td>
+                                                        </tr>
                                                     }
                                                     @if (d.CorrelationId is Guid corr)
                                                     {
@@ -183,7 +194,20 @@
                                                     }
                                                     @if (d.RelatedRequestId is Guid req)
                                                     {
+                                                        @* AiActionRequest: stays text on purpose — the approval-center
+                                                           detail route only exists from EP-09 on (F-0602 Drilling). *@
                                                         <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_Request"]</td><td><code>@req</code></td></tr>
+                                                    }
+                                                    @if (McpAuditLinks.ExtractPayloadReferences(d.PayloadJson) is { Count: > 0 } refs)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;vertical-align:top;">@L["McpAudit_Detail_References"]</td>
+                                                            <td>
+                                                                @foreach (var r in refs)
+                                                                {
+                                                                    <div><code>@r.Field</code> → <a href="@r.Href"><code>@r.Id</code></a></div>
+                                                                }
+                                                            </td>
+                                                        </tr>
                                                     }
                                                     <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_Hash"]</td><td><code style="word-break:break-all;">@d.EntryHash</code></td></tr>
                                                 </tbody>
@@ -206,7 +230,16 @@
                                                         {
                                                             <tr>
                                                                 <td>@c.EntityType</td>
-                                                                <td><code>@c.EntityId</code></td>
+                                                                <td>
+                                                                    @if (McpAuditLinks.TryGetEntityHref(c.EntityType, c.EntityId) is { } entityHref)
+                                                                    {
+                                                                        <a href="@entityHref"><code>@c.EntityId</code></a>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <code>@c.EntityId</code>
+                                                                    }
+                                                                </td>
                                                                 <td>@c.Field</td>
                                                                 <td style="word-break:break-all;">@(c.OldValue ?? "—")</td>
                                                                 <td style="word-break:break-all;">@(c.NewValue ?? "—")</td>

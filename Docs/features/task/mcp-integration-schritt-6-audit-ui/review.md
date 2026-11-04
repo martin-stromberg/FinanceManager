@@ -50,3 +50,23 @@
 - Verify meldet aktuell „Bruchstelle" bei abgeschnittenem Kettenkopf (Retention EP-11)
   — dokumentiertes Verhalten des Writers, UI zeigt FailureReason.
 - Export-Cap 5000 Zeilen; bei Bedarf Chunked-Export nachrüstbar (Konstante im Service).
+
+## Korrekturen Abnahme 1
+- [x] **F-0602 (Teilfunktion): Verlinkung im Drilling.** Neuer statischer Helper
+  `McpAuditLinks` (`FinanceManager.Web/ViewModels/Mcp/McpAuditLinks.cs`): mappt
+  Payload-Argumentfelder (`draftId` → `/card/statement-drafts/{id}`, `entryId` →
+  `/card/statement-drafts/entries/{id}`, `accountId`, `contactId`, `postingId`,
+  `savingsPlanId`, `securityId`, `mcpAccessId`) und `Changes.EntityType`
+  (`Posting`, `Contact`, `Account`, `StatementDraft(Entry)`, `Security`,
+  `SavingsPlan`, `McpAccess`, Kategorien, Budget) auf die heute existierenden
+  Card-Routen; Parsing des Payload-Snapshots via `JsonDocument` (rekursiv,
+  dedupliziert, Cap 20, `JsonException`-sicher). `McpAuditPanel.razor`: Zugangs-
+  zeile verlinkt auf `/card/mcp-accesses/{id}`, neue Detail-Zeile
+  „Verknüpfte Datensätze"/„Linked records" (`McpAudit_Detail_References`,
+  resx de/en/neutral) listet Payload-Referenzen als `<a href>`, und
+  `Changes.EntityId` wird bei bekannter Route klickbar (sonst `<code>`).
+  `RelatedRequestId` bleibt bewusst Text + Kommentar — die
+  `AiActionRequest`-/Genehmigungscenter-Route existiert erst ab EP-09; ebenso
+  bleiben `importId`/`requestId` unverlinkt (keine Import-Card-Route).
+  Tests: `McpAuditLinksTests` (Link-Generierung für bekannte Ziele,
+  Text-Fallback für unbekannte, Robustheit bei malformed/non-Guid-Payloads).
