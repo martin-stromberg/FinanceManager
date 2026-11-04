@@ -840,6 +840,10 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => x.McpAccessId);
             b.HasIndex(x => new { x.Category, x.EventType });
             b.HasIndex(x => new { x.OwnerUserId, x.SequenceNo }).IsUnique();
+            // Global chain (OwnerUserId IS NULL): composite unique indexes do not enforce
+            // sequence uniqueness for NULL owners under SQLite — a filtered index closes
+            // the gap (F-0302, datenmodell-erweiterungen.md §6.1).
+            b.HasIndex(x => x.SequenceNo).IsUnique().HasFilter("[OwnerUserId] IS NULL");
             b.Property(x => x.Utc).IsRequired();
             b.Property(x => x.SequenceNo).IsRequired();
             b.Property(x => x.Category).HasConversion<short>().IsRequired();
