@@ -16,9 +16,9 @@ Datum: 2026-11-04
 | [x] | Planprüfung | `project-plan-check.md`: Projektplan vollständig |
 | [x] | Planungscommit | `plan: MCP-Integration Konzept für Issue #470` |
 | [x] | Schritte-Tracking | `steps.md` + `status.html` |
-| [ ] | Entwicklungsschleife | Schritte mit Lifecycle, Abnahme, Merge |
-| [ ] | Aufräumen | Projektverzeichnis entfernen |
-| [ ] | Abschlusscommit | `feat: ...` |
+| [x] | Entwicklungsschleife | 5/5 Schritte gemergt, alle Abnahmen ohne Restabweichungen |
+| [x] | Aufräumen | Projektverzeichnis + Schritt-Feature-Verzeichnisse entfernt |
+| [x] | Abschlusscommit | `docs: ...` |
 | [ ] | PR | Gegen `staging`, Closing-Tag für #470, Checks überwachen |
 
 ## Hinweise
