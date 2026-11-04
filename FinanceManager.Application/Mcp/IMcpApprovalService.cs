@@ -99,17 +99,20 @@ public interface IMcpApprovalService
     Task<AiActionRequestDetailDto?> GetAsync(Guid ownerUserId, Guid requestId, CancellationToken ct);
 
     /// <summary>
-    /// Lists requests of the owner, optionally filtered by status and/or requesting access.
+    /// Lists requests of the owner, optionally filtered by status, requesting access and/or
+    /// tool name (ui-konzept.md §6.2 — the endpoint filter „Zugang/Tool/Zustand").
     /// </summary>
     /// <param name="ownerUserId">Owner user id.</param>
     /// <param name="status">Optional status filter.</param>
     /// <param name="accessId">Optional access filter.</param>
+    /// <param name="toolName">Optional exact <c>fm_*</c> tool name filter.</param>
     /// <param name="skip">Items to skip (≥ 0).</param>
     /// <param name="take">Items to take (server-clamped).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The matching requests ordered by <see cref="AiActionRequest.RequestedUtc"/> descending.</returns>
     Task<IReadOnlyList<AiActionRequestListItemDto>> ListAsync(
-        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, int skip, int take, CancellationToken ct);
+        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, string? toolName,
+        int skip, int take, CancellationToken ct);
 
     /// <summary>
     /// Counts the currently pending requests of one access (pending-limit evaluation).
@@ -118,6 +121,32 @@ public interface IMcpApprovalService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Number of pending requests.</returns>
     Task<int> CountPendingAsync(Guid mcpAccessId, CancellationToken ct);
+
+    /// <summary>
+    /// Counts the currently pending requests of an owner across all own accesses
+    /// (F-1001: the navigation badge of the approval center).
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Number of pending requests of the owner.</returns>
+    Task<int> CountPendingForOwnerAsync(Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
+    /// Applies one decision (approve or reject) to a set of own pending requests — the
+    /// batch operation of the approval center (F-1001, approval-konzept.md §7.4). Every
+    /// request keeps its own state transition and its own
+    /// <see cref="McpAuditCategory.ApprovalEvent"/> record; requests that are not pending,
+    /// not owned or missing are reported per item and do not abort the batch. All applied
+    /// transitions commit atomically in one save.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="requestIds">Requests to decide (server-clamped by the caller).</param>
+    /// <param name="approve"><see langword="true"/> approves, <see langword="false"/> rejects.</param>
+    /// <param name="note">Optional decision note applied to every decided request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>One outcome row per requested id.</returns>
+    Task<IReadOnlyList<AiActionRequestBatchItemDto>> DecideBatchAsync(
+        Guid ownerUserId, IReadOnlyList<Guid> requestIds, bool approve, string? note, CancellationToken ct);
 
     /// <summary>
     /// System-side withdrawal of all open (pending and approved-not-yet-executing) requests

@@ -421,7 +421,7 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
     {
         var attachmentId = McpToolArguments.RequiredGuid(arguments, "attachmentId");
         var existing = await _attachments.GetAsync(owner, attachmentId, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { operation = "delete", attachment = (object?)null };
         }
@@ -429,7 +429,23 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
             _scopeEvaluator, context, McpDataType.Attachments, "delete",
             "Deletes the attachment including its stored content and all references to " +
             "it; the deletion is final.",
-            new { attachmentId }, ct);
+            new { attachmentId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityType, attachmentId, "Deleted", existing!.FileName, null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "AttachmentDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { operation = "delete", attachmentId }), ct2);
+                if (!await _attachments.DeleteAsync(owner, attachmentId, ct2))
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The attachment no longer exists.");
+                }
+                return (object)new { operation = "delete", applied = true, attachmentId };
+            });
     }
 
     // ------------------------------------------------------------------

@@ -1,10 +1,13 @@
 using FinanceManager.Application.Exceptions;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Notifications;
+using FinanceManager.Application.Postings;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Mcp;
+using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Web.Mcp;
+using FinanceManager.Web.Mcp.Tools;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -65,18 +68,28 @@ public sealed class McpApprovalDispatcherTests
 
     private static McpToolDispatcher NewDispatcher(
         IMcpToolDescriptor descriptor, IMcpAuditWriter auditWriter,
-        IMcpApprovalGate gate, IMcpApprovalService approvals)
+        IMcpApprovalGate gate, IMcpApprovalService approvals, IMcpScopeEvaluator? scopes = null)
     {
         var registry = new Mock<IMcpToolRegistry>();
         registry.SetupGet(r => r.CatalogVersion).Returns("katalog-v1");
         registry.Setup(r => r.Find(descriptor.Name)).Returns(descriptor);
         var opts = new TestOptionsMonitor(new McpOptions());
         return new McpToolDispatcher(
-            registry.Object, Mock.Of<IMcpScopeEvaluator>(), auditWriter,
+            registry.Object, scopes ?? Mock.Of<IMcpScopeEvaluator>(), auditWriter,
             gate, approvals,
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
             opts, NullLogger<McpToolDispatcher>.Instance);
+    }
+
+    /// <summary>Scope evaluator stub granting every declared tuple.</summary>
+    private static IMcpScopeEvaluator AllowAllScopes()
+    {
+        var e = new Mock<IMcpScopeEvaluator>();
+        e.Setup(x => x.IsAllowedAsync(It.IsAny<McpAccess>(), It.IsAny<McpDataType>(),
+                It.IsAny<McpRightKind>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        return e.Object;
     }
 
     private static IMcpApprovalGate GateReturning(McpApprovalDecision decision)
@@ -150,6 +163,64 @@ public sealed class McpApprovalDispatcherTests
         var id1 = JsonSerializer.SerializeToElement(first.Result).GetProperty("requestId").GetGuid();
         var id2 = JsonSerializer.SerializeToElement(second.Result).GetProperty("requestId").GetGuid();
         Assert.Equal(id1, id2);
+        Assert.Equal(1, await db.AiActionRequests.CountAsync());
+    }
+
+    /// <summary>T31 enqueue-time pre-check (F-1003): a request on an already reversed
+    /// posting is rejected classified (<c>Err_AlreadyReversed</c>) at creation — no
+    /// Pending queue entry is persisted.</summary>
+    [Fact]
+    public async Task Dispatch_RequiresApproval_AlreadyReversed_ReturnsToolError_NoRequest()
+    {
+        var (db, approvals) = NewQueue();
+        var audit = new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance);
+        var access = NewAccess(Guid.NewGuid());
+        var postingId = Guid.NewGuid();
+        var descriptor = new FmPostingReverseDescriptor();
+
+        var reversals = new Mock<IPostingReversalService>();
+        reversals.Setup(r => r.CanReverseAsync(postingId, access.OwnerUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReversalValidationDto(false, new List<string> { "Posting already reversed" }));
+        IMcpToolHandler handler = new FmPostingReverseHandler(reversals.Object, Mock.Of<IMcpAuditWriter>());
+        var services = new ServiceCollection().AddSingleton(handler).BuildServiceProvider();
+
+        var dispatcher = NewDispatcher(descriptor, audit,
+            GateReturning(McpApprovalDecision.Approval), approvals, AllowAllScopes());
+        var result = await dispatcher.DispatchAsync(NewAccessContext(access), "fm_posting_reverse",
+            Args($"{{\"postingId\":\"{postingId}\"}}"), services, "10.0.0.1", CancellationToken.None);
+
+        Assert.Equal(McpDispatchResultKind.ToolError, result.Kind);
+        Assert.Equal("Err_AlreadyReversed", result.ErrorCode);
+        Assert.Equal(0, await db.AiActionRequests.CountAsync()); // request never parks
+        Assert.Contains(await db.McpAuditEntries.AsNoTracking().ToListAsync(),
+            e => e.ResultStatus == "Failed");
+    }
+
+    /// <summary>A valid reversal request still parks as Pending — the enqueue-time
+    /// validator only rejects the futile ones.</summary>
+    [Fact]
+    public async Task Dispatch_RequiresApproval_Reversible_EnqueuesNormally()
+    {
+        var (db, approvals) = NewQueue();
+        var audit = new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance);
+        var access = NewAccess(Guid.NewGuid());
+        var postingId = Guid.NewGuid();
+        var descriptor = new FmPostingReverseDescriptor();
+
+        var reversals = new Mock<IPostingReversalService>();
+        reversals.Setup(r => r.CanReverseAsync(postingId, access.OwnerUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReversalValidationDto(true, new List<string>()));
+        IMcpToolHandler handler = new FmPostingReverseHandler(reversals.Object, Mock.Of<IMcpAuditWriter>());
+        var services = new ServiceCollection().AddSingleton(handler).BuildServiceProvider();
+
+        var dispatcher = NewDispatcher(descriptor, audit,
+            GateReturning(McpApprovalDecision.Approval), approvals, AllowAllScopes());
+        var result = await dispatcher.DispatchAsync(NewAccessContext(access), "fm_posting_reverse",
+            Args($"{{\"postingId\":\"{postingId}\"}}"), services, null, CancellationToken.None);
+
+        Assert.Equal(McpDispatchResultKind.Success, result.Kind);
+        var payload = JsonSerializer.SerializeToElement(result.Result);
+        Assert.True(payload.GetProperty("queued").GetBoolean());
         Assert.Equal(1, await db.AiActionRequests.CountAsync());
     }
 

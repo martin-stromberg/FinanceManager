@@ -249,7 +249,7 @@ public sealed class FmSavingsPlansManageHandler : IMcpToolHandler
     {
         var planId = McpToolArguments.RequiredGuid(arguments, "savingsPlanId");
         var existing = await _plans.GetAsync(planId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "archive"))
         {
             return new { operation = "archive", savingsPlan = (object?)null };
         }
@@ -258,7 +258,33 @@ public sealed class FmSavingsPlansManageHandler : IMcpToolHandler
             "Archives the savings plan (sets ArchivedUtc / IsActive=false) — the only " +
             "delete-equivalent for savings plans. The plan stops matching new draft " +
             "entries; existing postings keep their reference.",
-            new { savingsPlanId = planId }, ct);
+            new { savingsPlanId = planId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityType, planId, "ArchivedUtc", null, DateTime.UtcNow.ToString("O"))
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "SavingsPlanArchived", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { operation = "archive", savingsPlanId = planId }), ct2);
+                bool archived;
+                try
+                {
+                    archived = await _plans.ArchiveAsync(planId, owner, ct2);
+                }
+                catch
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw;
+                }
+                if (!archived)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The savings plan no longer exists.");
+                }
+                return (object)new { operation = "archive", applied = true, savingsPlanId = planId };
+            });
     }
 
     private static object Result(SavingsPlanDto p)

@@ -29,6 +29,9 @@ public sealed class AiActionRequestsController : ControllerBase
 {
     private const string Origin = "API_McpApproval";
 
+    /// <summary>Maximum number of request ids accepted by one batch decision.</summary>
+    private const int MaxBatchSize = 50;
+
     private readonly IMcpApprovalService _svc;
     private readonly ICurrentUserService _current;
     private readonly ILogger<AiActionRequestsController> _logger;
@@ -70,6 +73,8 @@ public sealed class AiActionRequestsController : ControllerBase
     /// <summary>Lists the own approval requests (inbox and history), newest first.</summary>
     /// <param name="status">Optional status filter (AiActionRequestStatus as short).</param>
     /// <param name="accessId">Optional requesting-access filter.</param>
+    /// <param name="toolName">Optional exact <c>fm_*</c> tool name filter
+    /// (ui-konzept.md §6.2 — „Zugang/Tool/Zustand" serverseitig).</param>
     /// <param name="skip">Items to skip.</param>
     /// <param name="take">Items to take (clamped ≤ 200).</param>
     /// <param name="ct">Cancellation token.</param>
@@ -77,7 +82,7 @@ public sealed class AiActionRequestsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<AiActionRequestListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ListAsync(
-        [FromQuery] short? status, [FromQuery] Guid? accessId,
+        [FromQuery] short? status, [FromQuery] Guid? accessId, [FromQuery] string? toolName,
         [FromQuery] int skip = 0, [FromQuery] int take = 100,
         CancellationToken ct = default)
     {
@@ -89,14 +94,53 @@ public sealed class AiActionRequestsController : ControllerBase
         {
             return Ok(await _svc.ListAsync(_current.UserId,
                 status.HasValue ? (AiActionRequestStatus)status.Value : null,
-                accessId, skip, take, ct));
+                accessId, toolName, skip, take, ct));
+        }
+        catch (Exception ex) { return Error(ex); }
+    }
+
+    /// <summary>Returns the number of currently pending requests of the owner across all own
+    /// accesses — the badge counter of the approval center navigation entry (F-1001).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpGet("count")]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CountAsync(CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _svc.CountPendingForOwnerAsync(_current.UserId, ct));
+        }
+        catch (Exception ex) { return Error(ex); }
+    }
+
+    /// <summary>Applies one decision (approve or reject) to a set of own pending requests
+    /// (F-1001, approval-konzept.md §7.4). Every request keeps its own state transition —
+    /// per-item outcomes report partial success; <see cref="MaxBatchSize"/> caps one call.</summary>
+    /// <param name="req">The batch decision (ids + approve flag + optional comment).</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpPost("batch")]
+    [ProducesResponseType(typeof(IReadOnlyList<AiActionRequestBatchItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> BatchAsync([FromBody] AiActionRequestBatchRequest req, CancellationToken ct)
+    {
+        if (req.RequestIds is null || req.RequestIds.Count == 0 || req.RequestIds.Count > MaxBatchSize)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Mcp_InvalidArguments",
+                _localizer[$"{Origin}_Err_Mcp_InvalidArguments"].ResourceNotFound
+                    ? $"The batch must contain between 1 and {MaxBatchSize} request ids."
+                    : _localizer[$"{Origin}_Err_Mcp_InvalidArguments"].Value));
+        }
+        try
+        {
+            return Ok(await _svc.DecideBatchAsync(
+                _current.UserId, req.RequestIds, req.Approve, req.DecisionComment, ct));
         }
         catch (Exception ex) { return Error(ex); }
     }
 
     /// <summary>Gets one request detail (404 when not found/not owned). The detail carries the
-    /// frozen parameter snapshot, the client reason text and the decision metadata — the
-    /// server-side basis of the approval-center effect preview (EP-10).</summary>
+    /// frozen parameter snapshot, the server-side effect preview, the client reason text and
+    /// the decision metadata — the basis of the approval-center detail view (EP-10).</summary>
     /// <param name="id">Request id.</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpGet("{id:guid}")]

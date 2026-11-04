@@ -258,7 +258,7 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
     {
         var securityId = McpToolArguments.RequiredGuid(arguments, "securityId");
         var existing = await _securities.GetAsync(securityId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "archive"))
         {
             return new { operation = "archive", security = (object?)null };
         }
@@ -267,7 +267,33 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
             "Archives the security (IsActive=false) — the only delete-equivalent for " +
             "securities. The security stops matching new draft entries; existing " +
             "postings and price history keep their reference.",
-            new { securityId }, ct);
+            new { securityId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new("Security", securityId, "IsActive", "true", "false")
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "SecurityArchived", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { operation = "archive", securityId }), ct2);
+                bool archived;
+                try
+                {
+                    archived = await _securities.ArchiveAsync(securityId, owner, ct2);
+                }
+                catch
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw;
+                }
+                if (!archived)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The security no longer exists.");
+                }
+                return (object)new { operation = "archive", applied = true, securityId };
+            });
     }
 
     private static void ValidateCurrency(string currency)

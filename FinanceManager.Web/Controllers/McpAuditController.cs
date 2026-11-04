@@ -34,6 +34,7 @@ public sealed class McpAuditController : ControllerBase
     private const int ExportMaxRows = 5000;
 
     private readonly IMcpAuditQueryService _svc;
+    private readonly IMcpSecurityOverviewService _securityOverview;
     private readonly ICurrentUserService _current;
     private readonly ILogger<McpAuditController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
@@ -41,11 +42,13 @@ public sealed class McpAuditController : ControllerBase
     /// <summary>Creates the controller.</summary>
     public McpAuditController(
         IMcpAuditQueryService svc,
+        IMcpSecurityOverviewService securityOverview,
         ICurrentUserService current,
         ILogger<McpAuditController> logger,
         IStringLocalizer<Controller> localizer)
     {
         _svc = svc;
+        _securityOverview = securityOverview;
         _current = current;
         _logger = logger;
         _localizer = localizer;
@@ -191,6 +194,28 @@ public sealed class McpAuditController : ControllerBase
         {
             var dto = await _svc.GetAccessUsageAsync(_current.UserId, accessId, recent, ct);
             return dto is null ? NotFound() : Ok(dto);
+        }
+        catch (Exception ex) { return Error(ex); }
+    }
+
+    /// <summary>
+    /// Instance-wide MCP security overview for administrators (F-1005; ui-konzept.md §5.2,
+    /// audit-konzept.md §6.2): global switch state, access metadata of every owner,
+    /// pending-request counters and recent security events — strictly metadata, no token
+    /// material, no scope tuples, no audit payloads and no business content of foreign
+    /// users. Restricted to the <c>Admin</c> role.
+    /// </summary>
+    /// <param name="recent">Optional size of the security-events excerpt (server-clamped).</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpGet("security-overview")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    [ProducesResponseType(typeof(McpSecurityOverviewDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SecurityOverviewAsync([FromQuery] int recent = 25, CancellationToken ct = default)
+    {
+        try
+        {
+            return Ok(await _securityOverview.GetOverviewAsync(recent, ct));
         }
         catch (Exception ex) { return Error(ex); }
     }

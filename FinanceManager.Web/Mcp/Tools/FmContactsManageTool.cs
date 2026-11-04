@@ -357,7 +357,7 @@ public sealed class FmContactsManageHandler : IMcpToolHandler
                 "Source and target contact must differ.");
         }
         var existing = await _contacts.GetAsync(contactId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "merge"))
         {
             return new { operation = "merge", contact = (object?)null };
         }
@@ -366,14 +366,46 @@ public sealed class FmContactsManageHandler : IMcpToolHandler
             "Merges the source contact into the target contact: transfers alias patterns, " +
             "re-points all referencing records (draft entries, postings, budgets) and deletes " +
             "the source contact. The merge is irreversible.",
-            new { sourceContactId = contactId, targetContactId, mergePreference = preference.ToString() }, ct);
+            new { sourceContactId = contactId, targetContactId, mergePreference = preference.ToString() }, ct,
+            executeApproved: async ct2 =>
+            {
+                // The merge target must still resolve at execution time (re-check, §5.2).
+                if (await _contacts.GetAsync(targetContactId, owner, ct2) is null)
+                {
+                    throw new McpToolException("Err_TargetGone",
+                        "The merge target contact no longer exists.");
+                }
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityType, contactId, "MergedInto", existing!.Name, targetContactId.ToString())
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "ContactMerged", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { operation = "merge", contactId, targetContactId }), ct2);
+                ContactDto merged;
+                try
+                {
+                    merged = await _contacts.MergeAsync(owner, contactId, targetContactId, ct2, preference);
+                }
+                catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
+                }
+                catch
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw;
+                }
+                return (object)new { operation = "merge", applied = true, contact = Result(merged) };
+            });
     }
 
     private async Task<object> DeleteAsync(JsonElement arguments, Guid owner, McpToolCallContext context, CancellationToken ct)
     {
         var contactId = McpToolArguments.RequiredGuid(arguments, "contactId");
         var existing = await _contacts.GetAsync(contactId, owner, ct);
-        if (existing is null)
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "delete"))
         {
             return new { operation = "delete", contact = (object?)null };
         }
@@ -381,7 +413,33 @@ public sealed class FmContactsManageHandler : IMcpToolHandler
             _scopeEvaluator, context, McpDataType.Contacts, "delete",
             "Deletes the contact including its alias patterns. Referencing records lose " +
             "their contact link; the deletion is final.",
-            new { contactId }, ct);
+            new { contactId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new(EntityType, contactId, "Deleted", existing!.Name, null)
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "ContactDeleted", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { operation = "delete", contactId }), ct2);
+                bool deleted;
+                try
+                {
+                    deleted = await _contacts.DeleteAsync(contactId, owner, ct2);
+                }
+                catch
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw;
+                }
+                if (!deleted)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The contact no longer exists.");
+                }
+                return (object)new { operation = "delete", applied = true, contactId };
+            });
     }
 
     private static object Result(ContactDto c)

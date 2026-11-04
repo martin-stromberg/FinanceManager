@@ -238,7 +238,8 @@ public sealed class McpApprovalService : IMcpApprovalService
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<AiActionRequestListItemDto>> ListAsync(
-        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, int skip, int take, CancellationToken ct)
+        Guid ownerUserId, AiActionRequestStatus? status, Guid? accessId, string? toolName,
+        int skip, int take, CancellationToken ct)
     {
         var query = _db.AiActionRequests.AsNoTracking().Where(r => r.OwnerUserId == ownerUserId);
         if (status.HasValue)
@@ -248,6 +249,11 @@ public sealed class McpApprovalService : IMcpApprovalService
         if (accessId.HasValue)
         {
             query = query.Where(r => r.McpAccessId == accessId.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(toolName))
+        {
+            var tool = toolName.Trim();
+            query = query.Where(r => r.ToolName == tool);
         }
         var list = await query
             .OrderByDescending(r => r.RequestedUtc)
@@ -261,6 +267,67 @@ public sealed class McpApprovalService : IMcpApprovalService
     public Task<int> CountPendingAsync(Guid mcpAccessId, CancellationToken ct)
         => _db.AiActionRequests.AsNoTracking()
             .CountAsync(r => r.McpAccessId == mcpAccessId && r.Status == AiActionRequestStatus.Pending, ct);
+
+    /// <inheritdoc />
+    public Task<int> CountPendingForOwnerAsync(Guid ownerUserId, CancellationToken ct)
+        => _db.AiActionRequests.AsNoTracking()
+            .CountAsync(r => r.OwnerUserId == ownerUserId && r.Status == AiActionRequestStatus.Pending, ct);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<AiActionRequestBatchItemDto>> DecideBatchAsync(
+        Guid ownerUserId, IReadOnlyList<Guid> requestIds, bool approve, string? note, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(requestIds);
+        var distinctIds = requestIds.Distinct().ToList();
+        var results = new List<AiActionRequestBatchItemDto>(distinctIds.Count);
+        if (distinctIds.Count == 0)
+        {
+            return results;
+        }
+
+        var requests = await _db.AiActionRequests
+            .Where(r => r.OwnerUserId == ownerUserId && distinctIds.Contains(r.Id))
+            .ToListAsync(ct);
+        var byId = requests.ToDictionary(r => r.Id);
+
+        var changed = false;
+        foreach (var id in distinctIds)
+        {
+            if (!byId.TryGetValue(id, out var request))
+            {
+                // Owner isolation: a foreign request id behaves like a missing one.
+                results.Add(new AiActionRequestBatchItemDto(id, false, "Err_NotFound"));
+                continue;
+            }
+            try
+            {
+                if (approve)
+                {
+                    request.Approve(ownerUserId, note);
+                }
+                else
+                {
+                    request.Reject(ownerUserId, note);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                results.Add(new AiActionRequestBatchItemDto(id, false, "Err_Mcp_InvalidState"));
+                continue;
+            }
+            await StageDecisionAsync(request, approve ? "Approved" : "Rejected", note, ct);
+            results.Add(new AiActionRequestBatchItemDto(id, true, null));
+            changed = true;
+        }
+
+        if (changed)
+        {
+            // One save — every decided request carries its own transition plus its own
+            // ApprovalEvent record (approval-konzept.md §7.4).
+            await _db.SaveChangesAsync(ct);
+        }
+        return results;
+    }
 
     /// <inheritdoc />
     public async Task<int> WithdrawOpenForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct)
@@ -392,11 +459,13 @@ public sealed class McpApprovalService : IMcpApprovalService
     private static AiActionRequestListItemDto ToListItem(AiActionRequest r)
         => new(r.Id, r.McpAccessId, r.McpAccessName, r.ToolName, r.ActionKey, (short)r.Status,
             r.RequestedUtc, r.ExpiresUtc, r.DecidedUtc, r.ExecutedUtc, r.ExecutionResult,
-            r.FailureReason, r.CorrelationId, r.AttemptCount);
+            r.FailureReason, r.CorrelationId, r.AttemptCount,
+            McpApprovalEffectPreview.Build(r.ToolName, r.ActionKey, r.ParameterSnapshot));
 
     private static AiActionRequestDetailDto ToDetail(AiActionRequest r)
         => new(r.Id, r.McpAccessId, r.McpAccessName, r.ToolName, r.ActionKey, r.CatalogVersion,
             r.ParameterSnapshot, r.ReasonText, (short)r.Status, r.RequestedUtc, r.ExpiresUtc,
             r.DecidedUtc, r.DecidedByUserId, r.DecisionNote, r.ExecutedUtc, r.ExecutionResult,
-            r.FailureReason, r.CorrelationId, r.IdempotencyKey, r.AttemptCount);
+            r.FailureReason, r.CorrelationId, r.IdempotencyKey, r.AttemptCount,
+            McpApprovalEffectPreview.Build(r.ToolName, r.ActionKey, r.ParameterSnapshot));
 }
