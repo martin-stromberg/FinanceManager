@@ -133,6 +133,24 @@ public sealed class McpApprovalOptions
 
     /// <summary>Maximum number of pending approval requests per access.</summary>
     public int MaxPendingPerAccess { get; set; } = 25;
+
+    /// <summary>Seconds between two poll passes of the queue executor.</summary>
+    public int ExecutorPollSeconds { get; set; } = 5;
+
+    /// <summary>Maximum execution time of one approved request before <c>Err_ExecutionTimeout</c>.</summary>
+    public int ExecutionTimeoutSeconds { get; set; } = 300;
+
+    /// <summary>Minutes between two expiry sweep passes (<c>Pending/Approved → Expired</c>).</summary>
+    public int ExpiryCheckIntervalMinutes { get; set; } = 15;
+
+    /// <summary>Maximum requests claimed and executed per executor pass.</summary>
+    public int MaxExecutionBatchSize { get; set; } = 20;
+
+    /// <summary>
+    /// Minutes after which an unreleased claim is considered stale and reclaimable
+    /// (crash recovery of the single-instance executor).
+    /// </summary>
+    public int ClaimStaleMinutes { get; set; } = 10;
 }
 
 /// <summary>

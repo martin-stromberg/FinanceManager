@@ -178,6 +178,11 @@ public static class ServiceCollectionExtensions
         // Owner-isolated audit read path: timeline queries, detail drilling, chain
         // verification, export projection and the per-access usage aggregation (F-0601/F-0603).
         services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditQueryService, FinanceManager.Infrastructure.Mcp.McpAuditQueryService>();
+        // Approval queue (EP-09): the pipeline-position-8 gate, the persistent request
+        // service and the queue execution engine claimed by the hosted runners.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpApprovalGate, FinanceManager.Infrastructure.Mcp.McpApprovalGate>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpApprovalService, FinanceManager.Infrastructure.Mcp.McpApprovalService>();
+        services.AddScoped<FinanceManager.Application.Mcp.IAiActionExecutionEngine, FinanceManager.Infrastructure.Mcp.AiActionExecutionEngine>();
 
         return services;
     }

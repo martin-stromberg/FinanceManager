@@ -281,7 +281,7 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
             return new { entity = "purpose", operation = "delete", purpose = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Budgets, "delete",
+            _scopeEvaluator, context, McpDataType.Budgets, "delete",
             "Deletes the budget purpose including its rules and overrides; the deletion is final.",
             new { entity = "purpose", purposeId }, ct);
     }
@@ -443,7 +443,7 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
             return new { entity = "rule", operation = "delete", rule = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.BudgetRules, "delete",
+            _scopeEvaluator, context, McpDataType.BudgetRules, "delete",
             "Deletes the budget rule permanently; future budget periods lose this rule.",
             new { entity = "rule", ruleId }, ct);
     }
@@ -556,7 +556,7 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
             return new { entity = "override", operation = "delete", @override = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Budgets, "delete",
+            _scopeEvaluator, context, McpDataType.Budgets, "delete",
             "Deletes the monthly budget override; the period falls back to the rule amount.",
             new { entity = "override", overrideId }, ct);
     }
@@ -655,7 +655,7 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
             return new { entity = "category", operation = "delete", category = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.BudgetCategories, "delete",
+            _scopeEvaluator, context, McpDataType.BudgetCategories, "delete",
             "Deletes the budget category permanently; assigned purposes lose their " +
             "category link and category-scoped rules are removed.",
             new { entity = "category", categoryId }, ct);

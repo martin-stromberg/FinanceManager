@@ -107,34 +107,58 @@ internal static class McpMasterDataGuards
     }
 
     /// <summary>
-    /// Structured answer for the final/destructive sub-operations of the pflege tools
-    /// (toolkatalog §3.4, approval-konzept §2.2): the delete/archive/merge scope right is
-    /// verified first (approval never replaces the scope check — a missing Löschung right
-    /// denies immediately), then the call answers <c>Err_Mcp_ApprovalRequired</c> with a
-    /// description of the effect. <b>No</b> service is invoked — the AiActionRequest
-    /// queue coupling is introduced with EP-09.
+    /// Gate of the final/destructive sub-operations of the pflege tools (toolkatalog §3.4,
+    /// approval-konzept §2.2): the delete/archive/merge scope right is verified first
+    /// (approval never replaces the scope check — a missing Löschung right denies
+    /// immediately). In <see cref="McpToolExecutionMode.Interactive"/> mode the call then
+    /// answers <c>Err_Mcp_ApprovalRequired</c> with a description of the effect (the
+    /// approval-queue redirection is wired at dispatcher level with EP-09 Teil B); in
+    /// <see cref="McpToolExecutionMode.ApprovedExecution"/> mode — an owner-approved queue
+    /// execution — the supplied <paramref name="executeApproved"/> delegate performs the
+    /// real service effect instead.
     /// </summary>
     /// <param name="scopeEvaluator">The scope evaluator of the request scope.</param>
-    /// <param name="access">The MCP access context.</param>
+    /// <param name="context">The tool call context (carries the execution mode).</param>
     /// <param name="dataType">Data type whose Löschung right is required.</param>
     /// <param name="operation">The requested sub-operation.</param>
     /// <param name="effect">Human-readable description of the destructive effect.</param>
-    /// <param name="parameters">Optional parameter snapshot for the future queue.</param>
+    /// <param name="parameters">Optional parameter snapshot for the queue.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The structured approval-required result.</returns>
-    /// <exception cref="McpToolException">The Löschung scope is not granted.</exception>
+    /// <param name="executeApproved">
+    /// The real service effect to run under <see cref="McpToolExecutionMode.ApprovedExecution"/>;
+    /// <see langword="null"/> while the concrete operation has not been wired to the queue
+    /// yet (EP-10 wiring) — execution then fails classified with <c>Err_Mcp_ActionNotExecutable</c>.
+    /// </param>
+    /// <returns>The structured approval-required result, or the execution result.</returns>
+    /// <exception cref="McpToolException">
+    /// The Löschung scope is not granted, or the operation has no wired execution path yet.
+    /// </exception>
     public static async Task<object> ApprovalRequiredAsync(
-        IMcpScopeEvaluator scopeEvaluator, IMcpAccessContext access,
+        IMcpScopeEvaluator scopeEvaluator, McpToolCallContext context,
         McpDataType dataType, string operation, string effect,
-        object? parameters, CancellationToken ct)
+        object? parameters, CancellationToken ct,
+        Func<CancellationToken, Task<object>>? executeApproved = null)
     {
-        var entity = access.Access;
+        var entity = context.Access.Access;
         if (entity is not null
             && !await scopeEvaluator.IsAllowedAsync(entity, dataType, McpRightKind.Delete, ct))
         {
             throw new McpToolException("Err_Mcp_ScopeDenied",
                 $"Operation '{operation}' requires the scope ({dataType}, Löschung).");
         }
+
+        if (context.Mode == McpToolExecutionMode.ApprovedExecution)
+        {
+            // Owner-approved queue execution: run the real effect — or fail classified when
+            // the concrete operation is not wired yet (EP-10 wires the delegates).
+            if (executeApproved is null)
+            {
+                throw new McpToolException("Err_Mcp_ActionNotExecutable",
+                    $"Operation '{operation}' has no execution path wired yet.");
+            }
+            return await executeApproved(ct);
+        }
+
         return new
         {
             requiresApproval = true,
@@ -142,9 +166,7 @@ internal static class McpMasterDataGuards
             operation,
             effect,
             parameters,
-            message = "This operation is final/destructive and requires owner approval. " +
-                "The approval queue (AiActionRequest) is introduced with EP-09 — until then " +
-                "the call has no effect. Re-submit once approval queue support is available."
+            message = "This operation is final/destructive and requires owner approval."
         };
     }
 

@@ -287,7 +287,7 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
             return new { operation = "delete", account = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Accounts, "delete",
+            _scopeEvaluator, context, McpDataType.Accounts, "delete",
             "Deletes the account including its linked sub-IBANs. Postings and statement " +
             "references lose their account link; the deletion is final.",
             new { accountId }, ct);

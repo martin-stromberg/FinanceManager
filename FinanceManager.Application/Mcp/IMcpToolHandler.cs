@@ -3,17 +3,21 @@ using System.Text.Json;
 namespace FinanceManager.Application.Mcp;
 
 /// <summary>
-/// Per-call context handed to a tool handler by the dispatcher.
+/// Per-call context handed to a tool handler by the dispatcher or the approval-queue
+/// executor.
 /// </summary>
 /// <param name="Access">The authenticated MCP access context (owner resolution).</param>
 /// <param name="Services">Request service provider for resolving scoped services.</param>
 /// <param name="CorrelationId">Correlation id linking call, requests and audit entries.</param>
-/// <param name="SourceIp">Source IP of the client call (security attribution).</param>
+/// <param name="SourceIp">Source IP of the client call (security attribution); <see langword="null"/> on executor runs.</param>
+/// <param name="Mode">Execution mode — <see cref="McpToolExecutionMode.ApprovedExecution"/> switches
+/// approval-gated sub-operations from the <c>requiresApproval</c> answer to the real service effect.</param>
 public sealed record McpToolCallContext(
     IMcpAccessContext Access,
     IServiceProvider Services,
     Guid CorrelationId,
-    string? SourceIp);
+    string? SourceIp,
+    McpToolExecutionMode Mode = McpToolExecutionMode.Interactive);
 
 /// <summary>
 /// Exception thrown by tool handlers for a controlled, client-visible failure that must be

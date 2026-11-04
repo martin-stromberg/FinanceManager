@@ -263,7 +263,7 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
             return new { operation = "archive", security = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Securities, "archive",
+            _scopeEvaluator, context, McpDataType.Securities, "archive",
             "Archives the security (IsActive=false) — the only delete-equivalent for " +
             "securities. The security stops matching new draft entries; existing " +
             "postings and price history keep their reference.",

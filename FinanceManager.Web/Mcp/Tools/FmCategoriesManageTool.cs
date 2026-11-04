@@ -292,7 +292,7 @@ public sealed class FmCategoriesManageHandler : IMcpToolHandler
             return new { operation = "delete", category = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, dataType, "delete",
+            _scopeEvaluator, context, dataType, "delete",
             $"Deletes the {entityLabel} permanently. References of assigned records lose " +
             "their category link; the deletion is final.",
             new { categoryType = entityLabel, categoryId }, ct);
