@@ -9,8 +9,8 @@ Branch: `task/mcp-integration`
 | 3 | Audit-Grundlage & Revisionssicherheit (EP-03, #481) | 1 | `task/mcp-integration-schritt-3-audit` | Fertig |
 | 4 | Assistenz- & Vorschlags-Tools (EP-04, #482) | 2, 3 | `task/mcp-integration-schritt-4-assistenz` | Fertig |
 | 5 | Individuelle Rechte & Filter (EP-05, #483) | 1 | `task/mcp-integration-schritt-5-rechte` | Fertig |
-| 6 | Audit-Ansicht & Nutzungsprotokoll (EP-06, #484) | 3, 5 | `task/mcp-integration-schritt-6-audit-ui` | In Arbeit |
-| 7 | Kontoauszugs-Assistent (EP-07, #485) | 2, 3 | `task/mcp-integration-schritt-7-kontoauszug` | Offen |
+| 6 | Audit-Ansicht & Nutzungsprotokoll (EP-06, #484) | 3, 5 | `task/mcp-integration-schritt-6-audit-ui` | Fertig |
+| 7 | Kontoauszugs-Assistent (EP-07, #485) | 2, 3 | `task/mcp-integration-schritt-7-kontoauszug` | In Arbeit |
 | 8 | Stammdaten-Pflege (EP-08, #486) | 2, 3 | `task/mcp-integration-schritt-8-stammdaten` | Offen |
 | 9 | Genehmigungsworkflow & persistente Queue (EP-09, #487) | 1, 2, 3 | `task/mcp-integration-schritt-9-approval` | Offen |
 | 10 | Genehmigungscenter & finale Aktionen (EP-10, #488) | 8, 9 | `task/mcp-integration-schritt-10-center` | Offen |
