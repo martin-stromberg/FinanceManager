@@ -2971,4 +2971,138 @@
   <data name="Err_UserNotFound" xml:space="preserve">
     <value>Der Benutzer wurde nicht gefunden.</value>
   </data>
+  <data name="Nav_McpAccesses" xml:space="preserve"><value>KI-Zugänge</value></data>
+  <data name="General_Title_McpAccesses" xml:space="preserve"><value>KI-Zugänge</value></data>
+  <data name="McpAccess_Title" xml:space="preserve"><value>KI-Zugang</value></data>
+  <data name="McpList_Th_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="McpList_Th_Level" xml:space="preserve"><value>Freigabestufe</value></data>
+  <data name="McpList_Th_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="McpList_Th_Expires" xml:space="preserve"><value>Läuft ab</value></data>
+  <data name="McpList_Th_LastUsed" xml:space="preserve"><value>Zuletzt genutzt</value></data>
+  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>Die KI-Integration (MCP) ist serverseitig deaktiviert. Zugänge können erst verwaltet werden, wenn 'Mcp:Enabled' aktiviert ist.</value></data>
+  <data name="Mcp_Value_NeverUsed" xml:space="preserve"><value>nie</value></data>
+  <data name="Mcp_Level_Analyse" xml:space="preserve"><value>Analyse</value></data>
+  <data name="Mcp_Level_Assistent" xml:space="preserve"><value>Assistent</value></data>
+  <data name="Mcp_Level_Sachbearbeiter" xml:space="preserve"><value>Sachbearbeiter</value></data>
+  <data name="Mcp_Level_Buchhalter" xml:space="preserve"><value>Buchhalter</value></data>
+  <data name="Mcp_LevelDesc_Analyse" xml:space="preserve"><value>Darf alle Daten ansehen und auswerten. Kann nichts ändern.</value></data>
+  <data name="Mcp_LevelDesc_Assistent" xml:space="preserve"><value>Wie Analyse, zusätzlich dürfen Vorschläge erzeugt werden (z. B. Kategorisierungsideen). Ändert nichts.</value></data>
+  <data name="Mcp_LevelDesc_Sachbearbeiter" xml:space="preserve"><value>Darf Kontoauszugs-Entwürfe vorbereiten und ergänzen – Änderungen laufen über Ihre Genehmigung. Bucht und löscht nicht.</value></data>
+  <data name="Mcp_LevelDesc_Buchhalter" xml:space="preserve"><value>Volles Prozessrecht inkl. Verbuchung und Storno – immer über Ihre Genehmigung (oder dauerhaft vorab genehmigt).</value></data>
+  <data name="Mcp_LevelDesc_Individuell" xml:space="preserve"><value>Rechte je Datentyp selbst zusammenstellen (Expertenmodus).</value></data>
+  <data name="Mcp_Level_Individuell" xml:space="preserve"><value>Individuell</value></data>
+  <data name="Mcp_Status_Active" xml:space="preserve"><value>Aktiv</value></data>
+  <data name="Mcp_Status_Deactivated" xml:space="preserve"><value>Deaktiviert</value></data>
+  <data name="Mcp_Status_Revoked" xml:space="preserve"><value>Widerrufen</value></data>
+  <data name="Mcp_Status_Expired" xml:space="preserve"><value>Abgelaufen</value></data>
+  <data name="Mcp_ApprovalMode_PerAction" xml:space="preserve"><value>Jede Aktion einzeln genehmigen</value></data>
+  <data name="Mcp_ApprovalMode_PreApproved" xml:space="preserve"><value>Dauerhaft vorab genehmigen</value></data>
+  <data name="Mcp_ApprovalModeDesc_PerAction" xml:space="preserve"><value>Das KI-System legt Anfragen an; Sie entscheiden im Genehmigungscenter.</value></data>
+  <data name="Mcp_ApprovalModeDesc_PreApproved" xml:space="preserve"><value>Erlaubte Aktionen werden direkt ausgeführt – jede Ausführung wird trotzdem protokolliert.</value></data>
+  <data name="Mcp_Right_Read" xml:space="preserve"><value>Lesen</value></data>
+  <data name="Mcp_Right_Suggest" xml:space="preserve"><value>Vorschlag</value></data>
+  <data name="Mcp_Right_Complete" xml:space="preserve"><value>Vervollständigung</value></data>
+  <data name="Mcp_Right_Modify" xml:space="preserve"><value>Änderung</value></data>
+  <data name="Mcp_Right_Create" xml:space="preserve"><value>Erstellung</value></data>
+  <data name="Mcp_Right_Book" xml:space="preserve"><value>Buchung</value></data>
+  <data name="Mcp_Right_Delete" xml:space="preserve"><value>Löschung</value></data>
+  <data name="Mcp_DataType_Accounts" xml:space="preserve"><value>Konten</value></data>
+  <data name="Mcp_DataType_AccountTypes" xml:space="preserve"><value>Kontotypen</value></data>
+  <data name="Mcp_DataType_StatementImports" xml:space="preserve"><value>Kontoauszug-Importe</value></data>
+  <data name="Mcp_DataType_StatementDrafts" xml:space="preserve"><value>Kontoauszug-Entwürfe</value></data>
+  <data name="Mcp_DataType_Postings" xml:space="preserve"><value>Buchungen</value></data>
+  <data name="Mcp_DataType_Contacts" xml:space="preserve"><value>Kontakte</value></data>
+  <data name="Mcp_DataType_ContactCategories" xml:space="preserve"><value>Kontaktkategorien</value></data>
+  <data name="Mcp_DataType_SavingsPlans" xml:space="preserve"><value>Sparpläne</value></data>
+  <data name="Mcp_DataType_SavingsPlanCategories" xml:space="preserve"><value>Sparplankategorien</value></data>
+  <data name="Mcp_DataType_Securities" xml:space="preserve"><value>Wertpapiere</value></data>
+  <data name="Mcp_DataType_SecurityCategories" xml:space="preserve"><value>Wertpapierkategorien</value></data>
+  <data name="Mcp_DataType_Budgets" xml:space="preserve"><value>Budgets</value></data>
+  <data name="Mcp_DataType_BudgetCategories" xml:space="preserve"><value>Budgetkategorien</value></data>
+  <data name="Mcp_DataType_BudgetRules" xml:space="preserve"><value>Budgetregeln</value></data>
+  <data name="Mcp_DataType_Reports" xml:space="preserve"><value>Auswertungen</value></data>
+  <data name="Mcp_DataType_KpiConfigurations" xml:space="preserve"><value>KPI-Konfigurationen</value></data>
+  <data name="Mcp_DataType_Attachments" xml:space="preserve"><value>Anhänge</value></data>
+  <data name="Mcp_DataType_AttachmentCategories" xml:space="preserve"><value>Anhangkategorien</value></data>
+  <data name="EnumType_McpAccessLevel_Analyse" xml:space="preserve"><value>Analyse</value></data>
+  <data name="EnumType_McpAccessLevel_Assistent" xml:space="preserve"><value>Assistent</value></data>
+  <data name="EnumType_McpAccessLevel_Sachbearbeiter" xml:space="preserve"><value>Sachbearbeiter</value></data>
+  <data name="EnumType_McpAccessLevel_Buchhalter" xml:space="preserve"><value>Buchhalter</value></data>
+  <data name="EnumType_McpAccessLevel_Individuell" xml:space="preserve"><value>Individuell</value></data>
+  <data name="EnumType_McpApprovalMode_PerAction" xml:space="preserve"><value>Jede Aktion einzeln genehmigen</value></data>
+  <data name="EnumType_McpApprovalMode_PreApproved" xml:space="preserve"><value>Dauerhaft vorab genehmigen</value></data>
+  <data name="Mcp_Card_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Mcp_Card_Description" xml:space="preserve"><value>Beschreibung</value></data>
+  <data name="Mcp_Card_Description_Hint" xml:space="preserve"><value>Wofür wird dieser Zugang verwendet (welches KI-System, welcher Zweck)?</value></data>
+  <data name="Mcp_Card_Level" xml:space="preserve"><value>Freigabestufe</value></data>
+  <data name="Mcp_Card_ApprovalMode" xml:space="preserve"><value>Genehmigungsmodus</value></data>
+  <data name="Mcp_Card_ApprovalMode_Hint" xml:space="preserve"><value>Einzeln genehmigen: jede genehmigungspflichtige Aktion erzeugt eine Anfrage. Vorab genehmigt: erlaubte Aktionen laufen sofort (protokolliert).</value></data>
+  <data name="Mcp_Card_ExpiresUtc" xml:space="preserve"><value>Ablaufdatum</value></data>
+  <data name="Mcp_Card_ExpiresUtc_Hint" xml:space="preserve"><value>Optional. Nach diesem Zeitpunkt wird das Token abgelehnt. Leer = kein Ablauf.</value></data>
+  <data name="Mcp_Card_AllowedIpRanges" xml:space="preserve"><value>IP-Bindung</value></data>
+  <data name="Mcp_Card_AllowedIpRanges_Hint" xml:space="preserve"><value>Optional: kommagetrennte Liste von IP-Adressen oder CIDR-Bereichen, von denen der Zugang genutzt werden darf.</value></data>
+  <data name="Mcp_Card_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Mcp_Card_LastUsedUtc" xml:space="preserve"><value>Zuletzt genutzt</value></data>
+  <data name="Mcp_Card_TokenIssuedUtc" xml:space="preserve"><value>Token ausgestellt</value></data>
+  <data name="Mcp_Card_CreatedUtc" xml:space="preserve"><value>Erstellt</value></data>
+  <data name="Mcp_Section_Token" xml:space="preserve"><value>Token</value></data>
+  <data name="Mcp_Section_Rights" xml:space="preserve"><value>Rechte</value></data>
+  <data name="Mcp_Section_StatusActions" xml:space="preserve"><value>Status-Aktionen</value></data>
+  <data name="Mcp_Section_Usage" xml:space="preserve"><value>Nutzung</value></data>
+  <data name="Mcp_Token_IssuedUtc" xml:space="preserve"><value>Ausgestellt</value></data>
+  <data name="Mcp_Token_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Mcp_Token_NoPlaintext" xml:space="preserve"><value>Das Token wird aus Sicherheitsgründen nicht gespeichert und kann nicht erneut angezeigt werden.</value></data>
+  <data name="Mcp_Token_TlsWarning" xml:space="preserve"><value>Warnung: Die Verbindung ist nicht TLS-verschlüsselt – das Token wird unverschlüsselt übertragen. TLS-Setup und kurze Ablaufdaten werden empfohlen.</value></data>
+  <data name="Mcp_Rights_Level" xml:space="preserve"><value>Freigabestufe:</value></data>
+  <data name="Mcp_Rights_DataType" xml:space="preserve"><value>Datentyp</value></data>
+  <data name="Mcp_Rights_Right" xml:space="preserve"><value>Recht</value></data>
+  <data name="Mcp_Rights_Empty" xml:space="preserve"><value>Keine Rechte konfiguriert.</value></data>
+  <data name="Mcp_Rights_CapHint" xml:space="preserve"><value>Diese Rechte gelten nur bis zur Obergrenze Ihrer eigenen Benutzerrechte – ein geteiltes Konto mit Leserecht bleibt auch für die KI schreibgeschützt.</value></data>
+  <data name="Mcp_StatusActions_Hint" xml:space="preserve"><value>Deaktivieren und Widerrufen wirken sofort: laufende Aufrufe dieses Zugangs werden abgelehnt.</value></data>
+  <data name="Mcp_Usage_HistoryPlaceholder" xml:space="preserve"><value>Der detaillierte Verlauf („welches KI-System hat wann was getan“) folgt mit der Audit-Ansicht.</value></data>
+  <data name="McpToken_Title_Rotated" xml:space="preserve"><value>Neues Token</value></data>
+  <data name="McpToken_OnceWarning_Title" xml:space="preserve"><value>Token nur einmal sichtbar</value></data>
+  <data name="McpToken_OnceWarning_Message" xml:space="preserve"><value>Dieser Token wird nur jetzt angezeigt und kann nicht erneut abgerufen werden. Speichern Sie ihn jetzt an einem sicheren Ort.</value></data>
+  <data name="McpToken_Copy" xml:space="preserve"><value>Kopieren</value></data>
+  <data name="McpToken_Copied" xml:space="preserve"><value>Kopiert</value></data>
+  <data name="McpToken_ConfirmSaved" xml:space="preserve"><value>Ich habe den Token sicher gespeichert.</value></data>
+  <data name="McpToken_Close" xml:space="preserve"><value>Schließen</value></data>
+  <data name="McpToken_NoToken" xml:space="preserve"><value>Kein Token verfügbar.</value></data>
+  <data name="McpWizard_Title" xml:space="preserve"><value>Neuer KI-Zugang</value></data>
+  <data name="McpWizard_Step_MasterData" xml:space="preserve"><value>Stammdaten</value></data>
+  <data name="McpWizard_Step_Level" xml:space="preserve"><value>Freigabestufe</value></data>
+  <data name="McpWizard_Step_Token" xml:space="preserve"><value>Token</value></data>
+  <data name="McpWizard_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="McpWizard_Description" xml:space="preserve"><value>Beschreibung (optional)</value></data>
+  <data name="McpWizard_Advanced" xml:space="preserve"><value>Erweiterte Einstellungen</value></data>
+  <data name="McpWizard_ExpiresUtc" xml:space="preserve"><value>Ablaufdatum (optional)</value></data>
+  <data name="McpWizard_AllowedIpRanges" xml:space="preserve"><value>IP-Bindung (optional)</value></data>
+  <data name="McpWizard_ApprovalMode" xml:space="preserve"><value>Genehmigungsmodus</value></data>
+  <data name="McpWizard_Create" xml:space="preserve"><value>Zugang erzeugen</value></data>
+  <data name="Mcp_Ribbon_RotateToken" xml:space="preserve"><value>Token rotieren</value></data>
+  <data name="Mcp_Ribbon_Revoke" xml:space="preserve"><value>Zugang widerrufen</value></data>
+  <data name="Confirmation_McpRotate_Title" xml:space="preserve"><value>Token rotieren</value></data>
+  <data name="Confirmation_McpRotate_Message" xml:space="preserve"><value>Das bisherige Token wird sofort ungültig. Das neue Token wird nur einmal angezeigt.</value></data>
+  <data name="Confirmation_McpActivate_Title" xml:space="preserve"><value>Zugang aktivieren</value></data>
+  <data name="Confirmation_McpActivate_Message" xml:space="preserve"><value>Das Token dieses Zugangs wird wieder akzeptiert.</value></data>
+  <data name="Confirmation_McpDeactivate_Title" xml:space="preserve"><value>Zugang deaktivieren</value></data>
+  <data name="Confirmation_McpDeactivate_Message" xml:space="preserve"><value>Alle Aufrufe dieses Zugangs werden sofort abgelehnt, bis er wieder aktiviert wird.</value></data>
+  <data name="Confirmation_McpRevoke_Title" xml:space="preserve"><value>Zugang widerrufen</value></data>
+  <data name="Confirmation_McpRevoke_Message" xml:space="preserve"><value>Der Zugang wird endgültig gelöscht. Alle Aufrufe werden sofort abgelehnt und offene Anfragen zurückgezogen. Dies kann nicht rückgängig gemacht werden.</value></data>
+  <data name="Confirmation_McpLevelDowngrade_Title" xml:space="preserve"><value>Freigabestufe verringern</value></data>
+  <data name="Confirmation_McpLevelDowngrade_Message" xml:space="preserve"><value>Die niedrigere Stufe entfernt Rechte dieses Zugangs. Fortfahren?</value></data>
+  <data name="Btn_Back" xml:space="preserve"><value>Zurück</value></data>
+  <data name="Btn_Next" xml:space="preserve"><value>Weiter</value></data>
+  <data name="Err_NotFound" xml:space="preserve"><value>Nicht gefunden.</value></data>
+  <data name="Err_Mcp_Disabled" xml:space="preserve"><value>Die KI-Integration (MCP) ist serverseitig deaktiviert.</value></data>
+  <data name="Err_Mcp_NameInUse" xml:space="preserve"><value>Ein Zugang mit diesem Namen existiert bereits.</value></data>
+  <data name="Err_Mcp_InvalidScope" xml:space="preserve"><value>Das angegebene Rechteprofil ist ungültig.</value></data>
+  <data name="Err_Mcp_InvalidState" xml:space="preserve"><value>Der Vorgang ist im aktuellen Status des Zugangs nicht möglich.</value></data>
+  <data name="Err_Mcp_Unauthorized" xml:space="preserve"><value>Der Zugriff wurde verweigert.</value></data>
+  <data name="Err_Mcp_UnknownTool" xml:space="preserve"><value>Das angeforderte Werkzeug ist unbekannt.</value></data>
+  <data name="Err_Mcp_ToolNotImplemented" xml:space="preserve"><value>Das angeforderte Werkzeug ist noch nicht verfügbar.</value></data>
+  <data name="Err_Mcp_WriteAccessDisabled" xml:space="preserve"><value>Schreibzugriffe sind für MCP deaktiviert.</value></data>
+  <data name="Err_Mcp_RateLimited" xml:space="preserve"><value>Zu viele Anfragen – bitte später erneut versuchen.</value></data>
+  <data name="Err_Mcp_ScopeDenied" xml:space="preserve"><value>Das Recht wurde durch das Rechteprofil verweigert.</value></data>
+  <data name="Panel_Label_McpAccess" xml:space="preserve"><value>KI-Zugang</value></data>
 </root>

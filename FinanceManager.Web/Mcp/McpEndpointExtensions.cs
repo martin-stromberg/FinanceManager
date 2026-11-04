@@ -1,0 +1,230 @@
+using FinanceManager.Application.Mcp;
+using FinanceManager.Web.Infrastructure;
+using System.Text.Json;
+
+namespace FinanceManager.Web.Mcp;
+
+/// <summary>
+/// Endpoint mapping of the <c>/mcp</c> route (F-0103): a single POST endpoint accepting
+/// JSON-RPC 2.0 messages (<c>initialize</c>, <c>ping</c>, <c>tools/list</c>,
+/// <c>tools/call</c>, notifications), GET → 405, DELETE → session termination.
+/// Authentication runs exclusively via the <c>McpPat</c> scheme — no cookie/JWT path.
+/// </summary>
+public static class McpEndpointExtensions
+{
+    private const int ProtocolError = -32000;
+    private const int ParseError = -32700;
+    private const int InvalidRequest = -32600;
+    private const int MethodNotFound = -32601;
+    private const int InvalidParams = -32602;
+    private const int InternalError = -32603;
+    private const long MaxBodyBytes = 1_048_576; // 1 MiB envelope limit
+
+    private static readonly string[] SupportedProtocolVersions = ["2025-03-26", "2024-11-05", "2025-06-18"];
+
+    /// <summary>
+    /// Maps the MCP endpoint group.
+    /// </summary>
+    /// <param name="app">The endpoint route builder.</param>
+    /// <returns>The route group builder.</returns>
+    public static RouteGroupBuilder MapMcpEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/mcp");
+
+        group.MapPost("", HandlePostAsync)
+            .RequireAuthorization(McpAuthenticationDefaults.Policy)
+            .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
+
+        group.MapGet("", () => Results.StatusCode(StatusCodes.Status405MethodNotAllowed))
+            .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
+
+        group.MapDelete("", (HttpContext ctx, McpSessionHub sessions) =>
+        {
+            var id = ctx.Request.Headers[McpSessionHub.SessionHeader].ToString();
+            return sessions.Remove(id) ? Results.NoContent() : Results.NotFound();
+        }).RequireAuthorization(McpAuthenticationDefaults.Policy)
+          .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
+
+        return group;
+    }
+
+    private static async Task<IResult> HandlePostAsync(
+        HttpContext http,
+        McpSessionHub sessions,
+        IMcpToolRegistry registry,
+        McpToolDispatcher dispatcher,
+        IMcpAccessContext access)
+    {
+        var ct = http.RequestAborted;
+
+        // Session semantics: an unknown/expired session id is rejected (transport state only).
+        var sessionId = http.Request.Headers[McpSessionHub.SessionHeader].ToString();
+        if (!string.IsNullOrEmpty(sessionId) && !sessions.Touch(sessionId))
+        {
+            return Results.StatusCode(StatusCodes.Status404NotFound);
+        }
+
+        if (http.Request.ContentLength is > MaxBodyBytes)
+        {
+            return Results.Json(ErrorObject(null, InvalidRequest, "Request too large.", null, null));
+        }
+
+        JsonDocument doc;
+        try
+        {
+            doc = await JsonDocument.ParseAsync(http.Request.Body, cancellationToken: ct);
+        }
+        catch (JsonException)
+        {
+            return Results.Json(ErrorObject(null, ParseError, "Parse error.", null, null));
+        }
+
+        using (doc)
+        {
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                if (root.GetArrayLength() == 0)
+                {
+                    return Results.Json(ErrorObject(null, InvalidRequest, "Invalid request.", null, null));
+                }
+                var results = new List<object?>();
+                foreach (var msg in root.EnumerateArray())
+                {
+                    var response = await HandleMessageAsync(msg, http, sessions, registry, dispatcher, access, ct);
+                    if (response is not null)
+                    {
+                        results.Add(response);
+                    }
+                }
+                return results.Count == 0 ? Results.Accepted() : Results.Json(results);
+            }
+
+            var single = await HandleMessageAsync(root, http, sessions, registry, dispatcher, access, ct);
+            return single is null ? Results.Accepted() : Results.Json(single);
+        }
+    }
+
+    private static async Task<object?> HandleMessageAsync(
+        JsonElement msg,
+        HttpContext http,
+        McpSessionHub sessions,
+        IMcpToolRegistry registry,
+        McpToolDispatcher dispatcher,
+        IMcpAccessContext access,
+        CancellationToken ct)
+    {
+        if (msg.ValueKind != JsonValueKind.Object
+            || !msg.TryGetProperty("jsonrpc", out var rpcEl)
+            || rpcEl.GetString() != "2.0"
+            || !msg.TryGetProperty("method", out var methodEl)
+            || methodEl.GetString() is not { } method)
+        {
+            return Error(null, InvalidRequest, "Invalid request.");
+        }
+
+        var isNotification = !msg.TryGetProperty("id", out var idEl);
+        var method2 = method;
+        if (isNotification)
+        {
+            // Notifications (e.g. notifications/initialized) are accepted silently.
+            return null;
+        }
+
+        var id = idEl.Clone();
+        try
+        {
+            switch (method2)
+            {
+                case "initialize":
+                    {
+                        var newSession = sessions.Create();
+                        http.Response.Headers[McpSessionHub.SessionHeader] = newSession;
+                        var requested = msg.TryGetProperty("params", out var p)
+                            && p.ValueKind == JsonValueKind.Object
+                            && p.TryGetProperty("protocolVersion", out var pv)
+                                ? pv.GetString()
+                                : null;
+                        var version = requested is not null && SupportedProtocolVersions.Contains(requested)
+                            ? requested
+                            : SupportedProtocolVersions[0];
+                        return Result(id, new
+                        {
+                            protocolVersion = version,
+                            capabilities = new { tools = new { listChanged = false } },
+                            serverInfo = new { name = "FinanceManager", version = "1.0", catalogVersion = registry.CatalogVersion }
+                        });
+                    }
+                case "ping":
+                    return Result(id, new { });
+                case "tools/list":
+                    return Result(id, new
+                    {
+                        tools = registry.Tools.Select(t => (object)new
+                        {
+                            name = t.Name,
+                            description = t.Description + (t.IsDeprecated ? " [deprecated]" : string.Empty),
+                            inputSchema = t.InputSchema.RootElement.Clone()
+                        }).ToList()
+                    });
+                case "tools/call":
+                    {
+                        if (!msg.TryGetProperty("params", out var callParams)
+                            || callParams.ValueKind != JsonValueKind.Object
+                            || !callParams.TryGetProperty("name", out var nameEl)
+                            || nameEl.GetString() is not { } toolName)
+                        {
+                            return Error(id, InvalidParams, "Missing tool name.");
+                        }
+                        var arguments = callParams.TryGetProperty("arguments", out var argsEl)
+                            && argsEl.ValueKind == JsonValueKind.Object
+                                ? argsEl.Clone()
+                                : JsonDocument.Parse("{}").RootElement;
+
+                        var outcome = await dispatcher.DispatchAsync(
+                            access, toolName, arguments, http.RequestServices,
+                            http.Connection.RemoteIpAddress?.ToString(), ct);
+
+                        return outcome.Kind switch
+                        {
+                            McpDispatchResultKind.Success => Result(id, new
+                            {
+                                content = new[] { new { type = "text", text = JsonSerializer.Serialize(outcome.Result) } },
+                                structuredContent = outcome.Result
+                            }),
+                            McpDispatchResultKind.ToolError => Result(id, new
+                            {
+                                content = new[] { new { type = "text", text = outcome.ErrorMessage } },
+                                isError = true
+                            }),
+                            _ => Error(id, ProtocolError, outcome.ErrorMessage ?? "MCP error.", outcome.ErrorCode)
+                        };
+                    }
+                default:
+                    return Error(id, MethodNotFound, $"Method '{method2}' not found.");
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Error(id, InternalError, "Internal error.", detail: ex.GetType().Name);
+        }
+    }
+
+    private static object Result(JsonElement id, object result)
+        => new { jsonrpc = "2.0", id, result };
+
+    private static object Error(JsonElement? id, int code, string message, string? errCode = null, string? detail = null)
+        => ErrorObject(id, code, message, errCode, detail);
+
+    private static object ErrorObject(JsonElement? id, int code, string message, string? errCode, string? detail)
+    {
+        object? data = errCode is null && detail is null
+            ? null
+            : new { code = errCode, detail };
+        return new { jsonrpc = "2.0", id = id?.Clone(), error = new { code, message, data } };
+    }
+}

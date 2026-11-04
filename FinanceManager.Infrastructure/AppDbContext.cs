@@ -4,6 +4,7 @@ using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments; // new
 using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Contacts;
+using FinanceManager.Domain.Mcp;
 using FinanceManager.Domain.Notifications; // new
 using FinanceManager.Domain.Portfolio;
 using FinanceManager.Domain.Postings;
@@ -322,6 +323,46 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         get
         {
             return Set<BudgetOverride>();
+        }
+    }
+
+    /// <summary>MCP accesses (token-authenticated channels for MCP clients).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAccess> McpAccesses
+    {
+        get
+        {
+            return Set<McpAccess>();
+        }
+    }
+
+    /// <summary>Scope tuples of individually configured MCP accesses.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAccessScope> McpAccessScopes
+    {
+        get
+        {
+            return Set<McpAccessScope>();
+        }
+    }
+
+    /// <summary>Append-only MCP audit entries (hash-chained).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAuditEntry> McpAuditEntries
+    {
+        get
+        {
+            return Set<McpAuditEntry>();
+        }
+    }
+
+    /// <summary>Field deltas of MCP audit entries.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAuditEntryChange> McpAuditEntryChanges
+    {
+        get
+        {
+            return Set<McpAuditEntryChange>();
         }
     }
 
@@ -754,6 +795,78 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.PeriodMonth).IsRequired();
             b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId, x.PeriodYear, x.PeriodMonth }).IsUnique();
         });
+
+        // MCP access (datenmodell-erweiterungen.md §3)
+        modelBuilder.Entity<McpAccess>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => x.AccessKeyHint).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.Status });
+            b.HasIndex(x => x.ExpiresUtc);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.AccessKeyHint).HasMaxLength(12).IsRequired();
+            b.Property(x => x.TokenHash).HasMaxLength(256).IsRequired();
+            b.Property(x => x.Level).HasConversion<short>().IsRequired();
+            b.Property(x => x.ApprovalMode).HasConversion<short>().IsRequired();
+            b.Property(x => x.Status).HasConversion<short>().HasDefaultValue(McpAccessStatus.Active).IsRequired();
+            b.Property(x => x.AllowedIpRanges).HasMaxLength(500);
+            b.Property(x => x.RevocationReason).HasMaxLength(500);
+            b.HasMany(x => x.Scopes)
+                .WithOne(x => x.Access)
+                .HasForeignKey(x => x.McpAccessId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // MCP access scopes (datenmodell-erweiterungen.md §4)
+        modelBuilder.Entity<McpAccessScope>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.McpAccessId, x.DataType, x.Right });
+            b.HasIndex(x => x.OwnerUserId);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.DataType).HasConversion<short>().IsRequired();
+            b.Property(x => x.Right).HasConversion<short>().IsRequired();
+        });
+
+        // MCP audit entries (datenmodell-erweiterungen.md §6.1)
+        modelBuilder.Entity<McpAuditEntry>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.OwnerUserId, x.Utc });
+            b.HasIndex(x => x.CorrelationId);
+            b.HasIndex(x => x.McpAccessId);
+            b.HasIndex(x => new { x.Category, x.EventType });
+            b.HasIndex(x => new { x.OwnerUserId, x.SequenceNo }).IsUnique();
+            b.Property(x => x.Utc).IsRequired();
+            b.Property(x => x.SequenceNo).IsRequired();
+            b.Property(x => x.Category).HasConversion<short>().IsRequired();
+            b.Property(x => x.EventType).HasMaxLength(100).IsRequired();
+            b.Property(x => x.McpAccessName).HasMaxLength(100);
+            b.Property(x => x.ToolName).HasMaxLength(100);
+            b.Property(x => x.CatalogVersion).HasMaxLength(40);
+            b.Property(x => x.Context).HasMaxLength(40);
+            b.Property(x => x.ResultStatus).HasMaxLength(50).IsRequired();
+            b.Property(x => x.SourceIp).HasMaxLength(64);
+            b.Property(x => x.PrevHash).HasMaxLength(128);
+            b.Property(x => x.EntryHash).HasMaxLength(128).IsRequired();
+            b.HasMany(x => x.Changes)
+                .WithOne(x => x.Entry)
+                .HasForeignKey(x => x.EntryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // MCP audit entry changes (datenmodell-erweiterungen.md §6.2)
+        modelBuilder.Entity<McpAuditEntryChange>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => x.EntryId);
+            b.HasIndex(x => new { x.EntityType, x.EntityId });
+            b.Property(x => x.EntityType).HasMaxLength(100).IsRequired();
+            b.Property(x => x.Field).HasMaxLength(100).IsRequired();
+        });
     }
     /// <summary>
     /// Configure warnings and other runtime options for the DbContext.
@@ -775,12 +888,33 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 26;
+        var total = 30;
         var count = 0;
 
         // Notifications
         await Notifications
             .Where(n => n.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // MCP: audit field deltas → audit entries → scope rows → accesses
+        await McpAuditEntryChanges
+            .Where(c => McpAuditEntries.Any(e => e.Id == c.EntryId && e.OwnerUserId == userId))
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await McpAuditEntries
+            .Where(e => e.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await McpAccessScopes
+            .Where(s => s.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await McpAccesses
+            .Where(a => a.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
