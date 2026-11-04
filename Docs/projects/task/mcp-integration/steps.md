@@ -5,8 +5,8 @@ Branch: `task/mcp-integration`
 | # | Titel | Abhängigkeiten | Branch | Status |
 |---|-------|----------------|--------|--------|
 | 1 | MCP-Fundament & Zugangsverwaltung (EP-01, #479) | Keine | `task/mcp-integration-schritt-1-fundament` | Fertig |
-| 2 | Read-Only-Toolkatalog (EP-02, #480) | 1 | `task/mcp-integration-schritt-2-toolkatalog` | In Arbeit |
-| 3 | Audit-Grundlage & Revisionssicherheit (EP-03, #481) | 1 | `task/mcp-integration-schritt-3-audit` | Offen |
+| 2 | Read-Only-Toolkatalog (EP-02, #480) | 1 | `task/mcp-integration-schritt-2-toolkatalog` | Fertig |
+| 3 | Audit-Grundlage & Revisionssicherheit (EP-03, #481) | 1 | `task/mcp-integration-schritt-3-audit` | In Arbeit |
 | 4 | Assistenz- & Vorschlags-Tools (EP-04, #482) | 2, 3 | `task/mcp-integration-schritt-4-assistenz` | Offen |
 | 5 | Individuelle Rechte & Filter (EP-05, #483) | 1 | `task/mcp-integration-schritt-5-rechte` | Offen |
 | 6 | Audit-Ansicht & Nutzungsprotokoll (EP-06, #484) | 3, 5 | `task/mcp-integration-schritt-6-audit-ui` | Offen |
