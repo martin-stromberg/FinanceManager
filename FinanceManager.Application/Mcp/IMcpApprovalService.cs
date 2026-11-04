@@ -130,4 +130,21 @@ public interface IMcpApprovalService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Number of withdrawn requests.</returns>
     Task<int> WithdrawOpenForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct);
+
+    /// <summary>
+    /// System-side withdrawal of the open requests of one access whose declared tool scope
+    /// the current effective profile no longer covers — the „Recht entfallen" transition of
+    /// approval-konzept.md §3.3/§6.1 after a scope-profile or access-level change. The check
+    /// is granular: a request is only withdrawn when its tool descriptor declares a
+    /// (Datentyp × Rechteart) tuple missing from the new profile; still-covered requests,
+    /// meta-scope tools (inherent scope) and requests under an active claim stay untouched.
+    /// Called by the access administration after profile-changing writes
+    /// (<c>SetScopes</c>, level-changing <c>Update</c>); the executor's execution-time
+    /// re-check remains the safety net for every other lid.
+    /// </summary>
+    /// <param name="mcpAccessId">Access identifier.</param>
+    /// <param name="reason">Documented system reason (e.g. "Recht entfallen").</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Number of withdrawn requests.</returns>
+    Task<int> WithdrawScopeUncoveredForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct);
 }

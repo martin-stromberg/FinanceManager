@@ -33,6 +33,7 @@ public sealed class McpApprovalDispatcherTests
         var writer = new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance);
         var options = new TestOptionsMonitor(new McpOptions());
         var approvals = new McpApprovalService(db, writer, Mock.Of<INotificationWriter>(),
+            Mock.Of<IMcpToolRegistry>(), new McpScopeEvaluator(db),
             options, NullLogger<McpApprovalService>.Instance);
         return (db, approvals);
     }

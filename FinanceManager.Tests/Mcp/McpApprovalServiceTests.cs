@@ -23,7 +23,8 @@ namespace FinanceManager.Tests.Mcp;
 public sealed class McpApprovalServiceTests
 {
     private static (McpApprovalService svc, AppDbContext db, Mock<INotificationWriter> notifications) Create(
-        int maxPending = 25, int expiryHours = 72, bool realAudit = true)
+        int maxPending = 25, int expiryHours = 72, bool realAudit = true,
+        Mock<IMcpToolRegistry>? registry = null, Mock<IMcpScopeEvaluator>? scopes = null)
     {
         var services = new ServiceCollection();
         services.AddDbContext<AppDbContext>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString()));
@@ -33,12 +34,17 @@ public sealed class McpApprovalServiceTests
             ? new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance)
             : new NullMcpAuditWriter(NullLogger<NullMcpAuditWriter>.Instance);
         var notifications = new Mock<INotificationWriter>();
+        registry ??= new Mock<IMcpToolRegistry>();
+        scopes ??= new Mock<IMcpScopeEvaluator>();
+        // Safe default: an empty effective profile — the coverage check never dereferences null.
+        scopes.Setup(s => s.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<McpAccessScope>());
         var options = new TestOptionsMonitor(new McpOptions
         {
             Approval = new McpApprovalOptions { MaxPendingPerAccess = maxPending, DefaultExpiryHours = expiryHours }
         });
-        var svc = new McpApprovalService(db, audit, notifications.Object, options,
-            NullLogger<McpApprovalService>.Instance);
+        var svc = new McpApprovalService(db, audit, notifications.Object, registry.Object,
+            scopes.Object, options, NullLogger<McpApprovalService>.Instance);
         return (svc, db, notifications);
     }
 
@@ -266,6 +272,118 @@ public sealed class McpApprovalServiceTests
         Assert.Equal(AiActionRequestStatus.Approved, all.Single(x => x.Id == claimed.Id).Status);
         Assert.Equal(AiActionRequestStatus.Rejected, all.Single(x => x.Id == rejected.Id).Status);
         Assert.True(await db.McpAuditEntries.Where(e => e.EventType == "ApprovalWithdrawn").CountAsync() == 2);
+    }
+
+    /// <summary>A data-tool descriptor stub declaring the given required scope tuples.</summary>
+    private static IMcpToolDescriptor DataToolDescriptor(string name, params McpToolScope[] requiredScopes)
+    {
+        var d = new Mock<IMcpToolDescriptor>();
+        d.SetupGet(x => x.Name).Returns(name);
+        d.SetupGet(x => x.RequiredScopes).Returns(requiredScopes);
+        d.SetupGet(x => x.MetaScope).Returns((string?)null);
+        return d.Object;
+    }
+
+    /// <summary>
+    /// F-0904 (approval-konzept.md §3.3/§6.1 „Recht entfallen"): the granular withdrawal
+    /// rejects only the open requests whose tool descriptor declares a scope tuple the new
+    /// effective profile no longer grants — still-covered requests and requests under an
+    /// active claim stay untouched; every withdrawal couples its ApprovalWithdrawn record.
+    /// </summary>
+    [Fact]
+    public async Task WithdrawScopeUncovered_ShouldRejectOnlyUncoveredRequests()
+    {
+        var registry = new Mock<IMcpToolRegistry>();
+        var scopes = new Mock<IMcpScopeEvaluator>();
+        var (svc, db, _) = Create(registry: registry, scopes: scopes);
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner);
+        db.McpAccesses.Add(access);
+
+        registry.Setup(r => r.Find("fm_delete_tool")).Returns(DataToolDescriptor("fm_delete_tool",
+            new McpToolScope(McpDataType.Contacts, McpRightKind.Delete)));
+        registry.Setup(r => r.Find("fm_read_tool")).Returns(DataToolDescriptor("fm_read_tool",
+            new McpToolScope(McpDataType.Contacts, McpRightKind.Read)));
+        // The profile after the scope change grants Read only — the delete tool lost its tuple.
+        scopes.Setup(s => s.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Read) });
+
+        var pendingDelete = new AiActionRequest(owner, access.Id, "acc-1", "fm_delete_tool", "delete",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-pd");
+        var approvedDelete = new AiActionRequest(owner, access.Id, "acc-1", "fm_delete_tool", "delete",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-ad");
+        approvedDelete.Approve(owner, null);
+        var claimedDelete = new AiActionRequest(owner, access.Id, "acc-1", "fm_delete_tool", "delete",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-cd");
+        claimedDelete.Approve(owner, null);
+        claimedDelete.MarkClaimed(Guid.NewGuid(), DateTime.UtcNow); // active execution — untouched
+        var pendingRead = new AiActionRequest(owner, access.Id, "acc-1", "fm_read_tool", "list",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-pr");
+        db.AiActionRequests.AddRange(pendingDelete, approvedDelete, claimedDelete, pendingRead);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var count = await svc.WithdrawScopeUncoveredForAccessAsync(access.Id, "Recht entfallen", CancellationToken.None);
+
+        Assert.Equal(2, count);
+        var all = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        foreach (var id in new[] { pendingDelete.Id, approvedDelete.Id })
+        {
+            var row = all.Single(r => r.Id == id);
+            Assert.Equal(AiActionRequestStatus.Rejected, row.Status);
+            Assert.Equal("Recht entfallen", row.DecisionNote);
+            Assert.Null(row.DecidedByUserId); // system transition
+        }
+        Assert.Equal(AiActionRequestStatus.Approved, all.Single(r => r.Id == claimedDelete.Id).Status);
+        Assert.Equal(AiActionRequestStatus.Pending, all.Single(r => r.Id == pendingRead.Id).Status);
+        Assert.Equal(2, await db.McpAuditEntries.AsNoTracking()
+            .CountAsync(e => e.EventType == "ApprovalWithdrawn"));
+    }
+
+    /// <summary>
+    /// Meta-scope tools carry an inherent scope (never profile-lost) and unknown tools keep
+    /// their request — they fail classified at execution, not at the profile check.
+    /// </summary>
+    [Fact]
+    public async Task WithdrawScopeUncovered_MetaAndUnknownTools_StayOpen()
+    {
+        var registry = new Mock<IMcpToolRegistry>();
+        var scopes = new Mock<IMcpScopeEvaluator>(); // default: empty effective profile
+        var (svc, db, _) = Create(registry: registry, scopes: scopes);
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner);
+        db.McpAccesses.Add(access);
+
+        var metaDescriptor = new Mock<IMcpToolDescriptor>();
+        metaDescriptor.SetupGet(d => d.Name).Returns("fm_meta_tool");
+        metaDescriptor.SetupGet(d => d.MetaScope).Returns("Ausführungsstatus");
+        metaDescriptor.SetupGet(d => d.RequiredScopes).Returns(Array.Empty<McpToolScope>());
+        registry.Setup(r => r.Find("fm_meta_tool")).Returns(metaDescriptor.Object);
+        // "fm_unknown" deliberately not registered — Find returns null.
+
+        var meta = new AiActionRequest(owner, access.Id, "acc-1", "fm_meta_tool", "status",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-meta");
+        var unknown = new AiActionRequest(owner, access.Id, "acc-1", "fm_unknown", "call",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-unk");
+        db.AiActionRequests.AddRange(meta, unknown);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var count = await svc.WithdrawScopeUncoveredForAccessAsync(access.Id, "Recht entfallen", CancellationToken.None);
+
+        Assert.Equal(0, count);
+        var all = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        Assert.All(all, r => Assert.Equal(AiActionRequestStatus.Pending, r.Status));
+        Assert.Equal(0, await db.McpAuditEntries.AsNoTracking()
+            .CountAsync(e => e.EventType == "ApprovalWithdrawn"));
+    }
+
+    /// <summary>A scope check on a gone access is a no-op — the executor re-check covers it.</summary>
+    [Fact]
+    public async Task WithdrawScopeUncovered_MissingAccess_ReturnsZero()
+    {
+        var (svc, _, _) = Create();
+
+        Assert.Equal(0, await svc.WithdrawScopeUncoveredForAccessAsync(
+            Guid.NewGuid(), "Recht entfallen", CancellationToken.None));
     }
 
     /// <summary>Minimal options monitor stub.</summary>

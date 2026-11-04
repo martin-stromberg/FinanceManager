@@ -35,6 +35,8 @@ public sealed class McpApprovalService : IMcpApprovalService
     private readonly AppDbContext _db;
     private readonly IMcpAuditWriter _auditWriter;
     private readonly INotificationWriter _notifications;
+    private readonly IMcpToolRegistry _registry;
+    private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IOptionsMonitor<McpOptions> _options;
     private readonly ILogger<McpApprovalService> _logger;
 
@@ -42,18 +44,26 @@ public sealed class McpApprovalService : IMcpApprovalService
     /// <param name="db">Shared scoped database context.</param>
     /// <param name="auditWriter">Hash-chained audit writer (shared unit of work).</param>
     /// <param name="notifications">Owner notification writer.</param>
+    /// <param name="registry">Compiled tool registry (descriptor lookup for the granular
+    /// scope-coverage withdrawal).</param>
+    /// <param name="scopeEvaluator">Scope evaluator resolving the effective profile for the
+    /// coverage check.</param>
     /// <param name="options">MCP options (expiry default, pending limit).</param>
     /// <param name="logger">Logger.</param>
     public McpApprovalService(
         AppDbContext db,
         IMcpAuditWriter auditWriter,
         INotificationWriter notifications,
+        IMcpToolRegistry registry,
+        IMcpScopeEvaluator scopeEvaluator,
         IOptionsMonitor<McpOptions> options,
         ILogger<McpApprovalService> logger)
     {
         _db = db;
         _auditWriter = auditWriter;
         _notifications = notifications;
+        _registry = registry;
+        _scopeEvaluator = scopeEvaluator;
         _options = options;
         _logger = logger;
     }
@@ -265,13 +275,7 @@ public sealed class McpApprovalService : IMcpApprovalService
         foreach (var request in open)
         {
             request.WithdrawBySystem(reason);
-            await _auditWriter.StageAsync(new McpAuditWriteRequest(
-                McpAuditCategory.ApprovalEvent, "ApprovalWithdrawn", "Success",
-                OwnerUserId: request.OwnerUserId, McpAccessId: request.McpAccessId,
-                McpAccessName: request.McpAccessName, ToolName: request.ToolName,
-                CatalogVersion: request.CatalogVersion, Context: "System/Job",
-                CorrelationId: request.CorrelationId, RelatedRequestId: request.Id,
-                PayloadJson: JsonSerializer.Serialize(new { requestId = request.Id, reason })), ct);
+            await StageWithdrawalAsync(request, reason, ct);
         }
         if (open.Count > 0)
         {
@@ -281,6 +285,70 @@ public sealed class McpApprovalService : IMcpApprovalService
         }
         return open.Count;
     }
+
+    /// <inheritdoc />
+    public async Task<int> WithdrawScopeUncoveredForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(reason)) throw new ArgumentException("A documented reason is required.", nameof(reason));
+
+        var access = await _db.McpAccesses.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == mcpAccessId, ct);
+        if (access is null)
+        {
+            return 0; // a gone access withdraws nothing here — the executor re-check covers it
+        }
+        // The effective profile *after* the profile-changing write: level default profile or
+        // the persisted individual scope rows.
+        var granted = (await _scopeEvaluator.GetEffectiveScopesAsync(access, ct))
+            .Select(s => new McpScopeTuple(s.DataType, s.Right))
+            .ToHashSet();
+
+        var open = await _db.AiActionRequests
+            .Where(r => r.McpAccessId == mcpAccessId
+                && (r.Status == AiActionRequestStatus.Pending
+                    || (r.Status == AiActionRequestStatus.Approved && r.ClaimToken == null)))
+            .ToListAsync(ct);
+
+        var withdrawn = 0;
+        foreach (var request in open)
+        {
+            var descriptor = _registry.Find(request.ToolName);
+            if (descriptor is null || descriptor.MetaScope is not null)
+            {
+                // The meta scope is inherent to every access and never lost; an unknown tool
+                // keeps its request — it fails classified (Err_Mcp_UnknownTool) at execution.
+                continue;
+            }
+            // Granular „Recht entfallen" (approval-konzept.md §3.3): only a request whose
+            // declared scope tuples the new profile no longer fully covers is withdrawn —
+            // every still-covered request stays open for a normal decision.
+            if (descriptor.RequiredScopes.All(s => granted.Contains(new McpScopeTuple(s.DataType, s.Right))))
+            {
+                continue;
+            }
+            request.WithdrawBySystem(reason);
+            await StageWithdrawalAsync(request, reason, ct);
+            withdrawn++;
+        }
+        if (withdrawn > 0)
+        {
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation(
+                "Withdrew {Count} open approval requests of access {AccessId} — required scope no longer covered: {Reason}",
+                withdrawn, mcpAccessId, reason);
+        }
+        return withdrawn;
+    }
+
+    /// <summary>Stages the <c>ApprovalWithdrawn</c> audit record of a system withdrawal.</summary>
+    private Task<McpAuditEntry?> StageWithdrawalAsync(AiActionRequest request, string reason, CancellationToken ct)
+        => _auditWriter.StageAsync(new McpAuditWriteRequest(
+            McpAuditCategory.ApprovalEvent, "ApprovalWithdrawn", "Success",
+            OwnerUserId: request.OwnerUserId, McpAccessId: request.McpAccessId,
+            McpAccessName: request.McpAccessName, ToolName: request.ToolName,
+            CatalogVersion: request.CatalogVersion, Context: "System/Job",
+            CorrelationId: request.CorrelationId, RelatedRequestId: request.Id,
+            PayloadJson: JsonSerializer.Serialize(new { requestId = request.Id, reason })), ct);
 
     /// <summary>
     /// Stages the <c>ApprovalDecided</c> audit record of a user decision.

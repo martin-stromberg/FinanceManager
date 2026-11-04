@@ -92,3 +92,25 @@
 4. **fm_task_status** filtert Requests über `ListAsync(owner, status, accessId)`
    und prüft im Detailpfad `McpAccessId == context.McpAccessId` — Fremd-Zugriff
    verhält sich wie „nicht vorhanden".
+
+---
+
+# Korrekturen Abnahme 1
+
+- [x] **A1 (F-0904, approval-konzept §3.3/§6.1 „Recht entfallen"):**
+  `McpAccessService.SetScopesAsync` und `McpAccessService.UpdateAsync` (ein
+  Stufenwechsel weg von Individuell verwirft die persistierten Scope-Zeilen und
+  ändert damit das effektive Profil) rufen nach dem SaveChanges das neue
+  `IMcpApprovalService.WithdrawScopeUncoveredForAccessAsync` mit Grund
+  „Recht entfallen" auf. **Granulare Variante gewählt** — §3.3 formuliert den
+  Übergang explizit tupelscharf („das Rechteprofil das benötigte Scope nicht
+  mehr enthält"), nicht pauschal „bei jeder Deckel-Änderung": je offenem
+  Request wird `registry.Find(ToolName)` aufgelöst und nur bei einem im neuen
+  Profil fehlenden `RequiredScopes`-Tupel `WithdrawBySystem` + gekoppeltes
+  `ApprovalWithdrawn`-Audit gesetzt. Weiterhin gedeckte Requests, Meta-Tools
+  (inhärenter Scope), unbekannte Tools (klassifizierter Laufzeit-Fehlschlag)
+  und geclaimte Requests bleiben unberührt; der Executor-Re-Check
+  (`Err_RightsRevoked`) bleibt als Safety-Net bestehen.
+- [ ] **A2 (F-0905):** `Count`-/`Batch`-Endpunkte des
+  `AiActionRequestsController` sowie die serverseitige Wirkungsvorschau —
+  explizit **F-1001/EP-10** (Genehmigungscenter), nicht Teil dieser Korrektur.

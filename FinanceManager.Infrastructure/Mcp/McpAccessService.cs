@@ -36,8 +36,9 @@ public sealed class McpAccessService : IMcpAccessService
     /// <param name="auditWriter">Hash-chained audit write path (F-0301/F-0302); audit bundles are staged
     /// and commit atomically with the access change in one <c>SaveChangesAsync</c>.</param>
     /// <param name="approvalService">Approval-request queue: deactivation/revocation withdraws the
-    /// still-open requests of the access (approval-konzept.md §6.3; the executor's access re-check
-    /// remains the safety net).</param>
+    /// still-open requests of the access (approval-konzept.md §6.3), and scope-profile/level
+    /// changes withdraw the requests whose required scope the new profile no longer covers
+    /// (§3.3/§6.1 „Recht entfallen"; the executor's access re-check remains the safety net).</param>
     /// <param name="logger">Logger.</param>
     public McpAccessService(
         AppDbContext db,
@@ -159,6 +160,10 @@ public sealed class McpAccessService : IMcpAccessService
         access.Update(name, request.Description, level, approvalMode, request.ExpiresUtc, request.AllowedIpRanges);
         await StageAuditAsync(access, "AccessUpdated", ct, BuildAccessDelta(before, access));
         await _db.SaveChangesAsync(ct);
+        // approval-konzept.md §3.3/§6.1: an update can change the effective profile (a level
+        // switch away from Individuell drops the persisted scope rows) — open requests whose
+        // required scope the new profile no longer covers are system-withdrawn granularly.
+        await _approvalService.WithdrawScopeUncoveredForAccessAsync(access.Id, "Recht entfallen", ct);
         return true;
     }
 
@@ -187,6 +192,10 @@ public sealed class McpAccessService : IMcpAccessService
         await StageAuditAsync(access, "ScopesChanged", ct,
             BuildScopeDelta(scopesBefore, SnapshotScopes(access.Scopes), access.Id));
         await _db.SaveChangesAsync(ct);
+        // approval-konzept.md §3.3/§6.1: a scope change can leave open requests without their
+        // required scope — those are system-withdrawn („Recht entfallen"), while requests
+        // still covered by the new profile stay open for a normal decision.
+        await _approvalService.WithdrawScopeUncoveredForAccessAsync(access.Id, "Recht entfallen", ct);
         return true;
     }
 
