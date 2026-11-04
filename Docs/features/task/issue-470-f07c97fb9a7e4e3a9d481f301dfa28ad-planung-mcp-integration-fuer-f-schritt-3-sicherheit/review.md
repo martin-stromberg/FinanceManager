@@ -73,3 +73,10 @@
   `datenmodell-erweiterungen.md`), Queue-Claim-Atomarität unter SQLite
   (Schritt 4, `architekturkonzept.md`), Genehmigungscenter-/Audit-UI
   Details (Schritt 4, `ui-konzept.md`).
+
+## Korrekturen Abnahme 1
+
+- [x] `scope-und-toolkatalog.md` (T33, `fm_task_status`): Zustandsliste
+  der `AiActionRequest`-Ausgabe um `Expired` ergänzt – synchron zum
+  Approval-Konzept (§3.2, sechs Zustände); Verweis auf Schritt 3 als
+  Definition unverändert.

@@ -292,7 +292,7 @@ die Besitzprüfung (nur eigener Zugang/eigene Tasks).
 | # | Tool | Fachlicher Zweck | Scopes | Klasse | Referenz |
 |---|---|---|---|---|---|
 | T32 | `fm_capabilities_describe` | Eigenes Rechteprofil abfragen: effektive Scopes, Freigabestufe, gesetzte Filter, Genehmigungsmodus, Toolkatalog-Version des Servers | Meta-Scope `Zugangsprofil` (kein Fachdatenzugriff); liest nur Konfiguration des eigenen Zugangs | lesend | MCP-Zugangskonfiguration (Datenmodell Schritt 4) |
-| T33 | `fm_task_status` | Status asynchroner Ausführungen abfragen: `AiActionRequest`-Zustand (Pending/Approved/Rejected/Executed/Failed) und `IBackgroundTaskManager`-Fortschritt (Queued/Running/Completed, `book-all`, `ClassifyAllDrafts`) | Meta-Scope `Ausführungsstatus` (kein Fachdatenzugriff); nur eigene (Zugangs-/Besitzer-)Tasks | lesend | `AiActionRequest` (Schritt 3), `IBackgroundTaskManager`, `BookingTaskExecutor`, `ClassificationTaskExecutor` |
+| T33 | `fm_task_status` | Status asynchroner Ausführungen abfragen: `AiActionRequest`-Zustand (Pending/Approved/Rejected/Executed/Failed/Expired) und `IBackgroundTaskManager`-Fortschritt (Queued/Running/Completed, `book-all`, `ClassifyAllDrafts`) | Meta-Scope `Ausführungsstatus` (kein Fachdatenzugriff); nur eigene (Zugangs-/Besitzer-)Tasks | lesend | `AiActionRequest` (Schritt 3), `IBackgroundTaskManager`, `BookingTaskExecutor`, `ClassificationTaskExecutor` |
 
 **Ein-/Ausgaben:** `fm_capabilities_describe` → Zugangs-Deskriptor
 (Stufe, Scope-Liste Datentyp×Rechteart×Filter, Katalogversion);
