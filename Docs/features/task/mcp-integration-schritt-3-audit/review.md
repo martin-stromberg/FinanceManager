@@ -50,3 +50,18 @@
   Bestands-Abgrenzung, kein Retention-Pfad; bricht dort die Kette (Gap) — fachlich
   akzeptabel, da der gesamte Benutzerbestand gelöscht wird.
 - `Mcp:Enabled` bleibt `false` (opt-in).
+
+## Korrekturen Abnahme 1
+- [x] **A-01: Vorher/Nachher-Scope-Delta bei Scope-/Filter-/Konfigurationsänderungen**
+  (audit-konzept.md §3.3). `McpAccessService` erzeugt jetzt
+  `McpAuditFieldChange`-Zeilen für `ScopesChanged` (Delta je `DataType:Right`-Tupel:
+  hinzugefügt mit Nachher-Bild, entfernt mit Vorher-Bild, geänderte Filter-Sets als
+  alt→neu; Kompaktformat `DataType:Right[Dim=csv;…]`), `FiltersChanged` (eine Zeile je
+  geänderter Filterdimension, `EntityId` = Scope-Id) und `AccessUpdated` (geänderte
+  Konfigurationsfelder alt→neu plus Scope-Delta bei Stufenwechsel weg von
+  `Individuell`). Credential-Material (`TokenHash`, `AccessKeyHint`) ist nie Teil des
+  Snapshots; die Writer-Redaction bleibt als Safety-Net dahinter. Tests:
+  `SetScopes_WritesScopeDelta_AddedChangedRemoved`,
+  `SetFilters_WritesFilterDelta_PerDimension`,
+  `Update_WritesFieldDelta_IncludingScopeRemovalOnLevelSwitch`,
+  `AccessEvents_DeltaContainsNoSecrets` (`McpAccessServiceTests`).

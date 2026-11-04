@@ -4,6 +4,7 @@ using FinanceManager.Domain.Mcp;
 using FinanceManager.Shared.Dtos.Mcp;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace FinanceManager.Infrastructure.Mcp;
 
@@ -146,8 +147,11 @@ public sealed class McpAccessService : IMcpAccessService
         {
             throw new DomainValidationException("Err_Mcp_NameInUse", "An access with this name already exists.");
         }
+        // audit-konzept.md §3.3: configuration changes of the access carry a before/after
+        // delta — capture the auditable state before the mutation.
+        var before = AccessConfigSnapshot.Capture(access);
         access.Update(name, request.Description, level, approvalMode, request.ExpiresUtc, request.AllowedIpRanges);
-        await StageAuditAsync(access, "AccessUpdated", ct);
+        await StageAuditAsync(access, "AccessUpdated", ct, BuildAccessDelta(before, access));
         await _db.SaveChangesAsync(ct);
         return true;
     }
@@ -169,10 +173,13 @@ public sealed class McpAccessService : IMcpAccessService
         ValidateScopes(scopeDtos);
         // Explicitly track the new rows: entities added only via a navigation collection are
         // treated as existing (pre-assigned keys) and would fail on update.
+        var scopesBefore = SnapshotScopes(access.Scopes);
         var newScopes = scopeDtos.Select(s => ToScope(access, s)).ToList();
         await _db.McpAccessScopes.AddRangeAsync(newScopes, ct);
         access.ReplaceIndividualScopes(newScopes);
-        await StageAuditAsync(access, "ScopesChanged", ct);
+        // audit-konzept.md §3.3: scope changes are recorded as a before/after scope delta.
+        await StageAuditAsync(access, "ScopesChanged", ct,
+            BuildScopeDelta(scopesBefore, SnapshotScopes(access.Scopes), access.Id));
         await _db.SaveChangesAsync(ct);
         return true;
     }
@@ -186,6 +193,7 @@ public sealed class McpAccessService : IMcpAccessService
         {
             return false;
         }
+        var filtersBefore = new ScopeFilterSnapshot(scope);
         scope.SetFilters(request.AccountTypesCsv, request.ContactCategoryIdsCsv,
             request.SecurityCategoryIdsCsv, request.SavingsPlanCategoryIdsCsv, request.AttachmentCategoryIdsCsv);
         var access = await _db.McpAccesses.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id, ct);
@@ -195,7 +203,8 @@ public sealed class McpAccessService : IMcpAccessService
             // must not persist a filter change without its audit record.
             return false;
         }
-        await StageAuditAsync(access, "FiltersChanged", ct);
+        // audit-konzept.md §3.3: filter changes are recorded per dimension as before/after.
+        await StageAuditAsync(access, "FiltersChanged", ct, BuildFilterDelta(filtersBefore, scope));
         await _db.SaveChangesAsync(ct);
         return true;
     }
@@ -336,7 +345,8 @@ public sealed class McpAccessService : IMcpAccessService
     /// without its audit record fails, and vice versa (F-0301). Unlike a read-path audit
     /// failure, a staging failure propagates deliberately.
     /// </summary>
-    private Task<McpAuditEntry?> StageAuditAsync(McpAccess access, string eventType, CancellationToken ct)
+    private Task<McpAuditEntry?> StageAuditAsync(McpAccess access, string eventType, CancellationToken ct,
+        IReadOnlyList<McpAuditFieldChange>? changes = null)
         => _auditWriter.StageAsync(new McpAuditWriteRequest(
             Category: McpAuditCategory.AccessEvent,
             EventType: eventType,
@@ -344,7 +354,151 @@ public sealed class McpAccessService : IMcpAccessService
             OwnerUserId: access.OwnerUserId,
             McpAccessId: access.Id,
             McpAccessName: access.Name,
-            Context: "Ui"), ct);
+            Context: "Ui",
+            Changes: changes), ct);
+
+    /// <summary>
+    /// Snapshot of the auditable configuration of an access (audit-konzept.md §3.3). Never
+    /// carries credential material — <c>TokenHash</c>/<c>AccessKeyHint</c> are deliberately
+    /// not part of the snapshot.
+    /// </summary>
+    private sealed record AccessConfigSnapshot(
+        string Name,
+        string? Description,
+        McpAccessLevel Level,
+        McpApprovalMode ApprovalMode,
+        DateTime? ExpiresUtc,
+        string? AllowedIpRanges,
+        IReadOnlyDictionary<string, string> Scopes)
+    {
+        /// <summary>Captures the current auditable state of <paramref name="access"/>.</summary>
+        public static AccessConfigSnapshot Capture(McpAccess access)
+            => new(access.Name, access.Description, access.Level, access.ApprovalMode,
+                access.ExpiresUtc, access.AllowedIpRanges, SnapshotScopes(access.Scopes));
+    }
+
+    /// <summary>The five filter CSVs of one scope row (before-image for filter deltas).</summary>
+    private sealed record ScopeFilterSnapshot(
+        string? AccountTypesCsv,
+        string? ContactCategoryIdsCsv,
+        string? SecurityCategoryIdsCsv,
+        string? SavingsPlanCategoryIdsCsv,
+        string? AttachmentCategoryIdsCsv)
+    {
+        /// <summary>Captures the current filter CSVs of <paramref name="scope"/>.</summary>
+        public ScopeFilterSnapshot(McpAccessScope scope)
+            : this(scope.AccountTypesCsv, scope.ContactCategoryIdsCsv, scope.SecurityCategoryIdsCsv,
+                scope.SavingsPlanCategoryIdsCsv, scope.AttachmentCategoryIdsCsv)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Field delta of the editable access configuration plus the persisted scope profile
+    /// (a level switch away from <see cref="McpAccessLevel.Individuell"/> clears the scope
+    /// rows — the removal is part of the delta). Only actually changed fields produce rows.
+    /// </summary>
+    private static List<McpAuditFieldChange> BuildAccessDelta(AccessConfigSnapshot before, McpAccess after)
+    {
+        var changes = new List<McpAuditFieldChange>();
+        AddChange(changes, nameof(McpAccess), after.Id, nameof(McpAccess.Name), before.Name, after.Name);
+        AddChange(changes, nameof(McpAccess), after.Id, nameof(McpAccess.Description), before.Description, after.Description);
+        AddChange(changes, nameof(McpAccess), after.Id, nameof(McpAccess.Level), before.Level.ToString(), after.Level.ToString());
+        AddChange(changes, nameof(McpAccess), after.Id, nameof(McpAccess.ApprovalMode), before.ApprovalMode.ToString(), after.ApprovalMode.ToString());
+        AddChange(changes, nameof(McpAccess), after.Id, nameof(McpAccess.ExpiresUtc), FormatUtc(before.ExpiresUtc), FormatUtc(after.ExpiresUtc));
+        AddChange(changes, nameof(McpAccess), after.Id, nameof(McpAccess.AllowedIpRanges), before.AllowedIpRanges, after.AllowedIpRanges);
+        changes.AddRange(BuildScopeDelta(before.Scopes, SnapshotScopes(after.Scopes), after.Id));
+        return changes;
+    }
+
+    /// <summary>
+    /// Per-dimension filter delta of one scope row: one row per changed CSV field
+    /// (<c>null</c> = unrestricted). Only changed dimensions produce rows.
+    /// </summary>
+    private static List<McpAuditFieldChange> BuildFilterDelta(ScopeFilterSnapshot before, McpAccessScope after)
+    {
+        var changes = new List<McpAuditFieldChange>(5);
+        AddChange(changes, nameof(McpAccessScope), after.Id, nameof(McpAccessScope.AccountTypesCsv), before.AccountTypesCsv, after.AccountTypesCsv);
+        AddChange(changes, nameof(McpAccessScope), after.Id, nameof(McpAccessScope.ContactCategoryIdsCsv), before.ContactCategoryIdsCsv, after.ContactCategoryIdsCsv);
+        AddChange(changes, nameof(McpAccessScope), after.Id, nameof(McpAccessScope.SecurityCategoryIdsCsv), before.SecurityCategoryIdsCsv, after.SecurityCategoryIdsCsv);
+        AddChange(changes, nameof(McpAccessScope), after.Id, nameof(McpAccessScope.SavingsPlanCategoryIdsCsv), before.SavingsPlanCategoryIdsCsv, after.SavingsPlanCategoryIdsCsv);
+        AddChange(changes, nameof(McpAccessScope), after.Id, nameof(McpAccessScope.AttachmentCategoryIdsCsv), before.AttachmentCategoryIdsCsv, after.AttachmentCategoryIdsCsv);
+        return changes;
+    }
+
+    /// <summary>
+    /// Scope delta keyed by the <c>DataType:Right</c> tuple: added tuples carry the rendered
+    /// after-image (old = <see langword="null"/>), removed tuples the before-image
+    /// (new = <see langword="null"/>), tuples with changed filter sets an old→new row.
+    /// </summary>
+    private static List<McpAuditFieldChange> BuildScopeDelta(
+        IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after, Guid accessId)
+    {
+        var changes = new List<McpAuditFieldChange>();
+        foreach (var key in before.Keys.Union(after.Keys).OrderBy(k => k, StringComparer.Ordinal))
+        {
+            before.TryGetValue(key, out var oldRows);
+            after.TryGetValue(key, out var newRows);
+            AddChange(changes, nameof(McpAccessScope), accessId, $"Scope[{key}]", oldRows, newRows);
+        }
+        return changes;
+    }
+
+    /// <summary>
+    /// Renders the persisted scope profile as tuple key (<c>DataType:Right</c>) → sorted,
+    /// <c>|</c>-joined rendered rows of that tuple (several rows per tuple combine with OR,
+    /// berechtigungsmodell.md §4.2).
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> SnapshotScopes(IEnumerable<McpAccessScope> scopes)
+    {
+        var groups = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
+        foreach (var scope in scopes)
+        {
+            var key = $"{scope.DataType}:{scope.Right}";
+            if (!groups.TryGetValue(key, out var rows))
+            {
+                groups[key] = rows = new SortedSet<string>(StringComparer.Ordinal);
+            }
+            rows.Add(RenderScope(scope));
+        }
+        return groups.ToDictionary(g => g.Key, g => string.Join("|", g.Value), StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Compact rendering of one scope row: <c>DataType:Right</c> plus the set filter CSVs
+    /// (<c>[Dim=csv;…]</c>); an unrestricted row renders as the bare tuple.
+    /// </summary>
+    private static string RenderScope(McpAccessScope scope)
+    {
+        var filters = new List<string>(5);
+        AddFilter(filters, "AccountTypes", scope.AccountTypesCsv);
+        AddFilter(filters, "ContactCategories", scope.ContactCategoryIdsCsv);
+        AddFilter(filters, "SecurityCategories", scope.SecurityCategoryIdsCsv);
+        AddFilter(filters, "SavingsPlanCategories", scope.SavingsPlanCategoryIdsCsv);
+        AddFilter(filters, "AttachmentCategories", scope.AttachmentCategoryIdsCsv);
+        return $"{scope.DataType}:{scope.Right}"
+            + (filters.Count == 0 ? string.Empty : "[" + string.Join(";", filters) + "]");
+    }
+
+    private static void AddFilter(List<string> filters, string dimension, string? csv)
+    {
+        if (!string.IsNullOrWhiteSpace(csv))
+        {
+            filters.Add($"{dimension}={csv}");
+        }
+    }
+
+    private static void AddChange(List<McpAuditFieldChange> changes, string entityType, Guid entityId,
+        string field, string? oldValue, string? newValue)
+    {
+        if (!string.Equals(oldValue, newValue, StringComparison.Ordinal))
+        {
+            changes.Add(new McpAuditFieldChange(entityType, entityId, field, oldValue, newValue));
+        }
+    }
+
+    private static string? FormatUtc(DateTime? utc)
+        => utc?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
     private static void ValidateScopes(IReadOnlyList<McpAccessScopeDto> scopes)
     {
