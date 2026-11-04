@@ -60,21 +60,53 @@ public sealed record McpAuditWriteRequest(
 /// Revision-safe audit write path of the MCP integration (audit-konzept.md, F-0301/F-0302).
 /// Calls are issued at the pipeline points (authentication, scope decisions, tool calls,
 /// access events, security events). The implementation is responsible for chain anchoring
-/// (<c>SequenceNo</c>, <c>PrevHash</c>, <c>EntryHash</c>) and the transactional coupling to
-/// the business effect.
+/// (<c>SequenceNo</c>, <c>PrevHash</c>, <c>EntryHash</c>), graduated detail depth
+/// (never token material or binary content) and the transactional coupling to the
+/// business effect.
 /// </summary>
 /// <remarks>
-/// The registered implementation in this step is the documented no-op
-/// <c>NullMcpAuditWriter</c> — the persistent, hash-chained writer is scheduled with
-/// F-0301/F-0302 (step 3 of the roadmap). The interface and all call sites are already live.
+/// The registered implementation is the persistent, hash-chained <c>McpAuditWriter</c>
+/// (F-0301/F-0302). It shares the scoped <c>AppDbContext</c> of the caller, so staged
+/// entries commit atomically with the business effect in one <c>SaveChanges</c> round.
 /// </remarks>
 public interface IMcpAuditWriter
 {
     /// <summary>
-    /// Writes one audit entry bundle (entry plus optional field deltas).
+    /// Writes one audit entry bundle (entry plus optional field deltas) and commits it
+    /// immediately. Use this for events that are not coupled to a pending business
+    /// mutation (tool-call records, security events). For a write effect that must
+    /// commit atomically with its audit record use <see cref="StageAsync"/> instead.
     /// </summary>
     /// <param name="request">The write request.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes when the entry has been accepted.</returns>
+    /// <returns>A task that completes when the entry has been persisted.</returns>
     Task WriteAsync(McpAuditWriteRequest request, CancellationToken ct);
+
+    /// <summary>
+    /// Stages one audit entry bundle (entry plus optional field deltas) in the shared
+    /// unit of work <b>without saving</b>. The caller must persist it together with the
+    /// business effect via a single <c>SaveChangesAsync</c> of the same
+    /// <c>AppDbContext</c> — this is the transactional coupling required for write
+    /// effects (F-0301: an effect without its audit record must fail, and vice versa).
+    /// </summary>
+    /// <param name="request">The write request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The staged <see cref="McpAuditEntry"/> (tracked, not yet saved), or
+    /// <see langword="null"/> when the implementation does not stage entries
+    /// (documented no-op writer). Callers that retry failed saves must detach the
+    /// returned entry before the next attempt.
+    /// </returns>
+    Task<McpAuditEntry?> StageAsync(McpAuditWriteRequest request, CancellationToken ct);
+
+    /// <summary>
+    /// Verifies the integrity of one audit chain (the owner chain of
+    /// <paramref name="ownerUserId"/>, or the global chain when <see langword="null"/>):
+    /// monotonic, gap-free <c>SequenceNo</c>, intact <c>PrevHash</c> linkage and a valid
+    /// recomputed <c>EntryHash</c> of every entry.
+    /// </summary>
+    /// <param name="ownerUserId">Chain owner, or <see langword="null"/> for the global chain.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The verification result (intact flag, first breach, sequence gaps).</returns>
+    Task<McpAuditChainVerificationResult> VerifyAsync(Guid? ownerUserId, CancellationToken ct);
 }

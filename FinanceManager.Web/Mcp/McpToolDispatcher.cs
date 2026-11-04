@@ -1,5 +1,6 @@
 using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Mcp;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Text.Json;
@@ -20,6 +21,7 @@ public sealed class McpToolDispatcher
     private readonly McpToolRateLimiter _rateLimiter;
     private readonly McpAnomalyTracker _anomalyTracker;
     private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly ILogger<McpToolDispatcher> _logger;
 
     /// <summary>Creates the dispatcher.</summary>
     public McpToolDispatcher(
@@ -28,7 +30,8 @@ public sealed class McpToolDispatcher
         IMcpAuditWriter auditWriter,
         McpToolRateLimiter rateLimiter,
         McpAnomalyTracker anomalyTracker,
-        IOptionsMonitor<McpOptions> options)
+        IOptionsMonitor<McpOptions> options,
+        ILogger<McpToolDispatcher> logger)
     {
         _registry = registry;
         _scopeEvaluator = scopeEvaluator;
@@ -36,6 +39,7 @@ public sealed class McpToolDispatcher
         _rateLimiter = rateLimiter;
         _anomalyTracker = anomalyTracker;
         _options = options;
+        _logger = logger;
     }
 
     /// <summary>
@@ -69,16 +73,16 @@ public sealed class McpToolDispatcher
 
         // 2) Global write-stop lid (Mcp:WriteAccess:Enabled=false).
         if (!_options.CurrentValue.WriteAccess.Enabled
-            && descriptor.SecurityClass is McpToolSecurityClass.Schreibvorbereitend or McpToolSecurityClass.Genehmigungspflichtig)
+            && IsWriteClass(descriptor.SecurityClass))
         {
-            await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, sw, ct);
+            await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, arguments, sw, ct);
             return McpDispatchResult.DefinedError("Err_Mcp_WriteAccessDisabled", "Write access via MCP is currently disabled.");
         }
 
         // 3) Per-class rate limit (partition = access).
         if (entity is not null && !_rateLimiter.TryAcquire(entity.Id, descriptor))
         {
-            await AuditAsync(entity, toolName, "RateLimited", correlationId, sourceIp, sw, ct);
+            await AuditAsync(entity, toolName, "RateLimited", correlationId, sourceIp, arguments, sw, ct);
             return McpDispatchResult.DefinedError("Err_Mcp_RateLimited", "Rate limit for this tool class exceeded.");
         }
 
@@ -89,7 +93,7 @@ public sealed class McpToolDispatcher
             {
                 if (!await _scopeEvaluator.IsAllowedAsync(entity, scope.DataType, scope.Right, ct))
                 {
-                    await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, sw, ct);
+                    await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, arguments, sw, ct);
                     await _anomalyTracker.RecordScopeDenialAsync(entity.Id, entity.OwnerUserId, entity.Name, ct);
                     return McpDispatchResult.DefinedError("Err_Mcp_ScopeDenied",
                         $"The access does not grant the required scope ({scope.DataType}, {scope.Right}).");
@@ -108,17 +112,37 @@ public sealed class McpToolDispatcher
         {
             var result = await handler.InvokeAsync(arguments,
                 new McpToolCallContext(access, services, correlationId, sourceIp), ct);
-            await AuditAsync(entity, toolName, "Success", correlationId, sourceIp, sw, ct);
+            var audited = await AuditAsync(entity, toolName, "Success", correlationId, sourceIp, arguments, sw, ct);
+            // A write-class call without its audit record must fail (F-0301). Write tools
+            // additionally couple their DataChange/ApprovalEvent records inside the effect
+            // transaction via IMcpAuditWriter.StageAsync — this guard covers the ToolCall
+            // record itself.
+            if (!audited && IsWriteClass(descriptor.SecurityClass))
+            {
+                return McpDispatchResult.DefinedError("Err_Mcp_AuditFailed",
+                    "The audit record of this write call could not be persisted.");
+            }
             return McpDispatchResult.Success(result);
         }
         catch (McpToolException ex)
         {
-            await AuditAsync(entity, toolName, "Failed", correlationId, sourceIp, sw, ct);
+            await AuditAsync(entity, toolName, "Failed", correlationId, sourceIp, arguments, sw, ct);
             return McpDispatchResult.ToolError(ex.Code, ex.Message);
         }
     }
 
-    private async Task AuditAsync(McpAccess? access, string toolName, string result, Guid correlationId, string? sourceIp, Stopwatch sw, CancellationToken ct)
+    private static bool IsWriteClass(McpToolSecurityClass securityClass)
+        => securityClass is McpToolSecurityClass.Schreibvorbereitend or McpToolSecurityClass.Genehmigungspflichtig;
+
+    /// <summary>
+    /// Writes the <see cref="McpAuditCategory.ToolCall"/> record of one invocation. The call
+    /// parameters are stored in graduated detail (the writer truncates/redacts); result
+    /// payloads of read calls are never recorded (audit-konzept.md §4.2).
+    /// </summary>
+    /// <returns><see langword="true"/> when the record was persisted; <see langword="false"/>
+    /// when the audit write failed (logged — the read path must not be blocked).</returns>
+    private async Task<bool> AuditAsync(McpAccess? access, string toolName, string result, Guid correlationId,
+        string? sourceIp, JsonElement arguments, Stopwatch sw, CancellationToken ct)
     {
         try
         {
@@ -127,9 +151,20 @@ public sealed class McpToolDispatcher
                 OwnerUserId: access?.OwnerUserId, McpAccessId: access?.Id, McpAccessName: access?.Name,
                 ToolName: toolName, CatalogVersion: _registry.CatalogVersion,
                 Context: "McpEndpoint", CorrelationId: correlationId, SourceIp: sourceIp,
-                DurationMs: (int)sw.ElapsedMilliseconds), ct);
+                DurationMs: (int)sw.ElapsedMilliseconds,
+                PayloadJson: arguments.ValueKind is JsonValueKind.Object or JsonValueKind.Array
+                    ? arguments.GetRawText()
+                    : null), ct);
+            return true;
         }
-        catch { /* audit never blocks the call path */ }
+        catch (Exception ex)
+        {
+            // Read-path audit failures never block the call (F-0301); the missing record
+            // becomes visible via the chain gap check.
+            _logger.LogWarning(ex, "MCP audit write failed for tool {Tool} (result {Result}, correlation {CorrelationId})",
+                toolName, result, correlationId);
+            return false;
+        }
     }
 }
 

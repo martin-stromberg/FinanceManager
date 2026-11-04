@@ -733,6 +733,10 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.HasIndex("McpAccessId");
 
+                    b.HasIndex("SequenceNo")
+                        .IsUnique()
+                        .HasFilter("[OwnerUserId] IS NULL");
+
                     b.HasIndex("Category", "EventType");
 
                     b.HasIndex("OwnerUserId", "SequenceNo")

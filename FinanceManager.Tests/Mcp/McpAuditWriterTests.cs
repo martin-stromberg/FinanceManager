@@ -1,0 +1,437 @@
+using FinanceManager.Application.Mcp;
+using FinanceManager.Domain.Mcp;
+using FinanceManager.Infrastructure;
+using FinanceManager.Infrastructure.Mcp;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using System.Text.Json;
+using Xunit;
+
+namespace FinanceManager.Tests.Mcp;
+
+/// <summary>
+/// Unit tests of the persistent, hash-chained <see cref="McpAuditWriter"/> (F-0301/F-0302):
+/// persistence of all five categories, graduated detail depth (secret redaction, length
+/// caps, no binary material), per-owner/global <c>SequenceNo</c> chains, <c>PrevHash</c>/
+/// <c>EntryHash</c> anchoring, atomic entry+change bundles, staged coupling and the
+/// <see cref="IMcpAuditWriter.VerifyAsync"/> integrity check (breach and gap detection).
+/// </summary>
+public sealed class McpAuditWriterTests
+{
+    private static (McpAuditWriter writer, AppDbContext db, SqliteConnection connection) CreateSqlite()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(connection)
+            .Options;
+        var db = new AppDbContext(options);
+        db.Database.EnsureCreated();
+        return (new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance), db, connection);
+    }
+
+    private static McpAuditWriteRequest Request(
+        McpAuditCategory category = McpAuditCategory.ToolCall,
+        string eventType = "ToolCall",
+        string result = "Success",
+        Guid? owner = null,
+        bool globalChain = false,
+        string? payload = null,
+        IReadOnlyList<McpAuditFieldChange>? changes = null)
+        => new(category, eventType, result,
+            OwnerUserId: globalChain ? null : (owner ?? Guid.NewGuid()),
+            McpAccessId: Guid.NewGuid(),
+            McpAccessName: "access-a",
+            ToolName: "fm_accounts_overview",
+            CatalogVersion: "katalog-v1",
+            Context: "McpEndpoint",
+            CorrelationId: Guid.NewGuid(),
+            SourceIp: "192.168.1.10",
+            DurationMs: 12,
+            AffectedCount: 3,
+            PayloadJson: payload,
+            Changes: changes);
+
+    /// <summary>Every audit category of the normative five-value list is persisted.</summary>
+    [Fact]
+    public async Task WriteAsync_PersistsAllFiveCategories()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+
+        foreach (var category in Enum.GetValues<McpAuditCategory>())
+        {
+            await writer.WriteAsync(Request(category, $"Evt{category}", owner: owner), CancellationToken.None);
+        }
+
+        var stored = await db.McpAuditEntries.AsNoTracking()
+            .Where(e => e.OwnerUserId == owner).OrderBy(e => e.SequenceNo).ToListAsync();
+        Assert.Equal(5, stored.Count);
+        Assert.Equal(Enum.GetValues<McpAuditCategory>(), stored.Select(e => e.Category).ToArray());
+    }
+
+    /// <summary>Persisted entries carry the full grundgerüst and a server-side timestamp.</summary>
+    [Fact]
+    public async Task WriteAsync_PersistsGrundgeruestFields_WithServerTimestamp()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+        var before = DateTime.UtcNow;
+
+        await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        Assert.Equal("ToolCall", entry.EventType);
+        Assert.Equal("Success", entry.ResultStatus);
+        Assert.Equal(owner, entry.OwnerUserId);
+        Assert.Equal("access-a", entry.McpAccessName);
+        Assert.Equal("fm_accounts_overview", entry.ToolName);
+        Assert.Equal("katalog-v1", entry.CatalogVersion);
+        Assert.Equal("McpEndpoint", entry.Context);
+        Assert.Equal("192.168.1.10", entry.SourceIp);
+        Assert.Equal(12, entry.DurationMs);
+        Assert.Equal(3, entry.AffectedCount);
+        Assert.NotNull(entry.CorrelationId);
+        Assert.InRange(entry.Utc, before.AddSeconds(-5), DateTime.UtcNow.AddSeconds(5));
+        Assert.Equal(64, entry.EntryHash.Length); // sha256 lowercase hex
+        Assert.Equal(entry.EntryHash, entry.EntryHash.ToLowerInvariant());
+        Assert.Null(entry.PrevHash); // chain head
+    }
+
+    /// <summary>Sequence numbers are monotonic and contiguous per owner chain.</summary>
+    [Fact]
+    public async Task WriteAsync_AssignsMonotonicSequenceNo_PerOwnerChain()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var ownerA = Guid.NewGuid();
+        var ownerB = Guid.NewGuid();
+
+        for (var i = 0; i < 3; i++)
+        {
+            await writer.WriteAsync(Request(owner: ownerA), CancellationToken.None);
+        }
+        await writer.WriteAsync(Request(owner: ownerB), CancellationToken.None);
+        await writer.WriteAsync(Request(globalChain: true), CancellationToken.None); // global chain
+
+        var seqsA = await db.McpAuditEntries.Where(e => e.OwnerUserId == ownerA)
+            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync();
+        Assert.Equal(new long[] { 1, 2, 3 }, seqsA);
+        Assert.Equal(1, await db.McpAuditEntries.Where(e => e.OwnerUserId == ownerB).Select(e => e.SequenceNo).SingleAsync());
+        Assert.Equal(1, await db.McpAuditEntries.Where(e => e.OwnerUserId == null).Select(e => e.SequenceNo).SingleAsync());
+    }
+
+    /// <summary>Owner chains and the global (null-owner) chain are independent.</summary>
+    [Fact]
+    public async Task WriteAsync_GlobalChain_IsIndependentOfOwnerChains()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+
+        await writer.WriteAsync(Request(globalChain: true), CancellationToken.None);
+        await writer.WriteAsync(Request(globalChain: true), CancellationToken.None);
+        await writer.WriteAsync(Request(owner: Guid.NewGuid()), CancellationToken.None);
+
+        var globalSeqs = await db.McpAuditEntries.Where(e => e.OwnerUserId == null)
+            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync();
+        Assert.Equal(new long[] { 1, 2 }, globalSeqs);
+    }
+
+    /// <summary>Every entry anchors to the hash of its chain predecessor.</summary>
+    [Fact]
+    public async Task WriteAsync_LinksPrevHashToPredecessorEntryHash()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+
+        await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+        await writer.WriteAsync(Request(owner: owner, eventType: "ScopesChanged"), CancellationToken.None);
+        await writer.WriteAsync(Request(owner: owner, eventType: "TokenRotated"), CancellationToken.None);
+
+        var entries = await db.McpAuditEntries.AsNoTracking()
+            .OrderBy(e => e.SequenceNo).ToListAsync();
+        Assert.Null(entries[0].PrevHash);
+        Assert.Equal(entries[0].EntryHash, entries[1].PrevHash);
+        Assert.Equal(entries[1].EntryHash, entries[2].PrevHash);
+        Assert.Equal(3, entries.Select(e => e.EntryHash).Distinct().Count());
+    }
+
+    /// <summary>Field deltas persist as own rows attached to the entry (atomic bundle).</summary>
+    [Fact]
+    public async Task WriteAsync_PersistsFieldDeltas_AsChildRows()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var entityId = Guid.NewGuid();
+        var changes = new[]
+        {
+            new McpAuditFieldChange("McpAccess", entityId, "Status", "Active", "Deactivated"),
+            new McpAuditFieldChange("McpAccess", entityId, "Level", "Analyse", "Individuell")
+        };
+
+        await writer.WriteAsync(Request(
+            category: McpAuditCategory.DataChange, eventType: "AccessUpdated", changes: changes),
+            CancellationToken.None);
+
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        var stored = await db.McpAuditEntryChanges.AsNoTracking()
+            .Where(c => c.EntryId == entry.Id).OrderBy(c => c.Field).ToListAsync();
+        Assert.Equal(2, stored.Count);
+        Assert.Equal("Level", stored[0].Field);
+        Assert.Equal("Analyse", stored[0].OldValue);
+        Assert.Equal("Individuell", stored[0].NewValue);
+        Assert.Equal("Deactivated", stored[1].NewValue);
+        Assert.Equal(entityId, stored[0].EntityId);
+    }
+
+    /// <summary>Token material in payloads is redacted — never stored, never hashed.</summary>
+    [Fact]
+    public async Task WriteAsync_RedactsTokenMaterial_InPayloadAndChanges()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var token = "fm_mcp_ABCDEFGH_abcdefghijklmnopqrstuvwxyz0123456789_-abcde";
+        var changes = new[]
+        {
+            new McpAuditFieldChange("McpAccess", Guid.NewGuid(), "Note", null, $"Bearer abcdef123456==")
+        };
+
+        await writer.WriteAsync(Request(payload: $"{{\"token\":\"{token}\"}}", changes: changes),
+            CancellationToken.None);
+
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        Assert.DoesNotContain("fm_mcp_", entry.PayloadJson);
+        Assert.DoesNotContain(token, entry.PayloadJson);
+        Assert.Contains("[redacted]", entry.PayloadJson);
+
+        var change = await db.McpAuditEntryChanges.AsNoTracking().SingleAsync();
+        Assert.DoesNotContain("abcdef123456==", change.NewValue);
+        Assert.Contains("[redacted]", change.NewValue);
+    }
+
+    /// <summary>Oversized payloads are wrapped in a valid-JSON truncation envelope.</summary>
+    [Fact]
+    public async Task WriteAsync_TruncatesOversizedPayload_KeepingValidJson()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var payload = "{\"data\":\"" + new string('x', McpAuditWriter.MaxPayloadChars + 1000) + "\"}";
+
+        await writer.WriteAsync(Request(payload: payload), CancellationToken.None);
+
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        Assert.NotNull(entry.PayloadJson);
+        using var doc = JsonDocument.Parse(entry.PayloadJson!);
+        Assert.True(doc.RootElement.GetProperty("truncated").GetBoolean());
+        Assert.Equal(payload.Length, doc.RootElement.GetProperty("originalChars").GetInt32());
+        Assert.Equal(McpAuditWriter.MaxPayloadChars, doc.RootElement.GetProperty("head").GetString()!.Length);
+    }
+
+    /// <summary>Field-delta values are capped at 500 characters with a truncation note.</summary>
+    [Fact]
+    public async Task WriteAsync_TruncatesOversizedChangeValues()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var longValue = new string('v', McpAuditWriter.MaxChangeValueChars + 200);
+        var changes = new[] { new McpAuditFieldChange("Contact", Guid.NewGuid(), "Name", null, longValue) };
+
+        await writer.WriteAsync(Request(changes: changes), CancellationToken.None);
+
+        var change = await db.McpAuditEntryChanges.AsNoTracking().SingleAsync();
+        Assert.StartsWith(new string('v', 100), change.NewValue);
+        Assert.EndsWith("…[truncated]", change.NewValue);
+        Assert.True(change.NewValue!.Length <= McpAuditWriter.MaxChangeValueChars + 20);
+    }
+
+    /// <summary>Missing required fields are rejected before any persistence work.</summary>
+    [Fact]
+    public async Task WriteAsync_RejectsInvalidRequests()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => writer.WriteAsync(Request(eventType: " "), CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => writer.WriteAsync(Request(result: ""), CancellationToken.None));
+        Assert.Equal(0, await db.McpAuditEntries.CountAsync());
+    }
+
+    /// <summary>StageAsync tracks the bundle without saving; the caller's save commits it.</summary>
+    [Fact]
+    public async Task StageAsync_CommitsWithCallersSaveChanges()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+
+        var staged = await writer.StageAsync(Request(owner: owner), CancellationToken.None);
+        Assert.NotNull(staged);
+        Assert.Equal(0, await db.McpAuditEntries.CountAsync()); // nothing saved yet
+
+        // Simulate the coupled business effect in the same SaveChanges round.
+        var access = new McpAccess(owner, "acc", "HINT01", "pbkdf2|1|AA|AA",
+            McpAccessLevel.Analyse, McpApprovalMode.PerAction);
+        db.McpAccesses.Add(access);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(1, await db.McpAuditEntries.CountAsync());
+        Assert.Equal(1, await db.McpAccesses.CountAsync());
+        Assert.Equal(1, staged!.SequenceNo);
+    }
+
+    /// <summary>Concurrent writes on different contexts get distinct sequence numbers.</summary>
+    [Fact]
+    public async Task WriteAsync_ConcurrentChains_SerializeWithoutDuplicates()
+    {
+        var (writer1, db1, conn) = CreateSqlite();
+        await using var _ = conn;
+        var db2 = new AppDbContext(db1.Database.GetDbConnection() is SqliteConnection c
+            ? new DbContextOptionsBuilder<AppDbContext>().UseSqlite(c).Options
+            : throw new InvalidOperationException());
+        var writer2 = new McpAuditWriter(db2, NullLogger<McpAuditWriter>.Instance);
+        var owner = Guid.NewGuid();
+
+        await Task.WhenAll(
+            writer1.WriteAsync(Request(owner: owner), CancellationToken.None),
+            writer2.WriteAsync(Request(owner: owner), CancellationToken.None));
+
+        var seqs = await db1.McpAuditEntries.AsNoTracking()
+            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync();
+        Assert.Equal(new long[] { 1, 2 }, seqs);
+    }
+
+    /// <summary>An intact chain verifies clean — including after a full reload from disk.</summary>
+    [Fact]
+    public async Task VerifyAsync_IntactChain_SurvivesReload()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+        var changes = new[] { new McpAuditFieldChange("Posting", Guid.NewGuid(), "ContactId", null, Guid.NewGuid().ToString()) };
+
+        await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+        await writer.WriteAsync(Request(owner: owner, eventType: "DataChange", changes: changes), CancellationToken.None);
+        await writer.WriteAsync(Request(owner: owner, eventType: "AccessRevoked"), CancellationToken.None);
+
+        // Fresh context over the same database: hash recomputation must work on reloaded
+        // values (tick round-trip, canonical ordering of the loaded change rows).
+        var fresh = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(conn).Options);
+        var verifier = new McpAuditWriter(fresh, NullLogger<McpAuditWriter>.Instance);
+
+        var result = await verifier.VerifyAsync(owner, CancellationToken.None);
+
+        Assert.True(result.IsIntact, result.FailureReason);
+        Assert.Equal(3, result.EntriesChecked);
+        Assert.Null(result.FirstBrokenSequenceNo);
+        Assert.Empty(result.SequenceGaps);
+    }
+
+    /// <summary>A deleted middle entry shows up as both a sequence gap and a broken link.</summary>
+    [Fact]
+    public async Task VerifyAsync_DetectsGapFromDeletedEntry()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+        for (var i = 0; i < 3; i++)
+        {
+            await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+        }
+
+        // Simulated tampering: remove the middle entry of the chain.
+        await db.McpAuditEntries.Where(e => e.SequenceNo == 2).ExecuteDeleteAsync();
+
+        var result = await writer.VerifyAsync(owner, CancellationToken.None);
+
+        Assert.False(result.IsIntact);
+        var gap = Assert.Single(result.SequenceGaps);
+        Assert.Equal(2, gap.FirstMissingSequenceNo);
+        Assert.Equal(2, gap.LastMissingSequenceNo);
+        Assert.Equal(3, result.FirstBrokenSequenceNo); // dangling PrevHash of entry 3
+        Assert.NotNull(result.FailureReason);
+    }
+
+    /// <summary>Retroactively modified content breaks the recomputed entry hash.</summary>
+    [Fact]
+    public async Task VerifyAsync_DetectsTamperedContent()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+        for (var i = 0; i < 3; i++)
+        {
+            await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+        }
+
+        // Simulated tampering: alter the payload of entry 2 without fixing the chain.
+        await db.McpAuditEntries.Where(e => e.SequenceNo == 2)
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.PayloadJson, "{\"tampered\":true}"));
+
+        var result = await writer.VerifyAsync(owner, CancellationToken.None);
+
+        Assert.False(result.IsIntact);
+        Assert.Equal(2, result.FirstBrokenSequenceNo);
+        Assert.Contains("hash", result.FailureReason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>A forged chain link (PrevHash rewrite) is detected.</summary>
+    [Fact]
+    public async Task VerifyAsync_DetectsForgedPrevHash()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+        for (var i = 0; i < 2; i++)
+        {
+            await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+        }
+
+        await db.McpAuditEntries.Where(e => e.SequenceNo == 2)
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.PrevHash, "deadbeef"));
+
+        var result = await writer.VerifyAsync(owner, CancellationToken.None);
+
+        Assert.False(result.IsIntact);
+        Assert.Equal(2, result.FirstBrokenSequenceNo);
+    }
+
+    /// <summary>Verification is chain-scoped: owner verification ignores the global chain.</summary>
+    [Fact]
+    public async Task VerifyAsync_IsScopedToTheRequestedChain()
+    {
+        var (writer, db, conn) = CreateSqlite();
+        await using var _ = conn;
+        var owner = Guid.NewGuid();
+
+        await writer.WriteAsync(Request(globalChain: true), CancellationToken.None);
+        await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+
+        var globalResult = await writer.VerifyAsync(null, CancellationToken.None);
+        var ownerResult = await writer.VerifyAsync(owner, CancellationToken.None);
+
+        Assert.True(globalResult.IsIntact);
+        Assert.Equal(1, globalResult.EntriesChecked);
+        Assert.True(ownerResult.IsIntact);
+        Assert.Equal(1, ownerResult.EntriesChecked);
+    }
+
+    /// <summary>An empty chain verifies as intact.</summary>
+    [Fact]
+    public async Task VerifyAsync_EmptyChain_IsIntact()
+    {
+        var (writer, _, conn) = CreateSqlite();
+        await using var _ = conn;
+
+        var result = await writer.VerifyAsync(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.True(result.IsIntact);
+        Assert.Equal(0, result.EntriesChecked);
+    }
+}

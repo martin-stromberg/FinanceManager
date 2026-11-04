@@ -82,10 +82,19 @@ public sealed class McpAuthHandler : AuthenticationHandler<McpAuthOptions>
         if (!access.IsCurrentlyUsable(DateTime.UtcNow)
             || !McpIpRangeMatcher.IsAllowed(access.AllowedIpRanges, Context.Connection.RemoteIpAddress))
         {
-            await _auditWriter.WriteAsync(new McpAuditWriteRequest(
-                McpAuditCategory.SecurityEvent, "AuthFailed", "Denied",
-                OwnerUserId: access.OwnerUserId, McpAccessId: access.Id, McpAccessName: access.Name,
-                Context: "McpEndpoint", SourceIp: remoteIp), Context.RequestAborted);
+            try
+            {
+                await _auditWriter.WriteAsync(new McpAuditWriteRequest(
+                    McpAuditCategory.SecurityEvent, "AuthFailed", "Denied",
+                    OwnerUserId: access.OwnerUserId, McpAccessId: access.Id, McpAccessName: access.Name,
+                    Context: "McpEndpoint", SourceIp: remoteIp), Context.RequestAborted);
+            }
+            catch (Exception ex)
+            {
+                // The denial is the effect — an audit failure must not turn a uniform 401
+                // into a 500; the missing record surfaces via the chain gap check.
+                Logger.LogWarning(ex, "Failed to write MCP security audit record for access {AccessId}", access.Id);
+            }
             return AuthenticateResult.Fail("Invalid token");
         }
 

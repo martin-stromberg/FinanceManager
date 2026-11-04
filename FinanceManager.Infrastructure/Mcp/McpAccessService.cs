@@ -31,7 +31,8 @@ public sealed class McpAccessService : IMcpAccessService
     /// <param name="db">Application database context.</param>
     /// <param name="tokenIssuer">Token issuer for creation and rotation.</param>
     /// <param name="scopeEvaluator">Evaluator used to render effective profiles.</param>
-    /// <param name="auditWriter">Audit write path (no-op implementation until F-0301).</param>
+    /// <param name="auditWriter">Hash-chained audit write path (F-0301/F-0302); audit bundles are staged
+    /// and commit atomically with the access change in one <c>SaveChangesAsync</c>.</param>
     /// <param name="logger">Logger.</param>
     public McpAccessService(
         AppDbContext db,
@@ -106,16 +107,23 @@ public sealed class McpAccessService : IMcpAccessService
                 access.ReplaceIndividualScopes(scopeDtos.Select(s => ToScope(access, s)));
             }
             _db.McpAccesses.Add(access);
+            // Transactional coupling: the audit record commits in the same SaveChanges
+            // round as the new access — an effect without its record fails (F-0301).
+            var staged = await StageAuditAsync(access, "AccessCreated", ct);
             try
             {
                 await _db.SaveChangesAsync(ct);
             }
-            catch (DbUpdateException) when (attempt < HintCollisionRetries)
+            catch (DbUpdateException ex) when (attempt < HintCollisionRetries)
             {
+                _logger.LogWarning(ex, "MCP access insert failed on attempt {Attempt}; retrying with a fresh token", attempt + 1);
                 _db.Entry(access).State = EntityState.Detached;
+                if (staged is not null)
+                {
+                    _db.Entry(staged).State = EntityState.Detached;
+                }
                 continue; // access-key-hint collision: issue a fresh token
             }
-            await AuditAsync(access, "AccessCreated", ct);
             var scopes = await _scopeEvaluator.GetEffectiveScopesAsync(access, ct);
             return new McpAccessCreatedDto(ToDetail(access, scopes, DateTime.UtcNow), issued.PlainText);
         }
@@ -139,8 +147,8 @@ public sealed class McpAccessService : IMcpAccessService
             throw new DomainValidationException("Err_Mcp_NameInUse", "An access with this name already exists.");
         }
         access.Update(name, request.Description, level, approvalMode, request.ExpiresUtc, request.AllowedIpRanges);
+        await StageAuditAsync(access, "AccessUpdated", ct);
         await _db.SaveChangesAsync(ct);
-        await AuditAsync(access, "AccessUpdated", ct);
         return true;
     }
 
@@ -164,8 +172,8 @@ public sealed class McpAccessService : IMcpAccessService
         var newScopes = scopeDtos.Select(s => ToScope(access, s)).ToList();
         await _db.McpAccessScopes.AddRangeAsync(newScopes, ct);
         access.ReplaceIndividualScopes(newScopes);
+        await StageAuditAsync(access, "ScopesChanged", ct);
         await _db.SaveChangesAsync(ct);
-        await AuditAsync(access, "ScopesChanged", ct);
         return true;
     }
 
@@ -180,12 +188,15 @@ public sealed class McpAccessService : IMcpAccessService
         }
         scope.SetFilters(request.AccountTypesCsv, request.ContactCategoryIdsCsv,
             request.SecurityCategoryIdsCsv, request.SavingsPlanCategoryIdsCsv, request.AttachmentCategoryIdsCsv);
-        await _db.SaveChangesAsync(ct);
         var access = await _db.McpAccesses.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id, ct);
-        if (access is not null)
+        if (access is null)
         {
-            await AuditAsync(access, "FiltersChanged", ct);
+            // The scope references the access — a missing access row is inconsistent and
+            // must not persist a filter change without its audit record.
+            return false;
         }
+        await StageAuditAsync(access, "FiltersChanged", ct);
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 
@@ -212,8 +223,8 @@ public sealed class McpAccessService : IMcpAccessService
         {
             throw new DomainValidationException("Err_Mcp_InvalidState", ex.Message);
         }
+        await StageAuditAsync(access, eventType, ct);
         await _db.SaveChangesAsync(ct);
-        await AuditAsync(access, eventType, ct);
         return true;
     }
 
@@ -229,15 +240,21 @@ public sealed class McpAccessService : IMcpAccessService
         {
             var issued = _tokenIssuer.Issue();
             access.RotateToken(issued.AccessKeyHint, issued.TokenHash);
+            // Transactional coupling: rotation and audit record commit in one save round.
+            var staged = await StageAuditAsync(access, "TokenRotated", ct);
             try
             {
                 await _db.SaveChangesAsync(ct);
             }
-            catch (DbUpdateException) when (attempt < HintCollisionRetries)
+            catch (DbUpdateException ex) when (attempt < HintCollisionRetries)
             {
+                _logger.LogWarning(ex, "MCP token rotation save failed on attempt {Attempt}; retrying with a fresh token", attempt + 1);
+                if (staged is not null)
+                {
+                    _db.Entry(staged).State = EntityState.Detached;
+                }
                 continue;
             }
-            await AuditAsync(access, "TokenRotated", ct);
             return new McpAccessRotatedDto(access.Id, issued.PlainText, access.TokenIssuedUtc);
         }
     }
@@ -251,8 +268,8 @@ public sealed class McpAccessService : IMcpAccessService
             return false;
         }
         access.Revoke(string.IsNullOrWhiteSpace(reason) ? "Revoked by owner" : reason.Trim());
+        await StageAuditAsync(access, "AccessRevoked", ct);
         await _db.SaveChangesAsync(ct);
-        await AuditAsync(access, "AccessRevoked", ct);
         return true;
     }
 
@@ -313,24 +330,21 @@ public sealed class McpAccessService : IMcpAccessService
             isTlsRequest);
     }
 
-    private async Task AuditAsync(McpAccess access, string eventType, CancellationToken ct)
-    {
-        try
-        {
-            await _auditWriter.WriteAsync(new McpAuditWriteRequest(
-                Category: McpAuditCategory.AccessEvent,
-                EventType: eventType,
-                ResultStatus: "Success",
-                OwnerUserId: access.OwnerUserId,
-                McpAccessId: access.Id,
-                McpAccessName: access.Name,
-                Context: "Ui"), ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to write MCP audit event {EventType} for access {AccessId}", eventType, access.Id);
-        }
-    }
+    /// <summary>
+    /// Stages the access event audit record in the shared unit of work. It commits
+    /// atomically with the caller's subsequent <c>SaveChangesAsync</c> — a write effect
+    /// without its audit record fails, and vice versa (F-0301). Unlike a read-path audit
+    /// failure, a staging failure propagates deliberately.
+    /// </summary>
+    private Task<McpAuditEntry?> StageAuditAsync(McpAccess access, string eventType, CancellationToken ct)
+        => _auditWriter.StageAsync(new McpAuditWriteRequest(
+            Category: McpAuditCategory.AccessEvent,
+            EventType: eventType,
+            ResultStatus: "Success",
+            OwnerUserId: access.OwnerUserId,
+            McpAccessId: access.Id,
+            McpAccessName: access.Name,
+            Context: "Ui"), ct);
 
     private static void ValidateScopes(IReadOnlyList<McpAccessScopeDto> scopes)
     {
