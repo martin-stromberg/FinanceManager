@@ -87,6 +87,13 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
         var owner = context.Access.OwnerUserId;
         var draftId = McpToolArguments.OptionalGuid(arguments, "draftId");
         var entryId = McpToolArguments.OptionalGuid(arguments, "entryId");
+        // A single-entry lookup only exists inside a draft — reject instead of silently
+        // falling into the list path (schema: "requires draftId").
+        if (entryId.HasValue && !draftId.HasValue)
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments",
+                "Argument 'entryId' requires 'draftId'.");
+        }
         var includeEntries = McpToolArguments.OptionalBool(arguments, "includeEntries");
         var skip = McpToolArguments.Skip(arguments);
         var take = McpToolArguments.Take(arguments);

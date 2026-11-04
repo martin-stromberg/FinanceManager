@@ -197,6 +197,40 @@ public sealed class McpReadOnlyToolsTests
 
     /// <summary>Test case.</summary>
     [Fact]
+    public async Task PostingsQuery_SecurityContext_RejectsQ()
+    {
+        // The security-posting contract has no text filter — q must not be dropped silently.
+        var handler = new FmPostingsQueryHandler(
+            Mock.Of<Application.Postings.IPostingsQueryService>(),
+            Mock.Of<IAccountService>(), Mock.Of<Application.Contacts.IContactService>(),
+            Mock.Of<Application.Savings.ISavingsPlanService>(), Mock.Of<Application.Securities.ISecurityService>(),
+            NewFilter());
+        var ctx = NewCallContext(NewAccessContext(Guid.NewGuid()).Object);
+        var ex = await Assert.ThrowsAsync<McpToolException>(
+            () => handler.InvokeAsync(Args($"{{\"securityId\":\"{Guid.NewGuid()}\",\"q\":\"test\"}}"), ctx, CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task PostingsQuery_SecurityContext_WithoutQ_IsAccepted()
+    {
+        var owner = Guid.NewGuid();
+        var securityId = Guid.NewGuid();
+        var postings = new Mock<Application.Postings.IPostingsQueryService>();
+        postings.Setup(p => p.GetSecurityPostingsAsync(securityId, 0, 50, null, null, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PostingServiceDto>());
+        var handler = new FmPostingsQueryHandler(
+            postings.Object, Mock.Of<IAccountService>(), Mock.Of<Application.Contacts.IContactService>(),
+            Mock.Of<Application.Savings.ISavingsPlanService>(), Mock.Of<Application.Securities.ISecurityService>(),
+            NewFilter());
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"securityId\":\"{securityId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.Equal(0, doc.RootElement.GetProperty("postings").GetArrayLength());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
     public async Task PostingsQuery_WrapsPostingTextsInUntrustedData()
     {
         var owner = Guid.NewGuid();
@@ -318,6 +352,22 @@ public sealed class McpReadOnlyToolsTests
         Assert.Equal("file.csv", draft.GetProperty("untrusted_data").GetProperty("originalFileName").GetString());
         var e = draft.GetProperty("entries")[0];
         Assert.Equal("subject <inject>", e.GetProperty("untrusted_data").GetProperty("subject").GetString());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftsRead_EntryIdWithoutDraftId_Throws()
+    {
+        // A single-entry lookup only exists inside a draft — entryId alone must not
+        // silently fall into the list path (schema: "requires draftId").
+        var handler = new FmStatementDraftsReadHandler(Mock.Of<IStatementDraftService>(),
+            Mock.Of<IAccountService>(), Mock.Of<Application.Contacts.IContactService>(),
+            Mock.Of<Application.Savings.ISavingsPlanService>(), Mock.Of<Application.Securities.ISecurityService>(),
+            NewFilter());
+        var ex = await Assert.ThrowsAsync<McpToolException>(
+            () => handler.InvokeAsync(Args($"{{\"entryId\":\"{Guid.NewGuid()}\"}}"),
+                NewCallContext(NewAccessContext(Guid.NewGuid()).Object), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
     }
 
     /// <summary>Test case.</summary>

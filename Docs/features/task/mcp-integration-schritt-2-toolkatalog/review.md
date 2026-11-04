@@ -29,6 +29,13 @@
   zusammengeführt — keine Existenz-Preisgabe fremder Posting-Ids.
 - **Take-Clamp 200** einheitlich in `McpToolArguments` + `entryTake`/`priceTake`-Varianten.
 
+## Korrekturen Abnahme 1
+- [x] **T02 `fm_postings_query`:** `q` im `securityId`-Kontext wird nicht mehr still
+  verworfen — `Err_Mcp_InvalidArguments` („not supported in the securityId context"),
+  Schema-Beschreibung von `q` entsprechend präzisiert.
+- [x] **T13 `fm_statement_drafts_read`:** `entryId` ohne `draftId` wirft jetzt
+  `Err_Mcp_InvalidArguments` („requires draftId") statt still in den Listenpfad zu laufen.
+
 ## Risiken / offene Punkte für die Abnahme
 - `Mcp:Enabled` bleibt `false` (opt-in) — Live-Schaltung der Tools ist Katalog-Ebene;
   produktiv sichtbar erst bei aktiviertem Schalter + gültigem Zugang.

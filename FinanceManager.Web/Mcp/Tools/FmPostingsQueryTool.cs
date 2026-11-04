@@ -22,7 +22,7 @@ public sealed class FmPostingsQueryDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmPostingsQueryDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"accountId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Bank-posting context (exactly one context id required).\"},\"contactId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Contact-posting context.\"},\"savingsPlanId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Savings-plan-posting context.\"},\"securityId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Security-posting context.\"},\"q\":{\"type\":\"string\",\"description\":\"Optional search text.\"},\"from\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Inclusive start date (UTC).\"},\"to\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Inclusive end date (UTC).\"},\"skip\":{\"type\":\"integer\",\"minimum\":0},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":200}},\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"accountId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Bank-posting context (exactly one context id required).\"},\"contactId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Contact-posting context.\"},\"savingsPlanId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Savings-plan-posting context.\"},\"securityId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Security-posting context.\"},\"q\":{\"type\":\"string\",\"description\":\"Optional search text (not supported in the securityId context).\"},\"from\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Inclusive start date (UTC).\"},\"to\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Inclusive end date (UTC).\"},\"skip\":{\"type\":\"integer\",\"minimum\":0},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":200}},\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -95,6 +95,13 @@ public sealed class FmPostingsQueryHandler : IMcpToolHandler
         }
 
         var q = McpToolArguments.OptionalString(arguments, "q");
+        // The security-posting query contract has no text filter — reject instead of
+        // silently dropping the argument (clear input/output behaviour).
+        if (securityId.HasValue && !string.IsNullOrWhiteSpace(q))
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments",
+                "Argument 'q' is not supported in the securityId context.");
+        }
         var from = McpToolArguments.OptionalDateTime(arguments, "from");
         var to = McpToolArguments.OptionalDateTime(arguments, "to");
         var skip = McpToolArguments.Skip(arguments);
