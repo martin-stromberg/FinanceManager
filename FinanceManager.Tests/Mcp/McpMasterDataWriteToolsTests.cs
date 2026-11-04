@@ -330,6 +330,29 @@ public sealed class McpMasterDataWriteToolsTests
 
     /// <summary>Test case.</summary>
     [Fact]
+    public async Task Contacts_Update_ExplicitNull_ClearsCategoryDescriptionAndFlag()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(id, "contact", ContactType.Organization, Guid.NewGuid(), "desc", true, null));
+        contacts.Setup(c => c.UpdateAsync(id, owner, "contact", ContactType.Organization, null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(id, "contact", ContactType.Organization, null, null, false, null));
+        var audit = CapturingAudit(out var staged);
+        var handler = ContactsHandler(contacts, audit: audit);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"update\",\"contactId\":\"{id}\",\"categoryId\":null,\"description\":null,\"isPaymentIntermediary\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        contacts.Verify(c => c.UpdateAsync(id, owner, "contact", ContactType.Organization, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "CategoryId" && c.NewValue is null);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "Description" && c.NewValue is null);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "IsPaymentIntermediary" && c.NewValue is null);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
     public async Task Contacts_Update_FilteredRecordScope_DeniesOutOfScopeCategory()
     {
         var owner = Guid.NewGuid();
@@ -563,6 +586,62 @@ public sealed class McpMasterDataWriteToolsTests
         Assert.Contains(staged()!.Changes!, c => c.Field == "Name" && c.NewValue == "new");
     }
 
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Accounts_Update_ExplicitNull_ClearsIban()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var bankContactId = Guid.NewGuid();
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(id, bankContactId));
+        accounts.Setup(a => a.UpdateAsync(id, owner, "giro", null, bankContactId,
+                SavingsPlanExpectation.Optional, true, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(id, bankContactId));
+        var audit = CapturingAudit(out var staged);
+        var handler = AccountsHandler(accounts, audit: audit);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"update\",\"accountId\":\"{id}\",\"iban\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        accounts.Verify(a => a.UpdateAsync(id, owner, "giro", null, bankContactId,
+            SavingsPlanExpectation.Optional, true, false, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "Iban" && c.NewValue is null);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Accounts_Results_WrapIbanFields_InUntrustedData()
+    {
+        var owner = Guid.NewGuid();
+        var bankContactId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.CreateAsync(owner, "giro", AccountType.Giro, "DE001", bankContactId,
+                SavingsPlanExpectation.Optional, true, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(accountId, bankContactId));
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(accountId, bankContactId));
+        var handler = AccountsHandler(accounts);
+        var call = NewCallContext(NewAccessContext(owner).Object);
+
+        using var created = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"create\",\"name\":\"giro\",\"accountType\":\"Giro\",\"iban\":\"DE001\",\"bankContactId\":\"{bankContactId}\"}}"),
+            call, CancellationToken.None));
+        var account = created.RootElement.GetProperty("account");
+        Assert.Equal("DE001", account.GetProperty("untrusted_data").GetProperty("iban").GetString());
+        Assert.Equal(JsonValueKind.Array, account.GetProperty("untrusted_data").GetProperty("linkedIbans").ValueKind);
+        Assert.False(account.TryGetProperty("iban", out _));
+        Assert.False(account.TryGetProperty("linkedIbans", out _));
+
+        using var linked = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"addLinkedIban\",\"accountId\":\"{accountId}\",\"iban\":\"DE999\"}}"),
+            call, CancellationToken.None));
+        Assert.Equal("DE999", linked.RootElement.GetProperty("untrusted_data").GetProperty("iban").GetString());
+        Assert.False(linked.RootElement.TryGetProperty("iban", out _));
+    }
+
     // ------------------------------------------------------------------
     // T24 fm_savings_plans_manage
     // ------------------------------------------------------------------
@@ -638,6 +717,30 @@ public sealed class McpMasterDataWriteToolsTests
         plans.Verify(p => p.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task SavingsPlans_Update_ExplicitNull_ClearsNullableFields()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var categoryId = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SavingsPlanDto(id, "plan", SavingsPlanType.Recurring, 1000m,
+                DateTime.UtcNow, SavingsPlanInterval.Monthly, true, DateTime.UtcNow, null, categoryId, "CN-1"));
+        plans.Setup(p => p.UpdateAsync(id, owner, "plan", SavingsPlanType.Recurring, null, null, null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan(id));
+        var audit = CapturingAudit(out var staged);
+        var handler = PlansHandler(plans, audit: audit);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"update\",\"savingsPlanId\":\"{id}\",\"targetAmount\":null,\"targetDate\":null,\"interval\":null,\"categoryId\":null,\"contractNumber\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        plans.Verify(p => p.UpdateAsync(id, owner, "plan", SavingsPlanType.Recurring, null, null, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "ContractNumber" && c.NewValue is null);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "CategoryId" && c.NewValue is null);
+    }
+
     // ------------------------------------------------------------------
     // T25 fm_securities_manage
     // ------------------------------------------------------------------
@@ -698,6 +801,49 @@ public sealed class McpMasterDataWriteToolsTests
             NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
         securities.Verify(s => s.ArchiveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         securities.Verify(s => s.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Securities_Update_ExplicitNull_ClearsDescriptionAndCategory()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var securities = new Mock<ISecurityService>();
+        securities.Setup(s => s.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityDto
+            {
+                Id = id, Name = "sec", Identifier = "DE000A", CurrencyCode = "EUR",
+                IsActive = true, CategoryId = Guid.NewGuid(), Description = "desc", Region = "EU", Sector = "tech"
+            });
+        securities.Setup(s => s.UpdateAsync(id, owner, "sec", "DE000A", null, null, "EUR", null,
+                It.IsAny<CancellationToken>(), null, null))
+            .ReturnsAsync(NewSecurity(id));
+        var handler = SecuritiesHandler(securities);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"update\",\"securityId\":\"{id}\",\"description\":null,\"alphaVantageCode\":null,\"categoryId\":null,\"region\":null,\"sector\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        securities.Verify(s => s.UpdateAsync(id, owner, "sec", "DE000A", null, null, "EUR", null,
+            It.IsAny<CancellationToken>(), null, null), Times.Once);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Securities_Result_WrapsIdentifier_InUntrustedData()
+    {
+        var owner = Guid.NewGuid();
+        var securities = new Mock<ISecurityService>();
+        securities.Setup(s => s.CreateAsync(owner, "sec", "DE000A", null, null, "EUR", null,
+                It.IsAny<CancellationToken>(), null, null))
+            .ReturnsAsync(NewSecurity());
+        var handler = SecuritiesHandler(securities);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args("{\"operation\":\"create\",\"name\":\"sec\",\"identifier\":\"DE000A\",\"currencyCode\":\"EUR\"}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var security = doc.RootElement.GetProperty("security");
+        Assert.Equal("DE000A", security.GetProperty("untrusted_data").GetProperty("identifier").GetString());
+        Assert.False(security.TryGetProperty("identifier", out _));
     }
 
     // ------------------------------------------------------------------
@@ -847,6 +993,28 @@ public sealed class McpMasterDataWriteToolsTests
         purposes.Verify(p => p.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Budgets_RuleUpdate_ExplicitNull_ClearsEndDateAndPattern()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var rules = new Mock<IBudgetRuleService>();
+        rules.Setup(r => r.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BudgetRuleDto(id, owner, Guid.NewGuid(), null, 100m,
+                BudgetIntervalType.Monthly, null, new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31), "pat", false));
+        rules.Setup(r => r.UpdateAsync(id, owner, 100m, BudgetIntervalType.Monthly, null,
+                new DateOnly(2026, 1, 1), null, null, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewRule(id));
+        var handler = BudgetsHandler(rules: rules);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"entity\":\"rule\",\"operation\":\"update\",\"ruleId\":\"{id}\",\"endDate\":null,\"purposePattern\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        rules.Verify(r => r.UpdateAsync(id, owner, 100m, BudgetIntervalType.Monthly, null,
+            new DateOnly(2026, 1, 1), null, null, false, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ------------------------------------------------------------------
     // T28 fm_attachments_manage
     // ------------------------------------------------------------------
@@ -972,6 +1140,45 @@ public sealed class McpMasterDataWriteToolsTests
         await handler.InvokeAsync(Args($"{{\"operation\":\"setCategory\",\"attachmentId\":\"{attachmentId}\",\"categoryId\":\"{categoryId}\"}}"),
             call, CancellationToken.None);
         attachments.Verify(a => a.UpdateCategoryAsync(owner, attachmentId, categoryId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Attachments_SetCategory_ExplicitNull_ClearsCategory()
+    {
+        var owner = Guid.NewGuid();
+        var attachmentId = Guid.NewGuid();
+        var attachments = new Mock<IAttachmentService>();
+        attachments.Setup(a => a.GetAsync(owner, attachmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAttachment(attachmentId, categoryId: Guid.NewGuid()));
+        attachments.Setup(a => a.UpdateCategoryAsync(owner, attachmentId, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var handler = AttachmentsHandler(attachments);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"setCategory\",\"attachmentId\":\"{attachmentId}\",\"categoryId\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("categoryId").ValueKind);
+        attachments.Verify(a => a.UpdateCategoryAsync(owner, attachmentId, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Attachments_Update_ExplicitNull_ClearsCategory()
+    {
+        var owner = Guid.NewGuid();
+        var attachmentId = Guid.NewGuid();
+        var attachments = new Mock<IAttachmentService>();
+        attachments.Setup(a => a.GetAsync(owner, attachmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAttachment(attachmentId, categoryId: Guid.NewGuid()));
+        attachments.Setup(a => a.UpdateCoreAsync(owner, attachmentId, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var handler = AttachmentsHandler(attachments);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"update\",\"attachmentId\":\"{attachmentId}\",\"categoryId\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        attachments.Verify(a => a.UpdateCoreAsync(owner, attachmentId, null, null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>Test case.</summary>
@@ -1127,6 +1334,30 @@ public sealed class McpMasterDataWriteToolsTests
         Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
         Assert.Equal("HomeKpiUpdated", staged()!.EventType);
         Assert.Contains(staged()!.Changes!, c => c.Field == "SortOrder" && c.NewValue == "5");
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task ReportsConfig_FavoriteUpdate_ExplicitNull_ClearsFiltersAndKinds()
+    {
+        var owner = Guid.NewGuid();
+        var favoriteId = Guid.NewGuid();
+        var favorites = new Mock<IReportFavoriteService>();
+        var existing = new ReportFavoriteDto(favoriteId, "fav", PostingKind.Bank, false,
+            ReportInterval.Month, 24, false, false, false, false, false, DateTime.UtcNow, null,
+            new List<PostingKind> { PostingKind.Bank, PostingKind.Security },
+            new ReportFavoriteFiltersDto(new List<Guid> { Guid.NewGuid() }, null, null, null, null, null, null, null, null), false);
+        favorites.Setup(f => f.GetAsync(favoriteId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        favorites.Setup(f => f.UpdateAsync(favoriteId, owner, It.IsAny<ReportFavoriteUpdateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewFavorite(favoriteId));
+        var handler = ReportsConfigHandler(favorites: favorites);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"entity\":\"reportFavorite\",\"operation\":\"update\",\"favoriteId\":\"{favoriteId}\",\"filters\":null,\"postingKinds\":null}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        favorites.Verify(f => f.UpdateAsync(favoriteId, owner, It.Is<ReportFavoriteUpdateRequest>(r =>
+            r.Filters == null && r.PostingKinds == null), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ------------------------------------------------------------------

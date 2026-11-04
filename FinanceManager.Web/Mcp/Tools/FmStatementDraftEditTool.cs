@@ -413,7 +413,7 @@ public sealed class FmStatementDraftEditHandler : IMcpToolHandler
     private static EntryPatch ParseEntryPatch(JsonElement arguments, out HashSet<string> providedFields)
     {
         providedFields = new HashSet<string>(StringComparer.Ordinal);
-        if (!McpToolArguments.Has(arguments, "entry"))
+        if (!McpToolArguments.HasNonNull(arguments, "entry"))
         {
             return new EntryPatch(null, false, null, null, null, null, null, null);
         }
@@ -457,7 +457,7 @@ public sealed class FmStatementDraftEditHandler : IMcpToolHandler
 
     private static decimal? OptionalDecimal(JsonElement args, string name)
     {
-        if (!McpToolArguments.Has(args, name))
+        if (!McpToolArguments.HasNonNull(args, name))
         {
             return null;
         }

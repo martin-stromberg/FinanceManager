@@ -294,7 +294,7 @@ internal static class McpMasterDataGuards
     /// <exception cref="McpToolException">The value is present but not a number.</exception>
     public static decimal? OptionalDecimal(JsonElement args, string name)
     {
-        if (!McpToolArguments.Has(args, name))
+        if (!McpToolArguments.HasNonNull(args, name))
         {
             return null;
         }
@@ -315,7 +315,7 @@ internal static class McpMasterDataGuards
     /// <exception cref="McpToolException">The value is present but unparseable.</exception>
     public static DateOnly? OptionalDateOnly(JsonElement args, string name)
     {
-        if (!McpToolArguments.Has(args, name))
+        if (!McpToolArguments.HasNonNull(args, name))
         {
             return null;
         }

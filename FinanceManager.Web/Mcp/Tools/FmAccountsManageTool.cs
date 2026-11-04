@@ -104,7 +104,7 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
         var name = McpMasterDataGuards.RequiredName(arguments);
         var type = McpToolArguments.OptionalEnum<AccountType>(arguments, "accountType")
             ?? throw new McpToolException("Err_Mcp_InvalidArguments", "Argument 'accountType' is required for create.");
-        var iban = McpToolArguments.Has(arguments, "iban")
+        var iban = McpToolArguments.HasNonNull(arguments, "iban")
             ? McpMasterDataGuards.RequireIban(McpToolArguments.OptionalString(arguments, "iban", McpMasterDataGuards.MaxIbanLength + 10))
             : null;
         var bankContactId = McpToolArguments.RequiredGuid(arguments, "bankContactId");
@@ -275,7 +275,7 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
             McpWriteAudit.DiscardStaged(context, staged);
             throw;
         }
-        return new { operation, applied = true, accountId, iban };
+        return new { operation, applied = true, accountId, untrusted_data = new { iban } };
     }
 
     private async Task<object> DeleteAsync(JsonElement arguments, Guid owner, McpToolCallContext context, CancellationToken ct)
@@ -298,13 +298,11 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
         {
             id = a.Id,
             accountType = a.Type.ToString(),
-            iban = a.Iban,
             bankContactId = a.BankContactId,
             savingsPlanExpectation = a.SavingsPlanExpectation.ToString(),
             securityProcessingEnabled = a.SecurityProcessingEnabled,
             isCollectionAccount = a.IsCollectionAccount,
-            linkedIbans = a.LinkedIbans,
             symbolAttachmentId = a.SymbolAttachmentId,
-            untrusted_data = new { name = a.Name }
+            untrusted_data = new { name = a.Name, iban = a.Iban, linkedIbans = a.LinkedIbans }
         };
 }

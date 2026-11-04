@@ -283,7 +283,6 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
         => new
         {
             id = s.Id,
-            identifier = s.Identifier,
             currencyCode = s.CurrencyCode,
             categoryId = s.CategoryId,
             isActive = s.IsActive,
@@ -291,6 +290,7 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
             untrusted_data = new
             {
                 name = s.Name,
+                identifier = s.Identifier,
                 description = s.Description,
                 alphaVantageCode = s.AlphaVantageCode,
                 region = s.Region,

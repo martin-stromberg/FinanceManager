@@ -45,6 +45,38 @@
   Fehler, wo die Operation auf einen Bestand zielt (update/alias/delete-Vorbereitung).
 - **Kein Buchungspfad, kein AiActionRequest, kein DbContext/Repo in Handlern.**
 
+## Korrekturen Abnahme 1
+- [x] **A1 — Explizites `null` löscht nullable Felder (funktional).**
+  `McpToolArguments.Has` meldet jetzt „Feld vorhanden" inkl. JSON-`null`; das neue
+  `McpToolArguments.HasNonNull` trägt die bisherige „Wert ≠ null"-Semantik
+  (McpToolArguments.cs:36-55). Alle `Optional*`-Parser lesen über `HasNonNull`,
+  explizites `null` verhält sich dort wie „nicht gesetzt" (Rückgabe `null`).
+  Damit gilt in allen Update-Pfaden T22–T29 die Merge-Regel: vorhanden+`null` →
+  Feld auf `null` gesetzt, vorhanden+Wert → gesetzt, fehlend → Ist-Wert
+  beibehalten; nicht-leerbare Felder lehnen `null` weiterhin mit
+  `Err_Mcp_InvalidArguments` ("must not be null"/"required") ab.
+  `setCategory` mit `categoryId:null` löscht die Kategorie jetzt tatsächlich
+  (`UpdateCategoryAsync(..., null)`), der `iban`-Null-Zweig in
+  `FmAccountsManageTool.UpdateAsync` ist aktiv, `filters:null` leert den
+  Filtersatz (`ApplyFilters(null)` → `SetFilters(null,…)`) und
+  `postingKinds:null` setzt den Multi-Kind-Satz auf den primären
+  `postingKind` zurück. Schemas dokumentieren die neu löschbaren Felder
+  (`customIntervalMonths`, purpose-`categoryId`, `filters`, `postingKinds`,
+  `reportFavoriteId`, `predefinedType`). Nicht-Update-Aufrufer
+  (EP-07-Draft-Tools, `McpMasterDataGuards.OptionalDecimal/OptionalDateOnly`,
+  create-Pfade) nutzen `HasNonNull` und bleiben verhaltensgleich.
+  Neue Tests: `null clears` je Feld-Familie (Kategorie/Text/Flag via
+  Contact-Update, IBAN via Account-Update, Decimal/Date/Enum/Text/Guid via
+  SavingsPlan-Update, Metadaten via Security-Update, EndDate/Pattern via
+  BudgetRule-Update, `setCategory`+`update` `categoryId:null` via Attachment,
+  `filters`/`postingKinds` via ReportFavorite-Update).
+- [x] **A2 — `untrusted_data` auf Kennzeichner-Feldern (Konvention).**
+  `fm_accounts_manage` emittiert `iban` und `linkedIbans` ausschließlich in
+  `untrusted_data` (Result + `{iban}`-Echo der add/removeLinkedIban-Antwort);
+  `fm_securities_manage` emittiert `identifier` in `untrusted_data` —
+  Konvention T01 (`FmAccountsOverviewTool`)/T07 (`FmSecuritiesAnalysisTool`),
+  FA-9. Tests assertieren den Wrapper und die Abwesenheit der Top-Level-Felder.
+
 ## Offene Punkte / Folgeschritte
 - EP-09: `AiActionRequest`-Queue an die approval-required-Antwort anschließen
   (Parameter-Snapshot liegt bereits in `parameters` vor; `RelatedRequestId`-Feld

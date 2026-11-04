@@ -117,15 +117,15 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
                     "Argument 'mode' must be one of upload|empty|preliminary|massImport.")
             };
         }
-        if (McpToolArguments.Has(arguments, "files"))
+        if (McpToolArguments.HasNonNull(arguments, "files"))
         {
             return "massImport";
         }
-        if (McpToolArguments.Has(arguments, "accountId") && !McpToolArguments.Has(arguments, "contentBase64"))
+        if (McpToolArguments.HasNonNull(arguments, "accountId") && !McpToolArguments.HasNonNull(arguments, "contentBase64"))
         {
             return "preliminary";
         }
-        return McpToolArguments.Has(arguments, "contentBase64") ? "upload" : "empty";
+        return McpToolArguments.HasNonNull(arguments, "contentBase64") ? "upload" : "empty";
     }
 
     private async Task<object> UploadAsync(
@@ -277,7 +277,7 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
 
     private async Task<object> MassImportAsync(Guid owner, JsonElement arguments, McpToolCallContext context, CancellationToken ct)
     {
-        if (!McpToolArguments.Has(arguments, "files"))
+        if (!McpToolArguments.HasNonNull(arguments, "files"))
         {
             throw new McpToolException("Err_Mcp_InvalidArguments", "Mode 'massImport' requires 'files'.");
         }
@@ -332,7 +332,7 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
         }
 
         var decisions = new List<MassImportFileDecisionDto>();
-        if (McpToolArguments.Has(arguments, "decisions"))
+        if (McpToolArguments.HasNonNull(arguments, "decisions"))
         {
             var decEl = arguments.GetProperty("decisions");
             if (decEl.ValueKind != JsonValueKind.Array)

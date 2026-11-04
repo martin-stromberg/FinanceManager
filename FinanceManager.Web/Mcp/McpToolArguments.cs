@@ -33,11 +33,23 @@ internal static class McpToolArguments
     public static int Take(JsonElement args, int fallback = 50)
         => Math.Clamp(OptionalInt(args, "take") ?? fallback, 1, MaxTake);
 
-    /// <summary>Whether the named property exists and is not JSON null.</summary>
+    /// <summary>
+    /// Whether the named property exists on the arguments object — <b>including</b> an
+    /// explicit JSON <c>null</c>. Merge-style update paths interpret present-null as
+    /// "clear the field"; use <see cref="HasNonNull"/> when only a usable value counts.
+    /// </summary>
+    /// <param name="args">Tool arguments.</param>
+    /// <param name="name">Property name.</param>
+    /// <returns><see langword="true"/> when the property is present (any JSON value).</returns>
+    public static bool Has(JsonElement args, string name)
+        => args.ValueKind == JsonValueKind.Object
+           && args.TryGetProperty(name, out _);
+
+    /// <summary>Whether the named property exists and carries a non-null JSON value.</summary>
     /// <param name="args">Tool arguments.</param>
     /// <param name="name">Property name.</param>
     /// <returns><see langword="true"/> when a non-null value is present.</returns>
-    public static bool Has(JsonElement args, string name)
+    public static bool HasNonNull(JsonElement args, string name)
         => args.ValueKind == JsonValueKind.Object
            && args.TryGetProperty(name, out var el)
            && el.ValueKind != JsonValueKind.Null;
@@ -51,7 +63,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">The value is present but not a UUID.</exception>
     public static Guid? OptionalGuid(JsonElement args, string name)
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
@@ -83,7 +95,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">The value is present but not an integer.</exception>
     public static int? OptionalInt(JsonElement args, string name)
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
@@ -104,7 +116,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">The value is present but not a boolean.</exception>
     public static bool? OptionalBool(JsonElement args, string name)
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
@@ -128,7 +140,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">The value is not a string or exceeds the cap.</exception>
     public static string? OptionalString(JsonElement args, string name, int maxLength = 500)
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
@@ -158,7 +170,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">The value is present but unparseable.</exception>
     public static DateTime? OptionalDateTime(JsonElement args, string name)
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
@@ -183,7 +195,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">The value does not map to a defined enum member.</exception>
     public static TEnum? OptionalEnum<TEnum>(JsonElement args, string name) where TEnum : struct, Enum
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
@@ -212,7 +224,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">Malformed element or too many items.</exception>
     public static IReadOnlyList<Guid>? OptionalGuidList(JsonElement args, string name, int maxItems = 200)
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
@@ -244,7 +256,7 @@ internal static class McpToolArguments
     /// <exception cref="McpToolException">Malformed element or too many items.</exception>
     public static IReadOnlyList<int>? OptionalIntList(JsonElement args, string name, int maxItems = 200)
     {
-        if (!Has(args, name))
+        if (!HasNonNull(args, name))
         {
             return null;
         }
