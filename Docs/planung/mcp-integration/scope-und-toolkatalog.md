@@ -22,7 +22,11 @@ Approval-Konzept (Schritt 3).
 2. **Jeder Tool trägt eine Scope-Deklaration** in der Nomenklatur des
    Berechtigungsmodells: `(Datentyp, Rechteart [, Filter])`. Ein Tool ohne
    Scope-Zuordnung ist nicht zulässig
-   (`berechtigungsmodell.md`, Abschnitt 9).
+   (`berechtigungsmodell.md`, Abschnitt 9). **Festgelegte Ausnahme:** Die
+   Meta-Tools (Abschnitt 3.6) tragen statt eines Fachdaten-Tupels einen
+   **Meta-Scope** – einen eigenen, geschlossenen Scope-Typ ohne
+   Datentyp-Bezug, da sie ausschließlich Metadaten des eigenen Zugangs
+   lesen und keine Fachdaten berühren (Definition siehe Abschnitt 3.6).
 3. **Der MCP-Layer ist ein dünner Adapter.** Tools rufen dieselben
    `I*Service`-Contracts auf, die auch die BFF-REST-API nutzt – mit der
    `ownerUserId` des Zugangsbesitzers (Auflösung Token → UserId, analog
@@ -96,7 +100,7 @@ vollständig verfügbar.
 | T05 | `fm_budget_overview` | Budgetlage: Zwecke (`BudgetPurpose`), Regeln (`BudgetRule` inkl. `PurposePattern`), Überschreibungen (`BudgetOverride`), Auslastung/Planung je Kategorie | (Budgets, Lesen), (Budgetregeln, Lesen), (Budgetkategorien, Lesen) | `IBudgetPurposeService.ListAsync`/`ListOverviewAsync`, `IBudgetRuleService.ListByPurpose*`/`ListByCategoryAsync`, `IBudgetOverrideService`, `IBudgetPlanningService`, `IBudgetReportService` |
 | T06 | `fm_savings_plan_analysis` | Sparplan-Bestand und Fortschrittsanalyse (Zielbetrag, Zieldatum, Intervall, aktiv/archiviert) | (Sparpläne, Lesen), (Sparplankategorien, Lesen) | `ISavingsPlanService.ListAsync`/`GetAsync`/`AnalyzeAsync`/`CountAsync`, `ISavingsPlanCategoryService` |
 | T07 | `fm_securities_analysis` | Wertpapierbestand, Kurse (`SecurityPrice`), Performance-/Renditeanalyse (FIFO), Portfolio-Report | (Wertpapiere, Lesen), (Wertpapierkategorien, Lesen) | `ISecurityService.ListAsync`/`GetAsync`, `ISecurityPriceService`, `ISecurityReportService`, `IPortfolioAnalysisReportService`, `IReturnAnalysisService` |
-| T08 | `fm_statement_imports_review` | Importierte Kontoauszüge/Belege einsehen: Import-Header (`StatementImport`) und gebuchte Einträge (`StatementEntry`, Status Pending/Booked/IgnoredDuplicate) | (Kontoauszüge, Lesen) | `StatementImport`/`StatementEntry` (Repository-/Service-Fläche der Statement-Pipeline; schreibgeschützte Belege) |
+| T08 | `fm_statement_imports_review` | Importierte Kontoauszüge/Belege einsehen: Import-Header (`StatementImport`) und gebuchte Einträge (`StatementEntry`, Status Pending/Booked/IgnoredDuplicate) | (Kontoauszüge, Lesen) | `IStatementImportQueryService` – **neu zu konzipierender Lese-Contract** auf `StatementImport`/`StatementEntry` (schreibgeschützte Belege); existiert heute nicht, Umsetzungsbaustein (siehe Nebenbedingungen 3.1) |
 | T09 | `fm_attachments_read` | Anhänge auflisten und Inhalt lesen (polymorph: `EntityKind` + `EntityId`; `Content` als byte[]/Download) | (Anhänge, Lesen) | `IAttachmentService.ListAsync`/`CountAsync`/`DownloadAsync` |
 | T10 | `fm_configuration_read` | Auswertungskonfiguration einsehen: Report-Favoriten (inkl. Filter-CSVs), Startseiten-KPIs (`HomeKpi`), Portfolio-KPI-Konfiguration | (Reports, Lesen), (KPI-Konfigurationen, Lesen) | `IReportFavoriteService.ListAsync`/`GetAsync`, `IHomeKpiService.ListAsync` |
 
@@ -119,6 +123,16 @@ vollständig verfügbar.
   datensatzscharf über die `Posting`-Besitzableitung je `Kind` und den
   AccountShare-Deckel; Zeiträume in UTC (`ICurrentUserService`-Zeitzone des
   Besitzers für die Darstellung bleibt Sache des Clients).
+- *Offene Referenz (T08):* `fm_statement_imports_review` setzt einen
+  dedizierten Lese-Contract `IStatementImportQueryService` voraus, der
+  `StatementImport`/`StatementEntry` revisionssicher lesbar exponiert
+  (Import-Header mit Zeitraum/Format, Entries mit Status). Dieser Contract
+  existiert heute nicht – die Belege liegen nur als Entities der
+  Statement-Pipeline bzw. als Felder der Buchungsergebnis-DTOs vor. Er ist
+  als neuer Baustein der späteren Umsetzung (Adapter-/Service-Schicht,
+  Schritt 4) einzuplanen; Grundsatz 3 bleibt verbindlich – der Tool-Adapter
+  greift nicht auf Repositories oder die Datenbank zu, sondern ruft diesen
+  Contract auf. Bis zu seiner Bereitstellung ist T08 nicht implementierbar.
 
 ### 3.2 Geschäftsprozess „Assistenz und Vorschläge" (vorschlagend)
 
@@ -261,20 +275,32 @@ Archivieren, Merge, Konto-Löschung) sind genehmigungspflichtig – in der
 
 ### 3.6 Meta-Tools (Zugangsselbstauskunft und Status)
 
-Zwei Werkzeuge ohne Fachdaten-Scope – sie bedienen den MCP-Zugang selbst
+Zwei Werkzeuge ohne Fachdatenzugriff – sie bedienen den MCP-Zugang selbst
 und die asynchronen Ausführungspfade.
+
+**Scope-Regel (festgelegte Ausnahme zu Grundsatz 2):** Da diese Tools
+weder Fachdaten lesen noch schreiben, sind sie datentyp-unabhängig und
+tragen statt eines `(Datentyp, Rechteart)`-Tupels einen **Meta-Scope**.
+Der Meta-Scope ist ein eigener, geschlossener Scope-Typ: Er bezeichnet
+rein lesenden Zugriff auf Metadaten des eigenen Zugangs (Rechteprofil,
+Katalogversion, eigene Task-/Request-Zustände), enthält keinen
+Fachdatentyp, kein Filterkonzept und ist nicht auf Fachdatentypen
+übertragbar. Er wird nicht über das Scope-Rechteprofil vergeben, sondern
+ist jedem Zugang inhärent; die Absicherung erfolgt ausschließlich über
+die Besitzprüfung (nur eigener Zugang/eigene Tasks).
 
 | # | Tool | Fachlicher Zweck | Scopes | Klasse | Referenz |
 |---|---|---|---|---|---|
-| T32 | `fm_capabilities_describe` | Eigenes Rechteprofil abfragen: effektive Scopes, Freigabestufe, gesetzte Filter, Genehmigungsmodus, Toolkatalog-Version des Servers | Meta (kein Fachdatentyp); liest nur Konfiguration des eigenen Zugangs | lesend | MCP-Zugangskonfiguration (Datenmodell Schritt 4) |
-| T33 | `fm_task_status` | Status asynchroner Ausführungen abfragen: `AiActionRequest`-Zustand (Pending/Approved/Rejected/Executed/Failed) und `IBackgroundTaskManager`-Fortschritt (Queued/Running/Completed, `book-all`, `ClassifyAllDrafts`) | Meta; nur eigene (Zugangs-/Besitzer-)Tasks | lesend | `AiActionRequest` (Schritt 3), `IBackgroundTaskManager`, `BookingTaskExecutor`, `ClassificationTaskExecutor` |
+| T32 | `fm_capabilities_describe` | Eigenes Rechteprofil abfragen: effektive Scopes, Freigabestufe, gesetzte Filter, Genehmigungsmodus, Toolkatalog-Version des Servers | Meta-Scope `Zugangsprofil` (kein Fachdatenzugriff); liest nur Konfiguration des eigenen Zugangs | lesend | MCP-Zugangskonfiguration (Datenmodell Schritt 4) |
+| T33 | `fm_task_status` | Status asynchroner Ausführungen abfragen: `AiActionRequest`-Zustand (Pending/Approved/Rejected/Executed/Failed) und `IBackgroundTaskManager`-Fortschritt (Queued/Running/Completed, `book-all`, `ClassifyAllDrafts`) | Meta-Scope `Ausführungsstatus` (kein Fachdatenzugriff); nur eigene (Zugangs-/Besitzer-)Tasks | lesend | `AiActionRequest` (Schritt 3), `IBackgroundTaskManager`, `BookingTaskExecutor`, `ClassificationTaskExecutor` |
 
 **Ein-/Ausgaben:** `fm_capabilities_describe` → Zugangs-Deskriptor
 (Stufe, Scope-Liste Datentyp×Rechteart×Filter, Katalogversion);
 `fm_task_status` → Task-/Request-Deskriptor (Typ, Zustand, Progress,
 Ergebnisreferenz wie `BookingResult` bzw. `AiActionRequest`-Ergebnis).
-Beide Tools schreiben nichts und benötigen keinen Fach-Scope – sie
-unterliegen trotzdem der Besitzprüfung (nur eigener Zugang/eigene Tasks).
+Beide Tools schreiben nichts und tragen einen Meta-Scope statt eines
+Fachdaten-Tupels – sie unterliegen trotzdem der Besitzprüfung (nur
+eigener Zugang/eigene Tasks).
 
 ---
 
@@ -449,7 +475,7 @@ als „✓" markierten Rechtearten adressierbar:
 |---|---|---|
 | Konten | T01 (Lesen), T23 (Pflege) | inkl. `AccountLinkedIban` |
 | Kontotypen | T01 (Lesen) | nur Enum-Werte, kein Schreibpfad |
-| Kontoauszüge | T08 (Lesen) | Belege: kein Schreib-/Lösch-Tool – bewusste Lücke, keine versehentliche |
+| Kontoauszüge | T08 (Lesen) | Belege: kein Schreib-/Lösch-Tool – bewusste Lücke, keine versehentliche; Lesezugriff über neu zu schaffenden `IStatementImportQueryService` (siehe 3.1) |
 | Kontoauszugsentwürfe | T13–T21 | kompletter F7-Workflow |
 | Buchungen | T02, T03 (Lesen), T30/T31 (Storno) | kein Erstellungs-/Änderungstool – Invariante |
 | Kontakte | T04 (Lesen), T11 (Vorschlag), T22 (Pflege) | inkl. `AliasName` |
@@ -473,6 +499,12 @@ Alle Scope-Angaben in diesem Dokument verwenden ausschließlich die Tupel
 Schritt 1; optionale Filter (Kontotypen, Kontaktgruppen,
 Wertpapierkategorien, Sparplankategorien, Anhangkategorien) gelten
 zusätzlich auf jedem Scope und sind zugangsbezogen, nicht toolbezogen.
+**Einzige Ausnahme** ist der in Grundsatz 2 und Abschnitt 3.6 festgelegte
+**Meta-Scope** der Meta-Tools T32/T33: Diese Tools greifen auf keinen
+Fachdatentyp zu und tragen daher kein Datentyp-Tupel; der Meta-Scope ist
+eine geschlossene, nicht erweiterbare Scope-Kategorie (kein Datentyp,
+keine Rechteart der F3-Matrix, kein Filter) und gilt ausschließlich für
+Zugangs-/Ausführungsmetadaten.
 
 ### 5.3 Mindest-Freigabestufe
 
@@ -570,8 +602,8 @@ Mindest-Freigabestufe → genehmigungspflichtig.
 | `fm_reports_configuration_manage` | (Reports/KPI-Konfigurationen, Erstellung/Änderung); Löschen: Löschung | schreibvorbereitend | Sachbearbeiter / Buchhalter (Löschen) | teils (Löschen: **ja**) |
 | `fm_posting_reversal_check` | (Buchungen, Lesen) | lesend | Analyse | nein |
 | `fm_posting_reverse` | (Buchungen, Löschung=Storno) | genehmigungspflichtig | Buchhalter | **ja** |
-| `fm_capabilities_describe` | Meta | lesend | alle | nein |
-| `fm_task_status` | Meta | lesend | alle | nein |
+| `fm_capabilities_describe` | Meta-Scope `Zugangsprofil` | lesend | alle | nein |
+| `fm_task_status` | Meta-Scope `Ausführungsstatus` | lesend | alle | nein |
 
 **Summe: 33 Tools** – davon genehmigungspflichtig im Kern: 3
 (`fm_statement_draft_book`, `fm_statement_draft_discard`,

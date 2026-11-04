@@ -49,3 +49,18 @@
   `AiActionRequest`-Detailzustände und konkrete Approval-Liste
   (Schritt 3), Persistenz von Zugang/Scopes und Tool-Adapter-Technik
   (Schritt 4), Rate-Limit-Werte je Klasse (Schritt 3).
+
+## Korrekturen Abnahme 1
+
+- [x] **Meta-Scopes T32/T33:** `Meta-Scope` als eigener, geschlossener
+  Scope-Typ ohne Fachdatenbezug festgelegt (datentyp-unabhängig, rein
+  lesend auf Zugangs-/Ausführungsmetadaten, Absicherung über
+  Besitzprüfung) – Ausnahmeregel in Grundsatz 2, Definition in §3.6,
+  Nomenklatur-Klarstellung in §5.2 und Übersichtstabelle §7 konsistent
+  angepasst.
+- [x] **T08 `fm_statement_imports_review`:** Lücke explizit benannt –
+  Referenz auf neu zu konzipierenden Lese-Contract
+  `IStatementImportQueryService` umgestellt (kein vorhandener Code,
+  Umsetzungsbaustein in Schritt 4); Nebenbedingung in §3.1 dokumentiert,
+  dass der Adapter diesen Contract aufruft und T08 bis dahin nicht
+  implementierbar ist.
