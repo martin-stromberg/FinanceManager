@@ -459,6 +459,16 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftImportDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftCompleteDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftEditDescriptor>();
+            // Master-data write tools (EP-08, T22–T29): schreibvorbereitend; the
+            // final/destructive sub-operations answer Err_Mcp_ApprovalRequired until EP-09.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmContactsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAccountsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSavingsPlansManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSecuritiesManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmBudgetsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmCategoriesManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAttachmentsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmReportsConfigurationManageDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolRegistry, FinanceManager.Web.Mcp.McpToolRegistry>();
             builder.Services.AddScoped<FinanceManager.Web.Mcp.McpRecordScopeFilter>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeHandler>();
@@ -483,6 +493,14 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftImportHandler>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftCompleteHandler>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftEditHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmContactsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAccountsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSavingsPlansManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSecuritiesManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmBudgetsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCategoriesManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAttachmentsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmReportsConfigurationManageHandler>();
         }
 
         private static string? ExtractMcpHint(HttpContext httpContext)
