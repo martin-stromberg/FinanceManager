@@ -177,6 +177,23 @@ public sealed class AttachmentService : IAttachmentService
     }
 
     /// <summary>
+    /// Gets the metadata of a single attachment of the owner.
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="attachmentId">Attachment identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="AttachmentDto"/> or <see langword="null"/> when not found or not owned.</returns>
+    public async Task<AttachmentDto?> GetAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
+    {
+        var a = await _db.Attachments.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == attachmentId && x.OwnerUserId == ownerUserId, ct);
+        return a is null
+            ? null
+            : new AttachmentDto(a.Id, (short)a.EntityKind, a.EntityId, a.FileName, a.ContentType,
+                a.SizeBytes, a.CategoryId, a.UploadedUtc, a.Url != null, (short)a.Role);
+    }
+
+    /// <summary>
     /// Downloads the binary content of an attachment. For reference attachments the master attachment is resolved.
     /// </summary>
     /// <param name="ownerUserId">Owner user id.</param>

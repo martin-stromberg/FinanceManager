@@ -97,6 +97,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccountStatisticsPeriodProvider, AccountStatisticsPeriodProvider>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IStatementDraftService, StatementDraftService>();
+        services.AddScoped<IStatementImportQueryService, StatementImportQueryService>();
         services.AddScoped<IMassImportOrchestrator, MassImportOrchestrator>();
         services.AddScoped<IBudgetImpactEvaluationService, BudgetImpactEvaluationService>();
         services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
