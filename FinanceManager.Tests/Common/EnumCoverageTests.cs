@@ -348,4 +348,14 @@ public sealed class EnumCoverageTests
         => AssertValues<FinanceManager.Application.Reports.PostingExportFormat>(
             nameof(FinanceManager.Application.Reports.PostingExportFormat.Csv),
             nameof(FinanceManager.Application.Reports.PostingExportFormat.Xlsx));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void SecurityPriceRefreshStatus_Values()
+        => AssertValues<FinanceManager.Application.Securities.SecurityPriceRefreshStatus>(
+            nameof(FinanceManager.Application.Securities.SecurityPriceRefreshStatus.Stored),
+            nameof(FinanceManager.Application.Securities.SecurityPriceRefreshStatus.NoData),
+            nameof(FinanceManager.Application.Securities.SecurityPriceRefreshStatus.ProviderError));
 }
