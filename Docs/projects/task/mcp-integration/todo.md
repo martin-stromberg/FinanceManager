@@ -13,7 +13,7 @@ Datum: 2026-11-04
 | [x] | Projektplan | `project-plan.md`: 11 Schritte = EP-01…EP-11, geprüft `vollständig` |
 | [x] | Planungscommit | `plan: ...` |
 | [x] | Schritte-Tracking | `steps.md` + `status.html` |
-| [ ] | Entwicklungsschleife | 11 Schritte, je Branch + Lifecycle + Abnahme + Merge |
+| [x] | Entwicklungsschleife | 11 Schritte, je Branch + Lifecycle + Abnahme + Merge |
 | [ ] | Aufräumen + Abschlusscommit | Projektverzeichnis entfernen |
 | [ ] | PR | Gegen `staging`, Checks überwachen |
 
