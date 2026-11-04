@@ -1,0 +1,346 @@
+@using FinanceManager.Domain.Mcp
+@using FinanceManager.Shared.Dtos.Mcp
+@using FinanceManager.Web.ViewModels.Mcp
+@implements IDisposable
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+@inject IJSRuntime JS
+
+@if (Provider is not null)
+{
+    <div class="mcp-audit" style="display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;">
+
+        @if (Provider.IsMcpDisabled)
+        {
+            <div class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;color:var(--muted);">
+                @L["Mcp_Disabled_Hint"]
+            </div>
+        }
+        else
+        {
+            @* Filter bar (ui-konzept.md §4.5) *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <h4 style="margin:0 0 .5rem 0;">@L["McpAudit_Section_Filters"]</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;">
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_Access"]</span>
+                        <select class="card-input" style="min-width:11rem;" value="@(Provider.FilterAccessId?.ToString() ?? string.Empty)" @onchange="OnAccessChanged">
+                            <option value="">@L["McpAudit_Filter_AllAccesses"]</option>
+                            @foreach (var a in Provider.Accesses)
+                            {
+                                <option value="@a.Id">@a.Name</option>
+                            }
+                            @if (Provider.FilterAccessId is Guid sel && !Provider.Accesses.Any(a => a.Id == sel))
+                            {
+                                <option value="@sel">@sel</option>
+                            }
+                        </select>
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_Category"]</span>
+                        <select class="card-input" style="min-width:10rem;" value="@(Provider.FilterCategory?.ToString() ?? string.Empty)" @onchange="OnCategoryChanged">
+                            <option value="">@L["McpAudit_Filter_AllCategories"]</option>
+                            @foreach (var c in Enum.GetValues<McpAuditCategory>())
+                            {
+                                <option value="@((short)c)">@McpAuditText.Category(L, (short)c)</option>
+                            }
+                        </select>
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_Result"]</span>
+                        <select class="card-input" style="min-width:9rem;" value="@(Provider.FilterResult ?? string.Empty)" @onchange="OnResultChanged">
+                            <option value="">@L["McpAudit_Filter_AllResults"]</option>
+                            @foreach (var r in _results)
+                            {
+                                <option value="@r">@McpAuditText.Result(L, r)</option>
+                            }
+                        </select>
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_Tool"]</span>
+                        <input class="card-input" style="width:11rem;" placeholder="fm_*" value="@Provider.FilterToolName" @onchange="OnToolChanged" />
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_From"]</span>
+                        <input class="card-input" type="date" value="@_fromText" @onchange="OnFromChanged" />
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_To"]</span>
+                        <input class="card-input" type="date" value="@_toText" @onchange="OnToChanged" />
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_CorrelationId"]</span>
+                        <input class="card-input" style="width:15rem;" value="@_correlationText" @onchange="OnCorrelationChanged" />
+                    </label>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem;align-items:center;">
+                    <button type="button" class="btn" @onclick="ApplyAsync">@L["McpAudit_Filter_Apply"]</button>
+                    <button type="button" class="btn" @onclick="ClearAsync">@L["McpAudit_Filter_Clear"]</button>
+                    <button type="button" class="btn" style="@(Provider.OnlyDenied ? "border-color:var(--accent,#4c8dff);" : string.Empty)" @onclick="ToggleDeniedAsync">@L["McpAudit_Filter_OnlyDenied"]</button>
+                </div>
+            </section>
+
+            @* Integrity + export *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <h4 style="margin:0 0 .5rem 0;">@L["McpAudit_Section_Integrity"]</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+                    <button type="button" class="btn" disabled="@Provider.Verifying" @onclick="VerifyAsync">
+                        @(Provider.Verifying ? L["McpAudit_Verify_Running"].Value : L["McpAudit_Verify"].Value)
+                    </button>
+                    <button type="button" class="btn" @onclick="@(() => ExportAsync("csv"))">@L["McpAudit_Export_Csv"]</button>
+                    <button type="button" class="btn" @onclick="@(() => ExportAsync("json"))">@L["McpAudit_Export_Json"]</button>
+                </div>
+                @if (Provider.Verification is { } v)
+                {
+                    if (v.IsIntact)
+                    {
+                        <div style="margin-top:.5rem;color:#7cc37c;">@string.Format(L["McpAudit_Integrity_Intact"].Value, v.EntriesChecked)</div>
+                    }
+                    else
+                    {
+                        <div style="margin-top:.5rem;color:#e66;">
+                            @string.Format(L["McpAudit_Integrity_Broken"].Value, v.FirstBrokenSequenceNo, v.FailureReason)
+                        </div>
+                        @if (v.SequenceGaps.Count > 0)
+                        {
+                            <div style="margin-top:.25rem;color:#e66;font-size:.9rem;">
+                                @L["McpAudit_Integrity_Gaps"]
+                                @foreach (var g in v.SequenceGaps)
+                                {
+                                    <div>@g.FirstMissingSequenceNo – @g.LastMissingSequenceNo</div>
+                                }
+                            </div>
+                        }
+                    }
+                }
+            </section>
+
+            @* Timeline grouped by day (ui-konzept.md §4.5) *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <h4 style="margin:0 0 .5rem 0;">@L["McpAudit_Section_Timeline"]</h4>
+                @if (Provider.Loading && Provider.Entries.Count == 0)
+                {
+                    <div style="color:var(--muted);">@L["General_Loading"]</div>
+                }
+                else if (Provider.Entries.Count == 0)
+                {
+                    <div style="color:var(--muted);">@L["McpAudit_Empty"]</div>
+                }
+                else
+                {
+                    @foreach (var day in Provider.DayGroups())
+                    {
+                        <div style="margin:.6rem 0 .25rem;color:var(--muted);font-size:.85rem;font-weight:600;">
+                            @day.Key.ToString("d")
+                        </div>
+                        @foreach (var e in day)
+                        {
+                            var expanded = Provider.ExpandedId == e.Id;
+                            <div style="border-top:1px solid var(--border,#333);padding:.35rem 0;">
+                                <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:baseline;cursor:pointer;"
+                                     @onclick="@(() => ToggleAsync(e.Id))">
+                                    <span style="color:var(--muted);font-size:.85rem;min-width:4.5rem;">@e.Utc.ToString("T")</span>
+                                    <span style="font-size:.75rem;padding:.05rem .4rem;border:1px solid var(--border,#555);border-radius:10px;color:@McpAuditText.CategoryColor(e.Category);">
+                                        @McpAuditText.Category(L, e.Category)
+                                    </span>
+                                    <span>@McpAuditText.EventLine(L, e)</span>
+                                    <span style="font-size:.8rem;color:@(e.ResultStatus == "Success" ? "var(--muted)" : "#e6a03c");">
+                                        @McpAuditText.Result(L, e.ResultStatus)
+                                    </span>
+                                    <span style="margin-left:auto;color:var(--muted);font-size:.8rem;">
+                                        @(expanded ? L["McpAudit_Detail_Hide"].Value : L["McpAudit_Detail_Show"].Value)
+                                    </span>
+                                </div>
+                                @if (expanded)
+                                {
+                                    @if (Provider.Detail is { } d)
+                                    {
+                                        <div style="margin:.4rem 0 .4rem 5rem;font-size:.9rem;">
+                                            <table style="border-collapse:collapse;">
+                                                <tbody>
+                                                    @if (!string.IsNullOrWhiteSpace(d.ToolName))
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">Tool</td><td><code>@d.ToolName</code>@(d.CatalogVersion is not null ? $" ({d.CatalogVersion})" : string.Empty)</td></tr>
+                                                    }
+                                                    @if (d.McpAccessName is not null)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Filter_Access"]</td><td>@d.McpAccessName</td></tr>
+                                                    }
+                                                    @if (d.CorrelationId is Guid corr)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_CorrelationId"]</td><td><code>@corr</code></td></tr>
+                                                    }
+                                                    @if (d.SourceIp is not null)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_SourceIp"]</td><td>@d.SourceIp</td></tr>
+                                                    }
+                                                    @if (d.DurationMs is int dur)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_Duration"]</td><td>@dur ms</td></tr>
+                                                    }
+                                                    @if (d.AffectedCount is int aff)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_Affected"]</td><td>@aff</td></tr>
+                                                    }
+                                                    @if (d.RelatedRequestId is Guid req)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_Request"]</td><td><code>@req</code></td></tr>
+                                                    }
+                                                    <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_Hash"]</td><td><code style="word-break:break-all;">@d.EntryHash</code></td></tr>
+                                                </tbody>
+                                            </table>
+                                            @if (d.Changes.Count > 0)
+                                            {
+                                                <div style="margin-top:.5rem;color:var(--muted);">@L["McpAudit_Detail_Changes"]</div>
+                                                <table class="fm-table" style="margin-top:.25rem;width:100%;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="text-align:left;">@L["McpAudit_Changes_EntityType"]</th>
+                                                            <th style="text-align:left;">@L["McpAudit_Changes_EntityId"]</th>
+                                                            <th style="text-align:left;">@L["McpAudit_Changes_Field"]</th>
+                                                            <th style="text-align:left;">@L["McpAudit_Changes_Old"]</th>
+                                                            <th style="text-align:left;">@L["McpAudit_Changes_New"]</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var c in d.Changes)
+                                                        {
+                                                            <tr>
+                                                                <td>@c.EntityType</td>
+                                                                <td><code>@c.EntityId</code></td>
+                                                                <td>@c.Field</td>
+                                                                <td style="word-break:break-all;">@(c.OldValue ?? "—")</td>
+                                                                <td style="word-break:break-all;">@(c.NewValue ?? "—")</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(d.PayloadJson))
+                                            {
+                                                <div style="margin-top:.5rem;color:var(--muted);">@L["McpAudit_Detail_Payload"]</div>
+                                                <pre style="margin:.25rem 0 0;padding:.5rem;border:1px solid var(--border,#444);border-radius:6px;overflow:auto;max-height:16rem;font-size:.8rem;">@d.PayloadJson</pre>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div style="margin:.4rem 0 .4rem 5rem;color:var(--muted);">@L["General_Loading"]</div>
+                                    }
+                                }
+                            </div>
+                        }
+                    }
+                    @if (Provider.CanLoadMore)
+                    {
+                        <div style="margin-top:.6rem;">
+                            <button type="button" class="btn" disabled="@Provider.Loading" @onclick="LoadMoreAsync">@L["McpAudit_LoadMore"]</button>
+                        </div>
+                    }
+                }
+            </section>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The owning audit view model.</summary>
+    [Parameter] public McpAuditViewModel? Provider { get; set; }
+
+    private static readonly string[] _results = { "Success", "Denied", "Failed", "RateLimited", "RedirectedToApproval" };
+
+    private McpAuditViewModel? _subscribed;
+    private string _fromText = string.Empty;
+    private string _toText = string.Empty;
+    private string _correlationText = string.Empty;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (_subscribed != Provider)
+        {
+            if (_subscribed is not null)
+            {
+                _subscribed.StateChanged -= OnStateChanged;
+            }
+            _subscribed = Provider;
+            if (_subscribed is not null)
+            {
+                _subscribed.StateChanged += OnStateChanged;
+            }
+        }
+        _fromText = Provider?.FilterFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
+        _toText = Provider?.FilterTo?.ToString("yyyy-MM-dd") ?? string.Empty;
+        _correlationText = Provider?.FilterCorrelationId?.ToString() ?? string.Empty;
+    }
+
+    private void OnStateChanged(object? sender, EventArgs e)
+    {
+        _fromText = Provider?.FilterFrom?.ToString("yyyy-MM-dd") ?? _fromText;
+        _toText = Provider?.FilterTo?.ToString("yyyy-MM-dd") ?? _toText;
+        _correlationText = Provider?.FilterCorrelationId?.ToString() ?? _correlationText;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAccessChanged(ChangeEventArgs e)
+        => Provider?.SetFilterAccess(Guid.TryParse(e.Value?.ToString(), out var id) ? id : null);
+
+    private void OnCategoryChanged(ChangeEventArgs e)
+        => Provider?.SetFilterCategory(short.TryParse(e.Value?.ToString(), out var c) ? c : null);
+
+    private void OnResultChanged(ChangeEventArgs e)
+        => Provider?.SetFilterResult(e.Value?.ToString());
+
+    private void OnToolChanged(ChangeEventArgs e)
+        => Provider?.SetFilterTool(e.Value?.ToString());
+
+    private void OnFromChanged(ChangeEventArgs e)
+    {
+        _fromText = e.Value?.ToString() ?? string.Empty;
+        SyncRange();
+    }
+
+    private void OnToChanged(ChangeEventArgs e)
+    {
+        _toText = e.Value?.ToString() ?? string.Empty;
+        SyncRange();
+    }
+
+    private void OnCorrelationChanged(ChangeEventArgs e)
+    {
+        _correlationText = e.Value?.ToString() ?? string.Empty;
+        Provider?.SetFilterCorrelation(_correlationText);
+    }
+
+    private void SyncRange()
+    {
+        DateTime? from = DateTime.TryParse(_fromText, out var f)
+            ? DateTime.SpecifyKind(f, DateTimeKind.Utc) : null;
+        DateTime? to = DateTime.TryParse(_toText, out var t)
+            ? DateTime.SpecifyKind(t, DateTimeKind.Utc).AddDays(1).AddTicks(-1) : null;
+        Provider?.SetFilterRange(from, to);
+    }
+
+    private Task ApplyAsync() => Provider?.ApplyFiltersAsync() ?? Task.CompletedTask;
+    private Task ClearAsync() => Provider?.ClearFiltersAsync() ?? Task.CompletedTask;
+    private Task ToggleDeniedAsync() => Provider?.ToggleDeniedOnlyAsync() ?? Task.CompletedTask;
+    private Task ToggleAsync(Guid id) => Provider?.ToggleDetailsAsync(id) ?? Task.CompletedTask;
+    private Task LoadMoreAsync() => Provider?.LoadMoreAsync() ?? Task.CompletedTask;
+    private Task VerifyAsync() => Provider?.VerifyAsync() ?? Task.CompletedTask;
+
+    private async Task ExportAsync(string format)
+    {
+        if (Provider is null) return;
+        var url = Provider.BuildExportUrl(format);
+        try { await JS.InvokeVoidAsync("financeManager.downloadFromUrl", url); }
+        catch { /* download is best-effort */ }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_subscribed is not null)
+        {
+            _subscribed.StateChanged -= OnStateChanged;
+        }
+    }
+}

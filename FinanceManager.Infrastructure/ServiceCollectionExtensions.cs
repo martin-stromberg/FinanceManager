@@ -175,6 +175,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<FinanceManager.Application.Mcp.IMcpAccessService, FinanceManager.Infrastructure.Mcp.McpAccessService>();
         services.AddScoped<FinanceManager.Application.Mcp.IMcpScopeEvaluator, FinanceManager.Infrastructure.Mcp.McpScopeEvaluator>();
         services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditWriter, FinanceManager.Infrastructure.Mcp.McpAuditWriter>();
+        // Owner-isolated audit read path: timeline queries, detail drilling, chain
+        // verification, export projection and the per-access usage aggregation (F-0601/F-0603).
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditQueryService, FinanceManager.Infrastructure.Mcp.McpAuditQueryService>();
 
         return services;
     }

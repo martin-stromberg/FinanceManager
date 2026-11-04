@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
 	<!-- 
 		Microsoft ResX Schema
@@ -150,5 +150,8 @@
 	</data>
 	<data name="Budget_PurposePattern_InvalidRegex" xml:space="preserve">
 		<value>Invalid regex</value>
+	</data>
+	<data name="API_McpAudit_Err_Invalid_format" xml:space="preserve">
+		<value>Invalid export format. Supported formats are 'csv' and 'json'.</value>
 	</data>
 </root>

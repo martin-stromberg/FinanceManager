@@ -67,11 +67,80 @@
 
         <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
             <h4 style="margin:0 0 .5rem 0;">@L["Mcp_Section_Usage"]</h4>
-            <div>
-                <span style="color:var(--muted);">@L["Mcp_Card_LastUsedUtc"]</span>
-                <div>@(access.LastUsedUtc?.ToString("u") ?? L["Mcp_Value_NeverUsed"].Value)</div>
+            <div style="display:flex;flex-wrap:wrap;gap:1rem;font-size:.95rem;">
+                <div>
+                    <span style="color:var(--muted);">@L["Mcp_Card_LastUsedUtc"]</span>
+                    <div>@(access.LastUsedUtc?.ToString("u") ?? L["Mcp_Value_NeverUsed"].Value)</div>
+                </div>
             </div>
-            <div style="margin-top:.5rem;color:var(--muted);font-size:.85rem;">@L["Mcp_Usage_HistoryPlaceholder"]</div>
+            @if (Provider.Usage is { } usage)
+            {
+                @if (usage.TotalCalls == 0)
+                {
+                    <div style="margin-top:.5rem;color:var(--muted);font-size:.85rem;">@L["Mcp_Usage_Empty"]</div>
+                }
+                else
+                {
+                    <div style="display:flex;flex-wrap:wrap;gap:1.25rem;margin-top:.6rem;font-size:.95rem;">
+                        <div>
+                            <span style="color:var(--muted);">@L["Mcp_Usage_TotalCalls"]</span>
+                            <div>@usage.TotalCalls</div>
+                        </div>
+                        <div>
+                            <span style="color:var(--muted);">@L["Mcp_Usage_Success"]</span>
+                            <div>@usage.SuccessCalls</div>
+                        </div>
+                        <div>
+                            <span style="color:var(--muted);">@L["Mcp_Usage_Failed"]</span>
+                            <div>@usage.FailedCalls</div>
+                        </div>
+                        <div>
+                            <span style="color:var(--muted);">@L["Mcp_Usage_FailureRate"]</span>
+                            <div>@usage.FailureRate.ToString("P0")</div>
+                        </div>
+                        @if (usage.LastCallUtc is DateTime lastCall)
+                        {
+                            <div>
+                                <span style="color:var(--muted);">@L["Mcp_Usage_LastCall"]</span>
+                                <div>@lastCall.ToString("u")</div>
+                            </div>
+                        }
+                    </div>
+                    @if (usage.TopTools.Count > 0)
+                    {
+                        <div style="margin-top:.6rem;">
+                            <span style="color:var(--muted);font-size:.85rem;">@L["Mcp_Usage_TopTools"]</span>
+                            <div style="margin-top:.2rem;">
+                                @foreach (var t in usage.TopTools)
+                                {
+                                    <span style="display:inline-block;margin:.1rem .3rem .1rem 0;padding:.1rem .45rem;border:1px solid var(--border,#555);border-radius:10px;font-size:.8rem;">
+                                        <code>@t.ToolName</code> ×@t.CallCount
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (usage.RecentCalls.Count > 0)
+                    {
+                        <div style="margin-top:.6rem;">
+                            <span style="color:var(--muted);font-size:.85rem;">@L["Mcp_Usage_RecentCalls"]</span>
+                            <div style="margin-top:.2rem;font-size:.85rem;">
+                                @foreach (var r in usage.RecentCalls)
+                                {
+                                    <div style="display:flex;gap:.6rem;padding:.15rem 0;border-top:1px solid var(--border,#333);">
+                                        <span style="color:var(--muted);min-width:8.5rem;">@r.Utc.ToString("g")</span>
+                                        <span><code>@(r.ToolName ?? r.EventType)</code></span>
+                                        <span style="color:@(r.ResultStatus == "Success" ? "var(--muted)" : "#e6a03c");">@McpAuditText.Result(L, r.ResultStatus)</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            }
+            <div style="margin-top:.6rem;">
+                <a href="/card/mcp-audit?accessId=@access.Id">@L["Mcp_Usage_OpenHistory"]</a>
+            </div>
         </section>
     </div>
 }

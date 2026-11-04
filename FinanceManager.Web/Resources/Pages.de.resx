@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -3129,4 +3129,79 @@
   <data name="Err_Mcp_RateLimited" xml:space="preserve"><value>Zu viele Anfragen – bitte später erneut versuchen.</value></data>
   <data name="Err_Mcp_ScopeDenied" xml:space="preserve"><value>Das Recht wurde durch das Rechteprofil verweigert.</value></data>
   <data name="Panel_Label_McpAccess" xml:space="preserve"><value>KI-Zugang</value></data>
+  <data name="General_Title_McpAudit" xml:space="preserve"><value>Nutzungsprotokoll</value></data>
+  <data name="McpAudit_Title" xml:space="preserve"><value>Nutzungsprotokoll</value></data>
+  <data name="McpAudit_Section_Filters" xml:space="preserve"><value>Filter</value></data>
+  <data name="McpAudit_Section_Integrity" xml:space="preserve"><value>Integrität der Protokollkette</value></data>
+  <data name="McpAudit_Section_Timeline" xml:space="preserve"><value>Verlauf</value></data>
+  <data name="McpAudit_Filter_Access" xml:space="preserve"><value>Zugang</value></data>
+  <data name="McpAudit_Filter_AllAccesses" xml:space="preserve"><value>Alle Zugänge</value></data>
+  <data name="McpAudit_Filter_Category" xml:space="preserve"><value>Kategorie</value></data>
+  <data name="McpAudit_Filter_AllCategories" xml:space="preserve"><value>Alle Kategorien</value></data>
+  <data name="McpAudit_Filter_Result" xml:space="preserve"><value>Ergebnis</value></data>
+  <data name="McpAudit_Filter_AllResults" xml:space="preserve"><value>Alle Ergebnisse</value></data>
+  <data name="McpAudit_Filter_Tool" xml:space="preserve"><value>Tool</value></data>
+  <data name="McpAudit_Filter_From" xml:space="preserve"><value>Von</value></data>
+  <data name="McpAudit_Filter_To" xml:space="preserve"><value>Bis</value></data>
+  <data name="McpAudit_Filter_CorrelationId" xml:space="preserve"><value>Korrelations-Id</value></data>
+  <data name="McpAudit_Filter_OnlyDenied" xml:space="preserve"><value>Nur Verweigertes</value></data>
+  <data name="McpAudit_Filter_Apply" xml:space="preserve"><value>Filter anwenden</value></data>
+  <data name="McpAudit_Filter_Clear" xml:space="preserve"><value>Zurücksetzen</value></data>
+  <data name="McpAudit_LoadMore" xml:space="preserve"><value>Mehr laden</value></data>
+  <data name="McpAudit_Empty" xml:space="preserve"><value>Noch keine Aktivität – sobald ein KI-System über Ihre Zugänge arbeitet, erscheinen die Ereignisse hier.</value></data>
+  <data name="McpAudit_Verify" xml:space="preserve"><value>Kette prüfen</value></data>
+  <data name="McpAudit_Verify_Running" xml:space="preserve"><value>Prüfung läuft…</value></data>
+  <data name="McpAudit_Integrity_Intact" xml:space="preserve"><value>Kette intakt ({0} Einträge geprüft).</value></data>
+  <data name="McpAudit_Integrity_Broken" xml:space="preserve"><value>Bruchstelle bei Eintrag {0}: {1}</value></data>
+  <data name="McpAudit_Integrity_Gaps" xml:space="preserve"><value>Lücken in der Sequenz:</value></data>
+  <data name="McpAudit_Export_Csv" xml:space="preserve"><value>Export (CSV)</value></data>
+  <data name="McpAudit_Export_Json" xml:space="preserve"><value>Export (JSON)</value></data>
+  <data name="McpAudit_Detail_Show" xml:space="preserve"><value>Details</value></data>
+  <data name="McpAudit_Detail_Hide" xml:space="preserve"><value>Weniger</value></data>
+  <data name="McpAudit_Detail_CorrelationId" xml:space="preserve"><value>Korrelations-Id</value></data>
+  <data name="McpAudit_Detail_SourceIp" xml:space="preserve"><value>Quell-IP</value></data>
+  <data name="McpAudit_Detail_Duration" xml:space="preserve"><value>Dauer</value></data>
+  <data name="McpAudit_Detail_Affected" xml:space="preserve"><value>Betroffene Datensätze</value></data>
+  <data name="McpAudit_Detail_Request" xml:space="preserve"><value>Anfrage</value></data>
+  <data name="McpAudit_Detail_Hash" xml:space="preserve"><value>Eintrags-Hash</value></data>
+  <data name="McpAudit_Detail_Changes" xml:space="preserve"><value>Feldänderungen (Vorher/Nachher)</value></data>
+  <data name="McpAudit_Detail_Payload" xml:space="preserve"><value>Parameter (Rohdaten)</value></data>
+  <data name="McpAudit_Changes_EntityType" xml:space="preserve"><value>Entität</value></data>
+  <data name="McpAudit_Changes_EntityId" xml:space="preserve"><value>Datensatz</value></data>
+  <data name="McpAudit_Changes_Field" xml:space="preserve"><value>Feld</value></data>
+  <data name="McpAudit_Changes_Old" xml:space="preserve"><value>Vorher</value></data>
+  <data name="McpAudit_Changes_New" xml:space="preserve"><value>Nachher</value></data>
+  <data name="McpAudit_Category_ToolCall" xml:space="preserve"><value>Toolaufruf</value></data>
+  <data name="McpAudit_Category_DataChange" xml:space="preserve"><value>Änderung</value></data>
+  <data name="McpAudit_Category_AccessEvent" xml:space="preserve"><value>Zugangsereignis</value></data>
+  <data name="McpAudit_Category_ApprovalEvent" xml:space="preserve"><value>Genehmigung</value></data>
+  <data name="McpAudit_Category_SecurityEvent" xml:space="preserve"><value>Sicherheit</value></data>
+  <data name="McpAudit_Result_Success" xml:space="preserve"><value>Erfolg</value></data>
+  <data name="McpAudit_Result_Denied" xml:space="preserve"><value>Verweigert</value></data>
+  <data name="McpAudit_Result_Failed" xml:space="preserve"><value>Fehler</value></data>
+  <data name="McpAudit_Result_RateLimited" xml:space="preserve"><value>Rate-Limit</value></data>
+  <data name="McpAudit_Result_RedirectedToApproval" xml:space="preserve"><value>Genehmigung nötig</value></data>
+  <data name="McpAudit_Line_Generic" xml:space="preserve"><value>{0}</value></data>
+  <data name="McpAudit_Line_ToolCall" xml:space="preserve"><value>Tool {0} aufgerufen – {2} Datensätze</value></data>
+  <data name="McpAudit_Line_AccessCreated" xml:space="preserve"><value>Zugang „{1}“ angelegt</value></data>
+  <data name="McpAudit_Line_AccessUpdated" xml:space="preserve"><value>Zugang „{1}“ geändert</value></data>
+  <data name="McpAudit_Line_AccessActivated" xml:space="preserve"><value>Zugang „{1}“ aktiviert</value></data>
+  <data name="McpAudit_Line_AccessDeactivated" xml:space="preserve"><value>Zugang „{1}“ deaktiviert</value></data>
+  <data name="McpAudit_Line_AccessRevoked" xml:space="preserve"><value>Zugang „{1}“ widerrufen</value></data>
+  <data name="McpAudit_Line_TokenRotated" xml:space="preserve"><value>Token von „{1}“ rotiert</value></data>
+  <data name="McpAudit_Line_ScopesChanged" xml:space="preserve"><value>Rechte von „{1}“ geändert</value></data>
+  <data name="McpAudit_Line_FiltersChanged" xml:space="preserve"><value>Filter von „{1}“ geändert</value></data>
+  <data name="McpAudit_Line_AuthFailed" xml:space="preserve"><value>Authentifizierung fehlgeschlagen</value></data>
+  <data name="McpAudit_Line_AuditExported" xml:space="preserve"><value>Protokoll exportiert</value></data>
+  <data name="Mcp_Usage_TotalCalls" xml:space="preserve"><value>Aufrufe gesamt</value></data>
+  <data name="Mcp_Usage_Success" xml:space="preserve"><value>Erfolgreich</value></data>
+  <data name="Mcp_Usage_Failed" xml:space="preserve"><value>Fehlgeschlagen</value></data>
+  <data name="Mcp_Usage_FailureRate" xml:space="preserve"><value>Fehlquote</value></data>
+  <data name="Mcp_Usage_LastCall" xml:space="preserve"><value>Letzter Aufruf</value></data>
+  <data name="Mcp_Usage_TopTools" xml:space="preserve"><value>Häufigste Tools</value></data>
+  <data name="Mcp_Usage_RecentCalls" xml:space="preserve"><value>Letzte Aufrufe</value></data>
+  <data name="Mcp_Usage_Empty" xml:space="preserve"><value>Noch keine Aufrufe über diesen Zugang.</value></data>
+  <data name="Mcp_Usage_OpenHistory" xml:space="preserve"><value>Verlauf öffnen</value></data>
+  <data name="Mcp_Ribbon_AuditLog" xml:space="preserve"><value>Protokoll</value></data>
+  <data name="Err_Mcp_InvalidArguments" xml:space="preserve"><value>Die Anfrage enthält ungültige Parameter.</value></data>
 </root>
