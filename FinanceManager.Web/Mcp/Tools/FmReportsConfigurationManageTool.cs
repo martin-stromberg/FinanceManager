@@ -267,7 +267,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
             return new { entity = "reportFavorite", operation = "delete", favorite = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Reports, "delete",
+            _scopeEvaluator, context, McpDataType.Reports, "delete",
             "Deletes the report favorite permanently; home KPIs referencing it lose " +
             "their favorite link.",
             new { entity = "reportFavorite", favoriteId }, ct);
@@ -406,7 +406,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
             return new { entity = "homeKpi", operation = "delete", homeKpi = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.KpiConfigurations, "delete",
+            _scopeEvaluator, context, McpDataType.KpiConfigurations, "delete",
             "Deletes the home KPI configuration entry permanently; it disappears from " +
             "the owner's dashboard.",
             new { entity = "homeKpi", kpiId }, ct);

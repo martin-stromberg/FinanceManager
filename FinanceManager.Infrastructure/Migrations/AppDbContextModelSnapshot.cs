@@ -518,6 +518,116 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("ContactCategories");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.AiActionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActionKey")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("CatalogVersion")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ClaimToken")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ClaimedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DecidedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExecutedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExecutionResult")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("McpAccessId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("McpAccessName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParameterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReasonText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RequestedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("McpAccessId");
+
+                    b.HasIndex("OwnerUserId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "ExpiresUtc");
+
+                    b.HasIndex("OwnerUserId", "Status", "RequestedUtc");
+
+                    b.ToTable("AiActionRequests");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccess", b =>
                 {
                     b.Property<Guid>("Id")

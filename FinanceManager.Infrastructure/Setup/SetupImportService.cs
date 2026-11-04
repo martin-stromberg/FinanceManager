@@ -1311,6 +1311,44 @@ public sealed class SetupImportService : ISetupImportService
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
+        // MCP approval requests: open requests survive the restore so a granted approval is
+        // not lost (F-0901); access references are remapped like everywhere else, and any
+        // queue claim is cleared by AssignBackupDto.
+        ProgressChanged?.Invoke(this, progress.SetDescription("AI Action Requests"));
+        if (root.TryGetProperty("AiActionRequests", out var aiRequests) && aiRequests.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.AiActionRequest.AiActionRequestBackupDto>>(aiRequests.GetRawText(), jsonOptions) ?? new();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                try
+                {
+                    var mappedAccess = mcpAccessMap.TryGetValue(dto.McpAccessId, out var ma) ? ma : dto.McpAccessId;
+                    var entity = new FinanceManager.Domain.Mcp.AiActionRequest(
+                        userId, mappedAccess, dto.McpAccessName, dto.ToolName, dto.ActionKey,
+                        dto.CatalogVersion, dto.ParameterSnapshot, dto.ReasonText,
+                        dto.ExpiresUtc, dto.CorrelationId, dto.IdempotencyKey);
+                    entity.AssignBackupDto(dto);
+                    // The soft reference points at the remapped access (or stays dangling
+                    // when the access was not part of the backup — audit substrate stays).
+                    if (mappedAccess != dto.McpAccessId)
+                    {
+                        // AssignBackupDto applied the original id; re-apply the mapped one.
+                        var adjusted = dto with { McpAccessId = mappedAccess };
+                        entity.AssignBackupDto(adjusted);
+                    }
+                    _db.AiActionRequests.Add(entity);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "ImportVersion3: skipping AI action request {Tool}", dto.ToolName);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
         ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
         ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
         await _aggregateService.RebuildForUserAsync(userId, (step, count) =>

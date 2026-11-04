@@ -1,5 +1,6 @@
 using FinanceManager.Application.Exceptions;
 using FinanceManager.Application.Mcp;
+using FinanceManager.Application.Notifications;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Mcp;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Moq;
 using Xunit;
 
 namespace FinanceManager.Tests.Mcp;
@@ -30,6 +32,7 @@ public sealed class McpAccessServiceTests
         var evaluator = new McpScopeEvaluator(db);
         var svc = new McpAccessService(db, issuer, evaluator,
             new NullMcpAuditWriter(NullLogger<NullMcpAuditWriter>.Instance),
+            Mock.Of<IMcpApprovalService>(),
             NullLogger<McpAccessService>.Instance);
         return (svc, db, issuer);
     }
@@ -49,8 +52,33 @@ public sealed class McpAccessServiceTests
         var evaluator = new McpScopeEvaluator(db);
         var audit = new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance);
         var svc = new McpAccessService(db, issuer, evaluator, audit,
+            Mock.Of<IMcpApprovalService>(),
             NullLogger<McpAccessService>.Instance);
         return (svc, db, audit);
+    }
+
+    /// <summary>
+    /// Variant with the real <see cref="McpApprovalService"/> queue so the withdraw coupling
+    /// of deactivate/revoke/scope-changes can be asserted end to end (F-0904,
+    /// approval-konzept.md §3.3/§6.1/§6.3).
+    /// </summary>
+    private static (McpAccessService svc, AppDbContext db) CreateWithApprovals(Mock<IMcpToolRegistry>? registry = null)
+    {
+        var services = new ServiceCollection();
+        services.AddDbContext<AppDbContext>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+        var sp = services.BuildServiceProvider();
+        var db = sp.GetRequiredService<AppDbContext>();
+        var options = new TestOptionsMonitor(new McpOptions { TokenHash = new McpTokenHashOptions { Iterations = 1000 } });
+        var issuer = new McpTokenIssuer(new McpTokenHasher(options));
+        var evaluator = new McpScopeEvaluator(db);
+        var audit = new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance);
+        var notifications = new Mock<INotificationWriter>();
+        var approvals = new McpApprovalService(db, audit, notifications.Object,
+            (registry ?? new Mock<IMcpToolRegistry>()).Object, evaluator, options,
+            NullLogger<McpApprovalService>.Instance);
+        var svc = new McpAccessService(db, issuer, evaluator, audit, approvals,
+            NullLogger<McpAccessService>.Instance);
+        return (svc, db);
     }
 
     private static McpAccessCreateRequest NewRequest(short level = (short)McpAccessLevel.Analyse, IReadOnlyList<McpAccessScopeDto>? scopes = null)
@@ -491,6 +519,165 @@ public sealed class McpAccessServiceTests
             }
             Assert.DoesNotContain("Token", c.Field); // no credential field is ever diffed
         });
+    }
+
+    /// <summary>
+    /// F-0904 (approval-konzept.md §6.3): revoking an access withdraws all still-open
+    /// (pending and approved-not-claimed) approval requests of that access with a documented
+    /// system reason and a coupled <c>ApprovalWithdrawn</c> record; requests of other
+    /// accesses are untouched.
+    /// </summary>
+    [Fact]
+    public async Task Revoke_WithdrawsOpenApprovalRequests_WithAudit()
+    {
+        var (svc, db) = CreateWithApprovals();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest(), CancellationToken.None);
+        var accessId = created.Access.Id;
+        var otherAccessId = Guid.NewGuid();
+
+        var pending = new AiActionRequest(owner, accessId, "acc", "fm_x", "delete", "katalog-v1",
+            "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-p");
+        var approved = AiActionRequest.CreatePreApproved(owner, accessId, "acc", "fm_y", "call",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-a", "pre");
+        var claimed = AiActionRequest.CreatePreApproved(owner, accessId, "acc", "fm_z", "call",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-c", "pre");
+        claimed.MarkClaimed(Guid.NewGuid(), DateTime.UtcNow); // active execution — untouched
+        var foreign = new AiActionRequest(owner, otherAccessId, "other", "fm_w", "call",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-f");
+        db.AiActionRequests.AddRange(pending, approved, claimed, foreign);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        Assert.True(await svc.RevokeAsync(owner, accessId, "lost", CancellationToken.None));
+
+        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        var withdrawn = rows.Where(r => r.Id == pending.Id || r.Id == approved.Id).ToList();
+        Assert.All(withdrawn, r =>
+        {
+            Assert.Equal(AiActionRequestStatus.Rejected, r.Status);
+            Assert.Equal("Zugang entzogen", r.DecisionNote);
+            Assert.Null(r.DecidedByUserId); // system transition
+        });
+        Assert.Equal(AiActionRequestStatus.Approved, rows.Single(r => r.Id == claimed.Id).Status);
+        Assert.Equal(AiActionRequestStatus.Pending, rows.Single(r => r.Id == foreign.Id).Status);
+        Assert.Equal(2, await db.McpAuditEntries.AsNoTracking()
+            .CountAsync(e => e.EventType == "ApprovalWithdrawn"));
+    }
+
+    /// <summary>
+    /// F-0904 (approval-konzept.md §6.3): deactivating an access withdraws its open approval
+    /// requests as well — the status change must also stop banked effects.
+    /// </summary>
+    [Fact]
+    public async Task Deactivate_WithdrawsOpenApprovalRequests()
+    {
+        var (svc, db) = CreateWithApprovals();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest(), CancellationToken.None);
+        var pending = new AiActionRequest(owner, created.Access.Id, "acc", "fm_x", "delete",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-p");
+        db.AiActionRequests.Add(pending);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        Assert.True(await svc.DeactivateAsync(owner, created.Access.Id, CancellationToken.None));
+
+        var row = await db.AiActionRequests.AsNoTracking().SingleAsync(r => r.Id == pending.Id);
+        Assert.Equal(AiActionRequestStatus.Rejected, row.Status);
+        Assert.Equal("Zugang deaktiviert", row.DecisionNote);
+    }
+
+    /// <summary>A data-tool descriptor stub declaring the given required scope tuples.</summary>
+    private static IMcpToolDescriptor DataToolDescriptor(string name, params McpToolScope[] requiredScopes)
+    {
+        var d = new Mock<IMcpToolDescriptor>();
+        d.SetupGet(x => x.Name).Returns(name);
+        d.SetupGet(x => x.RequiredScopes).Returns(requiredScopes);
+        d.SetupGet(x => x.MetaScope).Returns((string?)null);
+        return d.Object;
+    }
+
+    /// <summary>
+    /// A1 (F-0904, approval-konzept.md §3.3/§6.1): a scope-profile change system-withdraws —
+    /// granularly — the open requests whose required scope tuple the new profile no longer
+    /// grants („Recht entfallen"); still-covered requests stay open for a normal decision.
+    /// </summary>
+    [Fact]
+    public async Task SetScopes_RemovedScope_WithdrawsUncoveredRequests()
+    {
+        var registry = new Mock<IMcpToolRegistry>();
+        registry.Setup(r => r.Find("fm_delete_tool")).Returns(DataToolDescriptor("fm_delete_tool",
+            new McpToolScope(McpDataType.Contacts, McpRightKind.Delete)));
+        registry.Setup(r => r.Find("fm_read_tool")).Returns(DataToolDescriptor("fm_read_tool",
+            new McpToolScope(McpDataType.Contacts, McpRightKind.Read)));
+        var (svc, db) = CreateWithApprovals(registry);
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell, new[]
+        {
+            ScopeDto(McpDataType.Contacts, McpRightKind.Read),
+            ScopeDto(McpDataType.Contacts, McpRightKind.Delete)
+        }), CancellationToken.None);
+        var accessId = created.Access.Id;
+
+        var deleteRequest = new AiActionRequest(owner, accessId, "acc", "fm_delete_tool", "delete",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-del");
+        var readRequest = new AiActionRequest(owner, accessId, "acc", "fm_read_tool", "list",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-read");
+        db.AiActionRequests.AddRange(deleteRequest, readRequest);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        // Drop Contacts:Delete from the individual profile.
+        Assert.True(await svc.SetScopesAsync(owner, accessId, new McpScopeSetRequest(new[]
+        {
+            ScopeDto(McpDataType.Contacts, McpRightKind.Read)
+        }), CancellationToken.None));
+
+        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        var withdrawn = rows.Single(r => r.Id == deleteRequest.Id);
+        Assert.Equal(AiActionRequestStatus.Rejected, withdrawn.Status);
+        Assert.Equal("Recht entfallen", withdrawn.DecisionNote);
+        Assert.Null(withdrawn.DecidedByUserId); // system transition
+        Assert.Equal(AiActionRequestStatus.Pending, rows.Single(r => r.Id == readRequest.Id).Status);
+        Assert.Single(await db.McpAuditEntries.AsNoTracking()
+            .Where(e => e.EventType == "ApprovalWithdrawn").ToListAsync());
+    }
+
+    /// <summary>
+    /// A1 (F-0904): a level switch away from the individual level drops the persisted scope
+    /// rows — the same granular „Recht entfallen" withdrawal applies because the effective
+    /// profile changed (Analyse grants read-only on every data type).
+    /// </summary>
+    [Fact]
+    public async Task Update_LevelSwitch_WithdrawsUncoveredRequests()
+    {
+        var registry = new Mock<IMcpToolRegistry>();
+        registry.Setup(r => r.Find("fm_delete_tool")).Returns(DataToolDescriptor("fm_delete_tool",
+            new McpToolScope(McpDataType.Contacts, McpRightKind.Delete)));
+        registry.Setup(r => r.Find("fm_read_tool")).Returns(DataToolDescriptor("fm_read_tool",
+            new McpToolScope(McpDataType.Contacts, McpRightKind.Read)));
+        var (svc, db) = CreateWithApprovals(registry);
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell, new[]
+        {
+            ScopeDto(McpDataType.Contacts, McpRightKind.Read),
+            ScopeDto(McpDataType.Contacts, McpRightKind.Delete)
+        }), CancellationToken.None);
+        var accessId = created.Access.Id;
+
+        var deleteRequest = new AiActionRequest(owner, accessId, "acc", "fm_delete_tool", "delete",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-del");
+        var readRequest = new AiActionRequest(owner, accessId, "acc", "fm_read_tool", "list",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-read");
+        db.AiActionRequests.AddRange(deleteRequest, readRequest);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        Assert.True(await svc.UpdateAsync(owner, accessId,
+            new McpAccessUpdateRequest("client-a", null, (short)McpAccessLevel.Analyse,
+                (short)McpApprovalMode.PerAction, null, null), CancellationToken.None));
+
+        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        Assert.Equal(AiActionRequestStatus.Rejected, rows.Single(r => r.Id == deleteRequest.Id).Status);
+        Assert.Equal("Recht entfallen", rows.Single(r => r.Id == deleteRequest.Id).DecisionNote);
+        Assert.Equal(AiActionRequestStatus.Pending, rows.Single(r => r.Id == readRequest.Id).Status);
     }
 
     /// <summary>Test case.</summary>

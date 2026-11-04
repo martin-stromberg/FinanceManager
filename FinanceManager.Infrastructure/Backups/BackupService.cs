@@ -741,6 +741,13 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var mcpAuditEntryChanges = mcpAuditChangeEntities.Select(c => c.ToBackupDto()).ToList();
 
+        // MCP approval requests: open (non-terminal) requests survive a restore — the
+        // backup carries the full request history of the user (F-0901).
+        var aiActionRequestEntities = await _db.AiActionRequests.AsNoTracking()
+            .Where(r => r.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var aiActionRequests = aiActionRequestEntities.Select(r => r.ToBackupDto()).ToList();
+
         return new
         {
             Accounts = accounts,
@@ -772,7 +779,8 @@ public sealed class BackupService : IBackupService
             McpAccesses = mcpAccesses,
             McpAccessScopes = mcpAccessScopes,
             McpAuditEntries = mcpAuditEntries,
-            McpAuditEntryChanges = mcpAuditEntryChanges
+            McpAuditEntryChanges = mcpAuditEntryChanges,
+            AiActionRequests = aiActionRequests
         };
     }
 

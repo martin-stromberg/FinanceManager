@@ -366,6 +366,16 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         }
     }
 
+    /// <summary>MCP approval requests — the persistent execution queue.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<AiActionRequest> AiActionRequests
+    {
+        get
+        {
+            return Set<AiActionRequest>();
+        }
+    }
+
     /// <summary>
     /// Configure the EF Core model: indexes, constraints and relationships.
     /// </summary>
@@ -871,6 +881,35 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.EntityType).HasMaxLength(100).IsRequired();
             b.Property(x => x.Field).HasMaxLength(100).IsRequired();
         });
+
+        // MCP approval requests = persistent execution queue (datenmodell-erweiterungen.md §5).
+        // McpAccessId is deliberately a soft reference (no FK constraint): requests stay
+        // readable as audit substrate after the access is deleted (approval-konzept.md §6.3).
+        modelBuilder.Entity<AiActionRequest>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.OwnerUserId, x.IdempotencyKey }).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.Status, x.RequestedUtc });
+            b.HasIndex(x => new { x.Status, x.ExpiresUtc });
+            b.HasIndex(x => x.CorrelationId);
+            b.HasIndex(x => x.McpAccessId);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.McpAccessId).IsRequired();
+            b.Property(x => x.McpAccessName).HasMaxLength(100).IsRequired();
+            b.Property(x => x.ToolName).HasMaxLength(100).IsRequired();
+            b.Property(x => x.ActionKey).HasMaxLength(60).IsRequired();
+            b.Property(x => x.CatalogVersion).HasMaxLength(40).IsRequired();
+            b.Property(x => x.ParameterSnapshot).IsRequired();
+            b.Property(x => x.ReasonText).HasMaxLength(1000);
+            b.Property(x => x.Status).HasConversion<short>().IsRequired();
+            b.Property(x => x.RequestedUtc).IsRequired();
+            b.Property(x => x.ExpiresUtc).IsRequired();
+            b.Property(x => x.DecisionNote).HasMaxLength(500);
+            b.Property(x => x.FailureReason).HasMaxLength(100);
+            b.Property(x => x.CorrelationId).IsRequired();
+            b.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+            b.Property(x => x.AttemptCount).HasDefaultValue(0).IsRequired();
+        });
     }
     /// <summary>
     /// Configure warnings and other runtime options for the DbContext.
@@ -892,7 +931,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 30;
+        var total = 31;
         var count = 0;
 
         // Notifications
@@ -901,7 +940,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
-        // MCP: audit field deltas → audit entries → scope rows → accesses
+        // MCP: audit field deltas → audit entries → approval requests → scope rows → accesses
         await McpAuditEntryChanges
             .Where(c => McpAuditEntries.Any(e => e.Id == c.EntryId && e.OwnerUserId == userId))
             .ExecuteDeleteAsync(ct);
@@ -909,6 +948,11 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
         await McpAuditEntries
             .Where(e => e.OwnerUserId == userId)
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        await AiActionRequests
+            .Where(r => r.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 

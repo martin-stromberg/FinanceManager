@@ -143,7 +143,7 @@ public sealed class McpToolRegistryTests
         var accessContext = new Mock<IMcpAccessContext>();
         accessContext.SetupGet(c => c.OwnerUserId).Returns(owner);
 
-        var handler = new FmTaskStatusHandler(tasks.Object);
+        var handler = new FmTaskStatusHandler(tasks.Object, EmptyApprovals());
         var result = await handler.InvokeAsync(
             JsonDocument.Parse("{}").RootElement,
             new McpToolCallContext(accessContext.Object, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null),
@@ -183,7 +183,7 @@ public sealed class McpToolRegistryTests
         var accessContext = new Mock<IMcpAccessContext>();
         accessContext.SetupGet(c => c.OwnerUserId).Returns(owner);
 
-        var handler = new FmTaskStatusHandler(tasks.Object);
+        var handler = new FmTaskStatusHandler(tasks.Object, EmptyApprovals());
         var result = await handler.InvokeAsync(
             JsonDocument.Parse("{}").RootElement,
             new McpToolCallContext(accessContext.Object, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null),
@@ -193,5 +193,17 @@ public sealed class McpToolRegistryTests
         var list = doc.RootElement.GetProperty("tasks");
         Assert.Equal(1, list.GetArrayLength());
         Assert.Equal(own.Id, list[0].GetProperty("id").GetGuid());
+    }
+
+    /// <summary>An approval service mock whose list/detail queries return empty results.</summary>
+    private static IMcpApprovalService EmptyApprovals()
+    {
+        var approvals = new Mock<IMcpApprovalService>();
+        approvals.Setup(a => a.ListAsync(It.IsAny<Guid>(), It.IsAny<AiActionRequestStatus?>(),
+                It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<FinanceManager.Shared.Dtos.Mcp.AiActionRequestListItemDto>());
+        approvals.Setup(a => a.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((FinanceManager.Shared.Dtos.Mcp.AiActionRequestDetailDto?)null);
+        return approvals.Object;
     }
 }

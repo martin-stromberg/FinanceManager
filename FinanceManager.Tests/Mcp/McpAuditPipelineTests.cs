@@ -64,9 +64,13 @@ public sealed class McpAuditPipelineTests
         registry.SetupGet(r => r.CatalogVersion).Returns("katalog-v1");
         registry.Setup(r => r.Find(descriptor.Name)).Returns(descriptor);
         var evaluator = new Mock<IMcpScopeEvaluator>();
+        var gate = new Mock<IMcpApprovalGate>();
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(McpApprovalDecision.Direct);
         var opts = new TestOptionsMonitor(options ?? new McpOptions());
         return new McpToolDispatcher(
             registry.Object, evaluator.Object, auditWriter,
+            gate.Object, Mock.Of<IMcpApprovalService>(),
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
             opts, NullLogger<McpToolDispatcher>.Instance);
@@ -186,9 +190,13 @@ public sealed class McpAuditPipelineTests
         var evaluator = new Mock<IMcpScopeEvaluator>();
         evaluator.Setup(e => e.IsAllowedAsync(access, McpDataType.Postings, McpRightKind.Read, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
+        var gate = new Mock<IMcpApprovalGate>();
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(McpApprovalDecision.Direct);
         var opts = new TestOptionsMonitor(new McpOptions());
         var dispatcher = new McpToolDispatcher(
             registry.Object, evaluator.Object, audit.Object,
+            gate.Object, Mock.Of<IMcpApprovalService>(),
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
             opts, NullLogger<McpToolDispatcher>.Instance);
@@ -210,6 +218,7 @@ public sealed class McpAuditPipelineTests
         var issuer = new McpTokenIssuer(new McpTokenHasher(options));
         var writer = new McpAuditWriter(db, NullLogger<McpAuditWriter>.Instance);
         var svc = new McpAccessService(db, issuer, new McpScopeEvaluator(db), writer,
+            Mock.Of<IMcpApprovalService>(),
             NullLogger<McpAccessService>.Instance);
         var owner = Guid.NewGuid();
 
@@ -238,6 +247,7 @@ public sealed class McpAuditPipelineTests
         audit.Setup(a => a.StageAsync(It.IsAny<McpAuditWriteRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("audit store down"));
         var svc = new McpAccessService(db, issuer, new McpScopeEvaluator(db), audit.Object,
+            Mock.Of<IMcpApprovalService>(),
             NullLogger<McpAccessService>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => svc.CreateAsync(Guid.NewGuid(),

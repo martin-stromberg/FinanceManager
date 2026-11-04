@@ -362,7 +362,7 @@ public sealed class FmContactsManageHandler : IMcpToolHandler
             return new { operation = "merge", contact = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Contacts, "merge",
+            _scopeEvaluator, context, McpDataType.Contacts, "merge",
             "Merges the source contact into the target contact: transfers alias patterns, " +
             "re-points all referencing records (draft entries, postings, budgets) and deletes " +
             "the source contact. The merge is irreversible.",
@@ -378,7 +378,7 @@ public sealed class FmContactsManageHandler : IMcpToolHandler
             return new { operation = "delete", contact = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Contacts, "delete",
+            _scopeEvaluator, context, McpDataType.Contacts, "delete",
             "Deletes the contact including its alias patterns. Referencing records lose " +
             "their contact link; the deletion is final.",
             new { contactId }, ct);

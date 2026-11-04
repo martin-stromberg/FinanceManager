@@ -435,6 +435,11 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpToolRateLimiter>();
             builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpAnomalyTracker>();
             builder.Services.AddScoped<FinanceManager.Web.Mcp.McpToolDispatcher>();
+            // Approval queue runners (EP-09): the persistent AiActionRequest table is the
+            // queue — the executor polls approved requests, the expiry sweep marks overdue
+            // ones. Both are inert while Mcp:Enabled is off.
+            builder.Services.AddHostedService<FinanceManager.Web.Services.AiActionExecutorService>();
+            builder.Services.AddHostedService<FinanceManager.Web.Services.AiActionExpiryService>();
             // Read-only tool catalog (EP-02): descriptors are singletons (compiled catalog),
             // handlers are scoped adapters on the I*Service contracts.
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeDescriptor>();

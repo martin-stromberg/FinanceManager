@@ -154,4 +154,13 @@
 	<data name="API_McpAudit_Err_Invalid_format" xml:space="preserve">
 		<value>Invalid export format. Supported formats are 'csv' and 'json'.</value>
 	</data>
+	<data name="API_McpApproval_Err_Mcp_InvalidArguments" xml:space="preserve">
+		<value>Invalid arguments for the approval request.</value>
+	</data>
+	<data name="API_McpApproval_Err_Mcp_InvalidState" xml:space="preserve">
+		<value>The request is no longer in a decidable state.</value>
+	</data>
+	<data name="API_McpApproval_Err_Unexpected" xml:space="preserve">
+		<value>Unexpected error while processing the approval request.</value>
+	</data>
 </root>

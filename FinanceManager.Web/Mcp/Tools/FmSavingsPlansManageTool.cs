@@ -254,7 +254,7 @@ public sealed class FmSavingsPlansManageHandler : IMcpToolHandler
             return new { operation = "archive", savingsPlan = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.SavingsPlans, "archive",
+            _scopeEvaluator, context, McpDataType.SavingsPlans, "archive",
             "Archives the savings plan (sets ArchivedUtc / IsActive=false) — the only " +
             "delete-equivalent for savings plans. The plan stops matching new draft " +
             "entries; existing postings keep their reference.",

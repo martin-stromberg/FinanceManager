@@ -426,7 +426,7 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
             return new { operation = "delete", attachment = (object?)null };
         }
         return await McpMasterDataGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context.Access, McpDataType.Attachments, "delete",
+            _scopeEvaluator, context, McpDataType.Attachments, "delete",
             "Deletes the attachment including its stored content and all references to " +
             "it; the deletion is final.",
             new { attachmentId }, ct);
