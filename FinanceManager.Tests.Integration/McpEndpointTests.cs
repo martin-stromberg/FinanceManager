@@ -69,16 +69,16 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
             id = 1,
             method = "initialize",
             @params = new { protocolVersion = "2025-03-26", capabilities = new { }, clientInfo = new { name = "test", version = "1" } }
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, init.StatusCode);
         Assert.True(init.Headers.Contains("Mcp-Session-Id"));
-        var initDoc = await init.Content.ReadFromJsonAsync<JsonElement>();
+        var initDoc = await init.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("FinanceManager", initDoc.GetProperty("result").GetProperty("serverInfo").GetProperty("name").GetString());
         Assert.Equal("katalog-v1", initDoc.GetProperty("result").GetProperty("serverInfo").GetProperty("catalogVersion").GetString());
 
         // tools/list → the two live meta tools with explicit input schemas.
-        var list = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 2, method = "tools/list" });
-        var listDoc = await list.Content.ReadFromJsonAsync<JsonElement>();
+        var list = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 2, method = "tools/list" }, cancellationToken: TestContext.Current.CancellationToken);
+        var listDoc = await list.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
         var tools = listDoc.GetProperty("result").GetProperty("tools");
         var names = tools.EnumerateArray().Select(t => t.GetProperty("name").GetString()).ToList();
         Assert.Contains("fm_capabilities_describe", names);
@@ -92,8 +92,8 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
             id = 3,
             method = "tools/call",
             @params = new { name = "fm_capabilities_describe", arguments = new { } }
-        });
-        var callDoc = await call.Content.ReadFromJsonAsync<JsonElement>();
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        var callDoc = await call.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
         var result = callDoc.GetProperty("result");
         var content = result.GetProperty("structuredContent");
         Assert.Equal("katalog-v1", content.GetProperty("catalogVersion").GetString());
@@ -107,16 +107,16 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
             id = 4,
             method = "tools/call",
             @params = new { name = "fm_no_such_tool", arguments = new { } }
-        });
-        var unknownDoc = await unknown.Content.ReadFromJsonAsync<JsonElement>();
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        var unknownDoc = await unknown.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
         var unknownRaw = unknownDoc.GetRawText();
         Assert.True(unknownDoc.TryGetProperty("error", out var unkErr), $"expected error, got {unknownRaw}");
         Assert.True(unkErr.TryGetProperty("data", out var unkData), $"expected data, got {unknownRaw}");
         Assert.Equal("Err_Mcp_UnknownTool", unkData.GetProperty("code").GetString());
 
         // unknown JSON-RPC method → -32601.
-        var method = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 5, method = "resources/list" });
-        var methodDoc = await method.Content.ReadFromJsonAsync<JsonElement>();
+        var method = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 5, method = "resources/list" }, cancellationToken: TestContext.Current.CancellationToken);
+        var methodDoc = await method.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(-32601, methodDoc.GetProperty("error").GetProperty("code").GetInt32());
     }
 
@@ -127,7 +127,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         using var client = _factory.CreateClient();
         var pat = await CreateAccessTokenAsync(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat);
-        var response = await client.GetAsync("/mcp");
+        var response = await client.GetAsync("/mcp", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
 
@@ -140,13 +140,13 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", created.PlainTextToken);
 
         // initialize → live session id the stream binds to.
-        var init = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "initialize" });
+        var init = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "initialize" }, cancellationToken: TestContext.Current.CancellationToken);
         var sessionId = init.Headers.GetValues("Mcp-Session-Id").Single();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/mcp");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
         request.Headers.Add("Mcp-Session-Id", sessionId);
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.StartsWith("text/event-stream", response.Content.Headers.ContentType?.ToString());
@@ -158,7 +158,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         hub.Publish(new FinanceManager.Application.Mcp.McpRequestStatusEvent(
             created.Access.Id, Guid.NewGuid(), requestId, "Executed", "fm_test_tool"));
 
-        await using var stream = await response.Content.ReadAsStreamAsync();
+        await using var stream = await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken);
         using var reader = new StreamReader(stream);
         var frame = await ReadFrameAsync(reader, TimeSpan.FromSeconds(15));
         Assert.Contains("request-status", frame);
@@ -174,7 +174,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat);
         using var request = new HttpRequestMessage(HttpMethod.Get, "/mcp");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
-        var response = await client.SendAsync(request);
+        var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -204,15 +204,15 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
     public async Task MissingOrInvalidPat_ReturnsUniform401()
     {
         using var client = _factory.CreateClient();
-        var missing = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" });
+        var missing = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" }, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Unauthorized, missing.StatusCode);
-        var body = await missing.Content.ReadAsStringAsync();
+        var body = await missing.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("Err_Mcp_Unauthorized", body);
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fm_mcp_AAAA_this_secret_does_not_exist_0123456789");
-        var invalid = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" });
+        var invalid = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" }, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Unauthorized, invalid.StatusCode);
-        var body2 = await invalid.Content.ReadAsStringAsync();
+        var body2 = await invalid.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("Err_Mcp_Unauthorized", body2);
         // Uniformity: same error payload for unknown and malformed credentials.
         Assert.Equal(body, body2);
@@ -225,7 +225,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         using var client = _factory.CreateClient();
         var jwt = TestJwtTokens.Create(_factory.Services, JwtKey, includeAdminRole: true);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
-        var response = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" });
+        var response = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" }, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -236,9 +236,9 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         using var factory = new TestWebApplicationFactory();
         // no Mcp:Enabled override → default false from appsettings.json.
         using var client = factory.CreateClient();
-        var response = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" });
+        var response = await client.PostAsJsonAsync("/mcp", new { jsonrpc = "2.0", id = 1, method = "ping" }, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        var get = await client.GetAsync("/mcp");
+        var get = await client.GetAsync("/mcp", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.ServiceUnavailable, get.StatusCode);
     }
 }

@@ -130,7 +130,7 @@ public sealed class McpApprovalDispatcherTests
         Assert.Equal("Pending", payload.GetProperty("status").GetString());
         Assert.True(payload.GetProperty("expiresUtc").GetDateTime() > DateTime.UtcNow);
 
-        var request = await db.AiActionRequests.SingleAsync();
+        var request = await db.AiActionRequests.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(requestId, request.Id);
         Assert.Equal("delete", request.ActionKey);
         Assert.Equal("cleanup", request.ReasonText);
@@ -139,7 +139,7 @@ public sealed class McpApprovalDispatcherTests
             It.IsAny<CancellationToken>()), Times.Never);
 
         // ToolCall (RedirectedToApproval) + ApprovalEvent (ApprovalRequested) records.
-        var events = await db.McpAuditEntries.AsNoTracking().ToListAsync();
+        var events = await db.McpAuditEntries.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Contains(events, e => e.Category == McpAuditCategory.ToolCall && e.ResultStatus == "RedirectedToApproval");
         Assert.Contains(events, e => e.Category == McpAuditCategory.ApprovalEvent && e.EventType == "ApprovalRequested");
     }
@@ -163,7 +163,7 @@ public sealed class McpApprovalDispatcherTests
         var id1 = JsonSerializer.SerializeToElement(first.Result).GetProperty("requestId").GetGuid();
         var id2 = JsonSerializer.SerializeToElement(second.Result).GetProperty("requestId").GetGuid();
         Assert.Equal(id1, id2);
-        Assert.Equal(1, await db.AiActionRequests.CountAsync());
+        Assert.Equal(1, await db.AiActionRequests.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>T31 enqueue-time pre-check (F-1003): a request on an already reversed
@@ -191,8 +191,8 @@ public sealed class McpApprovalDispatcherTests
 
         Assert.Equal(McpDispatchResultKind.ToolError, result.Kind);
         Assert.Equal("Err_AlreadyReversed", result.ErrorCode);
-        Assert.Equal(0, await db.AiActionRequests.CountAsync()); // request never parks
-        Assert.Contains(await db.McpAuditEntries.AsNoTracking().ToListAsync(),
+        Assert.Equal(0, await db.AiActionRequests.CountAsync(cancellationToken: TestContext.Current.CancellationToken)); // request never parks
+        Assert.Contains(await db.McpAuditEntries.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken),
             e => e.ResultStatus == "Failed");
     }
 
@@ -221,7 +221,7 @@ public sealed class McpApprovalDispatcherTests
         Assert.Equal(McpDispatchResultKind.Success, result.Kind);
         var payload = JsonSerializer.SerializeToElement(result.Result);
         Assert.True(payload.GetProperty("queued").GetBoolean());
-        Assert.Equal(1, await db.AiActionRequests.CountAsync());
+        Assert.Equal(1, await db.AiActionRequests.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>A denied gate decision maps to the defined error (pending limit).</summary>
@@ -240,8 +240,8 @@ public sealed class McpApprovalDispatcherTests
 
         Assert.Equal(McpDispatchResultKind.DefinedError, result.Kind);
         Assert.Equal("Err_Mcp_PendingLimit", result.ErrorCode);
-        Assert.Equal(0, await db.AiActionRequests.CountAsync());
-        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        Assert.Equal(0, await db.AiActionRequests.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("Denied", entry.ResultStatus);
     }
 
@@ -302,7 +302,7 @@ public sealed class McpApprovalDispatcherTests
         var payload = JsonSerializer.SerializeToElement(result.Result);
         Assert.True(payload.GetProperty("queued").GetBoolean());
         Assert.Equal("Approved", payload.GetProperty("status").GetString()); // pre-approved → directly queued
-        var request = await db.AiActionRequests.SingleAsync();
+        var request = await db.AiActionRequests.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Approved, request.Status);
         Assert.Equal("delete", request.ActionKey);
     }
@@ -330,7 +330,7 @@ public sealed class McpApprovalDispatcherTests
         var payload = JsonSerializer.SerializeToElement(result.Result);
         Assert.True(payload.GetProperty("applied").GetBoolean());
         Assert.False(payload.TryGetProperty("queued", out _));
-        Assert.Equal(0, await db.AiActionRequests.CountAsync());
+        Assert.Equal(0, await db.AiActionRequests.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>The real gate matrix end to end: a write-preparing call on a PerAction

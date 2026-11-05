@@ -79,9 +79,9 @@ public sealed class McpScopeEvaluatorTests
         var owner = Guid.NewGuid();
         var access = NewAccess(owner, McpAccessLevel.Individuell);
         db.McpAccesses.Add(access);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         db.McpAccessScopes.Add(new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Read));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         Assert.True(await eval.IsAllowedAsync(access, McpDataType.Contacts, McpRightKind.Read, CancellationToken.None));
         Assert.False(await eval.IsAllowedAsync(access, McpDataType.Accounts, McpRightKind.Read, CancellationToken.None));
@@ -124,7 +124,7 @@ public sealed class McpScopeEvaluatorTests
         var access = NewAccess(owner, McpAccessLevel.Analyse);
         var account = new Account(owner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var verdict = await eval.CheckRecordAccessAsync(access, McpDataType.StatementImports, McpRightKind.Read,
             new McpRecordContext { AccountId = account.Id }, CancellationToken.None);
@@ -142,7 +142,7 @@ public sealed class McpScopeEvaluatorTests
         var account = new Account(foreignOwner, AccountType.Giro, "Giro", null, Guid.NewGuid());
         db.Accounts.Add(account);
         db.AccountShares.Add(new AccountShare(account.Id, reader, AccountShareRole.Read));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var access = NewAccess(reader, McpAccessLevel.Buchhalter);
 
         // Read on account-bound data is allowed through the share…
@@ -166,7 +166,7 @@ public sealed class McpScopeEvaluatorTests
         var account = new Account(Guid.NewGuid(), AccountType.Giro, "Giro", null, Guid.NewGuid());
         db.Accounts.Add(account);
         db.AccountShares.Add(new AccountShare(account.Id, writer, AccountShareRole.Write));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var access = NewAccess(writer, McpAccessLevel.Buchhalter);
 
         var book = await eval.CheckRecordAccessAsync(access, McpDataType.StatementDrafts, McpRightKind.Book,
@@ -188,13 +188,13 @@ public sealed class McpScopeEvaluatorTests
         var catA = Guid.NewGuid();
         var access = NewAccess(owner, McpAccessLevel.Individuell);
         db.McpAccesses.Add(access);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         // Row 1: ContactCategories = {catA} → matches only contacts classified catA.
         // Row 2: no filters → matches everything → demonstrates OR over rows.
         var rowFiltered = new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Read,
             contactCategoryIdsCsv: catA.ToString());
         db.McpAccessScopes.Add(rowFiltered);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Unclassified record is never matched by the whitelist row.
         var unclassified = await eval.CheckRecordAccessAsync(access, McpDataType.Contacts, McpRightKind.Read,
@@ -207,7 +207,7 @@ public sealed class McpScopeEvaluatorTests
 
         // OR over rows: adding an unfiltered row makes any owned record pass.
         db.McpAccessScopes.Add(new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Read));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var viaSecondRow = await eval.CheckRecordAccessAsync(access, McpDataType.Contacts, McpRightKind.Read,
             new McpRecordContext { OwnerUserId = owner }, CancellationToken.None);
         Assert.Equal(McpAccessVerdict.Allowed, viaSecondRow);
@@ -225,7 +225,7 @@ public sealed class McpScopeEvaluatorTests
         var import = new FinanceManager.Domain.Statements.StatementImport(account.Id, FinanceManager.Shared.Dtos.Statements.ImportFormat.Csv, "f.csv");
         db.Accounts.Add(account);
         db.StatementImports.Add(import);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Owner access resolves the import through the account chain.
         var own = await eval.CheckRecordAccessAsync(NewAccess(owner), McpDataType.StatementImports, McpRightKind.Read,

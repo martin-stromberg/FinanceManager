@@ -158,7 +158,7 @@ public sealed class McpAuditQueryServiceTests
         var other = Guid.NewGuid();
         var access = Access(owner);
         db.McpAccesses.Add(access);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var entry = await writer.StageAsync(new McpAuditWriteRequest(
             McpAuditCategory.DataChange, "EntriesModified", "Success",
@@ -169,7 +169,7 @@ public sealed class McpAuditQueryServiceTests
                 new McpAuditFieldChange("StatementDraftEntry", Guid.NewGuid(), "ContactId", null, "abc"),
                 new McpAuditFieldChange("StatementDraftEntry", Guid.NewGuid(), "BookingDate", "2026-01-01", "2026-01-02")
             }), CancellationToken.None);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(entry);
 
         var detail = await svc.GetAsync(owner, entry!.Id, CancellationToken.None);

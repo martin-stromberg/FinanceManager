@@ -28,7 +28,7 @@ public sealed class McpSessionHubTests
         var delivered = hub.Publish(evt);
 
         Assert.Equal(1, delivered);
-        var received = await subA.Reader.ReadAsync();
+        var received = await subA.Reader.ReadAsync(TestContext.Current.CancellationToken);
         Assert.Equal(evt.RequestId, received.RequestId);
         Assert.False(subB.Reader.TryRead(out _));
     }
@@ -77,7 +77,7 @@ public sealed class McpSessionHubTests
 
         Assert.Equal(0, hub.SubscriberCount(access));
         Assert.Equal(0, hub.Publish(Event(access)));
-        var ex = await Assert.ThrowsAnyAsync<Exception>(async () => await sub.Reader.ReadAsync());
+        var ex = await Assert.ThrowsAnyAsync<Exception>(async () => await sub.Reader.ReadAsync(TestContext.Current.CancellationToken));
         Assert.NotNull(ex);
     }
 

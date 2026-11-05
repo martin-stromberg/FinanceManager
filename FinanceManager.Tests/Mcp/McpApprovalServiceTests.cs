@@ -69,7 +69,7 @@ public sealed class McpApprovalServiceTests
         Assert.Equal(owner, request.OwnerUserId);
         Assert.Equal(access.Id, request.McpAccessId);
         Assert.True(request.ExpiresUtc > DateTime.UtcNow);
-        var entry = await db.McpAuditEntries.SingleAsync();
+        var entry = await db.McpAuditEntries.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(McpAuditCategory.ApprovalEvent, entry.Category);
         Assert.Equal("ApprovalRequested", entry.EventType);
         Assert.Equal(request.Id, entry.RelatedRequestId);
@@ -89,7 +89,7 @@ public sealed class McpApprovalServiceTests
         var second = await EnqueueAsync(svc, access, "dup-key");
 
         Assert.Equal(first.Id, second.Id);
-        Assert.Equal(1, await db.AiActionRequests.CountAsync());
+        Assert.Equal(1, await db.AiActionRequests.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>Enqueue DifferentKeys ShouldCreateSeparateRequests.</summary>
@@ -103,7 +103,7 @@ public sealed class McpApprovalServiceTests
         var second = await EnqueueAsync(svc, access, "k2");
 
         Assert.NotEqual(first.Id, second.Id);
-        Assert.Equal(2, await db.AiActionRequests.CountAsync());
+        Assert.Equal(2, await db.AiActionRequests.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>Enqueue PendingLimitReached ShouldThrowErrMcpPendingLimit.</summary>
@@ -146,7 +146,7 @@ public sealed class McpApprovalServiceTests
         var owner = Guid.NewGuid();
         var access = NewAccess(owner);
         db.McpAccesses.Add(access);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var pending = await svc.EnqueueAsync(access, "fm_contacts_manage", "delete", "katalog-v1",
             "{}", null, Guid.NewGuid(), "m1", CancellationToken.None);
@@ -155,11 +155,11 @@ public sealed class McpApprovalServiceTests
         await svc.ApproveAsync(owner, approved.Id, null, CancellationToken.None);
         var failed = await svc.EnqueueAsync(access, "fm_contacts_manage", "archive", "katalog-v1",
             "{}", null, Guid.NewGuid(), "m3", CancellationToken.None);
-        var failedRow = await db.AiActionRequests.FindAsync(failed.Id);
+        var failedRow = await db.AiActionRequests.FindAsync(new object?[] { failed.Id }, TestContext.Current.CancellationToken);
         failedRow!.Approve(owner, null);
         failedRow.MarkClaimed(Guid.NewGuid(), DateTime.UtcNow);
         failedRow.MarkFailed("Err_TargetGone");
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var dto = await svc.GetAccessMonitoringAsync(owner, access.Id, CancellationToken.None);
 
@@ -189,11 +189,11 @@ public sealed class McpApprovalServiceTests
         var ok = await svc.ApproveAsync(owner, request.Id, "lgtm", CancellationToken.None);
 
         Assert.True(ok);
-        var reloaded = await db.AiActionRequests.FindAsync(request.Id);
+        var reloaded = await db.AiActionRequests.FindAsync(new object?[] { request.Id }, TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Approved, reloaded!.Status);
         Assert.Equal("lgtm", reloaded.DecisionNote);
-        Assert.Equal(2, await db.McpAuditEntries.CountAsync());
-        Assert.Equal("ApprovalDecided", (await db.McpAuditEntries.OrderByDescending(e => e.SequenceNo).FirstAsync()).EventType);
+        Assert.Equal(2, await db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal("ApprovalDecided", (await db.McpAuditEntries.OrderByDescending(e => e.SequenceNo).FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).EventType);
     }
 
     /// <summary>Approve ForeignOwner ShouldReturnFalse.</summary>
@@ -230,7 +230,7 @@ public sealed class McpApprovalServiceTests
 
         Assert.True(await svc.RejectAsync(owner, request.Id, "reason", CancellationToken.None));
         Assert.Equal(AiActionRequestStatus.Rejected,
-            (await db.AiActionRequests.FindAsync(request.Id))!.Status);
+            (await db.AiActionRequests.FindAsync(new object?[] { request.Id }, TestContext.Current.CancellationToken))!.Status);
     }
 
     /// <summary>Cancel ShouldWithdrawPendingRequest.</summary>
@@ -242,7 +242,7 @@ public sealed class McpApprovalServiceTests
         var request = await EnqueueAsync(svc, NewAccess(owner));
 
         Assert.True(await svc.CancelAsync(owner, request.Id, CancellationToken.None));
-        var reloaded = await db.AiActionRequests.FindAsync(request.Id);
+        var reloaded = await db.AiActionRequests.FindAsync(new object?[] { request.Id }, TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Rejected, reloaded!.Status);
         Assert.Equal("Withdrawn by owner", reloaded.DecisionNote);
     }
@@ -343,12 +343,12 @@ public sealed class McpApprovalServiceTests
         var count = await svc.WithdrawOpenForAccessAsync(access.Id, "Zugang entzogen", CancellationToken.None);
 
         Assert.Equal(2, count);
-        var all = await db.AiActionRequests.ToListAsync();
+        var all = await db.AiActionRequests.ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Rejected, all.Single(x => x.Id == pending.Id).Status);
         Assert.Equal(AiActionRequestStatus.Rejected, all.Single(x => x.Id == approved.Id).Status);
         Assert.Equal(AiActionRequestStatus.Approved, all.Single(x => x.Id == claimed.Id).Status);
         Assert.Equal(AiActionRequestStatus.Rejected, all.Single(x => x.Id == rejected.Id).Status);
-        Assert.True(await db.McpAuditEntries.Where(e => e.EventType == "ApprovalWithdrawn").CountAsync() == 2);
+        Assert.True(await db.McpAuditEntries.Where(e => e.EventType == "ApprovalWithdrawn").CountAsync(cancellationToken: TestContext.Current.CancellationToken) == 2);
     }
 
     /// <summary>A data-tool descriptor stub declaring the given required scope tuples.</summary>
@@ -402,7 +402,7 @@ public sealed class McpApprovalServiceTests
         var count = await svc.WithdrawScopeUncoveredForAccessAsync(access.Id, "Recht entfallen", CancellationToken.None);
 
         Assert.Equal(2, count);
-        var all = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        var all = await db.AiActionRequests.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         foreach (var id in new[] { pendingDelete.Id, approvedDelete.Id })
         {
             var row = all.Single(r => r.Id == id);
@@ -413,7 +413,7 @@ public sealed class McpApprovalServiceTests
         Assert.Equal(AiActionRequestStatus.Approved, all.Single(r => r.Id == claimedDelete.Id).Status);
         Assert.Equal(AiActionRequestStatus.Pending, all.Single(r => r.Id == pendingRead.Id).Status);
         Assert.Equal(2, await db.McpAuditEntries.AsNoTracking()
-            .CountAsync(e => e.EventType == "ApprovalWithdrawn"));
+            .CountAsync(e => e.EventType == "ApprovalWithdrawn", cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -447,10 +447,10 @@ public sealed class McpApprovalServiceTests
         var count = await svc.WithdrawScopeUncoveredForAccessAsync(access.Id, "Recht entfallen", CancellationToken.None);
 
         Assert.Equal(0, count);
-        var all = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        var all = await db.AiActionRequests.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.All(all, r => Assert.Equal(AiActionRequestStatus.Pending, r.Status));
         Assert.Equal(0, await db.McpAuditEntries.AsNoTracking()
-            .CountAsync(e => e.EventType == "ApprovalWithdrawn"));
+            .CountAsync(e => e.EventType == "ApprovalWithdrawn", cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>A scope check on a gone access is a no-op — the executor re-check covers it.</summary>

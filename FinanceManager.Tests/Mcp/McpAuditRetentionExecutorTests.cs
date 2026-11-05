@@ -80,7 +80,7 @@ public sealed class McpAuditRetentionExecutorTests
 
         Assert.Equal(2, result.EntriesRemoved);
         Assert.Equal(1, result.CutMarkersWritten);
-        var remaining = await f.Db.McpAuditEntries.OrderBy(e => e.SequenceNo).ToListAsync();
+        var remaining = await f.Db.McpAuditEntries.OrderBy(e => e.SequenceNo).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(3, remaining.Count); // ApprovalRequested, DataChange, RetentionPurged marker
         Assert.Equal(McpAuditCategory.ApprovalEvent, remaining[0].Category);
         Assert.Equal(McpAuditCategory.DataChange, remaining[1].Category);
@@ -122,9 +122,9 @@ public sealed class McpAuditRetentionExecutorTests
             await WriteAsync(f.Writer, owner, McpAuditCategory.ToolCall, "ToolCall");
         }
         // Tamper-style removal without a RetentionPurged marker.
-        var middle = await f.Db.McpAuditEntries.SingleAsync(e => e.SequenceNo == 2);
+        var middle = await f.Db.McpAuditEntries.SingleAsync(e => e.SequenceNo == 2, cancellationToken: TestContext.Current.CancellationToken);
         f.Db.McpAuditEntries.Remove(middle);
-        await f.Db.SaveChangesAsync();
+        await f.Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var verify = await f.Writer.VerifyAsync(owner, CancellationToken.None);
         Assert.False(verify.IsIntact);
@@ -144,7 +144,7 @@ public sealed class McpAuditRetentionExecutorTests
 
         Assert.Equal(0, result.EntriesRemoved);
         Assert.Equal(0, result.CutMarkersWritten);
-        Assert.Equal(2, await f.Db.McpAuditEntries.CountAsync());
+        Assert.Equal(2, await f.Db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>The anchor entry itself is never removed by a later pass.</summary>
@@ -155,12 +155,12 @@ public sealed class McpAuditRetentionExecutorTests
         var owner = Guid.NewGuid();
         await WriteAsync(f.Writer, owner, McpAuditCategory.ToolCall, "ToolCall");
         await f.Retention.RunAsync(DateTime.UtcNow.AddMonths(13), CancellationToken.None);
-        Assert.Equal(1, await f.Db.McpAuditEntries.CountAsync());
+        Assert.Equal(1, await f.Db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         // Even a pass far beyond every window keeps the anchor (it is excluded from expiry).
         var result = await f.Retention.RunAsync(DateTime.UtcNow.AddMonths(50), CancellationToken.None);
         Assert.Equal(0, result.EntriesRemoved);
-        Assert.Equal(1, await f.Db.McpAuditEntries.CountAsync());
+        Assert.Equal(1, await f.Db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
         var verify = await f.Writer.VerifyAsync(owner, CancellationToken.None);
         Assert.True(verify.IsIntact, verify.FailureReason);
     }
@@ -183,12 +183,12 @@ public sealed class McpAuditRetentionExecutorTests
         var pending = new AiActionRequest(owner, access.Id, access.Name, "fm_y", "call",
             "katalog-v1", "{}", null, DateTime.UtcNow.AddDays(1), Guid.NewGuid(), "k2");
         f.Db.AiActionRequests.AddRange(executed, pending);
-        await f.Db.SaveChangesAsync();
+        await f.Db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await f.Retention.RunAsync(DateTime.UtcNow.AddMonths(13), CancellationToken.None);
 
         Assert.Equal(1, result.RequestsRemoved);
-        var remaining = await f.Db.AiActionRequests.SingleAsync();
+        var remaining = await f.Db.AiActionRequests.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Pending, remaining.Status);
     }
 
@@ -205,7 +205,7 @@ public sealed class McpAuditRetentionExecutorTests
         var result = await f.Retention.RunAsync(DateTime.UtcNow.AddMonths(13), CancellationToken.None);
 
         Assert.Equal(1, result.EntriesRemoved); // only A's ToolCall
-        Assert.Equal(2, await f.Db.McpAuditEntries.CountAsync()); // B's entry + A's marker
+        Assert.Equal(2, await f.Db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken)); // B's entry + A's marker
         var verifyB = await f.Writer.VerifyAsync(ownerB, CancellationToken.None);
         Assert.True(verifyB.IsIntact, verifyB.FailureReason);
         var verifyA = await f.Writer.VerifyAsync(ownerA, CancellationToken.None);

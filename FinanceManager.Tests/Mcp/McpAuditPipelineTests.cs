@@ -151,7 +151,7 @@ public sealed class McpAuditPipelineTests
             ServicesWith(handler.Object), "10.0.0.1", CancellationToken.None);
 
         Assert.Equal(McpDispatchResultKind.Success, result.Kind);
-        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(McpAuditCategory.ToolCall, entry.Category);
         Assert.Equal("ToolCall", entry.EventType);
         Assert.Equal("Success", entry.ResultStatus);
@@ -228,7 +228,7 @@ public sealed class McpAuditPipelineTests
             CancellationToken.None);
 
         Assert.NotNull(created);
-        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(McpAuditCategory.AccessEvent, entry.Category);
         Assert.Equal("AccessCreated", entry.EventType);
         Assert.Equal(owner, entry.OwnerUserId);
@@ -256,8 +256,8 @@ public sealed class McpAuditPipelineTests
             CancellationToken.None));
 
         // The write effect must not survive without its audit record.
-        Assert.Equal(0, await db.McpAccesses.CountAsync());
-        Assert.Equal(0, await db.McpAuditEntries.CountAsync());
+        Assert.Equal(0, await db.McpAccesses.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(0, await db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     private sealed class TestOptionsMonitor : IOptionsMonitor<McpOptions>

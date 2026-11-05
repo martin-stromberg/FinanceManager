@@ -67,7 +67,7 @@ public sealed class McpAuditWriterTests
         }
 
         var stored = await db.McpAuditEntries.AsNoTracking()
-            .Where(e => e.OwnerUserId == owner).OrderBy(e => e.SequenceNo).ToListAsync();
+            .Where(e => e.OwnerUserId == owner).OrderBy(e => e.SequenceNo).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(5, stored.Count);
         Assert.Equal(Enum.GetValues<McpAuditCategory>(), stored.Select(e => e.Category).ToArray());
     }
@@ -83,7 +83,7 @@ public sealed class McpAuditWriterTests
 
         await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
 
-        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("ToolCall", entry.EventType);
         Assert.Equal("Success", entry.ResultStatus);
         Assert.Equal(owner, entry.OwnerUserId);
@@ -118,10 +118,10 @@ public sealed class McpAuditWriterTests
         await writer.WriteAsync(Request(globalChain: true), CancellationToken.None); // global chain
 
         var seqsA = await db.McpAuditEntries.Where(e => e.OwnerUserId == ownerA)
-            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync();
+            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(new long[] { 1, 2, 3 }, seqsA);
-        Assert.Equal(1, await db.McpAuditEntries.Where(e => e.OwnerUserId == ownerB).Select(e => e.SequenceNo).SingleAsync());
-        Assert.Equal(1, await db.McpAuditEntries.Where(e => e.OwnerUserId == null).Select(e => e.SequenceNo).SingleAsync());
+        Assert.Equal(1, await db.McpAuditEntries.Where(e => e.OwnerUserId == ownerB).Select(e => e.SequenceNo).SingleAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(1, await db.McpAuditEntries.Where(e => e.OwnerUserId == null).Select(e => e.SequenceNo).SingleAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>Owner chains and the global (null-owner) chain are independent.</summary>
@@ -136,7 +136,7 @@ public sealed class McpAuditWriterTests
         await writer.WriteAsync(Request(owner: Guid.NewGuid()), CancellationToken.None);
 
         var globalSeqs = await db.McpAuditEntries.Where(e => e.OwnerUserId == null)
-            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync();
+            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(new long[] { 1, 2 }, globalSeqs);
     }
 
@@ -153,7 +153,7 @@ public sealed class McpAuditWriterTests
         await writer.WriteAsync(Request(owner: owner, eventType: "TokenRotated"), CancellationToken.None);
 
         var entries = await db.McpAuditEntries.AsNoTracking()
-            .OrderBy(e => e.SequenceNo).ToListAsync();
+            .OrderBy(e => e.SequenceNo).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Null(entries[0].PrevHash);
         Assert.Equal(entries[0].EntryHash, entries[1].PrevHash);
         Assert.Equal(entries[1].EntryHash, entries[2].PrevHash);
@@ -177,9 +177,9 @@ public sealed class McpAuditWriterTests
             category: McpAuditCategory.DataChange, eventType: "AccessUpdated", changes: changes),
             CancellationToken.None);
 
-        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         var stored = await db.McpAuditEntryChanges.AsNoTracking()
-            .Where(c => c.EntryId == entry.Id).OrderBy(c => c.Field).ToListAsync();
+            .Where(c => c.EntryId == entry.Id).OrderBy(c => c.Field).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(2, stored.Count);
         Assert.Equal("Level", stored[0].Field);
         Assert.Equal("Analyse", stored[0].OldValue);
@@ -203,12 +203,12 @@ public sealed class McpAuditWriterTests
         await writer.WriteAsync(Request(payload: $"{{\"token\":\"{token}\"}}", changes: changes),
             CancellationToken.None);
 
-        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain("fm_mcp_", entry.PayloadJson);
         Assert.DoesNotContain(token, entry.PayloadJson);
         Assert.Contains("[redacted]", entry.PayloadJson);
 
-        var change = await db.McpAuditEntryChanges.AsNoTracking().SingleAsync();
+        var change = await db.McpAuditEntryChanges.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain("abcdef123456==", change.NewValue);
         Assert.Contains("[redacted]", change.NewValue);
     }
@@ -223,7 +223,7 @@ public sealed class McpAuditWriterTests
 
         await writer.WriteAsync(Request(payload: payload), CancellationToken.None);
 
-        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync();
+        var entry = await db.McpAuditEntries.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(entry.PayloadJson);
         using var doc = JsonDocument.Parse(entry.PayloadJson!);
         Assert.True(doc.RootElement.GetProperty("truncated").GetBoolean());
@@ -242,7 +242,7 @@ public sealed class McpAuditWriterTests
 
         await writer.WriteAsync(Request(changes: changes), CancellationToken.None);
 
-        var change = await db.McpAuditEntryChanges.AsNoTracking().SingleAsync();
+        var change = await db.McpAuditEntryChanges.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.StartsWith(new string('v', 100), change.NewValue);
         Assert.EndsWith("…[truncated]", change.NewValue);
         Assert.True(change.NewValue!.Length <= McpAuditWriter.MaxChangeValueChars + 20);
@@ -259,7 +259,7 @@ public sealed class McpAuditWriterTests
             () => writer.WriteAsync(Request(eventType: " "), CancellationToken.None));
         await Assert.ThrowsAsync<ArgumentException>(
             () => writer.WriteAsync(Request(result: ""), CancellationToken.None));
-        Assert.Equal(0, await db.McpAuditEntries.CountAsync());
+        Assert.Equal(0, await db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>StageAsync tracks the bundle without saving; the caller's save commits it.</summary>
@@ -272,16 +272,16 @@ public sealed class McpAuditWriterTests
 
         var staged = await writer.StageAsync(Request(owner: owner), CancellationToken.None);
         Assert.NotNull(staged);
-        Assert.Equal(0, await db.McpAuditEntries.CountAsync()); // nothing saved yet
+        Assert.Equal(0, await db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken)); // nothing saved yet
 
         // Simulate the coupled business effect in the same SaveChanges round.
         var access = new McpAccess(owner, "acc", "HINT01", "pbkdf2|1|AA|AA",
             McpAccessLevel.Analyse, McpApprovalMode.PerAction);
         db.McpAccesses.Add(access);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(1, await db.McpAuditEntries.CountAsync());
-        Assert.Equal(1, await db.McpAccesses.CountAsync());
+        Assert.Equal(1, await db.McpAuditEntries.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal(1, await db.McpAccesses.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Equal(1, staged!.SequenceNo);
     }
 
@@ -302,7 +302,7 @@ public sealed class McpAuditWriterTests
             writer2.WriteAsync(Request(owner: owner), CancellationToken.None));
 
         var seqs = await db1.McpAuditEntries.AsNoTracking()
-            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync();
+            .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(new long[] { 1, 2 }, seqs);
     }
 
@@ -346,7 +346,7 @@ public sealed class McpAuditWriterTests
         }
 
         // Simulated tampering: remove the middle entry of the chain.
-        await db.McpAuditEntries.Where(e => e.SequenceNo == 2).ExecuteDeleteAsync();
+        await db.McpAuditEntries.Where(e => e.SequenceNo == 2).ExecuteDeleteAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         var result = await writer.VerifyAsync(owner, CancellationToken.None);
 
@@ -372,7 +372,7 @@ public sealed class McpAuditWriterTests
 
         // Simulated tampering: alter the payload of entry 2 without fixing the chain.
         await db.McpAuditEntries.Where(e => e.SequenceNo == 2)
-            .ExecuteUpdateAsync(s => s.SetProperty(e => e.PayloadJson, "{\"tampered\":true}"));
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.PayloadJson, "{\"tampered\":true}"), cancellationToken: TestContext.Current.CancellationToken);
 
         var result = await writer.VerifyAsync(owner, CancellationToken.None);
 
@@ -394,7 +394,7 @@ public sealed class McpAuditWriterTests
         }
 
         await db.McpAuditEntries.Where(e => e.SequenceNo == 2)
-            .ExecuteUpdateAsync(s => s.SetProperty(e => e.PrevHash, "deadbeef"));
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.PrevHash, "deadbeef"), cancellationToken: TestContext.Current.CancellationToken);
 
         var result = await writer.VerifyAsync(owner, CancellationToken.None);
 

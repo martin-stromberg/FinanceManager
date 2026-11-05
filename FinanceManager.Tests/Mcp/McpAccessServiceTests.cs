@@ -108,11 +108,11 @@ public sealed class McpAccessServiceTests
         var created = await svc.CreateAsync(owner, NewRequest(), CancellationToken.None);
 
         Assert.StartsWith("fm_mcp_", created.PlainTextToken);
-        var entity = await db.McpAccesses.FirstAsync();
+        var entity = await db.McpAccesses.FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain(created.PlainTextToken, entity.TokenHash);
         Assert.DoesNotContain(created.PlainTextToken, entity.AccessKeyHint);
         Assert.Equal(McpAccessStatus.Active, entity.Status);
-        Assert.Empty(await db.McpAccesses.Where(a => a.OwnerUserId != owner).ToListAsync());
+        Assert.Empty(await db.McpAccesses.Where(a => a.OwnerUserId != owner).ToListAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>Test case.</summary>
@@ -156,14 +156,14 @@ public sealed class McpAccessServiceTests
         var (svc, db, _) = Create();
         var owner = Guid.NewGuid();
         var created = await svc.CreateAsync(owner, NewRequest(), CancellationToken.None);
-        var oldHash = (await db.McpAccesses.FirstAsync()).TokenHash;
+        var oldHash = (await db.McpAccesses.FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).TokenHash;
 
         var rotated = await svc.RotateTokenAsync(owner, created.Access.Id, CancellationToken.None);
         Assert.NotNull(rotated);
         Assert.StartsWith("fm_mcp_", rotated!.PlainTextToken);
         Assert.NotEqual(created.PlainTextToken, rotated.PlainTextToken);
 
-        var entity = await db.McpAccesses.AsNoTracking().FirstAsync();
+        var entity = await db.McpAccesses.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEqual(oldHash, entity.TokenHash);
     }
 
@@ -176,7 +176,7 @@ public sealed class McpAccessServiceTests
         var created = await svc.CreateAsync(owner, NewRequest(), CancellationToken.None);
 
         Assert.True(await svc.RevokeAsync(owner, created.Access.Id, "lost", CancellationToken.None));
-        var entity = await db.McpAccesses.AsNoTracking().FirstAsync();
+        var entity = await db.McpAccesses.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(McpAccessStatus.Revoked, entity.Status);
         Assert.NotNull(entity.RevokedUtc);
 
@@ -194,10 +194,10 @@ public sealed class McpAccessServiceTests
         var created = await svc.CreateAsync(owner, NewRequest(), CancellationToken.None);
 
         Assert.True(await svc.DeactivateAsync(owner, created.Access.Id, CancellationToken.None));
-        Assert.Equal(McpAccessStatus.Deactivated, (await db.McpAccesses.AsNoTracking().FirstAsync()).Status);
+        Assert.Equal(McpAccessStatus.Deactivated, (await db.McpAccesses.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).Status);
 
         Assert.True(await svc.ActivateAsync(owner, created.Access.Id, CancellationToken.None));
-        Assert.Equal(McpAccessStatus.Active, (await db.McpAccesses.AsNoTracking().FirstAsync()).Status);
+        Assert.Equal(McpAccessStatus.Active, (await db.McpAccesses.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).Status);
     }
 
     /// <summary>Test case.</summary>
@@ -235,13 +235,13 @@ public sealed class McpAccessServiceTests
         });
         Assert.True(await svc.SetScopesAsync(owner, created.Access.Id, scopes, CancellationToken.None));
 
-        var persisted = await db.McpAccessScopes.Where(s => s.McpAccessId == created.Access.Id).ToListAsync();
+        var persisted = await db.McpAccessScopes.Where(s => s.McpAccessId == created.Access.Id).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(3, persisted.Count);
 
         var scope = persisted.First(s => s.DataType == McpDataType.Contacts);
         var filters = new McpFilterSetRequest("0", Guid.NewGuid().ToString(), null, null, null);
         Assert.True(await svc.SetFiltersAsync(owner, created.Access.Id, scope.Id, filters, CancellationToken.None));
-        var updated = await db.McpAccessScopes.AsNoTracking().FirstAsync(s => s.Id == scope.Id);
+        var updated = await db.McpAccessScopes.AsNoTracking().FirstAsync(s => s.Id == scope.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("0", updated.AccountTypesCsv);
         Assert.NotNull(updated.ContactCategoryIdsCsv);
     }
@@ -415,7 +415,7 @@ public sealed class McpAccessServiceTests
         {
             ScopeDto(McpDataType.Contacts, McpRightKind.Read, accountTypes: "0")
         }), CancellationToken.None);
-        var scopeId = (await db.McpAccessScopes.SingleAsync()).Id;
+        var scopeId = (await db.McpAccessScopes.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).Id;
         var categoryId = Guid.NewGuid();
 
         Assert.True(await svc.SetFiltersAsync(owner, created.Access.Id, scopeId,
@@ -495,7 +495,7 @@ public sealed class McpAccessServiceTests
             ScopeDto(McpDataType.Contacts, McpRightKind.Read)
         }), CancellationToken.None);
         var accessId = created.Access.Id;
-        var tokenHash = (await db.McpAccesses.AsNoTracking().FirstAsync(a => a.Id == accessId)).TokenHash;
+        var tokenHash = (await db.McpAccesses.AsNoTracking().FirstAsync(a => a.Id == accessId, cancellationToken: TestContext.Current.CancellationToken)).TokenHash;
 
         await svc.SetScopesAsync(owner, accessId, new McpScopeSetRequest(new[]
         {
@@ -506,7 +506,7 @@ public sealed class McpAccessServiceTests
                 (short)McpApprovalMode.PerAction, null, null), CancellationToken.None);
         await svc.RotateTokenAsync(owner, accessId, CancellationToken.None);
 
-        var changes = await db.McpAuditEntryChanges.AsNoTracking().ToListAsync();
+        var changes = await db.McpAuditEntryChanges.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotEmpty(changes);
         Assert.All(changes, c =>
         {
@@ -550,7 +550,7 @@ public sealed class McpAccessServiceTests
 
         Assert.True(await svc.RevokeAsync(owner, accessId, "lost", CancellationToken.None));
 
-        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         var withdrawn = rows.Where(r => r.Id == pending.Id || r.Id == approved.Id).ToList();
         Assert.All(withdrawn, r =>
         {
@@ -561,7 +561,7 @@ public sealed class McpAccessServiceTests
         Assert.Equal(AiActionRequestStatus.Approved, rows.Single(r => r.Id == claimed.Id).Status);
         Assert.Equal(AiActionRequestStatus.Pending, rows.Single(r => r.Id == foreign.Id).Status);
         Assert.Equal(2, await db.McpAuditEntries.AsNoTracking()
-            .CountAsync(e => e.EventType == "ApprovalWithdrawn"));
+            .CountAsync(e => e.EventType == "ApprovalWithdrawn", cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -581,7 +581,7 @@ public sealed class McpAccessServiceTests
 
         Assert.True(await svc.DeactivateAsync(owner, created.Access.Id, CancellationToken.None));
 
-        var row = await db.AiActionRequests.AsNoTracking().SingleAsync(r => r.Id == pending.Id);
+        var row = await db.AiActionRequests.AsNoTracking().SingleAsync(r => r.Id == pending.Id, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Rejected, row.Status);
         Assert.Equal("Zugang deaktiviert", row.DecisionNote);
     }
@@ -631,14 +631,14 @@ public sealed class McpAccessServiceTests
             ScopeDto(McpDataType.Contacts, McpRightKind.Read)
         }), CancellationToken.None));
 
-        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         var withdrawn = rows.Single(r => r.Id == deleteRequest.Id);
         Assert.Equal(AiActionRequestStatus.Rejected, withdrawn.Status);
         Assert.Equal("Recht entfallen", withdrawn.DecisionNote);
         Assert.Null(withdrawn.DecidedByUserId); // system transition
         Assert.Equal(AiActionRequestStatus.Pending, rows.Single(r => r.Id == readRequest.Id).Status);
         Assert.Single(await db.McpAuditEntries.AsNoTracking()
-            .Where(e => e.EventType == "ApprovalWithdrawn").ToListAsync());
+            .Where(e => e.EventType == "ApprovalWithdrawn").ToListAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -674,7 +674,7 @@ public sealed class McpAccessServiceTests
             new McpAccessUpdateRequest("client-a", null, (short)McpAccessLevel.Analyse,
                 (short)McpApprovalMode.PerAction, null, null), CancellationToken.None));
 
-        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync();
+        var rows = await db.AiActionRequests.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Rejected, rows.Single(r => r.Id == deleteRequest.Id).Status);
         Assert.Equal("Recht entfallen", rows.Single(r => r.Id == deleteRequest.Id).DecisionNote);
         Assert.Equal(AiActionRequestStatus.Pending, rows.Single(r => r.Id == readRequest.Id).Status);

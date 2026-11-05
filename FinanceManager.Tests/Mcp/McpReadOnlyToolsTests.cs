@@ -664,7 +664,7 @@ public sealed class StatementImportQueryServiceTests
         db.Accounts.AddRange(ownAccount, foreignAccount);
         db.StatementImports.Add(new StatementImport(ownAccount.Id, ImportFormat.Csv, "own.csv"));
         db.StatementImports.Add(new StatementImport(foreignAccount.Id, ImportFormat.Pdf, "foreign.pdf"));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new StatementImportQueryService(db);
         var list = await svc.ListImportsAsync(owner, null, null, null, 0, 50, CancellationToken.None);
@@ -689,7 +689,7 @@ public sealed class StatementImportQueryServiceTests
         db.StatementImports.AddRange(import, foreignImport);
         db.StatementEntries.Add(new StatementEntry(import.Id, DateTime.UtcNow, -1m, "s", "h1", null, null, "EUR", null, false, false));
         db.StatementEntries.Add(new StatementEntry(foreignImport.Id, DateTime.UtcNow, -2m, "sf", "h2", null, null, "EUR", null, false, false));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var svc = new StatementImportQueryService(db);
         var entries = await svc.ListEntriesAsync(owner, import.Id, 0, 500, CancellationToken.None);

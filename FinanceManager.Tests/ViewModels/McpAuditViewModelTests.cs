@@ -97,7 +97,7 @@ public sealed class McpAuditViewModelTests
         await vm.ToggleDetailsAsync(id);
         Assert.Equal(id, vm.ExpandedId);
         Assert.Same(detail, vm.Detail);
-        Assert.Single(vm.Detail.Changes);
+        Assert.Single(vm.Detail!.Changes);
 
         await vm.ToggleDetailsAsync(id);
         Assert.Null(vm.ExpandedId);

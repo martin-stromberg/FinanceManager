@@ -149,7 +149,7 @@ public sealed class AiActionExecutionEngineTests
         var done = await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
         Assert.Equal(1, done);
-        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync();
+        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Executed, reloaded.Status);
         Assert.NotNull(reloaded.ExecutionResult);
         Assert.Null(reloaded.ClaimToken);
@@ -197,8 +197,8 @@ public sealed class AiActionExecutionEngineTests
         var done = await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
         Assert.Equal(1, done);
-        Assert.Equal(AiActionRequestStatus.Executed, (await f.Db.AiActionRequests.AsNoTracking().FirstAsync()).Status);
-        Assert.Equal(2, (await f.Db.AiActionRequests.AsNoTracking().FirstAsync()).AttemptCount);
+        Assert.Equal(AiActionRequestStatus.Executed, (await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).Status);
+        Assert.Equal(2, (await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).AttemptCount);
     }
 
     /// <summary>ExecuteDue HandlerFailure ShouldMarkFailedWithClassifiedReason.</summary>
@@ -215,7 +215,7 @@ public sealed class AiActionExecutionEngineTests
         var done = await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
         Assert.Equal(1, done);
-        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync();
+        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Failed, reloaded.Status);
         Assert.Equal("Err_AlreadyBooked", reloaded.FailureReason);
         Assert.Contains(f.Writes, w => w.EventType == "ApprovalFailed" && w.Result == "Failed");
@@ -234,7 +234,7 @@ public sealed class AiActionExecutionEngineTests
 
         await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
-        Assert.Equal("Err_Internal", (await f.Db.AiActionRequests.AsNoTracking().FirstAsync()).FailureReason);
+        Assert.Equal("Err_Internal", (await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).FailureReason);
     }
 
     /// <summary>ExecuteDue RevokedAccess ShouldWithdrawRequest.</summary>
@@ -251,7 +251,7 @@ public sealed class AiActionExecutionEngineTests
         var done = await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
         Assert.Equal(1, done);
-        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync();
+        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Rejected, reloaded.Status);
         Assert.Contains(f.Writes, w => w.EventType == "ApprovalWithdrawn");
         Assert.Null(f.SeenMode);
@@ -271,7 +271,7 @@ public sealed class AiActionExecutionEngineTests
 
         await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
-        Assert.Equal("Err_RightsRevoked", (await f.Db.AiActionRequests.AsNoTracking().FirstAsync()).FailureReason);
+        Assert.Equal("Err_RightsRevoked", (await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).FailureReason);
     }
 
     /// <summary>ExecuteDue WriteStop ShouldReleaseClaimAndKeepApproved.</summary>
@@ -287,7 +287,7 @@ public sealed class AiActionExecutionEngineTests
         var done = await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
         Assert.Equal(0, done);
-        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync();
+        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Approved, reloaded.Status);
         Assert.Null(reloaded.ClaimToken);
         Assert.Null(f.SeenMode);
@@ -312,7 +312,7 @@ public sealed class AiActionExecutionEngineTests
 
         var expired = await f.Engine.ExpireOverdueRequestsAsync(DateTime.UtcNow, 10, CancellationToken.None);
         Assert.Equal(1, expired);
-        Assert.Equal(AiActionRequestStatus.Expired, (await f.Db.AiActionRequests.AsNoTracking().FirstAsync()).Status);
+        Assert.Equal(AiActionRequestStatus.Expired, (await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).Status);
     }
 
     /// <summary>ExpireOverdue ShouldExpirePendingAndApproved KeepTerminalAndClaimed.</summary>
@@ -336,7 +336,7 @@ public sealed class AiActionExecutionEngineTests
         var expired = await f.Engine.ExpireOverdueRequestsAsync(DateTime.UtcNow, 10, CancellationToken.None);
 
         Assert.Equal(2, expired);
-        var all = await f.Db.AiActionRequests.AsNoTracking().ToListAsync();
+        var all = await f.Db.AiActionRequests.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Expired, all.Single(x => x.Id == p.Id).Status);
         Assert.Equal(AiActionRequestStatus.Expired, all.Single(x => x.Id == a.Id).Status);
         Assert.Equal(AiActionRequestStatus.Approved, all.Single(x => x.Id == claimed.Id).Status);
