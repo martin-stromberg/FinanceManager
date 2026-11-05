@@ -55,7 +55,7 @@ public sealed class McpMasterDataWriteToolsTests
         var evaluator = new Mock<IMcpScopeEvaluator>();
         evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(scopes.Length == 0
-                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Buchhalter)
+                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Buchhalter, isAdmin: true)
                     .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList()
                 : scopes.ToList());
         return new McpRecordScopeFilter(evaluator.Object);

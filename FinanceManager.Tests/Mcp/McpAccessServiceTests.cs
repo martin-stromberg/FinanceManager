@@ -5,6 +5,7 @@ using FinanceManager.Domain.Mcp;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Mcp;
 using FinanceManager.Shared.Dtos.Mcp;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -89,6 +90,16 @@ public sealed class McpAccessServiceTests
         string? savingsPlanCategories = null, string? attachmentCategories = null)
         => new(Guid.Empty, (short)dataType, (short)right,
             accountTypes, contactCategories, securityCategories, savingsPlanCategories, attachmentCategories);
+
+    /// <summary>Grants <paramref name="userId"/> membership of the <c>Admin</c> identity role —
+    /// the same source the fm_admin_* tool gate resolves via <c>IUserAdminService</c>.</summary>
+    private static async Task SeedAdminRoleAsync(AppDbContext db, Guid userId)
+    {
+        var role = new IdentityRole<Guid> { Name = "Admin", NormalizedName = "ADMIN" };
+        db.Roles.Add(role);
+        db.UserRoles.Add(new IdentityUserRole<Guid> { UserId = userId, RoleId = role.Id });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
 
     private static async Task<McpAuditEntry> LatestAccessEventAsync(AppDbContext db, string eventType)
         => await db.McpAuditEntries.AsNoTracking()
@@ -685,11 +696,124 @@ public sealed class McpAccessServiceTests
     public async Task GetLevels_ContainsAllLevels_WithDefaultProfiles()
     {
         var (svc, _, _) = Create();
-        var levels = await svc.GetLevelsAsync(CancellationToken.None);
+        var levels = await svc.GetLevelsAsync(Guid.NewGuid(), CancellationToken.None);
         Assert.Equal(5, levels.Count);
         Assert.All(levels.Where(l => l.Level != (short)McpAccessLevel.Individuell),
             l => Assert.NotEmpty(l.DefaultScopes));
         Assert.Empty(levels.Single(l => l.Level == (short)McpAccessLevel.Individuell).DefaultScopes);
+    }
+
+    /// <summary>
+    /// F-0501 hard gate: an explicitly set <c>Administration</c> tuple is rejected for a
+    /// non-admin owner — filtered silently only inside the derived standard profiles.
+    /// </summary>
+    [Fact]
+    public async Task SetScopes_AdministrationTuple_NonAdmin_ThrowsAdminRequired()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(
+            () => svc.SetScopesAsync(owner, created.Access.Id, new McpScopeSetRequest(new[]
+            {
+                ScopeDto(McpDataType.Administration, McpRightKind.Read)
+            }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_AdminRequired", ex.Code);
+    }
+
+    /// <summary>Admin owners may persist Administration tuples on the individual level.</summary>
+    [Fact]
+    public async Task SetScopes_AdministrationTuple_AdminOwner_Applies()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        await SeedAdminRoleAsync(db, owner);
+        var created = await svc.CreateAsync(owner, NewRequest((short)McpAccessLevel.Individuell), CancellationToken.None);
+
+        Assert.True(await svc.SetScopesAsync(owner, created.Access.Id, new McpScopeSetRequest(new[]
+        {
+            ScopeDto(McpDataType.Administration, McpRightKind.Read),
+            ScopeDto(McpDataType.Administration, McpRightKind.Modify)
+        }), CancellationToken.None));
+
+        var persisted = await db.McpAccessScopes.AsNoTracking()
+            .Where(s => s.McpAccessId == created.Access.Id && s.DataType == McpDataType.Administration)
+            .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(2, persisted.Count);
+    }
+
+    /// <summary>The same hard gate applies to a seeded profile on create.</summary>
+    [Fact]
+    public async Task Create_IndividualAdministrationScope_NonAdmin_ThrowsAdminRequired()
+    {
+        var (svc, _, _) = Create();
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(
+            () => svc.CreateAsync(Guid.NewGuid(), NewRequest((short)McpAccessLevel.Individuell, new[]
+            {
+                ScopeDto(McpDataType.Administration, McpRightKind.Read)
+            }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_AdminRequired", ex.Code);
+    }
+
+    /// <summary>
+    /// A standard-level access carries no persisted rows — the derived effective profile
+    /// drops the Administration tuples for non-admin owners and keeps them for admins.
+    /// </summary>
+    [Fact]
+    public async Task Create_StandardLevel_EffectiveProfile_FiltersAdministrationByOwnerRole()
+    {
+        var (svc, db, _) = Create();
+        var nonAdmin = Guid.NewGuid();
+        var admin = Guid.NewGuid();
+        await SeedAdminRoleAsync(db, admin);
+
+        var nonAdminCreated = await svc.CreateAsync(nonAdmin, NewRequest(), CancellationToken.None);
+        Assert.DoesNotContain(nonAdminCreated.Access.EffectiveScopes,
+            s => s.DataType == (short)McpDataType.Administration);
+
+        var adminCreated = await svc.CreateAsync(admin, NewRequest(), CancellationToken.None);
+        Assert.Contains(adminCreated.Access.EffectiveScopes,
+            s => s.DataType == (short)McpDataType.Administration && s.Right == (short)McpRightKind.Read);
+    }
+
+    /// <summary>
+    /// The options payload drives the rights matrix rows — the Administration row exists
+    /// for admin owners only (UI: the line is hidden for everyone else).
+    /// </summary>
+    [Fact]
+    public async Task GetOptions_AdministrationRow_OnlyForAdminOwners()
+    {
+        var (svc, db, _) = Create();
+        var nonAdmin = Guid.NewGuid();
+        var admin = Guid.NewGuid();
+        await SeedAdminRoleAsync(db, admin);
+
+        var nonAdminOptions = await svc.GetOptionsAsync(nonAdmin, false, CancellationToken.None);
+        Assert.DoesNotContain(nonAdminOptions.DataTypes,
+            t => t.DataType == (short)McpDataType.Administration);
+        Assert.Equal(Enum.GetValues<McpDataType>().Length - 1, nonAdminOptions.DataTypes.Count);
+
+        var adminOptions = await svc.GetOptionsAsync(admin, false, CancellationToken.None);
+        Assert.Contains(adminOptions.DataTypes,
+            t => t.DataType == (short)McpDataType.Administration);
+    }
+
+    /// <summary>The advertised level profiles omit Administration tuples for non-admins.</summary>
+    [Fact]
+    public async Task GetLevels_NonAdmin_OmitsAdministrationTuples()
+    {
+        var (svc, db, _) = Create();
+        var admin = Guid.NewGuid();
+        await SeedAdminRoleAsync(db, admin);
+
+        var nonAdminLevels = await svc.GetLevelsAsync(Guid.NewGuid(), CancellationToken.None);
+        Assert.All(nonAdminLevels,
+            l => Assert.DoesNotContain(l.DefaultScopes, s => s.DataType == (short)McpDataType.Administration));
+
+        var adminLevels = await svc.GetLevelsAsync(admin, CancellationToken.None);
+        Assert.Contains(adminLevels.Single(l => l.Level == (short)McpAccessLevel.Analyse).DefaultScopes,
+            s => s.DataType == (short)McpDataType.Administration);
     }
 
     /// <summary>Minimal options monitor stub.</summary>

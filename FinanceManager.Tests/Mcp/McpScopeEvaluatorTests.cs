@@ -6,6 +6,7 @@ using FinanceManager.Domain.Mcp;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Mcp;
 using FinanceManager.Shared.Dtos.Accounts;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -29,20 +30,78 @@ public sealed class McpScopeEvaluatorTests
     private static McpAccess NewAccess(Guid owner, McpAccessLevel level = McpAccessLevel.Analyse)
         => new(owner, "acc", "HINT01", "pbkdf2|1|AA|AA", level, McpApprovalMode.PerAction);
 
+    /// <summary>Grants <paramref name="userId"/> membership of the <c>Admin</c> identity role —
+    /// the same source the fm_admin_* tool gate resolves via <c>IUserAdminService</c>.</summary>
+    private static async Task SeedAdminRoleAsync(AppDbContext db, Guid userId)
+    {
+        var role = new IdentityRole<Guid> { Name = "Admin", NormalizedName = "ADMIN" };
+        db.Roles.Add(role);
+        db.UserRoles.Add(new IdentityUserRole<Guid> { UserId = userId, RoleId = role.Id });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
     /// <summary>Test case.</summary>
     [Fact]
-    public async Task AnalyseProfile_GrantsReadOnEveryDataType()
+    public async Task AnalyseProfile_NonAdmin_GrantsReadOnEveryDataTypeExceptAdministration()
     {
         var db = NewDb();
         var eval = new McpScopeEvaluator(db);
         var access = NewAccess(Guid.NewGuid(), McpAccessLevel.Analyse);
 
         var scopes = await eval.GetEffectiveScopesAsync(access, CancellationToken.None);
-        Assert.Equal(Enum.GetValues<McpDataType>().Length, scopes.Count);
+        Assert.Equal(Enum.GetValues<McpDataType>().Length - 1, scopes.Count);
         Assert.All(scopes, s => Assert.Equal(McpRightKind.Read, s.Right));
+        Assert.DoesNotContain(scopes, s => s.DataType == McpDataType.Administration);
 
         Assert.True(await eval.IsAllowedAsync(access, McpDataType.Postings, McpRightKind.Read, CancellationToken.None));
         Assert.False(await eval.IsAllowedAsync(access, McpDataType.Postings, McpRightKind.Delete, CancellationToken.None));
+        Assert.False(await eval.IsAllowedAsync(access, McpDataType.Administration, McpRightKind.Read, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The Administration installation scope belongs to the standard profile of admin owners
+    /// only — resolved against the live role membership of the owner.
+    /// </summary>
+    [Fact]
+    public async Task AnalyseProfile_AdminOwner_IncludesAdministrationScope()
+    {
+        var db = NewDb();
+        var eval = new McpScopeEvaluator(db);
+        var owner = Guid.NewGuid();
+        await SeedAdminRoleAsync(db, owner);
+        var access = NewAccess(owner, McpAccessLevel.Analyse);
+
+        var scopes = await eval.GetEffectiveScopesAsync(access, CancellationToken.None);
+        Assert.Equal(Enum.GetValues<McpDataType>().Length, scopes.Count);
+        Assert.Contains(scopes, s => s.DataType == McpDataType.Administration && s.Right == McpRightKind.Read);
+        Assert.True(await eval.IsAllowedAsync(access, McpDataType.Administration, McpRightKind.Read, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// A persisted Administration row of an individual profile must not keep granting once
+    /// the owner lost the role — the effective derivation drops it without a migration.
+    /// </summary>
+    [Fact]
+    public async Task IndividualProfile_NonAdmin_DropsPersistedAdministrationRows()
+    {
+        var db = NewDb();
+        var eval = new McpScopeEvaluator(db);
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpAccessLevel.Individuell);
+        db.McpAccesses.Add(access);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.McpAccessScopes.Add(new McpAccessScope(access.Id, owner, McpDataType.Administration, McpRightKind.Read));
+        db.McpAccessScopes.Add(new McpAccessScope(access.Id, owner, McpDataType.Contacts, McpRightKind.Read));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var scopes = await eval.GetEffectiveScopesAsync(access, CancellationToken.None);
+        Assert.DoesNotContain(scopes, s => s.DataType == McpDataType.Administration);
+        Assert.True(await eval.IsAllowedAsync(access, McpDataType.Contacts, McpRightKind.Read, CancellationToken.None));
+        Assert.False(await eval.IsAllowedAsync(access, McpDataType.Administration, McpRightKind.Read, CancellationToken.None));
+
+        // Admin owner: the same persisted row grants.
+        await SeedAdminRoleAsync(db, owner);
+        Assert.True(await eval.IsAllowedAsync(access, McpDataType.Administration, McpRightKind.Read, CancellationToken.None));
     }
 
     /// <summary>Test case.</summary>

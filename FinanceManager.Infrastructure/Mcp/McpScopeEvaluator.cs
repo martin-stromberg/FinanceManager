@@ -34,16 +34,27 @@ public sealed class McpScopeEvaluator : IMcpScopeEvaluator
         if (access.Level != McpAccessLevel.Individuell)
         {
             // Standard levels derive their profile from the server-side level matrix at
-            // runtime; the returned rows are detached descriptors (filter-less).
-            return McpLevelProfiles.GetDefaultScopes(access.Level)
+            // runtime; the returned rows are detached descriptors (filter-less). The
+            // Administration tuples resolve against the owner's live role membership —
+            // a demoted owner loses the installation scope without a persisted migration.
+            var isAdmin = await McpAdminRole.IsAdminAsync(_db, access.OwnerUserId, ct);
+            return McpLevelProfiles.GetDefaultScopes(access.Level, isAdmin)
                 .Select(t => new McpAccessScope(access.Id, access.OwnerUserId, t.DataType, t.Right))
                 .ToList();
         }
 
-        return await _db.McpAccessScopes.AsNoTracking()
+        var persisted = await _db.McpAccessScopes.AsNoTracking()
             .Where(s => s.McpAccessId == access.Id)
             .OrderBy(s => s.DataType).ThenBy(s => s.Right)
             .ToListAsync(ct);
+        // Persisted Administration rows may survive a demotion (granted while the owner
+        // held the role) — they must not keep granting: the effective profile drops them.
+        if (persisted.Any(s => s.DataType == McpDataType.Administration)
+            && !await McpAdminRole.IsAdminAsync(_db, access.OwnerUserId, ct))
+        {
+            persisted = persisted.Where(s => s.DataType != McpDataType.Administration).ToList();
+        }
+        return persisted;
     }
 
     /// <inheritdoc />

@@ -3137,6 +3137,7 @@
   <data name="Err_Mcp_Disabled" xml:space="preserve"><value>The AI integration (MCP) is disabled on the server.</value></data>
   <data name="Err_Mcp_NameInUse" xml:space="preserve"><value>An access with this name already exists.</value></data>
   <data name="Err_Mcp_InvalidScope" xml:space="preserve"><value>The given rights profile is invalid.</value></data>
+  <data name="Err_Mcp_AdminRequired" xml:space="preserve"><value>The Administration scope is restricted to owners with administrative privileges.</value></data>
   <data name="Err_Mcp_InvalidState" xml:space="preserve"><value>The operation is not possible in the current state of the access.</value></data>
   <data name="Err_Mcp_Unauthorized" xml:space="preserve"><value>Access was denied.</value></data>
   <data name="Err_Mcp_UnknownTool" xml:space="preserve"><value>The requested tool is unknown.</value></data>

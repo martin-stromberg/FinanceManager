@@ -445,9 +445,18 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
             return Access!.EffectiveScopes.Any(s =>
                 s.Right is (short)McpRightKind.Book or (short)McpRightKind.Delete);
         }
-        return McpLevelProfiles.GetDefaultScopes((McpAccessLevel)level)
+        return McpLevelProfiles.GetDefaultScopes((McpAccessLevel)level, IsCurrentUserAdmin)
             .Any(t => t.Right is McpRightKind.Book or McpRightKind.Delete);
     }
+
+    /// <summary>
+    /// Whether the signed-in user carries the admin role — resolved from the same
+    /// <see cref="FinanceManager.Application.ICurrentUserService"/> the other MCP views use
+    /// (absent service ⇒ restrictive <see langword="false"/>).
+    /// </summary>
+    private bool IsCurrentUserAdmin
+        => ServiceProvider.GetService(typeof(FinanceManager.Application.ICurrentUserService))
+            is FinanceManager.Application.ICurrentUserService cu && cu.IsAdmin;
 
     /// <summary>
     /// Rotates the token after a high-severity confirmation; the new plaintext token is shown

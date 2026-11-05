@@ -3136,6 +3136,7 @@
   <data name="Err_Mcp_WriteAccessDisabled" xml:space="preserve"><value>Write access is disabled for MCP.</value></data>
   <data name="Err_Mcp_RateLimited" xml:space="preserve"><value>Too many requests - please try again later.</value></data>
   <data name="Err_Mcp_ScopeDenied" xml:space="preserve"><value>The right was denied by the rights profile.</value></data>
+  <data name="Err_Mcp_AdminRequired" xml:space="preserve"><value>The Administration scope is restricted to owners with administrative privileges.</value></data>
   <data name="Panel_Label_McpAccess" xml:space="preserve"><value>AI access</value></data>
   <data name="General_Title_McpAudit" xml:space="preserve"><value>Usage log</value></data>
   <data name="McpAudit_Title" xml:space="preserve"><value>Usage log</value></data>

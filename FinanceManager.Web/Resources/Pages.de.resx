@@ -3137,6 +3137,7 @@
   <data name="Err_Mcp_Disabled" xml:space="preserve"><value>Die KI-Integration (MCP) ist serverseitig deaktiviert.</value></data>
   <data name="Err_Mcp_NameInUse" xml:space="preserve"><value>Ein Zugang mit diesem Namen existiert bereits.</value></data>
   <data name="Err_Mcp_InvalidScope" xml:space="preserve"><value>Das angegebene Rechteprofil ist ungültig.</value></data>
+  <data name="Err_Mcp_AdminRequired" xml:space="preserve"><value>Der Administrations-Scope ist Besitzern mit Administratorrechten vorbehalten.</value></data>
   <data name="Err_Mcp_InvalidState" xml:space="preserve"><value>Der Vorgang ist im aktuellen Status des Zugangs nicht möglich.</value></data>
   <data name="Err_Mcp_Unauthorized" xml:space="preserve"><value>Der Zugriff wurde verweigert.</value></data>
   <data name="Err_Mcp_UnknownTool" xml:space="preserve"><value>Das angeforderte Werkzeug ist unbekannt.</value></data>

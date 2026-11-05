@@ -103,8 +103,14 @@ public static class McpLevelProfiles
     /// Derives the default scope profile (without filters) of an access level.
     /// </summary>
     /// <param name="level">The access level.</param>
+    /// <param name="isAdmin">
+    /// Whether the access owner carries the administrative role. The
+    /// <see cref="McpDataType.Administration"/> installation scope is granted to admins only —
+    /// for a non-admin owner the tuples are removed from the profile so the standard level
+    /// does not advertise a scope the admin gate of the fm_admin_* tools would deny anyway.
+    /// </param>
     /// <returns>The effective scope tuples of the level; empty for unknown levels.</returns>
-    public static IReadOnlyList<McpScopeTuple> GetDefaultScopes(McpAccessLevel level)
+    public static IReadOnlyList<McpScopeTuple> GetDefaultScopes(McpAccessLevel level, bool isAdmin)
     {
         var scopes = new List<McpScopeTuple>();
         switch (level)
@@ -138,6 +144,10 @@ public static class McpLevelProfiles
             case McpAccessLevel.Individuell:
             default:
                 break;
+        }
+        if (!isAdmin)
+        {
+            scopes.RemoveAll(t => t.DataType == McpDataType.Administration);
         }
         return scopes;
     }

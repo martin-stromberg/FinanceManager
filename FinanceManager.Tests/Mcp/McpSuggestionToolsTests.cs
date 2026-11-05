@@ -48,7 +48,7 @@ public sealed class McpSuggestionToolsTests
         var evaluator = new Mock<IMcpScopeEvaluator>();
         evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(scopes.Length == 0
-                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Assistent)
+                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Assistent, isAdmin: true)
                     .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList()
                 : scopes.ToList());
         return new McpRecordScopeFilter(evaluator.Object);
@@ -65,7 +65,7 @@ public sealed class McpSuggestionToolsTests
                 It.IsAny<McpRightKind>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Buchhalter)
+            .ReturnsAsync(McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Buchhalter, isAdmin: true)
                 .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList());
         return evaluator.Object;
     }

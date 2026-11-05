@@ -246,7 +246,7 @@ public sealed class McpAccessesController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<McpAccessLevelDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLevelsAsync(CancellationToken ct)
     {
-        try { return Ok(await _svc.GetLevelsAsync(ct)); }
+        try { return Ok(await _svc.GetLevelsAsync(_current.UserId, ct)); }
         catch (Exception ex) { return Error(ex); }
     }
 

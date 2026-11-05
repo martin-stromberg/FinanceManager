@@ -98,6 +98,7 @@ public sealed class McpAccessService : IMcpAccessService
             throw new DomainValidationException("Err_Mcp_InvalidScope", "Persisted scopes are only allowed for the individual access level.");
         }
         ValidateScopes(scopeDtos);
+        await RejectAdministrationScopeForNonAdminAsync(ownerUserId, scopeDtos, ct);
 
         var name = (request.Name ?? string.Empty).Trim();
         if (await _db.McpAccesses.AnyAsync(a => a.OwnerUserId == ownerUserId && a.Name == name, ct))
@@ -182,6 +183,7 @@ public sealed class McpAccessService : IMcpAccessService
         }
         var scopeDtos = request.Scopes ?? Array.Empty<McpAccessScopeDto>();
         ValidateScopes(scopeDtos);
+        await RejectAdministrationScopeForNonAdminAsync(ownerUserId, scopeDtos, ct);
         // Explicitly track the new rows: entities added only via a navigation collection are
         // treated as existing (pre-assigned keys) and would fail on update.
         var scopesBefore = SnapshotScopes(access.Scopes);
@@ -310,23 +312,28 @@ public sealed class McpAccessService : IMcpAccessService
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<McpAccessLevelDto>> GetLevelsAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<McpAccessLevelDto>> GetLevelsAsync(Guid ownerUserId, CancellationToken ct)
     {
+        var isAdmin = await McpAdminRole.IsAdminAsync(_db, ownerUserId, ct);
         var levels = Enum.GetValues<McpAccessLevel>()
             .Select(level => new McpAccessLevelDto(
                 (short)level,
                 level.ToString(),
-                McpLevelProfiles.GetDefaultScopes(level)
+                McpLevelProfiles.GetDefaultScopes(level, isAdmin)
                     .Select(t => new McpAccessScopeDto(Guid.Empty, (short)t.DataType, (short)t.Right, null, null, null, null, null))
                     .ToList()))
             .ToList();
-        return Task.FromResult<IReadOnlyList<McpAccessLevelDto>>(levels);
+        return levels;
     }
 
     /// <inheritdoc />
     public async Task<McpAccessOptionsDto> GetOptionsAsync(Guid ownerUserId, bool isTlsRequest, CancellationToken ct)
     {
+        // The Administration installation scope is offered to admins only — the matrix
+        // editor renders exactly these rows, so the row disappears for non-admin owners.
+        var isAdmin = await McpAdminRole.IsAdminAsync(_db, ownerUserId, ct);
         var dataTypes = Enum.GetValues<McpDataType>()
+            .Where(t => isAdmin || t != McpDataType.Administration)
             .Select(t => new McpDataTypeOptionDto(
                 (short)t,
                 t.ToString(),
@@ -560,6 +567,24 @@ public sealed class McpAccessService : IMcpAccessService
                 throw new DomainValidationException("Err_Mcp_InvalidScope",
                     $"The scope ({dataType}, {right}) requires a Read scope on {dataType}.");
             }
+        }
+    }
+
+    /// <summary>
+    /// Rejects an explicit <see cref="McpDataType.Administration"/> scope grant when the
+    /// access owner does not carry the administrative role. Unlike the derived standard
+    /// profiles (where the installation scope is filtered silently), an explicitly set
+    /// tuple is rejected hard — the caller consciously asked for it and must see the
+    /// denial (<c>Err_Mcp_AdminRequired</c>, the same code the fm_admin_* tool gate uses).
+    /// </summary>
+    private async Task RejectAdministrationScopeForNonAdminAsync(
+        Guid ownerUserId, IReadOnlyList<McpAccessScopeDto> scopes, CancellationToken ct)
+    {
+        if (scopes.Any(s => s.DataType == (short)McpDataType.Administration)
+            && !await McpAdminRole.IsAdminAsync(_db, ownerUserId, ct))
+        {
+            throw new DomainValidationException("Err_Mcp_AdminRequired",
+                "The Administration scope is restricted to owners with administrative privileges.");
         }
     }
 

@@ -117,15 +117,19 @@ public interface IMcpAccessService
     Task<bool> RevokeAsync(Guid ownerUserId, Guid id, string? reason, CancellationToken ct);
 
     /// <summary>
-    /// Lists the server-side level definitions including their default scope profiles.
+    /// Lists the server-side level definitions including their default scope profiles as the
+    /// given owner would effectively receive them — the <c>Administration</c> installation
+    /// scope appears in the profiles of admin owners only.
     /// </summary>
+    /// <param name="ownerUserId">Owner user id (drives the admin-role evaluation).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The level definitions.</returns>
-    Task<IReadOnlyList<McpAccessLevelDto>> GetLevelsAsync(CancellationToken ct);
+    Task<IReadOnlyList<McpAccessLevelDto>> GetLevelsAsync(Guid ownerUserId, CancellationToken ct);
 
     /// <summary>
-    /// Builds the UI metadata: scope matrix, right kinds, filter dimensions, the owner's
-    /// category lists and the TLS flag.
+    /// Builds the UI metadata: scope matrix (without the <c>Administration</c> row for
+    /// non-admin owners), right kinds, filter dimensions, the owner's category lists and
+    /// the TLS flag.
     /// </summary>
     /// <param name="ownerUserId">Owner user id.</param>
     /// <param name="isTlsRequest">Whether the calling request used TLS.</param>
