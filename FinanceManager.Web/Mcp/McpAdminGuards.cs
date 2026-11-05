@@ -27,7 +27,20 @@ internal static class McpAdminGuards
     /// <exception cref="McpToolException">The owner is not an administrator.</exception>
     public static async Task RequireAdminAsync(IUserAdminService users, Guid ownerUserId, CancellationToken ct)
     {
-        var user = await users.GetAsync(ownerUserId, ct);
+        // IUserAdminService.GetAsync gates the CALLER via EnsureAdmin — in the MCP path the
+        // caller is the PAT owner, so a non-admin owner throws UnauthorizedAccessException
+        // before the IsAdmin check below. That denial is correct; it must surface as the
+        // defined Err_Mcp_AdminRequired, not leak as a protocol internal error.
+        UserAdminDto? user;
+        try
+        {
+            user = await users.GetAsync(ownerUserId, ct);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw new McpToolException("Err_Mcp_AdminRequired",
+                "This tool is restricted to owners with administrative privileges.");
+        }
         if (user is null || !user.IsAdmin)
         {
             throw new McpToolException("Err_Mcp_AdminRequired",
