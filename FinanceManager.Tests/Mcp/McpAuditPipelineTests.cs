@@ -73,7 +73,7 @@ public sealed class McpAuditPipelineTests
             gate.Object, Mock.Of<IMcpApprovalService>(),
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
-            opts, NullLogger<McpToolDispatcher>.Instance);
+            new TestMcpSettingsService(), NullLogger<McpToolDispatcher>.Instance);
     }
 
     private static IServiceProvider ServicesWith(IMcpToolHandler handler)
@@ -199,7 +199,7 @@ public sealed class McpAuditPipelineTests
             gate.Object, Mock.Of<IMcpApprovalService>(),
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
-            opts, NullLogger<McpToolDispatcher>.Instance);
+            new TestMcpSettingsService(), NullLogger<McpToolDispatcher>.Instance);
 
         var result = await dispatcher.DispatchAsync(
             NewAccessContext(access), "fm_test_read", JsonDocument.Parse("{}").RootElement,

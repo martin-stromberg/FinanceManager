@@ -2,7 +2,6 @@ using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Shared.Dtos.Mcp;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace FinanceManager.Infrastructure.Mcp;
 
@@ -19,15 +18,15 @@ public sealed class McpSecurityOverviewService : IMcpSecurityOverviewService
     private const int MaxRecentEvents = 50;
 
     private readonly AppDbContext _db;
-    private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly IMcpSettingsService _settings;
 
     /// <summary>Creates the service.</summary>
     /// <param name="db">Shared scoped database context.</param>
-    /// <param name="options">MCP options (global switch state).</param>
-    public McpSecurityOverviewService(AppDbContext db, IOptionsMonitor<McpOptions> options)
+    /// <param name="settings">Database-stored MCP switches (global switch state).</param>
+    public McpSecurityOverviewService(AppDbContext db, IMcpSettingsService settings)
     {
         _db = db;
-        _options = options;
+        _settings = settings;
     }
 
     /// <inheritdoc />
@@ -76,7 +75,7 @@ public sealed class McpSecurityOverviewService : IMcpSecurityOverviewService
                 e.Utc, e.EventType, e.ResultStatus, e.OwnerUserId, e.McpAccessName, e.SourceIp))
             .ToListAsync(ct);
 
-        var options = _options.CurrentValue;
+        var switches = await _settings.GetAsync(ct);
         var aggregates = new McpSecurityAggregatesDto(
             TotalAccesses: accesses.Count,
             ActiveAccesses: accesses.Count(a =>
@@ -94,6 +93,6 @@ public sealed class McpSecurityOverviewService : IMcpSecurityOverviewService
             .ToList();
 
         return new McpSecurityOverviewDto(
-            options.Enabled, options.WriteAccess.Enabled, aggregates, rows, securityEvents);
+            switches.Enabled, switches.WriteAccessEnabled, aggregates, rows, securityEvents);
     }
 }

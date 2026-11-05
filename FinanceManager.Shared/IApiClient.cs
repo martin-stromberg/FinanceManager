@@ -1618,6 +1618,11 @@ public interface IApiClient
 
     // MCP Accesses
 
+    /// <summary>Returns the lightweight MCP feature status (whether the endpoint is enabled).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The status DTO.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpStatusDto> Mcp_GetStatusAsync(CancellationToken ct = default);
+
     /// <summary>Lists the MCP accesses of the current user.</summary>
     /// <param name="search">Optional name search text.</param>
     /// <param name="skip">Items to skip.</param>
@@ -1801,6 +1806,16 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The security overview DTO or null when the caller is not an admin.</returns>
     Task<FinanceManager.Shared.Dtos.Mcp.McpSecurityOverviewDto?> Admin_McpSecurityOverviewAsync(int recent = 25, CancellationToken ct = default);
+
+    /// <summary>Loads the database-stored, admin-editable MCP settings (Admin role only).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The settings DTO or null when the caller is not an admin.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpSettingsDto?> Admin_McpGetSettingsAsync(CancellationToken ct = default);
+
+    /// <summary>Persists the database-stored MCP settings (Admin role only).</summary>
+    /// <param name="request">The update request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task Admin_McpUpdateSettingsAsync(FinanceManager.Shared.Dtos.Mcp.McpSettingsUpdateRequest request, CancellationToken ct = default);
 
     /// <summary>Loads the agent-monitoring view of one own access (queue depth, pending age, 24h outcome counters).</summary>
     /// <param name="accessId">Access identifier.</param>

@@ -376,6 +376,16 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         }
     }
 
+    /// <summary>Database-stored, admin-editable MCP switches (singleton row).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpSettings> McpSettings
+    {
+        get
+        {
+            return Set<McpSettings>();
+        }
+    }
+
     /// <summary>
     /// Configure the EF Core model: indexes, constraints and relationships.
     /// </summary>

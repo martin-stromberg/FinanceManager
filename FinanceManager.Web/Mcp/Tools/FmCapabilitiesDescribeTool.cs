@@ -1,6 +1,5 @@
 using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Mcp;
-using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace FinanceManager.Web.Mcp.Tools;
@@ -42,14 +41,14 @@ public sealed class FmCapabilitiesDescribeHandler : IMcpToolHandler
 {
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IMcpToolRegistry _registry;
-    private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly IMcpSettingsService _settings;
 
     /// <summary>Creates the handler.</summary>
-    public FmCapabilitiesDescribeHandler(IMcpScopeEvaluator scopeEvaluator, IMcpToolRegistry registry, IOptionsMonitor<McpOptions> options)
+    public FmCapabilitiesDescribeHandler(IMcpScopeEvaluator scopeEvaluator, IMcpToolRegistry registry, IMcpSettingsService settings)
     {
         _scopeEvaluator = scopeEvaluator;
         _registry = registry;
-        _options = options;
+        _settings = settings;
     }
 
     /// <inheritdoc />
@@ -96,7 +95,7 @@ public sealed class FmCapabilitiesDescribeHandler : IMcpToolHandler
                 }
             }).ToList(),
             catalogVersion = _registry.CatalogVersion,
-            writeAccessEnabled = _options.CurrentValue.WriteAccess.Enabled
+            writeAccessEnabled = await _settings.IsWriteAccessEnabledAsync(ct)
         };
     }
 }

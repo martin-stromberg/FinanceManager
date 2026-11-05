@@ -8,6 +8,18 @@ public partial class ApiClient
     #region MCP Accesses
 
     /// <summary>
+    /// Returns the lightweight MCP feature status (whether the endpoint is enabled).
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The status DTO.</returns>
+    public async Task<McpStatusDto> Mcp_GetStatusAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync("/api/mcp-accesses/status", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return (await resp.Content.ReadFromJsonAsync<McpStatusDto>(cancellationToken: ct))!;
+    }
+
+    /// <summary>
     /// Lists the MCP accesses of the current user.
     /// </summary>
     /// <param name="search">Optional name search text.</param>

@@ -19,7 +19,7 @@ public sealed class AiActionExecutorService : BackgroundService
 
     /// <summary>Creates the runner.</summary>
     /// <param name="scopeFactory">Scope factory — a scope per pass.</param>
-    /// <param name="options">MCP options (poll interval, kill-switch).</param>
+    /// <param name="options">MCP options (poll interval).</param>
     /// <param name="logger">Logger.</param>
     public AiActionExecutorService(
         IServiceScopeFactory scopeFactory,
@@ -39,9 +39,10 @@ public sealed class AiActionExecutorService : BackgroundService
             var interval = Math.Max(1, _options.CurrentValue.Approval.ExecutorPollSeconds);
             try
             {
-                if (_options.CurrentValue.Enabled)
+                using var scope = _scopeFactory.CreateScope();
+                var settings = scope.ServiceProvider.GetRequiredService<IMcpSettingsService>();
+                if (await settings.IsEnabledAsync(stoppingToken))
                 {
-                    using var scope = _scopeFactory.CreateScope();
                     var engine = scope.ServiceProvider.GetRequiredService<IAiActionExecutionEngine>();
                     await engine.ExecuteDueRequestsAsync(
                         _options.CurrentValue.Approval.MaxExecutionBatchSize, stoppingToken);

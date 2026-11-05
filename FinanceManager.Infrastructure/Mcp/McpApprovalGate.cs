@@ -12,7 +12,8 @@ namespace FinanceManager.Infrastructure.Mcp;
 /// (<see cref="McpApprovalMode.PerAction"/> → request, <see cref="McpApprovalMode.PreApproved"/>
 /// → direct); <c>Genehmigungspflichtig</c> always requires a request (the request itself is
 /// then created pending or already-approved depending on the mode). On top of the class
-/// decision the gate applies the global write-stop lid (<c>Mcp:WriteAccess:Enabled</c>) and
+/// decision the gate applies the global write-stop lid (database-stored
+/// <see cref="McpSettings.WriteAccessEnabled"/>) and
 /// the per-access pending-request limit (<c>Mcp:Approval:MaxPendingPerAccess</c>,
 /// sicherheitskonzept.md §7.2 — protection against approval spam).
 /// </summary>
@@ -24,14 +25,17 @@ public sealed class McpApprovalGate : IMcpApprovalGate
 {
     private readonly AppDbContext _db;
     private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly IMcpSettingsService _settings;
 
     /// <summary>Creates the gate.</summary>
     /// <param name="db">Shared scoped database context.</param>
-    /// <param name="options">MCP options (write-stop lid, approval limits).</param>
-    public McpApprovalGate(AppDbContext db, IOptionsMonitor<McpOptions> options)
+    /// <param name="options">MCP options (approval limits).</param>
+    /// <param name="settings">Database-stored MCP switches (write-stop lid).</param>
+    public McpApprovalGate(AppDbContext db, IOptionsMonitor<McpOptions> options, IMcpSettingsService settings)
     {
         _db = db;
         _options = options;
+        _settings = settings;
     }
 
     /// <inheritdoc />
@@ -50,7 +54,7 @@ public sealed class McpApprovalGate : IMcpApprovalGate
 
         // The write-stop lid caps every write class (stufe-3-Deckel). The dispatcher checks
         // it earlier already; the gate repeats it so the decision is correct standalone.
-        if (!_options.CurrentValue.WriteAccess.Enabled)
+        if (!await _settings.IsWriteAccessEnabledAsync(ct))
         {
             return McpApprovalDecision.Deny("Err_Mcp_WriteAccessDisabled",
                 "Write access via MCP is currently disabled.");

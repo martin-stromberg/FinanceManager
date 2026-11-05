@@ -170,6 +170,9 @@ public static class ServiceCollectionExtensions
         // MCP foundation: token primitives, access administration, scope evaluation and the
         // persistent, hash-chained audit writer (F-0301/F-0302; NullMcpAuditWriter remains
         // for tests/reference only).
+        // Database-stored MCP switches (kill switch + write-stop lid): admin-editable
+        // singleton row; the read path falls back to the safe defaults without writing.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpSettingsService, FinanceManager.Infrastructure.Mcp.McpSettingsService>();
         services.AddScoped<FinanceManager.Application.Mcp.IMcpTokenHasher, FinanceManager.Infrastructure.Mcp.McpTokenHasher>();
         services.AddScoped<FinanceManager.Application.Mcp.IMcpTokenIssuer, FinanceManager.Infrastructure.Mcp.McpTokenIssuer>();
         services.AddScoped<FinanceManager.Application.Mcp.IMcpAccessService, FinanceManager.Infrastructure.Mcp.McpAccessService>();

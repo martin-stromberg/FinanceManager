@@ -26,6 +26,7 @@ public sealed class McpAccessesController : ControllerBase
     private const string Origin = "API_McpAccess";
 
     private readonly IMcpAccessService _svc;
+    private readonly IMcpSettingsService _settings;
     private readonly ICurrentUserService _current;
     private readonly ILogger<McpAccessesController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
@@ -33,11 +34,13 @@ public sealed class McpAccessesController : ControllerBase
     /// <summary>Creates the controller.</summary>
     public McpAccessesController(
         IMcpAccessService svc,
+        IMcpSettingsService settings,
         ICurrentUserService current,
         ILogger<McpAccessesController> logger,
         IStringLocalizer<Controller> localizer)
     {
         _svc = svc;
+        _settings = settings;
         _current = current;
         _logger = logger;
         _localizer = localizer;
@@ -55,6 +58,22 @@ public sealed class McpAccessesController : ControllerBase
     {
         _logger.LogError(ex, "MCP access operation failed");
         return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+    }
+
+    /// <summary>
+    /// Lightweight feature status of the MCP integration: lets any authenticated client hide
+    /// or annotate the MCP UI surface (navigation, lists, cards) without loading data.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpGet("status")]
+    [ProducesResponseType(typeof(McpStatusDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStatusAsync(CancellationToken ct)
+    {
+        try
+        {
+            return Ok(new McpStatusDto(await _settings.IsEnabledAsync(ct)));
+        }
+        catch (Exception ex) { return Error(ex); }
     }
 
     /// <summary>Lists own accesses (search + paging).</summary>

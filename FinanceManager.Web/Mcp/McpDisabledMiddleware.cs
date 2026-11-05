@@ -1,31 +1,31 @@
 using FinanceManager.Application.Mcp;
-using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace FinanceManager.Web.Mcp;
 
 /// <summary>
-/// Kill-switch middleware of the <c>/mcp</c> path (F-0107): when <c>Mcp:Enabled=false</c>
-/// every MCP request is rejected with 503 before any authentication work (pipeline position
-/// after the rate limiter, before authentication). Bound via <see cref="IOptionsMonitor{T}"/>
-/// so a configuration reload takes effect without a deployment.
+/// Kill-switch middleware of the <c>/mcp</c> path (F-0107): when the database-stored
+/// <c>McpSettings.Enabled</c> switch is off every MCP request is rejected with 503 before
+/// any authentication work (pipeline position after the rate limiter, before
+/// authentication). The flag is read per request from the scoped
+/// <see cref="IMcpSettingsService"/> so an admin change takes effect immediately.
 /// </summary>
 public sealed class McpDisabledMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IOptionsMonitor<McpOptions> _options;
 
     /// <summary>Creates the middleware.</summary>
-    public McpDisabledMiddleware(RequestDelegate next, IOptionsMonitor<McpOptions> options)
+    public McpDisabledMiddleware(RequestDelegate next)
     {
         _next = next;
-        _options = options;
     }
 
     /// <summary>Rejects the request with 503 when MCP is disabled.</summary>
-    public async Task InvokeAsync(HttpContext context)
+    /// <param name="context">The http context.</param>
+    /// <param name="settings">Scoped MCP settings service (request scope).</param>
+    public async Task InvokeAsync(HttpContext context, IMcpSettingsService settings)
     {
-        if (!_options.CurrentValue.Enabled)
+        if (!await settings.IsEnabledAsync(context.RequestAborted))
         {
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             context.Response.ContentType = "application/json";

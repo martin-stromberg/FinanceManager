@@ -79,7 +79,7 @@ public sealed class McpApprovalDispatcherTests
             gate, approvals,
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
-            opts, NullLogger<McpToolDispatcher>.Instance);
+            new TestMcpSettingsService(), NullLogger<McpToolDispatcher>.Instance);
     }
 
     /// <summary>Scope evaluator stub granting every declared tuple.</summary>
@@ -344,7 +344,7 @@ public sealed class McpApprovalDispatcherTests
         var perAction = NewAccess(owner, McpApprovalMode.PerAction);
         var preApproved = NewAccess(owner, McpApprovalMode.PreApproved);
         var descriptor = NewDescriptor("fm_test_write", McpToolSecurityClass.Schreibvorbereitend);
-        var gate = new McpApprovalGate(db, new TestOptionsMonitor(new McpOptions()));
+        var gate = new McpApprovalGate(db, new TestOptionsMonitor(new McpOptions()), new TestMcpSettingsService());
 
         var handler = new Mock<IMcpToolHandler>();
         handler.SetupGet(h => h.ToolName).Returns("fm_test_write");

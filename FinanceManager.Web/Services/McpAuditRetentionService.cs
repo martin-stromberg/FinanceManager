@@ -18,7 +18,7 @@ public sealed class McpAuditRetentionService : BackgroundService
 
     /// <summary>Creates the runner.</summary>
     /// <param name="scopeFactory">Scope factory — a scope per pass.</param>
-    /// <param name="options">MCP options (retention interval, kill-switch).</param>
+    /// <param name="options">MCP options (retention interval).</param>
     /// <param name="logger">Logger.</param>
     public McpAuditRetentionService(
         IServiceScopeFactory scopeFactory,
@@ -38,9 +38,10 @@ public sealed class McpAuditRetentionService : BackgroundService
             var interval = Math.Max(1, _options.CurrentValue.Retention.IntervalMinutes);
             try
             {
-                if (_options.CurrentValue.Enabled)
+                using var scope = _scopeFactory.CreateScope();
+                var settings = scope.ServiceProvider.GetRequiredService<IMcpSettingsService>();
+                if (await settings.IsEnabledAsync(stoppingToken))
                 {
-                    using var scope = _scopeFactory.CreateScope();
                     var retention = scope.ServiceProvider.GetRequiredService<IMcpAuditRetention>();
                     var result = await retention.RunAsync(DateTime.UtcNow, stoppingToken);
                     if (result.EntriesRemoved > 0 || result.RequestsRemoved > 0)

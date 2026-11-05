@@ -18,7 +18,7 @@ public sealed class AiActionExpiryService : BackgroundService
 
     /// <summary>Creates the runner.</summary>
     /// <param name="scopeFactory">Scope factory — a scope per pass.</param>
-    /// <param name="options">MCP options (sweep interval, kill-switch).</param>
+    /// <param name="options">MCP options (sweep interval).</param>
     /// <param name="logger">Logger.</param>
     public AiActionExpiryService(
         IServiceScopeFactory scopeFactory,
@@ -38,9 +38,10 @@ public sealed class AiActionExpiryService : BackgroundService
             var interval = Math.Max(1, _options.CurrentValue.Approval.ExpiryCheckIntervalMinutes);
             try
             {
-                if (_options.CurrentValue.Enabled)
+                using var scope = _scopeFactory.CreateScope();
+                var settings = scope.ServiceProvider.GetRequiredService<IMcpSettingsService>();
+                if (await settings.IsEnabledAsync(stoppingToken))
                 {
-                    using var scope = _scopeFactory.CreateScope();
                     var engine = scope.ServiceProvider.GetRequiredService<IAiActionExecutionEngine>();
                     await engine.ExpireOverdueRequestsAsync(DateTime.UtcNow, 200, stoppingToken);
                 }

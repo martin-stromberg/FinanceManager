@@ -168,7 +168,7 @@ public sealed class McpSuggestionToolsTests
             gate.Object, Mock.Of<IMcpApprovalService>(),
             new McpToolRateLimiter(opts),
             new McpAnomalyTracker(opts, Mock.Of<IServiceProvider>(), NullLogger<McpAnomalyTracker>.Instance),
-            opts, NullLogger<McpToolDispatcher>.Instance);
+            new TestMcpSettingsService(), NullLogger<McpToolDispatcher>.Instance);
 
         var result = await dispatcher.DispatchAsync(ctx.Object, descriptor.Name,
             Args($"{{\"draftId\":\"{Guid.NewGuid()}\"}}"), Mock.Of<IServiceProvider>(), null, CancellationToken.None);

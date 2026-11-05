@@ -2979,7 +2979,7 @@
   <data name="McpList_Th_Status" xml:space="preserve"><value>Status</value></data>
   <data name="McpList_Th_Expires" xml:space="preserve"><value>Expires</value></data>
   <data name="McpList_Th_LastUsed" xml:space="preserve"><value>Last used</value></data>
-  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>The AI integration (MCP) is disabled on the server. Accesses can be managed once 'Mcp:Enabled' is turned on.</value></data>
+  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>The AI integration (MCP) is currently not activated. An administrator can enable it in the MCP settings under 'AI security'.</value></data>
   <data name="Mcp_Value_NeverUsed" xml:space="preserve"><value>never</value></data>
   <data name="Mcp_Level_Analyse" xml:space="preserve"><value>Analysis</value></data>
   <data name="Mcp_Level_Assistent" xml:space="preserve"><value>Assistant</value></data>

@@ -26,10 +26,9 @@ public sealed class McpApprovalGateTests
         var db = services.BuildServiceProvider().GetRequiredService<AppDbContext>();
         var options = new TestOptionsMonitor(new McpOptions
         {
-            WriteAccess = new McpWriteAccessOptions { Enabled = writeEnabled },
             Approval = new McpApprovalOptions { MaxPendingPerAccess = maxPending }
         });
-        return (new McpApprovalGate(db, options), db);
+        return (new McpApprovalGate(db, options, new TestMcpSettingsService(writeAccessEnabled: writeEnabled)), db);
     }
 
     private static McpAccess Access(McpApprovalMode mode)

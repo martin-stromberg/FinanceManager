@@ -48,6 +48,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
     private readonly INotificationWriter _notifications;
     private readonly IServiceProvider _services;
     private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly IMcpSettingsService _settings;
     private readonly IMcpRequestStatusPublisher? _statusPublisher;
     private readonly ILogger<AiActionExecutionEngine> _logger;
 
@@ -58,7 +59,8 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
     /// <param name="registry">Compiled tool registry (descriptor lookup for scope re-checks).</param>
     /// <param name="notifications">Owner notification writer.</param>
     /// <param name="services">Scope service provider for handler resolution.</param>
-    /// <param name="options">MCP options (write-stop lid, executor timeouts/batch).</param>
+    /// <param name="options">MCP options (executor timeouts/batch).</param>
+    /// <param name="settings">Database-stored MCP switches (write-stop lid).</param>
     /// <param name="logger">Logger.</param>
     /// <param name="statusPublisher">Optional SSE status publisher (F-1101) — after-commit,
     /// best effort; <see langword="null"/> disables the push channel (polling fallback).</param>
@@ -70,6 +72,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         INotificationWriter notifications,
         IServiceProvider services,
         IOptionsMonitor<McpOptions> options,
+        IMcpSettingsService settings,
         ILogger<AiActionExecutionEngine> logger,
         IMcpRequestStatusPublisher? statusPublisher = null)
     {
@@ -80,6 +83,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         _notifications = notifications;
         _services = services;
         _options = options;
+        _settings = settings;
         _logger = logger;
         _statusPublisher = statusPublisher;
     }
@@ -244,7 +248,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
 
         // 3) Write-stop lid — approved requests stay in the queue while it is active
         //    (they are released, not executed; the expiry deadline still applies).
-        if (!_options.CurrentValue.WriteAccess.Enabled
+        if (!await _settings.IsWriteAccessEnabledAsync(ct)
             && descriptor.SecurityClass is McpToolSecurityClass.Schreibvorbereitend or McpToolSecurityClass.Genehmigungspflichtig)
         {
             request.ReleaseClaim();

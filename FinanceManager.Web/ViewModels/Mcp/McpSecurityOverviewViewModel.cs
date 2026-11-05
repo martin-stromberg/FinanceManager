@@ -2,6 +2,7 @@ using FinanceManager.Domain.Attachments;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.Mcp;
 using FinanceManager.Web.Components.Shared;
+using FinanceManager.Web.Services;
 using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.Localization;
 
@@ -33,6 +34,21 @@ public sealed class McpSecurityOverviewViewModel : BaseCardViewModel<(string Key
     /// <summary>Whether the caller lacks the Admin role (endpoint answered 403).</summary>
     public bool NotAuthorized { get; private set; }
 
+    /// <summary>
+    /// Pending edit value of the MCP kill switch (<see cref="McpSettingsDto.Enabled"/>),
+    /// initialized from the persisted settings.
+    /// </summary>
+    public bool SettingsEnabled { get; private set; }
+
+    /// <summary>
+    /// Pending edit value of the write-stop lid (<see cref="McpSettingsDto.WriteAccessEnabled"/>),
+    /// initialized from the persisted settings.
+    /// </summary>
+    public bool SettingsWriteAccess { get; private set; }
+
+    /// <summary>Whether a settings save is currently running.</summary>
+    public bool SettingsBusy { get; private set; }
+
     /// <inheritdoc />
     public override async Task InitializeAsync(Guid id)
     {
@@ -47,12 +63,67 @@ public sealed class McpSecurityOverviewViewModel : BaseCardViewModel<(string Key
         {
             Overview = await _api.Admin_McpSecurityOverviewAsync(50, CancellationToken.None);
             NotAuthorized = Overview is null;
+            var settings = await _api.Admin_McpGetSettingsAsync(CancellationToken.None);
+            if (settings is not null)
+            {
+                SettingsEnabled = settings.Enabled;
+                SettingsWriteAccess = settings.WriteAccessEnabled;
+            }
+            else if (Overview is not null)
+            {
+                // Fallback: the overview carries the same switches (metadata only).
+                SettingsEnabled = Overview.McpEnabled;
+                SettingsWriteAccess = Overview.WriteAccessEnabled;
+            }
         }
         catch (Exception ex)
         {
             SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
         }
         finally { Loading = false; RaiseStateChanged(); }
+    }
+
+    /// <summary>Updates a pending switch value (does not persist).</summary>
+    public void SetSettingsEnabled(bool enabled) { SettingsEnabled = enabled; RaiseStateChanged(); }
+
+    /// <summary>Updates a pending switch value (does not persist).</summary>
+    public void SetSettingsWriteAccess(bool enabled) { SettingsWriteAccess = enabled; RaiseStateChanged(); }
+
+    /// <summary>
+    /// Persists the pending MCP settings (<c>PUT /api/mcp-audit/settings</c>). Enabling the
+    /// write-stop lid runs through a warning confirmation — it unlocks every write-capable
+    /// tool class for all accesses.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the settings were persisted.</returns>
+    public async Task<bool> SaveSettingsAsync(CancellationToken ct = default)
+    {
+        if (SettingsBusy) return false;
+        var enablingWriteAccess = SettingsWriteAccess
+            && !(Overview?.WriteAccessEnabled ?? false);
+        if (enablingWriteAccess)
+        {
+            var confirmed = await ConfirmationService.ConfirmAsync(new(
+                TitleResourceKey: "Confirmation_McpWriteAccess_Title",
+                MessageResourceKey: "Confirmation_McpWriteAccess_Message",
+                Severity: ConfirmationSeverity.Warning), ct);
+            if (!confirmed) return false;
+        }
+
+        SettingsBusy = true; SetError(null, null); RaiseStateChanged();
+        try
+        {
+            await _api.Admin_McpUpdateSettingsAsync(
+                new McpSettingsUpdateRequest(SettingsEnabled, SettingsWriteAccess), ct);
+            await LoadAsync(Guid.Empty);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
+            return false;
+        }
+        finally { SettingsBusy = false; RaiseStateChanged(); }
     }
 
     /// <summary>Requests the security-overview panel rendered below the card area.</summary>

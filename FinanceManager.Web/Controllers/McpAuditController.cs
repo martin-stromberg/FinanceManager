@@ -35,6 +35,7 @@ public sealed class McpAuditController : ControllerBase
 
     private readonly IMcpAuditQueryService _svc;
     private readonly IMcpSecurityOverviewService _securityOverview;
+    private readonly IMcpSettingsService _settings;
     private readonly ICurrentUserService _current;
     private readonly ILogger<McpAuditController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
@@ -43,12 +44,14 @@ public sealed class McpAuditController : ControllerBase
     public McpAuditController(
         IMcpAuditQueryService svc,
         IMcpSecurityOverviewService securityOverview,
+        IMcpSettingsService settings,
         ICurrentUserService current,
         ILogger<McpAuditController> logger,
         IStringLocalizer<Controller> localizer)
     {
         _svc = svc;
         _securityOverview = securityOverview;
+        _settings = settings;
         _current = current;
         _logger = logger;
         _localizer = localizer;
@@ -216,6 +219,46 @@ public sealed class McpAuditController : ControllerBase
         try
         {
             return Ok(await _securityOverview.GetOverviewAsync(recent, ct));
+        }
+        catch (Exception ex) { return Error(ex); }
+    }
+
+    /// <summary>
+    /// Returns the database-stored, administrator-editable MCP settings (kill switch and
+    /// write-stop lid) shown on the security page (<c>/card/mcp-security</c>). Restricted to
+    /// the <c>Admin</c> role.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpGet("settings")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    [ProducesResponseType(typeof(McpSettingsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetSettingsAsync(CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _settings.GetAsync(ct));
+        }
+        catch (Exception ex) { return Error(ex); }
+    }
+
+    /// <summary>
+    /// Persists the database-stored MCP settings. Both switches are effective immediately:
+    /// <c>Enabled</c> gates the whole <c>/mcp</c> endpoint, <c>WriteAccessEnabled</c> the
+    /// write-capable tool classes. Restricted to the <c>Admin</c> role.
+    /// </summary>
+    /// <param name="request">Request payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    [HttpPut("settings")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateSettingsAsync([FromBody] McpSettingsUpdateRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await _settings.UpdateAsync(request, ct);
+            return NoContent();
         }
         catch (Exception ex) { return Error(ex); }
     }

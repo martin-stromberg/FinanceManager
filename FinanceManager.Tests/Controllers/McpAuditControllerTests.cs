@@ -37,6 +37,7 @@ public sealed class McpAuditControllerTests
 
         var controller = new McpAuditController(
             svc.Object, Mock.Of<FinanceManager.Application.Mcp.IMcpSecurityOverviewService>(),
+            Mock.Of<FinanceManager.Application.Mcp.IMcpSettingsService>(),
             user, NullLogger<McpAuditController>.Instance, localizer.Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }

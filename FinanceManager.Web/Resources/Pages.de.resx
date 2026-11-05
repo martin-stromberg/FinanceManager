@@ -2979,7 +2979,7 @@
   <data name="McpList_Th_Status" xml:space="preserve"><value>Status</value></data>
   <data name="McpList_Th_Expires" xml:space="preserve"><value>Läuft ab</value></data>
   <data name="McpList_Th_LastUsed" xml:space="preserve"><value>Zuletzt genutzt</value></data>
-  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>Die KI-Integration (MCP) ist serverseitig deaktiviert. Zugänge können erst verwaltet werden, wenn 'Mcp:Enabled' aktiviert ist.</value></data>
+  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>Die KI-Integration (MCP) ist derzeit nicht aktiviert. Ein Administrator kann sie unter 'KI-Sicherheit' in den MCP-Einstellungen aktivieren.</value></data>
   <data name="Mcp_Value_NeverUsed" xml:space="preserve"><value>nie</value></data>
   <data name="Mcp_Level_Analyse" xml:space="preserve"><value>Analyse</value></data>
   <data name="Mcp_Level_Assistent" xml:space="preserve"><value>Assistent</value></data>
@@ -3278,7 +3278,14 @@
   <data name="Confirmation_McpBatchApprove_Message" xml:space="preserve"><value>Alle markierten Anfragen werden freigegeben – jede wird einzeln in die Ausführungswarteschlange gestellt. Fortfahren?</value></data>
   <data name="McpSecurity_NotAuthorized" xml:space="preserve"><value>Diese Übersicht ist nur für Administratoren verfügbar.</value></data>
   <data name="McpSecurity_Section_Switches" xml:space="preserve"><value>Globale Schalter</value></data>
-  <data name="McpSecurity_Switches_Hint" xml:space="preserve"><value>Die Schalter sind appsettings-Konfiguration (Betreiber-Ebene) und können hier nur angezeigt, nicht geändert werden.</value></data>
+  <data name="McpSecurity_Switches_Hint" xml:space="preserve"><value>Die Schalter sind datenbankgespeichert und wirken sofort — der Schreibzugriff ist ein separater Opt-in-Schalter.</value></data>
+  <data name="McpSecurity_Section_Settings" xml:space="preserve"><value>MCP-Einstellungen</value></data>
+  <data name="McpSecurity_Settings_Enabled" xml:space="preserve"><value>MCP aktivieren</value></data>
+  <data name="McpSecurity_Settings_Enabled_Hint" xml:space="preserve"><value>Aktiviert den /mcp-Endpunkt. Ist der Schalter aus, werden alle MCP-Aufrufe mit 503 abgelehnt.</value></data>
+  <data name="McpSecurity_Settings_WriteAccess" xml:space="preserve"><value>Schreibzugriff erlauben</value></data>
+  <data name="McpSecurity_Settings_WriteAccess_Hint" xml:space="preserve"><value>Erlaubt schreibende und genehmigungspflichtige Werkzeuge. Lesende und vorschlagende Werkzeuge bleiben davon unberührt.</value></data>
+  <data name="Confirmation_McpWriteAccess_Title" xml:space="preserve"><value>Schreibzugriff aktivieren</value></data>
+  <data name="Confirmation_McpWriteAccess_Message" xml:space="preserve"><value>Der Schreibzugriff schaltet alle schreibvorbereitenden und genehmigungspflichtigen Werkzeuge für sämtliche KI-Zugänge frei. Fortfahren?</value></data>
   <data name="McpSecurity_Section_Aggregates" xml:space="preserve"><value>Aggregate (24 h)</value></data>
   <data name="McpSecurity_Section_Accesses" xml:space="preserve"><value>Zugänge (alle Benutzer, nur Metadaten)</value></data>
   <data name="McpSecurity_Accesses_Empty" xml:space="preserve"><value>Keine Zugänge konfiguriert.</value></data>

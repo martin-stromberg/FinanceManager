@@ -100,13 +100,11 @@ public sealed class McpToolRegistryTests
         evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<McpAccessScope>());
         var registry = new McpToolRegistry(new IMcpToolDescriptor[] { new FmCapabilitiesDescribeDescriptor() });
-        var options = new Mock<IOptionsMonitor<McpOptions>>();
-        options.SetupGet(o => o.CurrentValue).Returns(new McpOptions());
         var accessContext = new Mock<IMcpAccessContext>();
         accessContext.SetupGet(c => c.Access).Returns(access);
         accessContext.SetupGet(c => c.OwnerUserId).Returns(owner);
 
-        var handler = new FmCapabilitiesDescribeHandler(evaluator.Object, registry, options.Object);
+        var handler = new FmCapabilitiesDescribeHandler(evaluator.Object, registry, new TestMcpSettingsService());
         var result = await handler.InvokeAsync(
             JsonDocument.Parse("{}").RootElement,
             new McpToolCallContext(accessContext.Object, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null),

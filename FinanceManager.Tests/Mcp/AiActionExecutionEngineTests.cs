@@ -74,7 +74,6 @@ public sealed class AiActionExecutionEngineTests
 
             var options = new TestOptionsMonitor(new McpOptions
             {
-                WriteAccess = new McpWriteAccessOptions { Enabled = writeEnabled },
                 Approval = new McpApprovalOptions
                 {
                     ClaimStaleMinutes = claimStaleMinutes,
@@ -86,7 +85,8 @@ public sealed class AiActionExecutionEngineTests
                 .Callback<McpRequestStatusEvent, CancellationToken>((e, _) => Published.Add(e))
                 .Returns(Task.CompletedTask);
             Engine = new AiActionExecutionEngine(Db, Scopes.Object, audit.Object, Registry.Object,
-                Notifications.Object, sp, options, NullLogger<AiActionExecutionEngine>.Instance,
+                Notifications.Object, sp, options, new TestMcpSettingsService(writeAccessEnabled: writeEnabled),
+                NullLogger<AiActionExecutionEngine>.Instance,
                 withPublisher ? Publisher.Object : null);
         }
 

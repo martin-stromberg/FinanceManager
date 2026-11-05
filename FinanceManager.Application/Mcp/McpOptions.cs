@@ -4,22 +4,16 @@ namespace FinanceManager.Application.Mcp;
 /// Configuration options of the MCP integration bound from the <c>Mcp</c> configuration
 /// section (sicherheitskonzept.md §6, architekturkonzept.md §9.1). All switches follow the
 /// feature-flag convention of the application and are bound reloadable via
-/// <see cref="Microsoft.Extensions.Options.IOptionsMonitor{TOptions}"/>.
+/// <see cref="Microsoft.Extensions.Options.IOptionsMonitor{TOptions}"/>. The two
+/// administrator-editable switches — the global kill switch and the write-stop lid — are
+/// deliberately not part of this options object: they live in the database-stored
+/// <see cref="FinanceManager.Domain.Mcp.McpSettings"/> singleton row and are read through
+/// <see cref="IMcpSettingsService"/> so the administrator can change them at runtime.
 /// </summary>
 public sealed class McpOptions
 {
     /// <summary>Configuration section name.</summary>
     public const string SectionName = "Mcp";
-
-    /// <summary>
-    /// Global kill switch. When <see langword="false"/> the <c>/mcp</c> endpoint rejects all
-    /// requests with HTTP 503 before any authentication work. Default is <see langword="false"/>
-    /// (opt-in: MCP ships disabled).
-    /// </summary>
-    public bool Enabled { get; set; }
-
-    /// <summary>Write-stop switch options.</summary>
-    public McpWriteAccessOptions WriteAccess { get; set; } = new();
 
     /// <summary>Token hash options.</summary>
     public McpTokenHashOptions TokenHash { get; set; } = new();
@@ -38,17 +32,6 @@ public sealed class McpOptions
 
     /// <summary>Audit/request retention options (F-1104, audit-konzept.md §5).</summary>
     public McpRetentionOptions Retention { get; set; } = new();
-}
-
-/// <summary>
-/// Write-stop switch: when disabled all tools of the classes
-/// <see cref="FinanceManager.Domain.Mcp.McpToolSecurityClass.Schreibvorbereitend"/> and
-/// <see cref="FinanceManager.Domain.Mcp.McpToolSecurityClass.Genehmigungspflichtig"/> are rejected.
-/// </summary>
-public sealed class McpWriteAccessOptions
-{
-    /// <summary>Whether write access via MCP is allowed. Default <see langword="true"/>.</summary>
-    public bool Enabled { get; set; } = true;
 }
 
 /// <summary>

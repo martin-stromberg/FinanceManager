@@ -900,6 +900,29 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("McpAuditEntryChanges");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("WriteAccessEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("McpSettings");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Notifications.Notification", b =>
                 {
                     b.Property<Guid>("Id")

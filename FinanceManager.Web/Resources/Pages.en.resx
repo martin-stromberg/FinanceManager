@@ -2979,7 +2979,7 @@
   <data name="McpList_Th_Status" xml:space="preserve"><value>Status</value></data>
   <data name="McpList_Th_Expires" xml:space="preserve"><value>Expires</value></data>
   <data name="McpList_Th_LastUsed" xml:space="preserve"><value>Last used</value></data>
-  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>The AI integration (MCP) is disabled on the server. Accesses can be managed once 'Mcp:Enabled' is turned on.</value></data>
+  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>The AI integration (MCP) is currently not activated. An administrator can enable it in the MCP settings under 'AI security'.</value></data>
   <data name="Mcp_Value_NeverUsed" xml:space="preserve"><value>never</value></data>
   <data name="Mcp_Level_Analyse" xml:space="preserve"><value>Analysis</value></data>
   <data name="Mcp_Level_Assistent" xml:space="preserve"><value>Assistant</value></data>
@@ -3278,7 +3278,14 @@
   <data name="Confirmation_McpBatchApprove_Message" xml:space="preserve"><value>All selected requests will be approved — each enters the execution queue individually. Continue?</value></data>
   <data name="McpSecurity_NotAuthorized" xml:space="preserve"><value>This overview is available to administrators only.</value></data>
   <data name="McpSecurity_Section_Switches" xml:space="preserve"><value>Global switches</value></data>
-  <data name="McpSecurity_Switches_Hint" xml:space="preserve"><value>The switches are appsettings configuration (operator level) and are shown read-only here.</value></data>
+  <data name="McpSecurity_Switches_Hint" xml:space="preserve"><value>The switches are stored in the database and take effect immediately — write access is a separate opt-in switch.</value></data>
+  <data name="McpSecurity_Section_Settings" xml:space="preserve"><value>MCP settings</value></data>
+  <data name="McpSecurity_Settings_Enabled" xml:space="preserve"><value>Enable MCP</value></data>
+  <data name="McpSecurity_Settings_Enabled_Hint" xml:space="preserve"><value>Enables the /mcp endpoint. While off, every MCP request is rejected with 503.</value></data>
+  <data name="McpSecurity_Settings_WriteAccess" xml:space="preserve"><value>Allow write access</value></data>
+  <data name="McpSecurity_Settings_WriteAccess_Hint" xml:space="preserve"><value>Allows write-preparing and approval-requiring tools. Read and suggest tools are unaffected.</value></data>
+  <data name="Confirmation_McpWriteAccess_Title" xml:space="preserve"><value>Enable write access</value></data>
+  <data name="Confirmation_McpWriteAccess_Message" xml:space="preserve"><value>Write access unlocks all write-preparing and approval-requiring tools for every AI access. Continue?</value></data>
   <data name="McpSecurity_Section_Aggregates" xml:space="preserve"><value>Aggregates (24 h)</value></data>
   <data name="McpSecurity_Section_Accesses" xml:space="preserve"><value>Accesses (all users, metadata only)</value></data>
   <data name="McpSecurity_Accesses_Empty" xml:space="preserve"><value>No accesses configured.</value></data>

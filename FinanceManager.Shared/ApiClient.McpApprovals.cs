@@ -164,5 +164,34 @@ public partial class ApiClient
         return await resp.Content.ReadFromJsonAsync<McpSecurityOverviewDto>(cancellationToken: ct);
     }
 
+    /// <summary>
+    /// Loads the database-stored, admin-editable MCP settings (Admin role only): the kill
+    /// switch and the write-stop lid.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The settings DTO or null when the caller is not an admin.</returns>
+    public async Task<McpSettingsDto?> Admin_McpGetSettingsAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync("/api/mcp-audit/settings", ct);
+        if (resp.StatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized)
+        {
+            return null;
+        }
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<McpSettingsDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Persists the database-stored MCP settings (Admin role only). Both switches are
+    /// effective immediately.
+    /// </summary>
+    /// <param name="request">The update request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task Admin_McpUpdateSettingsAsync(McpSettingsUpdateRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PutAsJsonAsync("/api/mcp-audit/settings", request, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+    }
+
     #endregion MCP Approvals (AiActionRequest)
 }

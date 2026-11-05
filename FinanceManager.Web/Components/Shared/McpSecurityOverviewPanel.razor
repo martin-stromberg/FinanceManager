@@ -14,17 +14,31 @@
         }
         else if (Provider.Overview is { } ov)
         {
-            @* Global switch state (read-only — appsettings owner, ui-konzept.md §5.2) *@
+            @* MCP settings (database-stored, admin-editable; ui-konzept.md §5.2) *@
             <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
-                <h4 style="margin:0 0 .5rem 0;">@L["McpSecurity_Section_Switches"]</h4>
-                <table style="border-collapse:collapse;">
-                    <tbody>
-                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;"><code>Mcp:Enabled</code></td>
-                            <td>@(ov.McpEnabled ? L["McpSecurity_State_On"].Value : L["McpSecurity_State_Off"].Value)</td></tr>
-                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;"><code>Mcp:WriteAccess:Enabled</code></td>
-                            <td>@(ov.WriteAccessEnabled ? L["McpSecurity_State_On"].Value : L["McpSecurity_State_Off"].Value)</td></tr>
-                    </tbody>
-                </table>
+                <h4 style="margin:0 0 .5rem 0;">@L["McpSecurity_Section_Settings"]</h4>
+                <div style="display:flex;flex-direction:column;gap:.5rem;">
+                    <label style="display:flex;gap:.5rem;align-items:flex-start;cursor:pointer;">
+                        <input type="checkbox" checked="@Provider.SettingsEnabled"
+                               @onchange="e => Provider.SetSettingsEnabled(e.Value is true)" />
+                        <span>
+                            @L["McpSecurity_Settings_Enabled"]
+                            <small style="display:block;color:var(--muted);">@L["McpSecurity_Settings_Enabled_Hint"]</small>
+                        </span>
+                    </label>
+                    <label style="display:flex;gap:.5rem;align-items:flex-start;cursor:pointer;">
+                        <input type="checkbox" checked="@Provider.SettingsWriteAccess"
+                               @onchange="e => Provider.SetSettingsWriteAccess(e.Value is true)" />
+                        <span>
+                            @L["McpSecurity_Settings_WriteAccess"]
+                            <small style="display:block;color:var(--muted);">@L["McpSecurity_Settings_WriteAccess_Hint"]</small>
+                        </span>
+                    </label>
+                    <div>
+                        <button type="button" class="btn btn-primary" disabled="@Provider.SettingsBusy"
+                                @onclick="SaveSettingsAsync">@L["Ribbon_Save"]</button>
+                    </div>
+                </div>
                 <div style="font-size:.85rem;color:var(--muted);margin-top:.4rem;">@L["McpSecurity_Switches_Hint"]</div>
             </section>
 
@@ -128,6 +142,9 @@
     }
 
     private void OnChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private Task SaveSettingsAsync()
+        => Provider is null ? Task.CompletedTask : Provider.SaveSettingsAsync();
 
     private string LevelText(short level) => level switch
     {

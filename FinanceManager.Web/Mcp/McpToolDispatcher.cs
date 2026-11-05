@@ -2,7 +2,6 @@ using FinanceManager.Application.Exceptions;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Mcp;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -37,7 +36,7 @@ public sealed class McpToolDispatcher
     private readonly IMcpApprovalService _approvalService;
     private readonly McpToolRateLimiter _rateLimiter;
     private readonly McpAnomalyTracker _anomalyTracker;
-    private readonly IOptionsMonitor<McpOptions> _options;
+    private readonly IMcpSettingsService _settings;
     private readonly ILogger<McpToolDispatcher> _logger;
 
     /// <summary>Creates the dispatcher.</summary>
@@ -49,7 +48,7 @@ public sealed class McpToolDispatcher
         IMcpApprovalService approvalService,
         McpToolRateLimiter rateLimiter,
         McpAnomalyTracker anomalyTracker,
-        IOptionsMonitor<McpOptions> options,
+        IMcpSettingsService settings,
         ILogger<McpToolDispatcher> logger)
     {
         _registry = registry;
@@ -59,7 +58,7 @@ public sealed class McpToolDispatcher
         _approvalService = approvalService;
         _rateLimiter = rateLimiter;
         _anomalyTracker = anomalyTracker;
-        _options = options;
+        _settings = settings;
         _logger = logger;
     }
 
@@ -92,8 +91,8 @@ public sealed class McpToolDispatcher
             return McpDispatchResult.ProtocolError("Err_Mcp_UnknownTool", $"Unknown tool '{toolName}'.");
         }
 
-        // 2) Global write-stop lid (Mcp:WriteAccess:Enabled=false).
-        if (!_options.CurrentValue.WriteAccess.Enabled
+        // 2) Global write-stop lid (database-stored McpSettings.WriteAccessEnabled=false).
+        if (!await _settings.IsWriteAccessEnabledAsync(ct)
             && IsWriteClass(descriptor.SecurityClass))
         {
             await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, arguments, sw, ct);
