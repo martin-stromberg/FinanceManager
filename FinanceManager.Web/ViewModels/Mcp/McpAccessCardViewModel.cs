@@ -381,6 +381,19 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
                 if (!confirmed) return false;
             }
 
+            // Switching a standard level to Individuell keeps the previously effective
+            // rights as the seeded profile — the matrix then starts from the chosen
+            // level's profile instead of an empty set (ui-konzept.md §4.3.2).
+            var switchToIndividual = (McpAccessLevel)level == McpAccessLevel.Individuell
+                && (McpAccessLevel)Access.Level != McpAccessLevel.Individuell;
+            var seed = switchToIndividual
+                ? Access.EffectiveScopes
+                    .Select(s => new McpAccessScopeDto(Guid.Empty, s.DataType, s.Right,
+                        s.AccountTypesCsv, s.ContactCategoryIdsCsv, s.SecurityCategoryIdsCsv,
+                        s.SavingsPlanCategoryIdsCsv, s.AttachmentCategoryIdsCsv))
+                    .ToList()
+                : null;
+
             var request = new McpAccessUpdateRequest(
                 Name: GetPendingText("Mcp_Card_Name", Access.Name),
                 Description: GetPendingText("Mcp_Card_Description", Access.Description),
@@ -394,6 +407,11 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
             {
                 SetError("Err_NotFound", Localizer?["Err_NotFound"].Value ?? "Not found");
                 return false;
+            }
+
+            if (seed is not null)
+            {
+                await _api.Mcp_SetScopesAsync(Access.Id, new McpScopeSetRequest(seed), ct);
             }
 
             ClearPendingChanges();
@@ -421,9 +439,11 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     {
         if ((McpAccessLevel)level == McpAccessLevel.Individuell)
         {
-            return Access!.Level == (short)McpAccessLevel.Individuell
-                && Access.EffectiveScopes.Any(s =>
-                    s.Right is (short)McpRightKind.Book or (short)McpRightKind.Delete);
+            // Individuell keeps the persisted rows — already individual — or, when the same
+            // save switches from a standard level, the seeded profile which equals the
+            // currently effective scopes. Both cases are covered by EffectiveScopes.
+            return Access!.EffectiveScopes.Any(s =>
+                s.Right is (short)McpRightKind.Book or (short)McpRightKind.Delete);
         }
         return McpLevelProfiles.GetDefaultScopes((McpAccessLevel)level)
             .Any(t => t.Right is McpRightKind.Book or McpRightKind.Delete);

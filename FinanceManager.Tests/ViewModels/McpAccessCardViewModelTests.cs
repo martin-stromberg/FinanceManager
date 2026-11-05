@@ -161,4 +161,87 @@ public sealed class McpAccessCardViewModelTests
         api.Verify(x => x.Mcp_UpdateAccessAsync(It.IsAny<Guid>(), It.IsAny<McpAccessUpdateRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    /// <summary>
+    /// Verifies that a level change from a standard level to <see cref="McpAccessLevel.Individuell"/>
+    /// seeds the persisted scope profile with the previously effective tuples — the matrix editor
+    /// must start from the chosen level's rights, not from an empty set.
+    /// </summary>
+    [Fact]
+    public async Task SaveAsync_SwitchToIndividual_SeedsEffectiveScopes()
+    {
+        var id = Guid.NewGuid();
+        var effective = new[]
+        {
+            Scope(McpDataType.Postings, McpRightKind.Read),
+            Scope(McpDataType.Contacts, McpRightKind.Suggest)
+        };
+        var detail = Detail(id, McpAccessLevel.Assistent, McpApprovalMode.PerAction, effective);
+        var (vm, api, confirm) = CreateVm(id, detail);
+        await vm.LoadAsync(id);
+        api.Setup(x => x.Mcp_SetScopesAsync(id, It.IsAny<McpScopeSetRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        SetPending(vm, "Mcp_Card_Level", nameof(McpAccessLevel.Individuell));
+        var ok = await vm.SaveAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(ok);
+        api.Verify(x => x.Mcp_SetScopesAsync(id,
+            It.Is<McpScopeSetRequest>(r =>
+                r.Scopes.Count == 2
+                && r.Scopes.Any(s => s.DataType == (short)McpDataType.Postings && s.Right == (short)McpRightKind.Read)
+                && r.Scopes.Any(s => s.DataType == (short)McpDataType.Contacts && s.Right == (short)McpRightKind.Suggest)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that saving any other level (or an already-individual access) does not trigger
+    /// the seeding call — the profile stays server-owned.
+    /// </summary>
+    [Fact]
+    public async Task SaveAsync_SwitchToStandardLevel_DoesNotSeed()
+    {
+        var id = Guid.NewGuid();
+        var detail = Detail(id, McpAccessLevel.Assistent, McpApprovalMode.PerAction,
+            new[] { Scope(McpDataType.Postings, McpRightKind.Read) });
+        var (vm, api, confirm) = CreateVm(id, detail);
+        await vm.LoadAsync(id);
+
+        SetPending(vm, "Mcp_Card_Level", nameof(McpAccessLevel.Buchhalter));
+        var ok = await vm.SaveAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(ok);
+        api.Verify(x => x.Mcp_SetScopesAsync(It.IsAny<Guid>(), It.IsAny<McpScopeSetRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that switching to <see cref="McpAccessLevel.Individuell"/> plus PreApproved in
+    /// the same save triggers the critical confirmation when the seeded (currently effective)
+    /// profile grants booking — the resulting profile check must cover the switch case.
+    /// </summary>
+    [Fact]
+    public async Task SaveAsync_SwitchToIndividualWithPreApproved_RequestsCriticalConfirmation()
+    {
+        var id = Guid.NewGuid();
+        var detail = Detail(id, McpAccessLevel.Buchhalter, McpApprovalMode.PerAction,
+            new[] { Scope(McpDataType.Postings, McpRightKind.Book) });
+        var (vm, api, confirm) = CreateVm(id, detail);
+        await vm.LoadAsync(id);
+        confirm.Setup(x => x.ConfirmAsync(It.IsAny<ConfirmationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        api.Setup(x => x.Mcp_SetScopesAsync(id, It.IsAny<McpScopeSetRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        SetPending(vm, "Mcp_Card_Level", nameof(McpAccessLevel.Individuell));
+        SetPending(vm, "Mcp_Card_ApprovalMode", nameof(McpApprovalMode.PreApproved));
+        var ok = await vm.SaveAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(ok);
+        confirm.Verify(x => x.ConfirmAsync(
+            It.Is<ConfirmationRequest>(r =>
+                r.Severity == ConfirmationSeverity.Critical
+                && r.TitleResourceKey == "Confirmation_McpPreApproved_Title"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
