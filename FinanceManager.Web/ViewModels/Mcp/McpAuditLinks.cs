@@ -68,7 +68,7 @@ public static class McpAuditLinks
         };
 
     /// <summary>
-    /// Resolves the card route of a field-delta entity (<see cref="Shared.Dtos.Mcp.McpAuditChangeDto"/>).
+    /// Resolves the card route of a field-delta entity (<see cref="FinanceManager.Shared.Dtos.Mcp.McpAuditChangeDto"/>).
     /// </summary>
     /// <param name="entityType">Entity type name stored with the change.</param>
     /// <param name="entityId">Referenced entity id.</param>
