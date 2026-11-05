@@ -11,7 +11,7 @@
 
 ## What's New
 
-- MCP integration: personal access tokens (`fm_mcp_*`) with five access levels, fine-grained scopes and filters, a persistent approval queue with approval-center UI, hash-chained audit trail with integrity verification and export, SSE status notifications, and 33 business tools across four security classes — documented under Help → MCP-Server.
+- MCP integration: personal access tokens (`fm_mcp_*`) with five access levels, fine-grained scopes and filters, a persistent approval queue with approval-center UI, hash-chained audit trail with integrity verification and export, SSE status notifications, and 38 tools across four security classes — including owner-admin-gated `fm_admin_*` tools (installation status, updates, backups incl. ticketed download and restore) — documented under Help → MCP-Server.
 
 - Security fix: self-registration is limited to the first user — the register page redirects to the login once a user exists; `Auth:AllowSelfRegistration` re-enables open registration for additional accounts.
 - Security fix: registration and the anonymous user-existence probe are rate-limited per source address (HTTP 429; configurable via `RateLimiting:AuthSensitive:*`).
@@ -43,11 +43,15 @@
 
 ## Wichtige Hinweise vor dem Update
 
+- Neue Opt-in-Funktion: Der MCP-Server (`/mcp`) gibt externen KI-Assistenten über abgestufte, protokollierte Werkzeuge Zugriff auf die Finanzdaten des jeweiligen Besitzers. Er ist **standardmäßig deaktiviert** — ein Administrator aktiviert ihn jederzeit in den Admin-Sicherheitseinstellungen (`/card/mcp-security`, datenbankgestützte Schalter `Enabled`/`WriteAccessEnabled`). Bestehende Installationen bleiben unverändert funktionsfähig.
+- Die MCP-Einstellungen liegen in der Datenbank, nicht in `appsettings.json`; der Schreibzugriff hat einen eigenen Opt-in-Schalter, sodass zunächst reiner Lesezugriff freigegeben werden kann.
 - Sicherheitshärtung: Forwarded-Headers (`X-Forwarded-For`/`X-Forwarded-Proto`) werden nur noch von ausdrücklich vertrauenswürdigen Proxies berücksichtigt. Wird FinanceManager hinter einem Reverse-Proxy betrieben, sind dessen IPs unter `ReverseProxy:KnownProxies` bzw. dessen Subnetze unter `ReverseProxy:KnownNetworks` einzutragen (semikolongetrennt). Ohne diese Einträge ignoriert die Anwendung Forwarded-Headers — Client-IPs erscheinen dann als Adresse des Proxys. Direkter HTTP-Zugriff im lokalen Netzwerk funktioniert unverändert.
 - Die Selbstregistrierung ist jetzt opt-in: Nur der allererste Benutzer kann sich selbst registrieren; weitere Konten legt ein Administrator an. `Auth:AllowSelfRegistration` auf `true` öffnet die Registrierung wieder.
 - Sicherheitshärtung: Sitzungs-Cookies werden bei Bereitstellung über HTTPS als `Secure` markiert (inkl. TLS-terminierender Reverse-Proxies via Forwarded Headers). Bei Exposition gegenüber nicht vertrauenswürdigen Netzen wird HTTPS dringend empfohlen.
 
 ## Neuerungen
+
+- MCP-Integration: Personal-Access-Tokens (`fm_mcp_*`) mit fünf Freigabestufen, feingranularen Scopes und Filtern, einer persistenten Genehmigungswarteschlange mit Genehmigungscenter-Oberfläche, hash-verkettetem Audit-Protokoll mit Integritätsprüfung und Export, SSE-Statusmeldungen sowie 38 Werkzeugen in vier Sicherheitsklassen — darunter die an die Admin-Rolle des Besitzers gebundenen `fm_admin_*`-Werkzeuge (Installationsstatus, Updates, Datensicherungen inkl. Ticket-Download und Rücksicherung) — dokumentiert unter Hilfe → MCP-Server.
 
 - Sicherheitsfix: Die Selbstregistrierung ist auf den ersten Benutzer beschränkt — sobald ein Benutzer existiert, leitet die Registrierungsseite auf die Anmeldung um; `Auth:AllowSelfRegistration` öffnet die Registrierung für weitere Konten wieder.
 - Sicherheitsfix: Registrierung und die anonyme Benutzer-Existenz-Abfrage werden pro Quelladresse ratenlimitiert (HTTP 429; konfigurierbar über `RateLimiting:AuthSensitive:*`).

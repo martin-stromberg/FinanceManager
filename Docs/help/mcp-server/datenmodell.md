@@ -60,7 +60,7 @@
 | `DecidedByUserId` | `Guid?` | Entscheidender Benutzer (Besitzer); `null` bei Systementscheidungen |
 | `DecisionNote` | `string?` | Entscheidungsnotiz (Ablehnungsgrund, Vorab-Genehmigung, Systemgrund) |
 | `ExecutedUtc` | `DateTime?` | Ausführungszeitpunkt |
-| `ExecutionResult` | `string?` | Ergebnisreferenz (angelegte IDs, Zusammenfassung) |
+| `ExecutionResult` | `string?` | Ergebnisreferenz (angelegte IDs, Zusammenfassung); bei Status `Failed` trägt das Feld stattdessen den klassifizierten Fehler-Wrapper `{"error":{…}}` (`{code, message}` bei definierten Fehlern, `{type}` bei Fremd-Exceptions), den `fm_task_status` als `untrusted_data.error` ausliefert |
 | `FailureReason` | `string?` | Klassifizierter `Err_*`-Fehlergrund |
 | `CorrelationId` | `Guid` | Korrelation Aufruf ↔ Anforderung ↔ Audit-Einträge |
 | `IdempotencyKey` | `string` | Deduplikationsschlüssel, eindeutig je Besitzer |
@@ -100,7 +100,7 @@ Zustandsautomat: `Pending → Approved | Rejected | Expired`; `Approved → Exec
 |-------------|-----|--------------|
 | `EntryId` | `Guid` | Übergeordneter Audit-Eintrag (FK, Kaskadenlöschung) |
 | `EntityType` | `string` | Betroffener Entitätstyp (z. B. `Posting`, `Contact`) |
-| `EntityId` | `Guid` | Betroffener Datensatz (Drilling-Ziel) |
+| `EntityId` | `Guid` | Betroffener Datensatz (Drilling-Ziel); immer eine echte Datensatz-ID, nie `Guid.Empty` — für Ereignisse ohne natürliche Entität ein deterministischer `StableId`-Anker (SHA-256 über den fachlichen Schlüssel, z. B. `UpdateSettings`, `UpdateInstallation:<version>`) |
 | `Field` | `string` | Name des geänderten Felds |
 | `OldValue` | `string?` | Serialisierter Vorher-Wert (längenbegrenzt) |
 | `NewValue` | `string?` | Serialisierter Nachher-Wert (längenbegrenzt) |

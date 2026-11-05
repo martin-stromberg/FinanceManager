@@ -97,7 +97,7 @@ vollständig verfügbar.
 | T02 | `fm_postings_query` | Buchungsabfrage je Kontext (Konto, Kontakt, Sparplan, Wertpapier) mit Zeitraum- und Volltextfilter – Kern-Tool für „Was lief wann mit wem?" | (Buchungen, Lesen) | `IPostingsQueryService.GetAccountPostingsAsync`/`GetContactPostingsAsync`/`GetSavingsPlanPostingsAsync`/`GetSecurityPostingsAsync` |
 | T03 | `fm_reporting_aggregate` | Aggregierte Auswertungen und Zeitreihen über Buchungen (Summen, Perioden, `PostingKind`, `SecuritySubType`) sowie Ausführung gespeicherter Report-Favoriten | (Buchungen, Lesen), (Reports, Lesen) | `IReportAggregationService.QueryAsync`, `IPostingTimeSeriesService`, `IPostingAggregateService`, `IReportFavoriteService.GetAsync`, `IPostingExportService` |
 | T04 | `fm_contacts_lookup` | Kontakte suchen/ansehen inkl. Alias-Muster (`AliasName.Pattern`) und Kategorie (`ContactCategory`) | (Kontakte, Lesen), (Kontaktgruppen, Lesen) | `IContactService.ListAsync`/`GetAsync`/`ListAliases`/`CountAsync`, `IContactCategoryService` |
-| T05 | `fm_budget_overview` | Budgetlage: Zwecke (`BudgetPurpose`), Regeln (`BudgetRule` inkl. `PurposePattern`), Überschreibungen (`BudgetOverride`), Auslastung/Planung je Kategorie | (Budgets, Lesen), (Budgetregeln, Lesen), (Budgetkategorien, Lesen) | `IBudgetPurposeService.ListAsync`/`ListOverviewAsync`, `IBudgetRuleService.ListByPurpose*`/`ListByCategoryAsync`, `IBudgetOverrideService`, `IBudgetPlanningService`, `IBudgetReportService` |
+| T05 | `fm_budget_overview` | Budgetlage: Zwecke (`BudgetPurpose`), Regeln (`BudgetRule` inkl. `PurposePattern`), Überschreibungen (`BudgetOverride`), Auslastung/Planung je Kategorie; je Zweck zusätzlich `parentBudget` (vererbte Regeln der Budgetkategorie), damit „keine eigene Regel" nicht mit „kein Budget" verwechselt wird | (Budgets, Lesen), (Budgetregeln, Lesen), (Budgetkategorien, Lesen) | `IBudgetPurposeService.ListAsync`/`ListOverviewAsync`, `IBudgetRuleService.ListByPurpose*`/`ListByCategoryAsync`, `IBudgetOverrideService`, `IBudgetPlanningService`, `IBudgetReportService` |
 | T06 | `fm_savings_plan_analysis` | Sparplan-Bestand und Fortschrittsanalyse (Zielbetrag, Zieldatum, Intervall, aktiv/archiviert) | (Sparpläne, Lesen), (Sparplankategorien, Lesen) | `ISavingsPlanService.ListAsync`/`GetAsync`/`AnalyzeAsync`/`CountAsync`, `ISavingsPlanCategoryService` |
 | T07 | `fm_securities_analysis` | Wertpapierbestand, Kurse (`SecurityPrice`), Performance-/Renditeanalyse (FIFO), Portfolio-Report | (Wertpapiere, Lesen), (Wertpapierkategorien, Lesen) | `ISecurityService.ListAsync`/`GetAsync`, `ISecurityPriceService`, `ISecurityReportService`, `IPortfolioAnalysisReportService`, `IReturnAnalysisService` |
 | T08 | `fm_statement_imports_review` | Importierte Kontoauszüge/Belege einsehen: Import-Header (`StatementImport`) und gebuchte Einträge (`StatementEntry`, Status Pending/Booked/IgnoredDuplicate) | (Kontoauszüge, Lesen) | `IStatementImportQueryService` – **neu zu konzipierender Lese-Contract** auf `StatementImport`/`StatementEntry` (schreibgeschützte Belege); existiert heute nicht, Umsetzungsbaustein (siehe Nebenbedingungen 3.1) |
@@ -228,7 +228,7 @@ Archivieren, Merge, Konto-Löschung) sind genehmigungspflichtig – in der
 | T23 | `fm_accounts_manage` | Konto anlegen/ändern (`Name`, `AccountType`, `Iban`, `BankContactId`, `SavingsPlanExpectation`, `SecurityProcessingEnabled`, `IsCollectionAccount`), Unter-IBANs pflegen; Konto-Löschung genehmigungspflichtig | (Konten, Erstellung/Änderung/Vervollständigung); Lösch-Modus: (Konten, Löschung) | schreibvorbereitend (teils genehmigungspflichtig) | `IAccountService.CreateAsync`/`UpdateAsync`/`DeleteAsync`/`AddLinkedIbanAsync`/`RemoveLinkedIbanAsync` |
 | T24 | `fm_savings_plans_manage` | Sparpläne anlegen/ändern (`Type`, `TargetAmount`/`TargetDate`, `Interval`, `ContractNumber`, Kategorie); **Archivierung** (`ArchiveAsync`/`ArchivedUtc`) als Lösch-Äquivalent – genehmigungspflichtig | (Sparpläne, Erstellung/Änderung); Archiv: (Sparpläne, Löschung); (Sparplankategorien, Lesen) | schreibvorbereitend (teils genehmigungspflichtig) | `ISavingsPlanService.CreateAsync`/`UpdateAsync`/`ArchiveAsync`/`DeleteAsync` |
 | T25 | `fm_securities_manage` | Wertpapiere anlegen/ändern (`Identifier` WKN/ISIN, `AlphaVantageCode`, `CurrencyCode`, `CategoryId`, Region/Sektor); **Archivierung** genehmigungspflichtig | (Wertpapiere, Erstellung/Änderung); Archiv: (Wertpapiere, Löschung); (Wertpapierkategorien, Lesen) | schreibvorbereitend (teils genehmigungspflichtig) | `ISecurityService.CreateAsync`/`UpdateAsync`/`ArchiveAsync`/`DeleteAsync` |
-| T26 | `fm_budgets_manage` | Budgetzwecke (`BudgetPurpose` inkl. `SourceType`/`SourceId`), Regeln (`BudgetRule` inkl. `PurposePattern`), Überschreibungen (`BudgetOverride`) und Budgetkategorien anlegen/ändern; Lösch-Modi genehmigungspflichtig | (Budgets, Erstellung/Änderung/Vervollständigung), (Budgetregeln, Erstellung/Änderung/Vervollständigung), (Budgetkategorien, Erstellung/Änderung); Lösch-Modi: jeweils Löschung | schreibvorbereitend (teils genehmigungspflichtig) | `IBudgetPurposeService`, `IBudgetRuleService`, `IBudgetOverrideService`, `IBudgetCategoryService` |
+| T26 | `fm_budgets_manage` | Budgetzwecke (`BudgetPurpose` inkl. `SourceType`/`SourceId`), Regeln (`BudgetRule` inkl. `PurposePattern`), Überschreibungen (`BudgetOverride`) und Budgetkategorien anlegen/ändern; `amount` der Regeln/Überschreibungen ist vorzeichenbehaftet (negativ = erwartete Kosten, positiv = erwartete Einnahmen; die Domäne akzeptiert jeden Wert inkl. 0); Lösch-Modi genehmigungspflichtig | (Budgets, Erstellung/Änderung/Vervollständigung), (Budgetregeln, Erstellung/Änderung/Vervollständigung), (Budgetkategorien, Erstellung/Änderung); Lösch-Modi: jeweils Löschung | schreibvorbereitend (teils genehmigungspflichtig) | `IBudgetPurposeService`, `IBudgetRuleService`, `IBudgetOverrideService`, `IBudgetCategoryService` |
 | T27 | `fm_categories_manage` | Kategorien verwalten: `ContactCategory` (Kontaktgruppen), `SavingsPlanCategory`, `SecurityCategory`, `AttachmentCategory` (Umbenennen, Anlegen); Lösch-Modi genehmigungspflichtig | (Kontaktgruppen, Erstellung/Änderung), (Sparplankategorien, Erstellung/Änderung), (Wertpapierkategorien, Erstellung/Änderung), (Anhangkategorien, Erstellung/Änderung); Lösch-Modi: jeweils Löschung | schreibvorbereitend (teils genehmigungspflichtig) | `IContactCategoryService`, `ISavingsPlanCategoryService`, `ISecurityCategoryService`, `IAttachmentCategoryService` |
 | T28 | `fm_attachments_manage` | Anhänge hochladen (`UploadAsync`, `CreateUrlAsync`, `CreateReferenceAsync`), Metadaten/Kategorie korrigieren (`UpdateCoreAsync`/`UpdateCategoryAsync`), neu zuordnen (`ReassignAsync`); Lösch-Modus genehmigungspflichtig | (Anhänge, Erstellung/Änderung/Vervollständigung); Lösch-Modus: (Anhänge, Löschung); Kategorie: (Anhangkategorien, Lesen) | schreibvorbereitend (teils genehmigungspflichtig) | `IAttachmentService` |
 | T29 | `fm_reports_configuration_manage` | Auswertungskonfiguration pflegen: Report-Favoriten (`ReportFavorite` inkl. Filter-CSVs), Startseiten-KPIs (`HomeKpi`), Portfolio-KPI-Konfiguration; Lösch-Modi genehmigungspflichtig | (Reports, Erstellung/Änderung), (KPI-Konfigurationen, Erstellung/Änderung); Lösch-Modi: jeweils Löschung | schreibvorbereitend (teils genehmigungspflichtig) | `IReportFavoriteService.CreateAsync`/`UpdateAsync`/`DeleteAsync`, `IHomeKpiService` |
@@ -298,6 +298,10 @@ die Besitzprüfung (nur eigener Zugang/eigene Tasks).
 (Stufe, Scope-Liste Datentyp×Rechteart×Filter, Katalogversion);
 `fm_task_status` → Task-/Request-Deskriptor (Typ, Zustand, Progress,
 Ergebnisreferenz wie `BookingResult` bzw. `AiActionRequest`-Ergebnis).
+Fehlgeschlagene Requests liefern ihr klassifiziertes Fehlerobjekt als
+`untrusted_data.error`: `{code, message}` bei definierten Fehlern,
+`{type}` bei Fremd-Exceptions (inkl. `ExecutionTimeout`) – niemals
+Stacktraces oder interne Meldungen.
 Beide Tools schreiben nichts und tragen einen Meta-Scope statt eines
 Fachdaten-Tupels – sie unterliegen trotzdem der Besitzprüfung (nur
 eigener Zugang/eigene Tasks).
@@ -312,19 +316,31 @@ kein Fachdatentyp; Aufnahme als kompatible Erweiterung gemäß §6.2).
 
 **Admin-Gate (festgelegt):** Zusätzlich zu den Scope-Tupeln gilt für alle
 `fm_admin_*`-Tools eine Besitzerrollen-Prüfung: Der Besitzer des aufrufenden
-Zugangs muss die Administratorrolle tragen (`User.IsAdmin`, aufgelöst über
-den regulären User-Service-Contract). Ein Aufruf ohne Admin-Rolle wird mit
-dem strukturierten Fehler `Err_Mcp_AdminRequired` abgelehnt – bei
-interaktiven Aufrufen wie bei genehmigten Warteschlangen-Ausführungen
-(ApprovedExecution prüft die Rolle erneut). Das Admin-Gate ersetzt die
-Scope-Prüfung nicht, es ergänzt sie („KI darf nicht mehr als ihr Besitzer"
-plus „nur Admins dürfen administrieren").
+Zugangs muss die Administratorrolle tragen – geprüft wird die
+Rollenmitgliedschaft im Identity-Rollenspeicher (`UserManager.IsInRoleAsync`,
+Rolle `Admin`), nicht der Caller-Kontext (der MCP/PAT-Pfad hat keinen).
+Ein Aufruf ohne Admin-Rolle wird mit dem strukturierten Fehler
+`Err_Mcp_AdminRequired` abgelehnt – bei interaktiven Aufrufen wie bei
+genehmigten Warteschlangen-Ausführungen (ApprovedExecution prüft die Rolle
+erneut, eine entzogene Rolle stoppt beide Phasen). Das Admin-Gate ersetzt
+die Scope-Prüfung nicht, es ergänzt sie („KI darf nicht mehr als ihr
+Besitzer" plus „nur Admins dürfen administrieren").
+
+**Vergabe des `Administration`-Scopes (festgelegt):** `(Administration, *)`
+darf nur auf Zugänge von Admin-Besitzern gelegt werden – die Vergabe wird
+für Nicht-Admins serverseitig abgelehnt, die Stufen-Standardprofile und die
+Scope-Auswahl blenden den Datentyp für Nicht-Admins aus, und persistierte
+`Administration`-Zeilen verlieren ihre Wirkung, sobald der Besitzer die
+Rolle verliert. Gültige Rechtearten sind ausschließlich `Lesen`,
+`Änderung` und `Erstellung` – `Löschung` existiert für den
+Installations-Datentyp nicht (Backup-Löschung/-Rücksicherung laufen
+fachlich über `Änderung`).
 
 | # | Tool | Fachlicher Zweck | Scopes | Klasse | Referenz |
 |---|---|---|---|---|---|
 | T34 | `fm_admin_status` | Installationsstatus der eigenen Instanz: installierte Version/Release-Metadaten, Update-Stand (verfügbare Version, letzte Prüfung, Lock, geplante Installationszeit), letztes Backup (Datum, Größe), eigener aktiver Benachrichtigungszähler, wirksame MCP-Schalter | (Administration, Lesen) | lesend | `IInstalledReleaseMetadataProvider`, `IUpdateOrchestrator.GetStatusAsync`, `IBackupService.ListAsync`, `INotificationService.ListActiveAsync`, `IMcpSettingsService` |
 | T35 | `fm_admin_updates` | Update-Infos abrufen (`status`), manuelle Update-Prüfung anstoßen (`check`); Installation des geladenen Pakets auslösen (`install`, erfordert `confirmDowntime`) und geplante Installationszeit setzen/löschen (`schedule`) | (Administration, Lesen); install/schedule zusätzlich (Administration, Änderung) | schreibvorbereitend (install/schedule: **genehmigungspflichtig**) | `IUpdateOrchestrator.GetStatusAsync`/`CheckAsync`/`StartInstallAsync`/`ScheduleAsync` |
-| T36 | `fm_admin_backups` | Gespeicherte Datensicherungen des Besitzers auflisten (`list`, Paging), eine neue Sicherung anstoßen (`create`, Quelle `KI`) und eine kurzlebige, ticketgebundene Download-URL ausstellen (`download` → `GET /mcp/download/{token}`, ≤10 Min., kein Approval); Wiederherstellung, Upload und Löschen werden bewusst nicht exponiert | (Administration, Lesen); create zusätzlich (Administration, Erstellung) | schreibvorbereitend (create: **genehmigungspflichtig**) | `IBackupService.ListAsync`/`CreateAsync`/`GetAsync` |
+| T36 | `fm_admin_backups` | Gespeicherte Datensicherungen des Besitzers auflisten (`list`, Paging), eine neue Sicherung anstoßen (`create`, Quelle `KI`), eine kurzlebige, ticketgebundene Download-URL ausstellen (`download` → `GET /mcp/download/{token}`, ≤10 Min., kein Approval), eine Sicherung löschen (`delete`), eine serverseitige ZIP-Datei als Sicherung registrieren (`upload`, Quelle `Upload`) und eine Sicherung zurückspielen (`apply` – enqueuert `BackupRestore`-Hintergrundtask) | (Administration, Lesen); create/upload zusätzlich (Administration, Erstellung); delete/apply zusätzlich (Administration, Änderung) | schreibvorbereitend (create/delete/upload/apply: **genehmigungspflichtig**) | `IBackupService.ListAsync`/`CreateAsync`/`GetAsync`/`DeleteAsync`/`UploadAsync`/`ApplyAsync`, `IBackgroundTaskManager` (BackupRestore) |
 | T37 | `fm_admin_notifications` | Eigene aktive Benachrichtigungen abrufen (`list`, Paging) und eine eigene/globale Benachrichtigung bestätigen (`dismiss` – unkritische Wirkung `IsDismissed`, direkte Ausführung ohne Approval) | (Administration, Lesen); dismiss zusätzlich (Administration, Änderung) | schreibvorbereitend | `INotificationService.ListActiveAsync`/`DismissAsync` |
 | T38 | `fm_admin_settings` | Admin-editable Einstellungen der Einrichtung lesen (`get`; Sektionen `mcp` = Kill-Switch/Write-Stop-Lid, `updates` = Update-Einstellungen, `wellKnown` = Well-Known-Endpunkte) und eine begrenzte Feldmenge ändern (`set`: `mcp.enabled`, `mcp.writeAccessEnabled`, `updates.enabled`, `updates.includePrereleases`, `wellKnown.changePasswordUrl` – nicht angegebene Felder bleiben unverändert) | (Administration, Lesen); set zusätzlich (Administration, Änderung) | schreibvorbereitend (set: **genehmigungspflichtig**) | `IMcpSettingsService`, `IUpdateOrchestrator.GetSettingsAsync`/`SaveSettingsAsync`, `IWellKnownSettingsService` |
 
@@ -337,11 +353,18 @@ plus „nur Admins dürfen administrieren").
   bei install), `scheduledInstallTime` (`HH:mm`, explizites `null` löscht
   die Planung); *Ausgabe* `UpdateStatusDto`-Abbildung bzw.
   `UpdateCheckResultDto`/`UpdateSettingsDto`.
-- `fm_admin_backups`: *Eingabe* `operation` (`list`|`create`|`download`),
-  `id` (Pflicht bei `download`), `skip`/`take`; *Ausgabe* `BackupDto`-Liste,
-  das erzeugte `BackupDto` bzw. `{downloadUrl, sizeBytes, expiresUtc}`
-  (signiertes Ticket, ~10 Min. gültig — das ZIP läuft über
-  `GET /mcp/download/{token}`, nicht über das JSON-RPC-Result).
+- `fm_admin_backups`: *Eingabe* `operation`
+  (`list`|`create`|`download`|`delete`|`upload`|`apply`),
+  `id` (Pflicht bei `download`/`delete`/`apply`), `path` (Pflicht bei
+  `upload`, serverseitiger Dateipfad), `confirmationText` (Pflicht bei
+  `apply`, muss exakt dem Dateinamen der Sicherung entsprechen),
+  `skip`/`take`; *Ausgabe* `BackupDto`-Liste, das erzeugte/registrierte
+  `BackupDto`, `{downloadUrl, sizeBytes, expiresUtc}` (signiertes Ticket,
+  ~10 Min. gültig — das ZIP läuft über `GET /mcp/download/{token}`, nicht
+  über das JSON-RPC-Result), `{deleted: true, id}` bzw. bei `apply`
+  `{enqueued, taskId}` (Fortschritt über `fm_task_status`; ein bereits
+  laufender/gequeueuter Restore wird nicht doppelt eingereiht,
+  `alreadyRunning: true`).
 - `fm_admin_notifications`: *Eingabe* `operation` (`list`|`dismiss`),
   `notificationId` (Pflicht bei dismiss), `skip`/`take`; *Ausgabe*
   `NotificationDto`-Liste bzw. `applied`-Status (fremde/vergebene
@@ -352,7 +375,8 @@ plus „nur Admins dürfen administrieren").
 - *Nebenbedingungen:* Alle Klartexte (Release-Notes, Fehlermeldungen,
   Dateinamen, Benachrichtigungstexte, URLs, Konfigurationspfade) werden als
   `untrusted_data` markiert ausgegeben; die genehmigungspflichtigen
-  Teiloperationen (`install`, `schedule`, `create`, `set`) laufen als
+  Teiloperationen (`install`, `schedule`, `create`, `delete`, `upload`,
+  `apply`, `set`) laufen als
   `AiActionRequest` über dieselbe Queue-Kopplung wie die finalen
   Pflege-Operationen – die interaktive Antwort ist
   `Err_Mcp_ApprovalRequired`, das Ergebnis wird über `fm_task_status`
@@ -555,7 +579,7 @@ als „✓" markierten Rechtearten adressierbar:
 | KPI-Konfigurationen | T10 (Lesen), T29 (Pflege) | `HomeKpi`, `PortfolioKpiConfiguration` |
 | Anhänge | T09 (Lesen), T28 (Pflege) | Inhalt untrusted content |
 | Anhangkategorien | T27 (Pflege), T28 (Lesen-Bezug) | Lesen implizit über `IAttachmentCategoryService` in T27 |
-| Administration | T34–T38 | installationsbezogen (kein Fachdatentyp): alle Tools zusätzlich Admin-Gate auf die Besitzerrolle (`Err_Mcp_AdminRequired`); Write-Ops über Änderung/Erstellung, kein Löschpfad |
+| Administration | T34–T38 | installationsbezogen (kein Fachdatentyp): alle Tools zusätzlich Admin-Gate auf die Besitzerrolle (`Err_Mcp_AdminRequired`); Scope nur an Admin-Besitzer vergebbar, gültige Rechte Lesen/Änderung/Erstellung – Write-Ops über Änderung/Erstellung, kein Löschpfad |
 
 ### 5.2 Scope-Nomenklatur
 
@@ -671,7 +695,7 @@ Mindest-Freigabestufe → genehmigungspflichtig.
 | `fm_task_status` | Meta-Scope `Ausführungsstatus` | lesend | alle | nein |
 | `fm_admin_status` | (Administration, Lesen) + Admin-Gate | lesend | Analyse | nein |
 | `fm_admin_updates` | (Administration, Lesen); install/schedule: Änderung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | teils (install, schedule: **ja**) |
-| `fm_admin_backups` | (Administration, Lesen); create: Erstellung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | teils (create: **ja**) |
+| `fm_admin_backups` | (Administration, Lesen); create/upload: Erstellung, delete/apply: Änderung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | teils (create, delete, upload, apply: **ja**) |
 | `fm_admin_notifications` | (Administration, Lesen); dismiss: Änderung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | nein |
 | `fm_admin_settings` | (Administration, Lesen); set: Änderung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | teils (set: **ja**) |
 
@@ -679,7 +703,8 @@ Mindest-Freigabestufe → genehmigungspflichtig.
 (`fm_statement_draft_book`, `fm_statement_draft_discard`,
 `fm_posting_reverse`) sowie die Lösch-/Archiv-/Merge-Teilmengen der
 Pflege-Tools (T22–T29) und die finalen Teiloperationen der Admin-Tools
-(`install`, `schedule`, `create`, `set` in T35–T38). Zusätzlich zu den
+(`install`, `schedule`, `create`, `delete`, `upload`, `apply`, `set` in
+T35–T38). Zusätzlich zu den
 Scopes gilt bei T34–T38 das Admin-Gate auf die Besitzerrolle. Die Liste
 „genehmigungspflichtiger Aktionen" des Approval-Konzepts (Schritt 3)
 ergibt sich direkt aus dieser Spalte.
