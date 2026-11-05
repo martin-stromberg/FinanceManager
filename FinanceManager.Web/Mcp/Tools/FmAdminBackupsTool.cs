@@ -44,7 +44,7 @@ public sealed class FmAdminBackupsDescriptor : McpToolDescriptorBase
            "or deletes one backup ('delete' — final/destructive, requires approval). " +
            "Restore and upload are not exposed. Restricted to owners with " +
            "administrative privileges. Scope: (Administration, Lesen); create additionally " +
-           "(Administration, Erstellung), delete additionally (Administration, Löschung).";
+           "(Administration, Erstellung), delete additionally (Administration, Änderung).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Schreibvorbereitend;
@@ -184,7 +184,9 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
     }
 
     /// <summary>
-    /// Deletes one of the owner's backups — final/destructive, (Administration, Löschung),
+    /// Deletes one of the owner's backups — final/destructive, (Administration, Änderung)
+    /// (the Administration installation scope knows Read/Modify/Create — Löschung is
+    /// reserved for the fachliche pflege data types),
     /// approval-required. The DataChange anchors on the real record id.
     /// </summary>
     private async Task<object> DeleteAsync(JsonElement arguments, Guid owner, McpToolCallContext context, CancellationToken ct)
@@ -196,7 +198,7 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
             throw new McpToolException("Err_Mcp_InvalidArguments", "The backup was not found.");
         }
         return await McpAdminGuards.ApprovalRequiredAsync(
-            _scopeEvaluator, context, McpDataType.Administration, McpRightKind.Delete,
+            _scopeEvaluator, context, McpDataType.Administration, McpRightKind.Modify,
             "delete",
             "Deletes the owner's backup record and its zip file — final/destructive, " +
             "the snapshot can no longer be restored afterwards.",
