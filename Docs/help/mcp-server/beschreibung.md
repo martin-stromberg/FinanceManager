@@ -14,7 +14,7 @@ Der Zugriff erfolgt ausschließlich über fachliche Werkzeuge (Tools) auf densel
 
 Die MCP-Integration ist standardmäßig deaktiviert (Opt-in). Ein Administrator schaltet sie auf der Seite **MCP-Sicherheit** (`/card/mcp-security`) über zwei getrennte Schalter frei:
 
-- **MCP aktiviert**: Der Endpunkt `/mcp` nimmt Anfragen an; deaktiviert antwortet er mit `503`.
+- **MCP aktiviert**: Die Schnittstelle `/mcp` nimmt Anfragen an; deaktiviert antwortet sie mit `503`.
 - **Schreibzugriff aktiviert**: Werkzeuge mit Schreibwirkung werden zugelassen; deaktiviert bleiben Lese-, Vorschlags- und Meta-Werkzeuge nutzbar.
 
 Die Seite zeigt Administratoren außerdem eine Sicherheitsübersicht über alle Zugänge der Installation — ausschließlich Metadaten (Status, Stufe, Nutzungszeitpunkte, Sicherheitsereignisse), keine Fachdaten und keine Tokeninhalte anderer Benutzer.
@@ -55,7 +55,7 @@ In der Detailkarte eines Zugangs (`/card/mcp-accesses/{id}`) stehen bereit:
 
 Werkzeugaufrufe mit hoher Wirkung — etwa Verbuchung, Storno oder das Verwerfen von Entwürfen — erzeugen je nach Stufe und Genehmigungsmodus eine **Anforderung**. Diese erscheint im Genehmigungscenter (`/card/mcp-approvals`), erreichbar über die Zugangsliste oder das Badge des Navigationseintrags (Anzahl offener Anforderungen).
 
-Jede Anforderung enthält Werkzeugname, den eingefrorenen Parametersatz zum Zeitpunkt der Anfrage, eine serverseitige Auswirkungsvorschau sowie die optionale Begründung des KI-Systems — ausdrücklich als ungeprüften Inhalt gekennzeichnet. Der Benutzer entscheidet einzeln oder im Stapel (bis zu 50 Anforderungen) über **Genehmigen** oder **Ablehnen**; eine eigene noch offene Anforderung lässt sich zurückziehen. Genehmigte Anforderungen gehen in eine Warteschlange und werden genau einmal über den regulären Anwendungsdienst ausgeführt; Erfolg, Fehlschlag oder Ablauf sind im Protokoll nachverfolgbar. Das KI-System erfragt den Status über das Werkzeug `fm_task_status` oder erhält Statusmeldungen über den Server-Ereignisstrom des `/mcp`-Endpunkts.
+Jede Anforderung enthält Werkzeugname, den eingefrorenen Parametersatz zum Zeitpunkt der Anfrage, eine serverseitige Auswirkungsvorschau sowie die optionale Begründung des KI-Systems — ausdrücklich als ungeprüften Inhalt gekennzeichnet. Der Benutzer entscheidet einzeln oder im Stapel (bis zu 50 Anforderungen) über **Genehmigen** oder **Ablehnen**; eine eigene noch offene Anforderung lässt sich zurückziehen. Genehmigte Anforderungen gehen in eine Warteschlange und werden genau einmal über den regulären Anwendungsdienst ausgeführt; Erfolg, Fehlschlag oder Ablauf sind im Protokoll nachverfolgbar. Das KI-System erfragt den Status über das Werkzeug `fm_task_status` oder erhält Statusmeldungen über den Server-Ereignisstrom der `/mcp`-Schnittstelle.
 
 ### Audit-Timeline
 
