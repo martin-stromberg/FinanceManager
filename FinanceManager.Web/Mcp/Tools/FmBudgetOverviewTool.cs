@@ -26,7 +26,7 @@ public sealed class FmBudgetOverviewDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Budget overview: purposes with utilization, rules incl. purpose patterns, overrides and budget categories. Scopes: (Budgets, Lesen), (Budgetregeln, Lesen), (Budgetkategorien, Lesen).";
+        => "Budget overview: purposes with utilization, rules incl. purpose patterns, overrides, budget categories and the inherited category-level budget (parentBudget) so purposes without own rules are not mistaken for unbudgeted. Scopes: (Budgets, Lesen), (Budgetregeln, Lesen), (Budgetkategorien, Lesen).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Lesend;
@@ -107,6 +107,43 @@ public sealed class FmBudgetOverviewHandler : IMcpToolHandler
         }
 
         var purposeOut = new List<object>(purposes.Count);
+        Dictionary<Guid, object>? parentBudgets = null;
+        if (includeRules)
+        {
+            // Category-level budgets apply to every purpose bound to the category. Surface them
+            // per purpose so readers can distinguish "no own rule" from "no budget at all".
+            var catIds = purposes
+                .Select(p => p.BudgetCategoryId)
+                .Where(id => id.HasValue && id.Value != Guid.Empty)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+            if (catIds.Count > 0)
+            {
+                parentBudgets = new Dictionary<Guid, object>(catIds.Count);
+                foreach (var catId in catIds)
+                {
+                    var catRules = await _rules.ListByCategoryAsync(owner, catId, ct);
+                    parentBudgets[catId] = new
+                    {
+                        budgetCategoryId = catId,
+                        rules = catRules.Select(r => new
+                        {
+                            id = r.Id,
+                            budgetPurposeId = r.BudgetPurposeId,
+                            budgetCategoryId = r.BudgetCategoryId,
+                            amount = r.Amount,
+                            interval = r.Interval.ToString(),
+                            customIntervalMonths = r.CustomIntervalMonths,
+                            startDate = r.StartDate,
+                            endDate = r.EndDate,
+                            useRegex = r.UseRegex,
+                            untrusted_data = new { purposePattern = r.PurposePattern }
+                        }).ToList()
+                    };
+                }
+            }
+        }
         foreach (var p in purposes)
         {
             object? rules = null;
@@ -151,6 +188,10 @@ public sealed class FmBudgetOverviewHandler : IMcpToolHandler
                 valuationType = p.ValuationType.ToString(),
                 rules,
                 overrides = overridesOut,
+                parentBudget = includeRules && p.BudgetCategoryId.HasValue && parentBudgets is not null
+                    && parentBudgets.TryGetValue(p.BudgetCategoryId.Value, out var pb)
+                        ? pb
+                        : null,
                 untrusted_data = new
                 {
                     name = p.Name,
