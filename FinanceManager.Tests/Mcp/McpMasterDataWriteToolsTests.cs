@@ -1022,6 +1022,65 @@ public sealed class McpMasterDataWriteToolsTests
             new DateOnly(2026, 1, 1), null, null, false, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Regression test: rule amounts are signed (negative = expected costs, positive = expected
+    /// income — <see cref="FinanceManager.Domain.Budget.BudgetRule.Amount"/> contract). A negative
+    /// amount must reach the service on both create and update.
+    /// </summary>
+    [Fact]
+    public async Task Budgets_RuleCreateAndUpdate_NegativeAmount_IsApplied()
+    {
+        var owner = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var ruleId = Guid.NewGuid();
+        var purposes = new Mock<IBudgetPurposeService>();
+        purposes.Setup(p => p.GetAsync(purposeId, owner, It.IsAny<CancellationToken>())).ReturnsAsync(NewPurpose(purposeId));
+        var rules = new Mock<IBudgetRuleService>();
+        rules.Setup(r => r.CreateAsync(owner, purposeId, -80m, BudgetIntervalType.Monthly, null,
+                new DateOnly(2026, 1, 1), null, null, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewRule(ruleId, purposeId));
+        rules.Setup(r => r.GetAsync(ruleId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BudgetRuleDto(ruleId, owner, purposeId, null, -50m,
+                BudgetIntervalType.Monthly, null, new DateOnly(2020, 1, 1), null, null, false));
+        rules.Setup(r => r.UpdateAsync(ruleId, owner, -80m, BudgetIntervalType.Monthly, null,
+                new DateOnly(2020, 1, 1), null, null, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewRule(ruleId, purposeId));
+        var handler = BudgetsHandler(purposes: purposes, rules: rules);
+        var call = NewCallContext(NewAccessContext(owner).Object);
+
+        using var doc1 = Serialize(await handler.InvokeAsync(Args(
+            $"{{\"entity\":\"rule\",\"operation\":\"create\",\"purposeId\":\"{purposeId}\",\"amount\":-80,\"interval\":\"Monthly\",\"startDate\":\"2026-01-01\"}}"),
+            call, CancellationToken.None));
+        Assert.True(doc1.RootElement.GetProperty("applied").GetBoolean());
+        rules.Verify(r => r.CreateAsync(owner, purposeId, -80m, BudgetIntervalType.Monthly, null,
+            new DateOnly(2026, 1, 1), null, null, false, It.IsAny<CancellationToken>()), Times.Once);
+
+        using var doc2 = Serialize(await handler.InvokeAsync(Args(
+            $"{{\"entity\":\"rule\",\"operation\":\"update\",\"purposeId\":\"{purposeId}\",\"ruleId\":\"{ruleId}\",\"amount\":-80}}"),
+            call, CancellationToken.None));
+        Assert.True(doc2.RootElement.GetProperty("applied").GetBoolean());
+        rules.Verify(r => r.UpdateAsync(ruleId, owner, -80m, BudgetIntervalType.Monthly, null,
+            new DateOnly(2020, 1, 1), null, null, false, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>A zero amount is meaningless for a rule and must still be rejected before effect.</summary>
+    [Fact]
+    public async Task Budgets_RuleCreate_ZeroAmount_RejectedBeforeEffect()
+    {
+        var owner = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var purposes = new Mock<IBudgetPurposeService>();
+        purposes.Setup(p => p.GetAsync(purposeId, owner, It.IsAny<CancellationToken>())).ReturnsAsync(NewPurpose(purposeId));
+        var rules = new Mock<IBudgetRuleService>();
+        var handler = BudgetsHandler(purposes: purposes, rules: rules);
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args($"{{\"entity\":\"rule\",\"operation\":\"create\",\"purposeId\":\"{purposeId}\",\"amount\":0,\"interval\":\"Monthly\",\"startDate\":\"2026-01-01\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
+            "Err_Mcp_InvalidArguments");
+        rules.Verify(r => r.CreateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<BudgetIntervalType>(),
+            It.IsAny<int?>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly?>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ------------------------------------------------------------------
     // T28 fm_attachments_manage
     // ------------------------------------------------------------------
