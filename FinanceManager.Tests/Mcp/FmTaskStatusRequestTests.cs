@@ -100,6 +100,131 @@ public sealed class FmTaskStatusRequestTests
         Assert.False(item.TryGetProperty("parameterSnapshot", out _));
     }
 
+    /// <summary>A failed request surfaces the engine's classified error envelope as
+    /// <c>untrusted_data.error</c> — the defined code/message pair of a defined failure —
+    /// instead of a result reference.</summary>
+    [Fact]
+    public async Task TaskStatus_RequestDetail_FailedDefinedError_ExposesErrorObject()
+    {
+        var owner = Guid.NewGuid();
+        var accessId = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+        var detail = new AiActionRequestDetailDto(requestId, accessId, "acc", "fm_admin_backups",
+            "create", "katalog-v1", "{}", null, (short)AiActionRequestStatus.Failed,
+            DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddHours(70), DateTime.UtcNow.AddHours(-1),
+            owner, null, DateTime.UtcNow.AddHours(-1),
+            "{\"error\":{\"code\":\"Err_Mcp_InvalidState\",\"message\":\"Invalid 'backupId'.\"}}",
+            "Err_Mcp_InvalidState", Guid.NewGuid(), "k1", 1, null);
+        var approvals = new Mock<IMcpApprovalService>();
+        approvals.Setup(a => a.GetAsync(owner, requestId, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
+
+        var handler = NewHandler(approvals.Object);
+        var result = await handler.InvokeAsync(
+            JsonDocument.Parse($"{{\"requestId\":\"{requestId}\"}}").RootElement,
+            new McpToolCallContext(NewContext(owner, accessId).Object, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null),
+            CancellationToken.None);
+
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(result));
+        var item = doc.RootElement.GetProperty("requests")[0];
+        Assert.Equal("Failed", item.GetProperty("status").GetString());
+        Assert.Equal("Err_Mcp_InvalidState", item.GetProperty("failureReason").GetString());
+        var untrusted = item.GetProperty("untrusted_data");
+        var error = untrusted.GetProperty("error");
+        Assert.Equal("Err_Mcp_InvalidState", error.GetProperty("code").GetString());
+        Assert.Equal("Invalid 'backupId'.", error.GetProperty("message").GetString());
+        // The error envelope replaces the result reference — it is not a result.
+        Assert.Equal(JsonValueKind.Null, untrusted.GetProperty("resultRef").ValueKind);
+        Assert.False(item.TryGetProperty("error", out _));
+    }
+
+    /// <summary>A foreign exception failure surfaces only the bare exception type name —
+    /// no message and no stack — under <c>untrusted_data.error.type</c>.</summary>
+    [Fact]
+    public async Task TaskStatus_RequestDetail_FailedForeignError_ExposesTypeNameOnly()
+    {
+        var owner = Guid.NewGuid();
+        var accessId = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+        var detail = new AiActionRequestDetailDto(requestId, accessId, "acc", "fm_admin_backups",
+            "create", "katalog-v1", "{}", null, (short)AiActionRequestStatus.Failed,
+            DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddHours(70), DateTime.UtcNow.AddHours(-1),
+            owner, null, DateTime.UtcNow.AddHours(-1),
+            "{\"error\":{\"type\":\"ArgumentException\"}}",
+            "Err_Internal", Guid.NewGuid(), "k1", 1, null);
+        var approvals = new Mock<IMcpApprovalService>();
+        approvals.Setup(a => a.GetAsync(owner, requestId, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
+
+        var handler = NewHandler(approvals.Object);
+        var result = await handler.InvokeAsync(
+            JsonDocument.Parse($"{{\"requestId\":\"{requestId}\"}}").RootElement,
+            new McpToolCallContext(NewContext(owner, accessId).Object, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null),
+            CancellationToken.None);
+
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(result));
+        var untrusted = doc.RootElement.GetProperty("requests")[0].GetProperty("untrusted_data");
+        var error = untrusted.GetProperty("error");
+        Assert.Equal("ArgumentException", error.GetProperty("type").GetString());
+        Assert.False(error.TryGetProperty("message", out _));
+        Assert.False(error.TryGetProperty("code", out _));
+        Assert.Equal(JsonValueKind.Null, untrusted.GetProperty("resultRef").ValueKind);
+    }
+
+    /// <summary>A successful execution whose payload happens to contain an <c>error</c>
+    /// property keeps it as the plain result reference — the envelope is only recognized
+    /// on failed requests.</summary>
+    [Fact]
+    public async Task TaskStatus_RequestDetail_ExecutedWithErrorProperty_KeepsResultRef()
+    {
+        var owner = Guid.NewGuid();
+        var accessId = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+        var detail = new AiActionRequestDetailDto(requestId, accessId, "acc", "fm_x",
+            "run", "katalog-v1", "{}", null, (short)AiActionRequestStatus.Executed,
+            DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddHours(70), DateTime.UtcNow.AddHours(-1),
+            owner, null, DateTime.UtcNow.AddHours(-1),
+            "{\"error\":\"soft warning\",\"done\":true}",
+            null, Guid.NewGuid(), "k1", 1, null);
+        var approvals = new Mock<IMcpApprovalService>();
+        approvals.Setup(a => a.GetAsync(owner, requestId, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
+
+        var handler = NewHandler(approvals.Object);
+        var result = await handler.InvokeAsync(
+            JsonDocument.Parse($"{{\"requestId\":\"{requestId}\"}}").RootElement,
+            new McpToolCallContext(NewContext(owner, accessId).Object, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null),
+            CancellationToken.None);
+
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(result));
+        var untrusted = doc.RootElement.GetProperty("requests")[0].GetProperty("untrusted_data");
+        Assert.Equal("soft warning", untrusted.GetProperty("resultRef").GetProperty("error").GetString());
+        Assert.Equal(JsonValueKind.Null, untrusted.GetProperty("error").ValueKind);
+    }
+
+    /// <summary>The list projection carries the same error object for failed requests.</summary>
+    [Fact]
+    public async Task TaskStatus_List_FailedRequest_ExposesErrorObject()
+    {
+        var owner = Guid.NewGuid();
+        var accessId = Guid.NewGuid();
+        var item = new AiActionRequestListItemDto(Guid.NewGuid(), accessId, "acc", "fm_admin_backups",
+            "create", (short)AiActionRequestStatus.Failed, DateTime.UtcNow.AddHours(-1),
+            DateTime.UtcNow.AddHours(71), DateTime.UtcNow.AddMinutes(-30), DateTime.UtcNow.AddMinutes(-20),
+            "{\"error\":{\"type\":\"SqliteException\"}}", "Err_Internal", Guid.NewGuid(), 1, null);
+        var approvals = new Mock<IMcpApprovalService>();
+        approvals.Setup(a => a.ListAsync(owner, null, accessId, null, 0, 100, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { item });
+
+        var handler = NewHandler(approvals.Object);
+        var result = await handler.InvokeAsync(
+            JsonDocument.Parse("{}").RootElement,
+            new McpToolCallContext(NewContext(owner, accessId).Object, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null),
+            CancellationToken.None);
+
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(result));
+        var untrusted = doc.RootElement.GetProperty("requests")[0].GetProperty("untrusted_data");
+        Assert.Equal("SqliteException", untrusted.GetProperty("error").GetProperty("type").GetString());
+        Assert.Equal(JsonValueKind.Null, untrusted.GetProperty("resultRef").ValueKind);
+    }
+
     /// <summary>A request id of a different access behaves like a missing one — empty list,
     /// no forbidden/not-found distinction.</summary>
     [Fact]

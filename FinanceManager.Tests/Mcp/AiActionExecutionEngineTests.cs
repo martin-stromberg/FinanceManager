@@ -37,7 +37,7 @@ public sealed class AiActionExecutionEngineTests
         public McpToolExecutionMode? SeenMode { get; set; }
         public IMcpAccessContext? SeenAccess { get; set; }
         public object HandlerResult { get; set; } = new { ok = true };
-        public Func<JsonElement, Task<object>>? Invoke { get; set; }
+        public Func<JsonElement, CancellationToken, Task<object>>? Invoke { get; set; }
         public Mock<IMcpRequestStatusPublisher> Publisher { get; } = new();
         public List<McpRequestStatusEvent> Published { get; } = new();
 
@@ -106,7 +106,7 @@ public sealed class AiActionExecutionEngineTests
             {
                 _f.SeenMode = context.Mode;
                 _f.SeenAccess = context.Access;
-                return _f.Invoke is not null ? _f.Invoke(arguments) : Task.FromResult(_f.HandlerResult);
+                return _f.Invoke is not null ? _f.Invoke(arguments, ct) : Task.FromResult(_f.HandlerResult);
             }
         }
     }
@@ -206,7 +206,7 @@ public sealed class AiActionExecutionEngineTests
     public async Task ExecuteDue_HandlerFailure_ShouldMarkFailedWithClassifiedReason()
     {
         var f = new Fixture();
-        f.Invoke = _ => throw new McpToolException("Err_AlreadyBooked", "booked");
+        f.Invoke = (_, _) => throw new McpToolException("Err_AlreadyBooked", "booked");
         var access = NewAccess(Guid.NewGuid());
         f.Db.McpAccesses.Add(access);
         f.Db.AiActionRequests.Add(ApprovedRequest(access));
@@ -218,15 +218,23 @@ public sealed class AiActionExecutionEngineTests
         var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(AiActionRequestStatus.Failed, reloaded.Status);
         Assert.Equal("Err_AlreadyBooked", reloaded.FailureReason);
+        // A defined McpToolException surfaces its declared code and the defined,
+        // interna-free message in the result payload's error object.
+        using var doc = JsonDocument.Parse(reloaded.ExecutionResult!);
+        var error = doc.RootElement.GetProperty("error");
+        Assert.Equal("Err_AlreadyBooked", error.GetProperty("code").GetString());
+        Assert.Equal("booked", error.GetProperty("message").GetString());
+        Assert.False(error.TryGetProperty("type", out _));
         Assert.Contains(f.Writes, w => w.EventType == "ApprovalFailed" && w.Result == "Failed");
     }
 
-    /// <summary>ExecuteDue UnknownException ShouldMarkFailedInternal.</summary>
+    /// <summary>ExecuteDue DomainValidationFailure ShouldStoreErrorCodeAndMessage.</summary>
     [Fact]
-    public async Task ExecuteDue_UnknownException_ShouldMarkFailedInternal()
+    public async Task ExecuteDue_DomainValidationFailure_ShouldStoreErrorCodeAndMessage()
     {
         var f = new Fixture();
-        f.Invoke = _ => throw new InvalidOperationException("boom");
+        f.Invoke = (_, _) => throw new FinanceManager.Application.Exceptions.DomainValidationException(
+            "Err_Mcp_InvalidState", "Only a pending request can be approved. Current state: Approved.");
         var access = NewAccess(Guid.NewGuid());
         f.Db.McpAccesses.Add(access);
         f.Db.AiActionRequests.Add(ApprovedRequest(access));
@@ -234,7 +242,62 @@ public sealed class AiActionExecutionEngineTests
 
         await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
 
-        Assert.Equal("Err_Internal", (await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken)).FailureReason);
+        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("Err_Mcp_InvalidState", reloaded.FailureReason);
+        using var doc = JsonDocument.Parse(reloaded.ExecutionResult!);
+        var error = doc.RootElement.GetProperty("error");
+        Assert.Equal("Err_Mcp_InvalidState", error.GetProperty("code").GetString());
+        Assert.Equal("Only a pending request can be approved. Current state: Approved.",
+            error.GetProperty("message").GetString());
+    }
+
+    /// <summary>ExecuteDue UnknownException ShouldMarkFailedInternal.</summary>
+    [Fact]
+    public async Task ExecuteDue_UnknownException_ShouldMarkFailedInternal()
+    {
+        var f = new Fixture();
+        f.Invoke = (_, _) => throw new InvalidOperationException("boom");
+        var access = NewAccess(Guid.NewGuid());
+        f.Db.McpAccesses.Add(access);
+        f.Db.AiActionRequests.Add(ApprovedRequest(access));
+        await f.Db.SaveChangesAsync(CancellationToken.None);
+
+        await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
+
+        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("Err_Internal", reloaded.FailureReason);
+        // A foreign exception leaks only its bare type name — no message, no stack.
+        using var doc = JsonDocument.Parse(reloaded.ExecutionResult!);
+        var error = doc.RootElement.GetProperty("error");
+        Assert.Equal("InvalidOperationException", error.GetProperty("type").GetString());
+        Assert.False(error.TryGetProperty("message", out _));
+        Assert.False(error.TryGetProperty("code", out _));
+    }
+
+    /// <summary>ExecuteDue HandlerTimeout ShouldFailWithTimeoutDetail.</summary>
+    [Fact]
+    public async Task ExecuteDue_HandlerTimeout_ShouldFailWithTimeoutDetail()
+    {
+        var f = new Fixture(timeoutSeconds: 1);
+        f.Invoke = async (_, ct) =>
+        {
+            await Task.Delay(TimeSpan.FromMinutes(1), ct);
+            return new { };
+        };
+        var access = NewAccess(Guid.NewGuid());
+        f.Db.McpAccesses.Add(access);
+        f.Db.AiActionRequests.Add(ApprovedRequest(access));
+        await f.Db.SaveChangesAsync(CancellationToken.None);
+
+        await f.Engine.ExecuteDueRequestsAsync(10, CancellationToken.None);
+
+        var reloaded = await f.Db.AiActionRequests.AsNoTracking().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(AiActionRequestStatus.Failed, reloaded.Status);
+        Assert.Equal("Err_ExecutionTimeout", reloaded.FailureReason);
+        using var doc = JsonDocument.Parse(reloaded.ExecutionResult!);
+        var error = doc.RootElement.GetProperty("error");
+        Assert.Equal("ExecutionTimeout", error.GetProperty("type").GetString());
+        Assert.Equal(1, error.GetProperty("timeoutSeconds").GetInt32());
     }
 
     /// <summary>ExecuteDue RevokedAccess ShouldWithdrawRequest.</summary>
@@ -371,7 +434,7 @@ public sealed class AiActionExecutionEngineTests
     public async Task ExecuteDue_WithPublisher_PublishesFailed()
     {
         var f = new Fixture(withPublisher: true);
-        f.Invoke = _ => throw new FinanceManager.Application.Exceptions.DomainValidationException("Err_TargetGone", "gone");
+        f.Invoke = (_, _) => throw new FinanceManager.Application.Exceptions.DomainValidationException("Err_TargetGone", "gone");
         var access = NewAccess(Guid.NewGuid());
         f.Db.McpAccesses.Add(access);
         var r = ApprovedRequest(access);

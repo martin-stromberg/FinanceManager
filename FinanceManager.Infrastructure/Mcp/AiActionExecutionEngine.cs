@@ -243,7 +243,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         var descriptor = _registry.Find(request.ToolName);
         if (descriptor is null)
         {
-            return await FailAsync(request, "Err_Mcp_UnknownTool", ct);
+            return await FailAsync(request, "Err_Mcp_UnknownTool", null, ct);
         }
 
         // 3) Write-stop lid — approved requests stay in the queue while it is active
@@ -266,7 +266,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
             {
                 if (!await _scopeEvaluator.IsAllowedAsync(access, scope.DataType, scope.Right, ct))
                 {
-                    return await FailAsync(request, "Err_RightsRevoked", ct);
+                    return await FailAsync(request, "Err_RightsRevoked", null, ct);
                 }
             }
         }
@@ -278,7 +278,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
             .FirstOrDefault(h => h.ToolName == request.ToolName);
         if (handler is null)
         {
-            return await FailAsync(request, "Err_Mcp_ToolNotImplemented", ct);
+            return await FailAsync(request, "Err_Mcp_ToolNotImplemented", null, ct);
         }
 
         JsonDocument parameters;
@@ -288,7 +288,7 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
         }
         catch (JsonException)
         {
-            return await FailAsync(request, "Err_Internal", ct);
+            return await FailAsync(request, "Err_Internal", new { type = nameof(JsonException) }, ct);
         }
 
         await StageRequestAuditAsync(request, "ApprovalExecutionStarted", "Success", null, ct);
@@ -309,20 +309,29 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                return await FailAsync(request, "Err_ExecutionTimeout", ct);
+                return await FailAsync(request, "Err_ExecutionTimeout",
+                    new { type = "ExecutionTimeout", timeoutSeconds = (int)timeout.TotalSeconds }, ct);
             }
             catch (McpToolException ex)
             {
-                return await FailAsync(request, ClassifyFailure(ex.Code), ct);
+                // Defined error: the declared code and its (interna-free) client message
+                // may be surfaced — the tool contract guarantees safe texts.
+                return await FailAsync(request, ClassifyFailure(ex.Code),
+                    new { code = ex.Code, message = ex.Message }, ct);
             }
             catch (FinanceManager.Application.Exceptions.DomainValidationException ex)
             {
-                return await FailAsync(request, ClassifyFailure(ex.Code), ct);
+                // Defined error: code + defined validation message (may name the affected
+                // arguments — the message is authored for client visibility).
+                return await FailAsync(request, ClassifyFailure(ex.Code),
+                    new { code = ex.Code, message = ex.Message }, ct);
             }
             catch (Exception ex)
             {
+                // Foreign exception: only the bare type name is a safe detail — never the
+                // message or a stack trace (both can carry internals).
                 _logger.LogError(ex, "Approval request {RequestId} execution failed with an unhandled error", request.Id);
-                return await FailAsync(request, "Err_Internal", ct);
+                return await FailAsync(request, "Err_Internal", new { type = ex.GetType().Name }, ct);
             }
         }
     }
@@ -355,11 +364,29 @@ public sealed class AiActionExecutionEngine : IAiActionExecutionEngine
     /// Marks a claimed request failed with a classified reason, stages the
     /// <c>ApprovalFailed</c> record and notifies the owner.
     /// </summary>
-    private async Task<bool> FailAsync(AiActionRequest request, string failureReason, CancellationToken ct)
+    /// <param name="request">The claimed request.</param>
+    /// <param name="failureReason">Classified <c>Err_*</c> failure reason.</param>
+    /// <param name="errorDetail">Optional safe diagnostic detail stored as the request's
+    /// result payload (<c>{"error":{…}}</c>) so <c>fm_task_status</c> can surface it as
+    /// <c>untrusted_data.error</c>: the declared <c>code</c>/<c>message</c> pair of defined
+    /// exceptions or the bare type name of a foreign exception — never internals.
+    /// <see cref="AiActionRequest.ReasonText"/> is client input and deliberately not used.</param>
+    /// <param name="ct">Cancellation token.</param>
+    private async Task<bool> FailAsync(AiActionRequest request, string failureReason,
+        object? errorDetail, CancellationToken ct)
     {
-        request.MarkFailed(failureReason);
+        string? resultJson = null;
+        if (errorDetail is not null)
+        {
+            resultJson = JsonSerializer.Serialize(new { error = errorDetail });
+            if (resultJson.Length > MaxResultChars)
+            {
+                resultJson = resultJson[..MaxResultChars];
+            }
+        }
+        request.MarkFailed(failureReason, resultJson);
         await StageRequestAuditAsync(request, "ApprovalFailed", "Failed",
-            JsonSerializer.Serialize(new { requestId = request.Id, failureReason }), ct);
+            JsonSerializer.Serialize(new { requestId = request.Id, failureReason, error = errorDetail }), ct);
         await _db.SaveChangesAsync(ct);
         await TryPublishEventAsync(McpRequestStatusEvent.FromRequest(request), ct);
         await _notifications.CreateForUserAsync(

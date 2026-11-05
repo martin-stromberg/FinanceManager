@@ -178,7 +178,11 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
 
     /// <summary>
     /// JSON result reference of a successful execution (created ids, result summary) —
-    /// the link path into the audit chain.
+    /// the link path into the audit chain. A failed execution carries the classified
+    /// error envelope (<c>{"error":{…}}</c>) here instead — the diagnostic channel that
+    /// <c>fm_task_status</c> surfaces as <c>untrusted_data.error</c>; it only ever contains
+    /// defined, safe detail (defined code/message pairs or the bare exception type name,
+    /// never internals, never stack traces).
     /// </summary>
     public string? ExecutionResult { get; private set; }
 
@@ -350,14 +354,18 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
     /// automatic retry — a new attempt is a conscious new client request.
     /// </summary>
     /// <param name="failureReason">Classified <c>Err_*</c> failure reason. Must not be null or whitespace.</param>
+    /// <param name="failureResultJson">Optional classified error envelope
+    /// (<c>{"error":{…}}</c>) stored as the execution result reference — defined, safe
+    /// diagnostic detail only (never internals/stack traces of foreign exceptions).</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="failureReason"/> is null or whitespace.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the request is not an approved, claimed one.</exception>
-    public void MarkFailed(string failureReason)
+    public void MarkFailed(string failureReason, string? failureResultJson = null)
     {
         EnsureClaimed("Only a claimed, approved request can be marked failed.");
         Status = AiActionRequestStatus.Failed;
         ExecutedUtc = DateTime.UtcNow;
         FailureReason = Guards.NotNullOrWhiteSpace(failureReason, nameof(failureReason));
+        ExecutionResult = failureResultJson;
         ClaimToken = null;
         ClaimedUtc = null;
         Touch();

@@ -137,6 +137,7 @@ public sealed class FmTaskStatusHandler : IMcpToolHandler
         {
             return Array.Empty<object>();
         }
+        var result = SplitExecutionResult(d.ExecutionResult, (AiActionRequestStatus)d.Status);
         return new object[]
         {
             new
@@ -156,16 +157,17 @@ public sealed class FmTaskStatusHandler : IMcpToolHandler
                 correlationId = d.CorrelationId,
                 idempotencyKey = d.IdempotencyKey,
                 attemptCount = d.AttemptCount,
-                // Parameter snapshot, client reason text, decision note and the execution
-                // result reference carry user/client content — untrusted_data wrapper
-                // (sicherheitskonzept.md §5.2).
+                // Parameter snapshot, client reason text, decision note, the execution
+                // result reference and the classified error object carry user/client or
+                // engine content — untrusted_data wrapper (sicherheitskonzept.md §5.2).
                 untrusted_data = new
                 {
                     mcpAccessName = d.McpAccessName,
                     parameterSnapshot = ParseSnapshot(d.ParameterSnapshot),
                     reasonText = d.ReasonText,
                     decisionNote = d.DecisionNote,
-                    resultRef = ParseSnapshot(d.ExecutionResult)
+                    resultRef = result.ResultRef,
+                    error = result.Error
                 }
             }
         };
@@ -176,26 +178,55 @@ public sealed class FmTaskStatusHandler : IMcpToolHandler
         Guid ownerUserId, Guid accessId, AiActionRequestStatus? status, int take, CancellationToken ct)
     {
         var items = await _approvals.ListAsync(ownerUserId, status, accessId, null, 0, take, ct);
-        return items.Select(r => (object)new
+        return items.Select(r =>
         {
-            requestId = r.Id,
-            mcpAccessId = r.McpAccessId,
-            toolName = r.ToolName,
-            actionKey = r.ActionKey,
-            status = ((AiActionRequestStatus)r.Status).ToString(),
-            requestedUtc = r.RequestedUtc,
-            expiresUtc = r.ExpiresUtc,
-            decidedUtc = r.DecidedUtc,
-            executedUtc = r.ExecutedUtc,
-            failureReason = r.FailureReason,
-            correlationId = r.CorrelationId,
-            attemptCount = r.AttemptCount,
-            untrusted_data = new
+            var result = SplitExecutionResult(r.ExecutionResult, (AiActionRequestStatus)r.Status);
+            return (object)new
             {
-                mcpAccessName = r.McpAccessName,
-                resultRef = ParseSnapshot(r.ExecutionResult)
-            }
+                requestId = r.Id,
+                mcpAccessId = r.McpAccessId,
+                toolName = r.ToolName,
+                actionKey = r.ActionKey,
+                status = ((AiActionRequestStatus)r.Status).ToString(),
+                requestedUtc = r.RequestedUtc,
+                expiresUtc = r.ExpiresUtc,
+                decidedUtc = r.DecidedUtc,
+                executedUtc = r.ExecutedUtc,
+                failureReason = r.FailureReason,
+                correlationId = r.CorrelationId,
+                attemptCount = r.AttemptCount,
+                untrusted_data = new
+                {
+                    mcpAccessName = r.McpAccessName,
+                    resultRef = result.ResultRef,
+                    error = result.Error
+                }
+            };
         }).ToList();
+    }
+
+    /// <summary>
+    /// Splits the stored execution result of a request: a successful execution returns its
+    /// payload as the result reference; a failed execution carries the engine's classified
+    /// error envelope (<c>{"error":{…}}</c>) which is surfaced as the dedicated
+    /// <c>error</c> object instead. The envelope is only recognized on
+    /// <see cref="AiActionRequestStatus.Failed"/> requests so a legitimate success result
+    /// that happens to carry an <c>error</c> property is never misread.
+    /// </summary>
+    /// <param name="json">The stored <see cref="AiActionRequest.ExecutionResult"/>.</param>
+    /// <param name="status">The request status.</param>
+    /// <returns>The result reference and the extracted error object (mutually exclusive).</returns>
+    private static (object? ResultRef, object? Error) SplitExecutionResult(string? json, AiActionRequestStatus status)
+    {
+        var parsed = ParseSnapshot(json);
+        if (status == AiActionRequestStatus.Failed
+            && parsed is JsonElement el
+            && el.ValueKind == JsonValueKind.Object
+            && el.TryGetProperty("error", out var errorEl))
+        {
+            return (null, errorEl);
+        }
+        return (parsed, null);
     }
 
     /// <summary>Returns the stored JSON as a structured element (or raw string when not JSON).</summary>
