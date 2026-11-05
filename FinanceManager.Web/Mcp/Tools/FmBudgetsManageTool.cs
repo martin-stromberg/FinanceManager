@@ -165,13 +165,8 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         }
         await RequireWritableAsync(context, McpDataType.Budgets, McpRightKind.Create, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityPurpose, Guid.Empty, "Created", null, $"{sourceType}:{sourceId}|{name}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "BudgetPurposeCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { entity = "purpose", operation = "create", sourceType = sourceType.ToString(), sourceId, categoryId }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         BudgetPurposeDto created;
         try
         {
@@ -179,14 +174,15 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or DomainValidationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityPurpose, created.Id, "Created", null, $"{sourceType}:{sourceId}|{name}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "BudgetPurposeCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { entity = "purpose", operation = "create", sourceType = sourceType.ToString(), sourceId, categoryId }), ct);
         return new { entity = "purpose", operation = "create", applied = true, purpose = PurposeResult(created) };
     }
 
@@ -338,14 +334,8 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         await RequireWritableAsync(context, McpDataType.BudgetRules, McpRightKind.Create, ct);
 
         var target = purposeId ?? categoryId!.Value;
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityRule, Guid.Empty, "Created", null,
-                $"{(purposeId.HasValue ? "purpose" : "category")}:{target}|{amount}|{interval}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "BudgetRuleCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { entity = "rule", operation = "create", purposeId, categoryId, amount, interval = interval.ToString() }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         BudgetRuleDto created;
         try
         {
@@ -355,14 +345,16 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or DomainValidationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityRule, created.Id, "Created", null,
+                $"{(purposeId.HasValue ? "purpose" : "category")}:{target}|{amount}|{interval}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "BudgetRuleCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { entity = "rule", operation = "create", purposeId, categoryId, amount, interval = interval.ToString() }), ct);
         return new { entity = "rule", operation = "create", applied = true, rule = RuleResult(created) };
     }
 
@@ -494,13 +486,8 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         await McpMasterDataGuards.RequireBudgetPurposeAsync(_purposes, purposeId, owner, ct);
         await RequireWritableAsync(context, McpDataType.Budgets, McpRightKind.Complete, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityOverride, Guid.Empty, "Created", null, $"{period}|{amount}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "BudgetOverrideCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { entity = "override", operation = "create", purposeId, period = period.ToString(), amount }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         BudgetOverrideDto created;
         try
         {
@@ -508,14 +495,15 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or DomainValidationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityOverride, created.Id, "Created", null, $"{period}|{amount}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "BudgetOverrideCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { entity = "override", operation = "create", purposeId, period = period.ToString(), amount }), ct);
         return new { entity = "override", operation = "create", applied = true, @override = OverrideResult(created) };
     }
 
@@ -618,13 +606,8 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         var name = McpMasterDataGuards.RequiredName(arguments);
         await RequireWritableAsync(context, McpDataType.BudgetCategories, McpRightKind.Create, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityCategory, Guid.Empty, "Created", null, name)
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "BudgetCategoryCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { entity = "category", operation = "create", name }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         BudgetCategoryDto created;
         try
         {
@@ -632,14 +615,15 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or DomainValidationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityCategory, created.Id, "Created", null, name)
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "BudgetCategoryCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { entity = "category", operation = "create", name }), ct);
         return new
         {
             entity = "category",

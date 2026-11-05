@@ -156,13 +156,8 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
 
         // The audit payload carries metadata + sha256 — never the binary content.
         var sha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityType, Guid.Empty, "Created", null, $"{kind}:{entityId}|{fileName}|{bytes.Length}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "AttachmentUploaded", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { operation = "upload", entityKind = kind.ToString(), entityId, fileName, contentType, sizeBytes = bytes.Length, sha256, categoryId }), ct);
+        // Upload first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         AttachmentDto created;
         try
         {
@@ -171,14 +166,15 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityType, created.Id, "Created", null, $"{kind}:{entityId}|{fileName}|{bytes.Length}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "AttachmentUploaded", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { operation = "upload", entityKind = kind.ToString(), entityId, fileName, contentType, sizeBytes = bytes.Length, sha256, categoryId }), ct);
         return new { operation = "upload", applied = true, sha256, attachment = Result(created) };
     }
 
@@ -190,13 +186,8 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
         var categoryId = await ResolveCategoryAsync(arguments, owner, ct);
         await RequireWritableAsync(context, McpRightKind.Create, categoryId, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityType, Guid.Empty, "Created", null, $"{kind}:{entityId}|url")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "AttachmentUrlCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { operation = "createUrl", entityKind = kind.ToString(), entityId, url, categoryId }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         AttachmentDto created;
         try
         {
@@ -204,14 +195,15 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or UriFormatException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityType, created.Id, "Created", null, $"{kind}:{entityId}|url")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "AttachmentUrlCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { operation = "createUrl", entityKind = kind.ToString(), entityId, url, categoryId }), ct);
         return new { operation = "createUrl", applied = true, attachment = Result(created) };
     }
 
@@ -224,13 +216,8 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
                 "The referenced master attachment does not exist or is not owned by the caller.");
         await RequireWritableAsync(context, McpRightKind.Create, master.CategoryId, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityType, Guid.Empty, "Created", null, $"{kind}:{entityId}|ref:{masterId}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "AttachmentReferenceCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { operation = "createReference", entityKind = kind.ToString(), entityId, masterAttachmentId = masterId }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         AttachmentDto created;
         try
         {
@@ -238,14 +225,15 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityType, created.Id, "Created", null, $"{kind}:{entityId}|ref:{masterId}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "AttachmentReferenceCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { operation = "createReference", entityKind = kind.ToString(), entityId, masterAttachmentId = masterId }), ct);
         return new { operation = "createReference", applied = true, attachment = Result(created) };
     }
 

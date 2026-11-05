@@ -140,11 +140,18 @@ public sealed class FmAdminUpdatesHandler : IMcpToolHandler
             new { operation = "install" }, ct,
             executeApproved: async ct2 =>
             {
+                // An install run is not a persisted record — the fachlich nächste anchor of
+                // the delta is the deterministic id of the release being installed (no run id
+                // exists on the update contract). The audit writer rejects empty entity ids.
+                var before = await _updates.GetStatusAsync(ct2);
+                var targetVersion = before.AvailableUpdate?.Version ?? before.AvailableVersion
+                    ?? before.DownloadedAssetName ?? before.InstalledVersion ?? "unknown";
                 var staged = await McpWriteAudit.StageDataChangeAsync(
                     _auditWriter, context, "UpdateInstallStarted", ToolName,
                     new List<McpAuditFieldChange>
                     {
-                        new(EntityType, Guid.Empty, "InstallStarted", null, null)
+                        new(EntityType, McpAuditAnchors.StableId($"{EntityType}:{targetVersion}"),
+                            "InstallStarted", null, targetVersion)
                     },
                     null,
                     JsonSerializer.Serialize(new { operation = "install" }), ct2);
@@ -193,11 +200,14 @@ public sealed class FmAdminUpdatesHandler : IMcpToolHandler
             new { operation = "schedule", scheduledInstallTime = schedule?.ToString("HH:mm", CultureInfo.InvariantCulture) }, ct,
             executeApproved: async ct2 =>
             {
+                // The changed record is the update-settings document — file-based
+                // (settings.json), so the delta anchors on its deterministic singleton id.
                 var staged = await McpWriteAudit.StageDataChangeAsync(
                     _auditWriter, context, "UpdateScheduleChanged", ToolName,
                     new List<McpAuditFieldChange>
                     {
-                        new(EntityType, Guid.Empty, "ScheduledInstallTime", null,
+                        new("UpdateSettings", McpAuditAnchors.StableId("UpdateSettings"),
+                            "ScheduledInstallTime", null,
                             schedule?.ToString("HH:mm", CultureInfo.InvariantCulture))
                     },
                     null,

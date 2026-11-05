@@ -126,13 +126,8 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
             _recordFilter, context.Access, McpDataType.Securities, McpRightKind.Create,
             new McpRecordContext { SecurityCategoryId = categoryId }, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityType, Guid.Empty, "Created", null, $"{identifier}|{name}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "SecurityCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { operation = "create", name, identifier, currencyCode = currency, categoryId }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         SecurityDto created;
         try
         {
@@ -140,14 +135,15 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityType, created.Id, "Created", null, $"{identifier}|{name}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "SecurityCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { operation = "create", name, identifier, currencyCode = currency, categoryId }), ct);
         return new { operation = "create", applied = true, security = Result(created) };
     }
 

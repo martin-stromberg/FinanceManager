@@ -2,6 +2,7 @@ using FinanceManager.Application.Mcp;
 using FinanceManager.Application.WellKnown;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Domain.Users;
+using FinanceManager.Domain.WellKnown;
 using FinanceManager.Shared.Dtos.Admin;
 using FinanceManager.Shared.Dtos.Mcp;
 using FinanceManager.Shared.Dtos.Update;
@@ -66,8 +67,6 @@ public sealed class FmAdminSettingsDescriptor : McpToolDescriptorBase
 /// </summary>
 public sealed class FmAdminSettingsHandler : IMcpToolHandler
 {
-    private const string EntityType = "AdminSettings";
-
     private readonly UserManager<User> _users;
     private readonly IMcpSettingsService _mcpSettings;
     private readonly IUpdateOrchestrator _updates;
@@ -175,11 +174,20 @@ public sealed class FmAdminSettingsHandler : IMcpToolHandler
             new { operation = "set", section, enabled, writeAccessEnabled, includePrereleases, changePasswordUrl }, ct,
             executeApproved: async ct2 =>
             {
+                // Anchor the delta on the record actually changed: the real singleton row id
+                // for the database-persisted settings (mcp/wellKnown), a deterministic anchor
+                // for the file-based update settings — the audit writer rejects empty ids.
+                var (entityType, entityId) = section switch
+                {
+                    "mcp" => ("McpSettings", McpSettings.SingletonId),
+                    "updates" => ("UpdateSettings", McpAuditAnchors.StableId("UpdateSettings")),
+                    _ => ("WellKnownSettings", WellKnownSettings.SingletonId)
+                };
                 var staged = await McpWriteAudit.StageDataChangeAsync(
                     _auditWriter, context, "AdminSettingsChanged", ToolName,
                     new List<McpAuditFieldChange>
                     {
-                        new(EntityType, Guid.Empty, "SectionChanged", null, section)
+                        new(entityType, entityId, "SectionChanged", null, section)
                     },
                     null,
                     JsonSerializer.Serialize(new { operation = "set", section }), ct2);

@@ -117,13 +117,8 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
             _recordFilter, context.Access, McpDataType.Accounts, McpRightKind.Create,
             new McpRecordContext { AccountTypeValue = (short)type }, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityType, Guid.Empty, "Created", null, $"{type}|{name}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "AccountCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { operation = "create", name, accountType = type.ToString(), bankContactId }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         AccountDto created;
         try
         {
@@ -131,14 +126,15 @@ public sealed class FmAccountsManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityType, created.Id, "Created", null, $"{type}|{name}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "AccountCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { operation = "create", name, accountType = type.ToString(), bankContactId }), ct);
         return new { operation = "create", applied = true, account = Result(created) };
     }
 

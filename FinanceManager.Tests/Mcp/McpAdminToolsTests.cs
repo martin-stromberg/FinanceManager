@@ -272,6 +272,7 @@ public sealed class McpAdminToolsTests
     public async Task AdminUpdates_Install_ExecutesOnApprovedExecution()
     {
         var updates = new Mock<IUpdateOrchestrator>();
+        updates.Setup(u => u.GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(NewStatus());
         updates.Setup(u => u.StartInstallAsync(true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(NewStatus(UpdateStatusKind.Installing));
         var handler = new FmAdminUpdatesHandler(NewUsers().Object, updates.Object,
@@ -376,6 +377,40 @@ public sealed class McpAdminToolsTests
             NewCallContext(NewAccessContext(AdminOwner).Object, McpToolExecutionMode.ApprovedExecution), ct));
         Assert.True(exec.RootElement.GetProperty("applied").GetBoolean());
         Assert.Equal(created.Id, exec.RootElement.GetProperty("backup").GetProperty("id").GetGuid());
+    }
+
+    /// <summary>
+    /// Regression test for the Guid.Empty defect: the real audit writer routes every field
+    /// delta through the <c>McpAuditEntryChange</c> ctor which throws for empty entity ids.
+    /// The guarding fake replays that guard — the approved create must stage the real
+    /// backup id and still answer <c>applied</c>.
+    /// </summary>
+    [Fact]
+    public async Task AdminBackups_Create_ApprovedExecution_StagesRealRecordId()
+    {
+        var created = new BackupDto
+        {
+            Id = Guid.NewGuid(),
+            CreatedUtc = DateTime.UtcNow,
+            FileName = "new.zip",
+            SizeBytes = 5,
+            Source = "System"
+        };
+        var backups = new Mock<IBackupService>();
+        backups.Setup(b => b.CreateAsync(AdminOwner, It.IsAny<CancellationToken>())).ReturnsAsync(created);
+        var audit = new GuardingAuditWriter();
+        var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewScopeEvaluator().Object, audit);
+        var result = await handler.InvokeAsync(Args("{\"operation\":\"create\"}"),
+            NewCallContext(NewAccessContext(AdminOwner).Object, McpToolExecutionMode.ApprovedExecution),
+            TestContext.Current.CancellationToken);
+
+        using var doc = Serialize(result);
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.NotNull(audit.LastRequest);
+        var change = Assert.Single(audit.LastRequest!.Changes!);
+        Assert.Equal(created.Id, change.EntityId);
+        Assert.Equal("BackupCreated", audit.LastRequest.EventType);
     }
 
     // ------------------------------------------------------------------

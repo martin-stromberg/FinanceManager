@@ -179,18 +179,24 @@ public sealed class McpFinalToolsAndDelegatesTests
     public async Task Book_BookAll_EnqueuesTask()
     {
         var owner = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
         var tasks = new Mock<IBackgroundTaskManager>();
         tasks.Setup(t => t.GetAll()).Returns(Array.Empty<BackgroundTaskInfo>());
         tasks.Setup(t => t.Enqueue(BackgroundTaskType.BookAllDrafts, owner, It.IsAny<object>(), false))
-            .Returns(new BackgroundTaskInfo(Guid.NewGuid(), BackgroundTaskType.BookAllDrafts, owner,
+            .Returns(new BackgroundTaskInfo(taskId, BackgroundTaskType.BookAllDrafts, owner,
                 DateTime.UtcNow, BackgroundTaskStatus.Queued, null, null, null, 0, 0, null,
                 null, null, null, null, null, null));
+        var audit = new GuardingAuditWriter();
         var handler = new FmStatementDraftBookHandler(new Mock<IStatementDraftService>().Object,
-            tasks.Object, NullAudit().Object);
+            tasks.Object, audit);
         var result = await handler.InvokeAsync(Args("{\"bookAll\":true}"),
             Ctx(owner, approved: true), CancellationToken.None);
         tasks.Verify(t => t.Enqueue(BackgroundTaskType.BookAllDrafts, owner, It.IsAny<object>(), false), Times.Once);
         Assert.False(JsonDocument.Parse(JsonSerializer.Serialize(result)).RootElement.GetProperty("alreadyRunning").GetBoolean());
+        // The batch event anchors on the enqueued task record — never an empty entity id.
+        var change = Assert.Single(audit.LastRequest!.Changes!);
+        Assert.Equal(taskId, change.EntityId);
+        Assert.Equal("BackgroundTask", change.EntityType);
     }
 
     // -------------------------------------------------------------- T21 discard
@@ -226,13 +232,19 @@ public sealed class McpFinalToolsAndDelegatesTests
     public async Task Discard_AllConfirmed_DeletesAll()
     {
         var owner = Guid.NewGuid();
+        var open = new[] { NewDraft(Guid.NewGuid()), NewDraft(Guid.NewGuid()), NewDraft(Guid.NewGuid()), NewDraft(Guid.NewGuid()) };
         var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetOpenDraftsAsync(owner, It.IsAny<CancellationToken>())).ReturnsAsync(open);
         drafts.Setup(d => d.DeleteAllAsync(owner, It.IsAny<CancellationToken>())).ReturnsAsync(4);
-        var handler = new FmStatementDraftDiscardHandler(drafts.Object, NullAudit().Object);
+        var audit = new GuardingAuditWriter();
+        var handler = new FmStatementDraftDiscardHandler(drafts.Object, audit);
         var result = await handler.InvokeAsync(Args("{\"all\":true,\"confirmDiscardAll\":true}"),
             Ctx(owner, approved: true), CancellationToken.None);
         drafts.Verify(d => d.DeleteAllAsync(owner, It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(4, JsonDocument.Parse(JsonSerializer.Serialize(result)).RootElement.GetProperty("discardedCount").GetInt32());
+        // The batch event carries one delta row per discarded draft — real ids, no placeholder.
+        Assert.Equal(open.Select(d => d.DraftId).OrderBy(id => id),
+            audit.LastRequest!.Changes!.Select(c => c.EntityId).OrderBy(id => id));
     }
 
     // -------------------------------------------------------------- T31 reverse

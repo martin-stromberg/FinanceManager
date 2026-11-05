@@ -196,12 +196,14 @@ public sealed class McpStatementWriteToolsTests
         Assert.Equal(draft.DraftId, d.GetProperty("draftId").GetGuid());
         Assert.Equal("a.pdf", doc.RootElement.GetProperty("untrusted_data").GetProperty("originalFileName").GetString());
 
-        // Audit staged before the effect, carrying metadata + sha256 — never the content.
+        // Audit staged with the real draft id after the effect, carrying metadata +
+        // sha256 — never the content.
         Assert.NotNull(stagedRequest);
         Assert.Equal(McpAuditCategory.DataChange, stagedRequest!.Category);
         Assert.Equal("DraftImported", stagedRequest.EventType);
         Assert.Contains("sha256", stagedRequest.PayloadJson);
         Assert.DoesNotContain(content, stagedRequest.PayloadJson);
+        Assert.Contains(stagedRequest.Changes!, c => c.EntityId == draft.DraftId && c.Field == "Import");
     }
 
     /// <summary>Test case.</summary>

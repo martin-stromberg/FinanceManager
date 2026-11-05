@@ -103,12 +103,16 @@ public sealed class FmStatementDraftDiscardHandler : IMcpToolHandler
 
         if (all)
         {
+            // Batch effect over every open draft: resolve the drafts first so the delta
+            // rows anchor on their real draft ids — the audit writer rejects the former
+            // Guid.Empty placeholder of the aggregated batch event.
+            var open = await _drafts.GetOpenDraftsAsync(owner, ct);
             var stagedAll = await McpWriteAudit.StageDataChangeAsync(
                 _auditWriter, context, "DraftsDiscardedAll", ToolName,
-                new List<McpAuditFieldChange>
-                {
-                    new(EntityType, Guid.Empty, "DiscardedAll", null, null)
-                }, null,
+                open.Select(d => new McpAuditFieldChange(
+                        EntityType, d.DraftId, "Discarded", d.Status.ToString(), null))
+                    .ToList(),
+                open.Count,
                 JsonSerializer.Serialize(new { operation = "discardAll" }), ct);
             int count;
             try

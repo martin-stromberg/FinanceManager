@@ -135,10 +135,19 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
         var fileName = RequireFileName(originalFileName);
         var bytes = DecodeContent(contentBase64, McpStatementDraftGuards.MaxUploadBytes);
 
-        var staged = await McpWriteAudit.StageDataChangeAsync(
+        // Import first, then stage the DataChange with the real draft ids — the draft
+        // records only exist after the pipeline ran and the audit writer rejects the
+        // former Guid.Empty placeholder entity id.
+        var created = new List<StatementDraftDto>();
+        await foreach (var draft in _drafts.CreateDraftAsync(owner, fileName, bytes, ct))
+        {
+            created.Add(draft);
+        }
+        await McpWriteAudit.StageDataChangeAsync(
             _auditWriter, context, "DraftImported", ToolName,
-            changes: new[] { new McpAuditFieldChange("StatementDraft", Guid.Empty, "Import", null, fileName) },
-            affectedCount: null,
+            changes: created.Select(d => new McpAuditFieldChange(
+                    "StatementDraft", d.DraftId, "Import", null, fileName)).ToList(),
+            affectedCount: created.Count,
             payloadJson: JsonSerializer.Serialize(new
             {
                 mode = "upload",
@@ -147,24 +156,12 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
                 sha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()
             }), ct);
 
-        var created = new List<StatementDraftDto>();
-        try
-        {
-            await foreach (var draft in _drafts.CreateDraftAsync(owner, fileName, bytes, ct))
-            {
-                created.Add(draft);
-            }
-        }
-        catch
-        {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
         if (created.Count == 0)
         {
             // No parser recognized the file: the pipeline only persisted the raw file as
-            // statement detail — keep the audit record (the effect happened) but report
-            // the recognition status honestly.
+            // statement detail (no draft record exists to anchor a field delta on — the
+            // entry keeps the file metadata + sha256 as payload). Report the recognition
+            // status honestly.
             return new
             {
                 mode = "upload",
@@ -195,27 +192,18 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
                 "Mode 'empty' does not accept 'contentBase64' — use mode 'upload'.");
         }
 
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "DraftImported", ToolName,
-            changes: new[] { new McpAuditFieldChange("StatementDraft", Guid.Empty, "Created", null, "empty") },
-            affectedCount: 1,
-            payloadJson: JsonSerializer.Serialize(new { mode = "empty", fileName }), ct);
-
-        StatementDraftDto? draft;
-        try
-        {
-            draft = await _drafts.CreateEmptyDraftAsync(owner, fileName, ct);
-        }
-        catch
-        {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+        // Create first, then stage the DataChange with the real draft id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
+        var draft = await _drafts.CreateEmptyDraftAsync(owner, fileName, ct);
         if (draft is null)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidState", "The empty draft could not be created.");
         }
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "DraftImported", ToolName,
+            changes: new[] { new McpAuditFieldChange("StatementDraft", draft.DraftId, "Created", null, "empty") },
+            affectedCount: 1,
+            payloadJson: JsonSerializer.Serialize(new { mode = "empty", fileName }), ct);
         return new
         {
             mode = "empty",
@@ -244,27 +232,18 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
         // F-0704: reject foreign/missing account references before any effect.
         var account = await McpStatementDraftGuards.RequireAccountAsync(_accounts, accountId.Value, owner, ct);
 
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "DraftImported", ToolName,
-            changes: new[] { new McpAuditFieldChange("StatementDraft", Guid.Empty, "Created", null, "preliminary") },
-            affectedCount: 1,
-            payloadJson: JsonSerializer.Serialize(new { mode = "preliminary", accountId = accountId.Value }), ct);
-
-        StatementDraftDto? draft;
-        try
-        {
-            draft = await _drafts.CreatePreliminaryDraftAsync(owner, account.Id, ct, description);
-        }
-        catch
-        {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+        // Create first, then stage the DataChange with the real draft id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
+        var draft = await _drafts.CreatePreliminaryDraftAsync(owner, account.Id, ct, description);
         if (draft is null)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidState", "The preliminary draft could not be created.");
         }
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "DraftImported", ToolName,
+            changes: new[] { new McpAuditFieldChange("StatementDraft", draft.DraftId, "Created", null, "preliminary") },
+            affectedCount: 1,
+            payloadJson: JsonSerializer.Serialize(new { mode = "preliminary", accountId = accountId.Value }), ct);
         return new
         {
             mode = "preliminary",
@@ -371,14 +350,44 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
             }
         }
 
-        var staged = await McpWriteAudit.StageDataChangeAsync(
+        // Run the batch first — the delta rows anchor on the created draft ids which only
+        // exist afterwards.
+        var result = await _massImport.ProcessAsync(owner, new MassImportBatchRequestDto
+        {
+            // MCP calls are fire-and-forget tool calls: the client confirms implicitly;
+            // files lacking required information are reported as skipped, never silently
+            // auto-assigned.
+            DialogPolicy = MassImportDialogPolicy.OnMissingInformation,
+            ConfirmExecution = true,
+            Files = uploads,
+            Decisions = decisions
+        }, context.CorrelationId.ToString(), ct);
+
+        // Stage the DataChange after the batch ran: one delta row per created draft; when
+        // the batch produced no draft at all (all files skipped/excluded) the übergeordnete
+        // batch record anchors the event — the audit writer rejects placeholder entity ids.
+        var importedDraftIds = result.Files
+            .SelectMany(f => f.StatementDraftIds)
+            .Concat(result.Files.Where(f => f.StatementDraftId.HasValue)
+                .Select(f => f.StatementDraftId!.Value))
+            .Distinct()
+            .ToList();
+        var changes = importedDraftIds.Count > 0
+            ? importedDraftIds.Select(id => new McpAuditFieldChange(
+                "StatementDraft", id, "Import", null, "massImport")).ToList()
+            : new List<McpAuditFieldChange>
+            {
+                new("MassImportBatch", result.BatchId, "Import", null, $"massImport:{uploads.Count} files")
+            };
+        await McpWriteAudit.StageDataChangeAsync(
             _auditWriter, context, "DraftImported", ToolName,
-            changes: new[] { new McpAuditFieldChange("StatementDraft", Guid.Empty, "Import", null, $"massImport:{uploads.Count} files") },
+            changes: changes,
             affectedCount: uploads.Count,
             payloadJson: JsonSerializer.Serialize(new
             {
                 mode = "massImport",
                 fileCount = uploads.Count,
+                batchId = result.BatchId,
                 files = uploads.Select(u => new
                 {
                     fileName = u.FileName,
@@ -386,26 +395,6 @@ public sealed class FmStatementDraftImportHandler : IMcpToolHandler
                     sha256 = Convert.ToHexString(SHA256.HashData(u.Content)).ToLowerInvariant()
                 })
             }), ct);
-
-        MassImportBatchResultDto result;
-        try
-        {
-            result = await _massImport.ProcessAsync(owner, new MassImportBatchRequestDto
-            {
-                // MCP calls are fire-and-forget tool calls: the client confirms implicitly;
-                // files lacking required information are reported as skipped, never silently
-                // auto-assigned.
-                DialogPolicy = MassImportDialogPolicy.OnMissingInformation,
-                ConfirmExecution = true,
-                Files = uploads,
-                Decisions = decisions
-            }, context.CorrelationId.ToString(), ct);
-        }
-        catch
-        {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
 
         return new
         {

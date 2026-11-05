@@ -246,26 +246,21 @@ public sealed class FmStatementDraftBookHandler : IMcpToolHandler
             };
         }
 
-        var staged = await McpWriteAudit.StageDataChangeAsync(
+        // Enqueue first, then stage the DataChange with the real id of the created
+        // background task — bookAll touches every open draft through that task (there is
+        // no single draft to anchor on), so the task record is the fachlich nächste
+        // anchor. The audit writer rejects placeholder entity ids (Guid.Empty).
+        var info = _taskManager.Enqueue(BackgroundTaskType.BookAllDrafts, owner,
+            new { IgnoreWarnings = forceWarnings, AbortOnFirstIssue = false, BookEntriesIndividually = false },
+            allowDuplicate: false);
+        await McpWriteAudit.StageDataChangeAsync(
             _auditWriter, context, "DraftBookAllEnqueued", ToolName,
             new List<McpAuditFieldChange>
             {
-                new(EntityType, Guid.Empty, "BookAllEnqueued", null, null)
+                new("BackgroundTask", info.Id, "BookAllEnqueued", null, info.Id.ToString())
             },
             null,
             JsonSerializer.Serialize(new { operation = "bookAll", forceWarnings }), ct);
-        BackgroundTaskInfo info;
-        try
-        {
-            info = _taskManager.Enqueue(BackgroundTaskType.BookAllDrafts, owner,
-                new { IgnoreWarnings = forceWarnings, AbortOnFirstIssue = false, BookEntriesIndividually = false },
-                allowDuplicate: false);
-        }
-        catch
-        {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
         return new
         {
             operation = "bookAll",

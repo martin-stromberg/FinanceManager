@@ -130,13 +130,8 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
         var request = FavoriteRequest(arguments, name, postingKind, interval);
         await RequireWritableAsync(context, McpDataType.Reports, McpRightKind.Create, ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityFavorite, Guid.Empty, "Created", null, $"{postingKind}|{interval}|{name}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "ReportFavoriteCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { entity = "reportFavorite", operation = "create", name, postingKind = postingKind.ToString(), interval = interval.ToString() }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         ReportFavoriteDto created;
         try
         {
@@ -144,14 +139,15 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityFavorite, created.Id, "Created", null, $"{postingKind}|{interval}|{name}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "ReportFavoriteCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { entity = "reportFavorite", operation = "create", name, postingKind = postingKind.ToString(), interval = interval.ToString() }), ct);
         return new { entity = "reportFavorite", operation = "create", applied = true, favorite = FavoriteResult(created) };
     }
 
@@ -312,13 +308,8 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
         await RequireWritableAsync(context, McpDataType.KpiConfigurations, McpRightKind.Create, ct);
 
         var request = new HomeKpiCreateRequest(kind, favoriteId, predefined, title, displayMode, sortOrder);
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(EntityKpi, Guid.Empty, "Created", null, $"{kind}|{displayMode}|{sortOrder}")
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "HomeKpiCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { entity = "homeKpi", operation = "create", kind = kind.ToString(), reportFavoriteId = favoriteId, predefinedType = predefined?.ToString() }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         HomeKpiDto created;
         try
         {
@@ -326,14 +317,15 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(EntityKpi, created.Id, "Created", null, $"{kind}|{displayMode}|{sortOrder}")
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "HomeKpiCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { entity = "homeKpi", operation = "create", kind = kind.ToString(), reportFavoriteId = favoriteId, predefinedType = predefined?.ToString() }), ct);
         return new { entity = "homeKpi", operation = "create", applied = true, homeKpi = KpiResult(created) };
     }
 

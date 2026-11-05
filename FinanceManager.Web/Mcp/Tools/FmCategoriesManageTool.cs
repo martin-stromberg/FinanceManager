@@ -157,6 +157,16 @@ public sealed class FmCategoriesManageHandler : IMcpToolHandler
             _ => null
         };
 
+    private static Guid IdOf(object dto)
+        => dto switch
+        {
+            ContactCategoryDto c => c.Id,
+            SavingsPlanCategoryDto c => c.Id,
+            SecurityCategoryDto c => c.Id,
+            AttachmentCategoryDto c => c.Id,
+            _ => throw new ArgumentOutOfRangeException(nameof(dto), "Unknown category DTO type.")
+        };
+
     private async Task<object> CreateAsync(
         JsonElement arguments, McpDataType dataType, string entityLabel,
         Guid owner, McpToolCallContext context, CancellationToken ct)
@@ -167,13 +177,8 @@ public sealed class FmCategoriesManageHandler : IMcpToolHandler
             _recordFilter, context.Access, dataType, McpRightKind.Create,
             RecordFor(dataType, null), ct);
 
-        var changes = new List<McpAuditFieldChange>
-        {
-            new(entityLabel, Guid.Empty, "Created", null, name)
-        };
-        var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "CategoryCreated", ToolName, changes, 1,
-            JsonSerializer.Serialize(new { categoryType = entityLabel, operation = "create", name }), ct);
+        // Create first, then stage the DataChange with the real record id — the audit
+        // writer rejects placeholder entity ids (Guid.Empty).
         object dto;
         try
         {
@@ -187,14 +192,15 @@ public sealed class FmCategoriesManageHandler : IMcpToolHandler
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            McpWriteAudit.DiscardStaged(context, staged);
             throw new McpToolException("Err_Mcp_InvalidArguments", ex.Message);
         }
-        catch
+        var changes = new List<McpAuditFieldChange>
         {
-            McpWriteAudit.DiscardStaged(context, staged);
-            throw;
-        }
+            new(entityLabel, IdOf(dto), "Created", null, name)
+        };
+        await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "CategoryCreated", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { categoryType = entityLabel, operation = "create", name }), ct);
         return new { operation = "create", applied = true, category = CategoryResult(dto, entityLabel) };
     }
 
