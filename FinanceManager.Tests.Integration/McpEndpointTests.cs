@@ -98,7 +98,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         var content = result.GetProperty("structuredContent");
         Assert.Equal("katalog-v1", content.GetProperty("catalogVersion").GetString());
         Assert.Equal("Analyse", content.GetProperty("access").GetProperty("level").GetString());
-        Assert.Equal(18, content.GetProperty("effectiveScopes").GetArrayLength());
+        Assert.Equal(19, content.GetProperty("effectiveScopes").GetArrayLength());
 
         // unknown tool → defined error, not a crash.
         var unknown = await client.PostAsJsonAsync("/mcp", new
