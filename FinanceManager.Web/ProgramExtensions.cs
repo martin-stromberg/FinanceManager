@@ -435,6 +435,9 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpToolRateLimiter>();
             builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpAnomalyTracker>();
             builder.Services.AddScoped<FinanceManager.Web.Mcp.McpToolDispatcher>();
+            // Stateless backup-download tickets (fm_admin_backups 'download' → GET
+            // /mcp/download/{token}): DataProtection-signed payload, no ticket table.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpDownloadTicketService, FinanceManager.Web.Mcp.McpDownloadTicketService>();
             // Approval queue runners (EP-09): the persistent AiActionRequest table is the
             // queue — the executor polls approved requests, the expiry sweep marks overdue
             // ones. Both are inert while Mcp:Enabled is off.

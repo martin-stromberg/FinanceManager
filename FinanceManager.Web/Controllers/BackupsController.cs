@@ -69,7 +69,7 @@ public sealed class BackupsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(BackupDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreateAsync(CancellationToken ct)
-        => Ok(await _svc.CreateAsync(_current.UserId, ct));
+        => Ok(await _svc.CreateAsync(_current.UserId, ct: ct));
 
     /// <summary>
     /// Uploads an existing backup file (binary) to make it available for restore operations.

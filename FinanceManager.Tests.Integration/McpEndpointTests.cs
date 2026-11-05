@@ -28,7 +28,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         _factory = factory;
     }
 
-    private async Task<McpAccessCreatedDto> CreateAccessAsync(HttpClient client)
+    private async Task<McpAccessCreatedDto> CreateAccessAsync(HttpClient client, short approvalMode = 0)
     {
         var jwt = TestJwtTokens.Create(_factory.Services, JwtKey, includeAdminRole: true);
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/mcp-accesses")
@@ -37,7 +37,7 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
                 Name: $"it-{Guid.NewGuid():N}"[..20],
                 Description: null,
                 Level: 0, // Analyse
-                ApprovalMode: 0, // PerAction
+                ApprovalMode: approvalMode,
                 ExpiresUtc: null,
                 AllowedIpRanges: null,
                 Scopes: null))
@@ -216,6 +216,75 @@ public sealed class McpEndpointTests : IClassFixture<TestWebApplicationFactory>
         Assert.Contains("Err_Mcp_Unauthorized", body2);
         // Uniformity: same error payload for unknown and malformed credentials.
         Assert.Equal(body, body2);
+    }
+
+    /// <summary>
+    /// End-to-end of the <c>fm_admin_backups</c> <c>download</c> sub-operation: the tool
+    /// answers a short-lived, ticket-bound <c>/mcp/download/{token}</c> URL which an
+    /// unauthenticated client can redeem within its ~10-minute lifetime for the backup zip;
+    /// invalid tokens answer a uniform 404.
+    /// </summary>
+    [Fact]
+    public async Task AdminBackups_DownloadTicket_ServesZipAndRejectsBadTokens()
+    {
+        using var client = _factory.CreateClient();
+        var jwt = TestJwtTokens.Create(_factory.Services, JwtKey, includeAdminRole: true);
+
+        // A real backup of the bootstrap admin (same owner as the PAT below).
+        Guid backupId;
+        using (var backupReq = new HttpRequestMessage(HttpMethod.Post, "/api/setup/backups"))
+        {
+            backupReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+            var backupRes = await client.SendAsync(backupReq, TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.OK, backupRes.StatusCode);
+            var backupDoc = await backupRes.Content.ReadFromJsonAsync<JsonElement>(
+                cancellationToken: TestContext.Current.CancellationToken);
+            backupId = backupDoc.GetProperty("id").GetGuid();
+        }
+
+        try
+        {
+            // PreApproved access → the write-preparing tool class runs directly; the
+            // download sub-op itself needs no handler-level approval.
+            var pat = (await CreateAccessAsync(client, approvalMode: 1)).PlainTextToken;
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat);
+            var call = await client.PostAsJsonAsync("/mcp", new
+            {
+                jsonrpc = "2.0",
+                id = 1,
+                method = "tools/call",
+                @params = new
+                {
+                    name = "fm_admin_backups",
+                    arguments = new { operation = "download", id = backupId.ToString() }
+                }
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            var callDoc = await call.Content.ReadFromJsonAsync<JsonElement>(
+                cancellationToken: TestContext.Current.CancellationToken);
+            var content = callDoc.GetProperty("result").GetProperty("structuredContent");
+            Assert.Equal("download", content.GetProperty("operation").GetString());
+            var url = content.GetProperty("downloadUrl").GetString();
+            Assert.NotNull(url);
+            Assert.Contains("/mcp/download/", url);
+
+            // The ticket is the credential — no PAT needed on the download itself.
+            using var anon = _factory.CreateClient();
+            var file = await anon.GetAsync(url, TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.OK, file.StatusCode);
+            Assert.Equal("application/zip", file.Content.Headers.ContentType?.MediaType);
+            Assert.True((await file.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken)).Length > 0);
+
+            // Unknown/garbage ticket → uniform 404 (no existence oracle).
+            var bad = await anon.GetAsync("/mcp/download/not-a-ticket", TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.NotFound, bad.StatusCode);
+        }
+        finally
+        {
+            // Best-effort cleanup of the backup file under the content root.
+            using var del = new HttpRequestMessage(HttpMethod.Delete, $"/api/setup/backups/{backupId}");
+            del.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+            await client.SendAsync(del, TestContext.Current.CancellationToken);
+        }
     }
 
     /// <summary>Test case.</summary>

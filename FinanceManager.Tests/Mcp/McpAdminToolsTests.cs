@@ -11,6 +11,7 @@ using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Mcp;
 using FinanceManager.Web.Mcp.Tools;
 using FinanceManager.Web.Services.Updates;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using System.Text.Json;
@@ -72,6 +73,23 @@ public sealed class McpAdminToolsTests
         writer.Setup(w => w.StageAsync(It.IsAny<McpAuditWriteRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((McpAuditEntry?)null);
         return writer;
+    }
+
+    private static Mock<IMcpDownloadTicketService> NewTickets(string token = "testtoken")
+    {
+        var tickets = new Mock<IMcpDownloadTicketService>();
+        tickets.Setup(t => t.Issue(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<TimeSpan?>()))
+            .Returns((Guid o, Guid b, Guid? a, TimeSpan? l) =>
+                new McpDownloadTicket(token, DateTime.UtcNow.Add(l ?? TimeSpan.FromMinutes(10))));
+        return tickets;
+    }
+
+    private static IHttpContextAccessor NewHttpContextAccessor()
+    {
+        var http = new DefaultHttpContext();
+        http.Request.Scheme = "https";
+        http.Request.Host = new HostString("fm.example.test");
+        return new HttpContextAccessor { HttpContext = http };
     }
 
     private static JsonElement Args(string json) => JsonDocument.Parse(json).RootElement;
@@ -149,7 +167,8 @@ public sealed class McpAdminToolsTests
             new FmAdminStatusHandler(users.Object, new Mock<IInstalledReleaseMetadataProvider>().Object,
                 updates.Object, backups.Object, notifications.Object, new TestMcpSettingsService()),
             new FmAdminUpdatesHandler(users.Object, updates.Object, evaluator.Object, writer.Object),
-            new FmAdminBackupsHandler(users.Object, backups.Object, evaluator.Object, writer.Object),
+            new FmAdminBackupsHandler(users.Object, backups.Object, NewTickets().Object,
+                NewHttpContextAccessor(), evaluator.Object, writer.Object),
             new FmAdminNotificationsHandler(users.Object, notifications.Object, evaluator.Object, writer.Object),
             new FmAdminSettingsHandler(users.Object, new TestMcpSettingsService(), updates.Object,
                 new Mock<IWellKnownSettingsService>().Object, evaluator.Object, writer.Object)
@@ -338,6 +357,7 @@ public sealed class McpAdminToolsTests
                 Source = "System"
             }).ToList());
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewTickets().Object, NewHttpContextAccessor(),
             NewScopeEvaluator().Object, NewAuditWriter().Object);
         var result = await handler.InvokeAsync(Args("{\"take\":2}"),
             NewCallContext(NewAccessContext(AdminOwner).Object), TestContext.Current.CancellationToken);
@@ -363,20 +383,23 @@ public sealed class McpAdminToolsTests
             Source = "System"
         };
         var backups = new Mock<IBackupService>();
-        backups.Setup(b => b.CreateAsync(AdminOwner, It.IsAny<CancellationToken>())).ReturnsAsync(created);
+        backups.Setup(b => b.CreateAsync(AdminOwner, "KI", It.IsAny<CancellationToken>())).ReturnsAsync(created);
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewTickets().Object, NewHttpContextAccessor(),
             NewScopeEvaluator().Object, NewAuditWriter().Object);
         var ct = TestContext.Current.CancellationToken;
 
         using var queued = Serialize(await handler.InvokeAsync(Args("{\"operation\":\"create\"}"),
             NewCallContext(NewAccessContext(AdminOwner).Object), ct));
         Assert.Equal("Err_Mcp_ApprovalRequired", queued.RootElement.GetProperty("code").GetString());
-        backups.Verify(b => b.CreateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        backups.Verify(b => b.CreateAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
 
         using var exec = Serialize(await handler.InvokeAsync(Args("{\"operation\":\"create\"}"),
             NewCallContext(NewAccessContext(AdminOwner).Object, McpToolExecutionMode.ApprovedExecution), ct));
         Assert.True(exec.RootElement.GetProperty("applied").GetBoolean());
         Assert.Equal(created.Id, exec.RootElement.GetProperty("backup").GetProperty("id").GetGuid());
+        // MCP-originated snapshots are tagged source "KI" (REST/Program callers keep "System").
+        backups.Verify(b => b.CreateAsync(AdminOwner, "KI", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
@@ -397,9 +420,10 @@ public sealed class McpAdminToolsTests
             Source = "System"
         };
         var backups = new Mock<IBackupService>();
-        backups.Setup(b => b.CreateAsync(AdminOwner, It.IsAny<CancellationToken>())).ReturnsAsync(created);
+        backups.Setup(b => b.CreateAsync(AdminOwner, "KI", It.IsAny<CancellationToken>())).ReturnsAsync(created);
         var audit = new GuardingAuditWriter();
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewTickets().Object, NewHttpContextAccessor(),
             NewScopeEvaluator().Object, audit);
         var result = await handler.InvokeAsync(Args("{\"operation\":\"create\"}"),
             NewCallContext(NewAccessContext(AdminOwner).Object, McpToolExecutionMode.ApprovedExecution),
@@ -411,6 +435,67 @@ public sealed class McpAdminToolsTests
         var change = Assert.Single(audit.LastRequest!.Changes!);
         Assert.Equal(created.Id, change.EntityId);
         Assert.Equal("BackupCreated", audit.LastRequest.EventType);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task AdminBackups_Download_ReturnsTicketedUrlAndMetadata()
+    {
+        var backup = new BackupDto
+        {
+            Id = Guid.NewGuid(),
+            CreatedUtc = DateTime.UtcNow,
+            FileName = "b.zip",
+            SizeBytes = 1234,
+            Source = "System"
+        };
+        var backups = new Mock<IBackupService>();
+        backups.Setup(b => b.GetAsync(AdminOwner, backup.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(backup);
+        var tickets = NewTickets("tok-abc");
+        var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            tickets.Object, NewHttpContextAccessor(),
+            NewScopeEvaluator().Object, NewAuditWriter().Object);
+
+        var result = await handler.InvokeAsync(
+            Args($"{{\"operation\":\"download\",\"id\":\"{backup.Id}\"}}"),
+            NewCallContext(NewAccessContext(AdminOwner).Object), TestContext.Current.CancellationToken);
+
+        using var doc = Serialize(result);
+        Assert.Equal("download", doc.RootElement.GetProperty("operation").GetString());
+        Assert.Equal("https://fm.example.test/mcp/download/tok-abc",
+            doc.RootElement.GetProperty("downloadUrl").GetString());
+        Assert.Equal(1234, doc.RootElement.GetProperty("sizeBytes").GetInt64());
+        Assert.True(doc.RootElement.TryGetProperty("expiresUtc", out _));
+        Assert.Equal("b.zip",
+            doc.RootElement.GetProperty("untrusted_data").GetProperty("fileName").GetString());
+        // The ticket binds owner + backup (and the causing access for audit attribution).
+        tickets.Verify(t => t.Issue(AdminOwner, backup.Id, It.IsAny<Guid?>(), It.IsAny<TimeSpan?>()), Times.Once);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task AdminBackups_Download_UnknownOrForeignId_Fails()
+    {
+        var backups = new Mock<IBackupService>();
+        backups.Setup(b => b.GetAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BackupDto?)null);
+        var tickets = NewTickets();
+        var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            tickets.Object, NewHttpContextAccessor(),
+            NewScopeEvaluator().Object, NewAuditWriter().Object);
+        var ct = TestContext.Current.CancellationToken;
+
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args($"{{\"operation\":\"download\",\"id\":\"{Guid.NewGuid()}\"}}"),
+            NewCallContext(NewAccessContext(AdminOwner).Object), ct));
+        Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
+        tickets.Verify(t => t.Issue(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<TimeSpan?>()), Times.Never);
+
+        var missingId = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args("{\"operation\":\"download\"}"),
+            NewCallContext(NewAccessContext(AdminOwner).Object), ct));
+        Assert.Equal("Err_Mcp_InvalidArguments", missingId.Code);
     }
 
     // ------------------------------------------------------------------

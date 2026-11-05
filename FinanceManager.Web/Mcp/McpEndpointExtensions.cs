@@ -1,4 +1,6 @@
+using FinanceManager.Application.Backups;
 using FinanceManager.Application.Mcp;
+using FinanceManager.Domain.Mcp;
 using FinanceManager.Web.Infrastructure;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -50,7 +52,99 @@ public static class McpEndpointExtensions
         }).RequireAuthorization(McpAuthenticationDefaults.Policy)
           .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
 
+        // Short-lived, ticket-bound backup download (fm_admin_backups 'download'): the
+        // signed/encrypted ticket itself is the credential — deliberately no PAT
+        // authorization, so an agent can hand the URL to any plain HTTP client. The
+        // endpoint still sits under the /mcp kill-switch branch and the per-IP
+        // unauthenticated rate-limit partition.
+        group.MapGet("/download/{token}", HandleDownloadAsync)
+            .RequireRateLimiting(RateLimitPolicies.McpEndpoint);
+
         return group;
+    }
+
+    /// <summary>
+    /// Serves one backup zip behind a short-lived download ticket issued by the
+    /// <c>fm_admin_backups</c> <c>download</c> sub-operation. The ticket binds owner +
+    /// backup id, so no request-side identity is evaluated: an authentic, unexpired token
+    /// grants exactly the file it was minted for. Invalid tokens answer 404, expired ones
+    /// 410 (uniform, no detail leak); every outcome is recorded as a
+    /// <see cref="McpAuditCategory.SecurityEvent"/> (<c>BackupDownloaded</c>/
+    /// <c>BackupDownloadDenied</c>).
+    /// </summary>
+    private static async Task<IResult> HandleDownloadAsync(
+        string token,
+        HttpContext http,
+        IMcpDownloadTicketService tickets,
+        IBackupService backups,
+        IMcpAuditWriter auditWriter,
+        ILoggerFactory loggerFactory)
+    {
+        var ct = http.RequestAborted;
+        var sourceIp = http.Connection.RemoteIpAddress?.ToString();
+        var validation = tickets.Validate(token);
+        var grant = validation.Grant;
+        if (grant is null || validation.Result is not McpDownloadTicketValidationResult.Valid)
+        {
+            await WriteDownloadAuditAsync(auditWriter, loggerFactory, "BackupDownloadDenied",
+                "Denied", grant, sourceIp, payloadJson: null, ct);
+            return validation.Result == McpDownloadTicketValidationResult.Expired
+                ? Results.StatusCode(StatusCodes.Status410Gone)
+                : Results.NotFound();
+        }
+
+        var meta = await backups.GetAsync(grant.OwnerUserId, grant.BackupId, ct);
+        var stream = meta is null
+            ? null
+            : await backups.OpenDownloadAsync(grant.OwnerUserId, grant.BackupId, ct);
+        if (meta is null || stream is null)
+        {
+            await WriteDownloadAuditAsync(auditWriter, loggerFactory, "BackupDownloadDenied",
+                "Denied", grant, sourceIp, payloadJson: null, ct);
+            return Results.NotFound();
+        }
+
+        await WriteDownloadAuditAsync(auditWriter, loggerFactory, "BackupDownloaded",
+            "Success", grant, sourceIp,
+            JsonSerializer.Serialize(new { backupId = grant.BackupId, fileName = meta.FileName }), ct);
+
+        return Results.File(stream, "application/zip", fileDownloadName: SanitizeDownloadName(meta.FileName));
+    }
+
+    /// <summary>
+    /// Defense-in-depth cleanup of the database-stored file name before it goes into the
+    /// <c>Content-Disposition</c> header: strips path segments, control characters and
+    /// quotes (the value is untrusted metadata, never a storage path).
+    /// </summary>
+    private static string SanitizeDownloadName(string? fileName)
+    {
+        var name = Path.GetFileName(fileName ?? string.Empty);
+        var cleaned = new string(name.Where(c => !char.IsControl(c) && c != '"').ToArray());
+        return string.IsNullOrWhiteSpace(cleaned) ? "backup.zip" : cleaned;
+    }
+
+    /// <summary>
+    /// Best-effort <see cref="McpAuditCategory.SecurityEvent"/> record of a ticket
+    /// redemption attempt. Audit failures are logged but never change the uniform
+    /// response (same convention as the auth-failure path).
+    /// </summary>
+    private static async Task WriteDownloadAuditAsync(
+        IMcpAuditWriter auditWriter, ILoggerFactory loggerFactory, string eventType,
+        string resultStatus, McpDownloadTicketGrant? grant, string? sourceIp,
+        string? payloadJson, CancellationToken ct)
+    {
+        try
+        {
+            await auditWriter.WriteAsync(new McpAuditWriteRequest(
+                McpAuditCategory.SecurityEvent, eventType, resultStatus,
+                OwnerUserId: grant?.OwnerUserId, McpAccessId: grant?.McpAccessId,
+                Context: "McpEndpoint", SourceIp: sourceIp, PayloadJson: payloadJson), ct);
+        }
+        catch (Exception ex)
+        {
+            loggerFactory.CreateLogger("FinanceManager.Web.Mcp.DownloadEndpoint")
+                .LogWarning(ex, "Failed to write MCP audit record {EventType}", eventType);
+        }
     }
 
     /// <summary>

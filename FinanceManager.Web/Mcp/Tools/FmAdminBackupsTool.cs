@@ -3,6 +3,7 @@ using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Mcp;
 using FinanceManager.Domain.Users;
 using FinanceManager.Shared.Dtos.Backups;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using System.Text.Json;
 
@@ -10,10 +11,12 @@ namespace FinanceManager.Web.Mcp.Tools;
 
 /// <summary>
 /// Descriptor of the administrative backup tool <c>fm_admin_backups</c> (T36): lists the
-/// owner's stored backups and triggers a new backup snapshot — the create sub-operation
-/// is final/effective (one-shot effect on the installation storage) and runs through the
-/// approval queue (<c>Err_Mcp_ApprovalRequired</c> → <c>AiActionRequest</c>). Restore,
-/// upload, download and delete are deliberately not exposed.
+/// owner's stored backups, triggers a new backup snapshot and issues a short-lived download
+/// URL — the create sub-operation is final/effective (one-shot effect on the installation
+/// storage) and runs through the approval queue (<c>Err_Mcp_ApprovalRequired</c> →
+/// <c>AiActionRequest</c>); download needs no approval (read-only, it only returns a
+/// ticketed URL — the file stream itself is served by <c>GET /mcp/download/{token}</c>).
+/// Restore, upload and delete are deliberately not exposed.
 /// Admin-gated (the owner must hold the admin role, <c>Err_Mcp_AdminRequired</c> otherwise).
 /// Scope: (Administration, Lesen); create additionally (Administration, Erstellung) —
 /// evaluated inside the handler.
@@ -25,7 +28,7 @@ public sealed class FmAdminBackupsDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmAdminBackupsDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"list\",\"create\"],\"description\":\"Backup operation (default 'list'); create requires approval.\"},\"skip\":{\"type\":\"integer\",\"description\":\"Paging offset (default 0).\"},\"take\":{\"type\":\"integer\",\"description\":\"Page size 1-200 (default 50).\"},\"idempotencyKey\":{\"type\":\"string\",\"description\":\"Client deduplication key for the approval request.\"},\"reasonText\":{\"type\":\"string\",\"description\":\"Optional client reason text (untrusted).\"}},\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"list\",\"create\",\"download\"],\"description\":\"Backup operation (default 'list'); create requires approval; download returns a short-lived download URL (no approval).\"},\"id\":{\"type\":\"string\",\"description\":\"Backup id (UUID) — required for 'download'.\"},\"skip\":{\"type\":\"integer\",\"description\":\"Paging offset (default 0).\"},\"take\":{\"type\":\"integer\",\"description\":\"Page size 1-200 (default 50).\"},\"idempotencyKey\":{\"type\":\"string\",\"description\":\"Client deduplication key for the approval request.\"},\"reasonText\":{\"type\":\"string\",\"description\":\"Optional client reason text (untrusted).\"}},\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -33,11 +36,14 @@ public sealed class FmAdminBackupsDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Lists the owner's stored backups (default operation 'list', paging via skip/take) " +
-           "or triggers a new backup snapshot ('create' — final/effective, requires approval " +
-           "and runs through the AiActionRequest queue). Restore, upload, download and delete " +
-           "are not exposed. Restricted to owners with administrative privileges. " +
-           "Scope: (Administration, Lesen); create additionally (Administration, Erstellung).";
+        => "Lists the owner's stored backups (default operation 'list', paging via skip/take), " +
+           "triggers a new backup snapshot ('create' — final/effective, requires approval " +
+           "and runs through the AiActionRequest queue) or issues a short-lived, ticket-bound " +
+           "download URL for one backup ('download' — (Administration, Lesen), no approval " +
+           "needed; the zip is served by GET /mcp/download/{token} within ~10 minutes). " +
+           "Restore, upload and delete are not exposed. Restricted to owners with " +
+           "administrative privileges. Scope: (Administration, Lesen); create additionally " +
+           "(Administration, Erstellung).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Schreibvorbereitend;
@@ -60,6 +66,8 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
 
     private readonly UserManager<User> _users;
     private readonly IBackupService _backups;
+    private readonly IMcpDownloadTicketService _tickets;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IMcpAuditWriter _auditWriter;
 
@@ -67,11 +75,15 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
     public FmAdminBackupsHandler(
         UserManager<User> users,
         IBackupService backups,
+        IMcpDownloadTicketService tickets,
+        IHttpContextAccessor httpContextAccessor,
         IMcpScopeEvaluator scopeEvaluator,
         IMcpAuditWriter auditWriter)
     {
         _users = users;
         _backups = backups;
+        _tickets = tickets;
+        _httpContextAccessor = httpContextAccessor;
         _scopeEvaluator = scopeEvaluator;
         _auditWriter = auditWriter;
     }
@@ -90,8 +102,9 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
         {
             "list" => await ListAsync(arguments, owner, ct),
             "create" => await CreateAsync(owner, context, ct),
+            "download" => await DownloadAsync(arguments, owner, context, ct),
             _ => throw new McpToolException("Err_Mcp_InvalidArguments",
-                "Argument 'operation' must be one of list|create.")
+                "Argument 'operation' must be one of list|create|download.")
         };
     }
 
@@ -125,7 +138,7 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
                 BackupDto created;
                 try
                 {
-                    created = await _backups.CreateAsync(owner, ct2);
+                    created = await _backups.CreateAsync(owner, "KI", ct2);
                 }
                 catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException)
                 {
@@ -141,6 +154,43 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
                     JsonSerializer.Serialize(new { operation = "create" }), ct2);
                 return new { operation = "create", applied = true, backup = Map(created) };
             });
+
+    /// <summary>
+    /// Issues a short-lived download ticket for one of the owner's backups and answers the
+    /// absolute (when an HTTP request context exists) or relative <c>/mcp/download/{token}</c>
+    /// URL. Read-only — no approval; the file stream itself is only ever served through the
+    /// ticketed endpoint, never inside the JSON-RPC result.
+    /// </summary>
+    private async Task<object> DownloadAsync(JsonElement arguments, Guid owner, McpToolCallContext context, CancellationToken ct)
+    {
+        var id = McpToolArguments.RequiredGuid(arguments, "id");
+        var backup = await _backups.GetAsync(owner, id, ct);
+        if (backup is null)
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments", "The backup was not found.");
+        }
+
+        var ticket = _tickets.Issue(owner, id, context.Access.Access?.Id);
+        return new
+        {
+            operation = "download",
+            downloadUrl = BuildDownloadUrl(ticket.Token),
+            sizeBytes = backup.SizeBytes,
+            expiresUtc = ticket.ExpiresUtc,
+            untrusted_data = new { fileName = backup.FileName }
+        };
+    }
+
+    private string BuildDownloadUrl(string token)
+    {
+        var path = $"/mcp/download/{token}";
+        var request = _httpContextAccessor.HttpContext?.Request;
+        if (request is null)
+        {
+            return path;
+        }
+        return $"{request.Scheme}://{request.Host.ToUriComponent()}{request.PathBase.ToUriComponent()}{path}";
+    }
 
     private static object Map(BackupDto b)
         => new

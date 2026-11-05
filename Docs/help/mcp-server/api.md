@@ -72,7 +72,8 @@ Die administrativen Werkzeuge T34–T38 sind zusätzlich zum Scope-Tupel `(Admin
 | `fm_admin_updates` | `status`, `check` | Update-Status bzw. manuelle Update-Prüfung (inkl. Paket-Download) |
 | `fm_admin_updates` | `install`, `schedule` | Update-Installation (`confirmDowntime` erforderlich, startet die Anwendung neu) bzw. geplante Installationszeit — beide **genehmigungspflichtig** (`AiActionRequest`), Scope `(Administration, Änderung)` |
 | `fm_admin_backups` | `list` | Gespeicherte Sicherungen des Besitzers (Paging) |
-| `fm_admin_backups` | `create` | Neue Datensicherung anstoßen — **genehmigungspflichtig**, Scope `(Administration, Erstellung)`; Wiederherstellung/Upload/Download/Löschen werden nicht exponiert |
+| `fm_admin_backups` | `create` | Neue Datensicherung anstoßen — **genehmigungspflichtig**, Scope `(Administration, Erstellung)`; der Datensatz trägt Quelle `KI`. Wiederherstellung/Upload/Löschen werden nicht exponiert |
+| `fm_admin_backups` | `download` | Kurzlebige Download-URL für eine Sicherung (`id` als Argument) — `(Administration, Lesen)`, **kein Approval**; die ZIP-Datei liefert `GET /mcp/download/{token}` (Ticket an Besitzer+Backup gebunden, ~10 Minuten gültig, keine eigenen Credentials nötig) |
 | `fm_admin_notifications` | `list`, `dismiss` | Eigene aktive Benachrichtigungen; `dismiss` quittiert eine eigene/globale Benachrichtigung direkt (unkritische Wirkung), Scope `(Administration, Änderung)` |
 | `fm_admin_settings` | `get` | Admin-Einstellungen der Einrichtung lesen (`mcp`, `updates`, `wellKnown`) |
 | `fm_admin_settings` | `set` | Begrenzte Felder ändern (`mcp.enabled`, `mcp.writeAccessEnabled`, `updates.enabled`, `updates.includePrereleases`, `wellKnown.changePasswordUrl`) — **genehmigungspflichtig**, Scope `(Administration, Änderung)` |

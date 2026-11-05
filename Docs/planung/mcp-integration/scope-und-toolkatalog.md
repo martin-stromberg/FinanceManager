@@ -324,7 +324,7 @@ plus „nur Admins dürfen administrieren").
 |---|---|---|---|---|---|
 | T34 | `fm_admin_status` | Installationsstatus der eigenen Instanz: installierte Version/Release-Metadaten, Update-Stand (verfügbare Version, letzte Prüfung, Lock, geplante Installationszeit), letztes Backup (Datum, Größe), eigener aktiver Benachrichtigungszähler, wirksame MCP-Schalter | (Administration, Lesen) | lesend | `IInstalledReleaseMetadataProvider`, `IUpdateOrchestrator.GetStatusAsync`, `IBackupService.ListAsync`, `INotificationService.ListActiveAsync`, `IMcpSettingsService` |
 | T35 | `fm_admin_updates` | Update-Infos abrufen (`status`), manuelle Update-Prüfung anstoßen (`check`); Installation des geladenen Pakets auslösen (`install`, erfordert `confirmDowntime`) und geplante Installationszeit setzen/löschen (`schedule`) | (Administration, Lesen); install/schedule zusätzlich (Administration, Änderung) | schreibvorbereitend (install/schedule: **genehmigungspflichtig**) | `IUpdateOrchestrator.GetStatusAsync`/`CheckAsync`/`StartInstallAsync`/`ScheduleAsync` |
-| T36 | `fm_admin_backups` | Gespeicherte Datensicherungen des Besitzers auflisten (`list`, Paging) und eine neue Sicherung anstoßen (`create`); Wiederherstellung, Upload, Download und Löschen werden bewusst nicht exponiert | (Administration, Lesen); create zusätzlich (Administration, Erstellung) | schreibvorbereitend (create: **genehmigungspflichtig**) | `IBackupService.ListAsync`/`CreateAsync` |
+| T36 | `fm_admin_backups` | Gespeicherte Datensicherungen des Besitzers auflisten (`list`, Paging), eine neue Sicherung anstoßen (`create`, Quelle `KI`) und eine kurzlebige, ticketgebundene Download-URL ausstellen (`download` → `GET /mcp/download/{token}`, ≤10 Min., kein Approval); Wiederherstellung, Upload und Löschen werden bewusst nicht exponiert | (Administration, Lesen); create zusätzlich (Administration, Erstellung) | schreibvorbereitend (create: **genehmigungspflichtig**) | `IBackupService.ListAsync`/`CreateAsync`/`GetAsync` |
 | T37 | `fm_admin_notifications` | Eigene aktive Benachrichtigungen abrufen (`list`, Paging) und eine eigene/globale Benachrichtigung bestätigen (`dismiss` – unkritische Wirkung `IsDismissed`, direkte Ausführung ohne Approval) | (Administration, Lesen); dismiss zusätzlich (Administration, Änderung) | schreibvorbereitend | `INotificationService.ListActiveAsync`/`DismissAsync` |
 | T38 | `fm_admin_settings` | Admin-editable Einstellungen der Einrichtung lesen (`get`; Sektionen `mcp` = Kill-Switch/Write-Stop-Lid, `updates` = Update-Einstellungen, `wellKnown` = Well-Known-Endpunkte) und eine begrenzte Feldmenge ändern (`set`: `mcp.enabled`, `mcp.writeAccessEnabled`, `updates.enabled`, `updates.includePrereleases`, `wellKnown.changePasswordUrl` – nicht angegebene Felder bleiben unverändert) | (Administration, Lesen); set zusätzlich (Administration, Änderung) | schreibvorbereitend (set: **genehmigungspflichtig**) | `IMcpSettingsService`, `IUpdateOrchestrator.GetSettingsAsync`/`SaveSettingsAsync`, `IWellKnownSettingsService` |
 
@@ -337,9 +337,11 @@ plus „nur Admins dürfen administrieren").
   bei install), `scheduledInstallTime` (`HH:mm`, explizites `null` löscht
   die Planung); *Ausgabe* `UpdateStatusDto`-Abbildung bzw.
   `UpdateCheckResultDto`/`UpdateSettingsDto`.
-- `fm_admin_backups`: *Eingabe* `operation` (`list`|`create`),
-  `skip`/`take`; *Ausgabe* `BackupDto`-Liste bzw. das erzeugte
-  `BackupDto`.
+- `fm_admin_backups`: *Eingabe* `operation` (`list`|`create`|`download`),
+  `id` (Pflicht bei `download`), `skip`/`take`; *Ausgabe* `BackupDto`-Liste,
+  das erzeugte `BackupDto` bzw. `{downloadUrl, sizeBytes, expiresUtc}`
+  (signiertes Ticket, ~10 Min. gültig — das ZIP läuft über
+  `GET /mcp/download/{token}`, nicht über das JSON-RPC-Result).
 - `fm_admin_notifications`: *Eingabe* `operation` (`list`|`dismiss`),
   `notificationId` (Pflicht bei dismiss), `skip`/`take`; *Ausgabe*
   `NotificationDto`-Liste bzw. `applied`-Status (fremde/vergebene

@@ -110,9 +110,10 @@ public sealed class BackupService : IBackupService
     /// A database record describing the backup is created and returned.
     /// </summary>
     /// <param name="userId">Owner user identifier for whom the backup is created.</param>
+    /// <param name="source">Optional source tag recorded on the backup record; defaults to <c>"System"</c>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A <see cref="BackupDto"/> describing the created backup.</returns>
-    public async Task<BackupDto> CreateAsync(Guid userId, CancellationToken ct)
+    public async Task<BackupDto> CreateAsync(Guid userId, string? source = null, CancellationToken ct = default)
     {
         // Build backup content (NDJSON with meta + data)
         var meta = new { Type = "Backup", Version = 3 };
@@ -141,7 +142,7 @@ public sealed class BackupService : IBackupService
             CreatedUtc = DateTime.UtcNow,
             FileName = fileName,
             SizeBytes = size,
-            Source = "System",
+            Source = source ?? "System",
             StoragePath = fileName
         };
         _db.Backups.Add(rec);

@@ -233,7 +233,7 @@ namespace FinanceManager.Tests.Infrastructure
             var logger = NullLogger<BackupService>.Instance;
 
             var svc = new BackupService(db, env, logger, services);
-            var backupDto = await svc.CreateAsync(owner, CancellationToken.None);
+            var backupDto = await svc.CreateAsync(owner, ct: CancellationToken.None);
             Assert.NotNull(backupDto);
 
             var rec = db.Backups.FirstOrDefault(b => b.Id == backupDto.Id);
