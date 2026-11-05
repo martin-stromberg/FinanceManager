@@ -120,14 +120,8 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
             new { operation = "create" }, ct,
             executeApproved: async ct2 =>
             {
-                var staged = await McpWriteAudit.StageDataChangeAsync(
-                    _auditWriter, context, "BackupCreated", ToolName,
-                    new List<McpAuditFieldChange>
-                    {
-                        new(EntityType, Guid.Empty, "Created", null, null)
-                    },
-                    1,
-                    JsonSerializer.Serialize(new { operation = "create" }), ct2);
+                // Create first, then stage the DataChange with the real record id —
+                // the audit writer rejects placeholder entity ids (Guid.Empty).
                 BackupDto created;
                 try
                 {
@@ -135,14 +129,16 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
                 }
                 catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException)
                 {
-                    McpWriteAudit.DiscardStaged(context, staged);
                     throw new McpToolException("Err_Mcp_InvalidState", ex.Message);
                 }
-                catch
-                {
-                    McpWriteAudit.DiscardStaged(context, staged);
-                    throw;
-                }
+                await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "BackupCreated", ToolName,
+                    new List<McpAuditFieldChange>
+                    {
+                        new(EntityType, created.Id, "Created", null, created.Id.ToString())
+                    },
+                    1,
+                    JsonSerializer.Serialize(new { operation = "create" }), ct2);
                 return new { operation = "create", applied = true, backup = Map(created) };
             });
 
