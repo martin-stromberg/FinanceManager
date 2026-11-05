@@ -42,13 +42,17 @@ internal static class McpStatementDraftGuards
     /// <summary>Maximum accepted file-name length.</summary>
     internal const int MaxFileNameLength = 250;
 
-    /// <summary>Maximum subject/booking-description length (batch-update convention).</summary>
+    /// <summary>Maximum subject/booking-description length — MCP-side defense cap, the
+    /// domain has no such limit (batch-update convention).</summary>
     internal const int MaxTextLength = 1000;
 
-    /// <summary>Maximum recipient-name length (batch-update convention).</summary>
+    /// <summary>Maximum recipient-name length — MCP-side defense cap, the domain has no
+    /// such limit (batch-update convention).</summary>
     internal const int MaxRecipientNameLength = 250;
 
-    /// <summary>Tolerated backwards distance between valuta date and booking date (§4.4 Datumslogik).</summary>
+    /// <summary>Tolerated backwards distance between valuta date and booking date —
+    /// the MCP-side plausibility convention covered by toolkatalog §4.4 Datumslogik;
+    /// the domain itself does not relate the two dates.</summary>
     internal static readonly TimeSpan ValutaTolerance = TimeSpan.FromDays(7);
 
     /// <summary>
@@ -130,8 +134,12 @@ internal static class McpStatementDraftGuards
 
     /// <summary>
     /// Validates the correctable core fields of a draft entry (toolkatalog T18 field list)
-    /// before <c>UpdateEntryCoreAsync</c>/<c>AddEntryAsync</c>: non-zero amount, non-empty
-    /// subject, valuta-date plausibility and the API text-length limits.
+    /// before <c>UpdateEntryCoreAsync</c>/<c>AddEntryAsync</c>. Only transport/defense
+    /// checks run here: the MCP-side length caps, the currency-code shape convention and
+    /// the §4.4 valuta-date plausibility. Value ranges stay with the domain — a zero
+    /// amount is explicitly legal (<c>StatementEntry</c>: "Zero is allowed for neutral
+    /// items") and an empty subject is persistable (<c>StatementDraftEntry.UpdateCore</c>);
+    /// both are only surfaced as findings by the read tool's Befundliste.
     /// </summary>
     /// <param name="bookingDate">Effective booking date.</param>
     /// <param name="valutaDate">Effective valuta date (may be <see langword="null"/>).</param>
@@ -140,13 +148,14 @@ internal static class McpStatementDraftGuards
     /// <param name="recipientName">Effective recipient name.</param>
     /// <param name="currencyCode">Effective currency code (may be <see langword="null"/>).</param>
     /// <param name="bookingDescription">Effective booking description.</param>
-    /// <exception cref="McpToolException">A plausibility rule is violated.</exception>
+    /// <exception cref="McpToolException">A transport/defense check is violated.</exception>
     public static void ValidateEntryCore(
         DateTime bookingDate, DateTime? valutaDate, decimal amount, string subject,
         string? recipientName, string? currencyCode, string? bookingDescription)
     {
         var findings = CollectEntryCoreFindings(
-            bookingDate, valutaDate, amount, subject, recipientName, currencyCode, bookingDescription);
+            bookingDate, valutaDate, amount, subject, recipientName, currencyCode,
+            bookingDescription, forWrite: true);
         if (findings.Count > 0)
         {
             throw new McpToolException("Err_Mcp_InvalidArguments", findings[0].Message);
@@ -157,6 +166,8 @@ internal static class McpStatementDraftGuards
     /// Non-throwing variant of <see cref="ValidateEntryCore"/> for the T14 Befundliste
     /// (F-0704, §4.4): evaluates the same rules in the same order and returns one
     /// <see cref="McpRuleFinding"/> per violation instead of aborting at the first.
+    /// Additionally reports the downstream-booking finding <c>MCP_SUBJECT_MISSING</c> —
+    /// an empty subject is persistable but fails at booking time.
     /// </summary>
     /// <param name="bookingDate">Effective booking date.</param>
     /// <param name="valutaDate">Effective valuta date (may be <see langword="null"/>).</param>
@@ -169,17 +180,27 @@ internal static class McpStatementDraftGuards
     public static IReadOnlyList<McpRuleFinding> CollectEntryCoreFindings(
         DateTime bookingDate, DateTime? valutaDate, decimal amount, string subject,
         string? recipientName, string? currencyCode, string? bookingDescription)
+        => CollectEntryCoreFindings(
+            bookingDate, valutaDate, amount, subject, recipientName, currencyCode,
+            bookingDescription, forWrite: false);
+
+    private static IReadOnlyList<McpRuleFinding> CollectEntryCoreFindings(
+        DateTime bookingDate, DateTime? valutaDate, decimal amount, string subject,
+        string? recipientName, string? currencyCode, string? bookingDescription, bool forWrite)
     {
+        // No amount check at all: zero is a legal domain value (StatementEntry —
+        // "Zero is allowed for neutral items"), the domain owns the value range.
+        _ = amount;
         var findings = new List<McpRuleFinding>();
-        if (amount == 0m)
+        if (!forWrite && string.IsNullOrWhiteSpace(subject))
         {
-            findings.Add(new("MCP_AMOUNT_ZERO", "Error", "Amount must not be zero."));
+            // Persistable (UpdateCore stores an empty subject) but booking would fail —
+            // the finding belongs to the validate Befundliste, not the write guard.
+            findings.Add(new("MCP_SUBJECT_MISSING", "Error",
+                "Subject is empty — the entry is persistable but booking will fail."));
         }
-        if (string.IsNullOrWhiteSpace(subject))
-        {
-            findings.Add(new("MCP_SUBJECT_MISSING", "Error", "Subject is required."));
-        }
-        else if (subject.Length > MaxTextLength)
+        // MCP-side defense caps, the domain has no such limits (batch-update convention).
+        else if (subject is { Length: > MaxTextLength })
         {
             findings.Add(new("MCP_SUBJECT_TOO_LONG", "Error", $"Subject must not exceed {MaxTextLength} characters."));
         }
@@ -191,6 +212,8 @@ internal static class McpStatementDraftGuards
         {
             findings.Add(new("MCP_RECIPIENT_TOO_LONG", "Error", $"RecipientName must not exceed {MaxRecipientNameLength} characters."));
         }
+        // MCP-side convention: a present currency code must carry the ISO-4217 shape;
+        // the domain accepts any string (or defaults to EUR).
         if (currencyCode is not null
             && (currencyCode.Length != 3 || !currencyCode.All(char.IsLetter)))
         {

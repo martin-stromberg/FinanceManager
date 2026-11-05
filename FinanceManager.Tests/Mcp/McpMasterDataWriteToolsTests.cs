@@ -681,6 +681,47 @@ public sealed class McpMasterDataWriteToolsTests
             SavingsPlanInterval.Quarterly, categoryId, "CN", It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// The non-negative <c>targetAmount</c> bound is a documented MCP-side convention
+    /// (inputSchema of <c>fm_savings_plans_manage</c>) — the domain itself is permissive.
+    /// The tool-level rejection is intentional and verified here.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_Create_NegativeTargetAmount_RejectedByMcpConvention()
+    {
+        var owner = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        var handler = PlansHandler(plans);
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args("{\"operation\":\"create\",\"name\":\"plan\",\"savingsPlanType\":\"Recurring\",\"targetAmount\":-100}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
+            "Err_Mcp_InvalidArguments");
+        plans.Verify(p => p.CreateAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<SavingsPlanType>(),
+            It.IsAny<decimal?>(), It.IsAny<DateTime?>(), It.IsAny<SavingsPlanInterval?>(), It.IsAny<Guid?>(),
+            It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The documented MCP convention only excludes <i>negative</i> target amounts — zero
+    /// stays within it and must reach the service.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_Create_ZeroTargetAmount_IsApplied()
+    {
+        var owner = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.CreateAsync(owner, "plan", SavingsPlanType.Recurring, 0m, null,
+                null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan());
+        var handler = PlansHandler(plans);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args("{\"operation\":\"create\",\"name\":\"plan\",\"savingsPlanType\":\"Recurring\",\"targetAmount\":0}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        plans.Verify(p => p.CreateAsync(owner, "plan", SavingsPlanType.Recurring, 0m, null,
+            null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     /// <summary>Test case.</summary>
     [Fact]
     public async Task SavingsPlans_Update_ArchivedPlan_Rejected()
@@ -1063,22 +1104,51 @@ public sealed class McpMasterDataWriteToolsTests
             new DateOnly(2020, 1, 1), null, null, false, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    /// <summary>A zero amount is meaningless for a rule and must still be rejected before effect.</summary>
+    /// <summary>
+    /// Regression test: zero is a legal domain value for a rule amount —
+    /// <c>BudgetRule.SetAmount</c> carries no sign/zero check, so the tool must not block
+    /// it either (the domain owns the value range, the tool only validates structure).
+    /// </summary>
     [Fact]
-    public async Task Budgets_RuleCreate_ZeroAmount_RejectedBeforeEffect()
+    public async Task Budgets_RuleCreate_ZeroAmount_IsApplied()
     {
         var owner = Guid.NewGuid();
         var purposeId = Guid.NewGuid();
         var purposes = new Mock<IBudgetPurposeService>();
         purposes.Setup(p => p.GetAsync(purposeId, owner, It.IsAny<CancellationToken>())).ReturnsAsync(NewPurpose(purposeId));
         var rules = new Mock<IBudgetRuleService>();
+        rules.Setup(r => r.CreateAsync(owner, purposeId, 0m, BudgetIntervalType.Monthly, null,
+                new DateOnly(2026, 1, 1), null, null, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewRule(purposeId: purposeId));
         var handler = BudgetsHandler(purposes: purposes, rules: rules);
-        await AssertMcpErrorAsync(handler.InvokeAsync(
+        using var doc = Serialize(await handler.InvokeAsync(
             Args($"{{\"entity\":\"rule\",\"operation\":\"create\",\"purposeId\":\"{purposeId}\",\"amount\":0,\"interval\":\"Monthly\",\"startDate\":\"2026-01-01\"}}"),
-            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
-            "Err_Mcp_InvalidArguments");
-        rules.Verify(r => r.CreateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<BudgetIntervalType>(),
-            It.IsAny<int?>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly?>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        rules.Verify(r => r.CreateAsync(owner, purposeId, 0m, BudgetIntervalType.Monthly, null,
+            new DateOnly(2026, 1, 1), null, null, false, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Regression test: override amounts are signed domain values like rule amounts — a
+    /// negative monthly override must reach the service unchanged.
+    /// </summary>
+    [Fact]
+    public async Task Budgets_OverrideCreate_NegativeAmount_IsApplied()
+    {
+        var owner = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var purposes = new Mock<IBudgetPurposeService>();
+        purposes.Setup(p => p.GetAsync(purposeId, owner, It.IsAny<CancellationToken>())).ReturnsAsync(NewPurpose(purposeId));
+        var overrides = new Mock<IBudgetOverrideService>();
+        overrides.Setup(o => o.CreateAsync(owner, purposeId, new BudgetPeriodKey(2026, 3), -150m, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewOverride(purposeId: purposeId));
+        var handler = BudgetsHandler(purposes: purposes, overrides: overrides);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"entity\":\"override\",\"operation\":\"create\",\"purposeId\":\"{purposeId}\",\"periodYear\":2026,\"periodMonth\":3,\"amount\":-150}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        overrides.Verify(o => o.CreateAsync(owner, purposeId, new BudgetPeriodKey(2026, 3), -150m, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ------------------------------------------------------------------

@@ -167,7 +167,7 @@ public sealed class FmStatementDraftBookHandler : IMcpToolHandler
             var firstError = result.Validation.Messages
                 .FirstOrDefault(m => string.Equals(m.Severity, "Error", StringComparison.OrdinalIgnoreCase));
             throw new McpToolException(
-                result.HasWarnings && firstError is null ? "Err_ValidationFailed" : "Err_ValidationFailed",
+                "Err_ValidationFailed",
                 firstError?.Message ?? "The draft could not be booked.");
         }
         return new

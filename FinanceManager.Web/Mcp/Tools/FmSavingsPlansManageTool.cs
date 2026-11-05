@@ -24,7 +24,7 @@ public sealed class FmSavingsPlansManageDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmSavingsPlansManageDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"archive\"],\"description\":\"Master-data operation (required); archive requires approval and has no effect until EP-09.\"},\"savingsPlanId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target savings plan (required for update/archive).\"},\"name\":{\"type\":\"string\",\"description\":\"Plan name (required for create; optional overwrite for update).\"},\"savingsPlanType\":{\"type\":\"string\",\"enum\":[\"OneTime\",\"Recurring\",\"Open\"],\"description\":\"Plan type (required for create; optional overwrite for update).\"},\"targetAmount\":{\"type\":\"number\",\"description\":\"Target amount; explicit null clears it on update.\"},\"targetDate\":{\"type\":\"string\",\"format\":\"date-time\",\"description\":\"Target date; explicit null clears it on update.\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Monthly\",\"BiMonthly\",\"Quarterly\",\"SemiAnnually\",\"Annually\"],\"description\":\"Savings interval; explicit null clears it on update.\"},\"categoryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Category assignment; explicit null clears it on update.\"},\"contractNumber\":{\"type\":\"string\",\"description\":\"Contract number; explicit null clears it on update.\"}},\"required\":[\"operation\"],\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"archive\"],\"description\":\"Master-data operation (required); archive requires approval and has no effect until EP-09.\"},\"savingsPlanId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target savings plan (required for update/archive).\"},\"name\":{\"type\":\"string\",\"description\":\"Plan name (required for create; optional overwrite for update).\"},\"savingsPlanType\":{\"type\":\"string\",\"enum\":[\"OneTime\",\"Recurring\",\"Open\"],\"description\":\"Plan type (required for create; optional overwrite for update).\"},\"targetAmount\":{\"type\":\"number\",\"description\":\"Target amount — must not be negative (documented MCP-side convention; the domain is permissive); explicit null clears it on update.\"},\"targetDate\":{\"type\":\"string\",\"format\":\"date-time\",\"description\":\"Target date; explicit null clears it on update.\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Monthly\",\"BiMonthly\",\"Quarterly\",\"SemiAnnually\",\"Annually\"],\"description\":\"Savings interval; explicit null clears it on update.\"},\"categoryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Category assignment; explicit null clears it on update.\"},\"contractNumber\":{\"type\":\"string\",\"description\":\"Contract number; explicit null clears it on update.\"}},\"required\":[\"operation\"],\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -111,6 +111,8 @@ public sealed class FmSavingsPlansManageHandler : IMcpToolHandler
         var categoryId = McpToolArguments.OptionalGuid(arguments, "categoryId");
         var contractNumber = McpToolArguments.OptionalString(arguments, "contractNumber", McpMasterDataGuards.MaxContractNumberLength);
 
+        // Documented MCP-side convention (see inputSchema of 'targetAmount'):
+        // non-negative target amounts only — the domain itself is permissive.
         if (targetAmount is < 0m)
         {
             throw new McpToolException("Err_Mcp_InvalidArguments", "Argument 'targetAmount' must not be negative.");
@@ -188,6 +190,8 @@ public sealed class FmSavingsPlansManageHandler : IMcpToolHandler
             ? McpToolArguments.OptionalString(arguments, "contractNumber", McpMasterDataGuards.MaxContractNumberLength)
             : existing.ContractNumber;
 
+        // Documented MCP-side convention (see inputSchema of 'targetAmount'):
+        // non-negative target amounts only — the domain itself is permissive.
         if (effAmount is < 0m)
         {
             throw new McpToolException("Err_Mcp_InvalidArguments", "Argument 'targetAmount' must not be negative.");

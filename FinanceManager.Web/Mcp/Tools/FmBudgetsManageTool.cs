@@ -28,7 +28,7 @@ public sealed class FmBudgetsManageDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmBudgetsManageDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"entity\":{\"type\":\"string\",\"enum\":[\"purpose\",\"rule\",\"override\",\"category\"],\"description\":\"Budget entity family (required).\"},\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"delete\"],\"description\":\"Operation (required); delete requires approval and has no effect until EP-09.\"},\"purposeId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target purpose (update/delete) or parent purpose (rule/override create).\"},\"ruleId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target rule (update/delete).\"},\"overrideId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target override (update/delete).\"},\"categoryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target category (category update/delete), rule-create binding or purpose assignment; explicit null clears the purpose assignment on update.\"},\"name\":{\"type\":\"string\",\"description\":\"Name (required for purpose/category create; optional overwrite).\"},\"description\":{\"type\":\"string\",\"description\":\"Purpose description; explicit null clears it on update.\"},\"sourceType\":{\"type\":\"string\",\"enum\":[\"Contact\",\"ContactGroup\",\"SavingsPlan\"],\"description\":\"Purpose source type (required for purpose create).\"},\"sourceId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Purpose source id — contact, contact category or savings plan (required for purpose create).\"},\"valuationType\":{\"type\":\"string\",\"enum\":[\"ExactPostings\",\"TotalBudget\"],\"description\":\"Purpose valuation type (default ExactPostings).\"},\"amount\":{\"type\":\"number\",\"description\":\"Rule/override amount — signed; negative for expected costs, positive for expected income (required for rule/override create).\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Monthly\",\"Quarterly\",\"Yearly\",\"CustomMonths\"],\"description\":\"Rule interval (required for rule create).\"},\"customIntervalMonths\":{\"type\":\"integer\",\"minimum\":1,\"description\":\"Custom interval length in months (required when interval=CustomMonths); explicit null clears it on update.\"},\"startDate\":{\"type\":\"string\",\"description\":\"Rule start date ISO-8601 (required for rule create).\"},\"endDate\":{\"type\":\"string\",\"description\":\"Rule end date ISO-8601; explicit null clears it on update.\"},\"purposePattern\":{\"type\":\"string\",\"description\":\"Rule purpose pattern; explicit null clears it on update.\"},\"useRegex\":{\"type\":\"boolean\",\"description\":\"Whether purposePattern is a regular expression.\"},\"periodYear\":{\"type\":\"integer\",\"description\":\"Override period year (required for override create).\"},\"periodMonth\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":12,\"description\":\"Override period month 1-12 (required for override create).\"}},\"required\":[\"entity\",\"operation\"],\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"entity\":{\"type\":\"string\",\"enum\":[\"purpose\",\"rule\",\"override\",\"category\"],\"description\":\"Budget entity family (required).\"},\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"delete\"],\"description\":\"Operation (required); delete requires approval and has no effect until EP-09.\"},\"purposeId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target purpose (update/delete) or parent purpose (rule/override create).\"},\"ruleId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target rule (update/delete).\"},\"overrideId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target override (update/delete).\"},\"categoryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target category (category update/delete), rule-create binding or purpose assignment; explicit null clears the purpose assignment on update.\"},\"name\":{\"type\":\"string\",\"description\":\"Name (required for purpose/category create; optional overwrite).\"},\"description\":{\"type\":\"string\",\"description\":\"Purpose description; explicit null clears it on update.\"},\"sourceType\":{\"type\":\"string\",\"enum\":[\"Contact\",\"ContactGroup\",\"SavingsPlan\"],\"description\":\"Purpose source type (required for purpose create).\"},\"sourceId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Purpose source id — contact, contact category or savings plan (required for purpose create).\"},\"valuationType\":{\"type\":\"string\",\"enum\":[\"ExactPostings\",\"TotalBudget\"],\"description\":\"Purpose valuation type (default ExactPostings).\"},\"amount\":{\"type\":\"number\",\"description\":\"Rule/override amount — signed; negative for expected costs, positive for expected income, zero is a legal domain value (required for rule/override create).\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Monthly\",\"Quarterly\",\"Yearly\",\"CustomMonths\"],\"description\":\"Rule interval (required for rule create).\"},\"customIntervalMonths\":{\"type\":\"integer\",\"minimum\":1,\"description\":\"Custom interval length in months (required when interval=CustomMonths); explicit null clears it on update.\"},\"startDate\":{\"type\":\"string\",\"description\":\"Rule start date ISO-8601 (required for rule create).\"},\"endDate\":{\"type\":\"string\",\"description\":\"Rule end date ISO-8601; explicit null clears it on update.\"},\"purposePattern\":{\"type\":\"string\",\"description\":\"Rule purpose pattern; explicit null clears it on update.\"},\"useRegex\":{\"type\":\"boolean\",\"description\":\"Whether purposePattern is a regular expression.\"},\"periodYear\":{\"type\":\"integer\",\"description\":\"Override period year (required for override create).\"},\"periodMonth\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":12,\"description\":\"Override period month 1-12 (required for override create).\"}},\"required\":[\"entity\",\"operation\"],\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -326,7 +326,7 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         var pattern = McpToolArguments.OptionalString(arguments, "purposePattern", McpMasterDataGuards.MaxPurposePatternLength);
         var useRegex = McpToolArguments.OptionalBool(arguments, "useRegex") ?? false;
 
-        ValidateRule(amount, interval, customMonths, startDate, endDate);
+        ValidateRule(interval, customMonths, startDate, endDate);
         if (purposeId.HasValue)
         {
             await McpMasterDataGuards.RequireBudgetPurposeAsync(_purposes, purposeId.Value, owner, ct);
@@ -402,7 +402,7 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
                 ?? throw new McpToolException("Err_Mcp_InvalidArguments", "Argument 'useRegex' must not be null.")
             : existing.UseRegex;
 
-        ValidateRule(effAmount, effInterval, effCustom, effStart, effEnd);
+        ValidateRule(effInterval, effCustom, effStart, effEnd);
 
         var changes = new List<McpAuditFieldChange>();
         McpMasterDataGuards.AddChange(changes, EntityRule, ruleId, "Amount", existing.Amount, effAmount);
@@ -755,14 +755,12 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
         }
     }
 
-    private static void ValidateRule(decimal amount, BudgetIntervalType interval, int? customMonths, DateOnly start, DateOnly? end)
+    // No sign/zero check on amount: BudgetRule.SetAmount accepts every signed value —
+    // negative for expected costs, positive for expected income, zero as a legal domain
+    // value. The domain owns the amount value range; the tool only validates structural
+    // coherence (interval/custom months, date order).
+    private static void ValidateRule(BudgetIntervalType interval, int? customMonths, DateOnly start, DateOnly? end)
     {
-        if (amount == 0m)
-        {
-            // Rules carry the expected amount with its sign — negative for expected costs,
-            // positive for expected income (BudgetRule.Amount is signed by domain contract).
-            throw new McpToolException("Err_Mcp_InvalidArguments", "Argument 'amount' must not be zero.");
-        }
         if (interval == BudgetIntervalType.CustomMonths && customMonths is null or <= 0)
         {
             throw new McpToolException("Err_Mcp_InvalidArguments",
@@ -784,6 +782,8 @@ public sealed class FmBudgetsManageHandler : IMcpToolHandler
             throw new McpToolException("Err_Mcp_InvalidArguments",
                 "Arguments 'periodYear' and 'periodMonth' are required for the override period.");
         }
+        // MCP-side defense cap, the domain has no such bound (BudgetPeriodKey only
+        // validates the month) — a sane planning horizon is enforced here.
         if (year is < 2000 or > 2200)
         {
             throw new McpToolException("Err_Mcp_InvalidArguments", "Argument 'periodYear' is out of range (2000-2200).");

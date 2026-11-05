@@ -92,10 +92,11 @@ public sealed class StatementDraftBookingTests
         public Task<bool> UpdateCoreAsync(Guid ownerUserId, Guid attachmentId, string? fileName, Guid? categoryId, CancellationToken ct)
             => Task.FromException<bool>(new NotSupportedException("ControlledAttachmentService: UpdateCoreAsync is not configured for this test scenario."));
 
-        public Task ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
+        public async Task<int> ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
         {
             ReassignCallCount++;
-            return _reassignHandler(ct);
+            await _reassignHandler(ct);
+            return 0;
         }
 
         public Task<AttachmentDto> CreateReferenceAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid masterAttachmentId, CancellationToken ct)

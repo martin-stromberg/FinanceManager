@@ -49,8 +49,9 @@ internal static class McpMasterDataGuards
     /// <summary>Maximum accepted alpha-vantage code length.</summary>
     internal const int MaxAlphaVantageCodeLength = 50;
 
-    /// <summary>Maximum accepted region/sector length.</summary>
-    internal const int MaxRegionSectorLength = 100;
+    /// <summary>Maximum accepted region/sector length — aligned to the domain limit of
+    /// <c>Security.Update</c> (255 characters).</summary>
+    internal const int MaxRegionSectorLength = 255;
 
     /// <summary>Maximum accepted budget purpose-pattern length.</summary>
     internal const int MaxPurposePatternLength = 500;
@@ -64,8 +65,10 @@ internal static class McpMasterDataGuards
     /// <summary>Maximum accepted URL length.</summary>
     internal const int MaxUrlLength = 2000;
 
-    /// <summary>Maximum accepted KPI title length.</summary>
-    internal const int MaxTitleLength = 200;
+    /// <summary>Maximum accepted KPI title length — aligned to the domain limit of
+    /// <c>HomeKpi.SetTitle</c> (120 characters; the domain would silently truncate, the
+    /// tool rejects instead).</summary>
+    internal const int MaxTitleLength = 120;
 
     /// <summary>
     /// Maximum accepted raw upload size for one MCP attachment upload. The JSON-RPC

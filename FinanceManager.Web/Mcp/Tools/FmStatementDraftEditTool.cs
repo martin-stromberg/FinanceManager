@@ -251,7 +251,9 @@ public sealed class FmStatementDraftEditHandler : IMcpToolHandler
         }
 
         var patch = ParseEntryPatch(arguments, out var providedFields);
-        if (patch.BookingDate is null || patch.Amount is null || string.IsNullOrWhiteSpace(patch.Subject))
+        // Presence check only — an empty subject is persistable (StatementDraftEntry
+        // stores an empty string); booking flags it downstream (see fm_statement_draft_validate).
+        if (patch.BookingDate is null || patch.Amount is null || !providedFields.Contains("subject"))
         {
             throw new McpToolException("Err_Mcp_InvalidArguments",
                 "Operation 'addEntry' requires 'entry' with bookingDate, amount and subject.");

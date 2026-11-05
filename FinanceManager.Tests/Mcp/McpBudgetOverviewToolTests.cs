@@ -127,4 +127,59 @@ public sealed class McpBudgetOverviewToolTests
         Assert.NotEqual(JsonValueKind.Null, parent.ValueKind);
         Assert.Equal(0, parent.GetProperty("rules").GetArrayLength());
     }
+
+    /// <summary>
+    /// Regression: the single-purpose path (<c>budgetPurposeId</c>) must surface the real
+    /// Kennzahlen of <c>ListOverviewAsync</c> — never fabricated zero placeholders.
+    /// </summary>
+    [Fact]
+    public async Task SinglePurpose_ShowsRealOverviewNumbers()
+    {
+        var owner = Guid.NewGuid();
+        var purposeId = Guid.NewGuid();
+        var catId = Guid.NewGuid();
+
+        var purposes = new Mock<IBudgetPurposeService>();
+        purposes.Setup(p => p.GetAsync(purposeId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BudgetPurposeDto(purposeId, owner, "Miete", null,
+                BudgetSourceType.Contact, Guid.NewGuid(), catId));
+        purposes.Setup(p => p.ListOverviewAsync(
+                owner, 0, It.IsAny<int>(), null, "Miete", It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), null,
+                It.IsAny<CancellationToken>(), It.IsAny<BudgetReportDateBasis>()))
+            .ReturnsAsync(new List<BudgetPurposeOverviewDto>
+            {
+                new(purposeId, owner, "Miete", null, BudgetSourceType.Contact, Guid.NewGuid(),
+                    2, -1200m, -1100m, 100m, "Vermieter", null, catId, "Wohnen")
+            });
+
+        var rules = new Mock<IBudgetRuleService>();
+        rules.Setup(r => r.ListByPurposeAsync(owner, purposeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BudgetRuleDto>());
+        rules.Setup(r => r.ListByCategoryAsync(owner, catId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BudgetRuleDto>());
+
+        var overrides = new Mock<IBudgetOverrideService>();
+        overrides.Setup(o => o.ListByPurposeAsync(owner, purposeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BudgetOverrideDto>());
+
+        var categories = new Mock<IBudgetCategoryService>();
+        categories.Setup(c => c.ListAsync(owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BudgetCategoryDto>());
+
+        var handler = new FmBudgetOverviewHandler(purposes.Object, rules.Object, overrides.Object, categories.Object);
+        var result = await handler.InvokeAsync(
+            JsonDocument.Parse($"{{\"budgetPurposeId\":\"{purposeId}\"}}").RootElement,
+            NewCallContext(owner), TestContext.Current.CancellationToken);
+
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(result));
+        var purpose = doc.RootElement.GetProperty("purposes")[0];
+        Assert.Equal(2, purpose.GetProperty("ruleCount").GetInt32());
+        Assert.Equal(-1200m, purpose.GetProperty("budgetSum").GetDecimal());
+        Assert.Equal(-1100m, purpose.GetProperty("actualSum").GetDecimal());
+        Assert.Equal(100m, purpose.GetProperty("variance").GetDecimal());
+        // The overview lookup is name-preselected (no id filter on the service contract).
+        purposes.Verify(p => p.ListOverviewAsync(
+            owner, 0, It.IsAny<int>(), null, "Miete", It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), null,
+            It.IsAny<CancellationToken>(), It.IsAny<BudgetReportDateBasis>()), Times.Once);
+    }
 }

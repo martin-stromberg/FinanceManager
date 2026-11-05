@@ -659,9 +659,12 @@ public sealed class McpStatementWriteToolsTests
         Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
     }
 
-    /// <summary>Test case.</summary>
+    /// <summary>
+    /// AlreadyBooked stays a hard lock; a zero amount is a legal domain value
+    /// (StatementEntry: "Zero is allowed for neutral items") and must be applied.
+    /// </summary>
     [Fact]
-    public async Task Edit_UpdateEntry_RejectsAlreadyBooked_AndInvalidAmount()
+    public async Task Edit_UpdateEntry_RejectsAlreadyBooked_AllowsZeroAmount()
     {
         var owner = Guid.NewGuid();
         var draftId = Guid.NewGuid();
@@ -680,8 +683,42 @@ public sealed class McpStatementWriteToolsTests
         var open = NewEntry();
         drafts.Setup(d => d.GetDraftEntryAsync(draftId, open.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(open);
-        ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(ArgsObj(new { draftId, operation = "updateEntry", entryId = open.Id, entry = new { amount = 0m } }), ctx, CancellationToken.None));
-        Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
+        drafts.Setup(d => d.UpdateEntryCoreAsync(
+                draftId, open.Id, owner,
+                It.IsAny<DateTime>(), It.IsAny<DateTime?>(), 0m,
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(open with { Amount = 0m });
+        using var doc = Serialize(await handler.InvokeAsync(ArgsObj(new { draftId, operation = "updateEntry", entryId = open.Id, entry = new { amount = 0m } }), ctx, CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+    }
+
+    /// <summary>
+    /// Regression: addEntry with a zero amount is domain-legal and must reach the
+    /// service (neutral items — same contract as updateEntry).
+    /// </summary>
+    [Fact]
+    public async Task Edit_AddEntry_ZeroAmount_IsApplied()
+    {
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var header = NewDraft(draftId, Guid.NewGuid());
+        var newEntry = NewEntry(id: Guid.NewGuid(), amount: 0m);
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(header);
+        drafts.Setup(d => d.AddEntryAsync(draftId, owner, It.IsAny<DateTime>(), 0m, "x", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(header with { Entries = new[] { newEntry } });
+        var handler = EditHandler(drafts);
+
+        using var doc = Serialize(await handler.InvokeAsync(ArgsObj(new
+        {
+            draftId,
+            operation = "addEntry",
+            entry = new { bookingDate = "2026-01-10", amount = 0m, subject = "x" }
+        }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        drafts.Verify(d => d.AddEntryAsync(draftId, owner, It.IsAny<DateTime>(), 0m, "x", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>Test case.</summary>

@@ -150,16 +150,18 @@ public sealed class FmBudgetRulesSuggestHandler : IMcpToolHandler
         IReadOnlyList<BudgetPurposeOverviewDto> purposes;
         if (budgetPurposeId.HasValue)
         {
+            // Real Kennzahlen instead of fabricated zeros: ListOverviewAsync has no id
+            // filter, so the lookup pre-selects by the master-data name (LIKE) and the
+            // result is then filtered down to the exact record.
             var single = await _purposes.GetAsync(budgetPurposeId.Value, owner, ct);
             purposes = single is null
                 ? Array.Empty<BudgetPurposeOverviewDto>()
-                : new[]
-                {
-                    new BudgetPurposeOverviewDto(
-                        single.Id, single.OwnerUserId, single.Name, single.Description,
-                        single.SourceType, single.SourceId, 0, 0m, 0m, 0m,
-                        null, null, single.BudgetCategoryId, null, single.ValuationType)
-                };
+                : (await _purposes.ListOverviewAsync(
+                        owner, 0, int.MaxValue, null, single.Name,
+                        DateOnly.FromDateTime(from), DateOnly.FromDateTime(to),
+                        null, ct))
+                    .Where(p => p.Id == single.Id)
+                    .ToList();
         }
         else
         {

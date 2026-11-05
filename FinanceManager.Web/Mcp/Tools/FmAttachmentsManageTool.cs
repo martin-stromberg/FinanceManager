@@ -388,17 +388,20 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
         await ResolveTargetAsync(toKind, toId, owner, ct);
         await RequireWritableAsync(context, McpRightKind.Modify, null, ct);
 
-        var moved = await _attachments.ListAsync(owner, fromKind, fromId, 0, McpToolArguments.MaxTake, null, null, null, ct);
+        // Exact pre-image count for the staged audit record — not a take-capped list page.
+        var affected = await _attachments.CountAsync(owner, fromKind, fromId, null, null, null, ct);
         var changes = new List<McpAuditFieldChange>
         {
             new(EntityType, fromId, "Reassigned", $"{fromKind}:{fromId}", $"{toKind}:{toId}")
         };
         var staged = await McpWriteAudit.StageDataChangeAsync(
-            _auditWriter, context, "AttachmentReassigned", ToolName, changes, moved.Count,
-            JsonSerializer.Serialize(new { operation = "reassign", fromEntityKind = fromKind.ToString(), fromEntityId = fromId, toEntityKind = toKind.ToString(), toEntityId = toId, affected = moved.Count }), ct);
+            _auditWriter, context, "AttachmentReassigned", ToolName, changes, affected,
+            JsonSerializer.Serialize(new { operation = "reassign", fromEntityKind = fromKind.ToString(), fromEntityId = fromId, toEntityKind = toKind.ToString(), toEntityId = toId, affected }), ct);
+        int moved;
         try
         {
-            await _attachments.ReassignAsync(fromKind, fromId, toKind, toId, owner, ct);
+            // The real result: ReassignAsync returns the rows actually moved.
+            moved = await _attachments.ReassignAsync(fromKind, fromId, toKind, toId, owner, ct);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
@@ -410,7 +413,7 @@ public sealed class FmAttachmentsManageHandler : IMcpToolHandler
             McpWriteAudit.DiscardStaged(context, staged);
             throw;
         }
-        return new { operation = "reassign", applied = true, moved = moved.Count };
+        return new { operation = "reassign", applied = true, moved };
     }
 
     // ------------------------------------------------------------------

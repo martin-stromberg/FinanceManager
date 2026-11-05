@@ -135,7 +135,8 @@ public interface IAttachmentService
     /// <param name="toId">The to id.</param>
     /// <param name="ownerUserId">The owner user id.</param>
     /// <param name="ct">Cancellation token.</param>
-    Task ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct);
+    /// <returns>The number of attachments actually reassigned.</returns>
+    Task<int> ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct);
 
     /// <summary>
     /// Creates a new referencing attachment entry pointing to an existing master attachment.

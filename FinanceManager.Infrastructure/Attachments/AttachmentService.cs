@@ -332,9 +332,9 @@ public sealed class AttachmentService : IAttachmentService
     /// <param name="toId">Destination entity id.</param>
     /// <param name="ownerUserId">Owner user id.</param>
     /// <param name="ct">Cancellation token.</param>
-    public async Task ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
+    public async Task<int> ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
     {
-        await _db.Attachments
+        return await _db.Attachments
             .Where(a => a.OwnerUserId == ownerUserId && a.EntityKind == fromKind && a.EntityId == fromId)
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.EntityKind, toKind).SetProperty(a => a.EntityId, toId), ct);
     }
