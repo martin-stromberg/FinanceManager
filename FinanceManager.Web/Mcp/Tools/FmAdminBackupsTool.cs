@@ -28,7 +28,7 @@ public sealed class FmAdminBackupsDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmAdminBackupsDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"list\",\"create\",\"download\",\"delete\"],\"description\":\"Backup operation (default 'list'); create/delete require approval; download returns a short-lived download URL (no approval).\"},\"id\":{\"type\":\"string\",\"description\":\"Backup id (UUID) — required for 'download' and 'delete'.\"},\"skip\":{\"type\":\"integer\",\"description\":\"Paging offset (default 0).\"},\"take\":{\"type\":\"integer\",\"description\":\"Page size 1-200 (default 50).\"},\"idempotencyKey\":{\"type\":\"string\",\"description\":\"Client deduplication key for the approval request.\"},\"reasonText\":{\"type\":\"string\",\"description\":\"Optional client reason text (untrusted).\"}},\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"list\",\"create\",\"download\",\"delete\",\"upload\"],\"description\":\"Backup operation (default 'list'); create/delete/upload require approval; download returns a short-lived download URL (no approval).\"},\"id\":{\"type\":\"string\",\"description\":\"Backup id (UUID) — required for 'download' and 'delete'.\"},\"path\":{\"type\":\"string\",\"description\":\"Server-side filesystem path of the backup zip — required for 'upload'.\"},\"skip\":{\"type\":\"integer\",\"description\":\"Paging offset (default 0).\"},\"take\":{\"type\":\"integer\",\"description\":\"Page size 1-200 (default 50).\"},\"idempotencyKey\":{\"type\":\"string\",\"description\":\"Client deduplication key for the approval request.\"},\"reasonText\":{\"type\":\"string\",\"description\":\"Optional client reason text (untrusted).\"}},\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -41,8 +41,10 @@ public sealed class FmAdminBackupsDescriptor : McpToolDescriptorBase
            "and runs through the AiActionRequest queue) or issues a short-lived, ticket-bound " +
            "download URL for one backup ('download' — (Administration, Lesen), no approval " +
            "needed; the zip is served by GET /mcp/download/{token} within ~10 minutes), " +
-           "or deletes one backup ('delete' — final/destructive, requires approval). " +
-           "Restore and upload are not exposed. Restricted to owners with " +
+           "or deletes one backup ('delete' — final/destructive, requires approval), " +
+           "or registers a server-side zip file as backup ('upload' — requires approval; " +
+           "'path' is read on the server filesystem). Restore is not exposed. " +
+           "Restricted to owners with " +
            "administrative privileges. Scope: (Administration, Lesen); create additionally " +
            "(Administration, Erstellung), delete additionally (Administration, Änderung).";
 
@@ -105,8 +107,9 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
             "create" => await CreateAsync(owner, context, ct),
             "download" => await DownloadAsync(arguments, owner, context, ct),
             "delete" => await DeleteAsync(arguments, owner, context, ct),
+            "upload" => await UploadAsync(arguments, owner, context, ct),
             _ => throw new McpToolException("Err_Mcp_InvalidArguments",
-                "Argument 'operation' must be one of list|create|download|delete.")
+                "Argument 'operation' must be one of list|create|download|delete|upload.")
         };
     }
 
@@ -219,6 +222,57 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
                     1,
                     JsonSerializer.Serialize(new { operation = "delete", id }), ct2);
                 return new { operation = "delete", deleted = true, id };
+            });
+    }
+
+    /// <summary>
+    /// Registers a server-side zip file as one of the owner's backups — (Administration,
+    /// Erstellung), approval-required. 'path' is read on the server filesystem (the admin
+    /// scope owner controls the installation); the service itself validates the zip
+    /// container and payload. The uploaded file name is untrusted content.
+    /// </summary>
+    private async Task<object> UploadAsync(JsonElement arguments, Guid owner, McpToolCallContext context, CancellationToken ct)
+    {
+        var path = McpToolArguments.OptionalString(arguments, "path", 1024);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments",
+                "Argument 'path' is required for 'upload'.");
+        }
+        var fileName = Path.GetFileName(path);
+        if (string.IsNullOrWhiteSpace(fileName) || !File.Exists(path))
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments",
+                "The path does not point to an existing file on the server.");
+        }
+        return await McpAdminGuards.ApprovalRequiredAsync(
+            _scopeEvaluator, context, McpDataType.Administration, McpRightKind.Create,
+            "upload",
+            "Registers a server-side zip file as backup of the owner — the file is copied " +
+            "into the backup storage; source is recorded as Upload.",
+            new { operation = "upload", fileName }, ct,
+            executeApproved: async ct2 =>
+            {
+                BackupDto uploaded;
+                try
+                {
+                    await using var stream = File.OpenRead(path);
+                    uploaded = await _backups.UploadAsync(owner, stream, fileName, ct2);
+                }
+                catch (Exception ex) when (ex is ArgumentException or InvalidOperationException
+                    or IOException or FileLoadException)
+                {
+                    throw new McpToolException("Err_Mcp_InvalidState", ex.Message);
+                }
+                await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "BackupUploaded", ToolName,
+                    new List<McpAuditFieldChange>
+                    {
+                        new(EntityType, uploaded.Id, "Created", null, uploaded.FileName)
+                    },
+                    1,
+                    JsonSerializer.Serialize(new { operation = "upload", fileName }), ct2);
+                return new { operation = "upload", applied = true, backup = Map(uploaded) };
             });
     }
 
