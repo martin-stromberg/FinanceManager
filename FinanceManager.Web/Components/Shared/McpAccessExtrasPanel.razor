@@ -3,7 +3,15 @@
 @implements IDisposable
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 
-@if (Provider?.Access is { } access)
+@if (Provider is { IsMcpDisabled: true })
+{
+    <div class="mcp-access-extras" style="display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;">
+        <div class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;color:var(--muted);">
+            @L["Mcp_Disabled_Hint"]
+        </div>
+    </div>
+}
+else if (Provider?.Access is { } access)
 {
     <div class="mcp-access-extras" style="display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;">
 

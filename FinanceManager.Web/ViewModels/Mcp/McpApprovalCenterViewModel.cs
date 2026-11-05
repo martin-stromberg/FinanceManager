@@ -126,6 +126,19 @@ public sealed class McpApprovalCenterViewModel : BaseCardViewModel<(string Key, 
         Loading = true; SetError(null, null); IsMcpDisabled = false; RaiseStateChanged();
         try
         {
+            try
+            {
+                var status = await _api.Mcp_GetStatusAsync(CancellationToken.None);
+                IsMcpDisabled = !status.Enabled;
+            }
+            catch { /* status is best-effort; the request load reports real failures */ }
+            if (IsMcpDisabled)
+            {
+                Accesses = Array.Empty<McpAccessListItemDto>();
+                Items.Clear(); CanLoadMore = false;
+                return;
+            }
+
             try { Accesses = await _api.Mcp_ListAccessesAsync(take: 200); }
             catch { Accesses = Array.Empty<McpAccessListItemDto>(); }
 

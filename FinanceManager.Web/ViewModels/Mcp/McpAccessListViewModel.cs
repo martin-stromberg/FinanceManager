@@ -66,6 +66,18 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
         IsMcpDisabled = false;
         try
         {
+            try
+            {
+                var status = await ApiClient.Mcp_GetStatusAsync(CancellationToken.None);
+                IsMcpDisabled = !status.Enabled;
+            }
+            catch { /* status is best-effort; the list load reports real failures */ }
+            if (IsMcpDisabled)
+            {
+                CanLoadMore = false;
+                return;
+            }
+
             var skip = resetPaging ? 0 : Items.Count;
             var list = await ApiClient.Mcp_ListAccessesAsync(
                 string.IsNullOrWhiteSpace(Search) ? null : Search,
@@ -161,6 +173,21 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                 }))
                 { MobileShortcut = true },
             new UiRibbonAction(
+                "Approvals",
+                localizer["Nav_McpApprovals"].Value,
+                "<svg><use href='/icons/sprite.svg#check'/></svg>",
+                UiRibbonItemSize.Small,
+                false,
+                null,
+                new Func<Task>(() =>
+                {
+                    // /card/mcp-approvals — the approval center is reachable inside the
+                    // access area (top-level nav is consolidated to a single entry).
+                    ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
+                        .NavigateTo("/card/mcp-approvals");
+                    return Task.CompletedTask;
+                })),
+            new UiRibbonAction(
                 "AuditLog",
                 localizer["Mcp_Ribbon_AuditLog"].Value,
                 "<svg><use href='/icons/sprite.svg#list'/></svg>",
@@ -172,6 +199,21 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                     // /card/mcp-audit — the audit timeline is a card-route view without record id.
                     ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
                         .NavigateTo("/card/mcp-audit");
+                    return Task.CompletedTask;
+                })),
+            new UiRibbonAction(
+                "Security",
+                localizer["Nav_McpSecurity"].Value,
+                "<svg><use href='/icons/sprite.svg#key'/></svg>",
+                UiRibbonItemSize.Small,
+                !(ServiceProvider.GetService(typeof(FinanceManager.Application.ICurrentUserService)) is FinanceManager.Application.ICurrentUserService cu && cu.IsAdmin),
+                null,
+                new Func<Task>(() =>
+                {
+                    // /card/mcp-security — admin security overview incl. the MCP settings
+                    // (Enabled / WriteAccessEnabled), reachable for admins only.
+                    ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
+                        .NavigateTo("/card/mcp-security");
                     return Task.CompletedTask;
                 })),
             new UiRibbonAction(

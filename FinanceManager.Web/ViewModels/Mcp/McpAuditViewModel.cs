@@ -140,6 +140,19 @@ public sealed class McpAuditViewModel : BaseCardViewModel<(string Key, string Va
         Loading = true; SetError(null, null); IsMcpDisabled = false; RaiseStateChanged();
         try
         {
+            try
+            {
+                var status = await _api.Mcp_GetStatusAsync(CancellationToken.None);
+                IsMcpDisabled = !status.Enabled;
+            }
+            catch { /* status is best-effort; the entry load reports real failures */ }
+            if (IsMcpDisabled)
+            {
+                Accesses = Array.Empty<McpAccessListItemDto>();
+                Entries.Clear(); CanLoadMore = false;
+                return;
+            }
+
             try { Accesses = await _api.Mcp_ListAccessesAsync(take: 200); }
             catch { Accesses = Array.Empty<McpAccessListItemDto>(); }
 

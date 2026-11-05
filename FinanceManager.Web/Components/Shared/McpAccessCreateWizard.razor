@@ -60,9 +60,9 @@
                 var selected = _level == lvl.Level;
                 <button type="button"
                         class="mcp-level-card"
-                        style="text-align:left;padding:.6rem .75rem;border-radius:6px;border:1px solid @(selected ? "var(--accent,#6cf)" : "var(--border,#444)");background:@(selected ? "rgba(100,160,255,.10)" : "transparent");cursor:pointer;"
+                        style="text-align:left;padding:.6rem .75rem;border-radius:6px;border:1px solid @(selected ? "var(--accent,#6cf)" : "var(--border,#444)");background:@(selected ? "rgba(100,160,255,.10)" : "var(--panel-bg,transparent)");color:var(--text,#e2e6ea);cursor:pointer;"
                         @onclick="() => _level = lvl.Level">
-                    <div style="font-weight:600;">@LevelName(lvl)</div>
+                    <div style="font-weight:600;color:var(--text,#e2e6ea);">@LevelName(lvl)</div>
                     <div style="font-size:.9rem;color:var(--muted);margin-top:.15rem;">@LevelDescription(lvl)</div>
                 </button>
             }

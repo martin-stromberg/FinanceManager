@@ -95,6 +95,19 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
                 return;
             }
 
+            try
+            {
+                var status = await _api.Mcp_GetStatusAsync();
+                IsMcpDisabled = !status.Enabled;
+            }
+            catch { /* status is best-effort; the detail load reports real failures */ }
+            if (IsMcpDisabled)
+            {
+                Access = null;
+                CardRecord = BuildCardRecord(null);
+                return;
+            }
+
             var detail = await _api.Mcp_GetAccessAsync(id);
             if (detail is null)
             {
@@ -145,11 +158,37 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
         if (Access is null) return (short)McpApprovalMode.PerAction;
         if (_pendingFieldValues.TryGetValue("Mcp_Card_ApprovalMode", out var am)
             && am is string amText
-            && Enum.TryParse<McpApprovalMode>(amText, ignoreCase: true, out var parsed))
+            && TryParseLocalizedEnum<McpApprovalMode>(amText, out var parsed))
         {
             return (short)parsed;
         }
         return Access.ApprovalMode;
+    }
+
+    /// <summary>
+    /// Parses an enum member from a select value that may hold either the raw member name
+    /// or its localized <c>EnumType_{Type}_{Member}</c> display text (the dropdown options
+    /// carry the localized names).
+    /// </summary>
+    private bool TryParseLocalizedEnum<TEnum>(string text, out TEnum value) where TEnum : struct, Enum
+    {
+        if (Enum.TryParse<TEnum>(text, ignoreCase: true, out var parsed))
+        {
+            value = parsed;
+            return true;
+        }
+        foreach (var v in Enum.GetValues<TEnum>())
+        {
+            var val = Localizer?[$"EnumType_{typeof(TEnum).Name}_{v}"];
+            if (val is not null && !val.ResourceNotFound
+                && string.Equals(val.Value, text, StringComparison.OrdinalIgnoreCase))
+            {
+                value = v;
+                return true;
+            }
+        }
+        value = default;
+        return false;
     }
 
     private DateTime? ResolvePendingExpiresUtc()
@@ -308,7 +347,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
             var level = Access.Level;
             if (_pendingFieldValues.TryGetValue("Mcp_Card_Level", out var lv)
                 && lv is string lvText
-                && Enum.TryParse<McpAccessLevel>(lvText, ignoreCase: true, out var parsedLevel))
+                && TryParseLocalizedEnum<McpAccessLevel>(lvText, out var parsedLevel))
             {
                 level = (short)parsedLevel;
             }
@@ -527,7 +566,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
         var parms = new Dictionary<string, object?> { ["Provider"] = this };
         return new[]
         {
-            new EmbeddedPanelSpec(typeof(McpAccessExtrasPanel), parms, EmbeddedPanelPosition.AfterCard, Visible: Access is not null)
+            new EmbeddedPanelSpec(typeof(McpAccessExtrasPanel), parms, EmbeddedPanelPosition.AfterCard, Visible: Access is not null || IsMcpDisabled)
         };
     }
 
@@ -578,7 +617,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
         };
 
         var record = new CardRecord(fields, a);
-        return ApplyPendingValues(record);
+        return ApplyPendingValues(ApplyEnumTranslations(record));
     }
 
     /// <inheritdoc />
