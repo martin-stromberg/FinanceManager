@@ -318,7 +318,7 @@ public sealed class McpAuditViewModel : BaseCardViewModel<(string Key, string Va
     }
 
     /// <summary>
-    /// Provides the ribbon: Back (to the access list) and Reload.
+    /// Provides the ribbon: Back (to the setup register) and Reload.
     /// </summary>
     /// <param name="localizer">Localizer used to resolve labels.</param>
     /// <returns>Ribbon registers for the audit view.</returns>
@@ -328,7 +328,7 @@ public sealed class McpAuditViewModel : BaseCardViewModel<(string Key, string Va
         {
             new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>",
                 UiRibbonItemSize.Large, false, null,
-                () => { RaiseUiActionRequested("Back", "/list/mcp-accesses"); return Task.CompletedTask; })
+                () => { RaiseUiActionRequested("Back", "/card/setup"); return Task.CompletedTask; })
             { MobileShortcut = true }
         };
         var actions = new List<UiRibbonAction>

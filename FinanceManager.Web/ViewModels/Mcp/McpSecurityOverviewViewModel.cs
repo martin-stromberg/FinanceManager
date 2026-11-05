@@ -140,14 +140,14 @@ public sealed class McpSecurityOverviewViewModel : BaseCardViewModel<(string Key
         };
     }
 
-    /// <summary>Ribbon: Back (to the access list) and Reload.</summary>
+    /// <summary>Ribbon: Back (to the setup register) and Reload.</summary>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
         var navigation = new List<UiRibbonAction>
         {
             new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>",
                 UiRibbonItemSize.Large, false, null,
-                () => { RaiseUiActionRequested("Back", "/list/mcp-accesses"); return Task.CompletedTask; })
+                () => { RaiseUiActionRequested("Back", "/card/setup"); return Task.CompletedTask; })
             { MobileShortcut = true }
         };
         var actions = new List<UiRibbonAction>

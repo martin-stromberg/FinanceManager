@@ -642,7 +642,8 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
         var navigation = new List<UiRibbonAction>
         {
             new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>",
-                UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
+                // The KI register inside setup is the home of the access management.
+                UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back", "/card/setup"); return Task.CompletedTask; })
             { MobileShortcut = true }
         };
 

@@ -3310,4 +3310,8 @@
   <data name="Err_ExecutionTimeout" xml:space="preserve"><value>Die Ausführung hat das Zeitlimit überschritten.</value></data>
   <data name="Err_Internal" xml:space="preserve"><value>Ein interner Fehler ist aufgetreten.</value></data>
   <data name="Err_Mcp_PendingLimit" xml:space="preserve"><value>Das Limit offener Genehmigungsanfragen ist erreicht.</value></data>
+  <data name="Setup_Section_Mcp" xml:space="preserve"><value>KI-Zugänge</value></data>
+  <data name="Ribbon_Group_Mcp" xml:space="preserve"><value>KI</value></data>
+  <data name="McpSetup_Section_Accesses" xml:space="preserve"><value>Ihre KI-Zugänge</value></data>
+  <data name="McpSetup_DisabledHint" xml:space="preserve"><value>Die KI-Funktionen sind derzeit deaktiviert. Über die Freischaltung oben können Sie MCP aktivieren.</value></data>
 </root>

@@ -147,6 +147,20 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
     }
 
     /// <summary>
+    /// Requests the create-access wizard overlay via <see cref="BaseViewModel.UiActionRequested"/>.
+    /// Used by the list ribbon ("New") and by the setup register (<c>SetupMcpTab</c>) so both
+    /// entry points share the same wizard flow.
+    /// </summary>
+    public void RequestCreateWizard()
+    {
+        var parms = new Dictionary<string, object?>
+        {
+            ["OverlayTitle"] = Localizer?["McpWizard_Title"].Value
+        };
+        RaiseUiActionRequested("New", new UiOverlaySpec(typeof(McpAccessCreateWizard), parms));
+    }
+
+    /// <summary>
     /// Provides ribbon registers for the MCP access list: a create-wizard action and a reload action.
     /// </summary>
     /// <param name="localizer">Localizer used to resolve UI labels.</param>
@@ -164,11 +178,7 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                 null,
                 new Func<Task>(() =>
                 {
-                    var parms = new Dictionary<string, object?>
-                    {
-                        ["OverlayTitle"] = localizer["McpWizard_Title"].Value
-                    };
-                    RaiseUiActionRequested("New", new UiOverlaySpec(typeof(McpAccessCreateWizard), parms));
+                    RequestCreateWizard();
                     return Task.CompletedTask;
                 }))
                 { MobileShortcut = true },

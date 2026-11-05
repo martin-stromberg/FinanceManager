@@ -3310,4 +3310,8 @@
   <data name="Err_ExecutionTimeout" xml:space="preserve"><value>The execution exceeded the time limit.</value></data>
   <data name="Err_Internal" xml:space="preserve"><value>An internal error occurred.</value></data>
   <data name="Err_Mcp_PendingLimit" xml:space="preserve"><value>The limit of open approval requests is reached.</value></data>
+  <data name="Setup_Section_Mcp" xml:space="preserve"><value>AI accesses</value></data>
+  <data name="Ribbon_Group_Mcp" xml:space="preserve"><value>AI</value></data>
+  <data name="McpSetup_Section_Accesses" xml:space="preserve"><value>Your AI accesses</value></data>
+  <data name="McpSetup_DisabledHint" xml:space="preserve"><value>AI features are currently disabled. Use the activation switches above to enable MCP.</value></data>
 </root>

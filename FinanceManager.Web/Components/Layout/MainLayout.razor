@@ -1,6 +1,5 @@
 @inherits LayoutComponentBase
 @inject FinanceManager.Application.ICurrentUserService CurrentUser
-@inject FinanceManager.Shared.IApiClient Api
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
 @inject Microsoft.AspNetCore.Components.NavigationManager Nav
 @inject LoadingBarService LoadingBar
@@ -29,23 +28,6 @@
                 <li><NavLink href="/list/budget/purposes">@L["Nav_BudgetPurposes"]</NavLink></li>
                 <li><NavLink href="/reports">@L["Nav_Reports"]</NavLink></li>
                 <li><NavLink href="/card/setup">@L["Nav_Setup"]</NavLink></li>
-                @if (_mcpEnabled)
-                {
-                    <li>
-                        <NavLink href="/list/mcp-accesses">
-                            @L["Nav_McpAccesses"]
-                            @if (_mcpPendingCount > 0)
-                            {
-                                <span style="display:inline-block;min-width:1.3rem;margin-left:.35rem;padding:0 .3rem;border-radius:8px;background:#e6a03c;color:#1a1a1a;font-size:.75rem;text-align:center;">@_mcpPendingCount</span>
-                            }
-                        </NavLink>
-                    </li>
-                }
-                else if (CurrentUser.IsAdmin)
-                {
-                    @* Disabled: only the admin setup page stays discoverable (it enables MCP). *@
-                    <li><NavLink href="/card/mcp-security">@L["Nav_McpSecurity"]</NavLink></li>
-                }
                 @if (CurrentUser.IsAdmin)
                 {
                     <li><NavLink href="/list/users">@L["Nav_Users"]</NavLink></li>
@@ -90,37 +72,12 @@
     private bool _useFullWidth;
     private IDisposable? _locationChangingRegistration;
     private bool _keepaliveRegistered;
-    private int _mcpPendingCount;
-    private bool _mcpEnabled;
 
     protected override void OnInitialized()
     {
         UpdateLogo(Nav.Uri);
         _locationChangingRegistration = Nav.RegisterLocationChangingHandler(HandleLocationChanging);
         Nav.LocationChanged += HandleLocationChanged;
-        _ = RefreshMcpStatusAsync();
-    }
-
-    /// <summary>Refreshes the cached MCP feature state and pending badge (best effort — failures hide the entry).</summary>
-    private async Task RefreshMcpStatusAsync()
-    {
-        try
-        {
-            if (!CurrentUser.IsAuthenticated)
-            {
-                _mcpEnabled = false;
-                _mcpPendingCount = 0;
-                return;
-            }
-            var status = await Api.Mcp_GetStatusAsync();
-            _mcpEnabled = status.Enabled;
-            _mcpPendingCount = _mcpEnabled ? await Api.Mcp_GetPendingApprovalCountAsync() : 0;
-            await InvokeAsync(StateHasChanged);
-        }
-        catch
-        {
-            _mcpPendingCount = 0; // status/badge are informational only — keep the last known state
-        }
     }
 
     private async ValueTask HandleLocationChanging(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
@@ -136,7 +93,6 @@
         UpdateLogo(e.Location);
         _ = PingKeepaliveAsync();
         _ = StopLoadingBarAsync();
-        _ = RefreshMcpStatusAsync();
         _ = InvokeAsync(StateHasChanged);
     }
 
