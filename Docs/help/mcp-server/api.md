@@ -43,6 +43,12 @@ Es existieren zwei Schnittstellengruppen: der öffentliche MCP-Endpunkt `/mcp` (
 
 **Beschreibung:** Beendet die Transportsitzung (`Mcp-Session-Id`).
 
+### `GET /mcp/download/{token}`
+
+**Beschreibung:** Liefert die ZIP-Datei einer Datensicherung hinter einem kurzlebigen Download-Ticket aus, das `fm_admin_backups` (`download`) ausstellt. Das signierte/verschlüsselte Ticket (DataProtection, Nutzlast `v1|owner|backup|access|expires`) ist selbst die Berechtigung — der Aufruf benötigt bewusst **kein** PAT, damit ein Agent die URL an einen beliebigen HTTP-Client weiterreichen kann. Ein gültiges Ticket gewährt exakt die eine Datei, für die es ausgestellt wurde; Standard-Lebensdauer 10 Minuten. Der Endpunkt liegt unter dem `/mcp`-Kill-Switch und dem Rate-Limit.
+
+**Fehler:** `404` bei ungültigem/manipuliertem Ticket oder fehlender Datei; `410` bei abgelaufenem Ticket (einheitlich, ohne Detail). Jeder Einlöseversuch wird als Sicherheitsereignis protokolliert (`BackupDownloaded`/`BackupDownloadDenied`).
+
 ### `tools/list`-Antwortschema
 
 Je Werkzeug werden ausgegeben: `name` (`fm_*`), `description`, `inputSchema` (JSON Schema), `deprecated`, `replacedBy`, `sinceVersion`. Die Liste spiegelt den serverseitigen Katalog; die tatsächliche Ausführbarkeit eines Werkzeugs hängt zusätzlich von Scopes, Sicherheitsklasse und den globalen Schaltern ab.
@@ -50,6 +56,10 @@ Je Werkzeug werden ausgegeben: `name` (`fm_*`), `description`, `inputSchema` (JS
 ### Meta-Werkzeug `fm_capabilities_describe`
 
 Liefert das effektive Profil des eigenen Zugangs: Stufe, Scopes samt Filtern, Genehmigungsmodus, Status und Ablauf sowie die Katalogversion. Freitexte (Name, Beschreibung) werden als `untrusted_data` markiert ausgegeben.
+
+### Meta-Werkzeug `fm_task_status`
+
+Liefert die eigenen Hintergrundtasks des Besitzers und die `AiActionRequest`-Zustände des aufrufenden Zugangs (optional Detail über `requestId`, Filter über `status`); fremde Tasks/Requests sind nicht sichtbar — eine fremde `requestId` verhält sich wie eine nicht vorhandene. Bei `Failed`-Requests liegt das klassifizierte Fehlerobjekt in `untrusted_data.error`: `{ "code": "Err_*", "message": "…" }` bei definierten Fehlern (`McpToolException`, `DomainValidationException`), `{ "type": "<ExceptionName>" }` bei Fremd-Exceptions bzw. `{ "type": "ExecutionTimeout", "timeoutSeconds": n }` beim Ausführungs-Timeout — niemals Stacktraces oder interne Meldungen. `failureReason` trägt den klassifizierten `Err_*`-Grund (u. a. `Err_RightsRevoked`, `Err_Internal`).
 
 ### Werkzeug-Überblick nach Sicherheitsklasse
 
@@ -64,7 +74,7 @@ Verbindliche Referenz ist stets die Laufzeit-Ausgabe von `tools/list` (Katalogve
 
 ### Administrative Werkzeuge (`fm_admin_*`)
 
-Die administrativen Werkzeuge T34–T38 sind zusätzlich zum Scope-Tupel `(Administration, …)` auf die Administratorrolle des Zugangsbesitzers beschränkt: Ein Zugang eines Benutzers ohne Admin-Flag erhält `Err_Mcp_AdminRequired` — bei interaktiven Aufrufen wie bei genehmigten Warteschlangen-Ausführungen.
+Die administrativen Werkzeuge T34–T38 sind zusätzlich zum Scope-Tupel `(Administration, …)` auf die Administratorrolle des Zugangsbesitzers beschränkt: Der Besitzer wird bei jedem Aufruf gegen den Identity-Rollenspeicher geprüft (`UserManager.IsInRoleAsync`, Rolle `Admin`) — ein Zugang eines Besitzers ohne diese Rollenmitgliedschaft erhält `Err_Mcp_AdminRequired`, bei interaktiven Aufrufen wie bei genehmigten Warteschlangen-Ausführungen (eine zwischenzeitlich entzogene Rolle stoppt beide Phasen). Der `Administration`-Scope kann außerdem nur Zugängen von Admin-Besitzern vergeben werden; gültige Rechte sind ausschließlich `Lesen`/`Änderung`/`Erstellung` (kein `Löschung`).
 
 | Werkzeug | Operationen | Wirkung |
 |----------|-------------|---------|
@@ -72,8 +82,11 @@ Die administrativen Werkzeuge T34–T38 sind zusätzlich zum Scope-Tupel `(Admin
 | `fm_admin_updates` | `status`, `check` | Update-Status bzw. manuelle Update-Prüfung (inkl. Paket-Download) |
 | `fm_admin_updates` | `install`, `schedule` | Update-Installation (`confirmDowntime` erforderlich, startet die Anwendung neu) bzw. geplante Installationszeit — beide **genehmigungspflichtig** (`AiActionRequest`), Scope `(Administration, Änderung)` |
 | `fm_admin_backups` | `list` | Gespeicherte Sicherungen des Besitzers (Paging) |
-| `fm_admin_backups` | `create` | Neue Datensicherung anstoßen — **genehmigungspflichtig**, Scope `(Administration, Erstellung)`; der Datensatz trägt Quelle `KI`. Wiederherstellung/Upload/Löschen werden nicht exponiert |
+| `fm_admin_backups` | `create` | Neue Datensicherung anstoßen — **genehmigungspflichtig**, Scope `(Administration, Erstellung)`; der Datensatz trägt Quelle `KI` |
 | `fm_admin_backups` | `download` | Kurzlebige Download-URL für eine Sicherung (`id` als Argument) — `(Administration, Lesen)`, **kein Approval**; die ZIP-Datei liefert `GET /mcp/download/{token}` (Ticket an Besitzer+Backup gebunden, ~10 Minuten gültig, keine eigenen Credentials nötig) |
+| `fm_admin_backups` | `delete` | Eine Sicherung endgültig löschen — **genehmigungspflichtig**, Scope `(Administration, Änderung)` |
+| `fm_admin_backups` | `upload` | Serverseitige ZIP-Datei als Sicherung registrieren (`path` wird auf dem Server-Dateisystem gelesen) — **genehmigungspflichtig**, Scope `(Administration, Erstellung)` |
+| `fm_admin_backups` | `apply` | Sicherung in die Live-Datenbank zurückspielen — final/destruktiv, **genehmigungspflichtig**, Scope `(Administration, Änderung)`; `confirmationText` muss exakt dem Dateinamen der Sicherung entsprechen. Die Wiederherstellung läuft als Hintergrundtask (`BackupRestore`), Fortschritt über `fm_task_status` |
 | `fm_admin_notifications` | `list`, `dismiss` | Eigene aktive Benachrichtigungen; `dismiss` quittiert eine eigene/globale Benachrichtigung direkt (unkritische Wirkung), Scope `(Administration, Änderung)` |
 | `fm_admin_settings` | `get` | Admin-Einstellungen der Einrichtung lesen (`mcp`, `updates`, `wellKnown`) |
 | `fm_admin_settings` | `set` | Begrenzte Felder ändern (`mcp.enabled`, `mcp.writeAccessEnabled`, `updates.enabled`, `updates.includePrereleases`, `wellKnown.changePasswordUrl`) — **genehmigungspflichtig**, Scope `(Administration, Änderung)` |

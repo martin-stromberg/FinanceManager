@@ -1,3 +1,4 @@
+using FinanceManager.Application;
 using FinanceManager.Application.Backups;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Notifications;
@@ -168,7 +169,8 @@ public sealed class McpAdminToolsTests
                 updates.Object, backups.Object, notifications.Object, new TestMcpSettingsService()),
             new FmAdminUpdatesHandler(users.Object, updates.Object, evaluator.Object, writer.Object),
             new FmAdminBackupsHandler(users.Object, backups.Object, NewTickets().Object,
-                NewHttpContextAccessor(), evaluator.Object, writer.Object),
+                NewHttpContextAccessor(), evaluator.Object, writer.Object,
+                Mock.Of<IBackgroundTaskManager>()),
             new FmAdminNotificationsHandler(users.Object, notifications.Object, evaluator.Object, writer.Object),
             new FmAdminSettingsHandler(users.Object, new TestMcpSettingsService(), updates.Object,
                 new Mock<IWellKnownSettingsService>().Object, evaluator.Object, writer.Object)
@@ -358,7 +360,8 @@ public sealed class McpAdminToolsTests
             }).ToList());
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
             NewTickets().Object, NewHttpContextAccessor(),
-            NewScopeEvaluator().Object, NewAuditWriter().Object);
+            NewScopeEvaluator().Object, NewAuditWriter().Object,
+            Mock.Of<IBackgroundTaskManager>());
         var result = await handler.InvokeAsync(Args("{\"take\":2}"),
             NewCallContext(NewAccessContext(AdminOwner).Object), TestContext.Current.CancellationToken);
 
@@ -386,7 +389,8 @@ public sealed class McpAdminToolsTests
         backups.Setup(b => b.CreateAsync(AdminOwner, "KI", It.IsAny<CancellationToken>())).ReturnsAsync(created);
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
             NewTickets().Object, NewHttpContextAccessor(),
-            NewScopeEvaluator().Object, NewAuditWriter().Object);
+            NewScopeEvaluator().Object, NewAuditWriter().Object,
+            Mock.Of<IBackgroundTaskManager>());
         var ct = TestContext.Current.CancellationToken;
 
         using var queued = Serialize(await handler.InvokeAsync(Args("{\"operation\":\"create\"}"),
@@ -424,7 +428,7 @@ public sealed class McpAdminToolsTests
         var audit = new GuardingAuditWriter();
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
             NewTickets().Object, NewHttpContextAccessor(),
-            NewScopeEvaluator().Object, audit);
+            NewScopeEvaluator().Object, audit, Mock.Of<IBackgroundTaskManager>());
         var result = await handler.InvokeAsync(Args("{\"operation\":\"create\"}"),
             NewCallContext(NewAccessContext(AdminOwner).Object, McpToolExecutionMode.ApprovedExecution),
             TestContext.Current.CancellationToken);
@@ -455,7 +459,8 @@ public sealed class McpAdminToolsTests
         var tickets = NewTickets("tok-abc");
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
             tickets.Object, NewHttpContextAccessor(),
-            NewScopeEvaluator().Object, NewAuditWriter().Object);
+            NewScopeEvaluator().Object, NewAuditWriter().Object,
+            Mock.Of<IBackgroundTaskManager>());
 
         var result = await handler.InvokeAsync(
             Args($"{{\"operation\":\"download\",\"id\":\"{backup.Id}\"}}"),
@@ -483,7 +488,8 @@ public sealed class McpAdminToolsTests
         var tickets = NewTickets();
         var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
             tickets.Object, NewHttpContextAccessor(),
-            NewScopeEvaluator().Object, NewAuditWriter().Object);
+            NewScopeEvaluator().Object, NewAuditWriter().Object,
+            Mock.Of<IBackgroundTaskManager>());
         var ct = TestContext.Current.CancellationToken;
 
         var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
@@ -496,6 +502,190 @@ public sealed class McpAdminToolsTests
             Args("{\"operation\":\"download\"}"),
             NewCallContext(NewAccessContext(AdminOwner).Object), ct));
         Assert.Equal("Err_Mcp_InvalidArguments", missingId.Code);
+    }
+
+    /// <summary>
+    /// The approved apply enqueues a <see cref="BackgroundTaskType.BackupRestore"/> task
+    /// (the apply/start path) instead of restoring synchronously, answers the task id,
+    /// keeps the file name in <c>untrusted_data</c> and anchors the staged DataChange on
+    /// the task record (<c>BackgroundTask</c> — bookAll precedent).
+    /// </summary>
+    [Fact]
+    public async Task AdminBackups_Apply_ApprovedExecution_EnqueuesRestoreTask()
+    {
+        var backup = new BackupDto
+        {
+            Id = Guid.NewGuid(),
+            CreatedUtc = DateTime.UtcNow,
+            FileName = "b.zip",
+            SizeBytes = 1234,
+            Source = "System"
+        };
+        var backups = new Mock<IBackupService>();
+        backups.Setup(b => b.GetAsync(AdminOwner, backup.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(backup);
+        var taskId = Guid.NewGuid();
+        object? capturedPayload = null;
+        var tasks = new Mock<IBackgroundTaskManager>();
+        tasks.Setup(t => t.GetAll()).Returns(Array.Empty<BackgroundTaskInfo>());
+        tasks.Setup(t => t.Enqueue(BackgroundTaskType.BackupRestore, AdminOwner,
+                It.IsAny<object>(), false))
+            .Callback<BackgroundTaskType, Guid, object?, bool>((_, _, p, _) => capturedPayload = p)
+            .Returns(new BackgroundTaskInfo(taskId, BackgroundTaskType.BackupRestore, AdminOwner,
+                DateTime.UtcNow, BackgroundTaskStatus.Queued, null, null, null, 0, 0, null,
+                null, null, null, null, null, null));
+        var audit = new GuardingAuditWriter();
+        var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewTickets().Object, NewHttpContextAccessor(),
+            NewScopeEvaluator().Object, audit, tasks.Object);
+
+        var result = await handler.InvokeAsync(
+            Args($"{{\"operation\":\"apply\",\"id\":\"{backup.Id}\",\"confirmationText\":\"b.zip\"}}"),
+            NewCallContext(NewAccessContext(AdminOwner).Object, McpToolExecutionMode.ApprovedExecution),
+            TestContext.Current.CancellationToken);
+
+        using var doc = Serialize(result);
+        Assert.Equal("apply", doc.RootElement.GetProperty("operation").GetString());
+        Assert.True(doc.RootElement.GetProperty("enqueued").GetBoolean());
+        Assert.Equal(taskId, doc.RootElement.GetProperty("taskId").GetGuid());
+        Assert.Equal("b.zip",
+            doc.RootElement.GetProperty("untrusted_data").GetProperty("fileName").GetString());
+        // The synchronous restore path is never exercised inside the tool call.
+        backups.Verify(b => b.ApplyAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>(),
+            It.IsAny<bool>(), It.IsAny<Action<string, int, int, int, int>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        // The executor payload mirrors apply/start: confirmed flag + the stored file name
+        // (the executor re-validates the match inside the task).
+        Assert.NotNull(capturedPayload);
+        using var payload = JsonDocument.Parse(JsonSerializer.Serialize(capturedPayload));
+        Assert.Equal(backup.Id, payload.RootElement.GetProperty("BackupId").GetGuid());
+        Assert.True(payload.RootElement.GetProperty("Confirmed").GetBoolean());
+        Assert.Equal("b.zip", payload.RootElement.GetProperty("ExpectedFileName").GetString());
+        // The staged DataChange anchors on the enqueued task record — never an empty id.
+        Assert.NotNull(audit.LastRequest);
+        Assert.Equal("BackupRestoreEnqueued", audit.LastRequest!.EventType);
+        var change = Assert.Single(audit.LastRequest.Changes!);
+        Assert.Equal("BackgroundTask", change.EntityType);
+        Assert.Equal(taskId, change.EntityId);
+    }
+
+    /// <summary>
+    /// Interactive apply answers the approval marker and never touches the task manager —
+    /// the effect only exists in the approved-execution phase.
+    /// </summary>
+    [Fact]
+    public async Task AdminBackups_Apply_InteractiveAnswersApprovalRequired_WithoutEnqueuing()
+    {
+        var backup = new BackupDto
+        {
+            Id = Guid.NewGuid(),
+            CreatedUtc = DateTime.UtcNow,
+            FileName = "b.zip",
+            SizeBytes = 10,
+            Source = "System"
+        };
+        var backups = new Mock<IBackupService>();
+        backups.Setup(b => b.GetAsync(AdminOwner, backup.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(backup);
+        var tasks = new Mock<IBackgroundTaskManager>();
+        var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewTickets().Object, NewHttpContextAccessor(),
+            NewScopeEvaluator().Object, NewAuditWriter().Object, tasks.Object);
+
+        var result = await handler.InvokeAsync(
+            Args($"{{\"operation\":\"apply\",\"id\":\"{backup.Id}\",\"confirmationText\":\"b.zip\"}}"),
+            NewCallContext(NewAccessContext(AdminOwner).Object), TestContext.Current.CancellationToken);
+
+        using var doc = Serialize(result);
+        Assert.Equal("Err_Mcp_ApprovalRequired", doc.RootElement.GetProperty("code").GetString());
+        Assert.Equal("apply", doc.RootElement.GetProperty("operation").GetString());
+        tasks.Verify(t => t.Enqueue(It.IsAny<BackgroundTaskType>(), It.IsAny<Guid>(),
+            It.IsAny<object>(), It.IsAny<bool>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Guard validation before queueing: a missing confirmation text or an unknown backup
+    /// id is a classified argument error; a text that does not equal the stored file name
+    /// fails fast (the service re-checks the match inside the task as the safety gate).
+    /// </summary>
+    [Fact]
+    public async Task AdminBackups_Apply_MissingOrMismatchedConfirmationAndUnknownId_Fail()
+    {
+        var backup = new BackupDto
+        {
+            Id = Guid.NewGuid(),
+            CreatedUtc = DateTime.UtcNow,
+            FileName = "b.zip",
+            SizeBytes = 10,
+            Source = "System"
+        };
+        var backups = new Mock<IBackupService>();
+        backups.Setup(b => b.GetAsync(AdminOwner, backup.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(backup);
+        backups.Setup(b => b.GetAsync(AdminOwner, It.IsNotIn(backup.Id), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BackupDto?)null);
+        var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewTickets().Object, NewHttpContextAccessor(),
+            NewScopeEvaluator().Object, NewAuditWriter().Object,
+            Mock.Of<IBackgroundTaskManager>());
+        var ctx = NewCallContext(NewAccessContext(AdminOwner).Object);
+        var ct = TestContext.Current.CancellationToken;
+
+        var missing = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args($"{{\"operation\":\"apply\",\"id\":\"{backup.Id}\"}}"), ctx, ct));
+        Assert.Equal("Err_Mcp_InvalidArguments", missing.Code);
+        Assert.Contains("file name", missing.Message);
+
+        var mismatched = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args($"{{\"operation\":\"apply\",\"id\":\"{backup.Id}\",\"confirmationText\":\"other.zip\"}}"),
+            ctx, ct));
+        Assert.Equal("Err_Mcp_InvalidArguments", mismatched.Code);
+        Assert.Contains("file name", mismatched.Message);
+
+        var unknown = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args($"{{\"operation\":\"apply\",\"id\":\"{Guid.NewGuid()}\",\"confirmationText\":\"b.zip\"}}"),
+            ctx, ct));
+        Assert.Equal("Err_Mcp_InvalidArguments", unknown.Code);
+    }
+
+    /// <summary>An already running/queued restore is reported instead of a second task.</summary>
+    [Fact]
+    public async Task AdminBackups_Apply_ActiveRestore_ReportsAlreadyRunning()
+    {
+        var backup = new BackupDto
+        {
+            Id = Guid.NewGuid(),
+            CreatedUtc = DateTime.UtcNow,
+            FileName = "b.zip",
+            SizeBytes = 10,
+            Source = "System"
+        };
+        var backups = new Mock<IBackupService>();
+        backups.Setup(b => b.GetAsync(AdminOwner, backup.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(backup);
+        var runningId = Guid.NewGuid();
+        var tasks = new Mock<IBackgroundTaskManager>();
+        tasks.Setup(t => t.GetAll()).Returns(new[]
+        {
+            new BackgroundTaskInfo(runningId, BackgroundTaskType.BackupRestore, AdminOwner,
+                DateTime.UtcNow, BackgroundTaskStatus.Running, null, null, null, 0, 0, null,
+                DateTime.UtcNow, null, null, null, null, null)
+        });
+        var handler = new FmAdminBackupsHandler(NewUsers().Object, backups.Object,
+            NewTickets().Object, NewHttpContextAccessor(),
+            NewScopeEvaluator().Object, NewAuditWriter().Object, tasks.Object);
+
+        var result = await handler.InvokeAsync(
+            Args($"{{\"operation\":\"apply\",\"id\":\"{backup.Id}\",\"confirmationText\":\"b.zip\"}}"),
+            NewCallContext(NewAccessContext(AdminOwner).Object, McpToolExecutionMode.ApprovedExecution),
+            TestContext.Current.CancellationToken);
+
+        using var doc = Serialize(result);
+        Assert.False(doc.RootElement.GetProperty("enqueued").GetBoolean());
+        Assert.True(doc.RootElement.GetProperty("alreadyRunning").GetBoolean());
+        Assert.Equal(runningId, doc.RootElement.GetProperty("taskId").GetGuid());
+        tasks.Verify(t => t.Enqueue(It.IsAny<BackgroundTaskType>(), It.IsAny<Guid>(),
+            It.IsAny<object>(), It.IsAny<bool>()), Times.Never);
     }
 
     // ------------------------------------------------------------------

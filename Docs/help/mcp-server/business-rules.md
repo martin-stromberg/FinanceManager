@@ -48,6 +48,21 @@
 
 **Umsetzung:** `McpScopeEvaluator` über `AccountShare`/`AccountShareRole`.
 
+## Administrative Werkzeuge sind besitzerrollengebunden
+
+**Beschreibung:** Die Werkzeuge `fm_admin_*` (Installationsstatus, Updates, Datensicherungen, Benachrichtigungen, Admin-Einstellungen) wirken auf die Installation, nicht auf Fachdatensätze — ihre bindende Prüfung ist die Administratorrolle des Zugangsbesitzers, ergänzt um den `Administration`-Scope.
+
+**Bedingungen:**
+- Der Besitzer des aufrufenden Zugangs muss die Identity-Rolle `Admin` tragen (`UserManager.IsInRoleAsync`); die Prüfung läuft bei jedem Aufruf neu — auch bei genehmigten Warteschlangen-Ausführungen.
+- `Administration`-Scopes dürfen nur Zugängen von Admin-Besitzern vergeben werden: Die Vergabe wird bei Nicht-Admins abgelehnt, die Stufen-Standardprofile und die Scope-Auswahl der Oberfläche blenden den Datentyp für Nicht-Admins aus, und persistierte `Administration`-Zeilen verlieren ihre Wirkung, sobald der Besitzer die Rolle verliert.
+- Gültige Rechtearten für `Administration` sind ausschließlich `Lesen`, `Änderung` und `Erstellung` — `Löschung` bleibt den destruktiven Pflege-Datentypen vorbehalten (Backup-Löschung und -Rücksicherung laufen fachlich über `Änderung`).
+
+**Verhalten:**
+- Aufrufe ohne Admin-Rolle werden mit `Err_Mcp_AdminRequired` abgelehnt; eine zwischen Genehmigung und Ausführung entzogene Rolle stoppt beide Phasen einer genehmigungspflichtigen Operation.
+- Finale Operationen (`create`, `delete`, `upload`, `apply` der Datensicherungen; `install`, `schedule`, `set` der übrigen Admin-Werkzeuge) laufen wie alle finalen Wirkungen über die `AiActionRequest`-Genehmigungswarteschlange; `apply` enqueuert nach Genehmigung einen `BackupRestore`-Hintergrundtask statt synchron zurückzuspielen.
+
+**Umsetzung:** `McpAdminGuards.RequireAdminAsync`/`ApprovalRequiredAsync`, `McpAdminRole.IsAdminAsync`, `RejectAdministrationScopeForNonAdminAsync` (`McpAccessService`), `McpScopeMatrix.IsValidCombination` (Administration-Zeile).
+
 ## Sicherheitsklassen und Genehmigungspflicht
 
 **Beschreibung:** Jedes Werkzeug gehört zu genau einer Sicherheitsklasse; die Klasse bestimmt Rate-Limit, Schreib-Stopp und Genehmigungsweg.
@@ -105,7 +120,7 @@
 **Verhalten:**
 - Die Anwendung ändert oder löscht Einträge niemals; allein der Retention-Job entfernt alte Einträge und dokumentiert die Kürzung durch `RetentionPurged`-Ankereinträge, sodass die Kette „ab diesem Eintrag" verifizierbar bleibt.
 - `GET /api/mcp-audit/verify` prüft lückenlose Sequenz, Verkettung und Eintragshashes der eigenen Kette.
-- Feldänderungen liegen als eigene `McpAuditEntryChange`-Zeilen vor (Vorher/Nachher, drillingfähig nach Entität).
+- Feldänderungen liegen als eigene `McpAuditEntryChange`-Zeilen vor (Vorher/Nachher, drillingfähig nach Entität); ihre `EntityId` verankert stets die echte Datensatz-ID — Platzhalter sind unzulässig. Ereignisse ohne natürliche Entität (z. B. die Einstellungsdatei oder ein Update-Installationslauf) verankern einen deterministischen `StableId`-Pseudo-Datensatz aus dem bekannten fachlichen Schlüssel, damit Drill-Down-Abfragen reproduzierbar auflösen.
 
 **Umsetzung:** `IMcpAuditWriter`, `McpAuditQueryService.VerifyAsync`, `McpAuditRetentionExecutor`.
 

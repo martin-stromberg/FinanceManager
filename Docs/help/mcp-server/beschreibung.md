@@ -65,7 +65,7 @@ Beispiele für gängige Clients — die genauen Bezeichnungen der Einstellungen 
   }
   ```
 
-- **VS Code / KI-Assistenten mit MCP-Unterstützung** (z. B. Cline): In der MCP-Konfiguration (z. B. `.vscode/mcp.json`) einen Server vom Typ `http` eintragen:
+- **VS Code / KI-Assistenten mit MCP-Unterstützung** (z. B. Cline): In der MCP-Konfigurationsdatei `.vscode/mcp.json` einen Server vom Typ `http` eintragen. Über eine `inputs`-Variable fragt VS Code das Token beim ersten Aufruf ab, statt es in der Datei zu speichern (`"password": true` maskiert die Eingabe):
 
   ```json
   {
@@ -73,11 +73,23 @@ Beispiele für gängige Clients — die genauen Bezeichnungen der Einstellungen 
       "financemanager": {
         "type": "http",
         "url": "https://<ihr-server>/mcp",
-        "headers": { "Authorization": "Bearer fm_mcp_..." }
+        "headers": {
+          "Authorization": "Bearer ${input:fm-mcp-token}"
+        }
       }
-    }
+    },
+    "inputs": [
+      {
+        "id": "fm-mcp-token",
+        "type": "promptString",
+        "description": "FinanceManager MCP access token (fm_mcp_...)",
+        "password": true
+      }
+    ]
   }
   ```
+
+  Clients ohne `inputs`-Unterstützung tragen das Token weiterhin direkt im Header ein (`"Authorization": "Bearer fm_mcp_..."`). Eine Datei mit Klartext-Token gehört nicht in die Versionskontrolle.
 
 - **Lokale LLM-Werkzeuge** (z. B. MCP Inspector, LibreChat, OpenWebUI): Dort die Adresse als „Streamable-HTTP"- oder „Remote-MCP"-Server mit demselben Autorisierungs-Header eintragen.
 
