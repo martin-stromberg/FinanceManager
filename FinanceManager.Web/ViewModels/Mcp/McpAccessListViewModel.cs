@@ -330,6 +330,21 @@ public static class McpAccessText
     }
 
     /// <summary>
+    /// Returns the localized explanation of a right kind (McpRightKind as short) — shown as
+    /// an info tooltip on the rights-matrix column headers.
+    /// </summary>
+    /// <param name="localizer">Localizer for the <c>Pages</c> resources.</param>
+    /// <param name="right">Right kind value.</param>
+    /// <returns>Localized right kind explanation; empty when the kind is unknown.</returns>
+    public static string RightKindInfo(IStringLocalizer localizer, short right)
+    {
+        var name = Enum.IsDefined(typeof(McpRightKind), (int)right)
+            ? ((McpRightKind)right).ToString()
+            : right.ToString();
+        return Lookup(localizer, "Mcp_RightInfo_" + name, string.Empty);
+    }
+
+    /// <summary>
     /// Returns the localized data type text (McpDataType as short).
     /// </summary>
     /// <param name="localizer">Localizer for the <c>Pages</c> resources.</param>

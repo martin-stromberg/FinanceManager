@@ -38,7 +38,9 @@
                         <th style="text-align:left;padding:.25rem .4rem;">@L["Mcp_Rights_DataType"]</th>
                         @foreach (var r in opts.RightKinds)
                         {
-                            <th style="text-align:center;padding:.25rem .4rem;">@McpAccessText.RightKind(L, r)</th>
+                            <th style="text-align:center;padding:.25rem .4rem;">
+                                @McpAccessText.RightKind(L, r)<span class="icon-btn" role="img" aria-label="@McpAccessText.RightKind(L, r)" title="@McpAccessText.RightKindInfo(L, r)" style="display:inline-block;vertical-align:text-bottom;margin-left:.2rem;cursor:help;opacity:.55;"><svg style="width:.85rem;height:.85rem;"><use href="/icons/sprite.svg#info" /></svg></span>
+                            </th>
                         }
                     </tr>
                 </thead>

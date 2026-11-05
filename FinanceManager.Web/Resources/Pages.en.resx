@@ -3006,6 +3006,13 @@
   <data name="Mcp_Right_Create" xml:space="preserve"><value>Create</value></data>
   <data name="Mcp_Right_Book" xml:space="preserve"><value>Post</value></data>
   <data name="Mcp_Right_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Mcp_RightInfo_Read" xml:space="preserve"><value>Read-only tools return records without changing anything.</value></data>
+  <data name="Mcp_RightInfo_Suggest" xml:space="preserve"><value>Tools produce suggestions (e.g. assignments, categories, duplicates); nothing is saved.</value></data>
+  <data name="Mcp_RightInfo_Complete" xml:space="preserve"><value>Tools only fill empty fields and unresolved assignments; existing values stay unchanged.</value></data>
+  <data name="Mcp_RightInfo_Modify" xml:space="preserve"><value>Tools deliberately change existing field values.</value></data>
+  <data name="Mcp_RightInfo_Create" xml:space="preserve"><value>Tools create new records.</value></data>
+  <data name="Mcp_RightInfo_Book" xml:space="preserve"><value>Tools perform bookings — only after approval or as a pre-approved action.</value></data>
+  <data name="Mcp_RightInfo_Delete" xml:space="preserve"><value>Tools delete or merge records — always only after approval.</value></data>
   <data name="Mcp_DataType_Accounts" xml:space="preserve"><value>Accounts</value></data>
   <data name="Mcp_DataType_AccountTypes" xml:space="preserve"><value>Account types</value></data>
   <data name="Mcp_DataType_StatementImports" xml:space="preserve"><value>Statement imports</value></data>

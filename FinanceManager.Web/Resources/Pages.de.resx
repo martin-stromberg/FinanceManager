@@ -3006,6 +3006,13 @@
   <data name="Mcp_Right_Create" xml:space="preserve"><value>Erstellung</value></data>
   <data name="Mcp_Right_Book" xml:space="preserve"><value>Buchung</value></data>
   <data name="Mcp_Right_Delete" xml:space="preserve"><value>Löschung</value></data>
+  <data name="Mcp_RightInfo_Read" xml:space="preserve"><value>Lesende Werkzeuge liefern Datensätze, ohne etwas zu verändern.</value></data>
+  <data name="Mcp_RightInfo_Suggest" xml:space="preserve"><value>Werkzeuge erzeugen Vorschläge (z. B. Zuordnungen, Kategorien, Duplikate); es wird nichts gespeichert.</value></data>
+  <data name="Mcp_RightInfo_Complete" xml:space="preserve"><value>Werkzeuge ergänzen nur leere Felder und unaufgelöste Zuordnungen; bestehende Werte bleiben unverändert.</value></data>
+  <data name="Mcp_RightInfo_Modify" xml:space="preserve"><value>Werkzeuge verändern bestehende Feldwerte gezielt.</value></data>
+  <data name="Mcp_RightInfo_Create" xml:space="preserve"><value>Werkzeuge legen neue Datensätze an.</value></data>
+  <data name="Mcp_RightInfo_Book" xml:space="preserve"><value>Werkzeuge führen Verbuchungen aus — nur nach Genehmigung bzw. als vorab genehmigte Aktion.</value></data>
+  <data name="Mcp_RightInfo_Delete" xml:space="preserve"><value>Werkzeuge löschen oder verschmelzen Datensätze — immer nur nach Genehmigung.</value></data>
   <data name="Mcp_DataType_Accounts" xml:space="preserve"><value>Konten</value></data>
   <data name="Mcp_DataType_AccountTypes" xml:space="preserve"><value>Kontotypen</value></data>
   <data name="Mcp_DataType_StatementImports" xml:space="preserve"><value>Kontoauszug-Importe</value></data>
