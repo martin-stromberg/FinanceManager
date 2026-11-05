@@ -813,8 +813,15 @@ public sealed class McpMasterDataWriteToolsTests
         securities.Setup(s => s.GetAsync(id, owner, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SecurityDto
             {
-                Id = id, Name = "sec", Identifier = "DE000A", CurrencyCode = "EUR",
-                IsActive = true, CategoryId = Guid.NewGuid(), Description = "desc", Region = "EU", Sector = "tech"
+                Id = id,
+                Name = "sec",
+                Identifier = "DE000A",
+                CurrencyCode = "EUR",
+                IsActive = true,
+                CategoryId = Guid.NewGuid(),
+                Description = "desc",
+                Region = "EU",
+                Sector = "tech"
             });
         securities.Setup(s => s.UpdateAsync(id, owner, "sec", "DE000A", null, null, "EUR", null,
                 It.IsAny<CancellationToken>(), null, null))

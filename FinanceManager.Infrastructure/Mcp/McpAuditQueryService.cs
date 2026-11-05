@@ -60,9 +60,19 @@ public sealed class McpAuditQueryService : IMcpAuditQueryService
             .Take(Math.Clamp(take, 1, MaxTake))
             .Select(e => new
             {
-                e.Id, e.Utc, e.SequenceNo, e.Category, e.EventType, e.ResultStatus,
-                e.McpAccessId, e.McpAccessName, e.ToolName, e.CorrelationId, e.Context,
-                e.DurationMs, e.AffectedCount,
+                e.Id,
+                e.Utc,
+                e.SequenceNo,
+                e.Category,
+                e.EventType,
+                e.ResultStatus,
+                e.McpAccessId,
+                e.McpAccessName,
+                e.ToolName,
+                e.CorrelationId,
+                e.Context,
+                e.DurationMs,
+                e.AffectedCount,
                 ChangeCount = e.Changes.Count
             })
             .ToListAsync(ct);
@@ -187,9 +197,19 @@ public sealed class McpAuditQueryService : IMcpAuditQueryService
             .Take(Math.Clamp(recentTake, 1, MaxRecentCalls))
             .Select(e => new
             {
-                e.Id, e.Utc, e.SequenceNo, e.Category, e.EventType, e.ResultStatus,
-                e.McpAccessId, e.McpAccessName, e.ToolName, e.CorrelationId, e.Context,
-                e.DurationMs, e.AffectedCount,
+                e.Id,
+                e.Utc,
+                e.SequenceNo,
+                e.Category,
+                e.EventType,
+                e.ResultStatus,
+                e.McpAccessId,
+                e.McpAccessName,
+                e.ToolName,
+                e.CorrelationId,
+                e.Context,
+                e.DurationMs,
+                e.AffectedCount,
                 ChangeCount = e.Changes.Count
             })
             .ToListAsync(ct);

@@ -359,14 +359,14 @@ public sealed class McpStatementWriteToolsTests
 
         var handler = CompleteHandler(drafts, contacts: contacts);
         using var doc = Serialize(await handler.InvokeAsync(ArgsObj(new
-            {
-                draftId,
-                entries = new object[]
+        {
+            draftId,
+            entries = new object[]
                 {
                     new { entryId = entryWithContact.Id, contactId = newContact },
                     new { entryId = entryWithout.Id, contactId = newContact }
                 }
-            }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
 
         // Gap entry got its fill via SaveEntryAll with the effective contact value …
         drafts.Verify(d => d.SaveEntryAllAsync(
@@ -442,14 +442,14 @@ public sealed class McpStatementWriteToolsTests
 
         var handler = CompleteHandler(drafts, contacts: contacts);
         var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(ArgsObj(new
-            {
-                draftId,
-                entries = new object[]
+        {
+            draftId,
+            entries = new object[]
                 {
                     new { entryId = entry1.Id, contactId = foreignContact },
                     new { entryId = entry2.Id, contactId = foreignContact }
                 }
-            }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
 
         Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
         // Atomicity: the whole call was rejected before the first write.
