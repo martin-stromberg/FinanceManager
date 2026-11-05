@@ -1,8 +1,9 @@
 using FinanceManager.Application.Mcp;
-using FinanceManager.Application.Users;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Domain.Users;
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Web.Services.Updates;
+using Microsoft.AspNetCore.Identity;
 using System.Globalization;
 using System.Text.Json;
 
@@ -61,14 +62,14 @@ public sealed class FmAdminUpdatesHandler : IMcpToolHandler
 {
     private const string EntityType = "UpdateInstallation";
 
-    private readonly IUserAdminService _users;
+    private readonly UserManager<User> _users;
     private readonly IUpdateOrchestrator _updates;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IMcpAuditWriter _auditWriter;
 
     /// <summary>Creates the handler.</summary>
     public FmAdminUpdatesHandler(
-        IUserAdminService users,
+        UserManager<User> users,
         IUpdateOrchestrator updates,
         IMcpScopeEvaluator scopeEvaluator,
         IMcpAuditWriter auditWriter)

@@ -1,17 +1,17 @@
 using FinanceManager.Application.Backups;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Notifications;
-using FinanceManager.Application.Users;
 using FinanceManager.Application.WellKnown;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Domain.Users;
 using FinanceManager.Shared.Dtos.Admin;
 using FinanceManager.Shared.Dtos.Backups;
 using FinanceManager.Shared.Dtos.Mcp;
 using FinanceManager.Shared.Dtos.Update;
-using FinanceManager.Shared.Dtos.Users;
 using FinanceManager.Web.Mcp;
 using FinanceManager.Web.Mcp.Tools;
 using FinanceManager.Web.Services.Updates;
+using Microsoft.AspNetCore.Identity;
 using Moq;
 using System.Text.Json;
 using Xunit;
@@ -44,12 +44,16 @@ public sealed class McpAdminToolsTests
         IMcpAccessContext access, McpToolExecutionMode mode = McpToolExecutionMode.Interactive)
         => new(access, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null, mode);
 
-    private static Mock<IUserAdminService> NewUsers(bool isAdmin = true, Guid? owner = null)
+    private static Mock<UserManager<User>> NewUsers(bool isAdmin = true, Guid? owner = null)
     {
-        var users = new Mock<IUserAdminService>();
-        users.Setup(u => u.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid id, CancellationToken _) =>
-                new UserAdminDto(id, "owner", isAdmin && id == (owner ?? AdminOwner), true, null, DateTime.UtcNow, "de"));
+        var store = new Mock<IUserStore<User>>();
+        var users = new Mock<UserManager<User>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
+        var adminOwner = owner ?? AdminOwner;
+        users.Setup(u => u.FindByIdAsync(It.IsAny<string>()))
+            .ReturnsAsync((string id) =>
+                Guid.TryParse(id, out var g) ? new User("owner") { Id = g } : null);
+        users.Setup(u => u.IsInRoleAsync(It.IsAny<User>(), "Admin"))
+            .ReturnsAsync((User u, string _) => isAdmin && u.Id == adminOwner);
         return users;
     }
 

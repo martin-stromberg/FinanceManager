@@ -1,8 +1,9 @@
 using FinanceManager.Application.Backups;
 using FinanceManager.Application.Mcp;
-using FinanceManager.Application.Users;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Domain.Users;
 using FinanceManager.Shared.Dtos.Backups;
+using Microsoft.AspNetCore.Identity;
 using System.Text.Json;
 
 namespace FinanceManager.Web.Mcp.Tools;
@@ -57,14 +58,14 @@ public sealed class FmAdminBackupsHandler : IMcpToolHandler
 {
     private const string EntityType = "Backup";
 
-    private readonly IUserAdminService _users;
+    private readonly UserManager<User> _users;
     private readonly IBackupService _backups;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IMcpAuditWriter _auditWriter;
 
     /// <summary>Creates the handler.</summary>
     public FmAdminBackupsHandler(
-        IUserAdminService users,
+        UserManager<User> users,
         IBackupService backups,
         IMcpScopeEvaluator scopeEvaluator,
         IMcpAuditWriter auditWriter)

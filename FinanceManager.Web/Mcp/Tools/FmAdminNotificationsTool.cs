@@ -1,8 +1,9 @@
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Notifications;
-using FinanceManager.Application.Users;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Domain.Users;
 using FinanceManager.Shared.Dtos.Admin;
+using Microsoft.AspNetCore.Identity;
 using System.Text.Json;
 
 namespace FinanceManager.Web.Mcp.Tools;
@@ -57,14 +58,14 @@ public sealed class FmAdminNotificationsHandler : IMcpToolHandler
 {
     private const string EntityType = "Notification";
 
-    private readonly IUserAdminService _users;
+    private readonly UserManager<User> _users;
     private readonly INotificationService _notifications;
     private readonly IMcpScopeEvaluator _scopeEvaluator;
     private readonly IMcpAuditWriter _auditWriter;
 
     /// <summary>Creates the handler.</summary>
     public FmAdminNotificationsHandler(
-        IUserAdminService users,
+        UserManager<User> users,
         INotificationService notifications,
         IMcpScopeEvaluator scopeEvaluator,
         IMcpAuditWriter auditWriter)

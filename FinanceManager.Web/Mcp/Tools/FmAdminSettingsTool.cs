@@ -1,12 +1,13 @@
 using FinanceManager.Application.Mcp;
-using FinanceManager.Application.Users;
 using FinanceManager.Application.WellKnown;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Domain.Users;
 using FinanceManager.Shared.Dtos.Admin;
 using FinanceManager.Shared.Dtos.Mcp;
 using FinanceManager.Shared.Dtos.Update;
 using FinanceManager.Shared.WellKnown;
 using FinanceManager.Web.Services.Updates;
+using Microsoft.AspNetCore.Identity;
 using System.Text.Json;
 
 namespace FinanceManager.Web.Mcp.Tools;
@@ -67,7 +68,7 @@ public sealed class FmAdminSettingsHandler : IMcpToolHandler
 {
     private const string EntityType = "AdminSettings";
 
-    private readonly IUserAdminService _users;
+    private readonly UserManager<User> _users;
     private readonly IMcpSettingsService _mcpSettings;
     private readonly IUpdateOrchestrator _updates;
     private readonly IWellKnownSettingsService _wellKnown;
@@ -76,7 +77,7 @@ public sealed class FmAdminSettingsHandler : IMcpToolHandler
 
     /// <summary>Creates the handler.</summary>
     public FmAdminSettingsHandler(
-        IUserAdminService users,
+        UserManager<User> users,
         IMcpSettingsService mcpSettings,
         IUpdateOrchestrator updates,
         IWellKnownSettingsService wellKnown,

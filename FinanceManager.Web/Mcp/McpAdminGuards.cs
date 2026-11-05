@@ -1,6 +1,7 @@
 using FinanceManager.Application.Mcp;
-using FinanceManager.Application.Users;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Domain.Users;
+using Microsoft.AspNetCore.Identity;
 
 namespace FinanceManager.Web.Mcp;
 
@@ -8,40 +9,30 @@ namespace FinanceManager.Web.Mcp;
 /// MCP-specific guards of the administrative tools T34–T38 (fm_admin_*): the admin gate and
 /// the approval gate of the final/effective sub-operations. Unlike the fachlichen
 /// Pflege-Tools, admin tools are not bound by record-level scope filters — the binding
-/// restriction is the owner's administrative role, evaluated against the regular
-/// <see cref="IUserAdminService"/> contract at every invocation (interactive calls and
-/// approved queue executions alike, so a role lost between approval and execution denies
-/// the effect).
+/// restriction is the owner's administrative role, evaluated against the canonical
+/// Identity role store at every invocation (interactive calls and approved queue
+/// executions alike, so a role lost between approval and execution denies the effect).
 /// </summary>
 internal static class McpAdminGuards
 {
     /// <summary>
     /// Enforces the admin gate of the fm_admin_* tools: the owner of the calling access
-    /// must resolve to a user with administrative privileges. Evaluated on every call —
-    /// including <see cref="McpToolExecutionMode.ApprovedExecution"/> queue runs — so a
-    /// revoked admin role stops both phases of an approval-bound operation.
+    /// must resolve to an identity user holding the "Admin" role. Owner-based check via
+    /// <see cref="UserManager{TUser}"/> — the same Identity role store the admin read
+    /// contract derives its IsAdmin flag from, but without that contract's caller gate:
+    /// the MCP/PAT path has no populated caller context, so a caller-gated service would
+    /// deny every owner including administrators. Evaluated on every call — including
+    /// <see cref="McpToolExecutionMode.ApprovedExecution"/> queue runs — so a revoked
+    /// admin role stops both phases of an approval-bound operation.
     /// </summary>
-    /// <param name="users">The user administration read contract.</param>
+    /// <param name="users">The Identity user manager of the request scope.</param>
     /// <param name="ownerUserId">Owner user id of the calling access.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="McpToolException">The owner is not an administrator.</exception>
-    public static async Task RequireAdminAsync(IUserAdminService users, Guid ownerUserId, CancellationToken ct)
+    public static async Task RequireAdminAsync(UserManager<User> users, Guid ownerUserId, CancellationToken ct)
     {
-        // IUserAdminService.GetAsync gates the CALLER via EnsureAdmin — in the MCP path the
-        // caller is the PAT owner, so a non-admin owner throws UnauthorizedAccessException
-        // before the IsAdmin check below. That denial is correct; it must surface as the
-        // defined Err_Mcp_AdminRequired, not leak as a protocol internal error.
-        UserAdminDto? user;
-        try
-        {
-            user = await users.GetAsync(ownerUserId, ct);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            throw new McpToolException("Err_Mcp_AdminRequired",
-                "This tool is restricted to owners with administrative privileges.");
-        }
-        if (user is null || !user.IsAdmin)
+        var user = await users.FindByIdAsync(ownerUserId.ToString());
+        if (user is null || !await users.IsInRoleAsync(user, "Admin"))
         {
             throw new McpToolException("Err_Mcp_AdminRequired",
                 "This tool is restricted to owners with administrative privileges.");

@@ -1,9 +1,10 @@
 using FinanceManager.Application.Backups;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Notifications;
-using FinanceManager.Application.Users;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Domain.Users;
 using FinanceManager.Web.Services.Updates;
+using Microsoft.AspNetCore.Identity;
 using System.Globalization;
 using System.Text.Json;
 
@@ -51,12 +52,13 @@ public sealed class FmAdminStatusDescriptor : McpToolDescriptorBase
 /// Handler of <c>fm_admin_status</c>: adapts <see cref="IInstalledReleaseMetadataProvider"/>,
 /// <see cref="IUpdateOrchestrator"/>, <see cref="IBackupService"/>,
 /// <see cref="INotificationService"/> and <see cref="IMcpSettingsService"/>; the admin gate
-/// runs through <see cref="IUserAdminService"/>. Externally sourced texts (release notes,
+/// runs through <see cref="UserManager{User}"/> (owner-based Identity role check).
+/// Externally sourced texts (release notes,
 /// error messages, file names) are untrusted content (<c>untrusted_data</c>).
 /// </summary>
 public sealed class FmAdminStatusHandler : IMcpToolHandler
 {
-    private readonly IUserAdminService _users;
+    private readonly UserManager<User> _users;
     private readonly IInstalledReleaseMetadataProvider _release;
     private readonly IUpdateOrchestrator _updates;
     private readonly IBackupService _backups;
@@ -65,7 +67,7 @@ public sealed class FmAdminStatusHandler : IMcpToolHandler
 
     /// <summary>Creates the handler.</summary>
     public FmAdminStatusHandler(
-        IUserAdminService users,
+        UserManager<User> users,
         IInstalledReleaseMetadataProvider release,
         IUpdateOrchestrator updates,
         IBackupService backups,
