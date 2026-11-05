@@ -941,7 +941,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 31;
+        var total = 26;
         var count = 0;
 
         // Notifications
@@ -950,31 +950,11 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 
-        // MCP: audit field deltas → audit entries → approval requests → scope rows → accesses
-        await McpAuditEntryChanges
-            .Where(c => McpAuditEntries.Any(e => e.Id == c.EntryId && e.OwnerUserId == userId))
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        await McpAuditEntries
-            .Where(e => e.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        await AiActionRequests
-            .Where(r => r.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        await McpAccessScopes
-            .Where(s => s.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
-
-        await McpAccesses
-            .Where(a => a.OwnerUserId == userId)
-            .ExecuteDeleteAsync(ct);
-        progressCallback(++count, total);
+        // MCP state (accesses, scopes, audit entries/changes, ai action requests) is
+        // intentionally NOT cleared: it is operational/installation state — credentials,
+        // the approval queue and the revision-safe audit chain — not user finance data.
+        // Deleting it during a restore would invalidate live PATs and the very request
+        // executing the restore.
 
         // AliasNames (vor Contacts zur Sicherheit – alternativ würde FK-Cascade greifen)
         await AliasNames

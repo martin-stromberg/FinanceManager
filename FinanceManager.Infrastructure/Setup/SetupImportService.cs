@@ -202,7 +202,7 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            Total = 34 - (replaceExisting ? 0 : 1),
+            Total = 29 - (replaceExisting ? 0 : 1),
             SubStep = 0,
             SubTotal = 0
         };
@@ -1205,149 +1205,12 @@ public sealed class SetupImportService : ISetupImportService
 
         ProgressChanged?.Invoke(this, progress.Inc());
 
-        // MCP accesses (optional payload; restored always revoked — a backup never restores
-        // a usable credential; reactivation happens via token rotation in the UI).
-        var mcpAccessMap = new Dictionary<Guid, Guid>();
-        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Accesses"));
-        if (root.TryGetProperty("McpAccesses", out var mcpAccesses) && mcpAccesses.ValueKind == JsonValueKind.Array)
-        {
-            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAccess.McpAccessBackupDto>>(mcpAccesses.GetRawText(), jsonOptions) ?? new();
-            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
-            foreach (var dto in list)
-            {
-                try
-                {
-                    // Placeholder credentials: the hint derives from the new id (unique), the
-                    // hash never verifies — the access is usable only after rotation.
-                    var entity = new FinanceManager.Domain.Mcp.McpAccess(
-                        userId, dto.Name, $"rst{Guid.NewGuid():N}"[..12], "pbkdf2|1|AAAA|AAAA",
-                        dto.Level, dto.ApprovalMode, dto.Description, dto.ExpiresUtc, dto.AllowedIpRanges);
-                    entity.AssignBackupDto(dto);
-                    _db.McpAccesses.Add(entity);
-                    await _db.SaveChangesAsync(ct);
-                    mcpAccessMap[dto.Id] = entity.Id;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "ImportVersion3: skipping MCP access {Name}", dto.Name);
-                }
-                ProgressChanged?.Invoke(this, progress.IncSub());
-            }
-        }
-        ProgressChanged?.Invoke(this, progress.Inc());
+        // MCP payload sections (accesses, scopes, audit entries/changes, ai action requests)
+        // are intentionally NOT imported: they describe operational/installation state —
+        // credentials, the approval queue and the revision-safe audit chain — not finance
+        // data. ClearUserDataAsync leaves those tables untouched, so existing PATs, the
+        // running approval queue and the audit chain survive a restore intact.
 
-        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Access Scopes"));
-        if (root.TryGetProperty("McpAccessScopes", out var mcpScopes) && mcpScopes.ValueKind == JsonValueKind.Array)
-        {
-            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAccessScope.McpAccessScopeBackupDto>>(mcpScopes.GetRawText(), jsonOptions) ?? new();
-            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
-            foreach (var dto in list)
-            {
-                if (mcpAccessMap.TryGetValue(dto.McpAccessId, out var mappedAccess))
-                {
-                    var entity = new FinanceManager.Domain.Mcp.McpAccessScope(
-                        mappedAccess, userId, dto.DataType, dto.Right);
-                    entity.AssignBackupDto(dto);
-                    _db.McpAccessScopes.Add(entity);
-                }
-                ProgressChanged?.Invoke(this, progress.IncSub());
-            }
-            await _db.SaveChangesAsync(ct);
-        }
-        ProgressChanged?.Invoke(this, progress.Inc());
-
-        // MCP audit trail: entries carry their chain fields verbatim; ids are remapped.
-        var mcpEntryMap = new Dictionary<Guid, Guid>();
-        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Audit Entries"));
-        if (root.TryGetProperty("McpAuditEntries", out var mcpEntries) && mcpEntries.ValueKind == JsonValueKind.Array)
-        {
-            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAuditEntry.McpAuditEntryBackupDto>>(mcpEntries.GetRawText(), jsonOptions) ?? new();
-            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
-            foreach (var dto in list.OrderBy(d => d.SequenceNo))
-            {
-                try
-                {
-                    var entity = new FinanceManager.Domain.Mcp.McpAuditEntry(
-                        dto.Utc, dto.SequenceNo, dto.Category, dto.EventType, dto.ResultStatus, dto.EntryHash,
-                        ownerUserId: userId,
-                        mcpAccessId: dto.McpAccessId.HasValue && mcpAccessMap.TryGetValue(dto.McpAccessId.Value, out var ma) ? ma : dto.McpAccessId,
-                        mcpAccessName: dto.McpAccessName, toolName: dto.ToolName,
-                        catalogVersion: dto.CatalogVersion, context: dto.Context,
-                        correlationId: dto.CorrelationId, sourceIp: dto.SourceIp,
-                        durationMs: dto.DurationMs, affectedCount: dto.AffectedCount,
-                        payloadJson: dto.PayloadJson, relatedRequestId: dto.RelatedRequestId,
-                        prevHash: dto.PrevHash);
-                    entity.AssignBackupDto(dto);
-                    _db.McpAuditEntries.Add(entity);
-                    await _db.SaveChangesAsync(ct);
-                    mcpEntryMap[dto.Id] = entity.Id;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "ImportVersion3: skipping MCP audit entry Seq={Seq}", dto.SequenceNo);
-                }
-                ProgressChanged?.Invoke(this, progress.IncSub());
-            }
-        }
-        ProgressChanged?.Invoke(this, progress.Inc());
-
-        ProgressChanged?.Invoke(this, progress.SetDescription("MCP Audit Entry Changes"));
-        if (root.TryGetProperty("McpAuditEntryChanges", out var mcpChanges) && mcpChanges.ValueKind == JsonValueKind.Array)
-        {
-            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.McpAuditEntryChange.McpAuditEntryChangeBackupDto>>(mcpChanges.GetRawText(), jsonOptions) ?? new();
-            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
-            foreach (var dto in list)
-            {
-                if (mcpEntryMap.TryGetValue(dto.EntryId, out var mappedEntry))
-                {
-                    var entity = new FinanceManager.Domain.Mcp.McpAuditEntryChange(
-                        mappedEntry, dto.EntityType, dto.EntityId, dto.Field, dto.OldValue, dto.NewValue);
-                    entity.AssignBackupDto(dto);
-                    _db.McpAuditEntryChanges.Add(entity);
-                }
-                ProgressChanged?.Invoke(this, progress.IncSub());
-            }
-            await _db.SaveChangesAsync(ct);
-        }
-        ProgressChanged?.Invoke(this, progress.Inc());
-
-        // MCP approval requests: open requests survive the restore so a granted approval is
-        // not lost (F-0901); access references are remapped like everywhere else, and any
-        // queue claim is cleared by AssignBackupDto.
-        ProgressChanged?.Invoke(this, progress.SetDescription("AI Action Requests"));
-        if (root.TryGetProperty("AiActionRequests", out var aiRequests) && aiRequests.ValueKind == JsonValueKind.Array)
-        {
-            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Mcp.AiActionRequest.AiActionRequestBackupDto>>(aiRequests.GetRawText(), jsonOptions) ?? new();
-            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
-            foreach (var dto in list)
-            {
-                try
-                {
-                    var mappedAccess = mcpAccessMap.TryGetValue(dto.McpAccessId, out var ma) ? ma : dto.McpAccessId;
-                    var entity = new FinanceManager.Domain.Mcp.AiActionRequest(
-                        userId, mappedAccess, dto.McpAccessName, dto.ToolName, dto.ActionKey,
-                        dto.CatalogVersion, dto.ParameterSnapshot, dto.ReasonText,
-                        dto.ExpiresUtc, dto.CorrelationId, dto.IdempotencyKey);
-                    entity.AssignBackupDto(dto);
-                    // The soft reference points at the remapped access (or stays dangling
-                    // when the access was not part of the backup — audit substrate stays).
-                    if (mappedAccess != dto.McpAccessId)
-                    {
-                        // AssignBackupDto applied the original id; re-apply the mapped one.
-                        var adjusted = dto with { McpAccessId = mappedAccess };
-                        entity.AssignBackupDto(adjusted);
-                    }
-                    _db.AiActionRequests.Add(entity);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "ImportVersion3: skipping AI action request {Tool}", dto.ToolName);
-                }
-                ProgressChanged?.Invoke(this, progress.IncSub());
-            }
-            await _db.SaveChangesAsync(ct);
-        }
-        ProgressChanged?.Invoke(this, progress.Inc());
 
         ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
         ProgressChanged?.Invoke(this, progress.InitSub(postingCount));
