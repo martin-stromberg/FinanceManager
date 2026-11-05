@@ -2,11 +2,16 @@
 
 ## Important Notes Before Update
 
+- New opt-in feature: the MCP server (`/mcp`) lets external AI assistants access the owner's financial data through scoped, audited tools. It ships **disabled by default** — an administrator enables it anytime in the admin security settings (`/card/mcp-security`, database-stored `Enabled`/`WriteAccessEnabled` switches). Existing installations keep working unchanged.
+- The MCP settings are stored in the database, not in `appsettings.json`; write access has a separate opt-in kill switch so an admin can enable read-only MCP access first.
+
 - Security hardening: forwarded headers (`X-Forwarded-For`/`X-Forwarded-Proto`) are now only honored from explicitly trusted proxies. If FinanceManager runs behind a reverse proxy, list its IPs in `ReverseProxy:KnownProxies` and/or its subnets in `ReverseProxy:KnownNetworks` (semicolon-separated). Without these entries the app ignores forwarded headers — client IPs would then appear as the proxy's address. Direct HTTP access in local networks keeps working unchanged.
 - Self-registration is now opt-in: only the very first user can register themselves; additional accounts are created by an administrator. Set `Auth:AllowSelfRegistration` to `true` to re-enable open registration.
 - Security hardening: session cookies are marked `Secure` when the app is served via HTTPS (including TLS-terminating reverse proxies via forwarded headers). If the app is exposed to untrusted networks, serving it via HTTPS is strongly recommended.
 
 ## What's New
+
+- MCP integration: personal access tokens (`fm_mcp_*`) with five access levels, fine-grained scopes and filters, a persistent approval queue with approval-center UI, hash-chained audit trail with integrity verification and export, SSE status notifications, and 33 business tools across four security classes — documented under Help → MCP-Server.
 
 - Security fix: self-registration is limited to the first user — the register page redirects to the login once a user exists; `Auth:AllowSelfRegistration` re-enables open registration for additional accounts.
 - Security fix: registration and the anonymous user-existence probe are rate-limited per source address (HTTP 429; configurable via `RateLimiting:AuthSensitive:*`).
