@@ -485,6 +485,13 @@ namespace FinanceManager.Web
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftBookDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftDiscardDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmPostingReverseDescriptor>();
+            // Administrative tools (T34–T38): owner admin gate + (Administration, …) scopes;
+            // the final/effective sub-operations run through the AiActionRequest queue.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminStatusDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminUpdatesDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminBackupsDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminNotificationsDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminSettingsDescriptor>();
             builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolRegistry, FinanceManager.Web.Mcp.McpToolRegistry>();
             builder.Services.AddScoped<FinanceManager.Web.Mcp.McpRecordScopeFilter>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeHandler>();
@@ -520,6 +527,11 @@ namespace FinanceManager.Web
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftBookHandler>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftDiscardHandler>();
             builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmPostingReverseHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminStatusHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminUpdatesHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminBackupsHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminNotificationsHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminSettingsHandler>();
         }
 
         private static string? ExtractMcpHint(HttpContext httpContext)

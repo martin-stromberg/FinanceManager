@@ -3031,6 +3031,7 @@
   <data name="Mcp_DataType_KpiConfigurations" xml:space="preserve"><value>KPI-Konfigurationen</value></data>
   <data name="Mcp_DataType_Attachments" xml:space="preserve"><value>Anhänge</value></data>
   <data name="Mcp_DataType_AttachmentCategories" xml:space="preserve"><value>Anhangkategorien</value></data>
+  <data name="Mcp_DataType_Administration" xml:space="preserve"><value>Administration</value></data>
   <data name="EnumType_McpAccessLevel_Analyse" xml:space="preserve"><value>Analyse</value></data>
   <data name="EnumType_McpAccessLevel_Assistent" xml:space="preserve"><value>Assistent</value></data>
   <data name="EnumType_McpAccessLevel_Sachbearbeiter" xml:space="preserve"><value>Sachbearbeiter</value></data>

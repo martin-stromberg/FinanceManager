@@ -61,10 +61,12 @@ Ein **Scope** ist das Tupel:
 Scope = (Datentyp T, Rechteart R, optionaler Filter F)
 ```
 
-- **Datentyp T:** einer der 18 klassifizierten Datentypen
+- **Datentyp T:** einer der 19 klassifizierten Datentypen
   (`fachkonzept.md`, Abschnitt 7.1), abgebildet auf konkrete Entitäten/Enums
   (`Account`, `Posting`, `StatementDraft`, `ContactCategory`,
-  `AccountType`-Enum …).
+  `AccountType`-Enum …); `Administration` ist der installationsbezogene
+  Scope der `fm_admin_*`-Tools ohne eigene Entität (zusätzlich Admin-Gate
+  auf die Besitzerrolle statt datensatzscharfer Besitzableitung).
 - **Rechteart R:** eine der sieben Rechtearten (Lesen, Vorschlag,
   Vervollständigung, Änderung, Erstellung, Buchung, Löschung) mit der im
   Fachkonzept (Abschnitt 4) und in Abschnitt 7 dieses Dokuments

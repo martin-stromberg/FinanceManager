@@ -302,6 +302,68 @@ Beide Tools schreiben nichts und tragen einen Meta-Scope statt eines
 Fachdaten-Tupels – sie unterliegen trotzdem der Besitzprüfung (nur
 eigener Zugang/eigene Tasks).
 
+### 3.7 Geschäftsprozess „Administration der eigenen Installation"
+
+Administrative Werkzeuge für den Installationsbetrieb: Programmupdates,
+Datensicherungen, eigene Benachrichtigungen und admin-editable
+Einstellungen der Einrichtung. Sie adressieren den **19. Datentyp
+`Administration`** (`McpDataType.Administration=18` – installationsbezogen,
+kein Fachdatentyp; Aufnahme als kompatible Erweiterung gemäß §6.2).
+
+**Admin-Gate (festgelegt):** Zusätzlich zu den Scope-Tupeln gilt für alle
+`fm_admin_*`-Tools eine Besitzerrollen-Prüfung: Der Besitzer des aufrufenden
+Zugangs muss die Administratorrolle tragen (`User.IsAdmin`, aufgelöst über
+den regulären User-Service-Contract). Ein Aufruf ohne Admin-Rolle wird mit
+dem strukturierten Fehler `Err_Mcp_AdminRequired` abgelehnt – bei
+interaktiven Aufrufen wie bei genehmigten Warteschlangen-Ausführungen
+(ApprovedExecution prüft die Rolle erneut). Das Admin-Gate ersetzt die
+Scope-Prüfung nicht, es ergänzt sie („KI darf nicht mehr als ihr Besitzer"
+plus „nur Admins dürfen administrieren").
+
+| # | Tool | Fachlicher Zweck | Scopes | Klasse | Referenz |
+|---|---|---|---|---|---|
+| T34 | `fm_admin_status` | Installationsstatus der eigenen Instanz: installierte Version/Release-Metadaten, Update-Stand (verfügbare Version, letzte Prüfung, Lock, geplante Installationszeit), letztes Backup (Datum, Größe), eigener aktiver Benachrichtigungszähler, wirksame MCP-Schalter | (Administration, Lesen) | lesend | `IInstalledReleaseMetadataProvider`, `IUpdateOrchestrator.GetStatusAsync`, `IBackupService.ListAsync`, `INotificationService.ListActiveAsync`, `IMcpSettingsService` |
+| T35 | `fm_admin_updates` | Update-Infos abrufen (`status`), manuelle Update-Prüfung anstoßen (`check`); Installation des geladenen Pakets auslösen (`install`, erfordert `confirmDowntime`) und geplante Installationszeit setzen/löschen (`schedule`) | (Administration, Lesen); install/schedule zusätzlich (Administration, Änderung) | schreibvorbereitend (install/schedule: **genehmigungspflichtig**) | `IUpdateOrchestrator.GetStatusAsync`/`CheckAsync`/`StartInstallAsync`/`ScheduleAsync` |
+| T36 | `fm_admin_backups` | Gespeicherte Datensicherungen des Besitzers auflisten (`list`, Paging) und eine neue Sicherung anstoßen (`create`); Wiederherstellung, Upload, Download und Löschen werden bewusst nicht exponiert | (Administration, Lesen); create zusätzlich (Administration, Erstellung) | schreibvorbereitend (create: **genehmigungspflichtig**) | `IBackupService.ListAsync`/`CreateAsync` |
+| T37 | `fm_admin_notifications` | Eigene aktive Benachrichtigungen abrufen (`list`, Paging) und eine eigene/globale Benachrichtigung bestätigen (`dismiss` – unkritische Wirkung `IsDismissed`, direkte Ausführung ohne Approval) | (Administration, Lesen); dismiss zusätzlich (Administration, Änderung) | schreibvorbereitend | `INotificationService.ListActiveAsync`/`DismissAsync` |
+| T38 | `fm_admin_settings` | Admin-editable Einstellungen der Einrichtung lesen (`get`; Sektionen `mcp` = Kill-Switch/Write-Stop-Lid, `updates` = Update-Einstellungen, `wellKnown` = Well-Known-Endpunkte) und eine begrenzte Feldmenge ändern (`set`: `mcp.enabled`, `mcp.writeAccessEnabled`, `updates.enabled`, `updates.includePrereleases`, `wellKnown.changePasswordUrl` – nicht angegebene Felder bleiben unverändert) | (Administration, Lesen); set zusätzlich (Administration, Änderung) | schreibvorbereitend (set: **genehmigungspflichtig**) | `IMcpSettingsService`, `IUpdateOrchestrator.GetSettingsAsync`/`SaveSettingsAsync`, `IWellKnownSettingsService` |
+
+**Ein-/Ausgaben:**
+- `fm_admin_status`: *Eingabe* keine; *Ausgabe* Aggregat
+  (`installation`, `update`, `backups.latest`, `notifications.activeCount`,
+  `mcp`).
+- `fm_admin_updates`: *Eingabe* `operation`
+  (`status`|`check`|`install`|`schedule`), `confirmDowntime` (Pflicht `true`
+  bei install), `scheduledInstallTime` (`HH:mm`, explizites `null` löscht
+  die Planung); *Ausgabe* `UpdateStatusDto`-Abbildung bzw.
+  `UpdateCheckResultDto`/`UpdateSettingsDto`.
+- `fm_admin_backups`: *Eingabe* `operation` (`list`|`create`),
+  `skip`/`take`; *Ausgabe* `BackupDto`-Liste bzw. das erzeugte
+  `BackupDto`.
+- `fm_admin_notifications`: *Eingabe* `operation` (`list`|`dismiss`),
+  `notificationId` (Pflicht bei dismiss), `skip`/`take`; *Ausgabe*
+  `NotificationDto`-Liste bzw. `applied`-Status (fremde/vergebene
+  Benachrichtigung = nicht vorhanden).
+- `fm_admin_settings`: *Eingabe* `operation` (`get`|`set`), `section`
+  (`mcp`|`updates`|`wellKnown`|`all`), Feldpaket der Whitelist oben;
+  *Ausgabe* Sektions-DTOs bzw. `applied`-Status plus neue Werte.
+- *Nebenbedingungen:* Alle Klartexte (Release-Notes, Fehlermeldungen,
+  Dateinamen, Benachrichtigungstexte, URLs, Konfigurationspfade) werden als
+  `untrusted_data` markiert ausgegeben; die genehmigungspflichtigen
+  Teiloperationen (`install`, `schedule`, `create`, `set`) laufen als
+  `AiActionRequest` über dieselbe Queue-Kopplung wie die finalen
+  Pflege-Operationen – die interaktive Antwort ist
+  `Err_Mcp_ApprovalRequired`, das Ergebnis wird über `fm_task_status`
+  abgerufen. Die fachlich passende Rechteart der Write-Operationen ist
+  Änderung/Erstellung (nicht Löschung – reserviert für destruktive
+  Pflege-Operationen); die Prüfung erfolgt im Handler, da die deklarierten
+  Tool-Scopes den Lese-Teil abdecken.
+- *Update-Ausführung:* `install` ruft denselben
+  `IUpdateOrchestrator.StartInstallAsync`-Contract wie der Admin-REST-
+  Endpunkt; ein nicht bereites Paket oder ein fehlgeschlagener Start
+  endet als klassifizierter Fehler der Ausführung (`Failed`), nie als
+  Teileffekt.
+
 ---
 
 ## 4. Kontoauszugs-Assistent (F7) – vollständiger Workflow
@@ -466,7 +528,7 @@ fachliche Regeln aus:
 
 ## 5. Scope-Zuordnung und Datentypabdeckung
 
-### 5.1 Abdeckung der 18 Datentypen
+### 5.1 Abdeckung der 19 Datentypen
 
 Jeder Datentyp der F3-Matrix ist über mindestens einen Tool mit den dort
 als „✓" markierten Rechtearten adressierbar:
@@ -491,11 +553,12 @@ als „✓" markierten Rechtearten adressierbar:
 | KPI-Konfigurationen | T10 (Lesen), T29 (Pflege) | `HomeKpi`, `PortfolioKpiConfiguration` |
 | Anhänge | T09 (Lesen), T28 (Pflege) | Inhalt untrusted content |
 | Anhangkategorien | T27 (Pflege), T28 (Lesen-Bezug) | Lesen implizit über `IAttachmentCategoryService` in T27 |
+| Administration | T34–T38 | installationsbezogen (kein Fachdatentyp): alle Tools zusätzlich Admin-Gate auf die Besitzerrolle (`Err_Mcp_AdminRequired`); Write-Ops über Änderung/Erstellung, kein Löschpfad |
 
 ### 5.2 Scope-Nomenklatur
 
 Alle Scope-Angaben in diesem Dokument verwenden ausschließlich die Tupel
-`(Datentyp, Rechteart)` mit den 18 Datentypnamen und 7 Rechtearten aus
+`(Datentyp, Rechteart)` mit den 19 Datentypnamen und 7 Rechtearten aus
 Schritt 1; optionale Filter (Kontotypen, Kontaktgruppen,
 Wertpapierkategorien, Sparplankategorien, Anhangkategorien) gelten
 zusätzlich auf jedem Scope und sind zugangsbezogen, nicht toolbezogen.
@@ -526,7 +589,7 @@ Stabilität ist Pflegeaufgabe, keine Einmalentscheidung.
 - Schema `fm_<bereich>_<aktion>` in `snake_case` (Bereiche:
   `accounts`, `postings`, `contacts`, `budget`, `savings_plan`,
   `securities`, `statement_draft(s)`, `attachments`, `categories`,
-  `reports`, `configuration`, `capabilities`, `task`).
+  `reports`, `configuration`, `capabilities`, `task`, `admin`).
 - Namen sind **stabil und semantisch**: Sie benennen den Geschäftsprozess,
   nicht die Implementierung (keine Service-/Methodennamen im Toolnamen).
 - Einmal veröffentlichte Namen werden nie umbenannt – Umbenennung =
@@ -604,12 +667,20 @@ Mindest-Freigabestufe → genehmigungspflichtig.
 | `fm_posting_reverse` | (Buchungen, Löschung=Storno) | genehmigungspflichtig | Buchhalter | **ja** |
 | `fm_capabilities_describe` | Meta-Scope `Zugangsprofil` | lesend | alle | nein |
 | `fm_task_status` | Meta-Scope `Ausführungsstatus` | lesend | alle | nein |
+| `fm_admin_status` | (Administration, Lesen) + Admin-Gate | lesend | Analyse | nein |
+| `fm_admin_updates` | (Administration, Lesen); install/schedule: Änderung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | teils (install, schedule: **ja**) |
+| `fm_admin_backups` | (Administration, Lesen); create: Erstellung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | teils (create: **ja**) |
+| `fm_admin_notifications` | (Administration, Lesen); dismiss: Änderung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | nein |
+| `fm_admin_settings` | (Administration, Lesen); set: Änderung + Admin-Gate | schreibvorbereitend | Sachbearbeiter | teils (set: **ja**) |
 
-**Summe: 33 Tools** – davon genehmigungspflichtig im Kern: 3
+**Summe: 38 Tools** – davon genehmigungspflichtig im Kern: 3
 (`fm_statement_draft_book`, `fm_statement_draft_discard`,
 `fm_posting_reverse`) sowie die Lösch-/Archiv-/Merge-Teilmengen der
-Pflege-Tools (T22–T29). Die Liste „genehmigungspflichtiger Aktionen" des
-Approval-Konzepts (Schritt 3) ergibt sich direkt aus dieser Spalte.
+Pflege-Tools (T22–T29) und die finalen Teiloperationen der Admin-Tools
+(`install`, `schedule`, `create`, `set` in T35–T38). Zusätzlich zu den
+Scopes gilt bei T34–T38 das Admin-Gate auf die Besitzerrolle. Die Liste
+„genehmigungspflichtiger Aktionen" des Approval-Konzepts (Schritt 3)
+ergibt sich direkt aus dieser Spalte.
 
 ---
 

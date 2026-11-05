@@ -31,7 +31,7 @@
 |-------------|-----|--------------|
 | `McpAccessId` | `Guid` | Zugehöriger Zugang (FK, Kaskadenlöschung) |
 | `OwnerUserId` | `Guid` | Besitzer (denormalisiert für besitzergestützte Abfragen) |
-| `DataType` | `McpDataType` | Einer von 18 Datentypen (`Accounts` bis `AttachmentCategories`) |
+| `DataType` | `McpDataType` | Einer von 19 Datentypen (`Accounts` bis `Administration`) |
 | `Right` | `McpRightKind` | `Read`, `Suggest`, `Complete`, `Modify`, `Create`, `Book`, `Delete` |
 | `AccountTypesCsv` | `string?` | Kontotypen-Filter |
 | `ContactCategoryIdsCsv` | `string?` | Kontaktkategorien-Filter |

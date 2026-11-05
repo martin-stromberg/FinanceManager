@@ -5,7 +5,7 @@ namespace FinanceManager.Domain.Mcp;
 /// <see cref="McpRightKind"/> on exactly one of these data types.
 /// </summary>
 /// <remarks>
-/// Persisted via <c>HasConversion&lt;short&gt;()</c>. The 18 values and their order are normative
+/// Persisted via <c>HasConversion&lt;short&gt;()</c>. The 19 values and their order are normative
 /// (datenmodell-erweiterungen.md §2.2, berechtigungsmodell.md) and must not be changed without
 /// updating the concept.
 /// </remarks>
@@ -63,5 +63,12 @@ public enum McpDataType
     Attachments = 16,
 
     /// <summary>Attachment categories.</summary>
-    AttachmentCategories = 17
+    AttachmentCategories = 17,
+
+    /// <summary>
+    /// Administrative installation scope (updates, backups, notifications, admin settings
+    /// of the setup area) — not a business record type; the admin tools additionally gate
+    /// on the owner's admin role.
+    /// </summary>
+    Administration = 18
 }

@@ -55,12 +55,27 @@ Liefert das effektive Profil des eigenen Zugangs: Stufe, Scopes samt Filtern, Ge
 
 | Klasse | Beispiele |
 |--------|-----------|
-| `Lesend` | `fm_accounts_overview`, `fm_postings_query`, `fm_statement_drafts_read`, `fm_statement_draft_validate`, `fm_statement_imports_review`, `fm_budget_overview`, `fm_reporting_aggregate`, `fm_savings_plan_analysis`, `fm_securities_analysis`, `fm_contacts_lookup`, `fm_configuration_read`, `fm_attachments_read`, `fm_posting_reversal_check`, `fm_task_status`, `fm_capabilities_describe` |
+| `Lesend` | `fm_accounts_overview`, `fm_postings_query`, `fm_statement_drafts_read`, `fm_statement_draft_validate`, `fm_statement_imports_review`, `fm_budget_overview`, `fm_reporting_aggregate`, `fm_savings_plan_analysis`, `fm_securities_analysis`, `fm_contacts_lookup`, `fm_configuration_read`, `fm_attachments_read`, `fm_posting_reversal_check`, `fm_task_status`, `fm_capabilities_describe`, `fm_admin_status` |
 | `Vorschlagend` | `fm_statement_draft_analyze`, `fm_statement_draft_prepare_booking`, `fm_contacts_suggest`, `fm_budget_rules_suggest` |
-| `Schreibvorbereitend` | `fm_statement_draft_complete`, `fm_statement_draft_edit`, `fm_statement_draft_import`, `fm_contacts_manage`, `fm_accounts_manage`, `fm_budgets_manage`, `fm_savings_plans_manage`, `fm_securities_manage`, `fm_attachments_manage`, `fm_categories_manage`, `fm_reports_configuration_manage` |
+| `Schreibvorbereitend` | `fm_statement_draft_complete`, `fm_statement_draft_edit`, `fm_statement_draft_import`, `fm_contacts_manage`, `fm_accounts_manage`, `fm_budgets_manage`, `fm_savings_plans_manage`, `fm_securities_manage`, `fm_attachments_manage`, `fm_categories_manage`, `fm_reports_configuration_manage`, `fm_admin_updates`, `fm_admin_backups`, `fm_admin_notifications`, `fm_admin_settings` |
 | `Genehmigungspflichtig` | `fm_statement_draft_book`, `fm_statement_draft_discard`, `fm_posting_reverse` |
 
 Verbindliche Referenz ist stets die Laufzeit-Ausgabe von `tools/list` (Katalogversion `katalog-v<n>`); veraltete Werkzeuge sind dort über `deprecated`/`replacedBy` gekennzeichnet.
+
+### Administrative Werkzeuge (`fm_admin_*`)
+
+Die administrativen Werkzeuge T34–T38 sind zusätzlich zum Scope-Tupel `(Administration, …)` auf die Administratorrolle des Zugangsbesitzers beschränkt: Ein Zugang eines Benutzers ohne Admin-Flag erhält `Err_Mcp_AdminRequired` — bei interaktiven Aufrufen wie bei genehmigten Warteschlangen-Ausführungen.
+
+| Werkzeug | Operationen | Wirkung |
+|----------|-------------|---------|
+| `fm_admin_status` | – (nur lesend) | Installationsstatus: Version, Update-Stand, letztes Backup, Benachrichtigungszähler, MCP-Schalter |
+| `fm_admin_updates` | `status`, `check` | Update-Status bzw. manuelle Update-Prüfung (inkl. Paket-Download) |
+| `fm_admin_updates` | `install`, `schedule` | Update-Installation (`confirmDowntime` erforderlich, startet die Anwendung neu) bzw. geplante Installationszeit — beide **genehmigungspflichtig** (`AiActionRequest`), Scope `(Administration, Änderung)` |
+| `fm_admin_backups` | `list` | Gespeicherte Sicherungen des Besitzers (Paging) |
+| `fm_admin_backups` | `create` | Neue Datensicherung anstoßen — **genehmigungspflichtig**, Scope `(Administration, Erstellung)`; Wiederherstellung/Upload/Download/Löschen werden nicht exponiert |
+| `fm_admin_notifications` | `list`, `dismiss` | Eigene aktive Benachrichtigungen; `dismiss` quittiert eine eigene/globale Benachrichtigung direkt (unkritische Wirkung), Scope `(Administration, Änderung)` |
+| `fm_admin_settings` | `get` | Admin-Einstellungen der Einrichtung lesen (`mcp`, `updates`, `wellKnown`) |
+| `fm_admin_settings` | `set` | Begrenzte Felder ändern (`mcp.enabled`, `mcp.writeAccessEnabled`, `updates.enabled`, `updates.includePrereleases`, `wellKnown.changePasswordUrl`) — **genehmigungspflichtig**, Scope `(Administration, Änderung)` |
 
 ## Verwaltungs-API `/api/mcp-accesses`
 

@@ -394,7 +394,8 @@ public sealed class EnumCoverageTests
             nameof(FinanceManager.Domain.Mcp.McpDataType.Reports),
             nameof(FinanceManager.Domain.Mcp.McpDataType.KpiConfigurations),
             nameof(FinanceManager.Domain.Mcp.McpDataType.Attachments),
-            nameof(FinanceManager.Domain.Mcp.McpDataType.AttachmentCategories));
+            nameof(FinanceManager.Domain.Mcp.McpDataType.AttachmentCategories),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Administration));
 
     /// <summary>
     /// Verifies the declared values of the enum covered by this test.

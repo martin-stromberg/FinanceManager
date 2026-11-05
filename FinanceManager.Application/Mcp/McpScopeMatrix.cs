@@ -40,6 +40,12 @@ public static class McpScopeMatrix
     public static bool IsValidCombination(McpDataType dataType, McpRightKind right)
         => right switch
         {
+            // Administration is an installation scope without suggestion/completion
+            // semantics and without a delete/book path (fachkonzept.md §7.2): reading the
+            // admin surfaces, modifying admin-editable settings/effects and creating a
+            // backup snapshot are the only grantable rights.
+            _ when dataType == McpDataType.Administration
+                => right is McpRightKind.Read or McpRightKind.Modify or McpRightKind.Create,
             // Reading and suggestion apply to every classified data type.
             McpRightKind.Read or McpRightKind.Suggest => true,
             // Completion/modify/create apply to all writable types; postings stay write-
