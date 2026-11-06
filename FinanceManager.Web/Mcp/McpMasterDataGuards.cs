@@ -132,22 +132,34 @@ internal static class McpMasterDataGuards
     /// <see langword="null"/> while the concrete operation has not been wired to the queue
     /// yet (EP-10 wiring) — execution then fails classified with <c>Err_Mcp_ActionNotExecutable</c>.
     /// </param>
+    /// <param name="requiredRight">The right the access must grant for the operation —
+    /// <see cref="McpRightKind.Delete"/> by default (delete-equivalent operations); set
+    /// <see cref="McpRightKind.Modify"/> for approval-required but non-destructive effects.</param>
     /// <returns>The structured approval-required result, or the execution result.</returns>
     /// <exception cref="McpToolException">
-    /// The Löschung scope is not granted, or the operation has no wired execution path yet.
+    /// The required scope is not granted, or the operation has no wired execution path yet.
     /// </exception>
     public static async Task<object> ApprovalRequiredAsync(
         IMcpScopeEvaluator scopeEvaluator, McpToolCallContext context,
         McpDataType dataType, string operation, string effect,
         object? parameters, CancellationToken ct,
-        Func<CancellationToken, Task<object>>? executeApproved = null)
+        Func<CancellationToken, Task<object>>? executeApproved = null,
+        McpRightKind requiredRight = McpRightKind.Delete)
     {
         var entity = context.Access.Access;
         if (entity is not null
-            && !await scopeEvaluator.IsAllowedAsync(entity, dataType, McpRightKind.Delete, ct))
+            && !await scopeEvaluator.IsAllowedAsync(entity, dataType, requiredRight, ct))
         {
+            var rightLabel = requiredRight switch
+            {
+                McpRightKind.Delete => "Löschung",
+                McpRightKind.Modify => "Änderung",
+                McpRightKind.Create => "Erstellung",
+                McpRightKind.Read => "Lesen",
+                _ => requiredRight.ToString()
+            };
             throw new McpToolException("Err_Mcp_ScopeDenied",
-                $"Operation '{operation}' requires the scope ({dataType}, Löschung).");
+                $"Operation '{operation}' requires the scope ({dataType}, {rightLabel}).");
         }
 
         if (context.Mode == McpToolExecutionMode.ApprovedExecution)

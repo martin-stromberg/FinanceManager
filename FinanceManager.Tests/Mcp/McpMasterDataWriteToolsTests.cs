@@ -62,11 +62,13 @@ public sealed class McpMasterDataWriteToolsTests
         return new McpRecordScopeFilter(evaluator.Object);
     }
 
-    private static Mock<IMcpScopeEvaluator> NewScopeEvaluator(bool allowDelete = true)
+    private static Mock<IMcpScopeEvaluator> NewScopeEvaluator(bool allowDelete = true, bool allowModify = true)
     {
         var evaluator = new Mock<IMcpScopeEvaluator>();
         evaluator.Setup(e => e.IsAllowedAsync(It.IsAny<McpAccess>(), It.IsAny<McpDataType>(), McpRightKind.Delete, It.IsAny<CancellationToken>()))
             .ReturnsAsync(allowDelete);
+        evaluator.Setup(e => e.IsAllowedAsync(It.IsAny<McpAccess>(), It.IsAny<McpDataType>(), McpRightKind.Modify, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(allowModify);
         return evaluator;
     }
 

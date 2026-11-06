@@ -16,7 +16,7 @@ namespace FinanceManager.Web.Mcp.Tools;
 /// answer <c>Err_Mcp_ApprovalRequired</c> without effect until the approval queue ships
 /// (EP-09).
 /// Scopes: (Wertpapiere, Erstellung/Änderung), (Wertpapierkategorien, Lesen);
-/// archive/unarchive additionally (Wertpapiere, Löschung) — evaluated inside the handler.
+/// archive additionally (Wertpapiere, Löschung), unarchive (Wertpapiere, Änderung) — evaluated inside the handler.
 /// </summary>
 public sealed class FmSecuritiesManageDescriptor : McpToolDescriptorBase
 {
@@ -33,7 +33,7 @@ public sealed class FmSecuritiesManageDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Creates and updates securities (name, identifier WKN/ISIN, alphaVantageCode, currencyCode, categoryId, region, sector, description). Archiving — the only delete-equivalent — and unarchiving (reactivation of an accidentally archived security) require approval and answer Err_Mcp_ApprovalRequired without effect until the approval queue ships (EP-09). Scopes: (Wertpapiere, Erstellung/Änderung), (Wertpapierkategorien, Lesen); archive/unarchive additionally (Wertpapiere, Löschung).";
+        => "Creates and updates securities (name, identifier WKN/ISIN, alphaVantageCode, currencyCode, categoryId, region, sector, description). Archiving — the only delete-equivalent, only allowed for positions without holdings — and unarchiving (reactivation of an accidentally archived security) require approval and answer Err_Mcp_ApprovalRequired without effect until the approval queue ships (EP-09). Scopes: (Wertpapiere, Erstellung/Änderung), (Wertpapierkategorien, Lesen); archive additionally (Wertpapiere, Löschung), unarchive (Wertpapiere, Änderung).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Schreibvorbereitend;
@@ -279,6 +279,11 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
                 {
                     archived = await _securities.ArchiveAsync(securityId, owner, ct2);
                 }
+                catch (InvalidOperationException ex)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_Mcp_InvalidState", ex.Message);
+                }
                 catch
                 {
                     McpWriteAudit.DiscardStaged(context, staged);
@@ -339,7 +344,8 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
                 }
                 var refreshed = await _securities.GetAsync(securityId, owner, ct2);
                 return (object)new { operation = "unarchive", applied = true, securityId, security = refreshed is null ? null : Result(refreshed) };
-            });
+            },
+            requiredRight: McpRightKind.Modify);
     }
 
     private static void ValidateCurrency(string currency)

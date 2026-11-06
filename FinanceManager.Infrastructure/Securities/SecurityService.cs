@@ -1,5 +1,6 @@
 using FinanceManager.Application.Securities;
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Shared.Dtos.Securities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Securities;
@@ -125,10 +126,20 @@ public sealed class SecurityService : ISecurityService
     /// <param name="ownerUserId">Owner user identifier used to validate ownership.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><c>true</c> when the security was found and archived; otherwise <c>false</c> when not found or already inactive.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the security still holds a quantity (open position) — only empty positions may be archived.</exception>
     public async Task<bool> ArchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == id && s.OwnerUserId == ownerUserId, ct);
         if (entity == null || !entity.IsActive) { return false; }
+        var openQuantity = await _db.Postings.AsNoTracking()
+            .Where(p => p.SecurityId == id
+                && (p.SecuritySubType == SecurityPostingSubType.Buy || p.SecuritySubType == SecurityPostingSubType.Sell))
+            .SumAsync(p => p.SecuritySubType == SecurityPostingSubType.Buy ? (p.Quantity ?? 0m) : -(p.Quantity ?? 0m), ct);
+        if (openQuantity > 0m)
+        {
+            throw new InvalidOperationException(
+                $"Cannot archive a security with an open position ({openQuantity} units still held). Archive is reserved for positions without holdings.");
+        }
         entity.Archive();
         await _db.SaveChangesAsync(ct);
         return true;
