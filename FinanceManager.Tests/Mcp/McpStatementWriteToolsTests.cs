@@ -673,12 +673,13 @@ public sealed class McpStatementWriteToolsTests
 
     private static FmStatementDraftEditHandler EditHandler(
         Mock<IStatementDraftService> drafts, Mock<IMcpScopeEvaluator>? evaluator = null,
-        Mock<IMcpAuditWriter>? audit = null, McpRecordScopeFilter? filter = null)
+        Mock<IMcpAuditWriter>? audit = null, McpRecordScopeFilter? filter = null,
+        Mock<IAccountService>? accounts = null)
         => new(drafts.Object,
             new Mock<IContactService>().Object,
             new Mock<ISavingsPlanService>().Object,
             new Mock<ISecurityService>().Object,
-            new Mock<IAccountService>().Object,
+            (accounts ?? new Mock<IAccountService>()).Object,
             (evaluator ?? AllowAllEvaluator()).Object,
             (audit ?? NullAudit()).Object,
             filter ?? NewFilter());
@@ -920,5 +921,163 @@ public sealed class McpStatementWriteToolsTests
 
         var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(ArgsObj(new { draftId, operation = "deleteEntry", entryId = Guid.NewGuid() }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
         Assert.Equal("Err_Mcp_InvalidState", ex.Code);
+    }
+
+    // ------------------------------------------------------------------
+    // T18 fm_statement_draft_edit — operation assignAccount
+    // ------------------------------------------------------------------
+
+    private static AccountDto NewAccountOfType(Guid id, AccountType type)
+        => new(id, type.ToString().ToLowerInvariant(), type, null, 0m,
+            Guid.NewGuid(), null, SavingsPlanExpectation.Optional, false);
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Edit_AssignAccount_SetsDetectedAccount_AndReturnsUpdatedDraft()
+    {
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var header = NewDraft(draftId); // no DetectedAccountId yet
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(header);
+        drafts.Setup(d => d.SetAccountAsync(draftId, owner, accountId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(header with { DetectedAccountId = accountId });
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccountOfType(accountId, AccountType.Giro));
+        var audit = NullAudit();
+        McpAuditWriteRequest? stagedRequest = null;
+        audit.Setup(a => a.StageAsync(It.IsAny<McpAuditWriteRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<McpAuditWriteRequest, CancellationToken>((r, _) => stagedRequest = r)
+            .ReturnsAsync((McpAuditEntry?)null);
+
+        var handler = EditHandler(drafts, audit: audit, accounts: accounts);
+        using var doc = Serialize(await handler.InvokeAsync(ArgsObj(new { draftId, operation = "assignAccount", accountId }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Equal(accountId, doc.RootElement.GetProperty("draft").GetProperty("detectedAccountId").GetGuid());
+        Assert.Contains("DetectedAccountId", doc.RootElement.GetProperty("changedFields").EnumerateArray().Select(e => e.GetString()).ToList());
+        drafts.Verify(d => d.SetAccountAsync(draftId, owner, accountId, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.NotNull(stagedRequest);
+        var change = Assert.Single(stagedRequest!.Changes!);
+        Assert.Equal("StatementDraft", change.EntityType);
+        Assert.Equal("DetectedAccountId", change.Field);
+        Assert.Null(change.OldValue);
+        Assert.Equal(accountId.ToString(), change.NewValue);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Edit_AssignAccount_UnknownOrForeignAccount_IsInvalidArguments()
+    {
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewDraft(draftId));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AccountDto?)null); // missing or foreign — indistinguishable
+        var audit = NullAudit();
+
+        var handler = EditHandler(drafts, audit: audit, accounts: accounts);
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(ArgsObj(new { draftId, operation = "assignAccount", accountId }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
+        drafts.Verify(d => d.SetAccountAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        audit.Verify(a => a.StageAsync(It.IsAny<McpAuditWriteRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Edit_AssignAccount_ForeignDraft_IsInvisible()
+    {
+        var owner = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((StatementDraftDto?)null);
+        var handler = EditHandler(drafts);
+
+        using var doc = Serialize(await handler.InvokeAsync(ArgsObj(new { draftId = Guid.NewGuid(), operation = "assignAccount", accountId = Guid.NewGuid() }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("result").ValueKind);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Edit_AssignAccount_AllowsCreditCardAndGiroAccounts()
+    {
+        // assignAccount performs a plain account assignment — the domain contract owns
+        // any account-type rule, so both CreditCard and Giro targets reach the service.
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var cardId = Guid.NewGuid();
+        var giroId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewDraft(draftId));
+        drafts.Setup(d => d.SetAccountAsync(draftId, owner, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid d, Guid o, Guid a, CancellationToken _) =>
+                NewDraft(d, a));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(cardId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccountOfType(cardId, AccountType.CreditCard));
+        accounts.Setup(a => a.GetAsync(giroId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccountOfType(giroId, AccountType.Giro));
+        var handler = EditHandler(drafts, accounts: accounts);
+        var ctx = NewCallContext(NewAccessContext(owner).Object);
+
+        using var cardDoc = Serialize(await handler.InvokeAsync(ArgsObj(new { draftId, operation = "assignAccount", accountId = cardId }), ctx, CancellationToken.None));
+        Assert.True(cardDoc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Equal(cardId, cardDoc.RootElement.GetProperty("draft").GetProperty("detectedAccountId").GetGuid());
+
+        using var giroDoc = Serialize(await handler.InvokeAsync(ArgsObj(new { draftId, operation = "assignAccount", accountId = giroId }), ctx, CancellationToken.None));
+        Assert.True(giroDoc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Equal(giroId, giroDoc.RootElement.GetProperty("draft").GetProperty("detectedAccountId").GetGuid());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Edit_AssignAccount_SameAccount_IsUnchanged()
+    {
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewDraft(draftId, accountId));
+        var handler = EditHandler(drafts);
+
+        using var doc = Serialize(await handler.InvokeAsync(ArgsObj(new { draftId, operation = "assignAccount", accountId }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.False(doc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Equal("unchanged", doc.RootElement.GetProperty("reason").GetString());
+        // No pointless re-classification (SetAccountAsync would reset entry statuses).
+        drafts.Verify(d => d.SetAccountAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Edit_AssignAccount_OnSplitChild_PassesDomainErrorThrough()
+    {
+        // The domain contract (SetAccountAsync) forbids a non-credit-card account on a
+        // draft already linked as a split child — the tool surfaces that domain error.
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var giroId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewDraft(draftId) with { IsSplitDraft = true });
+        drafts.Setup(d => d.SetAccountAsync(draftId, owner, giroId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Split draft must not have an account assigned."));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(giroId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccountOfType(giroId, AccountType.Giro));
+        var handler = EditHandler(drafts, accounts: accounts);
+
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(ArgsObj(new { draftId, operation = "assignAccount", accountId = giroId }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.Equal("Err_ValidationFailed", ex.Code);
+        Assert.Contains("Split draft", ex.Message);
     }
 }

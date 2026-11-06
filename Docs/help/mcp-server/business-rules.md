@@ -158,6 +158,7 @@
 **Verhalten:**
 - `fm_statement_draft_validate` meldet `MCP_CARD_REQUIRES_PARENT` (Pipeline-Code `CARD_REQUIRES_PARENT`), `fm_statement_draft_prepare_booking` den Blocker `cardRequiresParent`, `fm_statement_draft_analyze` `parentEntry` + `requiresParentEntry`.
 - `fm_statement_draft_book` lehnt Standalone-Buchung/Commit mit `Err_StatementDraft_CardRequiresParent` ab; Split-Kinder behalten ihre Karten-Kontozuordnung.
+- `fm_statement_draft_edit` (`assignAccount`) setzt/überschreibt die Entwurfs-Kontozuordnung über `SetAccountAsync` und löst die Klassifizierung erneut aus; auf bereits verlinkte Split-Kinder sind nur `CreditCard`-Zuordnungen zulässig (Domänenfehler `Err_ValidationFailed`).
 - `fm_statement_drafts_read` referenziert im Einzel-Entwurf den Original-Anhang (`sourceAttachment`, via `fm_attachments_read` lesbar; Liste: `hasSourceAttachment`).
 
 **Umsetzung:** `AccountType.CreditCard`, `StatementDraftService` (Split-Exemption + `CARD_REQUIRES_PARENT`), `FmStatementDraft*Handler`.

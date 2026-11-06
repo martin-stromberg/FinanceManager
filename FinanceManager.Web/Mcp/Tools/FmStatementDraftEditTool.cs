@@ -16,7 +16,8 @@ namespace FinanceManager.Web.Mcp.Tools;
 /// explicit corrections to one draft entry per call — overwriting the correctable core
 /// fields (<c>bookingDate</c>, <c>valutaDate</c>, <c>amount</c>, <c>subject</c>,
 /// <c>recipientName</c>, <c>currencyCode</c>, <c>bookingDescription</c>), adding or
-/// removing an entry, and resetting a wrong duplicate flag. Unlike
+/// removing an entry, resetting a wrong duplicate flag, and assigning or overwriting
+/// the draft-level detected account (<c>assignAccount</c>). Unlike
 /// <c>fm_statement_draft_complete</c> (gaps only) this tool is the intended overwrite path
 /// and requires the Änderung right; <c>addEntry</c> additionally requires Erstellung.
 /// Scope: (Kontoauszugsentwürfe, Änderung).
@@ -28,7 +29,7 @@ public sealed class FmStatementDraftEditDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmStatementDraftEditDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"draftId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Draft to correct (required).\"},\"operation\":{\"type\":\"string\",\"enum\":[\"updateEntry\",\"addEntry\",\"deleteEntry\",\"resetDuplicate\"],\"description\":\"Correction operation (required).\"},\"entryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target entry (required for updateEntry/deleteEntry/resetDuplicate).\"},\"entry\":{\"type\":\"object\",\"properties\":{\"bookingDate\":{\"type\":\"string\",\"format\":\"date-time\"},\"valutaDate\":{\"type\":\"string\",\"format\":\"date-time\"},\"amount\":{\"type\":\"number\"},\"subject\":{\"type\":\"string\"},\"recipientName\":{\"type\":\"string\"},\"currencyCode\":{\"type\":\"string\"},\"bookingDescription\":{\"type\":\"string\"}},\"additionalProperties\":false,\"description\":\"Core-field values; updateEntry merges provided fields over the current state, addEntry requires bookingDate/amount/subject.\"}},\"required\":[\"draftId\",\"operation\"],\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"draftId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Draft to correct (required).\"},\"operation\":{\"type\":\"string\",\"enum\":[\"updateEntry\",\"addEntry\",\"deleteEntry\",\"resetDuplicate\",\"assignAccount\"],\"description\":\"Correction operation (required).\"},\"entryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target entry (required for updateEntry/deleteEntry/resetDuplicate).\"},\"accountId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target account (required for assignAccount); overwrites the draft's detected account and re-runs pipeline classification.\"},\"entry\":{\"type\":\"object\",\"properties\":{\"bookingDate\":{\"type\":\"string\",\"format\":\"date-time\"},\"valutaDate\":{\"type\":\"string\",\"format\":\"date-time\"},\"amount\":{\"type\":\"number\"},\"subject\":{\"type\":\"string\"},\"recipientName\":{\"type\":\"string\"},\"currencyCode\":{\"type\":\"string\"},\"bookingDescription\":{\"type\":\"string\"}},\"additionalProperties\":false,\"description\":\"Core-field values; updateEntry merges provided fields over the current state, addEntry requires bookingDate/amount/subject.\"}},\"required\":[\"draftId\",\"operation\"],\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -36,7 +37,7 @@ public sealed class FmStatementDraftEditDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Applies explicit corrections to a statement draft: overwrite correctable entry core fields (bookingDate, valutaDate, amount, subject, recipientName, currencyCode, bookingDescription), add an entry, delete an entry or reset a duplicate flag. Scopes: (Kontoauszugsentwürfe, Änderung); addEntry additionally (Kontoauszugsentwürfe, Erstellung).";
+        => "Applies explicit corrections to a statement draft: overwrite correctable entry core fields (bookingDate, valutaDate, amount, subject, recipientName, currencyCode, bookingDescription), add an entry, delete an entry, reset a duplicate flag or assign/overwrite the draft-level detected account (assignAccount — re-runs pipeline classification). Scopes: (Kontoauszugsentwürfe, Änderung); addEntry additionally (Kontoauszugsentwürfe, Erstellung).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Schreibvorbereitend;
@@ -52,7 +53,7 @@ public sealed class FmStatementDraftEditDescriptor : McpToolDescriptorBase
 /// Handler of <c>fm_statement_draft_edit</c> (F-0703): executes exactly one correction per
 /// call through the existing <see cref="IStatementDraftService"/> paths
 /// (<c>UpdateEntryCoreAsync</c>, <c>AddEntryAsync</c>, <c>DeleteEntryAsync</c>,
-/// <c>ResetDuplicateEntryAsync</c>) — a partial <c>entry</c> object is merged over the
+/// <c>ResetDuplicateEntryAsync</c>, <c>SetAccountAsync</c>) — a partial <c>entry</c> object is merged over the
 /// current field values so unspecified fields are preserved; fields outside the
 /// correctable whitelist are rejected instead of silently dropped. The fachliche
 /// Zusatzvalidierung (F-0704) checks amount/date/text plausibility before the write;
@@ -141,8 +142,9 @@ public sealed class FmStatementDraftEditHandler : IMcpToolHandler
             "addEntry" => await AddEntryAsync(draftId, header, arguments, owner, context, ct),
             "deleteEntry" => await DeleteEntryAsync(draftId, header, RequireEntryId(entryId, operation), scopes, owner, context, ct),
             "resetDuplicate" => await ResetDuplicateAsync(draftId, header, RequireEntryId(entryId, operation), scopes, owner, context, ct),
+            "assignAccount" => await AssignAccountAsync(draftId, header, arguments, scopes, owner, context, ct),
             _ => throw new McpToolException("Err_Mcp_InvalidArguments",
-                "Argument 'operation' must be one of updateEntry|addEntry|deleteEntry|resetDuplicate.")
+                "Argument 'operation' must be one of updateEntry|addEntry|deleteEntry|resetDuplicate|assignAccount.")
         };
     }
 
@@ -400,6 +402,78 @@ public sealed class FmStatementDraftEditHandler : IMcpToolHandler
     }
 
     // ------------------------------------------------------------------
+    // assignAccount — draft-level Konto-Zuordnung (Überschreibpfad)
+    // ------------------------------------------------------------------
+
+    private async Task<object> AssignAccountAsync(
+        Guid draftId, StatementDraftDto header, JsonElement arguments,
+        IReadOnlyList<McpAccessScope> scopes, Guid owner, McpToolCallContext context, CancellationToken ct)
+    {
+        var accountId = McpToolArguments.RequiredGuid(arguments, "accountId");
+        if (header.DetectedAccountId == accountId)
+        {
+            // SetAccountAsync re-runs the classification (resetting entry statuses) —
+            // skip the effect entirely when nothing would change.
+            return new { draftId, operation = "assignAccount", applied = false, reason = "unchanged" };
+        }
+        // F-0704: owner-scoped reference — a foreign account is indistinguishable from a
+        // missing one. The account-type decision (incl. the split-child CreditCard
+        // exemption) stays with the domain contract of SetAccountAsync.
+        var account = await McpStatementDraftGuards.RequireAccountAsync(_accounts, accountId, owner, ct);
+        // Record scope on the effective state: the assignment must not move the draft
+        // out of the caller's Modify-filtered record set.
+        if (McpRecordScopeFilter.RequiresRecordFilter(scopes)
+            && !McpRecordScopeFilter.IsAllowed(scopes, new McpRecordContext
+            {
+                DraftId = draftId,
+                AccountTypeValue = (short)account.Type
+            }))
+        {
+            throw new McpToolException("Err_Mcp_ScopeDenied",
+                "The record-level scope does not permit assigning this account to the draft.");
+        }
+
+        var changes = new List<McpAuditFieldChange>
+        {
+            new(EntityDraft, draftId, "DetectedAccountId",
+                header.DetectedAccountId?.ToString(), accountId.ToString())
+        };
+        var staged = await McpWriteAudit.StageDataChangeAsync(
+            _auditWriter, context, "DraftEdited", ToolName, changes, 1,
+            JsonSerializer.Serialize(new { draftId, operation = "assignAccount", accountId }), ct);
+        StatementDraftDto? updated;
+        try
+        {
+            updated = await _drafts.SetAccountAsync(draftId, owner, accountId, ct);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            // Domain contract errors pass through with their message (e.g. the
+            // split-child rule rejecting a non-credit-card account assignment).
+            McpWriteAudit.DiscardStaged(context, staged);
+            throw new McpToolException("Err_ValidationFailed", ex.Message);
+        }
+        catch
+        {
+            McpWriteAudit.DiscardStaged(context, staged);
+            throw;
+        }
+        if (updated is null)
+        {
+            McpWriteAudit.DiscardStaged(context, staged);
+            throw new McpToolException("Err_Mcp_InvalidState", "The account could not be assigned to the draft.");
+        }
+        return new
+        {
+            draftId,
+            operation = "assignAccount",
+            applied = true,
+            changedFields = changes.Select(c => c.Field).ToList(),
+            draft = DraftResult(updated)
+        };
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
 
@@ -545,6 +619,28 @@ public sealed class FmStatementDraftEditHandler : IMcpToolHandler
             changes.Add(new McpAuditFieldChange(EntityEntry, entityId, field, oldValue, newValue));
         }
     }
+
+    private static object DraftResult(StatementDraftDto draft)
+        => new
+        {
+            id = draft.DraftId,
+            status = draft.Status.ToString(),
+            detectedAccountId = draft.DetectedAccountId,
+            accountBankContactId = draft.AccountBankContactId,
+            totalAmount = draft.TotalAmount,
+            isSplitDraft = draft.IsSplitDraft,
+            parentDraftId = draft.ParentDraftId,
+            parentEntryId = draft.ParentEntryId,
+            parentEntryAmount = draft.ParentEntryAmount,
+            uploadGroupId = draft.UploadGroupId,
+            isPreliminary = draft.IsPreliminary,
+            entries = draft.Entries.Select(EntryResult).ToList(),
+            untrusted_data = new
+            {
+                originalFileName = draft.OriginalFileName,
+                description = draft.Description
+            }
+        };
 
     private static object EntryResult(StatementDraftEntryDto entry)
         => new

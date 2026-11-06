@@ -1525,8 +1525,18 @@ public sealed partial class StatementDraftService : IStatementDraftService
         var draft = await _db.StatementDrafts.Include(d => d.Entries)
             .FirstOrDefaultAsync(d => d.Id == draftId && d.OwnerUserId == ownerUserId, ct);
         if (draft == null || draft.Status != StatementDraftStatus.Draft) { return null; }
-        var accountExists = await _db.Accounts.AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
-        if (!accountExists) { return null; }
+        var account = await _db.Accounts.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (account == null) { return null; }
+        if (account.Type != AccountType.CreditCard
+            && await _db.StatementDraftEntries.AsNoTracking().AnyAsync(e => e.SplitDraftId == draft.Id, ct))
+        {
+            // Credit-card exemption (mirrors SetEntrySplitDraftAsync): a draft already
+            // linked as a split child may only carry a CreditCard account assignment —
+            // any other account type would produce the SPLIT_DRAFT_HAS_ACCOUNT
+            // violation at booking.
+            throw new InvalidOperationException("Split draft must not have an account assigned.");
+        }
         draft.SetDetectedAccount(accountId);
         await ClassifyInternalAsync(draft, null, ownerUserId, ct);
         await _db.SaveChangesAsync(ct);
