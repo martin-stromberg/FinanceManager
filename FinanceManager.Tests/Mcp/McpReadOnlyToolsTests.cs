@@ -3,6 +3,7 @@ using FinanceManager.Application.Attachments;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Postings;
+using FinanceManager.Application.Reports;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
@@ -772,6 +773,47 @@ public sealed class McpReadOnlyToolsTests
         Assert.Equal("import.csv", doc.RootElement.GetProperty("imports")[0]
             .GetProperty("untrusted_data").GetProperty("originalFileName").GetString());
     }
+
+    /// <summary>
+    /// Test case: fm_reporting_aggregate serializes <see cref="ReportAggregatePointDto.SecuritySubType"/> as
+    /// <c>postingType</c> — the enum name for split security detail points, <c>null</c> for non-security and
+    /// roll-up (Category:) rows.
+    /// </summary>
+    [Fact]
+    public async Task ReportingAggregate_EmitsPostingTypePerPoint()
+    {
+        var owner = Guid.NewGuid();
+        var month = new DateTime(2025, 8, 1);
+        var secId = Guid.NewGuid();
+        var agg = new Mock<IReportAggregationService>();
+        agg.Setup(a => a.QueryAsync(It.IsAny<ReportAggregationQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportAggregationResult(
+                ReportInterval.Month,
+                new ReportAggregatePointDto[]
+                {
+                    new(month, $"Security:{secId}:Buy", "ACME", null, -100m, null, null, null, null,
+                        SecuritySubType: FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType.Buy),
+                    new(month, $"Security:{secId}:Dividend", "ACME", null, 25m, null, null, null, null,
+                        SecuritySubType: FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType.Dividend),
+                    new(month, $"Security:{secId}:Sell", "ACME", null, 300m, null, null, null, null,
+                        SecuritySubType: FinanceManager.Shared.Dtos.Securities.SecurityPostingSubType.Sell),
+                    new(month, "Account:x", "Giro", null, -5m, null, null, null, null),
+                    new(month, "Category:Security:c1", "Aktien", "Aktien", -75m, null, null, null, null)
+                },
+                false, false, false));
+        var handler = new FmReportingAggregateHandler(agg.Object, Mock.Of<IReportFavoriteService>());
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args("{\"postingKind\":\"Security\",\"interval\":\"Month\"}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        var pts = doc.RootElement.GetProperty("result").GetProperty("points");
+        Assert.Equal(5, pts.GetArrayLength());
+        Assert.Equal("Buy", pts[0].GetProperty("postingType").GetString());
+        Assert.Equal("Dividend", pts[1].GetProperty("postingType").GetString());
+        Assert.Equal("Sell", pts[2].GetProperty("postingType").GetString());
+        Assert.Equal(JsonValueKind.Null, pts[3].GetProperty("postingType").ValueKind);
+        Assert.Equal(JsonValueKind.Null, pts[4].GetProperty("postingType").ValueKind);
+    }
 }
 
 /// <summary>
@@ -837,3 +879,4 @@ public sealed class StatementImportQueryServiceTests
         Assert.Equal(0, await svc.CountEntriesAsync(owner, foreignImport.Id, CancellationToken.None));
     }
 }
+

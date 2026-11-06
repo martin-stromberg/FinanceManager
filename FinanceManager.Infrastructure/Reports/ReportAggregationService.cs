@@ -326,7 +326,11 @@ public sealed class ReportAggregationService : IReportAggregationService
         static bool SupportsCategories(PostingKind k) => k is PostingKind.Contact or PostingKind.SavingsPlan or PostingKind.Security;
 
         // 1) Aggregate entity (leaf) level per period
-        var entityGroups = rawAnon.GroupBy(r => new { r.Kind, r.PeriodStart, r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId })
+        // Security rows keep their SecuritySubType in the group key so that security points
+        // are split per posting sub type (one point per period/security/sub type) instead of
+        // being flattened into a single mixed amount. For all other kinds the sub type is
+        // always null, so their grouping is unchanged.
+        var entityGroups = rawAnon.GroupBy(r => new { r.Kind, r.PeriodStart, r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId, r.SecuritySubType })
              .Select(g => new
              {
                  g.Key.Kind,
@@ -335,7 +339,8 @@ public sealed class ReportAggregationService : IReportAggregationService
                  g.Key.AccountId,
                  g.Key.ContactId,
                  g.Key.SavingsPlanId,
-                 g.Key.SecurityId
+                 g.Key.SecurityId,
+                 g.Key.SecuritySubType
              })
              .OrderBy(g => g.PeriodStart)
              .ToList();
@@ -376,7 +381,13 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
             else if (e.SecurityId.HasValue)
             {
-                groupKey = $"Security:{e.SecurityId}";
+                // Split security points per posting sub type: the sub type is part of the
+                // group key so each (security, sub type) series stays distinct for the
+                // downstream period/comparison transforms. Rows without a sub type keep the
+                // plain "Security:{id}" key (unknown sub type).
+                groupKey = e.SecuritySubType.HasValue
+                    ? $"Security:{e.SecurityId}:{e.SecuritySubType.Value}"
+                    : $"Security:{e.SecurityId}";
                 if (securityNames.TryGetValue(e.SecurityId.Value, out var nSec)) { groupName = nSec; }
                 else { groupName = e.SecurityId.Value.ToString("N")[..6]; }
                 if (query.IncludeCategory && securityCategoryMap.TryGetValue(e.SecurityId.Value, out var cidSec))
@@ -410,7 +421,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
             // In single-kind non-category mode: parent remains null (flat list)
 
-            points.Add(new ReportAggregatePointDto(e.PeriodStart, groupKey, groupName, categoryName, e.Amount, null, parent, null, null));
+            points.Add(new ReportAggregatePointDto(e.PeriodStart, groupKey, groupName, categoryName, e.Amount, null, parent, null, null, SecuritySubType: e.SecuritySubType));
         }
 
         // Category aggregates (per period) (only when categories requested & kind supports)
@@ -496,7 +507,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 foreach (var y in byYear)
                 {
                     var start = new DateTime(y.Year, 1, 1);
-                    ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, null, y.Sample.ParentGroupKey, null, null));
+                    ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, null, y.Sample.ParentGroupKey, null, null, SecuritySubType: y.Sample.SecuritySubType));
                 }
             }
             points = ytd.OrderBy(p => p.PeriodStart).ThenBy(p => p.GroupKey).ToList();
@@ -512,7 +523,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var sample = grp.OrderBy(x => x.PeriodStart).First();
                 // Use a constant period start (e.g., DateTime.MinValue.Date truncated to year) to anchor display
                 var anchor = new DateTime(2000, 1, 1);
-                hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, null, sample.ParentGroupKey, null, null));
+                hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, null, sample.ParentGroupKey, null, null, SecuritySubType: sample.SecuritySubType));
             }
             points = hist.OrderBy(p => p.GroupKey).ToList();
 
@@ -578,7 +589,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             {
                 if (!points.Any(p => p.GroupKey == g.Key && p.PeriodStart == latestPeriod))
                 {
-                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null));
+                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null, SecuritySubType: g.Latest.SecuritySubType));
                 }
             }
         }
@@ -1046,7 +1057,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             {
                 if (!points.Any(p => p.GroupKey == g.Key && p.PeriodStart == latestPeriod))
                 {
-                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null));
+                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null, SecuritySubType: g.Latest.SecuritySubType));
                 }
             }
         }
@@ -1478,8 +1489,18 @@ public sealed class ReportAggregationService : IReportAggregationService
     private static bool TryParseSecurityKey(string groupKey, out Guid securityId)
     {
         securityId = Guid.Empty;
-        return groupKey.StartsWith("Security:", StringComparison.Ordinal)
-            && Guid.TryParse(groupKey["Security:".Length..], out securityId);
+        if (!groupKey.StartsWith("Security:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+        // Group keys may carry a posting-sub-type suffix ("Security:{id}:{SubType}") — parse only the id segment.
+        var idPart = groupKey["Security:".Length..];
+        var colonIndex = idPart.IndexOf(':');
+        if (colonIndex >= 0)
+        {
+            idPart = idPart[..colonIndex];
+        }
+        return Guid.TryParse(idPart, out securityId);
     }
 
     private static PostingKind? ParseKindFromKey(string groupKey)
