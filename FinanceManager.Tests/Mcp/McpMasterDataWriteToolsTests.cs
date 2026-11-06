@@ -550,6 +550,29 @@ public sealed class McpMasterDataWriteToolsTests
 
     /// <summary>Test case.</summary>
     [Fact]
+    public async Task Accounts_Create_CreditCard_CallsService()
+    {
+        var owner = Guid.NewGuid();
+        var bankContactId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.CreateAsync(owner, "karte", AccountType.CreditCard, null, bankContactId,
+                SavingsPlanExpectation.Optional, true, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(accountId, "karte", AccountType.CreditCard, null, 0m,
+                bankContactId, null, SavingsPlanExpectation.Optional, true));
+        var handler = AccountsHandler(accounts);
+
+        using var doc = Serialize(await handler.InvokeAsync(Args(
+            $"{{\"operation\":\"create\",\"name\":\"karte\",\"accountType\":\"CreditCard\",\"bankContactId\":\"{bankContactId}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        accounts.Verify(a => a.CreateAsync(owner, "karte", AccountType.CreditCard, null, bankContactId,
+            SavingsPlanExpectation.Optional, true, false, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal("CreditCard", doc.RootElement.GetProperty("account").GetProperty("accountType").GetString());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
     public async Task Accounts_Delete_RequiresApproval_WithoutServiceEffect()
     {
         var owner = Guid.NewGuid();

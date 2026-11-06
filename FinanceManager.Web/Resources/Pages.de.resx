@@ -150,6 +150,9 @@
   <data name="EnumType_AccountType_Giro" xml:space="preserve">
     <value>Girokonto</value>
   </data>
+  <data name="EnumType_AccountType_CreditCard" xml:space="preserve">
+    <value>Kreditkartenkonto</value>
+  </data>
   <data name="EnumType_AccountType_Savings" xml:space="preserve">
     <value>Sparkonto</value>
   </data>
@@ -2675,6 +2678,9 @@
   </data>
   <data name="Validation_NO_ACCOUNT" xml:space="preserve">
     <value>Kein Konto zugeordnet.</value>
+  </data>
+  <data name="Validation_CARD_REQUIRES_PARENT" xml:space="preserve">
+    <value>Kreditkarten-Abrechnungen müssen einer Eltern-Auszugszeile (Giro-Abbuchung) als Split zugeordnet werden und können nie eigenständig gebucht werden.</value>
   </data>
   <data name="Validation_SPLIT_CYCLE_DETECTED" xml:space="preserve">
     <value>[Split] Zyklen in Split-Verknüpfungen erkannt.</value>

@@ -691,6 +691,54 @@ public sealed class McpSuggestionToolsTests
         Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("analysis").ValueKind);
     }
 
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftAnalyze_CreditCardWithoutParent_ReportsParentEntryMiss()
+    {
+        // Credit-card rule: a card-bound draft missing the parent entry link reports
+        // "parentEntry" + requiresParentEntry instead of an account suggestion.
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Header(draftId, accountId));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StatementDraftEntryDto>());
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.ListAsync(owner, 0, 200, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new AccountDto(accountId, "card", AccountType.CreditCard, null, 0m, Guid.NewGuid(), null,
+                    SavingsPlanExpectation.None, false)
+            });
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.ListAsync(owner, 0, 200, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ContactDto>());
+        var savings = new Mock<Application.Savings.ISavingsPlanService>();
+        savings.Setup(s => s.ListAsync(owner, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Shared.Dtos.SavingsPlans.SavingsPlanDto>());
+        var securities = new Mock<Application.Securities.ISecurityService>();
+        securities.Setup(s => s.ListAsync(owner, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Shared.Dtos.Securities.SecurityDto>());
+        var handler = new FmStatementDraftAnalyzeHandler(
+            drafts.Object, contacts.Object, savings.Object, securities.Object, accounts.Object,
+            Mock.Of<IPostingsQueryService>(), Mock.Of<IStatementImportQueryService>(),
+            Mock.Of<IKnownContactCatalog>(), Mock.Of<IMcpScopeEvaluator>(), NewFilter());
+
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        var analysis = doc.RootElement.GetProperty("analysis");
+        var missing = analysis.GetProperty("missingDraftAssignments").EnumerateArray()
+            .Select(m => m.GetString()).ToList();
+        Assert.Contains("parentEntry", missing);
+        Assert.DoesNotContain("account", missing);
+        Assert.True(analysis.GetProperty("requiresParentEntry").GetBoolean());
+        Assert.False(string.IsNullOrWhiteSpace(analysis.GetProperty("parentEntryHint").GetString()));
+    }
+
     private static StatementDraftDto Header(Guid draftId, Guid? accountId)
         => new(draftId, "f.csv", null, accountId, null, null, StatementDraftStatus.Draft,
             0m, false, null, null, null, null, Array.Empty<StatementDraftEntryDto>());
@@ -789,6 +837,52 @@ public sealed class McpSuggestionToolsTests
             It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         drafts.Verify(d => d.CommitAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(),
             It.IsAny<ImportFormat>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task PrepareBooking_CreditCardWithoutParent_ReportsCardRequiresParent()
+    {
+        // Credit-card rule: a draft bound to a CreditCard account without a parent
+        // entry link can never be booked standalone — surfaced as a draft blocker.
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var contactId = Guid.NewGuid();
+        var entry = new StatementDraftEntryDto(Guid.NewGuid(), 1, DateTime.UtcNow, null, -10m, "EUR",
+            "s1", "r1", null, false, false, StatementDraftEntryStatus.Open,
+            contactId, null, false, null, null, null, null, null, null);
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Header(draftId, accountId));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { entry });
+        drafts.Setup(d => d.ValidateAsync(draftId, null, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DraftValidationResultDto(draftId, true, Array.Empty<DraftValidationMessageDto>()));
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.ListAsync(owner, 0, 200, ContactType.Self, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ContactDto>());
+        contacts.Setup(c => c.GetAsync(contactId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactDto(contactId, "C", ContactType.Organization, null, null, false, null));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(accountId, "card", AccountType.CreditCard, null, 0m, Guid.Empty, null,
+                SavingsPlanExpectation.None, false));
+        var handler = new FmStatementDraftPrepareBookingHandler(
+            drafts.Object, contacts.Object, accounts.Object,
+            Mock.Of<Application.Savings.ISavingsPlanService>(),
+            Mock.Of<Application.Securities.ISecurityService>(),
+            AllowAllEvaluator(), NewFilter());
+
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        var plan = doc.RootElement.GetProperty("plan");
+        Assert.False(plan.GetProperty("canBook").GetBoolean());
+        var blockerCodes = plan.GetProperty("draftBlockers").EnumerateArray()
+            .Select(b => b.GetProperty("code").GetString()).ToList();
+        Assert.Contains("cardRequiresParent", blockerCodes);
     }
 
     /// <summary>Test case.</summary>

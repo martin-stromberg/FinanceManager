@@ -446,10 +446,17 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
             var splitHeader = await _drafts.GetDraftHeaderAsync(req.SplitDraftId!.Value, owner, ct)
                 ?? throw new McpToolException("Err_Mcp_InvalidArguments",
                     "The referenced split draft does not exist or is not owned by the caller.");
-            if (splitHeader.DetectedAccountId is not null)
+            if (splitHeader.DetectedAccountId is { } splitAccountId)
             {
-                throw new McpToolException("Err_Mcp_InvalidArguments",
-                    "The referenced split draft must not have an account assigned.");
+                // Credit-card exemption: a card statement draft keeps its CreditCard
+                // account assignment when linked as a split child — other account
+                // types stay forbidden (mirrors SetEntrySplitDraftAsync).
+                var splitAccount = await _accounts.GetAsync(splitAccountId, owner, ct);
+                if (splitAccount?.Type != AccountType.CreditCard)
+                {
+                    throw new McpToolException("Err_Mcp_InvalidArguments",
+                        "The referenced split draft must not have an account assigned (unless the account is a credit card).");
+                }
             }
             if (header.UploadGroupId is not null && splitHeader.UploadGroupId == header.UploadGroupId)
             {

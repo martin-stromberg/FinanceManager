@@ -150,6 +150,9 @@
   <data name="EnumType_AccountType_Giro" xml:space="preserve">
     <value>Giro account</value>
   </data>
+  <data name="EnumType_AccountType_CreditCard" xml:space="preserve">
+    <value>Credit card account</value>
+  </data>
   <data name="EnumType_AccountType_Savings" xml:space="preserve">
     <value>Savings account</value>
   </data>
@@ -2675,6 +2678,9 @@
   </data>
   <data name="Validation_NO_ACCOUNT" xml:space="preserve">
     <value>No account assigned.</value>
+  </data>
+  <data name="Validation_CARD_REQUIRES_PARENT" xml:space="preserve">
+    <value>Credit card statement drafts must be assigned as a split of a parent statement entry (the debiting giro line) and can never be booked standalone.</value>
   </data>
   <data name="Validation_SPLIT_CYCLE_DETECTED" xml:space="preserve">
     <value>[Split] Cycles detected in split connections.</value>

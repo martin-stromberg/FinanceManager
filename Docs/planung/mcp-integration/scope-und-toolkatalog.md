@@ -177,7 +177,10 @@ Bankabruf, kein alternativer Dateneingang.
 
 **Ein-/Ausgaben:**
 - `fm_statement_drafts_read`: *Eingabe* `draftId?` (leer = Liste offener
-  Entwürfe, `skip`/`take`), `entryId?`; *Ausgabe* `StatementDraftDto`,
+  Entwürfe, `skip`/`take`), `entryId?`; *Ausgabe* `StatementDraftDto`
+  (Einzel-Entwurf zusätzlich `sourceAttachment` — Referenz des
+  Original-Anhangs, lesbar via `fm_attachments_read`; Liste nur
+  `hasSourceAttachment`),
   `StatementDraftEntryDto`/`StatementDraftEntryDetailDto` (inkl.
   `EntryNumber`, `BookingDate`, `Amount`, `Subject`, `RecipientName`,
   `Status`, `ContactId`, `SavingsPlanId`, `SecurityId`,
@@ -225,7 +228,7 @@ Archivieren, Merge, Konto-Löschung) sind genehmigungspflichtig – in der
 | # | Tool | Fachlicher Zweck | Scopes | Klasse | Referenz |
 |---|---|---|---|---|---|
 | T22 | `fm_contacts_manage` | Kontakte anlegen/ändern (Name, `ContactType`, `CategoryId`, `Description`, `IsPaymentIntermediary`), Alias-Muster ergänzen/entfernen; **Merge-Modus** (`MergeAsync`, destruktiv) und Lösch-Modus sind genehmigungspflichtig | (Kontakte, Erstellung/Änderung/Vervollständigung); Merge+Löschen: (Kontakte, Löschung); Kategorie-Zuordnung: (Kontaktgruppen, Lesen) | schreibvorbereitend (teils genehmigungspflichtig) | `IContactService.CreateAsync`/`UpdateAsync`/`DeleteAsync`/`MergeAsync`/`AddAliasAsync`/`DeleteAliasAsync` |
-| T23 | `fm_accounts_manage` | Konto anlegen/ändern (`Name`, `AccountType`, `Iban`, `BankContactId`, `SavingsPlanExpectation`, `SecurityProcessingEnabled`, `IsCollectionAccount`), Unter-IBANs pflegen; Konto-Löschung genehmigungspflichtig | (Konten, Erstellung/Änderung/Vervollständigung); Lösch-Modus: (Konten, Löschung) | schreibvorbereitend (teils genehmigungspflichtig) | `IAccountService.CreateAsync`/`UpdateAsync`/`DeleteAsync`/`AddLinkedIbanAsync`/`RemoveLinkedIbanAsync` |
+| T23 | `fm_accounts_manage` | Konto anlegen/ändern (`Name`, `AccountType` Giro/Savings/CreditCard, `Iban`, `BankContactId`, `SavingsPlanExpectation`, `SecurityProcessingEnabled`, `IsCollectionAccount`), Unter-IBANs pflegen; Konto-Löschung genehmigungspflichtig | (Konten, Erstellung/Änderung/Vervollständigung); Lösch-Modus: (Konten, Löschung) | schreibvorbereitend (teils genehmigungspflichtig) | `IAccountService.CreateAsync`/`UpdateAsync`/`DeleteAsync`/`AddLinkedIbanAsync`/`RemoveLinkedIbanAsync` |
 | T24 | `fm_savings_plans_manage` | Sparpläne anlegen/ändern (`Type`, `TargetAmount`/`TargetDate`, `Interval`, `ContractNumber`, Kategorie); **Archivierung** (`ArchiveAsync`/`ArchivedUtc`) als Lösch-Äquivalent – genehmigungspflichtig | (Sparpläne, Erstellung/Änderung); Archiv: (Sparpläne, Löschung); (Sparplankategorien, Lesen) | schreibvorbereitend (teils genehmigungspflichtig) | `ISavingsPlanService.CreateAsync`/`UpdateAsync`/`ArchiveAsync`/`DeleteAsync` |
 | T25 | `fm_securities_manage` | Wertpapiere anlegen/ändern (`Identifier` WKN/ISIN, `AlphaVantageCode`, `CurrencyCode`, `CategoryId`, Region/Sektor); **Archivierung** genehmigungspflichtig | (Wertpapiere, Erstellung/Änderung); Archiv: (Wertpapiere, Löschung); (Wertpapierkategorien, Lesen) | schreibvorbereitend (teils genehmigungspflichtig) | `ISecurityService.CreateAsync`/`UpdateAsync`/`ArchiveAsync`/`DeleteAsync` |
 | T26 | `fm_budgets_manage` | Budgetzwecke (`BudgetPurpose` inkl. `SourceType`/`SourceId`), Regeln (`BudgetRule` inkl. `PurposePattern`), Überschreibungen (`BudgetOverride`) und Budgetkategorien anlegen/ändern; `amount` der Regeln/Überschreibungen ist vorzeichenbehaftet (negativ = erwartete Kosten, positiv = erwartete Einnahmen; die Domäne akzeptiert jeden Wert inkl. 0); Lösch-Modi genehmigungspflichtig | (Budgets, Erstellung/Änderung/Vervollständigung), (Budgetregeln, Erstellung/Änderung/Vervollständigung), (Budgetkategorien, Erstellung/Änderung); Lösch-Modi: jeweils Löschung | schreibvorbereitend (teils genehmigungspflichtig) | `IBudgetPurposeService`, `IBudgetRuleService`, `IBudgetOverrideService`, `IBudgetCategoryService` |
@@ -514,6 +517,17 @@ fachliche Regeln aus:
   Kombinationen.
 - **Dublettenreste:** Entries mit `AlreadyBooked` werden im Buchungsplan
   als gesperrt geführt – nie stillschweigend mitgebucht.
+- **Kreditkarten-Regel:** Ein Entwurf mit `DetectedAccountId`→
+  `AccountType.CreditCard` darf nur indirekt gebucht werden — als Split
+  eines Eltern-Auszugseintrags (Giro-Abbuchung). Ohne Elternbezug meldet
+  `fm_statement_draft_validate` den Befund `MCP_CARD_REQUIRES_PARENT`
+  (Pipeline-Code `CARD_REQUIRES_PARENT`), `fm_statement_draft_prepare_booking`
+  den Blocker `cardRequiresParent`, `fm_statement_draft_analyze`
+  `missingDraftAssignments:["parentEntry"]` + `requiresParentEntry`, und
+  `fm_statement_draft_book` lehnt mit `Err_StatementDraft_CardRequiresParent`
+  ab (auch Commit). Split-Kinder dürfen die Karten-Kontozuordnung behalten
+  (Ausnahme zu `SPLIT_DRAFT_HAS_ACCOUNT`/`SetEntrySplitDraftAsync`, nur für
+  `CreditCard`).
 
 ### 4.5 Abbildung Teilfunktion → Pipeline → Tool → Scope
 

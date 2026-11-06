@@ -5,6 +5,7 @@ using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Statements;
 using System.Text.Json;
 
@@ -147,6 +148,23 @@ public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
             draftBlockers.Add(Blocker("noAccount",
                 "No detected account — booking requires SetDetectedAccountId first."));
         }
+
+        // Resolve the detected account once — reused for the credit-card rule and the
+        // expected balance effect below (account-type resolution needs the accounts
+        // read scope; without it the card check degrades like the balance effect).
+        AccountDto? detectedAccount = null;
+        if (accountsAllowed && header.DetectedAccountId.HasValue)
+        {
+            detectedAccount = await _accounts.GetAsync(header.DetectedAccountId.Value, owner, ct);
+        }
+        if (detectedAccount?.Type == AccountType.CreditCard && !header.IsSplitDraft)
+        {
+            // Credit-card rule: card statement drafts may only be booked indirectly
+            // as a split of a parent statement entry (the debiting giro line) —
+            // mirrors the pipeline rule CARD_REQUIRES_PARENT.
+            draftBlockers.Add(Blocker("cardRequiresParent",
+                "Credit card statement drafts must be assigned as a split of a parent statement entry (the debiting giro statement line) — standalone booking is not allowed."));
+        }
         if (errorCount > 0)
         {
             draftBlockers.Add(Blocker("validationErrors",
@@ -281,10 +299,10 @@ public sealed class FmStatementDraftPrepareBookingHandler : IMcpToolHandler
         decimal? expectedBalance = null;
         if (accountsAllowed && header.DetectedAccountId.HasValue)
         {
-            var account = await _accounts.GetAsync(header.DetectedAccountId.Value, owner, ct);
-            if (account is not null)
+            detectedAccount ??= await _accounts.GetAsync(header.DetectedAccountId.Value, owner, ct);
+            if (detectedAccount is not null)
             {
-                expectedBalance = account.CurrentBalance + bankDelta;
+                expectedBalance = detectedAccount.CurrentBalance + bankDelta;
             }
         }
 

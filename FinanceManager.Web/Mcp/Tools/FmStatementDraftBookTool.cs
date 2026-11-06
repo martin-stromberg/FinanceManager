@@ -1,7 +1,9 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Admin;
 using FinanceManager.Shared.Dtos.Statements;
 using System.Text.Json;
@@ -58,17 +60,24 @@ public sealed class FmStatementDraftBookHandler : IMcpToolHandler
 {
     private const string EntityType = "StatementDraft";
 
+    /// <summary>Error code of the credit-card booking rule: card statement drafts may
+    /// only be booked indirectly as a split of a parent statement entry.</summary>
+    internal const string CardRequiresParentCode = "Err_StatementDraft_CardRequiresParent";
+
     private readonly IStatementDraftService _drafts;
+    private readonly IAccountService _accounts;
     private readonly IBackgroundTaskManager _taskManager;
     private readonly IMcpAuditWriter _auditWriter;
 
     /// <summary>Creates the handler.</summary>
     public FmStatementDraftBookHandler(
         IStatementDraftService drafts,
+        IAccountService accounts,
         IBackgroundTaskManager taskManager,
         IMcpAuditWriter auditWriter)
     {
         _drafts = drafts;
+        _accounts = accounts;
         _taskManager = taskManager;
         _auditWriter = auditWriter;
     }
@@ -127,6 +136,29 @@ public sealed class FmStatementDraftBookHandler : IMcpToolHandler
         if (header is null)
         {
             throw new McpToolException("Err_TargetGone", "The draft no longer exists.");
+        }
+
+        // Credit-card rule: card statement drafts may only be booked indirectly as a
+        // split of a parent statement entry (the debiting giro line) — standalone
+        // booking/committing is rejected before any effect. The pipeline validation
+        // surfaces the same rule as CARD_REQUIRES_PARENT.
+        if (accountId.HasValue)
+        {
+            var commitAccount = await _accounts.GetAsync(accountId.Value, owner, ct);
+            if (commitAccount?.Type == AccountType.CreditCard)
+            {
+                throw new McpToolException(CardRequiresParentCode,
+                    "Credit card statement drafts must be booked via a parent entry split (the debiting giro statement line) — standalone commit into a credit card account is not allowed.");
+            }
+        }
+        else if (!header.IsSplitDraft && header.DetectedAccountId.HasValue)
+        {
+            var detected = await _accounts.GetAsync(header.DetectedAccountId.Value, owner, ct);
+            if (detected?.Type == AccountType.CreditCard)
+            {
+                throw new McpToolException(CardRequiresParentCode,
+                    "Credit card statement drafts must be assigned as a split of a parent statement entry (the debiting giro statement line) and can never be booked standalone.");
+            }
         }
 
         return accountId.HasValue

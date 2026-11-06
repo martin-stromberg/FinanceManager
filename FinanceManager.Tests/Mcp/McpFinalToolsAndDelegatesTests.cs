@@ -1,4 +1,5 @@
 using FinanceManager.Application;
+using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Postings;
@@ -127,7 +128,7 @@ public sealed class McpFinalToolsAndDelegatesTests
         var owner = Guid.NewGuid(); var draftId = Guid.NewGuid();
         var drafts = new Mock<IStatementDraftService>();
         var handler = new FmStatementDraftBookHandler(drafts.Object,
-            new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
+            new Mock<IAccountService>().Object, new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
         var doc = JsonDocument.Parse(JsonSerializer.Serialize(await handler.InvokeAsync(
             Args($"{{\"draftId\":\"{draftId}\"}}"), Ctx(owner, approved: false), CancellationToken.None)));
         Assert.True(doc.RootElement.GetProperty("requiresApproval").GetBoolean());
@@ -147,7 +148,7 @@ public sealed class McpFinalToolsAndDelegatesTests
                 new DraftValidationResultDto(draftId, true, new List<DraftValidationMessageDto>()),
                 importId, 3, null));
         var handler = new FmStatementDraftBookHandler(drafts.Object,
-            new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
+            new Mock<IAccountService>().Object, new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
         var result = await handler.InvokeAsync(Args($"{{\"draftId\":\"{draftId}\",\"forceWarnings\":true}}"),
             Ctx(owner, approved: true), CancellationToken.None);
         drafts.Verify(d => d.BookAsync(draftId, null, owner, true, It.IsAny<CancellationToken>()), Times.Once);
@@ -164,10 +165,87 @@ public sealed class McpFinalToolsAndDelegatesTests
         drafts.Setup(d => d.GetDraftHeaderAsync(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
             .ReturnsAsync((StatementDraftDto?)null);
         var handler = new FmStatementDraftBookHandler(drafts.Object,
-            new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
+            new Mock<IAccountService>().Object, new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
         var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
             Args($"{{\"draftId\":\"{Guid.NewGuid()}\"}}"), Ctx(owner, approved: true), CancellationToken.None));
         Assert.Equal("Err_TargetGone", ex.Code);
+    }
+
+    /// <summary>A standalone CreditCard-bound draft is never booked directly.</summary>
+    [Fact]
+    public async Task Book_ApprovedExecution_CreditCardStandalone_Rejected()
+    {
+        var owner = Guid.NewGuid(); var draftId = Guid.NewGuid(); var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(draftId, "card.pdf", null, accountId, null, null,
+                StatementDraftStatus.Draft, -120m, false, null, null, null, null,
+                new List<StatementDraftEntryDto>()));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "card",
+                FinanceManager.Shared.Dtos.Accounts.AccountType.CreditCard, null, 0m, Guid.NewGuid(), null,
+                FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.None, false));
+        var handler = new FmStatementDraftBookHandler(drafts.Object,
+            accounts.Object, new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), Ctx(owner, approved: true), CancellationToken.None));
+        Assert.Equal("Err_StatementDraft_CardRequiresParent", ex.Code);
+        drafts.Verify(d => d.BookAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<Guid>(),
+            It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>A split-linked CreditCard draft reaches the regular service path.</summary>
+    [Fact]
+    public async Task Book_ApprovedExecution_CreditCardSplitChild_NotRejectedByCardRule()
+    {
+        var owner = Guid.NewGuid(); var draftId = Guid.NewGuid(); var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(draftId, "card.pdf", null, accountId, null, null,
+                StatementDraftStatus.Draft, -120m, true, Guid.NewGuid(), Guid.NewGuid(), -120m, null,
+                new List<StatementDraftEntryDto>()));
+        // The pipeline still refuses a direct child booking — the card pre-check must
+        // not fire first (it is reserved for the standalone case).
+        drafts.Setup(d => d.BookAsync(draftId, null, owner, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BookingResult(false, false,
+                new DraftValidationResultDto(draftId, false, new List<DraftValidationMessageDto>
+                {
+                    new("CHILD", "Error", "child draft", draftId, null)
+                }), null, null, null));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "card",
+                FinanceManager.Shared.Dtos.Accounts.AccountType.CreditCard, null, 0m, Guid.NewGuid(), null,
+                FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.None, false));
+        var handler = new FmStatementDraftBookHandler(drafts.Object,
+            accounts.Object, new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), Ctx(owner, approved: true), CancellationToken.None));
+        Assert.Equal("Err_ValidationFailed", ex.Code);
+    }
+
+    /// <summary>Commit mode into a CreditCard account is rejected as well.</summary>
+    [Fact]
+    public async Task Book_ApprovedExecution_CommitIntoCreditCard_Rejected()
+    {
+        var owner = Guid.NewGuid(); var draftId = Guid.NewGuid(); var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewDraft(draftId));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "card",
+                FinanceManager.Shared.Dtos.Accounts.AccountType.CreditCard, null, 0m, Guid.NewGuid(), null,
+                FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.None, false));
+        var handler = new FmStatementDraftBookHandler(drafts.Object,
+            accounts.Object, new Mock<IBackgroundTaskManager>().Object, NullAudit().Object);
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\",\"accountId\":\"{accountId}\",\"importFormat\":\"Csv\"}}"),
+            Ctx(owner, approved: true), CancellationToken.None));
+        Assert.Equal("Err_StatementDraft_CardRequiresParent", ex.Code);
+        drafts.Verify(d => d.CommitAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<ImportFormat>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private static StatementDraftDto NewDraft(Guid draftId)
@@ -188,7 +266,7 @@ public sealed class McpFinalToolsAndDelegatesTests
                 null, null, null, null, null, null));
         var audit = new GuardingAuditWriter();
         var handler = new FmStatementDraftBookHandler(new Mock<IStatementDraftService>().Object,
-            tasks.Object, audit);
+            new Mock<IAccountService>().Object, tasks.Object, audit);
         var result = await handler.InvokeAsync(Args("{\"bookAll\":true}"),
             Ctx(owner, approved: true), CancellationToken.None);
         tasks.Verify(t => t.Enqueue(BackgroundTaskType.BookAllDrafts, owner, It.IsAny<object>(), false), Times.Once);

@@ -574,6 +574,99 @@ public sealed class McpStatementWriteToolsTests
         Assert.Equal(contactId.ToString(), change.NewValue);
     }
 
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Complete_SplitLink_AllowsCreditCardBoundDraft()
+    {
+        // Credit-card exemption: the referenced split draft may keep its account
+        // assignment when the account type is CreditCard — that is the preparation
+        // path for card statements (create card account → assign → link as split
+        // of the debiting giro entry).
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var splitDraftId = Guid.NewGuid();
+        var cardAccountId = Guid.NewGuid();
+        var intermediaryId = Guid.NewGuid();
+        var parentEntry = NewEntry(contactId: intermediaryId);
+        var header = NewDraft(draftId, Guid.NewGuid());
+
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(header);
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { parentEntry });
+        drafts.Setup(d => d.GetDraftHeaderAsync(splitDraftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(splitDraftId, "card.pdf", null, cardAccountId,
+                null, null, StatementDraftStatus.Draft, 0m, false, null, null, null,
+                Guid.NewGuid(), Array.Empty<StatementDraftEntryDto>()));
+        drafts.Setup(d => d.SetEntrySplitDraftAsync(draftId, parentEntry.Id, splitDraftId, owner,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(header);
+
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.GetAsync(intermediaryId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewContact(intermediaryId, intermediary: true));
+
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(cardAccountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(cardAccountId, "card", AccountType.CreditCard, null, 0m,
+                Guid.NewGuid(), null, SavingsPlanExpectation.None, false));
+        accounts.Setup(a => a.GetAsync(header.DetectedAccountId!.Value, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(header.DetectedAccountId!.Value));
+
+        var handler = CompleteHandler(drafts, contacts: contacts, accounts: accounts);
+        using var doc = Serialize(await handler.InvokeAsync(ArgsObj(new
+        {
+            draftId,
+            entries = new[] { new { entryId = parentEntry.Id, splitDraftId } }
+        }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        drafts.Verify(d => d.SetEntrySplitDraftAsync(draftId, parentEntry.Id, splitDraftId, owner,
+            It.IsAny<CancellationToken>()), Times.Once);
+        Assert.True(doc.RootElement.GetProperty("result").GetProperty("appliedFieldCount").GetInt32() > 0);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Complete_SplitLink_StillRejectsNonCardBoundDraft()
+    {
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var splitDraftId = Guid.NewGuid();
+        var giroAccountId = Guid.NewGuid();
+        var intermediaryId = Guid.NewGuid();
+        var parentEntry = NewEntry(contactId: intermediaryId);
+
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewDraft(draftId, Guid.NewGuid()));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { parentEntry });
+        drafts.Setup(d => d.GetDraftHeaderAsync(splitDraftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(splitDraftId, "other.pdf", null, giroAccountId,
+                null, null, StatementDraftStatus.Draft, 0m, false, null, null, null,
+                Guid.NewGuid(), Array.Empty<StatementDraftEntryDto>()));
+
+        var contacts = new Mock<IContactService>();
+        contacts.Setup(c => c.GetAsync(intermediaryId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewContact(intermediaryId, intermediary: true));
+
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(giroAccountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(giroAccountId, "g", AccountType.Giro, null, 0m,
+                Guid.NewGuid(), null, SavingsPlanExpectation.None, false));
+
+        var handler = CompleteHandler(drafts, contacts: contacts, accounts: accounts);
+        var ex = await Assert.ThrowsAsync<McpToolException>(() => handler.InvokeAsync(ArgsObj(new
+        {
+            draftId,
+            entries = new[] { new { entryId = parentEntry.Id, splitDraftId } }
+        }), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidArguments", ex.Code);
+        drafts.Verify(d => d.SetEntrySplitDraftAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<Guid?>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ------------------------------------------------------------------
     // T18 fm_statement_draft_edit
     // ------------------------------------------------------------------

@@ -5,6 +5,7 @@ using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Statements;
 using System.Text.Json;
 
@@ -125,6 +126,8 @@ public sealed class FmStatementDraftValidateHandler : IMcpToolHandler
             && await _scopeEvaluator.IsAllowedAsync(access, McpDataType.Securities, McpRightKind.Read, ct);
         var importsAllowed = access is not null
             && await _scopeEvaluator.IsAllowedAsync(access, McpDataType.StatementImports, McpRightKind.Read, ct);
+        var accountsAllowed = access is not null
+            && await _scopeEvaluator.IsAllowedAsync(access, McpDataType.Accounts, McpRightKind.Read, ct);
 
         var scopes = await _recordFilter.GetReadScopesAsync(context.Access, McpDataType.StatementDrafts, ct);
         var entriesFiltered = McpRecordScopeFilter.RequiresRecordFilter(scopes);
@@ -219,6 +222,21 @@ public sealed class FmStatementDraftValidateHandler : IMcpToolHandler
             }
         }
 
+        // Credit-card rule: a draft bound to a CreditCard account may only be booked
+        // indirectly as a split of a parent statement entry (the debiting giro line) —
+        // without a parent link standalone booking fails (mirrors the pipeline rule
+        // CARD_REQUIRES_PARENT). Account-type resolution needs the accounts read scope.
+        if (accountsAllowed && !header.IsSplitDraft && header.DetectedAccountId is { } detectedAccountForCardCheck)
+        {
+            var detectedAccount = await _accounts.GetAsync(detectedAccountForCardCheck, owner, ct);
+            if (detectedAccount?.Type == AccountType.CreditCard)
+            {
+                findings.Add(new Finding("MCP_CARD_REQUIRES_PARENT", "Error", null,
+                    "accounts", detectedAccountForCardCheck,
+                    "The detected account is a credit card — card statement drafts must be assigned as a split of a parent statement entry (the debiting giro statement line) and can never be booked standalone."));
+            }
+        }
+
         // Datumslogik (§4.4): Zeitraum-Überlappung zu bereits verbuchten
         // StatementImport-Perioden desselben Kontos — heuristic on the first page of
         // each import's entries (booking-date ordered), Warning severity.
@@ -279,7 +297,8 @@ public sealed class FmStatementDraftValidateHandler : IMcpToolHandler
                 contactReferences = !contactsAllowed,
                 savingsPlanReferences = !savingsPlansAllowed,
                 securityReferences = !securitiesAllowed,
-                periodOverlap = !importsAllowed
+                periodOverlap = !importsAllowed,
+                accountTypeChecks = !accountsAllowed
             }
         };
     }

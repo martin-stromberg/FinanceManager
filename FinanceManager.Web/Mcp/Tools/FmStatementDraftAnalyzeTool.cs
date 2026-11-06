@@ -475,6 +475,15 @@ public sealed class FmStatementDraftAnalyzeHandler : IMcpToolHandler
         // the IBAN source field is not exposed by the read contract — documented limit).
         object? accountSuggestion = null;
         var missingDraft = new List<string>();
+        // Credit-card rule: a draft bound to a CreditCard account needs a parent entry
+        // link (split of the debiting giro statement line) — report that gap instead of
+        // an account assignment; unlinked drafts keep the plain "account" miss (no
+        // auto-guessing whether a statement looks card-related).
+        var requiresParentEntry = account?.Type == AccountType.CreditCard && !header.IsSplitDraft;
+        if (requiresParentEntry)
+        {
+            missingDraft.Add("parentEntry");
+        }
         if (header.DetectedAccountId is null)
         {
             missingDraft.Add("account");
@@ -504,6 +513,10 @@ public sealed class FmStatementDraftAnalyzeHandler : IMcpToolHandler
                 totalEntries = allEntries.Count,
                 analyzedEntries = analysisEntries.Count,
                 missingDraftAssignments = missingDraft,
+                requiresParentEntry = requiresParentEntry ? true : (bool?)null,
+                parentEntryHint = requiresParentEntry
+                    ? "The detected account is a credit card — card statement drafts can only be booked indirectly: link this draft as a split of a parent giro statement entry (the card debit) via fm_statement_draft_complete (entries[].splitDraftId on the parent entry)."
+                    : null,
                 accountSuggestion,
                 heuristicScope = new
                 {

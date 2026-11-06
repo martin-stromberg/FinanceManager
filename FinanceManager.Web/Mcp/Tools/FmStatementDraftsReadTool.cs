@@ -1,10 +1,13 @@
 using FinanceManager.Application.Accounts;
+using FinanceManager.Application.Attachments;
 using FinanceManager.Application.Contacts;
 using FinanceManager.Application.Mcp;
 using FinanceManager.Application.Savings;
 using FinanceManager.Application.Securities;
 using FinanceManager.Application.Statements;
+using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Mcp;
+using FinanceManager.Shared.Dtos.Attachments;
 using FinanceManager.Shared.Dtos.Statements;
 using System.Text.Json;
 
@@ -31,7 +34,7 @@ public sealed class FmStatementDraftsReadDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Lists open statement drafts or reads one draft incl. entries, split sums and upload-group neighbors. Scope: (Kontoauszugsentwürfe, Lesen).";
+        => "Lists open statement drafts or reads one draft incl. entries, split sums and upload-group neighbors. A single draft also carries sourceAttachment — the original uploaded statement file; sourceAttachment.id is readable via fm_attachments_read. Scope: (Kontoauszugsentwürfe, Lesen).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Lesend;
@@ -50,7 +53,11 @@ public sealed class FmStatementDraftsReadDescriptor : McpToolDescriptorBase
 /// <c>GetUploadGroupNeighborsAsync</c>). File names, descriptions and imported booking
 /// texts are untrusted content (<c>untrusted_data</c>). Record-level filters apply per the
 /// derivation table: Kontotyp via <c>DetectedAccountId</c>→<c>Account.Type</c> and the
-/// linked contact/savings-plan/security categories on entries, sofern gesetzt.
+/// linked contact/savings-plan/security categories on entries, sofern gesetzt. The
+/// single-draft projection additionally emits <c>sourceAttachment</c> — the metadata
+/// reference of the original uploaded statement file (<see cref="AttachmentEntityKind.StatementDraft"/>)
+/// — so a client knows the source document stays readable via
+/// <c>fm_attachments_read</c>; the list path only carries <c>hasSourceAttachment</c>.
 /// </summary>
 public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
 {
@@ -59,6 +66,7 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
     private readonly IContactService _contacts;
     private readonly ISavingsPlanService _savingsPlans;
     private readonly ISecurityService _securities;
+    private readonly IAttachmentService _attachments;
     private readonly McpRecordScopeFilter _recordFilter;
 
     /// <summary>Creates the handler.</summary>
@@ -68,6 +76,7 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
         IContactService contacts,
         ISavingsPlanService savingsPlans,
         ISecurityService securities,
+        IAttachmentService attachments,
         McpRecordScopeFilter recordFilter)
     {
         _drafts = drafts;
@@ -75,6 +84,7 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
         _contacts = contacts;
         _savingsPlans = savingsPlans;
         _securities = securities;
+        _attachments = attachments;
         _recordFilter = recordFilter;
     }
 
@@ -142,6 +152,7 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
             {
                 splitGroupSum = await _drafts.GetSplitGroupSumAsync(draftId.Value, owner, ct);
             }
+            var sourceAttachment = await SourceAttachmentAsync(draftId.Value, context, owner, ct);
 
             return new
             {
@@ -160,6 +171,16 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
                     uploadGroupId = draft.UploadGroupId,
                     isPreliminary = draft.IsPreliminary,
                     splitGroupSum,
+                    sourceAttachment = sourceAttachment is null
+                        ? null
+                        : (object)new
+                        {
+                            id = sourceAttachment.Id,
+                            sizeBytes = sourceAttachment.SizeBytes,
+                            contentType = sourceAttachment.ContentType,
+                            untrusted_data = new { fileName = sourceAttachment.FileName }
+                        },
+                    sourceDocumentReadable = sourceAttachment is not null,
                     uploadGroupNeighbors = new { prevDraftId = neighbors.prevId, nextDraftId = neighbors.nextId },
                     entries = entryOut,
                     untrusted_data = new
@@ -182,10 +203,10 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
             }
         }
 
-        return new
+        var items = new List<object>(visible.Count);
+        foreach (var d in visible)
         {
-            total = openTotal,
-            drafts = visible.Select(d => (object)new
+            items.Add(new
             {
                 id = d.DraftId,
                 status = d.Status.ToString(),
@@ -196,13 +217,44 @@ public sealed class FmStatementDraftsReadHandler : IMcpToolHandler
                 uploadGroupId = d.UploadGroupId,
                 isPreliminary = d.IsPreliminary,
                 entryCount = d.Entries?.Count ?? 0,
+                hasSourceAttachment = await SourceAttachmentAsync(d.DraftId, context, owner, ct) is not null,
                 untrusted_data = new
                 {
                     originalFileName = d.OriginalFileName,
                     description = d.Description
                 }
-            }).ToList()
+            });
+        }
+
+        return new
+        {
+            total = openTotal,
+            drafts = items
         };
+    }
+
+    /// <summary>
+    /// Resolves the source-file attachment of a draft (the original uploaded statement,
+    /// <see cref="AttachmentEntityKind.StatementDraft"/>) — metadata only, same lookup the
+    /// UI download endpoint performs. The Anhangkategorien record-filter dimension applies
+    /// like in <c>fm_attachments_read</c>: a category-filtered attachment is invisible.
+    /// </summary>
+    private async Task<AttachmentDto?> SourceAttachmentAsync(
+        Guid draftId, McpToolCallContext context, Guid owner, CancellationToken ct)
+    {
+        var list = await _attachments.ListAsync(
+            owner, AttachmentEntityKind.StatementDraft, draftId,
+            0, 1, categoryId: null, isUrl: false, q: null, ct);
+        var attachment = list.FirstOrDefault();
+        if (attachment is null)
+        {
+            return null;
+        }
+        return await _recordFilter.IsVisibleAsync(
+            context.Access, McpDataType.Attachments,
+            new McpRecordContext { AttachmentCategoryId = attachment.CategoryId }, ct)
+            ? attachment
+            : null;
     }
 
     private async Task<bool> DraftVisibleAsync(

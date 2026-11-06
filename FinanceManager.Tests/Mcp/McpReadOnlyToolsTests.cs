@@ -344,10 +344,15 @@ public sealed class McpReadOnlyToolsTests
             .ReturnsAsync(new[] { entry });
         drafts.Setup(d => d.GetUploadGroupNeighborsAsync(draftId, owner, It.IsAny<CancellationToken>()))
             .ReturnsAsync((null, null));
+        var attachments = new Mock<IAttachmentService>();
+        attachments.Setup(a => a.ListAsync(It.IsAny<Guid>(), It.IsAny<FinanceManager.Domain.Attachments.AttachmentEntityKind>(),
+                It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Guid?>(),
+                It.IsAny<bool?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AttachmentDto>());
         var handler = new FmStatementDraftsReadHandler(drafts.Object,
             Mock.Of<IAccountService>(), Mock.Of<Application.Contacts.IContactService>(),
             Mock.Of<Application.Savings.ISavingsPlanService>(), Mock.Of<Application.Securities.ISecurityService>(),
-            NewFilter());
+            attachments.Object, NewFilter());
         using var doc = Serialize(await handler.InvokeAsync(
             Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
         var draft = doc.RootElement.GetProperty("draft");
@@ -359,6 +364,75 @@ public sealed class McpReadOnlyToolsTests
 
     /// <summary>Test case.</summary>
     [Fact]
+    public async Task DraftsRead_EmitsSourceAttachment_WhenPresent()
+    {
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var attachmentId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(draftId, "file.csv", null, null, null, null,
+                StatementDraftStatus.Draft, -5m, false, null, null, null, null,
+                Array.Empty<StatementDraftEntryDto>()));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StatementDraftEntryDto>());
+        drafts.Setup(d => d.GetUploadGroupNeighborsAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((null, null));
+        var attachments = new Mock<IAttachmentService>();
+        attachments.Setup(a => a.ListAsync(owner, FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementDraft,
+                draftId, 0, 1, null, false, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new AttachmentDto(attachmentId, (short)FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementDraft,
+                    draftId, "Kontoauszug_01.pdf", "application/octet-stream", 136203, null, DateTime.UtcNow, false)
+            });
+        var handler = new FmStatementDraftsReadHandler(drafts.Object,
+            Mock.Of<IAccountService>(), Mock.Of<Application.Contacts.IContactService>(),
+            Mock.Of<Application.Savings.ISavingsPlanService>(), Mock.Of<Application.Securities.ISecurityService>(),
+            attachments.Object, NewFilter());
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var draft = doc.RootElement.GetProperty("draft");
+        var source = draft.GetProperty("sourceAttachment");
+        Assert.Equal(attachmentId, source.GetProperty("id").GetGuid());
+        Assert.Equal(136203, source.GetProperty("sizeBytes").GetInt64());
+        Assert.Equal("application/octet-stream", source.GetProperty("contentType").GetString());
+        Assert.Equal("Kontoauszug_01.pdf", source.GetProperty("untrusted_data").GetProperty("fileName").GetString());
+        Assert.True(draft.GetProperty("sourceDocumentReadable").GetBoolean());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftsRead_SourceAttachmentNull_WhenNoAttachment()
+    {
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(draftId, "file.csv", null, null, null, null,
+                StatementDraftStatus.Draft, -5m, false, null, null, null, null,
+                Array.Empty<StatementDraftEntryDto>()));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StatementDraftEntryDto>());
+        drafts.Setup(d => d.GetUploadGroupNeighborsAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((null, null));
+        var attachments = new Mock<IAttachmentService>();
+        attachments.Setup(a => a.ListAsync(owner, FinanceManager.Domain.Attachments.AttachmentEntityKind.StatementDraft,
+                draftId, 0, 1, null, false, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AttachmentDto>());
+        var handler = new FmStatementDraftsReadHandler(drafts.Object,
+            Mock.Of<IAccountService>(), Mock.Of<Application.Contacts.IContactService>(),
+            Mock.Of<Application.Savings.ISavingsPlanService>(), Mock.Of<Application.Securities.ISecurityService>(),
+            attachments.Object, NewFilter());
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var draft = doc.RootElement.GetProperty("draft");
+        Assert.Equal(JsonValueKind.Null, draft.GetProperty("sourceAttachment").ValueKind);
+        Assert.False(draft.GetProperty("sourceDocumentReadable").GetBoolean());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
     public async Task DraftsRead_EntryIdWithoutDraftId_Throws()
     {
         // A single-entry lookup only exists inside a draft — entryId alone must not
@@ -366,7 +440,7 @@ public sealed class McpReadOnlyToolsTests
         var handler = new FmStatementDraftsReadHandler(Mock.Of<IStatementDraftService>(),
             Mock.Of<IAccountService>(), Mock.Of<Application.Contacts.IContactService>(),
             Mock.Of<Application.Savings.ISavingsPlanService>(), Mock.Of<Application.Securities.ISecurityService>(),
-            NewFilter());
+            Mock.Of<IAttachmentService>(), NewFilter());
         var ex = await Assert.ThrowsAsync<McpToolException>(
             () => handler.InvokeAsync(Args($"{{\"entryId\":\"{Guid.NewGuid()}\"}}"),
                 NewCallContext(NewAccessContext(Guid.NewGuid()).Object), CancellationToken.None));
@@ -526,6 +600,67 @@ public sealed class McpReadOnlyToolsTests
             .Single(f => f.GetProperty("code").GetString() == "MCP_PERIOD_OVERLAP");
         Assert.Equal("Warning", finding.GetProperty("severity").GetString());
         Assert.Equal(importId, finding.GetProperty("relatedRecordId").GetGuid());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftValidate_CreditCardWithoutParent_FlagsCardRequiresParent()
+    {
+        // Credit-card rule: a draft bound to a CreditCard account without a parent
+        // entry link can never be booked standalone — surfaced as an Error finding.
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var drafts = DraftsForValidate(draftId, owner, accountId,
+            NewValidateEntry(contactId: Guid.NewGuid()));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(accountId, "card", AccountType.CreditCard, null, 0m,
+                Guid.NewGuid(), null, SavingsPlanExpectation.None, false));
+        var imports = new Mock<IStatementImportQueryService>();
+        imports.Setup(s => s.ListImportsAsync(owner, accountId, null, null, 0, 200, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StatementImportListItemDto>());
+        var handler = ValidateHandler(drafts, accounts: accounts, imports: imports);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var codes = FindingCodes(doc);
+        Assert.Contains("MCP_CARD_REQUIRES_PARENT", codes);
+        var finding = doc.RootElement.GetProperty("additionalFindings").EnumerateArray()
+            .Single(f => f.GetProperty("code").GetString() == "MCP_CARD_REQUIRES_PARENT");
+        Assert.Equal("Error", finding.GetProperty("severity").GetString());
+        Assert.Equal(accountId, finding.GetProperty("relatedRecordId").GetGuid());
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task DraftValidate_CreditCardSplitChild_NoCardFinding()
+    {
+        // A CreditCard draft that IS a split child is booked indirectly through its
+        // parent entry — the card finding must not fire.
+        var owner = Guid.NewGuid();
+        var draftId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var drafts = new Mock<IStatementDraftService>();
+        drafts.Setup(d => d.GetDraftHeaderAsync(draftId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StatementDraftDto(draftId, "card.pdf", null, accountId, null, null,
+                StatementDraftStatus.Draft, -120m, true, Guid.NewGuid(), Guid.NewGuid(), -120m, null,
+                Array.Empty<StatementDraftEntryDto>()));
+        drafts.Setup(d => d.ValidateAsync(draftId, It.IsAny<Guid?>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DraftValidationResultDto(draftId, true, Array.Empty<DraftValidationMessageDto>()));
+        drafts.Setup(d => d.GetDraftEntriesAsync(draftId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StatementDraftEntryDto>());
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AccountDto(accountId, "card", AccountType.CreditCard, null, 0m,
+                Guid.NewGuid(), null, SavingsPlanExpectation.None, false));
+        var imports = new Mock<IStatementImportQueryService>();
+        imports.Setup(s => s.ListImportsAsync(owner, accountId, null, null, 0, 200, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StatementImportListItemDto>());
+        var handler = ValidateHandler(drafts, accounts: accounts, imports: imports);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"draftId\":\"{draftId}\"}}"), NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        var codes = FindingCodes(doc);
+        Assert.DoesNotContain("MCP_CARD_REQUIRES_PARENT", codes);
     }
 
     /// <summary>Test case.</summary>
