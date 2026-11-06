@@ -135,6 +135,7 @@ Die Audit-Timeline (`/card/mcp-audit`) zeigt das revisionssichere Protokoll alle
 - Ein Zugang kann nie mehr als sein Besitzer: Der Zugriff auf fremde oder nur eingeschränkt geteilte Daten ist durch das Benutzerrecht und die Rolle der Kontofreigabe gedeckelt; auch die Admin-Rolle gewährt keinen Fremdzugriff.
 - Das Token wird genau einmal angezeigt; es lässt sich nicht erneut abrufen, nur rotieren. Gespeichert wird ausschließlich ein Hash.
 - Kritische Wirkungen (Verbuchung, Storno, Löschung) sind nie „still": Sie erfordern mindestens eine dokumentierte Genehmigung — je Aktion oder als vorab erteilte Dauerfreigabe des Zugangs.
+- Kontoauszugsentwürfe, die einem Kreditkartenkonto zugeordnet sind, können nicht eigenständig gebucht werden — die Verbuchung erfolgt ausschließlich indirekt als Split einer Auszugszeile des abbuchenden Girokontos (dieselbe Regel wie in der Oberfläche).
 - Rate-Limits begrenzen die Anfragelast je Werkzeugklasse; bei Überschreitung antwortet der Server mit `429`.
 - Backups enthalten kein Tokenmaterial; ein wiederhergestellter Zugang gilt als widerrufen und wird erst durch eine Token-Rotation wieder nutzbar.
 - Eine Anomalieerkennung meldet auffällige Häufungen von Berechtigungsverweigerungen und Ausführungsfehlern als Benachrichtigung an den Besitzer und die Administratoren.

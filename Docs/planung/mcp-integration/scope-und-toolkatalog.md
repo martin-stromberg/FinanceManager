@@ -93,9 +93,9 @@ vollständig verfügbar.
 
 | # | Tool | Fachlicher Zweck | Scopes (Datentyp, Rechteart) | Referenz |
 |---|---|---|---|---|
-| T01 | `fm_accounts_overview` | Kontenübersicht: Liste mit Salden, Typ (`AccountType` Giro/Savings), IBAN, verknüpften Unter-IBANs (`AccountLinkedIban`), Kontostatistik | (Konten, Lesen), (Kontotypen, Lesen) | `IAccountService.ListAsync`/`GetAsync`/`GetStatisticsAsync`/`GetLinkedIbansAsync` |
+| T01 | `fm_accounts_overview` | Kontenübersicht: Liste mit Salden, Typ (`AccountType` Giro/Savings/CreditCard), IBAN, verknüpften Unter-IBANs (`AccountLinkedIban`), Kontostatistik | (Konten, Lesen), (Kontotypen, Lesen) | `IAccountService.ListAsync`/`GetAsync`/`GetStatisticsAsync`/`GetLinkedIbansAsync` |
 | T02 | `fm_postings_query` | Buchungsabfrage je Kontext (Konto, Kontakt, Sparplan, Wertpapier) mit Zeitraum- und Volltextfilter – Kern-Tool für „Was lief wann mit wem?" | (Buchungen, Lesen) | `IPostingsQueryService.GetAccountPostingsAsync`/`GetContactPostingsAsync`/`GetSavingsPlanPostingsAsync`/`GetSecurityPostingsAsync` |
-| T03 | `fm_reporting_aggregate` | Aggregierte Auswertungen und Zeitreihen über Buchungen (Summen, Perioden, `PostingKind`, `SecuritySubType`) sowie Ausführung gespeicherter Report-Favoriten | (Buchungen, Lesen), (Reports, Lesen) | `IReportAggregationService.QueryAsync`, `IPostingTimeSeriesService`, `IPostingAggregateService`, `IReportFavoriteService.GetAsync`, `IPostingExportService` |
+| T03 | `fm_reporting_aggregate` | Aggregierte Auswertungen und Zeitreihen über Buchungen (Summen, Perioden, `PostingKind`, `SecuritySubType`) sowie Ausführung gespeicherter Report-Favoriten; optionales `year`-Argument + `coverage`-Feld (Vertragsdetail siehe Ein-/Ausgaben) | (Buchungen, Lesen), (Reports, Lesen) | `IReportAggregationService.QueryAsync`, `IPostingTimeSeriesService`, `IPostingAggregateService`, `IReportFavoriteService.GetAsync`, `IPostingExportService` |
 | T04 | `fm_contacts_lookup` | Kontakte suchen/ansehen inkl. Alias-Muster (`AliasName.Pattern`) und Kategorie (`ContactCategory`) | (Kontakte, Lesen), (Kontaktgruppen, Lesen) | `IContactService.ListAsync`/`GetAsync`/`ListAliases`/`CountAsync`, `IContactCategoryService` |
 | T05 | `fm_budget_overview` | Budgetlage: Zwecke (`BudgetPurpose`), Regeln (`BudgetRule` inkl. `PurposePattern`), Überschreibungen (`BudgetOverride`), Auslastung/Planung je Kategorie; je Zweck zusätzlich `parentBudget` (vererbte Regeln der Budgetkategorie), damit „keine eigene Regel" nicht mit „kein Budget" verwechselt wird | (Budgets, Lesen), (Budgetregeln, Lesen), (Budgetkategorien, Lesen) | `IBudgetPurposeService.ListAsync`/`ListOverviewAsync`, `IBudgetRuleService.ListByPurpose*`/`ListByCategoryAsync`, `IBudgetOverrideService`, `IBudgetPlanningService`, `IBudgetReportService` |
 | T06 | `fm_savings_plan_analysis` | Sparplan-Bestand und Fortschrittsanalyse (Zielbetrag, Zieldatum, Intervall, aktiv/archiviert) | (Sparpläne, Lesen), (Sparplankategorien, Lesen) | `ISavingsPlanService.ListAsync`/`GetAsync`/`AnalyzeAsync`/`CountAsync`, `ISavingsPlanCategoryService` |
@@ -123,6 +123,17 @@ vollständig verfügbar.
   datensatzscharf über die `Posting`-Besitzableitung je `Kind` und den
   AccountShare-Deckel; Zeiträume in UTC (`ICurrentUserService`-Zeitzone des
   Besitzers für die Darstellung bleibt Sache des Clients).
+- *Vertragsdetail (T03):* `fm_reporting_aggregate` kennt zusätzlich das
+  optionale Argument `year` (Ganzzahl; serverseitiger Kalenderjahr-Filter
+  auf das `periodStart` der gelieferten Punkte) und trägt im Result das
+  Feld `coverage` `{ pointCount, periodCount, firstPeriod, lastPeriod,
+  yearFilter }`, das die abgedeckte Zeitspanne explizit macht.
+  `interval`-Semantik: `Ytd` liefert Jahresschnitte (year-to-date-Fenster)
+  über **alle** Kalenderjahre — ein Bucket je Jahr, nicht „das aktuelle
+  Jahr"; `Year` ein Bucket je Kalenderjahr; `AllHistory` einen einzigen
+  Gesamtwert. Praxisbeispiel „aktuelles Jahr": `interval:'Ytd'` +
+  `year:2026` oder `interval:'Year'` mit clientseitigem
+  `periodStart`-Filter.
 - *Offene Referenz (T08):* `fm_statement_imports_review` setzt einen
   dedizierten Lese-Contract `IStatementImportQueryService` voraus, der
   `StatementImport`/`StatementEntry` revisionssicher lesbar exponiert

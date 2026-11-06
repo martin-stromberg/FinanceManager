@@ -12,6 +12,8 @@
 ## What's New
 
 - MCP integration: personal access tokens (`fm_mcp_*`) with five access levels, fine-grained scopes and filters, a persistent approval queue with approval-center UI, hash-chained audit trail with integrity verification and export, SSE status notifications, and 38 tools across four security classes — including owner-admin-gated `fm_admin_*` tools (installation status, updates, backups incl. ticketed download and restore) — documented under Help → MCP-Server.
+- MCP: new account type `CreditCard` marks a credit-card settlement account — its statement drafts can only be booked indirectly as a split of a parent giro statement entry (never standalone); `fm_statement_draft_edit` gains an `assignAccount` operation (assigns/overwrites the draft's detected account and re-runs classification), and `fm_statement_drafts_read` exposes the draft's original statement file (`sourceAttachment`, readable via `fm_attachments_read`).
+- MCP: `fm_reporting_aggregate` gains an optional `year` filter and a `coverage` result field that states the covered time span explicitly (the `Ytd` interval produces year-to-date buckets across all calendar years, not just the current one); the hash-chained audit trail tolerates concurrently written entries via bounded re-anchoring on sequence collisions.
 
 - Security fix: self-registration is limited to the first user — the register page redirects to the login once a user exists; `Auth:AllowSelfRegistration` re-enables open registration for additional accounts.
 - Security fix: registration and the anonymous user-existence probe are rate-limited per source address (HTTP 429; configurable via `RateLimiting:AuthSensitive:*`).
@@ -52,6 +54,8 @@
 ## Neuerungen
 
 - MCP-Integration: Personal-Access-Tokens (`fm_mcp_*`) mit fünf Freigabestufen, feingranularen Scopes und Filtern, einer persistenten Genehmigungswarteschlange mit Genehmigungscenter-Oberfläche, hash-verkettetem Audit-Protokoll mit Integritätsprüfung und Export, SSE-Statusmeldungen sowie 38 Werkzeugen in vier Sicherheitsklassen — darunter die an die Admin-Rolle des Besitzers gebundenen `fm_admin_*`-Werkzeuge (Installationsstatus, Updates, Datensicherungen inkl. Ticket-Download und Rücksicherung) — dokumentiert unter Hilfe → MCP-Server.
+- MCP: Die neue Kontoart `CreditCard` kennzeichnet ein Kreditkarten-Abrechnungskonto — dessen Auszugsentwürfe sind nur indirekt als Split einer Eltern-Auszugszeile des Girokontos buchbar (nie eigenständig); `fm_statement_draft_edit` erhält die Operation `assignAccount` (setzt/überschreibt die Entwurfs-Kontozuordnung und löst die Klassifizierung erneut aus), und `fm_statement_drafts_read` liefert die Original-Auszugsdatei des Entwurfs (`sourceAttachment`, lesbar via `fm_attachments_read`).
+- MCP: `fm_reporting_aggregate` erhält einen optionalen `year`-Filter und das Result-Feld `coverage`, das die abgedeckte Zeitspanne explizit ausweist (das Intervall `Ytd` liefert Jahresschnitte über alle Kalenderjahre, nicht nur das aktuelle); das hash-verkettete Audit-Protokoll verträgt parallel geschriebene Einträge über begrenzte Neuverankerung bei Sequenz-Kollisionen.
 
 - Sicherheitsfix: Die Selbstregistrierung ist auf den ersten Benutzer beschränkt — sobald ein Benutzer existiert, leitet die Registrierungsseite auf die Anmeldung um; `Auth:AllowSelfRegistration` öffnet die Registrierung für weitere Konten wieder.
 - Sicherheitsfix: Registrierung und die anonyme Benutzer-Existenz-Abfrage werden pro Quelladresse ratenlimitiert (HTTP 429; konfigurierbar über `RateLimiting:AuthSensitive:*`).

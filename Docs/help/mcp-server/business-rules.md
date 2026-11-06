@@ -121,6 +121,7 @@
 - Die Anwendung ändert oder löscht Einträge niemals; allein der Retention-Job entfernt alte Einträge und dokumentiert die Kürzung durch `RetentionPurged`-Ankereinträge, sodass die Kette „ab diesem Eintrag" verifizierbar bleibt.
 - `GET /api/mcp-audit/verify` prüft lückenlose Sequenz, Verkettung und Eintragshashes der eigenen Kette.
 - Feldänderungen liegen als eigene `McpAuditEntryChange`-Zeilen vor (Vorher/Nachher, drillingfähig nach Entität); ihre `EntityId` verankert stets die echte Datensatz-ID — Platzhalter sind unzulässig. Ereignisse ohne natürliche Entität (z. B. die Einstellungsdatei oder ein Update-Installationslauf) verankern einen deterministischen `StableId`-Pseudo-Datensatz aus dem bekannten fachlichen Schlüssel, damit Drill-Down-Abfragen reproduzierbar auflösen.
+- Die Kette ist resilient gegen parallel geschriebene Einträge (z. B. ein `BackupRestore`-Hintergrundtask neben Dispatcher-Aufrufen): Verliert ein Schreibversuch das Kettenanker-Rennen um die nächste `SequenceNo` (UNIQUE-Kollision), wird der Eintrag begrenzt (max. 3 Versuche) erneut verankert — `SequenceNo`, `PrevHash` und `EntryHash` werden je Versuch gemeinsam gegen den dann aktuellen Kettenkopf neu berechnet; dabei zählen auch bereits getrackte, noch nicht persistierte Einträge desselben Kontexts (gestufte Bündel) zum Kopf. Ein Eintrag wird nie still fallengelassen — bleibt auch der letzte Versuch erfolglos, schlägt der Schreibvorgang fehl.
 
 **Umsetzung:** `IMcpAuditWriter`, `McpAuditQueryService.VerifyAsync`, `McpAuditRetentionExecutor`.
 
@@ -162,3 +163,18 @@
 - `fm_statement_drafts_read` referenziert im Einzel-Entwurf den Original-Anhang (`sourceAttachment`, via `fm_attachments_read` lesbar; Liste: `hasSourceAttachment`).
 
 **Umsetzung:** `AccountType.CreditCard`, `StatementDraftService` (Split-Exemption + `CARD_REQUIRES_PARENT`), `FmStatementDraft*Handler`.
+
+## Mehrjahres-Aggregate deklarieren ihre Zeitabdeckung
+
+**Beschreibung:** `fm_reporting_aggregate` kann Ergebnismengen über viele Kalenderjahre liefern; das Result macht die tatsächlich abgedeckte Spanne ausdrücklich sichtbar, statt sie aus den Punkten erraten zu lassen.
+
+**Bedingungen:**
+- Ohne Filterargument liefert die Aggregation alle Perioden, die der Anfrage (`interval`, `take`, Favoriten-Filter) entsprechen — das kann mehrere Jahre umfassen.
+
+**Verhalten:**
+- Das optionale Argument `year` (Ganzzahl) filtert serverseitig die gelieferten Punkte auf deren `periodStart`-Kalenderjahr.
+- Das Result trägt das Feld `coverage` `{ pointCount, periodCount, firstPeriod, lastPeriod, yearFilter }` — die explizite Auskunft, welche Zeitspanne die Antwort abdeckt.
+- `interval`-Semantik: `Ytd` bildet Jahresschnitte (year-to-date-Fenster) über **alle** Kalenderjahre — ein Bucket je Jahr, nicht „das aktuelle Jahr"; `Year` liefert ein Bucket je Kalenderjahr; `AllHistory` einen einzigen Gesamtwert.
+- Praxisbeispiel „aktuelles Jahr": `interval: "Ytd"` zusammen mit `year: 2026`, oder `interval: "Year"` mit clientseitigem `periodStart`-Filter.
+
+**Umsetzung:** `FmReportingAggregateTool` (`year`-Filter + `coverage`-Projektion).

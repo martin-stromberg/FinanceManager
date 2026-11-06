@@ -33,7 +33,7 @@
 | `OwnerUserId` | `Guid` | Besitzer (denormalisiert für besitzergestützte Abfragen) |
 | `DataType` | `McpDataType` | Einer von 19 Datentypen (`Accounts` bis `Administration`) |
 | `Right` | `McpRightKind` | `Read`, `Suggest`, `Complete`, `Modify`, `Create`, `Book`, `Delete` |
-| `AccountTypesCsv` | `string?` | Kontotypen-Filter |
+| `AccountTypesCsv` | `string?` | Kontotypen-Filter (`AccountType`-Werte `Giro`, `Savings`, `CreditCard`; `CreditCard` = Kreditkarten-Abrechnungskonto, dessen Entwürfe nur indirekt als Split buchbar sind) |
 | `ContactCategoryIdsCsv` | `string?` | Kontaktkategorien-Filter |
 | `SecurityCategoryIdsCsv` | `string?` | Wertpapierkategorien-Filter |
 | `SavingsPlanCategoryIdsCsv` | `string?` | Sparplankategorien-Filter |

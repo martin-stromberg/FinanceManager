@@ -72,6 +72,17 @@ Liefert die eigenen Hintergrundtasks des Besitzers und die `AiActionRequest`-Zus
 
 Verbindliche Referenz ist stets die Laufzeit-Ausgabe von `tools/list` (Katalogversion `katalog-v<n>`); veraltete Werkzeuge sind dort über `deprecated`/`replacedBy` gekennzeichnet.
 
+### Werkzeugverträge (Detailergänzungen)
+
+Vertragliche Besonderheiten einzelner Werkzeuge, die über den Überblick hinaus relevant sind:
+
+| Werkzeug | Vertragsdetail |
+|----------|----------------|
+| `fm_reporting_aggregate` | Optionales Argument `year` (Ganzzahl): serverseitiger Kalenderjahr-Filter auf das `periodStart` der gelieferten Punkte. Das Result trägt das Feld `coverage` `{ pointCount, periodCount, firstPeriod, lastPeriod, yearFilter }`, das die abgedeckte Zeitspanne explizit macht — ohne `year` kann das Ergebnis viele Jahre umspannen. `interval`-Semantik: `Ytd` liefert Jahresschnitte (year-to-date-Fenster) über **alle** Kalenderjahre — ein Bucket je Jahr, nicht „das aktuelle Jahr"; `Year` liefert ein Bucket je Kalenderjahr; `AllHistory` einen einzigen Gesamtwert. Praxisbeispiel „aktuelles Jahr": `interval: "Ytd"` mit `year: 2026` oder `interval: "Year"` mit clientseitigem `periodStart`-Filter. |
+| `fm_statement_drafts_read` | Der Einzel-Entwurf (`draftId`-Pfad) trägt `sourceAttachment` `{ id, sizeBytes, contentType, untrusted_data.fileName }` bzw. `null` plus `sourceDocumentReadable: bool` — die Original-Auszugsdatei ist über `fm_attachments_read` mit der Attachment-`id` lesbar. Der Listenpfad führt nur `hasSourceAttachment: bool`. |
+| `fm_statement_draft_edit` | Die Operation `assignAccount` (`draftId` + `accountId`) setzt/überschreibt die Entwurfs-Kontozuordnung (`DetectedAccountId`, UI-Äquivalent `POST {draftId}/account/{accountId}`) und löst die Pipeline-Klassifizierung erneut aus. Result `{ draftId, operation, applied, changedFields, draft }`; bei No-Op `applied: false` mit `reason: "unchanged"`. Scope `(Kontoauszugsentwürfe, Änderung)`. |
+| `fm_accounts_manage` | Das `accountType`-Enum umfasst `Giro`, `Savings` und `CreditCard`. `CreditCard` kennzeichnet ein Kreditkarten-Abrechnungskonto: dessen Auszugsentwürfe können nur indirekt als Split einer Eltern-Auszugszeile (abbuchende Giro-Abrechnung) gebucht werden, niemals eigenständig. |
+
 ### Administrative Werkzeuge (`fm_admin_*`)
 
 Die administrativen Werkzeuge T34–T38 sind zusätzlich zum Scope-Tupel `(Administration, …)` auf die Administratorrolle des Zugangsbesitzers beschränkt: Der Besitzer wird bei jedem Aufruf gegen den Identity-Rollenspeicher geprüft (`UserManager.IsInRoleAsync`, Rolle `Admin`) — ein Zugang eines Besitzers ohne diese Rollenmitgliedschaft erhält `Err_Mcp_AdminRequired`, bei interaktiven Aufrufen wie bei genehmigten Warteschlangen-Ausführungen (eine zwischenzeitlich entzogene Rolle stoppt beide Phasen). Der `Administration`-Scope kann außerdem nur Zugängen von Admin-Besitzern vergeben werden; gültige Rechte sind ausschließlich `Lesen`/`Änderung`/`Erstellung` (kein `Löschung`).
@@ -142,3 +153,11 @@ Reine Lese-API des eigenen Protokolls; ein Änderungspfad existiert nicht.
 ## Fehler
 
 Typische Fehler: `401` bei ungültigem, deaktiviertem oder abgelaufenem Token; `404` bei fremden oder fehlenden Ressourcen (bewusst keine `403`-Unterscheidung im Benutzerkontext); `429` bei Überschreitung des Rate-Limits; `503` bei global deaktiviertem MCP-Endpunkt; `400` bei Validierungsfehlern (`Err_Mcp_InvalidArguments`, `Err_Invalid_format`).
+
+Werkzeug-Fehlercodes mit besonderer Semantik:
+
+| Code | Bedeutung |
+|------|-----------|
+| `Err_Mcp_AuditFailed` | Der Aufruf-Protokolleintrag eines schreibenden Werkzeugs konnte nicht persistiert werden. Achtung: Der fachliche Effekt kann bereits angewendet sein — der Call-Audit läuft nach der Wirkung; der Fehler bedeutet „nicht auditiert", nicht zwingend „nicht angewendet". Eine Wiederholung des Aufrufs ohne Prüfung kann deshalb doppelte Wirkung erzeugen. |
+| `Err_StatementDraft_CardRequiresParent` | `fm_statement_draft_book` (Buchung wie Commit) auf einem `CreditCard`-gebundenen Entwurf ohne Eltern-Split-Verknüpfung — Kreditkarten-Abrechnungen sind nur indirekt über die Split-Zuordnung einer Eltern-Auszugszeile buchbar. |
+| `Err_ValidationFailed` | Domänenvertrag verletzt; die Meldung nennt den fachlichen Grund (u. a. verbotene Konto-Zuordnung eines nicht-`CreditCard`-Kontos auf einen Split-Kind-Entwurf über `assignAccount`). |
