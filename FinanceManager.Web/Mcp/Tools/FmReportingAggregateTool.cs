@@ -19,7 +19,7 @@ public sealed class FmReportingAggregateDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmReportingAggregateDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"favoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Execute a stored report favorite instead of an inline query.\"},\"postingKind\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"],\"description\":\"Required for inline queries.\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Month\",\"Quarter\",\"HalfYear\",\"Year\",\"Ytd\",\"AllHistory\"]},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":200,\"description\":\"Max periods/groups (clamped to 200).\"},\"includeCategory\":{\"type\":\"boolean\"},\"comparePrevious\":{\"type\":\"boolean\"},\"compareYear\":{\"type\":\"boolean\"},\"compareProjection\":{\"type\":\"boolean\"},\"useValutaDate\":{\"type\":\"boolean\"},\"accountIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securitySubTypes\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"}}},\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"favoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Execute a stored report favorite instead of an inline query.\"},\"postingKind\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"],\"description\":\"Required for inline queries.\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Month\",\"Quarter\",\"HalfYear\",\"Year\",\"Ytd\",\"AllHistory\"],\"description\":\"Period granularity. 'Ytd' compares year-to-date slices across ALL years (one bucket per calendar year) — it is NOT limited to the current year; filter points by periodStart or pass 'year'. 'Year' returns one bucket per calendar year, 'AllHistory' a single total.\"},\"year\":{\"type\":\"integer\",\"minimum\":1900,\"maximum\":9999,\"description\":\"Optional calendar-year filter applied to the returned points' periodStart (e.g. 2026). Without it the result may span many years — the 'coverage' field states the span.\"},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":200,\"description\":\"Max periods/groups (clamped to 200).\"},\"includeCategory\":{\"type\":\"boolean\"},\"comparePrevious\":{\"type\":\"boolean\"},\"compareYear\":{\"type\":\"boolean\"},\"compareProjection\":{\"type\":\"boolean\"},\"useValutaDate\":{\"type\":\"boolean\"},\"accountIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securitySubTypes\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"}}},\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -134,6 +134,16 @@ public sealed class FmReportingAggregateHandler : IMcpToolHandler
         }
 
         var result = await _aggregation.QueryAsync(query, ct);
+
+        var yearFilter = McpToolArguments.OptionalInt(arguments, "year");
+        var points = result.Points.AsEnumerable();
+        if (yearFilter.HasValue)
+        {
+            points = points.Where(p => p.PeriodStart.Year == yearFilter.Value);
+        }
+        var pointList = points.ToList();
+        var periodStarts = pointList.Select(p => p.PeriodStart).Distinct().OrderBy(d => d).ToList();
+
         return new
         {
             favorite = favoriteOut,
@@ -143,7 +153,15 @@ public sealed class FmReportingAggregateHandler : IMcpToolHandler
                 comparedPrevious = result.ComparedPrevious,
                 comparedYear = result.ComparedYear,
                 comparedProjection = result.ComparedProjection,
-                points = result.Points.Select(p => new
+                coverage = new
+                {
+                    pointCount = pointList.Count,
+                    periodCount = periodStarts.Count,
+                    firstPeriod = periodStarts.FirstOrDefault(),
+                    lastPeriod = periodStarts.LastOrDefault(),
+                    yearFilter
+                },
+                points = pointList.Select(p => new
                 {
                     periodStart = p.PeriodStart,
                     groupKey = p.GroupKey,
