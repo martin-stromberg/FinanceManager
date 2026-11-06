@@ -47,8 +47,9 @@ public sealed class McpMasterDataWriteToolsTests
         return ctx;
     }
 
-    private static McpToolCallContext NewCallContext(IMcpAccessContext access)
-        => new(access, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null);
+    private static McpToolCallContext NewCallContext(IMcpAccessContext access,
+        McpToolExecutionMode mode = McpToolExecutionMode.Interactive)
+        => new(access, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null, mode);
 
     private static McpRecordScopeFilter NewFilter(params McpAccessScope[] scopes)
     {
@@ -865,6 +866,132 @@ public sealed class McpMasterDataWriteToolsTests
             NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
         securities.Verify(s => s.ArchiveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         securities.Verify(s => s.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Securities_Unarchive_RequiresApproval_WithoutServiceEffect()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var securities = new Mock<ISecurityService>();
+        securities.Setup(s => s.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityDto
+            {
+                Id = id,
+                Name = "sec",
+                Identifier = "DE000A",
+                CurrencyCode = "EUR",
+                IsActive = false,
+                ArchivedUtc = DateTime.UtcNow
+            });
+        var handler = SecuritiesHandler(securities);
+        await AssertApprovalRequiredAsync(handler.InvokeAsync(
+            Args($"{{\"operation\":\"unarchive\",\"securityId\":\"{id}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+        securities.Verify(s => s.UnarchiveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Securities_Unarchive_ApprovedExecution_ReactivatesAndStagesAudit()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var archived = new SecurityDto
+        {
+            Id = id,
+            Name = "sec",
+            Identifier = "DE000A",
+            CurrencyCode = "EUR",
+            IsActive = false,
+            ArchivedUtc = DateTime.UtcNow
+        };
+        var securities = new Mock<ISecurityService>();
+        securities.SetupSequence(s => s.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(archived)
+            .ReturnsAsync(new SecurityDto
+            {
+                Id = id,
+                Name = "sec",
+                Identifier = "DE000A",
+                CurrencyCode = "EUR",
+                IsActive = true,
+                ArchivedUtc = null
+            });
+        securities.Setup(s => s.UnarchiveAsync(id, owner, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var audit = CapturingAudit(out var staged);
+        var handler = SecuritiesHandler(securities, audit: audit);
+
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"unarchive\",\"securityId\":\"{id}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object, McpToolExecutionMode.ApprovedExecution), CancellationToken.None));
+
+        securities.Verify(s => s.UnarchiveAsync(id, owner, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        var security = doc.RootElement.GetProperty("security");
+        Assert.True(security.GetProperty("isActive").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, security.GetProperty("archivedUtc").ValueKind);
+        Assert.Equal("SecurityUnarchived", staged()!.EventType);
+        Assert.Equal(McpAuditCategory.DataChange, staged()!.Category);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "IsActive" && c.OldValue == "false" && c.NewValue == "true");
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Securities_Unarchive_OnActive_ReturnsUnchanged_WithoutServiceEffect()
+    {
+        var owner = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var securities = new Mock<ISecurityService>();
+        securities.Setup(s => s.GetAsync(id, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewSecurity(id));
+        var handler = SecuritiesHandler(securities);
+
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"unarchive\",\"securityId\":\"{id}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.False(doc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Equal("unchanged", doc.RootElement.GetProperty("reason").GetString());
+        Assert.True(doc.RootElement.GetProperty("security").GetProperty("isActive").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("security").GetProperty("archivedUtc").ValueKind);
+        securities.Verify(s => s.UnarchiveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Securities_Unarchive_ForeignSecurity_ReturnsNull()
+    {
+        var owner = Guid.NewGuid();
+        var securities = new Mock<ISecurityService>();
+        securities.Setup(s => s.GetAsync(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SecurityDto?)null);
+        var handler = SecuritiesHandler(securities);
+
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"unarchive\",\"securityId\":\"{Guid.NewGuid()}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("security").ValueKind);
+        securities.Verify(s => s.UnarchiveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Test case.</summary>
+    [Fact]
+    public async Task Securities_Unarchive_ApprovedExecution_TargetGone()
+    {
+        var owner = Guid.NewGuid();
+        var securities = new Mock<ISecurityService>();
+        securities.Setup(s => s.GetAsync(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SecurityDto?)null);
+        var handler = SecuritiesHandler(securities);
+
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args($"{{\"operation\":\"unarchive\",\"securityId\":\"{Guid.NewGuid()}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object, McpToolExecutionMode.ApprovedExecution), CancellationToken.None),
+            "Err_TargetGone");
+        securities.Verify(s => s.UnarchiveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>Test case.</summary>

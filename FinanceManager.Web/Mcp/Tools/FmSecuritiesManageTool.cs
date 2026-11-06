@@ -10,13 +10,13 @@ namespace FinanceManager.Web.Mcp.Tools;
 /// Descriptor of the write-preparing tool <c>fm_securities_manage</c> (T25): creates and
 /// updates securities (<c>Identifier</c> WKN/ISIN, <c>AlphaVantageCode</c>,
 /// <c>CurrencyCode</c>, <c>CategoryId</c>, region/sector, description). The
-/// <c>archive</c> operation — the only delete-equivalent for securities
-/// (fachkonzept §5.5: archiving instead of deletion; <c>DeleteAsync</c> is not
-/// exposed) — is genehmigungspflichtig and answers
-/// <c>Err_Mcp_ApprovalRequired</c> without effect until the approval queue ships
+/// <c>archive</c>/<c>unarchive</c> operations — archive is the only delete-equivalent for
+/// securities (fachkonzept §5.5: archiving instead of deletion; <c>DeleteAsync</c> is not
+/// exposed), unarchive reverses an accidental archiving — are genehmigungspflichtig and
+/// answer <c>Err_Mcp_ApprovalRequired</c> without effect until the approval queue ships
 /// (EP-09).
-/// Scopes: (Wertpapiere, Erstellung/Änderung), (Wertpapierkategorien, Lesen); archive
-/// additionally (Wertpapiere, Löschung) — evaluated inside the handler.
+/// Scopes: (Wertpapiere, Erstellung/Änderung), (Wertpapierkategorien, Lesen);
+/// archive/unarchive additionally (Wertpapiere, Löschung) — evaluated inside the handler.
 /// </summary>
 public sealed class FmSecuritiesManageDescriptor : McpToolDescriptorBase
 {
@@ -25,7 +25,7 @@ public sealed class FmSecuritiesManageDescriptor : McpToolDescriptorBase
 
     /// <summary>Creates the descriptor.</summary>
     public FmSecuritiesManageDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"archive\"],\"description\":\"Master-data operation (required); archive requires approval and has no effect until EP-09.\"},\"securityId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target security (required for update/archive).\"},\"name\":{\"type\":\"string\",\"description\":\"Security name (required for create; optional overwrite for update).\"},\"identifier\":{\"type\":\"string\",\"description\":\"WKN/ISIN identifier (required for create; optional overwrite for update).\"},\"description\":{\"type\":\"string\",\"description\":\"Free-text description; explicit null clears it on update.\"},\"alphaVantageCode\":{\"type\":\"string\",\"description\":\"Alpha-Vantage symbol; explicit null clears it on update.\"},\"currencyCode\":{\"type\":\"string\",\"description\":\"3-letter ISO-4217 currency (required for create; optional overwrite for update).\"},\"categoryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Category assignment; explicit null clears it on update.\"},\"region\":{\"type\":\"string\",\"description\":\"Region; explicit null clears it on update.\"},\"sector\":{\"type\":\"string\",\"description\":\"Sector; explicit null clears it on update.\"}},\"required\":[\"operation\"],\"additionalProperties\":false}")
+        "{\"type\":\"object\",\"properties\":{\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"archive\",\"unarchive\"],\"description\":\"Master-data operation (required); archive/unarchive require approval and have no effect until EP-09.\"},\"securityId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target security (required for update/archive/unarchive).\"},\"name\":{\"type\":\"string\",\"description\":\"Security name (required for create; optional overwrite for update).\"},\"identifier\":{\"type\":\"string\",\"description\":\"WKN/ISIN identifier (required for create; optional overwrite for update).\"},\"description\":{\"type\":\"string\",\"description\":\"Free-text description; explicit null clears it on update.\"},\"alphaVantageCode\":{\"type\":\"string\",\"description\":\"Alpha-Vantage symbol; explicit null clears it on update.\"},\"currencyCode\":{\"type\":\"string\",\"description\":\"3-letter ISO-4217 currency (required for create; optional overwrite for update).\"},\"categoryId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Category assignment; explicit null clears it on update.\"},\"region\":{\"type\":\"string\",\"description\":\"Region; explicit null clears it on update.\"},\"sector\":{\"type\":\"string\",\"description\":\"Sector; explicit null clears it on update.\"}},\"required\":[\"operation\"],\"additionalProperties\":false}")
     { }
 
     /// <inheritdoc />
@@ -33,7 +33,7 @@ public sealed class FmSecuritiesManageDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Creates and updates securities (name, identifier WKN/ISIN, alphaVantageCode, currencyCode, categoryId, region, sector, description). Archiving — the only delete-equivalent — requires approval and answers Err_Mcp_ApprovalRequired without effect until the approval queue ships (EP-09). Scopes: (Wertpapiere, Erstellung/Änderung), (Wertpapierkategorien, Lesen); archive additionally (Wertpapiere, Löschung).";
+        => "Creates and updates securities (name, identifier WKN/ISIN, alphaVantageCode, currencyCode, categoryId, region, sector, description). Archiving — the only delete-equivalent — and unarchiving (reactivation of an accidentally archived security) require approval and answer Err_Mcp_ApprovalRequired without effect until the approval queue ships (EP-09). Scopes: (Wertpapiere, Erstellung/Änderung), (Wertpapierkategorien, Lesen); archive/unarchive additionally (Wertpapiere, Löschung).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Schreibvorbereitend;
@@ -53,8 +53,8 @@ public sealed class FmSecuritiesManageDescriptor : McpToolDescriptorBase
 /// the nullable metadata fields. Category references resolve owner-scoped via
 /// <see cref="ISecurityCategoryService"/>; the record-level scope filter binds the
 /// security's category. Each effect commits atomically with its staged
-/// <c>DataChange</c> record (F-0301); archive answers approval-required without any
-/// service call.
+/// <c>DataChange</c> record (F-0301); archive/unarchive answer approval-required without
+/// any service call.
 /// </summary>
 public sealed class FmSecuritiesManageHandler : IMcpToolHandler
 {
@@ -96,8 +96,9 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
             "create" => await CreateAsync(arguments, owner, context, ct),
             "update" => await UpdateAsync(arguments, owner, context, ct),
             "archive" => await ArchiveAsync(arguments, owner, context, ct),
+            "unarchive" => await UnarchiveAsync(arguments, owner, context, ct),
             _ => throw new McpToolException("Err_Mcp_InvalidArguments",
-                "Argument 'operation' must be one of create|update|archive.")
+                "Argument 'operation' must be one of create|update|archive|unarchive.")
         };
     }
 
@@ -289,6 +290,55 @@ public sealed class FmSecuritiesManageHandler : IMcpToolHandler
                     throw new McpToolException("Err_TargetGone", "The security no longer exists.");
                 }
                 return (object)new { operation = "archive", applied = true, securityId };
+            });
+    }
+
+    private async Task<object> UnarchiveAsync(JsonElement arguments, Guid owner, McpToolCallContext context, CancellationToken ct)
+    {
+        var securityId = McpToolArguments.RequiredGuid(arguments, "securityId");
+        var existing = await _securities.GetAsync(securityId, owner, ct);
+        if (McpMasterDataGuards.ThrowIfExecutionTargetGone(context, existing, "unarchive"))
+        {
+            return new { operation = "unarchive", security = (object?)null };
+        }
+        if (existing!.IsActive)
+        {
+            // Already active: reactivation is a no-op — no approval needed for a
+            // state-free effect (mirrors the domain no-op of Security.Unarchive).
+            return new { operation = "unarchive", applied = false, reason = "unchanged", security = Result(existing) };
+        }
+        return await McpMasterDataGuards.ApprovalRequiredAsync(
+            _scopeEvaluator, context, McpDataType.Securities, "unarchive",
+            "Reactivates the archived security (IsActive=true, ArchivedUtc=null) — the " +
+            "inverse of archive. The security matches new draft entries again; existing " +
+            "postings and price history are untouched.",
+            new { securityId }, ct,
+            executeApproved: async ct2 =>
+            {
+                var changes = new List<McpAuditFieldChange>
+                {
+                    new("Security", securityId, "IsActive", "false", "true")
+                };
+                var staged = await McpWriteAudit.StageDataChangeAsync(
+                    _auditWriter, context, "SecurityUnarchived", ToolName, changes, 1,
+                    JsonSerializer.Serialize(new { operation = "unarchive", securityId }), ct2);
+                bool unarchived;
+                try
+                {
+                    unarchived = await _securities.UnarchiveAsync(securityId, owner, ct2);
+                }
+                catch
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw;
+                }
+                if (!unarchived)
+                {
+                    McpWriteAudit.DiscardStaged(context, staged);
+                    throw new McpToolException("Err_TargetGone", "The security no longer exists.");
+                }
+                var refreshed = await _securities.GetAsync(securityId, owner, ct2);
+                return (object)new { operation = "unarchive", applied = true, securityId, security = refreshed is null ? null : Result(refreshed) };
             });
     }
 

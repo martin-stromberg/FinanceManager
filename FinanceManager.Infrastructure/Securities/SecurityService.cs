@@ -135,6 +135,22 @@ public sealed class SecurityService : ISecurityService
     }
 
     /// <summary>
+    /// Reactivates (unarchives) the specified security.
+    /// </summary>
+    /// <param name="id">Identifier of the security to reactivate.</param>
+    /// <param name="ownerUserId">Owner user identifier used to validate ownership.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the security was found and reactivated; otherwise <c>false</c> when not found or already active.</returns>
+    public async Task<bool> UnarchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+    {
+        var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == id && s.OwnerUserId == ownerUserId, ct);
+        if (entity == null || entity.IsActive) { return false; }
+        entity.Unarchive();
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>
     /// Deletes a security if it exists and is archived.
     /// </summary>
     /// <param name="id">Identifier of the security to delete.</param>
