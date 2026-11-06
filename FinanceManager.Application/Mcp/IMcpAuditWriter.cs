@@ -77,6 +77,11 @@ public interface IMcpAuditWriter
     /// mutation (tool-call records, security events). For a write effect that must
     /// commit atomically with its audit record use <see cref="StageAsync"/> instead.
     /// </summary>
+    /// <remarks>
+    /// The persistent implementation anchors every write to the chain head current at
+    /// write time and retries a sequence-number collision of a concurrent commit a
+    /// bounded number of times before surfacing it as an error.
+    /// </remarks>
     /// <param name="request">The write request.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the entry has been persisted.</returns>

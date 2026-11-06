@@ -1,5 +1,6 @@
 using FinanceManager.Application.Mcp;
 using FinanceManager.Domain.Mcp;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Buffers;
@@ -30,8 +31,19 @@ namespace FinanceManager.Infrastructure.Mcp;
 /// sorted field deltas). A process-wide semaphore serializes chain-head lookup plus
 /// insert; for owner chains the unique index <c>(OwnerUserId, SequenceNo)</c> and for the
 /// global chain the filtered unique index on <c>SequenceNo</c> enforce the invariant at
-/// database level — a concurrent colliding save fails the whole batch, which is the
-/// required behaviour for coupled writes.
+/// database level.
+/// </para>
+/// <para>
+/// <b>Lock-bypassing commits:</b> the semaphore cannot cover the staged write mode —
+/// <see cref="StageAsync"/> releases it before the caller commits the staged bundle, so a
+/// staged save of another scope may claim the just-computed <c>SequenceNo</c> between the
+/// head read and the insert. <see cref="WriteAsync"/> therefore retries such a
+/// unique-constraint collision a bounded number of times: the rejected bundle is detached
+/// and <c>SequenceNo</c>, <c>PrevHash</c> and <c>EntryHash</c> are recomputed together
+/// against the now-current head (never a cached value), so the chain stays coherent. For
+/// coupled writes the colliding staged save still fails effect and record together —
+/// the required behaviour — while a write that keeps colliding after the last retry
+/// surfaces as an error instead of being dropped silently (F-0301).
 /// </para>
 /// <para>
 /// <b>Graduated detail depth:</b> callers pass already graduated payloads (read calls:
@@ -64,10 +76,21 @@ public sealed class McpAuditWriter : IMcpAuditWriter
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     /// <summary>
+    /// Maximum attempts of one <see cref="WriteAsync"/> call — the initial try plus
+    /// bounded retries after a sequence-number collision with a commit that bypasses
+    /// <see cref="ChainLock"/> (a staged bundle saved by another scope).
+    /// </summary>
+    private const int MaxWriteAttempts = 3;
+
+    /// <summary>SQLite primary error code of a constraint violation (SQLITE_CONSTRAINT).</summary>
+    private const int SqliteConstraintErrorCode = 19;
+
+    /// <summary>
     /// Process-wide serialization of chain-head lookup plus bundle insert. SQLite
     /// serializes writers anyway, so contention is minimal; the lock additionally
     /// protects the global (NULL-owner) chain, where the composite unique index cannot
-    /// enforce sequence uniqueness.
+    /// enforce sequence uniqueness. Commits of staged bundles run outside the lock —
+    /// the bounded retry of <see cref="WriteAsync"/> covers that residual race.
     /// </summary>
     private static readonly SemaphoreSlim ChainLock = new(1, 1);
 
@@ -86,17 +109,43 @@ public sealed class McpAuditWriter : IMcpAuditWriter
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The chain anchor is never cached: every attempt re-reads the current head
+    /// immediately before the save and derives <c>SequenceNo</c>, <c>PrevHash</c> and
+    /// <c>EntryHash</c> together. A commit that bypasses <see cref="ChainLock"/> — a
+    /// staged bundle saved by another scope between the head read and this insert —
+    /// surfaces as a unique-constraint violation on the sequence index and is retried
+    /// a bounded number of times (<see cref="MaxWriteAttempts"/>) with a freshly
+    /// re-anchored bundle. A write that still collides after the last attempt throws:
+    /// the audit record is never dropped silently (F-0301).
+    /// </remarks>
     public async Task WriteAsync(McpAuditWriteRequest request, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);
         await ChainLock.WaitAsync(ct);
         try
         {
-            var entry = await BuildAndTrackAsync(request, ct);
-            await _db.SaveChangesAsync(ct);
-            _logger.LogDebug(
-                "MCP audit entry {EntryId} written (chain {Owner}, seq {Seq}, {Category}/{EventType}/{Result})",
-                entry.Id, request.OwnerUserId, entry.SequenceNo, entry.Category, entry.EventType, entry.ResultStatus);
+            for (var attempt = 1; ; attempt++)
+            {
+                var entry = await BuildAndTrackAsync(request, ct);
+                try
+                {
+                    await _db.SaveChangesAsync(ct);
+                    _logger.LogDebug(
+                        "MCP audit entry {EntryId} written (chain {Owner}, seq {Seq}, {Category}/{EventType}/{Result})",
+                        entry.Id, request.OwnerUserId, entry.SequenceNo, entry.Category, entry.EventType, entry.ResultStatus);
+                    return;
+                }
+                catch (DbUpdateException ex) when (attempt < MaxWriteAttempts && IsChainSequenceCollision(ex))
+                {
+                    // A lock-bypassing commit claimed the computed sequence number: drop
+                    // the rejected bundle and re-anchor to the now-current head.
+                    DetachBundle(entry);
+                    _logger.LogWarning(ex,
+                        "MCP audit write collided on chain {Owner} seq {Seq} (attempt {Attempt}/{MaxAttempts}) — re-anchoring to the current head and retrying",
+                        request.OwnerUserId, entry.SequenceNo, attempt, MaxWriteAttempts);
+                }
+            }
         }
         finally
         {
@@ -298,6 +347,47 @@ public sealed class McpAuditWriter : IMcpAuditWriter
             cursor = rt + 1;
         }
         return false;
+    }
+
+    /// <summary>
+    /// True when the failed save is the chain-anchor race this writer retries: SQLite
+    /// reports a constraint violation (primary error <see cref="SqliteConstraintErrorCode"/>)
+    /// on one of the sequence indexes — <c>(OwnerUserId, SequenceNo)</c> or the filtered
+    /// global <c>SequenceNo</c> index. Other constraint violations (e.g. a foreign-key or
+    /// uniqueness breach of an unrelated record in the same batch) are not retried.
+    /// </summary>
+    private static bool IsChainSequenceCollision(DbUpdateException exception)
+    {
+        for (var ex = exception.InnerException; ex is not null; ex = ex.InnerException)
+        {
+            if (ex is SqliteException sqlite)
+            {
+                return sqlite.SqliteErrorCode == SqliteConstraintErrorCode
+                    && sqlite.Message.Contains("McpAuditEntries", StringComparison.Ordinal)
+                    && sqlite.Message.Contains(nameof(McpAuditEntry.SequenceNo), StringComparison.Ordinal);
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Detaches a rejected bundle (entry plus its field-delta rows) after a failed save
+    /// so the recomputed retry does not re-insert the rejected rows — the same pattern
+    /// the Web layer applies when discarding a staged bundle.
+    /// </summary>
+    private void DetachBundle(McpAuditEntry entry)
+    {
+        foreach (var change in entry.Changes)
+        {
+            if (_db.Entry(change).State != EntityState.Detached)
+            {
+                _db.Entry(change).State = EntityState.Detached;
+            }
+        }
+        if (_db.Entry(entry).State != EntityState.Detached)
+        {
+            _db.Entry(entry).State = EntityState.Detached;
+        }
     }
 
     /// <summary>

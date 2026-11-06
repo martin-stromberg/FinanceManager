@@ -4,6 +4,7 @@ using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Mcp;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 using Xunit;
@@ -304,6 +305,121 @@ public sealed class McpAuditWriterTests
         var seqs = await db1.McpAuditEntries.AsNoTracking()
             .OrderBy(e => e.SequenceNo).Select(e => e.SequenceNo).ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(new long[] { 1, 2 }, seqs);
+    }
+
+    /// <summary>
+    /// Simulates the live defect: a competing scope commits a staged bundle on the same
+    /// chain head while the writer's save is in flight — staged saves commit outside the
+    /// writer's process-wide chain lock, so the just-computed sequence number is claimed
+    /// between the head read and the insert.
+    /// </summary>
+    /// <param name="inject">The lock-bypassing commit run once per armed save attempt.</param>
+    private sealed class CollidingCommitInterceptor(Func<CancellationToken, Task> inject) : SaveChangesInterceptor
+    {
+        private int _armed;
+
+        /// <summary>Arms <paramref name="count"/> colliding commits, one per save attempt.</summary>
+        public void Arm(int count) => _armed = count;
+
+        /// <summary>Number of injected colliding commits so far.</summary>
+        public int Fired { get; private set; }
+
+        /// <inheritdoc />
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (_armed > 0
+                && eventData.Context!.ChangeTracker.Entries<McpAuditEntry>().Any(e => e.State == EntityState.Added))
+            {
+                _armed--;
+                Fired++;
+                await inject(cancellationToken);
+            }
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// A lock-bypassing commit claiming the computed sequence number does not fail the
+    /// write: <see cref="IMcpAuditWriter.WriteAsync"/> re-anchors the bundle to the
+    /// now-current head (SequenceNo, PrevHash and EntryHash together) and retries.
+    /// </summary>
+    [Fact]
+    public async Task WriteAsync_RetriesOnSequenceCollision_ReanchorsToNewHead()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        await using var _ = connection;
+        var db2 = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).Options);
+        db2.Database.EnsureCreated();
+        var writer2 = new McpAuditWriter(db2, NullLogger<McpAuditWriter>.Instance);
+        var injector = new CollidingCommitInterceptor(ct => db2.SaveChangesAsync(ct));
+        var db1 = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(connection).AddInterceptors(injector).Options);
+        var writer = new McpAuditWriter(db1, NullLogger<McpAuditWriter>.Instance);
+        var owner = Guid.NewGuid();
+
+        await writer.WriteAsync(Request(owner: owner), CancellationToken.None); // chain head seq 1
+
+        // The competing scope stages a bundle anchored on the same head — its commit is
+        // not serialized by the writer's chain lock (staged saves run outside it).
+        await writer2.StageAsync(Request(owner: owner,
+            category: McpAuditCategory.ApprovalEvent, eventType: "ApprovalExecuted"), CancellationToken.None);
+        injector.Arm(1);
+
+        await writer.WriteAsync(Request(owner: owner), CancellationToken.None);
+
+        var entries = await db1.McpAuditEntries.AsNoTracking()
+            .Where(e => e.OwnerUserId == owner).OrderBy(e => e.SequenceNo)
+            .ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(new long[] { 1, 2, 3 }, entries.Select(e => e.SequenceNo).ToArray());
+        Assert.Equal("ApprovalExecuted", entries[1].EventType); // the lock-bypassing commit won seq 2
+        Assert.Equal(1, injector.Fired);
+        Assert.Equal(entries[1].EntryHash, entries[2].PrevHash); // retry re-anchored to the new head
+
+        var verification = await writer.VerifyAsync(owner, CancellationToken.None);
+        Assert.True(verification.IsIntact, verification.FailureReason);
+    }
+
+    /// <summary>
+    /// The retry is bounded: a chain that keeps colliding fails after the last attempt
+    /// instead of silently dropping the audit record (F-0301).
+    /// </summary>
+    [Fact]
+    public async Task WriteAsync_FailsAfterBoundedRetries_WhenCollisionsPersist()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        await using var _ = connection;
+        var db2 = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).Options);
+        db2.Database.EnsureCreated();
+        var owner = Guid.NewGuid();
+        var injector = new CollidingCommitInterceptor(async ct =>
+        {
+            // Every firing stages and commits a fresh bundle on the current head — the
+            // competing writer always wins the just-computed sequence number again.
+            var head = await db2.McpAuditEntries.AsNoTracking()
+                .Where(e => e.OwnerUserId == owner)
+                .OrderByDescending(e => e.SequenceNo)
+                .Select(e => new { e.SequenceNo, e.EntryHash })
+                .FirstOrDefaultAsync(ct);
+            db2.McpAuditEntries.Add(new McpAuditEntry(
+                DateTime.UtcNow, (head?.SequenceNo ?? 0) + 1, McpAuditCategory.ApprovalEvent,
+                "ApprovalExecuted", "Success", new string('c', 64),
+                ownerUserId: owner, prevHash: head?.EntryHash));
+            await db2.SaveChangesAsync(ct);
+        });
+        var db1 = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(connection).AddInterceptors(injector).Options);
+        var writer = new McpAuditWriter(db1, NullLogger<McpAuditWriter>.Instance);
+        injector.Arm(10); // more collisions than the bounded retry budget
+
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () => writer.WriteAsync(Request(owner: owner), CancellationToken.None));
+
+        Assert.Equal(3, injector.Fired); // initial attempt + bounded retries, then it fails
+        Assert.Equal(0, await db1.McpAuditEntries
+            .CountAsync(e => e.EventType == "ToolCall", cancellationToken: TestContext.Current.CancellationToken));
     }
 
     /// <summary>An intact chain verifies clean — including after a full reload from disk.</summary>
