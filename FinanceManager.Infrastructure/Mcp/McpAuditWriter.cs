@@ -411,6 +411,20 @@ public sealed class McpAuditWriter : IMcpAuditWriter
             .Select(e => new { e.SequenceNo, e.EntryHash })
             .FirstOrDefaultAsync(ct);
 
+        // Tracked-but-unflushed entries are invisible to the DB head query. A staged
+        // bundle (StageAsync, coupled with the business effect) can already occupy the
+        // next sequence number while the dispatcher's WriteAsync computes its own —
+        // otherwise both get head+1 and the batch collides on (OwnerUserId, SequenceNo).
+        var trackedHead = _db.ChangeTracker.Entries<McpAuditEntry>()
+            .Where(e => e.State == EntityState.Added && e.Entity.OwnerUserId == request.OwnerUserId)
+            .OrderByDescending(e => e.Entity.SequenceNo)
+            .Select(e => new { e.Entity.SequenceNo, e.Entity.EntryHash })
+            .FirstOrDefault();
+        if (trackedHead is not null && (head is null || trackedHead.SequenceNo > head.SequenceNo))
+        {
+            head = trackedHead;
+        }
+
         var utc = DateTime.UtcNow; // server-side timestamp only — client times are never taken
         var sequenceNo = (head?.SequenceNo ?? 0) + 1;
         var prevHash = head?.EntryHash;
