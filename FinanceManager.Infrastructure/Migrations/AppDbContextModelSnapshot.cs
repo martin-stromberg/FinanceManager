@@ -1075,6 +1075,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid?>("SavingsPlanId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("SavingsPlanSubType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid?>("SecurityId")
                         .HasColumnType("TEXT");
 

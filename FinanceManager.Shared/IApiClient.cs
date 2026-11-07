@@ -940,6 +940,41 @@ public interface IApiClient
     /// <returns><c>true</c> when cleared; otherwise <c>false</c>.</returns>
     Task<bool> SavingsPlans_ClearSymbolAsync(Guid id, CancellationToken ct = default);
 
+    /// <summary>
+    /// Lists the identifiers of the bank accounts linked to a savings plan.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The linked account ids, or <c>null</c> when the plan was not found.</returns>
+    Task<IReadOnlyList<Guid>?> SavingsPlans_GetLinkedAccountsAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Links a bank account to a savings plan.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="accountId">Identifier of the account to link.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the link was created; <c>false</c> when the plan or account was not found or the request was rejected.</returns>
+    Task<bool> SavingsPlans_AddAccountLinkAsync(Guid id, Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes the link between a savings plan and a bank account.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="accountId">Identifier of the account to unlink.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the link was removed; <c>false</c> when the plan or link was not found.</returns>
+    Task<bool> SavingsPlans_RemoveAccountLinkAsync(Guid id, Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Captures an actual-balance report ("Istmeldung") for a savings plan without linked accounts.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="req">Request payload containing the reported balance.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The report result, or <c>null</c> when the plan was not found or the request was rejected (see <see cref="ApiClient.LastError"/>).</returns>
+    Task<SavingsPlanActualReportResponse?> SavingsPlans_ReportActualBalanceAsync(Guid id, SavingsPlanActualReportRequest req, CancellationToken ct = default);
+
     // Securities
 
     /// <summary>Lists securities for the current user.</summary>

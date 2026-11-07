@@ -1,4 +1,5 @@
 using FinanceManager.Infrastructure;
+using FinanceManager.Infrastructure.Savings;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
@@ -370,6 +371,13 @@ namespace FinanceManager.Web.Services
 
             var rows = await ordered.ToListAsync(ct);
 
+            // Informal funding postings: plan postings of account-linked plans whose group holds a
+            // bank posting on a non-linked account. Derived - nothing is persisted.
+            var informalIds = await SavingsPlanLinkAnalysis.GetInformalPostingIdsAsync(
+                _db,
+                rows.Select(r => new SavingsPlanLinkAnalysis.PlanPostingRef(r.P.Id, planId, r.P.GroupId)).ToList(),
+                ct);
+
             var result = rows.Select(r => new PostingServiceDto(
                 r.P.Id,
                 r.P.BookingDate,
@@ -398,7 +406,10 @@ namespace FinanceManager.Web.Services
                 r.P.IsReversed,
                 r.P.IsReversal,
                 r.P.ReversedByPostingId,
-                r.P.ReversalForPostingId, r.P.IsPreliminary)).ToList();
+                r.P.ReversalForPostingId,
+                r.P.IsPreliminary,
+                informalIds.Contains(r.P.Id),
+                r.P.SavingsPlanSubType)).ToList();
 
             return result;
         }

@@ -32,6 +32,11 @@ namespace FinanceManager.Shared.Dtos.Postings
     /// <param name="ReversedByPostingId">Id of the reversal posting that reversed this posting; populated when <see cref="IsReversed"/> is <c>true</c>.</param>
     /// <param name="ReversalForPostingId">Id of the original posting that this posting reverses; populated when <see cref="IsReversal"/> is <c>true</c>.</param>
     /// <param name="IsPreliminary">Indicates whether this posting is a preliminary (provisional) booking.</param>
+    /// <param name="Informal">Indicates whether this savings plan posting documents the funding of an
+    /// account-linked plan from a non-linked account. Informal postings stay visible as the funding
+    /// source but are excluded from the plan's accumulated and expected amounts.</param>
+    /// <param name="SavingsPlanSubType">Optional savings plan posting subtype (e.g. actual-balance
+    /// report "Istmeldung" correction posting).</param>
     /// <returns>The result.</returns>
     public sealed record PostingServiceDto(
         Guid Id,
@@ -62,5 +67,7 @@ namespace FinanceManager.Shared.Dtos.Postings
         bool IsReversal,
         Guid? ReversedByPostingId,
         Guid? ReversalForPostingId,
-        bool IsPreliminary = false);
+        bool IsPreliminary = false,
+        bool Informal = false,
+        FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanPostingSubType? SavingsPlanSubType = null);
 }

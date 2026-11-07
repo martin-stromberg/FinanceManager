@@ -175,5 +175,79 @@ public partial class ApiClient
         return true;
     }
 
+    /// <summary>
+    /// Lists the identifiers of the bank accounts linked to a savings plan.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The linked account ids, or <c>null</c> when the plan was not found.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<IReadOnlyList<Guid>?> SavingsPlans_GetLinkedAccountsAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/savings-plans/{id}/linked-accounts", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<Guid>>(cancellationToken: ct) ?? Array.Empty<Guid>();
+    }
+
+    /// <summary>
+    /// Links a bank account to a savings plan.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="accountId">Identifier of the account to link.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns><c>true</c> when the link was created; <c>false</c> when the plan or account was not found or the request was rejected (see <see cref="LastError"/>).</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
+    public async Task<bool> SavingsPlans_AddAccountLinkAsync(Guid id, Guid accountId, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsync($"/api/savings-plans/{id}/linked-accounts/{accountId}", content: null, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NoContent) return true;
+        if (resp.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.BadRequest)
+        {
+            LastError = await resp.Content.ReadAsStringAsync(ct);
+            return false;
+        }
+        resp.EnsureSuccessStatusCode();
+        return true;
+    }
+
+    /// <summary>
+    /// Removes the link between a savings plan and a bank account.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="accountId">Identifier of the account to unlink.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns><c>true</c> when the link was removed; <c>false</c> when the plan or link was not found.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
+    public async Task<bool> SavingsPlans_RemoveAccountLinkAsync(Guid id, Guid accountId, CancellationToken ct = default)
+    {
+        var resp = await _http.DeleteAsync($"/api/savings-plans/{id}/linked-accounts/{accountId}", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return true;
+    }
+
+    /// <summary>
+    /// Captures an actual-balance report ("Istmeldung") for a savings plan without linked accounts.
+    /// </summary>
+    /// <param name="id">Savings plan identifier.</param>
+    /// <param name="req">Request payload containing the reported balance.</param>
+    /// <param name="ct">Cancellation token used to cancel the HTTP request.</param>
+    /// <returns>The report result, or <c>null</c> when the plan was not found or the request was rejected (see <see cref="LastError"/>).</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="req"/> is <c>null</c>.</exception>
+    /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
+    public async Task<SavingsPlanActualReportResponse?> SavingsPlans_ReportActualBalanceAsync(Guid id, SavingsPlanActualReportRequest req, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(req);
+        var resp = await _http.PostAsJsonAsync($"/api/savings-plans/{id}/actual-reports", req, ct);
+        if (resp.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.BadRequest)
+        {
+            LastError = await resp.Content.ReadAsStringAsync(ct);
+            return null;
+        }
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<SavingsPlanActualReportResponse>(cancellationToken: ct);
+    }
+
     #endregion Savings Plans
 }
