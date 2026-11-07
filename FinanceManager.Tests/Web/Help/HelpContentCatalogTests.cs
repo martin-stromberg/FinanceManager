@@ -34,7 +34,7 @@ public sealed class HelpContentCatalogTests
     [Fact]
     public void Topics_ContainsReviewedUserHelpTopicsOnly()
     {
-        Assert.Equal(12, HelpContentCatalog.Topics.Count);
+        Assert.Equal(13, HelpContentCatalog.Topics.Count);
         Assert.Contains(HelpContentCatalog.Topics, topic => topic.Id == "konten-und-buchungen");
         Assert.DoesNotContain(HelpContentCatalog.Topics, topic => topic.Id == "bestandsaufnahme");
     }

@@ -76,6 +76,9 @@ public sealed class SetupImportService : ISetupImportService
             return Task.FromResult(new AttachmentDto(Guid.Empty, (short)kind, entityId, name, "text/uri-list", 0L, categoryId, DateTime.UtcNow, true));
         }
 
+        public Task<AttachmentDto?> GetAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
+            => Task.FromResult<AttachmentDto?>(null);
+
         public Task<(Stream Content, string FileName, string ContentType)?> DownloadAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
             => Task.FromResult<(Stream, string, string)?>(null);
 
@@ -88,8 +91,8 @@ public sealed class SetupImportService : ISetupImportService
         public Task<bool> UpdateCoreAsync(Guid ownerUserId, Guid attachmentId, string? fileName, Guid? categoryId, CancellationToken ct)
             => Task.FromResult(false);
 
-        public Task ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
-            => Task.CompletedTask;
+        public Task<int> ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
+            => Task.FromResult(0);
 
         public Task<AttachmentDto> CreateReferenceAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid masterAttachmentId, CancellationToken ct)
             => Task.FromResult(new AttachmentDto(Guid.Empty, (short)kind, entityId, "ref", "application/octet-stream", 0L, null, DateTime.UtcNow, false));
@@ -199,7 +202,7 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            Total = 34 - (replaceExisting ? 0 : 1),
+            Total = 29 - (replaceExisting ? 0 : 1),
             SubStep = 0,
             SubTotal = 0
         };
@@ -1201,6 +1204,13 @@ public sealed class SetupImportService : ISetupImportService
         }
 
         ProgressChanged?.Invoke(this, progress.Inc());
+
+        // MCP payload sections (accesses, scopes, audit entries/changes, ai action requests)
+        // are intentionally NOT imported: they describe operational/installation state —
+        // credentials, the approval queue and the revision-safe audit chain — not finance
+        // data. ClearUserDataAsync leaves those tables untouched, so existing PATs, the
+        // running approval queue and the audit chain survive a restore intact.
+
 
         ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));
         ProgressChanged?.Invoke(this, progress.InitSub(postingCount));

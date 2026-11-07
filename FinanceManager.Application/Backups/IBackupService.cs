@@ -89,9 +89,10 @@ public interface IBackupService
     /// Creates a new backup snapshot for the specified user.
     /// </summary>
     /// <param name="userId">The user id.</param>
+    /// <param name="source">Optional source tag recorded on the backup record (e.g. <c>"Upload"</c>, <c>"KI"</c>); defaults to <c>"System"</c>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The result.</returns>
-    Task<BackupDto> CreateAsync(Guid userId, CancellationToken ct);
+    Task<BackupDto> CreateAsync(Guid userId, string? source = null, CancellationToken ct = default);
 
     /// <summary>
     /// Lists available backups for the specified user.

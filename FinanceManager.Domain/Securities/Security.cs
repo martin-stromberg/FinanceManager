@@ -195,6 +195,17 @@ public sealed class Security : Entity
     }
 
     /// <summary>
+    /// Reactivates the security if it is currently archived. No-op when already active.
+    /// </summary>
+    public void Unarchive()
+    {
+        if (IsActive) { return; }
+        IsActive = true;
+        ArchivedUtc = null;
+        Touch();
+    }
+
+    /// <summary>
     /// Marks the security as having a price fetch error and records the message and timestamp.
     /// </summary>
     /// <param name="message">Error message to record. Whitespace-only strings are preserved as provided; if null or whitespace, a default message will be stored by the implementation.</param>
@@ -276,6 +287,7 @@ public sealed class Security : Entity
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         Update(dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, dto.CategoryId, dto.Region, dto.Sector);
         if (!dto.IsActive && IsActive) Archive();
+        if (dto.IsActive && !IsActive) Unarchive();
         SymbolAttachmentId = dto.SymbolAttachmentId;
         SetDates(dto.CreatedUtc, dto.ModifiedUtc, dto.ArchivedUtc);
     }

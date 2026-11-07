@@ -62,7 +62,7 @@ werden aus `McpAuditEntries` aggregiert; `McpAccess` führt nur
 || Enum | Werte | Persistenz |
 |---|---|---|---|
 | `McpAccessLevel` | `Analyse=0, Assistent=1, Sachbearbeiter=2, Buchhalter=3, Individuell=4` | `short` |
-| `McpDataType` | die 18 Datentypen der F3-Matrix (`Accounts=0, AccountTypes=1, StatementImports=2, StatementDrafts=3, Postings=4, Contacts=5, ContactCategories=6, SavingsPlans=7, SavingsPlanCategories=8, Securities=9, SecurityCategories=10, Budgets=11, BudgetCategories=12, BudgetRules=13, Reports=14, KpiConfigurations=15, Attachments=16, AttachmentCategories=17`) | `short` |
+| `McpDataType` | die 19 Datentypen der F3-Matrix (`Accounts=0, AccountTypes=1, StatementImports=2, StatementDrafts=3, Postings=4, Contacts=5, ContactCategories=6, SavingsPlans=7, SavingsPlanCategories=8, Securities=9, SecurityCategories=10, Budgets=11, BudgetCategories=12, BudgetRules=13, Reports=14, KpiConfigurations=15, Attachments=16, AttachmentCategories=17, Administration=18` — `Administration` ergänzt mit den Admin-Tools T34–T38; installationsbezogen, kein Fachdatentyp, zusätzlich Admin-Gate auf der Besitzerrolle) | `short` |
 | `McpRightKind` | `Read=0, Suggest=1, Complete=2, Modify=3, Create=4, Book=5, Delete=6` | `short` |
 | `McpApprovalMode` | `PerAction=0` (je Aktion/Batch), `PreApproved=1` (dauerhaft vorab genehmigt) | `short` |
 | `McpAccessStatus` | `Active=0, Deactivated=1, Revoked=2` (Ablauf ist berechnet aus `ExpiresUtc`, kein Status) | `short` |

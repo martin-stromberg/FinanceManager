@@ -252,14 +252,14 @@ public interface IStatementDraftService
     /// <param name="draftId">Identifier of the draft containing the entry.</param>
     /// <param name="entryId">Identifier of the entry to update.</param>
     /// <param name="securityId">Security identifier to assign, or <c>null</c> to clear.</param>
-    /// <param name="txType">Optional security transaction type (buy/sell/etc.).</param>
+    /// <param name="transactionType">Optional security transaction type (buy/sell/etc.).</param>
     /// <param name="quantity">Optional security quantity.</param>
-    /// <param name="price">Optional security price (per unit).</param>
-    /// <param name="fee">Optional fee amount for the security transaction.</param>
+    /// <param name="feeAmount">Optional fee amount for the security transaction.</param>
+    /// <param name="taxAmount">Optional tax amount for the security transaction.</param>
     /// <param name="ownerUserId">Owner user identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The domain <see cref="StatementDraft"/> when the operation succeeded; otherwise <c>null</c>.</returns>
-    Task<StatementDraft?> SetEntrySecurityAsync(Guid draftId, Guid entryId, Guid? securityId, SecurityTransactionType? txType, decimal? quantity, decimal? price, decimal? fee, Guid ownerUserId, CancellationToken ct);
+    Task<StatementDraft?> SetEntrySecurityAsync(Guid draftId, Guid entryId, Guid? securityId, SecurityTransactionType? transactionType, decimal? quantity, decimal? feeAmount, decimal? taxAmount, Guid ownerUserId, CancellationToken ct);
 
     /// <summary>
     /// Validates the draft (or a single entry) and returns a <see cref="DraftValidationResultDto"/> describing warnings and errors.
@@ -288,18 +288,18 @@ public interface IStatementDraftService
     /// <param name="draftId">Identifier of the draft.</param>
     /// <param name="entryId">Identifier of the entry.</param>
     /// <param name="ownerUserId">Owner user identifier.</param>
-    /// <param name="splitDraftId">Optional split draft id to assign.</param>
-    /// <param name="isCostNeutral">Optional cost-neutral flag.</param>
-    /// <param name="contactId">Optional contact id to assign.</param>
-    /// <param name="archiveSavingsPlanOnBooking">Optional flag whether to archive linked savings plan on booking.</param>
-    /// <param name="savingsPlanId">Optional savings plan id to assign.</param>
-    /// <param name="txType">Optional security transaction type.</param>
-    /// <param name="quantity">Optional quantity for securities.</param>
-    /// <param name="price">Optional price for securities.</param>
-    /// <param name="fee">Optional fee for securities.</param>
+    /// <param name="contactId">Contact id to assign (<c>null</c> clears the contact).</param>
+    /// <param name="isCostNeutral">Optional cost-neutral flag (<c>null</c> keeps the current value).</param>
+    /// <param name="savingsPlanId">Savings plan id to assign (<c>null</c> clears the assignment).</param>
+    /// <param name="archiveOnBooking">Optional flag whether to archive the linked savings plan on booking.</param>
+    /// <param name="securityId">Security id to assign.</param>
+    /// <param name="transactionType">Optional security transaction type.</param>
+    /// <param name="quantity">Optional security quantity.</param>
+    /// <param name="feeAmount">Optional fee amount for the security transaction.</param>
+    /// <param name="taxAmount">Optional tax amount for the security transaction.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated <see cref="StatementDraftEntryDto"/> when saved; otherwise <c>null</c>.</returns>
-    Task<StatementDraftEntryDto?> SaveEntryAllAsync(Guid draftId, Guid entryId, Guid ownerUserId, Guid? splitDraftId, bool? isCostNeutral, Guid? contactId, bool? archiveSavingsPlanOnBooking, Guid? savingsPlanId, SecurityTransactionType? txType, decimal? quantity, decimal? price, decimal? fee, CancellationToken ct);
+    Task<StatementDraftEntryDto?> SaveEntryAllAsync(Guid draftId, Guid entryId, Guid ownerUserId, Guid? contactId, bool? isCostNeutral, Guid? savingsPlanId, bool? archiveOnBooking, Guid? securityId, SecurityTransactionType? transactionType, decimal? quantity, decimal? feeAmount, decimal? taxAmount, CancellationToken ct);
 
     /// <summary>
     /// Adds additional statement details such as original file attachment to the draft.

@@ -1615,4 +1615,211 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the cache has been invalidated.</returns>
     Task Portfolio_ResetCacheAsync(CancellationToken ct = default);
+
+    // MCP Accesses
+
+    /// <summary>Returns the lightweight MCP feature status (whether the endpoint is enabled).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The status DTO.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpStatusDto> Mcp_GetStatusAsync(CancellationToken ct = default);
+
+    /// <summary>Lists the MCP accesses of the current user.</summary>
+    /// <param name="search">Optional name search text.</param>
+    /// <param name="skip">Items to skip.</param>
+    /// <param name="take">Items to take.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The list of access list items.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.McpAccessListItemDto>> Mcp_ListAccessesAsync(string? search = null, int skip = 0, int take = 100, CancellationToken ct = default);
+
+    /// <summary>Gets one MCP access detail or null when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The detail DTO or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessDetailDto?> Mcp_GetAccessAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Creates a new MCP access; the response contains the plaintext token once.</summary>
+    /// <param name="request">Creation request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created access plus plaintext token.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessCreatedDto> Mcp_CreateAccessAsync(FinanceManager.Shared.Dtos.Mcp.McpAccessCreateRequest request, CancellationToken ct = default);
+
+    /// <summary>Updates an MCP access. Returns false when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="request">Update request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when updated.</returns>
+    Task<bool> Mcp_UpdateAccessAsync(Guid id, FinanceManager.Shared.Dtos.Mcp.McpAccessUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>Replaces the individual scope profile of an access. Returns false when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="request">Scope set request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when applied.</returns>
+    Task<bool> Mcp_SetScopesAsync(Guid id, FinanceManager.Shared.Dtos.Mcp.McpScopeSetRequest request, CancellationToken ct = default);
+
+    /// <summary>Replaces the filters of one scope row. Returns false when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="scopeId">Scope row id.</param>
+    /// <param name="request">Filter set request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when applied.</returns>
+    Task<bool> Mcp_SetFiltersAsync(Guid id, Guid scopeId, FinanceManager.Shared.Dtos.Mcp.McpFilterSetRequest request, CancellationToken ct = default);
+
+    /// <summary>Activates an access. Returns false when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when changed.</returns>
+    Task<bool> Mcp_ActivateAccessAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Deactivates an access. Returns false when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when changed.</returns>
+    Task<bool> Mcp_DeactivateAccessAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Rotates the token of an access; returns the new plaintext token once, or null when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The rotation result or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessRotatedDto?> Mcp_RotateTokenAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Revokes (deletes) an access. Returns false when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="reason">Optional revocation reason.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when revoked.</returns>
+    Task<bool> Mcp_RevokeAccessAsync(Guid id, string? reason = null, CancellationToken ct = default);
+
+    /// <summary>Lists the server-side access level definitions with their default scope profiles.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The level definitions.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.McpAccessLevelDto>> Mcp_GetLevelsAsync(CancellationToken ct = default);
+
+    /// <summary>Loads the UI options of the access management (scope matrix, categories, TLS flag).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The options DTO.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessOptionsDto?> Mcp_GetOptionsAsync(CancellationToken ct = default);
+
+    /// <summary>Lists the audit entries of the current user (newest first, filters AND-combined).</summary>
+    /// <param name="from">Optional inclusive lower bound (UTC).</param>
+    /// <param name="to">Optional inclusive upper bound (UTC).</param>
+    /// <param name="category">Optional category (McpAuditCategory as short).</param>
+    /// <param name="mcpAccessId">Optional access restriction.</param>
+    /// <param name="correlationId">Optional correlation id.</param>
+    /// <param name="toolName">Optional exact tool name.</param>
+    /// <param name="result">Optional exact result code.</param>
+    /// <param name="skip">Items to skip.</param>
+    /// <param name="take">Items to take.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The list of audit list items.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.McpAuditEntryListItemDto>> Mcp_ListAuditEntriesAsync(
+        DateTime? from = null, DateTime? to = null, short? category = null,
+        Guid? mcpAccessId = null, Guid? correlationId = null, string? toolName = null,
+        string? result = null, int skip = 0, int take = 100, CancellationToken ct = default);
+
+    /// <summary>Gets one audit entry detail incl. payload and field deltas, or null when not found.</summary>
+    /// <param name="id">Entry id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The detail DTO or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAuditEntryDetailDto?> Mcp_GetAuditEntryAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Verifies the integrity of the own audit hash chain.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The verification result.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAuditVerifyResultDto> Mcp_VerifyAuditChainAsync(CancellationToken ct = default);
+
+    /// <summary>Loads the usage overview of one own access (aggregated from the audit trail), or null when not found.</summary>
+    /// <param name="accessId">Access id.</param>
+    /// <param name="recent">Optional size of the recent-calls excerpt.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The usage DTO or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessUsageDto?> Mcp_GetAccessUsageAsync(Guid accessId, int recent = 10, CancellationToken ct = default);
+
+    /// <summary>Builds the export download URL of the own audit protocol (browser download uses cookie auth).</summary>
+    /// <param name="format"><c>csv</c> or <c>json</c>.</param>
+    /// <param name="from">Optional inclusive lower bound (UTC).</param>
+    /// <param name="to">Optional inclusive upper bound (UTC).</param>
+    /// <param name="category">Optional category (McpAuditCategory as short).</param>
+    /// <param name="mcpAccessId">Optional access restriction.</param>
+    /// <param name="correlationId">Optional correlation id.</param>
+    /// <param name="toolName">Optional exact tool name.</param>
+    /// <param name="result">Optional exact result code.</param>
+    /// <returns>The relative export URL.</returns>
+    string Mcp_BuildAuditExportUrl(string format,
+        DateTime? from = null, DateTime? to = null, short? category = null,
+        Guid? mcpAccessId = null, Guid? correlationId = null, string? toolName = null,
+        string? result = null);
+
+    /// <summary>Lists the approval requests of the current user (inbox and history), newest first.</summary>
+    /// <param name="status">Optional status filter (AiActionRequestStatus as short).</param>
+    /// <param name="accessId">Optional requesting-access filter.</param>
+    /// <param name="toolName">Optional exact <c>fm_*</c> tool name filter (server-side).</param>
+    /// <param name="skip">Items to skip.</param>
+    /// <param name="take">Items to take.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching request list items.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.AiActionRequestListItemDto>> Mcp_ListActionRequestsAsync(
+        short? status = null, Guid? accessId = null, string? toolName = null, int skip = 0, int take = 100, CancellationToken ct = default);
+
+    /// <summary>Gets one approval request detail or null when not found.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The detail DTO or null.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.AiActionRequestDetailDto?> Mcp_GetActionRequestAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Approves a pending request. Returns false when not found/not owned.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="decisionComment">Optional decision comment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when approved.</returns>
+    Task<bool> Mcp_ApproveRequestAsync(Guid id, string? decisionComment = null, CancellationToken ct = default);
+
+    /// <summary>Rejects a pending request. Returns false when not found/not owned.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="decisionComment">Optional rejection reason (played back to the client).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when rejected.</returns>
+    Task<bool> Mcp_RejectRequestAsync(Guid id, string? decisionComment = null, CancellationToken ct = default);
+
+    /// <summary>Withdraws a still-pending request of the owner. Returns false when not found/not owned.</summary>
+    /// <param name="id">Request id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when withdrawn.</returns>
+    Task<bool> Mcp_CancelRequestAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Returns the number of currently pending approval requests of the current user (badge counter).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The pending request count.</returns>
+    Task<int> Mcp_GetPendingApprovalCountAsync(CancellationToken ct = default);
+
+    /// <summary>Applies one decision to a set of own pending requests; returns per-item outcomes.</summary>
+    /// <param name="requestIds">Requests to decide.</param>
+    /// <param name="approve">True approves, false rejects.</param>
+    /// <param name="decisionComment">Optional decision comment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Per-request outcome rows.</returns>
+    Task<IReadOnlyList<FinanceManager.Shared.Dtos.Mcp.AiActionRequestBatchItemDto>> Mcp_DecideActionRequestsBatchAsync(
+        IReadOnlyList<Guid> requestIds, bool approve, string? decisionComment = null, CancellationToken ct = default);
+
+    /// <summary>Loads the instance-wide MCP security overview (Admin role only; metadata only).</summary>
+    /// <param name="recent">Optional size of the security-events excerpt.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The security overview DTO or null when the caller is not an admin.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpSecurityOverviewDto?> Admin_McpSecurityOverviewAsync(int recent = 25, CancellationToken ct = default);
+
+    /// <summary>Loads the database-stored, admin-editable MCP settings (Admin role only).</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The settings DTO or null when the caller is not an admin.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpSettingsDto?> Admin_McpGetSettingsAsync(CancellationToken ct = default);
+
+    /// <summary>Persists the database-stored MCP settings (Admin role only).</summary>
+    /// <param name="request">The update request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task Admin_McpUpdateSettingsAsync(FinanceManager.Shared.Dtos.Mcp.McpSettingsUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>Loads the agent-monitoring view of one own access (queue depth, pending age, 24h outcome counters).</summary>
+    /// <param name="accessId">Access identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The monitoring DTO or null when not found.</returns>
+    Task<FinanceManager.Shared.Dtos.Mcp.McpAccessMonitoringDto?> Mcp_GetAccessMonitoringAsync(Guid accessId, CancellationToken ct = default);
 }

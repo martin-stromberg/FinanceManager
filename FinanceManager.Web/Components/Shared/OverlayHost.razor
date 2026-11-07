@@ -114,6 +114,8 @@
             if (t == typeof(SetPasswordOverlay)) return Localizer?["Users_SetPassword_Title"] ?? "Set password";
             if (t == typeof(AssignStatementOverlay)) return Localizer?["AssignStatement_Title"] ?? "Assign statement";
             if (t == typeof(MassBookingOptionsPanel)) return Localizer?["MassBooking_Title"] ?? "Mass booking";
+            if (t == typeof(McpAccessCreateWizard)) return Localizer?["McpWizard_Title"] ?? "New AI access";
+            if (t == typeof(McpTokenDisplayPanel)) return Localizer?["McpToken_Title_Rotated"] ?? "New token";
         }
         catch { }
         return _spec.ComponentType.Name;

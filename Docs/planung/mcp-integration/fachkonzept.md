@@ -375,9 +375,10 @@ KI-System hat wann was mit meinen Daten getan oder versucht?"*
 
 ### 7.1 Begriffs-Mapping (Anforderung → Code)
 
-Die 18 Datentypen der Anforderung werden verbindlich auf die realen
+Die 19 Datentypen werden verbindlich auf die realen
 Entitäten/Enums des Repos gemappt (Quelle: `inventory.md` und
-`inventory/entitaeten.md`):
+`inventory/entitaeten.md`; Nr. 19 `Administration` wurde mit den
+Admin-Tools T34–T38 ergänzt – installationsbezogen, kein Fachdatentyp):
 
 | # | Datentyp (Anforderung) | Reale Entität / Enum | Hinweis |
 |---|---|---|---|
@@ -399,8 +400,9 @@ Entitäten/Enums des Repos gemappt (Quelle: `inventory.md` und
 | 16 | KPI-Konfigurationen | `HomeKpi`, `PortfolioKpiConfiguration` | |
 | 17 | Anhänge | `Attachment` | `Content` als `byte[]` **in der DB**; polymorph via `EntityKind`/`EntityId` |
 | 18 | Anhangkategorien | `AttachmentCategory` | |
+| 19 | Administration | kein Entitäts-Typ: Installationsscope (Updates via `IUpdateOrchestrator`, Backups via `IBackupService`, `Notification` des Besitzers, Admin-Settings via `IMcpSettingsService`/`IWellKnownSettingsService`) | zusätzlich Admin-Gate auf die Besitzerrolle (`User.IsAdmin`) |
 
-### 7.2 Klassifizierungs-Matrix (18 Datentypen × 7 Rechtearten)
+### 7.2 Klassifizierungs-Matrix (19 Datentypen × 7 Rechtearten)
 
 Legende: **✓** = Rechteart fachlich sinnvoll/vergebbar · **—** = nicht
 anwendbar (kein fachlicher Schreibpfad / Invariante) · **◑** = nur indirekt
@@ -426,6 +428,7 @@ vergebbar (über verknüpfte Entität/Prozess).
 | KPI-Konfigurationen (`HomeKpi`, `PortfolioKpiConfiguration`) | ✓ | ✓ | — | ✓ | ✓ | — | ✓ |
 | Anhänge (`Attachment`) | ✓¹⁰ | — | ✓ | ✓¹¹ | ✓ | — | ✓ |
 | Anhangkategorien (`AttachmentCategory`) | ✓ | — | — | ✓ | ✓ | — | ✓ |
+| Administration (Installationsscope) | ✓ | — | — | ✓¹² | ✓¹³ | — | — |
 
 **Fußnoten:**
 1. Vorschlag z. B. IBAN-/Bankkontakt-Ergänzung, `DetectedAccountId`-
@@ -460,6 +463,15 @@ vergebbar (über verknüpfte Entität/Prozess).
     deckt Metadaten **und** Inhalt ab; Feinsteuerung erfolgt ggf. über Filter.
 11. Änderung = Zuordnung/`CategoryId`/`FileName`-Metadaten; Inhalt
     (`Content`) ist nach Upload unveränderlich (Sha256-Prüfsumme).
+12. Änderung auf Administration = admin-editable Effekte (Update-
+    Installation/Planung, Benachrichtigungs-Dismissal, Admin-Settings) –
+    final/effective Operationen laufen genehmigungspflichtig über
+    `AiActionRequest`; zusätzlich gilt das Admin-Gate auf die
+    Besitzerrolle.
+13. Erstellung auf Administration = Backup-Snapshot anstoßen
+    (`IBackupService.CreateAsync`, genehmigungspflichtig); ein
+    Lösch-/Buchungspfad existiert nicht (Wiederherstellung ist bewusst
+    nicht exponiert).
 
 ### 7.3 Konsequenzen der Matrix
 
