@@ -616,6 +616,12 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var savingsPlans = savingsPlanEntities.Select(sp => sp.ToBackupDto()).ToList();
 
+        // Savings plan <-> account links (explicit n:m join)
+        var savingsPlanAccountLinkEntities = await _db.SavingsPlanAccountLinks.AsNoTracking()
+            .Where(l => l.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var savingsPlanAccountLinks = savingsPlanAccountLinkEntities.Select(l => l.ToBackupDto()).ToList();
+
         // Accounts
         var accountEntities = await _db.Accounts.AsNoTracking()
             .Where(a => a.OwnerUserId == userId)
@@ -781,7 +787,10 @@ public sealed class BackupService : IBackupService
             McpAccessScopes = mcpAccessScopes,
             McpAuditEntries = mcpAuditEntries,
             McpAuditEntryChanges = mcpAuditEntryChanges,
-            AiActionRequests = aiActionRequests
+            AiActionRequests = aiActionRequests,
+            // Optional payload section: backups created before the plan-account-link feature
+            // simply omit it - the restore treats it as empty.
+            SavingsPlanAccountLinks = savingsPlanAccountLinks
         };
     }
 

@@ -202,7 +202,7 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            Total = 29 - (replaceExisting ? 0 : 1),
+            Total = 30 - (replaceExisting ? 0 : 1),
             SubStep = 0,
             SubTotal = 0
         };
@@ -442,6 +442,29 @@ public sealed class SetupImportService : ISetupImportService
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
+        // SavingsPlanAccountLinks (optional section - backups predating the feature omit it)
+        ProgressChanged?.Invoke(this, progress.SetDescription("Savings Plan Account Links"));
+        if (root.TryGetProperty("SavingsPlanAccountLinks", out var spLinks) && spLinks.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<SavingsPlanAccountLink.SavingsPlanAccountLinkBackupDto>>(spLinks.GetRawText(), jsonOptions) ?? new List<SavingsPlanAccountLink.SavingsPlanAccountLinkBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                // Skip links whose plan or account did not survive the id remapping.
+                if (!savingsMap.TryGetValue(dto.SavingsPlanId, out var mappedPlan)
+                    || !accountMap.TryGetValue(dto.AccountId, out var mappedAccount))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var entity = new SavingsPlanAccountLink(mappedPlan, mappedAccount, userId);
+                _db.SavingsPlanAccountLinks.Add(entity);
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
         // BudgetCategories
         ProgressChanged?.Invoke(this, progress.SetDescription("Budget Categories"));
         if (root.TryGetProperty("BudgetCategories", out var budgetCategoriesEl) && budgetCategoriesEl.ValueKind == JsonValueKind.Array)
@@ -604,6 +627,7 @@ public sealed class SetupImportService : ISetupImportService
                     dto.SecuritySubType,
                     dto.Quantity);
                 if (dto.GroupId.HasValue && dto.GroupId != Guid.Empty) entity.SetGroup(dto.GroupId.Value);
+                if (dto.SavingsPlanSubType.HasValue) entity.SetSavingsPlanSubType(dto.SavingsPlanSubType.Value);
                 _db.Postings.Add(entity);
                 postingMapCollection.Add(dto.Id, entity);
                 if (progress.SubStep % 100 == 0)
