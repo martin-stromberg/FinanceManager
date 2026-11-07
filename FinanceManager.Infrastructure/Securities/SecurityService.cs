@@ -39,7 +39,11 @@ public sealed class SecurityService : ISecurityService
             .Select(g => new
             {
                 SecurityId = g.Key,
-                OpenQuantity = g.Sum(p => p.SecuritySubType == SecurityPostingSubType.Buy ? (p.Quantity ?? 0m) : -(p.Quantity ?? 0m))
+                // sign-robust: stored Sell quantities may already be negative —
+                // |quantity| * (Buy:+1 / Sell:-1) without Math.Abs (not EF-translatable)
+                OpenQuantity = g.Sum(p => (p.Quantity ?? 0m)
+                    * (p.SecuritySubType == SecurityPostingSubType.Buy ? 1m : -1m)
+                    * ((p.Quantity ?? 0m) < 0m ? -1m : 1m))
             })
             .ToDictionaryAsync(x => x.SecurityId, x => x.OpenQuantity, ct);
         var tasks = entities.Select(e => MapToDtoAsync(
@@ -235,7 +239,9 @@ public sealed class SecurityService : ISecurityService
         => _db.Postings.AsNoTracking()
             .Where(p => p.SecurityId == securityId
                 && (p.SecuritySubType == SecurityPostingSubType.Buy || p.SecuritySubType == SecurityPostingSubType.Sell))
-            .SumAsync(p => p.SecuritySubType == SecurityPostingSubType.Buy ? (p.Quantity ?? 0m) : -(p.Quantity ?? 0m), ct);
+            .SumAsync(p => (p.Quantity ?? 0m)
+                * (p.SecuritySubType == SecurityPostingSubType.Buy ? 1m : -1m)
+                * ((p.Quantity ?? 0m) < 0m ? -1m : 1m), ct);
 
     private async Task<SecurityDto> MapToDtoAsync(FinanceManager.Domain.Securities.Security s, CancellationToken ct, decimal? openQuantity = null)
     {
