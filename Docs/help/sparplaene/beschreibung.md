@@ -14,6 +14,8 @@ Die Detailansicht eines bestehenden Sparplans zeigt neben den Stammdaten den akt
 
 Die Sparplan-Analyse bewertet den Einzahlungsrhythmus zyklusbasiert: Fälligkeitspläne laufen in Finanzierungszyklen — Einzahlungen finanzieren den nächsten Zielbetrag, eine Entnahme in etwa Zielhöhe (oder ein erreichtes Zieldatum) schließt den Zyklus ab und eröffnet den nächsten. Der ausgewiesene Rückstand (`ScheduleDeficit`) zählt daher nur den laufenden Zyklus; revolvierende Pläne, deren Entnahmen die Einzahlungen etwa ausgleichen, gelten als zyklisch ausgeglichen und melden keinen Deficit.
 
+Die beobachtete Rate leitet sich aus der dominanten Betragsklasse der Einzahlungen im laufenden Zyklus ab: Gleiche Beträge werden geclustert (Toleranz max(0,50 EUR, 5 %)), die häufigste Klasse gilt als wiederkehrende Einzahlung (bei Gleichstand gewinnt der größere Betrag). Mikro-Postings wie Zinsgutschriften (unter ~50 % des dominanten Klassenbetrags) fließen weder in die Rate noch in die erhaltene Summe ein — auch dann nicht, wenn sie die eigentlichen Einzahlungen an Zahl übersteigen.
+
 ## Beispiele
 
 - Monatlicher Sparplan mit Zielbetrag und Kategorie.

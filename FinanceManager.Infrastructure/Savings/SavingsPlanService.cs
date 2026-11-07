@@ -276,17 +276,26 @@ public sealed class SavingsPlanService : ISavingsPlanService
     /// <paramref name="targetDate"/> when no usable disbursement exists, else at the first
     /// deposit. Positive effective postings since then feed <c>ReceivedToDate</c>, while
     /// <c>Disbursements</c> always reports the whole-history total of negative effective
-    /// postings. The observed rate is the median of the monthly totals of contributing months
-    /// inside the cycle, normalized to a monthly rate via the plan interval (Monthly=1,
-    /// BiMonthly=2, Quarterly=3, SemiAnnually=6, Annually=12). Expected periods count every
-    /// fully elapsed contribution month since the cycle start (the current month is not due
-    /// yet); for multi-month intervals every n-th elapsed month counts. When the in-cycle
-    /// disbursements beyond the cycle-opening payout roughly balance the received deposits the
-    /// plan revolves (e.g. a credit-card settlement reserve) and <c>ScheduleDeficit</c> stays
-    /// <see langword="null"/> - "cyclically balanced" is more honest than zero. Without an
-    /// explicit interval a rhythm is only assumed when deposits cover at least half of the
-    /// elapsed months in at least two distinct months - irregular one-off top-ups then yield
-    /// <see langword="null"/> instead of a bogus deficit.
+    /// postings. The positive cycle postings cluster into amount classes (equal amounts
+    /// within max(0.50, 5 %) tolerance) and the dominant class - the most frequent one,
+    /// ties by larger amount - stands for the recurring contribution. A most-frequent
+    /// class below half of the largest class amount is micro noise (e.g. interest
+    /// credits): it can never dominate when a comparably frequent larger class exists
+    /// (at least half the members), and its postings never enter
+    /// <c>ObservedMonthlyRate</c>, <c>ExpectedToDate</c> or <c>ReceivedToDate</c>. The
+    /// observed rate is the dominant class amount normalized to a monthly rate via the
+    /// plan interval (Monthly=1, BiMonthly=2, Quarterly=3, SemiAnnually=6, Annually=12).
+    /// Expected periods count every fully elapsed contribution month since the cycle
+    /// start (the current month is not due yet); for multi-month intervals every n-th
+    /// elapsed month counts. When the in-cycle disbursements beyond the cycle-opening
+    /// payout roughly balance the received deposits the plan revolves (e.g. a
+    /// credit-card settlement reserve) and <c>ScheduleDeficit</c> stays
+    /// <see langword="null"/> - "cyclically balanced" is more honest than zero. Without
+    /// an explicit interval a rhythm is only assumed when dominant-class deposits cover
+    /// at least half of the elapsed months in at least two distinct months - irregular
+    /// one-off top-ups then yield <see langword="null"/> instead of a bogus deficit, and
+    /// so does a history in which every deposit amount occurred at most once (no
+    /// detectable dominant class).
     /// </summary>
     private static ContributionSchedule ComputeSchedule(
         IReadOnlyList<PostingObservation> history, SavingsPlanInterval? interval, decimal? targetAmount, DateTime? targetDate, DateTime today)
@@ -328,18 +337,65 @@ public sealed class SavingsPlanService : ISavingsPlanService
         // marks the completed previous cycle and must not weigh against the new cycle's deposits.
         var cycleDisbursements = inCycle.Where(h => h.Amount < 0m && !ReferenceEquals(h, cycleBoundary)).Sum(h => h.Amount);
 
-        var positiveMonthlyTotals = inCycle
-            .Where(h => h.Amount > 0m)
-            .GroupBy(h => (h.BookingDate.Year, h.BookingDate.Month))
-            .Select(g => g.Sum(x => x.Amount))
-            .OrderBy(total => total)
-            .ToList();
-        if (positiveMonthlyTotals.Count == 0)
+        // Amount classes: ascending positive postings join the previous class while they
+        // stay within max(0.50, 5 % of the last member) - enough slack for cent-level
+        // wobble of a fixed contribution, tight enough to keep interest credits and
+        // distinct contribution rates apart.
+        var positive = inCycle.Where(h => h.Amount > 0m).OrderBy(h => h.Amount).ToList();
+        if (positive.Count == 0)
         {
             return new ContributionSchedule(received, disbursements, null, null, null);
         }
 
-        // positiveMonthlyTotals is non-empty, so at least one deposit exists and cycleStart is set.
+        var amountClasses = new List<List<PostingObservation>>();
+        foreach (var p in positive)
+        {
+            var current = amountClasses.Count > 0 ? amountClasses[^1] : null;
+            if (current is { Count: > 0 })
+            {
+                var lastAmount = current[^1].Amount;
+                if (p.Amount - lastAmount <= Math.Max(0.5m, lastAmount * 0.05m))
+                {
+                    current.Add(p);
+                    continue;
+                }
+            }
+            amountClasses.Add(new List<PostingObservation> { p });
+        }
+
+        // Dominant class = the most frequent amount class; ties go to the larger
+        // amount. Exception: when the most frequent class is a micro class (below
+        // 50 % of the largest class amount) a comparably frequent larger class wins
+        // instead - a swarm of small interest credits must not out-vote the recurring
+        // deposit it accompanies by sheer count.
+        var dominant = amountClasses
+            .OrderByDescending(c => c.Count)
+            .ThenByDescending(c => c.Average(x => x.Amount))
+            .First();
+        var largestClassAmount = amountClasses.Max(c => c.Average(x => x.Amount));
+        if (dominant.Average(x => x.Amount) < largestClassAmount * 0.5m)
+        {
+            dominant = amountClasses
+                .Where(c => c.Count * 2 >= dominant.Count)
+                .OrderByDescending(c => c.Average(x => x.Amount))
+                .First();
+        }
+
+        // No detectable dominant class: when every deposit amount occurred at most
+        // once there is no recurring contribution to derive a rhythm from.
+        if (dominant.Count < 2 && amountClasses.Count > 1)
+        {
+            return new ContributionSchedule(received, disbursements, null, null, null);
+        }
+
+        var dominantAmount = dominant.Average(x => x.Amount);
+        // Received/expected/deficit only count the dominant class: micro postings
+        // (below ~50 % of the dominant class amount, e.g. interest credits) and
+        // non-recurring amounts of other classes never enter the rhythm fields.
+        var receivedDominant = dominant.Sum(x => x.Amount);
+        var dominantMonths = dominant.Select(x => (x.BookingDate.Year, x.BookingDate.Month)).Distinct().Count();
+
+        // At least one deposit exists here, so cycleStart is set.
         var elapsedMonths = ((today.Year - cycleStart!.Value.Year) * 12) + today.Month - cycleStart.Value.Month;
 
         var intervalMonths = interval switch
@@ -353,33 +409,27 @@ public sealed class SavingsPlanService : ISavingsPlanService
         };
 
         var rhythmDetected = interval.HasValue
-            || (elapsedMonths >= 1 && positiveMonthlyTotals.Count >= 2 && positiveMonthlyTotals.Count * 2 >= elapsedMonths);
+            || (elapsedMonths >= 1 && dominantMonths >= 2 && dominantMonths * 2 >= elapsedMonths);
         if (!rhythmDetected)
         {
             return new ContributionSchedule(received, disbursements, null, null, null);
         }
 
         var expectedPeriods = elapsedMonths >= 1 ? ((elapsedMonths - 1) / intervalMonths) + 1 : 0;
-        var observedPeriodRate = Median(positiveMonthlyTotals);
-        var observedMonthlyRate = observedPeriodRate / intervalMonths;
-        var expectedToDate = observedPeriodRate * expectedPeriods;
+        var observedMonthlyRate = dominantAmount / intervalMonths;
+        var expectedToDate = dominantAmount * expectedPeriods;
 
         // A revolving plan (in-cycle disbursements roughly balancing the deposits, e.g. a
         // credit-card settlement reserve) carries no backlog: null states "cyclically balanced".
-        decimal? scheduleDeficit = Math.Max(0m, expectedToDate - received);
-        if (received > 0m && cycleDisbursements < 0m
-            && Math.Abs(received + cycleDisbursements) <= 0.2m * Math.Max(received, Math.Abs(cycleDisbursements)))
+        decimal? scheduleDeficit = Math.Max(0m, expectedToDate - receivedDominant);
+        if (receivedDominant > 0m && cycleDisbursements < 0m
+            && Math.Abs(receivedDominant + cycleDisbursements) <= 0.2m * Math.Max(receivedDominant, Math.Abs(cycleDisbursements)))
         {
             scheduleDeficit = null;
         }
 
-        return new ContributionSchedule(received, disbursements, observedMonthlyRate, expectedToDate, scheduleDeficit);
+        return new ContributionSchedule(receivedDominant, disbursements, observedMonthlyRate, expectedToDate, scheduleDeficit);
     }
-
-    private static decimal Median(IReadOnlyList<decimal> sortedValues)
-        => sortedValues.Count % 2 == 1
-            ? sortedValues[sortedValues.Count / 2]
-            : (sortedValues[(sortedValues.Count / 2) - 1] + sortedValues[sortedValues.Count / 2]) / 2m;
 
     private sealed record PostingObservation(DateTime BookingDate, decimal Amount, bool IsReversed, bool IsReversal);
 
