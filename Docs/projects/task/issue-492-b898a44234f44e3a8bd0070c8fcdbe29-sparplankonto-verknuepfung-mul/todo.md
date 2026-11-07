@@ -12,6 +12,6 @@ Issue: `#492`
 - [x] Planprüfung (`project-plan-check.md`)
 - [x] Planungscommit
 - [x] Entwicklungsschritte-Tracking (`steps.md`, `status.html`)
-- [ ] Entwicklungsschleife
-- [ ] Aufräumen
-- [ ] Abschlusscommit
+- [x] Entwicklungsschleife
+- [x] Aufräumen
+- [x] Abschlusscommit
