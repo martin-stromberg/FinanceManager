@@ -10,8 +10,8 @@ Issue: `#492`
 - [x] Projektplan (`project-plan.md`)
 - [x] Offene Punkte klären
 - [x] Planprüfung (`project-plan-check.md`)
-- [ ] Planungscommit
-- [ ] Entwicklungsschritte-Tracking (`steps.md`, `status.html`)
+- [x] Planungscommit
+- [x] Entwicklungsschritte-Tracking (`steps.md`, `status.html`)
 - [ ] Entwicklungsschleife
 - [ ] Aufräumen
 - [ ] Abschlusscommit
