@@ -1399,6 +1399,39 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("SavingsPlans");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlanAccountLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SavingsPlanId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("SavingsPlanId", "AccountId")
+                        .IsUnique();
+
+                    b.ToTable("SavingsPlanAccountLinks", (string)null);
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlanCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2358,6 +2391,25 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlanAccountLink", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Accounts.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FinanceManager.Domain.Savings.SavingsPlan", "SavingsPlan")
+                        .WithMany()
+                        .HasForeignKey("SavingsPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("SavingsPlan");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Securities.Security", b =>

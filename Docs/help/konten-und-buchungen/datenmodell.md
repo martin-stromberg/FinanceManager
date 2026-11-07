@@ -45,6 +45,7 @@
 
 - Ein `Account` hat viele `Posting`-Einträge.
 - Ein `Account` kann mehrere `AccountLinkedIban`-Einträge besitzen.
+- Ein `Account` kann über `SavingsPlanAccountLink` mit mehreren Sparplänen verknüpft sein (n:m; ein Sparplan kann umgekehrt mehrere Konten bedienen lassen).
 - Eine `Posting`-Zeile kann optional auf Kontakt, Sparplan oder Wertpapier verweisen.
 
 ## Diagramm
@@ -53,6 +54,8 @@
 erDiagram
     ACCOUNT ||--o{ POSTING : "enthaelt"
     ACCOUNT ||--o{ ACCOUNT_LINKED_IBAN : "verknuepft"
+    ACCOUNT ||--o{ SAVINGS_PLAN_ACCOUNT_LINK : "verknuepft"
+    SAVINGS_PLAN ||--o{ SAVINGS_PLAN_ACCOUNT_LINK : "verknuepft"
     CONTACT ||--o{ POSTING : "optional"
     SAVINGS_PLAN ||--o{ POSTING : "optional"
     SECURITY ||--o{ POSTING : "optional"
