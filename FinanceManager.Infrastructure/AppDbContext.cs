@@ -158,6 +158,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     }
     /// <summary>Savings plan categories.</summary>
     public DbSet<SavingsPlanCategory> SavingsPlanCategories { get; set; } = null!;
+    /// <summary>Explicit many-to-many links between savings plans and accounts.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<SavingsPlanAccountLink> SavingsPlanAccountLinks
+    {
+        get
+        {
+            return Set<SavingsPlanAccountLink>();
+        }
+    }
     /// <summary>Securities / stocks.</summary>
     /// <returns>The result.</returns>
     public DbSet<FinanceManager.Domain.Securities.Security> Securities => Set<FinanceManager.Domain.Securities.Security>();
@@ -550,6 +559,25 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
                   .WithMany()
                   .HasForeignKey(e => e.CategoryId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // SavingsPlanAccountLink (explicit n:m join between SavingsPlan and Account)
+        modelBuilder.Entity<SavingsPlanAccountLink>(entity =>
+        {
+            entity.ToTable("SavingsPlanAccountLinks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OwnerUserId).IsRequired();
+            entity.HasIndex(e => new { e.SavingsPlanId, e.AccountId }).IsUnique();
+            entity.HasIndex(e => e.AccountId);
+            entity.HasIndex(e => e.OwnerUserId);
+            entity.HasOne(e => e.SavingsPlan)
+                  .WithMany()
+                  .HasForeignKey(e => e.SavingsPlanId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Account)
+                  .WithMany()
+                  .HasForeignKey(e => e.AccountId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<StatementDraftEntry>(b =>
