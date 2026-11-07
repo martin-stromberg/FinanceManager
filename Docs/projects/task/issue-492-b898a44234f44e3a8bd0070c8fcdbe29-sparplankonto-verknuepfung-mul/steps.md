@@ -4,7 +4,7 @@ Branch: `task/issue-492-b898a44234f44e3a8bd0070c8fcdbe29-sparplankonto-verknuepf
 
 | # | Titel | Abhängigkeiten | Branch | Status |
 |---|-------|----------------|--------|--------|
-| 1 | Persistenz und fachliche Verwaltung der Sparplan↔Konto-Verknüpfung | Keine | `task/issue-492-b898a44234f44e3a8bd0070c8fcdbe29-sparplankonto-verknuepfung-mul-schritt-1-persistenz` | In Arbeit |
+| 1 | Persistenz und fachliche Verwaltung der Sparplan↔Konto-Verknüpfung | Keine | `task/issue-492-b898a44234f44e3a8bd0070c8fcdbe29-sparplankonto-verknuepfung-mul-schritt-1-persistenz` | Fertig |
 | 2 | Konto-basierte Ist-Betrachtung in der Plananalyse | 1 | `task/issue-492-b898a44234f44e3a8bd0070c8fcdbe29-sparplankonto-verknuepfung-mul-schritt-2-analyse` | Offen |
 | 3 | REST-API und ApiClient für die Kontoverknüpfung | 1, 2 | `task/issue-492-b898a44234f44e3a8bd0070c8fcdbe29-sparplankonto-verknuepfung-mul-schritt-3-api` | Offen |
 | 4 | „informal"-Kennzeichnung in der Postings-Ausgabe (API und MCP) | 2, 3 | `task/issue-492-b898a44234f44e3a8bd0070c8fcdbe29-sparplankonto-verknuepfung-mul-schritt-4-informal` | Offen |
