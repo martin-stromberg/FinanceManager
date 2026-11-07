@@ -31,7 +31,19 @@ public sealed class SecurityService : ISecurityService
         if (onlyActive) { q = q.Where(s => s.IsActive); }
 
         var entities = await q.OrderBy(s => s.Name).ToListAsync(ct);
-        var tasks = entities.Select(e => MapToDtoAsync(e, ct));
+        var ids = entities.Select(e => e.Id).ToList();
+        var openBySecurity = await _db.Postings.AsNoTracking()
+            .Where(p => p.SecurityId != null && ids.Contains(p.SecurityId.Value)
+                && (p.SecuritySubType == SecurityPostingSubType.Buy || p.SecuritySubType == SecurityPostingSubType.Sell))
+            .GroupBy(p => p.SecurityId!.Value)
+            .Select(g => new
+            {
+                SecurityId = g.Key,
+                OpenQuantity = g.Sum(p => p.SecuritySubType == SecurityPostingSubType.Buy ? (p.Quantity ?? 0m) : -(p.Quantity ?? 0m))
+            })
+            .ToDictionaryAsync(x => x.SecurityId, x => x.OpenQuantity, ct);
+        var tasks = entities.Select(e => MapToDtoAsync(
+            e, ct, openBySecurity.TryGetValue(e.Id, out var oq) ? oq : 0m));
         var list = await Task.WhenAll(tasks);
         return list;
     }
@@ -131,10 +143,7 @@ public sealed class SecurityService : ISecurityService
     {
         var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == id && s.OwnerUserId == ownerUserId, ct);
         if (entity == null || !entity.IsActive) { return false; }
-        var openQuantity = await _db.Postings.AsNoTracking()
-            .Where(p => p.SecurityId == id
-                && (p.SecuritySubType == SecurityPostingSubType.Buy || p.SecuritySubType == SecurityPostingSubType.Sell))
-            .SumAsync(p => p.SecuritySubType == SecurityPostingSubType.Buy ? (p.Quantity ?? 0m) : -(p.Quantity ?? 0m), ct);
+        var openQuantity = await ComputeOpenQuantityAsync(id, ct);
         if (openQuantity > 0m)
         {
             throw new InvalidOperationException(
@@ -216,7 +225,19 @@ public sealed class SecurityService : ISecurityService
     }
 
     // Map a domain Security entity to its DTO representation.
-    private async Task<SecurityDto> MapToDtoAsync(FinanceManager.Domain.Securities.Security s, CancellationToken ct)
+    /// <summary>
+    /// Computes the open holding quantity for a security (Σ buy − Σ sell quantities from postings).
+    /// </summary>
+    /// <param name="securityId">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The net held quantity; zero when no quantity-bearing postings exist.</returns>
+    private Task<decimal> ComputeOpenQuantityAsync(Guid securityId, CancellationToken ct)
+        => _db.Postings.AsNoTracking()
+            .Where(p => p.SecurityId == securityId
+                && (p.SecuritySubType == SecurityPostingSubType.Buy || p.SecuritySubType == SecurityPostingSubType.Sell))
+            .SumAsync(p => p.SecuritySubType == SecurityPostingSubType.Buy ? (p.Quantity ?? 0m) : -(p.Quantity ?? 0m), ct);
+
+    private async Task<SecurityDto> MapToDtoAsync(FinanceManager.Domain.Securities.Security s, CancellationToken ct, decimal? openQuantity = null)
     {
         string? categoryName = null;
         if (s.CategoryId != null)
@@ -239,6 +260,7 @@ public sealed class SecurityService : ISecurityService
             ArchivedUtc = s.ArchivedUtc,
             SymbolAttachmentId = s.SymbolAttachmentId,
             HasPriceError = s.HasPriceError,
+            OpenQuantity = openQuantity ?? await ComputeOpenQuantityAsync(s.Id, ct),
             Region = s.Region,
             Sector = s.Sector
         };

@@ -131,6 +131,7 @@ public sealed class FmSecuritiesAnalysisHandler : IMcpToolHandler
                 archivedUtc = s.ArchivedUtc,
                 symbolAttachmentId = s.SymbolAttachmentId,
                 hasPriceError = s.HasPriceError,
+                openQuantity = s.OpenQuantity,
                 prices,
                 untrusted_data = new
                 {
