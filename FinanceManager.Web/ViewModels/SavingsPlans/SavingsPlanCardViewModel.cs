@@ -46,6 +46,34 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     public SavingsPlanAnalysisDto? Analysis { get; private set; }
 
     /// <summary>
+    /// Bank accounts currently linked to the savings plan (resolved with names for display).
+    /// </summary>
+    public IReadOnlyList<AccountDto> LinkedAccounts { get; private set; } = [];
+
+    /// <summary>
+    /// Owner accounts that are not linked to the plan yet and can be selected for linking.
+    /// </summary>
+    public IReadOnlyList<AccountDto> LinkableAccounts { get; private set; } = [];
+
+    /// <summary>
+    /// Whether the plan has at least one linked account. A linked plan derives its
+    /// accumulated amount from the account balances, so the actual-balance report
+    /// ("Istmeldung") is not available for it.
+    /// </summary>
+    public bool HasLinkedAccounts => LinkedAccounts.Count > 0;
+
+    /// <summary>
+    /// Whether the actual-balance report ("Istmeldung") can be captured for this plan:
+    /// only existing plans without linked accounts are eligible.
+    /// </summary>
+    public bool CanReportActualBalance => IsEdit && !HasLinkedAccounts;
+
+    /// <summary>
+    /// Identifier of the account selected in the linked-accounts panel for linking.
+    /// </summary>
+    public Guid? NewLinkedAccountId { get; set; }
+
+    /// <summary>
     /// Available categories for the savings plan used to populate lookup fields.
     /// </summary>
     /// <returns>The result.</returns>
@@ -144,6 +172,8 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Analysis = null;
             }
 
+            await LoadLinkedAccountsAsync();
+
             CardRecord = await BuildCardRecordAsync(dto);
         }
         catch (Exception ex)
@@ -177,6 +207,155 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     {
         try { Categories = (await ApiClient.SavingsPlanCategories_ListAsync(ct)).ToList(); } catch { Categories = new(); }
         RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Loads the accounts linked to the current savings plan together with the remaining
+    /// linkable owner accounts. No-ops for new (unsaved) plans; failures leave the link
+    /// state empty without blocking the card.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task LoadLinkedAccountsAsync(CancellationToken ct = default)
+    {
+        if (!IsEdit)
+        {
+            LinkedAccounts = Array.Empty<AccountDto>();
+            LinkableAccounts = Array.Empty<AccountDto>();
+            return;
+        }
+        try
+        {
+            var linkedIds = await ApiClient.SavingsPlans_GetLinkedAccountsAsync(Id, ct) ?? Array.Empty<Guid>();
+            var accounts = await ApiClient.GetAccountsAsync(0, 500, ct: ct) ?? Array.Empty<AccountDto>();
+            var linkedSet = linkedIds.ToHashSet();
+            LinkedAccounts = accounts.Where(a => linkedSet.Contains(a.Id)).ToList();
+            LinkableAccounts = accounts.Where(a => !linkedSet.Contains(a.Id)).ToList();
+        }
+        catch
+        {
+            LinkedAccounts = Array.Empty<AccountDto>();
+            LinkableAccounts = Array.Empty<AccountDto>();
+        }
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Links the account selected via <see cref="NewLinkedAccountId"/> to the plan and
+    /// refreshes link state and analysis (the accumulated amount follows account balances).
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the link was created; otherwise <c>false</c>.</returns>
+    public async Task<bool> AddAccountLinkAsync(CancellationToken ct = default)
+    {
+        if (!IsEdit || NewLinkedAccountId is not { } accountId || accountId == Guid.Empty)
+        {
+            return false;
+        }
+        try
+        {
+            var ok = await ApiClient.SavingsPlans_AddAccountLinkAsync(Id, accountId, ct);
+            if (!ok)
+            {
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Link failed");
+                return false;
+            }
+            NewLinkedAccountId = null;
+            await LoadLinkedAccountsAsync(ct);
+            await LoadAnalysisAsync(ct);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            return false;
+        }
+        finally { RaiseStateChanged(); }
+    }
+
+    /// <summary>
+    /// Removes the link between the plan and <paramref name="accountId"/> and refreshes
+    /// link state and analysis (the plan falls back to posting-based evaluation once the
+    /// last link is removed).
+    /// </summary>
+    /// <param name="accountId">Identifier of the account to unlink.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task RemoveAccountLinkAsync(Guid accountId, CancellationToken ct = default)
+    {
+        if (!IsEdit)
+        {
+            return;
+        }
+        try
+        {
+            var ok = await ApiClient.SavingsPlans_RemoveAccountLinkAsync(Id, accountId, ct);
+            if (!ok)
+            {
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Unlink failed");
+                return;
+            }
+            await LoadLinkedAccountsAsync(ct);
+            await LoadAnalysisAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+        }
+        finally { RaiseStateChanged(); }
+    }
+
+    /// <summary>
+    /// Requests the actual-balance report ("Istmeldung") overlay for the current plan.
+    /// Only meaningful for plans without linked accounts; linked plans keep the account
+    /// balance as their single source of truth.
+    /// </summary>
+    public void RequestActualReport()
+    {
+        if (!CanReportActualBalance)
+        {
+            return;
+        }
+        var spec = new UiOverlaySpec(
+            typeof(FinanceManager.Web.Components.Shared.SavingsPlanActualReportPanel),
+            new Dictionary<string, object?>
+            {
+                ["Title"] = Localizer?["ActualReport_Title"]?.Value ?? "Actual-balance report",
+                ["Vm"] = this
+            });
+        RaiseUiActionRequested("OpenActualReport", spec);
+    }
+
+    /// <summary>
+    /// Captures an actual-balance report ("Istmeldung") for the current plan: the API books
+    /// the difference between the reported balance and the accumulated amount as a
+    /// correction posting and the card is reloaded so the new values show up.
+    /// </summary>
+    /// <param name="reportedBalance">The real balance reported by the user.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the report was captured; otherwise <c>false</c>.</returns>
+    public async Task<bool> ReportActualBalanceAsync(decimal reportedBalance, CancellationToken ct = default)
+    {
+        if (!CanReportActualBalance)
+        {
+            SetError(null, Localizer?["ActualReport_Error_Linked"]?.Value ?? "Actual-balance reports are only available for plans without linked accounts.");
+            return false;
+        }
+        try
+        {
+            var result = await ApiClient.SavingsPlans_ReportActualBalanceAsync(Id, new SavingsPlanActualReportRequest(reportedBalance), ct);
+            if (result is null)
+            {
+                SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Report failed");
+                return false;
+            }
+            await LoadAsync(Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            return false;
+        }
+        finally { RaiseStateChanged(); }
     }
 
     /// <summary>
@@ -669,7 +848,23 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             )
         });
 
-        var tabs = new List<UiRibbonTab> { nav, manage, linked, analysis };
+        // Bookings group (Istmeldung): only for plans WITHOUT linked accounts — a
+        // linked plan's account balance is the single source of truth, so the action is
+        // disabled with an explanatory tooltip once a link exists.
+        var bookings = new UiRibbonTab(localizer["Ribbon_Group_Bookings"].Value, new List<UiRibbonAction>
+        {
+            new UiRibbonAction(
+                Id: "ActualReport",
+                Label: localizer["Ribbon_SavingsPlan_ActualReport"].Value,
+                IconSvg: "<svg><use href='/icons/sprite.svg#edit'/></svg>",
+                Size: UiRibbonItemSize.Small,
+                Disabled: !CanReportActualBalance,
+                Tooltip: HasLinkedAccounts ? localizer["ActualReport_Disabled_Linked"].Value : null,
+                Callback: new Func<Task>(() => { RequestActualReport(); return Task.CompletedTask; })
+            )
+        });
+
+        var tabs = new List<UiRibbonTab> { nav, manage, linked, analysis, bookings };
         var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
         var baseRegs = base.GetRibbonRegisterDefinition(localizer);
         if (baseRegs != null) registers.AddRange(baseRegs);

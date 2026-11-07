@@ -3329,4 +3329,24 @@
   <data name="Mcp_Monitor_Pending" xml:space="preserve"><value>Pending requests</value></data>
   <data name="Mcp_PreApproved_Banner" xml:space="preserve"><value>Pre-approved actions active: this access runs matching write-preparing and approval-required actions without per-action approval. Every execution is still fully audited.</value></data>
   <data name="Mcp_Section_Monitoring" xml:space="preserve"><value>Runtime monitoring</value></data>
+  <data name="LinkedAccounts_Section_Title" xml:space="preserve"><value>Linked accounts</value></data>
+  <data name="LinkedAccounts_Empty" xml:space="preserve"><value>No linked accounts. The accumulated amount is computed from the plan's postings.</value></data>
+  <data name="LinkedAccounts_Add_Button" xml:space="preserve"><value>Link</value></data>
+  <data name="LinkedAccounts_Remove_Button" xml:space="preserve"><value>Unlink</value></data>
+  <data name="LinkedAccounts_Select_Placeholder" xml:space="preserve"><value>Select account...</value></data>
+  <data name="LinkedAccounts_None_Available" xml:space="preserve"><value>No account available</value></data>
+  <data name="Ribbon_SavingsPlan_ActualReport" xml:space="preserve"><value>Actual-balance report</value></data>
+  <data name="ActualReport_Title" xml:space="preserve"><value>Actual-balance report</value></data>
+  <data name="ActualReport_Description" xml:space="preserve"><value>Enter the real balance of this savings plan. The difference to the current amount is booked as a correction posting - no account movement is created.</value></data>
+  <data name="ActualReport_Balance_Placeholder" xml:space="preserve"><value>Reported balance</value></data>
+  <data name="ActualReport_Error_InvalidAmount" xml:space="preserve"><value>Please enter a valid amount.</value></data>
+  <data name="ActualReport_Error_Failed" xml:space="preserve"><value>The actual-balance report could not be captured.</value></data>
+  <data name="ActualReport_Error_Linked" xml:space="preserve"><value>Actual-balance reports are only available for plans without linked accounts.</value></data>
+  <data name="ActualReport_Disabled_Linked" xml:space="preserve"><value>Not available for plans with linked accounts - the account balance is the source of truth.</value></data>
+  <data name="List_Th_Postings_Marks" xml:space="preserve"><value>Marks</value></data>
+  <data name="Posting_Flag_Informal" xml:space="preserve"><value>informal</value></data>
+  <data name="Posting_Flag_ActualReport" xml:space="preserve"><value>actual report</value></data>
+  <data name="Card_Caption_Posting_Informal" xml:space="preserve"><value>Informal</value></data>
+  <data name="Card_Caption_Posting_SavingsPlanSubType" xml:space="preserve"><value>Plan posting type</value></data>
+  <data name="EnumType_SavingsPlanPostingSubType_ActualReport" xml:space="preserve"><value>Actual report</value></data>
 </root>

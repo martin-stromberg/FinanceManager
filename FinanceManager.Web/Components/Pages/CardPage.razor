@@ -48,6 +48,11 @@ else
             <LinkedIbansPanel Vm="bankVm" Localizer="Localizer" />
         }
 
+        @if (_vm is FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel savingsVm && savingsVm.IsEdit)
+        {
+            <SavingsPlanLinkedAccountsPanel Vm="savingsVm" Localizer="Localizer" />
+        }
+
         <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterCard" />
 
         @if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "securities" && string.IsNullOrWhiteSpace(SubKind) && Id != Guid.Empty)

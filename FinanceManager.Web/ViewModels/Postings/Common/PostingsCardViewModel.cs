@@ -98,7 +98,19 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
             new CardField("Card_Caption_Posting_Description", CardFieldKind.Text, text: p.Description ?? string.Empty)
         };
 
-        var record = new CardRecord(fields, p);
+        // Markings: informal funding postings of account-linked savings plans and
+        // actual-balance reports ("Istmeldung") get a visible flag on the detail card.
+        if (p.Informal)
+        {
+            fields.Add(new CardField("Card_Caption_Posting_Informal", CardFieldKind.Boolean, boolValue: true));
+        }
+        if (p.SavingsPlanSubType.HasValue)
+        {
+            fields.Add(new CardField("Card_Caption_Posting_SavingsPlanSubType", CardFieldKind.Text,
+                text: p.SavingsPlanSubType.Value.ToString(), lookupType: "Enum:SavingsPlanPostingSubType"));
+        }
+
+        var record = ApplyEnumTranslations(new CardRecord(fields, p));
         return Task.FromResult(record);
     }
 

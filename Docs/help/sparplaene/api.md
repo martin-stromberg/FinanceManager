@@ -26,7 +26,23 @@ Die Schnittstelle liegt in `SavingsPlansController` und `SavingsPlanCategoriesCo
 
 ### `GET /api/savings-plans/{id}/analysis`
 
-**Beschreibung:** Liefert Sparplananalyse. Die Detailansicht nutzt daraus `RequiredMonthly` für den benötigten Monatsbetrag bei offenen einmaligen Sparzielen.
+**Beschreibung:** Liefert Sparplananalyse. Die Detailansicht nutzt daraus `RequiredMonthly` für den benötigten Monatsbetrag bei offenen einmaligen Sparzielen. Bei verknüpften Konten folgen `accumulatedAmount` und die Rhythmus-Felder den Kontosalden bzw. dem Konto-Inflow.
+
+### `GET /api/savings-plans/{id}/linked-accounts`
+
+**Beschreibung:** Listet die IDs der mit dem Plan verknüpften Konten.
+
+### `POST /api/savings-plans/{id}/linked-accounts/{accountId}`
+
+**Beschreibung:** Verknüpft ein eigenes Konto mit dem Plan (Owner-Scoped; Duplikate und fremde Konten werden mit 400 abgewiesen).
+
+### `DELETE /api/savings-plans/{id}/linked-accounts/{accountId}`
+
+**Beschreibung:** Entfernt eine Kontoverknüpfung.
+
+### `POST /api/savings-plans/{id}/actual-reports`
+
+**Beschreibung:** Erfasst eine Istmeldung (`{ reportedBalance }`): bucht die Differenz zum aktuellen `accumulated` als Korrekturposting (`SavingsPlanSubType = ActualReport`) ohne Kontobewegung. Bei verknüpften Konten mit 400 abgewiesen.
 
 ### `GET /api/savings-plan-categories`
 

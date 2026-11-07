@@ -1,0 +1,75 @@
+@using System.Globalization
+@using FinanceManager.Web.ViewModels.SavingsPlans
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<div style="display:flex;flex-direction:column;gap:0.5rem;">
+    <p style="margin:0;color:var(--muted);">
+        @Localizer["ActualReport_Description"]
+    </p>
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <p style="margin:0;color:var(--danger, #c00);">@_error</p>
+    }
+    <input type="text"
+           class="card-input"
+           inputmode="decimal"
+           placeholder="@Localizer["ActualReport_Balance_Placeholder"]"
+           @bind="_balanceText"
+           @bind:event="oninput"
+           disabled="@_busy" />
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button type="button" class="btn" @onclick="Close" disabled="@_busy">@Localizer["Btn_Cancel"]</button>
+        <button type="button" class="btn btn-primary" @onclick="SubmitAsync" disabled="@_busy">@Localizer["Btn_Save"]</button>
+    </div>
+</div>
+
+@code {
+    /// <summary>Cascaded close action of the hosting overlay.</summary>
+    [CascadingParameter(Name = "OverlayClose")] public Action? OverlayClose { get; set; }
+
+    /// <summary>The savings plan view model performing the report.</summary>
+    [Parameter, EditorRequired] public SavingsPlanCardViewModel? Vm { get; set; }
+
+    /// <summary>Optional overlay title (rendered by the overlay host).</summary>
+    [Parameter] public string? OverlayTitle { get; set; }
+
+    private string? _balanceText;
+    private string? _error;
+    private bool _busy;
+
+    private void Close() => OverlayClose?.Invoke();
+
+    private async Task SubmitAsync()
+    {
+        if (Vm == null || _busy)
+        {
+            return;
+        }
+        if (!decimal.TryParse(_balanceText, NumberStyles.Number, CultureInfo.CurrentCulture, out var balance))
+        {
+            _error = Localizer["ActualReport_Error_InvalidAmount"]?.Value ?? "Please enter a valid amount.";
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        StateHasChanged();
+        try
+        {
+            var ok = await Vm.ReportActualBalanceAsync(balance);
+            if (ok)
+            {
+                Close();
+            }
+            else
+            {
+                _error = Vm.LastError ?? Localizer["ActualReport_Error_Failed"]?.Value;
+            }
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+}

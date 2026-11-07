@@ -61,3 +61,12 @@ Beim Löschen von Plan oder Konto werden die Verknüpfungen per Cascade mitentfe
 | `OwnerUserId` | `Guid` | Eigentümer (redundant, für Owner-Prüfung/Indizes) |
 | `CreatedUtc` | `DateTime` | Erstellungszeitpunkt (UTC) |
 | `ModifiedUtc` | `DateTime?` | Letzter Änderungszeitpunkt (UTC) |
+
+### `Posting.SavingsPlanSubType`
+
+Optionale Unterart auf Plan-Buchungen (`Kind == SavingsPlan`). Derzeit ein Wert:
+`ActualReport` — kennzeichnet eine Istmeldung (Korrekturbuchung ohne Kontobewegung,
+nur für Pläne ohne verknüpfte Konten). Buchungen ohne Unterart sind reguläre
+Einzahlungs- oder Entnahmebuchungen. Informelle Funding-Buchungen werden nicht
+persistiert markiert, sondern aus dem Konto-Link abgeleitet (`informal` in der
+Postings-Ausgabe).
