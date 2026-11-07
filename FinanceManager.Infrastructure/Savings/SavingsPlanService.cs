@@ -283,11 +283,17 @@ public sealed class SavingsPlanService : ISavingsPlanService
     /// credits): it can never dominate when a comparably frequent larger class exists
     /// (at least half the members), and its postings never enter
     /// <c>ObservedMonthlyRate</c>, <c>ExpectedToDate</c> or <c>ReceivedToDate</c>. The
-    /// observed rate is the dominant class amount normalized to a monthly rate via the
-    /// plan interval (Monthly=1, BiMonthly=2, Quarterly=3, SemiAnnually=6, Annually=12).
-    /// Expected periods count every fully elapsed contribution month since the cycle
-    /// start (the current month is not due yet); for multi-month intervals every n-th
-    /// elapsed month counts. When the in-cycle disbursements beyond the cycle-opening
+    /// deposit cadence is read from the bookings themselves: the median month gap
+    /// between consecutive booking months of the dominant class (1 = monthly,
+    /// 3 = quarterly ...). The plan interval only fills in when no cadence is
+    /// derivable - fewer than two booking months, or a single ambiguous gap larger
+    /// than one month that cannot be told apart from missed monthly deposits - as it
+    /// marks the due rhythm of the financed expense (e.g. an annual insurance
+    /// premium), not how often money flows in. The
+    /// observed rate is the dominant class amount divided by the cadence months, and
+    /// expected periods are the fully elapsed cadence windows since the cycle start
+    /// (floor of elapsed months / cadence, so the current month is not due yet).
+    /// When the in-cycle disbursements beyond the cycle-opening
     /// payout roughly balance the received deposits the plan revolves (e.g. a
     /// credit-card settlement reserve) and <c>ScheduleDeficit</c> stays
     /// <see langword="null"/> - "cyclically balanced" is more honest than zero. Without
@@ -393,7 +399,6 @@ public sealed class SavingsPlanService : ISavingsPlanService
         // (below ~50 % of the dominant class amount, e.g. interest credits) and
         // non-recurring amounts of other classes never enter the rhythm fields.
         var receivedDominant = dominant.Sum(x => x.Amount);
-        var dominantMonths = dominant.Select(x => (x.BookingDate.Year, x.BookingDate.Month)).Distinct().Count();
 
         // At least one deposit exists here, so cycleStart is set.
         var elapsedMonths = ((today.Year - cycleStart!.Value.Year) * 12) + today.Month - cycleStart.Value.Month;
@@ -408,15 +413,55 @@ public sealed class SavingsPlanService : ISavingsPlanService
             _ => 1
         };
 
+        // The deposit cadence comes from the bookings themselves - the median month
+        // gap between consecutive booking months of the dominant class (1 = monthly,
+        // 3 = quarterly ...). The plan interval only marks the due rhythm of the
+        // expense the plan finances (e.g. an annual membership fee), not how often
+        // money flows in, so it fills in when the cadence is not derivable: fewer
+        // than two booking months, or a single ambiguous gap larger than one month.
+        var dominantMonths = dominant
+            .Select(x => (x.BookingDate.Year * 12) + x.BookingDate.Month)
+            .Distinct()
+            .OrderBy(m => m)
+            .ToList();
+        var cadenceMonths = intervalMonths;
+        if (dominantMonths.Count >= 2)
+        {
+            var gaps = dominantMonths
+                .Skip(1)
+                .Select((m, i) => m - dominantMonths[i])
+                .OrderBy(g => g)
+                .ToList();
+            if (gaps.Count == 1)
+            {
+                // A single observed gap is ambiguous: a gap of 1 proves a monthly
+                // flow, but a larger gap cannot be told apart from missed monthly
+                // deposits - the plan interval stays the tiebreaker.
+                if (gaps[0] == 1)
+                {
+                    cadenceMonths = 1;
+                }
+            }
+            else
+            {
+                var median = gaps.Count % 2 == 1
+                    ? gaps[gaps.Count / 2]
+                    : (int)Math.Round((gaps[(gaps.Count / 2) - 1] + gaps[gaps.Count / 2]) / 2m, MidpointRounding.AwayFromZero);
+                cadenceMonths = Math.Max(1, median);
+            }
+        }
+
         var rhythmDetected = interval.HasValue
-            || (elapsedMonths >= 1 && dominantMonths >= 2 && dominantMonths * 2 >= elapsedMonths);
+            || (elapsedMonths >= 1 && dominantMonths.Count >= 2 && dominantMonths.Count * 2 >= elapsedMonths);
         if (!rhythmDetected)
         {
             return new ContributionSchedule(received, disbursements, null, null, null);
         }
 
-        var expectedPeriods = elapsedMonths >= 1 ? ((elapsedMonths - 1) / intervalMonths) + 1 : 0;
-        var observedMonthlyRate = dominantAmount / intervalMonths;
+        // Only fully elapsed cadence windows count as due - a window ending in the
+        // current month is not due yet.
+        var expectedPeriods = elapsedMonths / cadenceMonths;
+        var observedMonthlyRate = dominantAmount / cadenceMonths;
         var expectedToDate = dominantAmount * expectedPeriods;
 
         // A revolving plan (in-cycle disbursements roughly balancing the deposits, e.g. a

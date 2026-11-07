@@ -8,7 +8,7 @@ Der MCP-Server öffnet FinanceManager für externe KI-Systeme (z. B. ChatGPT, Cl
 
 Der Zugriff erfolgt ausschließlich über fachliche Werkzeuge (Tools) auf denselben Anwendungsdiensten, die auch die Weboberfläche nutzt. Es gibt keinen direkten Datenbankzugriff und keinen alternativen Schreibpfad: Buchungen entstehen weiterhin nur durch die Verbuchung von Kontoauszugsentwürfen, Rücknahmen nur als Storno.
 
-Die Sparplan-Analyse (`fm_savings_plan_analysis`) weist mit `scheduleDeficit` zusätzlich den Rückstand eines Plans gegenüber seinem erkannten Einzahlungsrhythmus aus — ein positiver Wert bedeutet ausgefallene Einzahlungen. Der Deficit zählt nur den laufenden Finanzierungszyklus seit der letzten fälligen Entnahme (bzw. dem letzten erreichten Zieldatum oder der ersten Einzahlung); Entnahmen erscheinen getrennt als `disbursements`, stornierte Buchungen fließen nicht ein, und revolvierende Pläne melden `null` statt eines Deficits.
+Die Sparplan-Analyse (`fm_savings_plan_analysis`) weist mit `scheduleDeficit` zusätzlich den Rückstand eines Plans gegenüber seinem erkannten Einzahlungsrhythmus aus — ein positiver Wert bedeutet ausgefallene Einzahlungen. Der Deficit zählt nur den laufenden Finanzierungszyklus seit der letzten fälligen Entnahme (bzw. dem letzten erreichten Zieldatum oder der ersten Einzahlung); Entnahmen erscheinen getrennt als `disbursements`, stornierte Buchungen fließen nicht ein, und revolvierende Pläne melden `null` statt eines Deficits. Die `observedMonthlyRate` folgt der beobachteten Einzahlungskadenz aus den Buchungen (Median der Belegmonats-Abstände der dominanten Betragsklasse), nicht dem Ausgaben-Fälligkeitsintervall des Plans — `interval` greift nur als Fallback bei nicht ableitbarer Kadenz.
 
 ## Funktionsweise
 

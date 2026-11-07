@@ -12,8 +12,9 @@ using Microsoft.EntityFrameworkCore;
 /// due disbursement (a withdrawal within 20 % of the target amount, else the largest one), else at the
 /// last reached target date, else at the first deposit. The scenarios pin down the cycle reset after a
 /// target-sized payout, reversal handling (a reversed deposit and its storno drop out of both sides),
-/// the separation of extraordinary disbursements from the deficit, interval normalization of the
-/// observed rate, the dominant amount class over micro postings (interest credits), the null
+/// the separation of extraordinary disbursements from the deficit, the observed deposit cadence
+/// (median booking-month gap of the dominant class; the plan interval only falls back when no
+/// cadence is derivable) normalizing the observed rate, the dominant amount class over micro postings (interest credits), the null
 /// deficit of revolving plans and the null result for plans without a detectable rhythm.
 /// </summary>
 public sealed class SavingsPlanScheduleDeficitTests
@@ -479,6 +480,98 @@ public sealed class SavingsPlanScheduleDeficitTests
         Assert.Null(result.ExpectedToDate);
         Assert.Null(result.ObservedMonthlyRate);
         Assert.Equal(60m, result.ReceivedToDate);
+        conn.Dispose();
+    }
+
+    /// <summary>The plan interval marks the expense's due rhythm, not the deposit cadence: monthly deposits on an annual-fee plan yield the monthly dominant-class rate, not a twelfth of it.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_ShouldUseObservedMonthlyCadence_WhenIntervalIsAnnually()
+    {
+        var (sut, db, conn, owner) = Create();
+        var planId = await CreatePlanAsync(db, owner, SavingsPlanType.Recurring, SavingsPlanInterval.Annually);
+        foreach (var m in new[] { -5, -4, -3, -2, -1 })
+        {
+            await AddPostingAsync(db, planId, DateTime.Today.AddMonths(m), 100m);
+        }
+
+        var result = await sut.AnalyzeAsync(planId, owner, CancellationToken.None);
+
+        Assert.Equal(100m, result.ObservedMonthlyRate);
+        Assert.Equal(500m, result.ExpectedToDate);
+        Assert.Equal(500m, result.ReceivedToDate);
+        Assert.Equal(0m, result.ScheduleDeficit);
+        conn.Dispose();
+    }
+
+    /// <summary>Deposits arriving every three months establish a quarterly cadence even on a monthly-interval plan: the observed rate normalizes the dominant class by three and the elapsed windows match the received deposits.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_ShouldDeriveQuarterlyCadence_WhenDepositsArriveEveryThreeMonths()
+    {
+        var (sut, db, conn, owner) = Create();
+        var planId = await CreatePlanAsync(db, owner, SavingsPlanType.Recurring, SavingsPlanInterval.Monthly);
+        foreach (var m in new[] { -9, -6, -3 })
+        {
+            await AddPostingAsync(db, planId, DateTime.Today.AddMonths(m), 300m);
+        }
+
+        var result = await sut.AnalyzeAsync(planId, owner, CancellationToken.None);
+
+        Assert.Equal(100m, result.ObservedMonthlyRate);
+        Assert.Equal(900m, result.ExpectedToDate);
+        Assert.Equal(900m, result.ReceivedToDate);
+        Assert.Equal(0m, result.ScheduleDeficit);
+        conn.Dispose();
+    }
+
+    /// <summary>A single booking month cannot yield a cadence: the plan interval steps in as fallback, normalizing the dominant class by twelve for an annual plan.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_ShouldFallBackToInterval_WhenOnlyOneDepositMonthExists()
+    {
+        var (sut, db, conn, owner) = Create();
+        var planId = await CreatePlanAsync(db, owner, SavingsPlanType.Recurring, SavingsPlanInterval.Annually);
+        var date = DateTime.Today.AddMonths(-13);
+        await AddPostingAsync(db, planId, date, 300m);
+        await AddPostingAsync(db, planId, date, 300m);
+
+        var result = await sut.AnalyzeAsync(planId, owner, CancellationToken.None);
+
+        Assert.Equal(25m, result.ObservedMonthlyRate);
+        Assert.Equal(300m, result.ExpectedToDate);
+        Assert.Equal(600m, result.ReceivedToDate);
+        Assert.Equal(0m, result.ScheduleDeficit);
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// ADAC-style live case: an annual fee payout opened the current cycle, monthly deposits of
+    /// the dominant class fund it since, micro interest credits accompany them - the observed
+    /// cadence is monthly, so ten due months against nine received deposits leave a deficit of
+    /// exactly one deposit (8.25), not the annual-interval distortion of the old computation.
+    /// </summary>
+    [Fact]
+    public async Task AnalyzeAsync_ShouldReturnOneDepositDeficit_WhenAnnualFeePlanIsFundedMonthly()
+    {
+        var (sut, db, conn, owner) = Create();
+        var planId = await CreatePlanAsync(db, owner, SavingsPlanType.Recurring, SavingsPlanInterval.Annually, targetAmount: 99m);
+        // annual fee payout opens the cycle ten months ago
+        await AddPostingAsync(db, planId, DateTime.Today.AddMonths(-10), -99m);
+        // interest noise in all ten months of the cycle
+        foreach (var m in new[] { -10, -9, -8, -7, -6, -5, -4, -3, -2, -1 })
+        {
+            await AddPostingAsync(db, planId, DateTime.Today.AddMonths(m), 0.68m);
+        }
+        // monthly deposits of the dominant class in nine of the ten due months
+        foreach (var m in new[] { -9, -8, -7, -6, -5, -4, -3, -2, -1 })
+        {
+            await AddPostingAsync(db, planId, DateTime.Today.AddMonths(m), 8.25m);
+        }
+
+        var result = await sut.AnalyzeAsync(planId, owner, CancellationToken.None);
+
+        Assert.Equal(8.25m, result.ObservedMonthlyRate);
+        Assert.Equal(74.25m, result.ReceivedToDate);
+        Assert.Equal(82.5m, result.ExpectedToDate);
+        Assert.Equal(8.25m, result.ScheduleDeficit);
         conn.Dispose();
     }
 }
