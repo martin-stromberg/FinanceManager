@@ -26,7 +26,14 @@ public sealed class FmSavingsPlanAnalysisDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Savings plan stock and progress analysis (target amount/date, interval, active/archived) incl. categories. Scopes: (Sparpläne, Lesen), (Sparplankategorien, Lesen).";
+        => "Savings plan stock and progress analysis (target amount/date, interval, active/archived) incl. categories. " +
+           "Savings plans serve distinct purposes: 'Recurring' plans smooth regular expenses (insurances, vehicle costs, memberships) into monthly contributions; " +
+           "'OneTime' plans are reserves for expected one-time purchases (e.g. replacing an appliance when it breaks) — a past targetDate does NOT mark them dead: " +
+           "while accumulatedAmount >= targetAmount the funded reserve stands ready until the purchase actually happens; 'Open' plans are flexible buffers without a target. " +
+           "Interpretation of analysis: accumulatedAmount may be NEGATIVE — that means Vorleistung (the purchase happened before the reserve was fully saved, e.g. a building-society loan disbursement, and the plan is being refilled) — a legitimate state, not a data error. " +
+           "accumulatedAmount of 0 on a monthly-revolving plan (e.g. a credit-card settlement reserve deposited at month-end and spent mid-month) is normal too, not underfunding. " +
+           "The list-level currentAmount field is not populated — the real balance lives in analysis.accumulatedAmount (pass includeAnalysis: true). " +
+           "Scopes: (Sparpläne, Lesen), (Sparplankategorien, Lesen).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Lesend;
