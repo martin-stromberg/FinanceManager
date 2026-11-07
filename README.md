@@ -19,6 +19,7 @@ Die Anwendung bietet unter anderem:
 - **Budget- und Reporting-Funktionen** inklusive Budget-Kategorien, -Zwecken, -Regeln und Berichten
 - **Portfolio-Analyse** mit Bericht und benutzerspezifischer KPI-Konfiguration
 - **Betriebsfunktionen** wie Backups, Update-Steuerung, Help-System und Well-Known-Endpunkte (`security.txt`, `/.well-known/change-password` mit administrierbarem Weiterleitungsziel)
+- **MCP-Server** (`/mcp`, Streamable HTTP) für den benutzerbezogenen Zugriff externer KI-Systeme: Personal-Access-Tokens, 5 Freigabestufen mit feingranularen Scopes und Filtern, genehmigungspflichtige Aktionen über eine persistente Queue mit Genehmigungscenter sowie revisionssichere, hash-verkettete Audit-Protokollierung
 
 Bei der Erstregistrierung, wenn noch kein Benutzer vorhanden ist, wird der Start auf die Registrierungsseite umgeleitet. Nur der erste Benutzer sieht dort die Checkbox `Demodaten anlegen`; ist sie aktiviert, erstellt ein Hintergrundtask nach der Registrierung den vollständigen Demo-Datenbestand. Der Fortschritt ist auf der Startseite in der Background-Task-Anzeige sichtbar.
 

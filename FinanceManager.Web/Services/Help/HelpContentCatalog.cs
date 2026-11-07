@@ -78,6 +78,7 @@ public static class HelpContentCatalog
         new("kontakte", "Kontakte", "Personen und Organisationen verwalten, die in Buchungen verwendet werden.", DescriptionOnlyDocuments),
         new("konten-und-buchungen", "Konten und Buchungen", "Konten, Buchungen und vorlaeufige Buchungen im Alltag bearbeiten.", AccountsDocuments),
         new("kontoauszuege-und-import", "Kontoauszuege und Import", "Kontoauszuege importieren und Buchungen aus Importdaten erstellen.", StatementsDocuments),
+        new("mcp-server", "MCP-Server", "Externen KI-Systemen kontrollierten Zugriff auf die eigenen Finanzdaten geben.", DescriptionOnlyDocuments),
         new("programminformationen", "Programminformationen", "Versions- und Programminformationen in der Anwendung einsehen.", ProgramDocuments),
         new("sparplaene", "Sparplaene", "Regelmaessige Sparvorgaenge planen und verwalten.", DescriptionOnlyDocuments),
         new("systemverwaltung-und-setup", "Systemverwaltung und Setup", "Grundlegende Einstellungen, Installation, Sicherheit und Fehlerbehebung.", SetupDocuments),

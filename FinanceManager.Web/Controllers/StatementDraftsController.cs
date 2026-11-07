@@ -527,11 +527,15 @@ public sealed class StatementDraftsController : ControllerBase
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetAccountAsync(Guid draftId, Guid accountId, CancellationToken ct)
     {
-        var draft = await _drafts.SetAccountAsync(draftId, _current.UserId, accountId, ct);
-        if (draft is null) return NotFound();
-        var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draft.DraftId, _current.UserId, ct);
-        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
-        return Ok(dto);
+        try
+        {
+            var draft = await _drafts.SetAccountAsync(draftId, _current.UserId, accountId, ct);
+            if (draft is null) return NotFound();
+            var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draft.DraftId, _current.UserId, ct);
+            var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
+            return Ok(dto);
+        }
+        catch (Exception ex) { return BadRequest(ex); }
     }
 
     /// <summary>

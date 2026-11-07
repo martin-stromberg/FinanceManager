@@ -58,12 +58,14 @@ namespace FinanceManager.Tests.Infrastructure
             var svc = new BackupService(db, env, logger, services);
             var userId = Guid.NewGuid();
 
-            var dto = await svc.CreateAsync(userId, CancellationToken.None);
+            var dto = await svc.CreateAsync(userId, ct: CancellationToken.None);
 
             Assert.NotNull(dto);
-            // record persisted
+            // record persisted; the source default for callers that pass none stays "System"
             var rec = db.Backups.FirstOrDefault(b => b.Id == dto.Id);
             Assert.NotNull(rec);
+            Assert.Equal("System", rec.Source);
+            Assert.Equal("System", dto.Source);
             var full = Path.Combine(backupsDir, userId.ToString("N"), rec.StoragePath);
             Assert.True(File.Exists(full));
 
@@ -429,7 +431,7 @@ namespace FinanceManager.Tests.Infrastructure
             db.BudgetRules.Add(purposeRule);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var dto = await svc.CreateAsync(userId, CancellationToken.None);
+            var dto = await svc.CreateAsync(userId, ct: CancellationToken.None);
             Assert.NotNull(dto);
 
             var rec = db.Backups.FirstOrDefault(b => b.Id == dto.Id);

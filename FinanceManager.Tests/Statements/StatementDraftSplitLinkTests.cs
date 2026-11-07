@@ -349,4 +349,158 @@ public sealed class StatementDraftSplitLinkTests
 
         conn.Dispose();
     }
+
+    /// <summary>
+    /// Credit-card rule: a card statement draft keeps its CreditCard account assignment when
+    /// linked as a split child — the postings still book on the parent giro account.
+    /// </summary>
+    [Fact]
+    public async Task SetEntrySplitDraftAsync_ShouldLink_WhenChildHasCreditCardAccount()
+    {
+        var (sut, db, conn, owner) = Create();
+
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        var intermediary = new Contact(owner, "CardProvider", ContactType.Organization, null, null, isPaymentIntermediary: true);
+        db.Contacts.AddRange(bank, intermediary);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var giro = new Account(owner, AccountType.Giro, "Giro", "DE12500105170648489890", bank.Id);
+        var card = new Account(owner, AccountType.CreditCard, "Karte", null, bank.Id);
+        db.Accounts.AddRange(giro, card);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var child = new StatementDraft(owner, "card.pdf", null, null);
+        child.SetUploadGroup(Guid.NewGuid());
+        child.SetDetectedAccount(card.Id);
+        db.StatementDrafts.Add(child);
+        var parent = new StatementDraft(owner, "giro.pdf", null, null);
+        parent.SetUploadGroup(Guid.NewGuid());
+        parent.SetDetectedAccount(giro.Id);
+        db.StatementDrafts.Add(parent);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var pEntry = parent.AddEntry(DateTime.Today, -120m, "Card debit", intermediary.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(pEntry).State = EntityState.Added;
+        pEntry.MarkAccounted(intermediary.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await sut.SetEntrySplitDraftAsync(parent.Id, pEntry.Id, child.Id, owner, CancellationToken.None);
+
+        Assert.NotNull(result);
+        var updated = await db.StatementDraftEntries.FirstAsync(e => e.Id == pEntry.Id, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(child.Id, updated.SplitDraftId);
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Credit-card rule: linking still fails when the child draft is bound to a non-card
+    /// account — only CreditCard keeps the assignment.
+    /// </summary>
+    [Fact]
+    public async Task SetEntrySplitDraftAsync_ShouldThrow_WhenChildHasNonCardAccount()
+    {
+        var (sut, db, conn, owner) = Create();
+
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        var intermediary = new Contact(owner, "PayService", ContactType.Organization, null, null, isPaymentIntermediary: true);
+        db.Contacts.AddRange(bank, intermediary);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var giro = new Account(owner, AccountType.Giro, "Giro", null, bank.Id);
+        var savings = new Account(owner, AccountType.Savings, "Spar", null, bank.Id);
+        db.Accounts.AddRange(giro, savings);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var child = new StatementDraft(owner, "savings.pdf", null, null);
+        child.SetUploadGroup(Guid.NewGuid());
+        child.SetDetectedAccount(savings.Id);
+        db.StatementDrafts.Add(child);
+        var parent = new StatementDraft(owner, "giro.pdf", null, null);
+        parent.SetUploadGroup(Guid.NewGuid());
+        parent.SetDetectedAccount(giro.Id);
+        db.StatementDrafts.Add(parent);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var pEntry = parent.AddEntry(DateTime.Today, -50m, "Transfer", intermediary.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(pEntry).State = EntityState.Added;
+        pEntry.MarkAccounted(intermediary.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var act = async () => await sut.SetEntrySplitDraftAsync(parent.Id, pEntry.Id, child.Id, owner, CancellationToken.None);
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(act);
+        Assert.Contains("must not have an account", ex.Message, StringComparison.OrdinalIgnoreCase);
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Credit-card rule: a standalone card-bound draft fails pipeline validation with
+    /// CARD_REQUIRES_PARENT — it can never be booked standalone.
+    /// </summary>
+    [Fact]
+    public async Task ValidateAsync_ShouldFail_WhenCreditCardDraftHasNoParent()
+    {
+        var (sut, db, conn, owner) = Create();
+
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        var shop = new Contact(owner, "Shop", ContactType.Organization, null, null);
+        db.Contacts.AddRange(bank, shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var card = new Account(owner, AccountType.CreditCard, "Karte", null, bank.Id);
+        db.Accounts.Add(card);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var draft = new StatementDraft(owner, "card.pdf", null, null);
+        draft.SetDetectedAccount(card.Id);
+        db.StatementDrafts.Add(draft);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var entry = draft.AddEntry(new DateTime(2026, 1, 10), -30m, "Shop", shop.Name, null, "EUR", null, false);
+        db.Entry(entry).State = EntityState.Added;
+        entry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await sut.ValidateAsync(draft.Id, null, owner, CancellationToken.None);
+
+        Assert.Contains(result.Messages, m => m.Code == "CARD_REQUIRES_PARENT" && m.Severity == "Error");
+
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Credit-card rule: standalone booking of a card-bound draft fails.
+    /// </summary>
+    [Fact]
+    public async Task BookAsync_ShouldFail_WhenCreditCardDraftBookedStandalone()
+    {
+        var (sut, db, conn, owner) = Create();
+
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        var shop = new Contact(owner, "Shop", ContactType.Organization, null, null);
+        db.Contacts.AddRange(bank, shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var card = new Account(owner, AccountType.CreditCard, "Karte", null, bank.Id);
+        db.Accounts.Add(card);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var draft = new StatementDraft(owner, "card.pdf", null, null);
+        draft.SetDetectedAccount(card.Id);
+        db.StatementDrafts.Add(draft);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var entry = draft.AddEntry(new DateTime(2026, 1, 10), -30m, "Shop", shop.Name, null, "EUR", null, false);
+        db.Entry(entry).State = EntityState.Added;
+        entry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await sut.BookAsync(draft.Id, null, owner, forceWarnings: true, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Empty(await db.Postings.ToListAsync(cancellationToken: TestContext.Current.CancellationToken));
+
+        conn.Dispose();
+    }
 }

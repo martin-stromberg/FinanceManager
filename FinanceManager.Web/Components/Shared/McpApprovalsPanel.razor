@@ -1,0 +1,342 @@
+@using FinanceManager.Domain.Mcp
+@using FinanceManager.Shared.Dtos.Mcp
+@using FinanceManager.Web.ViewModels.Mcp
+@implements IDisposable
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+
+@if (Provider is not null)
+{
+    <div class="mcp-approvals" style="display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;">
+
+        @if (Provider.IsMcpDisabled)
+        {
+            <div class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;color:var(--muted);">
+                @L["Mcp_Disabled_Hint"]
+            </div>
+        }
+        else
+        {
+            @* Warning banner while any own access runs in durable pre-approval (F-1102,
+               ui-konzept.md §7): its actions bypass this inbox and appear in history only. *@
+            @if (Provider.Accesses.Any(a => (McpApprovalMode)a.ApprovalMode == McpApprovalMode.PreApproved
+                    && (McpAccessStatus)a.Status == McpAccessStatus.Active))
+            {
+                <div role="alert" style="padding:.6rem .9rem;border:1px solid rgba(230,160,60,.5);background:rgba(230,160,60,.08);border-radius:6px;">
+                    @L["McpApproval_PreApproved_Banner"]
+                </div>
+            }
+
+            @* View switch + filters (ui-konzept.md §4.6) *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;">
+                    <div style="display:flex;gap:.4rem;">
+                        <button type="button" class="btn" style="@(!Provider.ShowHistory ? "border-color:var(--accent,#4c8dff);" : string.Empty)"
+                                @onclick="@(() => Provider.SetHistoryAsync(false))">@L["McpApproval_View_Inbox"]</button>
+                        <button type="button" class="btn" style="@(Provider.ShowHistory ? "border-color:var(--accent,#4c8dff);" : string.Empty)"
+                                @onclick="@(() => Provider.SetHistoryAsync(true))">@L["McpApproval_View_History"]</button>
+                    </div>
+                    @if (Provider.ShowHistory)
+                    {
+                        <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                            <span style="color:var(--muted);">@L["McpApproval_Filter_Status"]</span>
+                            <select class="card-input" style="min-width:10rem;" value="@(Provider.FilterStatus?.ToString() ?? string.Empty)" @onchange="OnStatusChanged">
+                                <option value="">@L["McpApproval_Filter_AllStatuses"]</option>
+                                @foreach (var s in _decidedStatuses)
+                                {
+                                    <option value="@((short)s)">@StatusText((short)s)</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_Access"]</span>
+                        <select class="card-input" style="min-width:11rem;" value="@(Provider.FilterAccessId?.ToString() ?? string.Empty)" @onchange="OnAccessChanged">
+                            <option value="">@L["McpAudit_Filter_AllAccesses"]</option>
+                            @foreach (var a in Provider.Accesses)
+                            {
+                                <option value="@a.Id">@a.Name</option>
+                            }
+                        </select>
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.2rem;font-size:.9rem;">
+                        <span style="color:var(--muted);">@L["McpAudit_Filter_Tool"]</span>
+                        <input class="card-input" style="width:12rem;" placeholder="fm_*" value="@Provider.FilterToolName" @onchange="OnToolChanged" />
+                    </label>
+                    <button type="button" class="btn" @onclick="@(() => Provider.ApplyFiltersAsync())">@L["McpAudit_Filter_Apply"]</button>
+                    <button type="button" class="btn" @onclick="@(() => Provider.ClearFiltersAsync())">@L["McpAudit_Filter_Clear"]</button>
+                </div>
+            </section>
+
+            @* Batch bar (pending inbox only) *@
+            @if (!Provider.ShowHistory && Provider.SelectedIds.Count > 0)
+            {
+                <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center;">
+                    <span>@string.Format(L["McpApproval_Batch_Selected"].Value, Provider.SelectedIds.Count)</span>
+                    <button type="button" class="btn" disabled="@Provider.Busy" @onclick="@(() => Provider.ApproveSelectedAsync())">@L["McpApproval_Batch_Approve"]</button>
+                    <button type="button" class="btn" disabled="@Provider.Busy" @onclick="RejectSelectedAsync">@L["McpApproval_Batch_Reject"]</button>
+                </section>
+            }
+            @if (Provider.LastBatchResult is { Count: > 0 } batch)
+            {
+                <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.6rem 1rem;font-size:.85rem;">
+                    @string.Format(L["McpApproval_Batch_Result"].Value, batch.Count(b => b.Succeeded), batch.Count)
+                    @foreach (var item in batch.Where(b => !b.Succeeded))
+                    {
+                        <div style="color:#e66;"><code>@item.RequestId</code>: @ErrText(item.ErrorCode)</div>
+                    }
+                </section>
+            }
+
+            @* Request list *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                @if (Provider.Loading && Provider.Items.Count == 0)
+                {
+                    <div style="color:var(--muted);">@L["General_Loading"]</div>
+                }
+                else if (Provider.Items.Count == 0)
+                {
+                    <div style="color:var(--muted);">@(Provider.ShowHistory ? L["McpApproval_History_Empty"].Value : L["McpApproval_Inbox_Empty"].Value)</div>
+                }
+                else
+                {
+                    @foreach (var r in Provider.Items)
+                    {
+                        var expanded = Provider.ExpandedId == r.Id;
+                        var isPending = r.Status == (short)AiActionRequestStatus.Pending;
+                        var remaining = r.ExpiresUtc - DateTime.UtcNow;
+                        <div style="border-top:1px solid var(--border,#333);padding:.4rem 0;">
+                            <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+                                @if (!Provider.ShowHistory && isPending)
+                                {
+                                    <input type="checkbox" checked="@Provider.SelectedIds.Contains(r.Id)" @onchange="@(() => Provider.ToggleSelected(r.Id))" />
+                                }
+                                <span style="color:var(--muted);font-size:.85rem;min-width:8rem;">@r.RequestedUtc.ToString("g")</span>
+                                <span style="font-size:.75rem;padding:.05rem .4rem;border:1px solid var(--border,#555);border-radius:10px;color:@StatusColor(r.Status);">
+                                    @StatusText(r.Status)
+                                </span>
+                                @if ((r.EffectPreview?.IsDestructive) ?? McpApprovalCenterViewModel.IsDestructive(r.ToolName, r.ActionKey))
+                                {
+                                    <span style="font-size:.75rem;padding:.05rem .4rem;border:1px solid #a33;border-radius:10px;color:#e88;">@L["McpApproval_Destructive"]</span>
+                                }
+                                @* Localized process label + compact effect from the server-side
+                                   EffectPreview (ui-konzept.md §4.6) — the technical fm_* name
+                                   stays in the detail view. *@
+                                <span>@r.McpAccessName · @ToolText(r.ToolName): <span style="color:var(--muted);">@EffectText(r)</span></span>
+                                @if (isPending)
+                                {
+                                    <span style="font-size:.8rem;color:@(remaining < TimeSpan.FromHours(24) ? "#e6a03c" : "var(--muted)");">
+                                        @string.Format(L["McpApproval_ExpiresIn"].Value, remaining.Days * 24 + remaining.Hours, remaining.Minutes)
+                                    </span>
+                                }
+                                <span style="margin-left:auto;color:var(--muted);font-size:.8rem;cursor:pointer;" @onclick="@(() => Provider.ToggleDetailsAsync(r.Id))">
+                                    @(expanded ? L["McpAudit_Detail_Hide"].Value : L["McpAudit_Detail_Show"].Value)
+                                </span>
+                            </div>
+
+                            @if (expanded)
+                            {
+                                @if (Provider.Detail is { } d)
+                                {
+                                    <div style="margin:.4rem 0 .4rem 2rem;font-size:.9rem;">
+                                        <table style="border-collapse:collapse;">
+                                            <tbody>
+                                                <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_RequestId"]</td><td><code>@d.Id</code></td></tr>
+                                                <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Access"]</td><td>@d.McpAccessName</td></tr>
+                                                <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Tool"]</td><td><code>@d.ToolName</code> · @d.ActionKey</td></tr>
+                                                <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Kind"]</td><td>@KindText(d.EffectPreview?.Kind ?? "generic")</td></tr>
+                                                @if (d.ExpiresUtc != default)
+                                                {
+                                                    <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["Mcp_Card_ExpiresUtc"]</td><td>@d.ExpiresUtc.ToString("g")</td></tr>
+                                                }
+                                                @if (d.DecisionNote is not null)
+                                                {
+                                                    <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_DecisionNote"]</td><td>@d.DecisionNote</td></tr>
+                                                }
+                                                @if (d.FailureReason is not null)
+                                                {
+                                                    <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpApproval_Detail_Failure"]</td><td>@ErrText(d.FailureReason)</td></tr>
+                                                }
+                                                <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;">@L["McpAudit_Detail_CorrelationId"]</td>
+                                                    <td><a href="/card/mcp-audit?correlationId=@d.CorrelationId"><code>@d.CorrelationId</code></a></td></tr>
+                                            </tbody>
+                                        </table>
+
+                                        @if (d.ReasonText is not null)
+                                        {
+                                            <div style="margin-top:.5rem;">
+                                                <span style="color:var(--muted);">@L["McpApproval_Detail_ReasonText"]</span>
+                                                <div style="border-left:3px solid #e6a03c;padding:.2rem .6rem;font-style:italic;">@d.ReasonText</div>
+                                            </div>
+                                        }
+
+                                        @if (d.EffectPreview is { Fields.Count: > 0 } preview)
+                                        {
+                                            <div style="margin-top:.5rem;color:var(--muted);">@L["McpApproval_Detail_Effect"]</div>
+                                            <table class="fm-table" style="margin-top:.25rem;">
+                                                <tbody>
+                                                    @foreach (var f in preview.Fields)
+                                                    {
+                                                        <tr><td style="color:var(--muted);padding:.1rem .6rem .1rem 0;"><code>@f.Name</code></td><td>@(f.Value ?? "—")</td></tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        }
+                                        <div style="margin-top:.5rem;color:var(--muted);">@L["McpAudit_Detail_Payload"]</div>
+                                        <pre style="margin:.25rem 0 0;padding:.5rem;border:1px solid var(--border,#444);border-radius:6px;overflow:auto;max-height:12rem;font-size:.8rem;">@d.ParameterSnapshot</pre>
+
+                                        @if (d.ExecutionResult is not null)
+                                        {
+                                            <div style="margin-top:.5rem;color:var(--muted);">@L["McpApproval_Detail_Result"]</div>
+                                            <pre style="margin:.25rem 0 0;padding:.5rem;border:1px solid var(--border,#444);border-radius:6px;overflow:auto;max-height:10rem;font-size:.8rem;">@d.ExecutionResult</pre>
+                                        }
+
+                                        @if (d.Status == (short)AiActionRequestStatus.Pending)
+                                        {
+                                            <div style="margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+                                                <button type="button" class="btn" disabled="@Provider.Busy" @onclick="@(() => Provider.ApproveExpandedAsync())">@L["McpApproval_Action_Approve"]</button>
+                                                <button type="button" class="btn" disabled="@(Provider.Busy || string.IsNullOrWhiteSpace(Provider.DecisionComment))" @onclick="@(() => Provider.RejectExpandedAsync())">@L["McpApproval_Action_Reject"]</button>
+                                                <button type="button" class="btn" disabled="@Provider.Busy" @onclick="@(() => Provider.CancelExpandedAsync())">@L["McpApproval_Action_Cancel"]</button>
+                                                <input class="card-input" style="flex:1;min-width:14rem;" placeholder="@L["McpApproval_Comment_Placeholder"].Value"
+                                                       value="@Provider.DecisionComment" @onchange="OnCommentChanged" />
+                                            </div>
+                                            <div style="font-size:.8rem;color:var(--muted);margin-top:.25rem;">@L["McpApproval_Comment_Hint"]</div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="margin:.4rem 0 .4rem 2rem;color:var(--muted);">@L["General_Loading"]</div>
+                                }
+                            }
+                        </div>
+                    }
+                    @if (Provider.CanLoadMore)
+                    {
+                        <div style="margin-top:.6rem;">
+                            <button type="button" class="btn" disabled="@Provider.Loading" @onclick="@(() => Provider.LoadMoreAsync())">@L["McpAudit_LoadMore"]</button>
+                        </div>
+                    }
+                }
+            </section>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The owning approval-center view model.</summary>
+    [Parameter] public McpApprovalCenterViewModel? Provider { get; set; }
+
+    private static readonly AiActionRequestStatus[] _decidedStatuses =
+    {
+        AiActionRequestStatus.Approved, AiActionRequestStatus.Executed,
+        AiActionRequestStatus.Failed, AiActionRequestStatus.Rejected, AiActionRequestStatus.Expired
+    };
+
+    private McpApprovalCenterViewModel? _subscribed;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (_subscribed != Provider)
+        {
+            if (_subscribed is not null) _subscribed.StateChanged -= OnChanged;
+            _subscribed = Provider;
+            if (_subscribed is not null) _subscribed.StateChanged += OnChanged;
+        }
+    }
+
+    private void OnChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private void OnStatusChanged(ChangeEventArgs e)
+        => Provider?.SetFilterStatus(short.TryParse(e.Value?.ToString(), out var s) ? s : null);
+
+    private void OnAccessChanged(ChangeEventArgs e)
+        => Provider?.SetFilterAccess(Guid.TryParse(e.Value?.ToString(), out var id) ? id : null);
+
+    private void OnToolChanged(ChangeEventArgs e) => Provider?.SetFilterTool(e.Value?.ToString());
+
+    private void OnCommentChanged(ChangeEventArgs e) => Provider?.SetDecisionComment(e.Value?.ToString());
+
+    private Task RejectSelectedAsync()
+    {
+        // Batch reject uses the optional shared comment input of the expanded detail —
+        // without a comment the per-request reject stays available.
+        return Provider?.RejectSelectedAsync(Provider.DecisionComment) ?? Task.CompletedTask;
+    }
+
+    private string StatusText(short status) => status switch
+    {
+        (short)AiActionRequestStatus.Pending => L["McpApproval_Status_Pending"].Value,
+        (short)AiActionRequestStatus.Approved => L["McpApproval_Status_Approved"].Value,
+        (short)AiActionRequestStatus.Rejected => L["McpApproval_Status_Rejected"].Value,
+        (short)AiActionRequestStatus.Executed => L["McpApproval_Status_Executed"].Value,
+        (short)AiActionRequestStatus.Failed => L["McpApproval_Status_Failed"].Value,
+        (short)AiActionRequestStatus.Expired => L["McpApproval_Status_Expired"].Value,
+        _ => status.ToString()
+    };
+
+    private static string StatusColor(short status) => status switch
+    {
+        (short)AiActionRequestStatus.Pending => "#e6a03c",
+        (short)AiActionRequestStatus.Approved => "#4c8dff",
+        (short)AiActionRequestStatus.Executed => "#7cc37c",
+        (short)AiActionRequestStatus.Failed or (short)AiActionRequestStatus.Rejected => "#e66",
+        _ => "var(--muted)"
+    };
+
+    /// <summary>Localized process label of a tool (McpApproval_ToolLabel_*), fallback = tool name.</summary>
+    private string ToolText(string toolName)
+    {
+        var value = L[$"McpApproval_ToolLabel_{toolName}"];
+        return value.ResourceNotFound || string.IsNullOrWhiteSpace(value.Value) ? toolName : value.Value;
+    }
+
+    /// <summary>
+    /// Compact effect statement of a request derived from the server-side
+    /// <see cref="AiActionRequestEffectPreviewDto"/> of the list item: the localized effect
+    /// kind plus up to two identifying snapshot values.
+    /// </summary>
+    private string EffectText(AiActionRequestListItemDto r)
+    {
+        var preview = r.EffectPreview;
+        var text = KindText(preview?.Kind ?? "generic");
+        if (preview?.Fields is { Count: > 0 } fields)
+        {
+            var parts = fields.Take(2).Select(f => $"{f.Name}={TrimFieldValue(f.Value)}");
+            text += " (" + string.Join(", ", parts) + ")";
+        }
+        return text;
+    }
+
+    private static string TrimFieldValue(string? value)
+        => value is null ? "—" : value.Length > 24 ? value[..24] + "…" : value;
+
+    /// <summary>Maps a classified <c>Err_*</c> code to its localized text; fallback = raw code.</summary>
+    private string ErrText(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return string.Empty;
+        }
+        var value = L[code];
+        return value.ResourceNotFound || string.IsNullOrWhiteSpace(value.Value) ? code : value.Value;
+    }
+
+    private string KindText(string kind) => kind switch
+    {
+        "book" or "bookAll" => L["McpApproval_Kind_Book"].Value,
+        "commit" => L["McpApproval_Kind_Commit"].Value,
+        "discard" or "discardAll" => L["McpApproval_Kind_Discard"].Value,
+        "reverse" => L["McpApproval_Kind_Reverse"].Value,
+        "merge" => L["McpApproval_Kind_Merge"].Value,
+        "delete" => L["McpApproval_Kind_Delete"].Value,
+        "archive" => L["McpApproval_Kind_Archive"].Value,
+        _ => L["McpApproval_Kind_Generic"].Value
+    };
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_subscribed is not null) _subscribed.StateChanged -= OnChanged;
+    }
+}

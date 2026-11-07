@@ -1,3 +1,5 @@
+using FinanceManager.Shared.Dtos.Securities;
+
 namespace FinanceManager.Shared.Dtos.Reports;
 
 /// <summary>
@@ -13,6 +15,9 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="PreviousAmount">Optional amount in the previous comparison period.</param>
 /// <param name="YearAgoAmount">Optional amount in the same period one year ago.</param>
 /// <param name="ProjectionExpectedDividends">Expected dividend details contributing to the projection.</param>
+/// <param name="SecuritySubType">For security detail points: the concrete posting sub type of this point
+/// (security points are split per sub type). <c>null</c> for non-security points, roll-up rows
+/// (Category:/Type:) and netted security rows.</param>
 /// <returns>The result.</returns>
 public sealed record ReportAggregatePointDto(
     DateTime PeriodStart,
@@ -24,7 +29,8 @@ public sealed record ReportAggregatePointDto(
     string? ParentGroupKey,
     decimal? PreviousAmount,
     decimal? YearAgoAmount,
-    IReadOnlyList<ReportProjectionExpectedDividendDto>? ProjectionExpectedDividends = null
+    IReadOnlyList<ReportProjectionExpectedDividendDto>? ProjectionExpectedDividends = null,
+    SecurityPostingSubType? SecuritySubType = null
 );
 
 /// <summary>

@@ -1422,7 +1422,16 @@ public sealed partial class StatementDraftService : IStatementDraftService
         var draft = await _db.StatementDrafts.Include(d => d.Entries)
             .FirstOrDefaultAsync(d => d.Id == draftId && d.OwnerUserId == ownerUserId, ct);
         if (draft == null || draft.Status != StatementDraftStatus.Draft) { return null; }
-        if (!await _db.Accounts.AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct)) { return null; }
+        var commitAccount = await _db.Accounts.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (commitAccount == null) { return null; }
+        if (commitAccount.Type == AccountType.CreditCard)
+        {
+            // Credit-card rule: card statement drafts may only be finalized indirectly
+            // as a split of a parent statement entry — never committed standalone.
+            throw new InvalidOperationException(
+                "Credit card statement drafts must be booked via a parent entry split, not committed standalone.");
+        }
 
         var import = new StatementImport(accountId, format, draft.OriginalFileName);
         _db.StatementImports.Add(import);
@@ -1516,8 +1525,18 @@ public sealed partial class StatementDraftService : IStatementDraftService
         var draft = await _db.StatementDrafts.Include(d => d.Entries)
             .FirstOrDefaultAsync(d => d.Id == draftId && d.OwnerUserId == ownerUserId, ct);
         if (draft == null || draft.Status != StatementDraftStatus.Draft) { return null; }
-        var accountExists = await _db.Accounts.AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
-        if (!accountExists) { return null; }
+        var account = await _db.Accounts.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (account == null) { return null; }
+        if (account.Type != AccountType.CreditCard
+            && await _db.StatementDraftEntries.AsNoTracking().AnyAsync(e => e.SplitDraftId == draft.Id, ct))
+        {
+            // Credit-card exemption (mirrors SetEntrySplitDraftAsync): a draft already
+            // linked as a split child may only carry a CreditCard account assignment —
+            // any other account type would produce the SPLIT_DRAFT_HAS_ACCOUNT
+            // violation at booking.
+            throw new InvalidOperationException("Split draft must not have an account assigned.");
+        }
         draft.SetDetectedAccount(accountId);
         await ClassifyInternalAsync(draft, null, ownerUserId, ct);
         await _db.SaveChangesAsync(ct);
@@ -1631,7 +1650,19 @@ public sealed partial class StatementDraftService : IStatementDraftService
             }
             var splitDraft = await _db.StatementDrafts.FirstOrDefaultAsync(d => d.Id == splitDraftId && d.OwnerUserId == ownerUserId, ct);
             if (splitDraft == null) { throw new InvalidOperationException("Split draft not found."); }
-            if (splitDraft.DetectedAccountId != null) { throw new InvalidOperationException("Split draft must not have an account assigned."); }
+            if (splitDraft.DetectedAccountId != null)
+            {
+                // Credit-card exemption: a card statement draft keeps its CreditCard
+                // account assignment when linked as a split child — the account type
+                // marks the statement origin, the postings still book on the parent
+                // (giro) account. Other account types stay forbidden.
+                var splitAccount = await _db.Accounts.AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Id == splitDraft.DetectedAccountId && a.OwnerUserId == ownerUserId, ct);
+                if (splitAccount?.Type != AccountType.CreditCard)
+                {
+                    throw new InvalidOperationException("Split draft must not have an account assigned.");
+                }
+            }
             bool inUse = await _db.StatementDraftEntries.AnyAsync(e => e.SplitDraftId == splitDraftId, ct);
             if (inUse) { throw new InvalidOperationException("Split draft already linked."); }
             // Require different upload groups
@@ -1808,6 +1839,18 @@ public sealed partial class StatementDraftService : IStatementDraftService
             ? null
             : await _db.Accounts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == draft.DetectedAccountId, ct);
 
+        // Credit-card rule: card statement drafts may only be booked indirectly as a
+        // split of a parent statement entry (the debiting giro line) — a draft bound
+        // to a CreditCard account without a parent entry link can never be booked
+        // standalone. Split children keep their card account assignment (the
+        // SPLIT_DRAFT_HAS_ACCOUNT exemption below); the presence of a parent
+        // reference is derived the same way as IsSplitDraft on the DTO mapping.
+        if (account?.Type == AccountType.CreditCard
+            && !await _db.StatementDraftEntries.AsNoTracking().AnyAsync(e => e.SplitDraftId == draft.Id, ct))
+        {
+            Add("CARD_REQUIRES_PARENT", "Error", "Validation_CARD_REQUIRES_PARENT", null, null);
+        }
+
         // Cycle detection for split relations
         var visited = new HashSet<Guid>();
         var stack = new HashSet<Guid>();
@@ -1858,9 +1901,22 @@ public sealed partial class StatementDraftService : IStatementDraftService
             var groupEntries = groupDrafts.SelectMany(d => d.Entries)
                 .Where(e => e.Status != StatementDraftEntryStatus.AlreadyBooked)
                 .ToList();
-            if (groupDrafts.Any(d => d.DetectedAccountId != null))
+            var groupAccountIds = groupDrafts
+                .Where(d => d.DetectedAccountId != null)
+                .Select(d => d.DetectedAccountId!.Value)
+                .Distinct()
+                .ToList();
+            if (groupAccountIds.Count > 0)
             {
-                Add("SPLIT_DRAFT_HAS_ACCOUNT", "Error", "Validation_SPLIT_DRAFT_HAS_ACCOUNT", draft.Id, parentEntry.Id, prefix);
+                // Credit-card exemption: a card statement draft may keep its
+                // CreditCard account assignment inside a split group.
+                var nonCardAccountAssigned = await _db.Accounts.AsNoTracking()
+                    .Where(a => groupAccountIds.Contains(a.Id) && a.Type != AccountType.CreditCard)
+                    .AnyAsync(token);
+                if (nonCardAccountAssigned)
+                {
+                    Add("SPLIT_DRAFT_HAS_ACCOUNT", "Error", "Validation_SPLIT_DRAFT_HAS_ACCOUNT", draft.Id, parentEntry.Id, prefix);
+                }
             }
             var sum = groupEntries.Sum(e => e.Amount);
             if (sum != parentEntry.Amount)

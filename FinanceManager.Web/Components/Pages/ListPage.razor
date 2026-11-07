@@ -125,6 +125,7 @@ else
             "savings-plans" => Localizer["General_Title_SavingsPlans"],
             "postings" => Localizer["General_Title_Postings"],
             "securities" => Localizer["General_Title_Securities"],
+            "mcp-accesses" => Localizer["General_Title_McpAccesses"],
             _ => Kind
         } ?? string.Empty;
     }
@@ -291,6 +292,8 @@ else
         if (t == typeof(SetPasswordOverlay)) return Localizer["Users_SetPassword_Title"];
         if (t == typeof(AssignStatementOverlay)) return Localizer["AssignStatement_Title"];
         if (t == typeof(MassBookingOptionsPanel)) return Localizer["MassBooking_Title"];
+        if (t == typeof(McpAccessCreateWizard)) return Localizer["McpWizard_Title"];
+        if (t == typeof(McpTokenDisplayPanel)) return Localizer["McpToken_Title_Rotated"];
         return Localizer["Attachments_Title"];
     }
 }
