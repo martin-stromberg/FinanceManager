@@ -200,7 +200,8 @@ public sealed class McpMasterDataWriteToolsTests
             {
                 new McpToolScope(McpDataType.SavingsPlans, McpRightKind.Create),
                 new McpToolScope(McpDataType.SavingsPlans, McpRightKind.Modify),
-                new McpToolScope(McpDataType.SavingsPlanCategories, McpRightKind.Read)
+                new McpToolScope(McpDataType.SavingsPlanCategories, McpRightKind.Read),
+                new McpToolScope(McpDataType.Accounts, McpRightKind.Read)
             },
             registry.Find("fm_savings_plans_manage")!.RequiredScopes);
         Assert.Equal(new[]
@@ -674,12 +675,16 @@ public sealed class McpMasterDataWriteToolsTests
 
     private static FmSavingsPlansManageHandler PlansHandler(
         Mock<ISavingsPlanService> plans, Mock<ISavingsPlanCategoryService>? categories = null,
-        Mock<IMcpScopeEvaluator>? evaluator = null, Mock<IMcpAuditWriter>? audit = null)
+        Mock<IMcpScopeEvaluator>? evaluator = null, Mock<IMcpAuditWriter>? audit = null,
+        Mock<ISavingsPlanAccountLinkService>? links = null, Mock<IAccountService>? accounts = null,
+        McpRecordScopeFilter? filter = null)
         => new(plans.Object,
             (categories ?? new Mock<ISavingsPlanCategoryService>()).Object,
+            (links ?? new Mock<ISavingsPlanAccountLinkService>()).Object,
+            (accounts ?? new Mock<IAccountService>()).Object,
             (evaluator ?? NewScopeEvaluator()).Object,
             (audit ?? NullAudit()).Object,
-            NewFilter());
+            filter ?? NewFilter());
 
     /// <summary>Test case.</summary>
     [Fact]
@@ -806,6 +811,220 @@ public sealed class McpMasterDataWriteToolsTests
         plans.Verify(p => p.UpdateAsync(id, owner, "plan", SavingsPlanType.Recurring, null, null, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
         Assert.Contains(staged()!.Changes!, c => c.Field == "ContractNumber" && c.NewValue is null);
         Assert.Contains(staged()!.Changes!, c => c.Field == "CategoryId" && c.NewValue is null);
+    }
+
+    // ------------------------------------------------------------------
+    // T24 account links + actual-balance report (issue #492)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// addAccountLink resolves both records owner-scoped, delegates to the link service and
+    /// stages the DataChange audit atomically with the effect.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_AddAccountLink_Delegates_AndStagesAudit()
+    {
+        var owner = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(planId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan(planId));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(accountId));
+        var links = new Mock<ISavingsPlanAccountLinkService>();
+        var audit = CapturingAudit(out var staged);
+
+        var handler = PlansHandler(plans, links: links, accounts: accounts, audit: audit);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"addAccountLink\",\"savingsPlanId\":\"{planId}\",\"accountId\":\"{accountId}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        links.Verify(l => l.AddLinkAsync(planId, accountId, owner, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal("SavingsPlanAccountLinkChanged", staged()!.EventType);
+        Assert.Contains(staged()!.Changes!, c => c.Field == "AccountLinkAdded" && c.NewValue == accountId.ToString());
+    }
+
+    /// <summary>
+    /// A foreign (or unknown) account id behaves like a missing record — the call is
+    /// rejected before any link effect.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_AddAccountLink_ForeignAccount_RejectedBeforeEffect()
+    {
+        var owner = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(planId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan(planId));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AccountDto?)null);
+        var links = new Mock<ISavingsPlanAccountLinkService>();
+
+        var handler = PlansHandler(plans, links: links, accounts: accounts);
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args($"{{\"operation\":\"addAccountLink\",\"savingsPlanId\":\"{planId}\",\"accountId\":\"{Guid.NewGuid()}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
+            "Err_Mcp_InvalidArguments");
+        links.Verify(l => l.AddLinkAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A foreign (or unknown) plan yields the documented 404-shaped null answer — the link
+    /// service is never touched.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_AddAccountLink_ForeignPlan_ReturnsNull()
+    {
+        var owner = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(It.IsAny<Guid>(), owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SavingsPlanDto?)null);
+        var links = new Mock<ISavingsPlanAccountLinkService>();
+
+        var handler = PlansHandler(plans, links: links);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"addAccountLink\",\"savingsPlanId\":\"{Guid.NewGuid()}\",\"accountId\":\"{Guid.NewGuid()}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("savingsPlan").ValueKind);
+        links.Verify(l => l.AddLinkAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A duplicate link reported by the service surfaces as the classified state conflict
+    /// Err_Mcp_InvalidState (the REST endpoint maps the same case to 400).
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_AddAccountLink_Duplicate_RejectedAsInvalidState()
+    {
+        var owner = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(planId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan(planId));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(accountId));
+        var links = new Mock<ISavingsPlanAccountLinkService>();
+        links.Setup(l => l.AddLinkAsync(planId, accountId, owner, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Account already linked to this savings plan"));
+
+        var handler = PlansHandler(plans, links: links, accounts: accounts);
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args($"{{\"operation\":\"addAccountLink\",\"savingsPlanId\":\"{planId}\",\"accountId\":\"{accountId}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
+            "Err_Mcp_InvalidState");
+    }
+
+    /// <summary>
+    /// removeAccountLink delegates to the link service; a missing link (service returns
+    /// false) is rejected with Err_Mcp_InvalidArguments.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_RemoveAccountLink_Delegates_AndRejectsMissingLink()
+    {
+        var owner = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(planId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan(planId));
+        var accounts = new Mock<IAccountService>();
+        accounts.Setup(a => a.GetAsync(accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewAccount(accountId));
+        var links = new Mock<ISavingsPlanAccountLinkService>();
+        links.Setup(l => l.RemoveLinkAsync(planId, accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var audit = CapturingAudit(out var staged);
+
+        var handler = PlansHandler(plans, links: links, accounts: accounts, audit: audit);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"removeAccountLink\",\"savingsPlanId\":\"{planId}\",\"accountId\":\"{accountId}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Contains(staged()!.Changes!, c => c.Field == "AccountLinkRemoved" && c.OldValue == accountId.ToString());
+
+        // Missing link → classified rejection.
+        links.Setup(l => l.RemoveLinkAsync(planId, accountId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args($"{{\"operation\":\"removeAccountLink\",\"savingsPlanId\":\"{planId}\",\"accountId\":\"{accountId}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
+            "Err_Mcp_InvalidArguments");
+    }
+
+    /// <summary>
+    /// reportActualBalance delegates to the savings plan service and returns the booked
+    /// difference plus the resulting accumulated amount.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_ReportActualBalance_Delegates_AndStagesAudit()
+    {
+        var owner = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var postingId = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(planId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan(planId));
+        plans.Setup(p => p.ReportActualBalanceAsync(planId, owner, 50m, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SavingsPlanActualReportResponse(postingId, 75.30m, 50m));
+        var audit = CapturingAudit(out var staged);
+
+        var handler = PlansHandler(plans, audit: audit);
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args($"{{\"operation\":\"reportActualBalance\",\"savingsPlanId\":\"{planId}\",\"reportedBalance\":50}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        Assert.True(doc.RootElement.GetProperty("applied").GetBoolean());
+        Assert.Equal(75.30m, doc.RootElement.GetProperty("differenceAmount").GetDecimal());
+        Assert.Equal(50m, doc.RootElement.GetProperty("accumulatedAmount").GetDecimal());
+        Assert.Equal(postingId, doc.RootElement.GetProperty("postingId").GetGuid());
+        Assert.Equal("SavingsPlanActualReported", staged()!.EventType);
+        plans.Verify(p => p.ReportActualBalanceAsync(planId, owner, 50m, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// reportActualBalance requires the reportedBalance argument.
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_ReportActualBalance_MissingBalance_Rejected()
+    {
+        var owner = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        var handler = PlansHandler(plans);
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args($"{{\"operation\":\"reportActualBalance\",\"savingsPlanId\":\"{Guid.NewGuid()}\"}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
+            "Err_Mcp_InvalidArguments");
+        plans.Verify(p => p.ReportActualBalanceAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// reportActualBalance is rejected once the plan has linked accounts — the account
+    /// balance is the single source of truth (same validation as the REST endpoint).
+    /// </summary>
+    [Fact]
+    public async Task SavingsPlans_ReportActualBalance_LinkedPlan_RejectedAsInvalidState()
+    {
+        var owner = Guid.NewGuid();
+        var planId = Guid.NewGuid();
+        var plans = new Mock<ISavingsPlanService>();
+        plans.Setup(p => p.GetAsync(planId, owner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NewPlan(planId));
+        plans.Setup(p => p.ReportActualBalanceAsync(planId, owner, It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Actual-balance reports are only allowed for savings plans without linked accounts"));
+
+        var handler = PlansHandler(plans);
+        await AssertMcpErrorAsync(handler.InvokeAsync(
+            Args($"{{\"operation\":\"reportActualBalance\",\"savingsPlanId\":\"{planId}\",\"reportedBalance\":50}}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None),
+            "Err_Mcp_InvalidState");
     }
 
     // ------------------------------------------------------------------
