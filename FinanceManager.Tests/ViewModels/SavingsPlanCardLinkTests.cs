@@ -117,7 +117,7 @@ public sealed class SavingsPlanCardLinkTests
         apiMock.Setup(a => a.SavingsPlans_GetLinkedAccountsAsync(planId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { account.Id });
 
-        var ok = await vm.AddAccountLinkAsync();
+        var ok = await vm.AddAccountLinkAsync(TestContext.Current.CancellationToken);
 
         ok.Should().BeTrue();
         apiMock.Verify(a => a.SavingsPlans_AddAccountLinkAsync(planId, account.Id, It.IsAny<CancellationToken>()), Times.Once);
@@ -144,7 +144,7 @@ public sealed class SavingsPlanCardLinkTests
         apiMock.Setup(a => a.SavingsPlans_GetLinkedAccountsAsync(planId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Guid>());
 
-        await vm.RemoveAccountLinkAsync(account.Id);
+        await vm.RemoveAccountLinkAsync(account.Id, TestContext.Current.CancellationToken);
 
         apiMock.Verify(a => a.SavingsPlans_RemoveAccountLinkAsync(planId, account.Id, It.IsAny<CancellationToken>()), Times.Once);
         vm.HasLinkedAccounts.Should().BeFalse();
@@ -194,7 +194,7 @@ public sealed class SavingsPlanCardLinkTests
                 planId, It.Is<SavingsPlanActualReportRequest>(r => r.ReportedBalance == 50m), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SavingsPlanActualReportResponse(Guid.NewGuid(), 75.30m, 50m));
 
-        var ok = await vm.ReportActualBalanceAsync(50m);
+        var ok = await vm.ReportActualBalanceAsync(50m, TestContext.Current.CancellationToken);
 
         ok.Should().BeTrue();
         apiMock.Verify(a => a.SavingsPlans_ReportActualBalanceAsync(
@@ -215,7 +215,7 @@ public sealed class SavingsPlanCardLinkTests
         SetupLoad(apiMock, planId, new[] { account.Id }, new[] { account });
         await vm.LoadAsync(planId);
 
-        var ok = await vm.ReportActualBalanceAsync(50m);
+        var ok = await vm.ReportActualBalanceAsync(50m, TestContext.Current.CancellationToken);
 
         ok.Should().BeFalse();
         vm.LastError.Should().NotBeNullOrEmpty();

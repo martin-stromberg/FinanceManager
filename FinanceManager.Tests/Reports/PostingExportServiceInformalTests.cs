@@ -121,8 +121,9 @@ public sealed class PostingExportServiceInformalTests
 
         Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", contentType);
         using var doc = SpreadsheetDocument.Open(stream, false);
-        var sheetData = doc.WorkbookPart?.WorksheetParts.FirstOrDefault()?.Worksheet.Elements<SheetData>().Single();
-        Assert.NotNull(sheetData);
+        Assert.NotNull(doc.WorkbookPart);
+        var worksheetPart = Assert.Single(doc.WorkbookPart.WorksheetParts);
+        var sheetData = Assert.Single(worksheetPart.Worksheet!.Elements<SheetData>());
         var rows = sheetData.Elements<Row>().ToList();
         Assert.Equal(2, rows.Count);
 
