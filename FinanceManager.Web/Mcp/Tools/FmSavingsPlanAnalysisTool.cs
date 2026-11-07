@@ -32,9 +32,11 @@ public sealed class FmSavingsPlanAnalysisDescriptor : McpToolDescriptorBase
            "while accumulatedAmount >= targetAmount the funded reserve stands ready until the purchase actually happens; 'Open' plans are flexible buffers without a target. " +
            "Interpretation of analysis: accumulatedAmount may be NEGATIVE — that means Vorleistung (the purchase happened before the reserve was fully saved, e.g. a building-society loan disbursement, and the plan is being refilled) — a legitimate state, not a data error. " +
            "accumulatedAmount of 0 on a monthly-revolving plan (e.g. a credit-card settlement reserve deposited at month-end and spent mid-month) is normal too, not underfunding. " +
-           "scheduleDeficit is the backlog against the plan's own observed deposit rhythm (expectedToDate = observedMonthlyRate, the median monthly contribution normalized by interval, times elapsed contribution periods, minus receivedToDate): a positive value means one or more scheduled deposits were missed. " +
-           "It never includes withdrawals — those are reported separately as disbursements — and reversed postings are excluded from both sides. " +
-           "scheduleDeficit/expectedToDate/observedMonthlyRate are null when the plan has no postings or no regular rhythm is detectable (e.g. scattered one-off top-ups). " +
+           "scheduleDeficit is the backlog against the plan's own observed deposit rhythm, counted within the CURRENT financing cycle only: the cycle starts at the last due disbursement (a withdrawal ≈ targetAmount within 20%, else the largest one), else at the last reached targetDate, else at the first deposit — deposits received before the last payout funded the completed cycle and are never a backlog. " +
+           "expectedToDate = observedMonthlyRate (median monthly contribution since cycle start, normalized by interval) times elapsed contribution periods, minus receivedToDate (deposits since cycle start): a positive deficit means one or more scheduled deposits were missed in the current cycle. " +
+           "Withdrawals never enter the deficit — they are reported separately as disbursements (a whole-history total, including the cycle-opening payout) — and reversed postings are excluded from both sides. " +
+           "A plan whose in-cycle disbursements roughly balance its deposits revolves (e.g. a credit-card settlement reserve) and reports scheduleDeficit: null — cyclically balanced, not missing. " +
+           "scheduleDeficit/expectedToDate/observedMonthlyRate are also null when the plan has no postings or no regular rhythm is detectable (e.g. scattered one-off top-ups). " +
            "The list-level currentAmount field is not populated — the real balance lives in analysis.accumulatedAmount (pass includeAnalysis: true). " +
            "Scopes: (Sparpläne, Lesen), (Sparplankategorien, Lesen).";
 

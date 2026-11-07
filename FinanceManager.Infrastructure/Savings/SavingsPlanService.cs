@@ -224,7 +224,7 @@ public sealed class SavingsPlanService : ISavingsPlanService
             .ToListAsync(ct);
 
         var accumulated = history.Sum(x => x.Amount);
-        var schedule = ComputeSchedule(history, plan.Interval, today);
+        var schedule = ComputeSchedule(history, plan.Interval, plan.TargetAmount, plan.TargetDate, today);
 
         // If no target defined, return accumulated amount and no forecast
         if (plan.TargetAmount is null || plan.TargetDate is null)
@@ -264,22 +264,32 @@ public sealed class SavingsPlanService : ISavingsPlanService
     }
 
     /// <summary>
-    /// Derives the plan's observed contribution rhythm and the backlog against it.
-    /// Effective postings are those neither reversed themselves nor a reversal of another posting,
-    /// so a reversed deposit and its cancellation drop out of both sides. Positive effective
-    /// postings feed <c>ReceivedToDate</c>, negative ones are reported separately as
-    /// <c>Disbursements</c> (advance payments/withdrawals never enter the deficit). The observed
-    /// rate is the median of the monthly totals of contributing months - a month holding the full
-    /// interval payment - normalized to a monthly rate via the plan interval (Monthly=1,
+    /// Derives the plan's observed contribution rhythm and the backlog against it within the
+    /// current financing cycle. Effective postings are those neither reversed themselves nor a
+    /// reversal of another posting, so a reversed deposit and its cancellation drop out of both
+    /// sides. Due plans run in financing cycles, not as a continuous history: deposits fund the
+    /// next due amount, then a disbursement of roughly the target amount pays it out and opens a
+    /// new cycle. The backlog therefore only counts the current cycle - deposits received before
+    /// the last payout are already spent and can never be "missing". The cycle starts at the
+    /// booking date of the last due disbursement (the newest negative posting within 20 % of the
+    /// target amount, else the largest withdrawal), else at the last reached
+    /// <paramref name="targetDate"/> when no usable disbursement exists, else at the first
+    /// deposit. Positive effective postings since then feed <c>ReceivedToDate</c>, while
+    /// <c>Disbursements</c> always reports the whole-history total of negative effective
+    /// postings. The observed rate is the median of the monthly totals of contributing months
+    /// inside the cycle, normalized to a monthly rate via the plan interval (Monthly=1,
     /// BiMonthly=2, Quarterly=3, SemiAnnually=6, Annually=12). Expected periods count every
-    /// fully elapsed contribution month since the first deposit (the current month is not due
-    /// yet); for multi-month intervals every n-th elapsed month since the first deposit counts.
-    /// Without an explicit interval a rhythm is only assumed when deposits cover at least half
-    /// of the elapsed months in at least two distinct months - irregular one-off top-ups then
-    /// yield <see langword="null"/> instead of a bogus deficit.
+    /// fully elapsed contribution month since the cycle start (the current month is not due
+    /// yet); for multi-month intervals every n-th elapsed month counts. When the in-cycle
+    /// disbursements beyond the cycle-opening payout roughly balance the received deposits the
+    /// plan revolves (e.g. a credit-card settlement reserve) and <c>ScheduleDeficit</c> stays
+    /// <see langword="null"/> - "cyclically balanced" is more honest than zero. Without an
+    /// explicit interval a rhythm is only assumed when deposits cover at least half of the
+    /// elapsed months in at least two distinct months - irregular one-off top-ups then yield
+    /// <see langword="null"/> instead of a bogus deficit.
     /// </summary>
     private static ContributionSchedule ComputeSchedule(
-        IReadOnlyList<PostingObservation> history, SavingsPlanInterval? interval, DateTime today)
+        IReadOnlyList<PostingObservation> history, SavingsPlanInterval? interval, decimal? targetAmount, DateTime? targetDate, DateTime today)
     {
         if (history.Count == 0)
         {
@@ -287,10 +297,38 @@ public sealed class SavingsPlanService : ISavingsPlanService
         }
 
         var effective = history.Where(h => h is { IsReversed: false, IsReversal: false }).ToList();
-        var received = effective.Where(h => h.Amount > 0m).Sum(h => h.Amount);
         var disbursements = effective.Where(h => h.Amount < 0m).Sum(h => h.Amount);
 
-        var positiveMonthlyTotals = effective
+        // Cycle boundary: the last due disbursement (|amount| ≈ targetAmount ±20 %, else the
+        // largest withdrawal). Without a target amount no withdrawal can qualify as "due", so a
+        // reached target date bounds the cycle instead; without either the whole history since
+        // the first deposit forms the cycle (previous behaviour).
+        var withdrawals = effective.Where(h => h.Amount < 0m).ToList();
+        PostingObservation? cycleBoundary = null;
+        if (targetAmount is { } target && withdrawals.Count > 0)
+        {
+            var absTarget = Math.Abs(target);
+            cycleBoundary = withdrawals
+                .Where(w => Math.Abs(w.Amount) >= absTarget * 0.8m && Math.Abs(w.Amount) <= absTarget * 1.2m)
+                .OrderByDescending(w => w.BookingDate)
+                .FirstOrDefault()
+                ?? withdrawals.OrderByDescending(w => Math.Abs(w.Amount)).ThenByDescending(w => w.BookingDate).First();
+        }
+
+        var cycleStart = cycleBoundary?.BookingDate.Date
+            ?? (targetDate is { } due && due.Date <= today ? due.Date : (DateTime?)null)
+            ?? effective.Where(h => h.Amount > 0m).Select(h => (DateTime?)h.BookingDate.Date).Min();
+
+        var inCycle = cycleStart is { } start
+            ? effective.Where(h => h.BookingDate.Date >= start).ToList()
+            : new List<PostingObservation>(0);
+
+        var received = inCycle.Where(h => h.Amount > 0m).Sum(h => h.Amount);
+        // In-cycle disbursements beyond the cycle-opening payout itself: the boundary withdrawal
+        // marks the completed previous cycle and must not weigh against the new cycle's deposits.
+        var cycleDisbursements = inCycle.Where(h => h.Amount < 0m && !ReferenceEquals(h, cycleBoundary)).Sum(h => h.Amount);
+
+        var positiveMonthlyTotals = inCycle
             .Where(h => h.Amount > 0m)
             .GroupBy(h => (h.BookingDate.Year, h.BookingDate.Month))
             .Select(g => g.Sum(x => x.Amount))
@@ -301,8 +339,8 @@ public sealed class SavingsPlanService : ISavingsPlanService
             return new ContributionSchedule(received, disbursements, null, null, null);
         }
 
-        var firstContribution = effective.Where(h => h.Amount > 0m).Min(h => h.BookingDate);
-        var elapsedMonths = ((today.Year - firstContribution.Year) * 12) + today.Month - firstContribution.Month;
+        // positiveMonthlyTotals is non-empty, so at least one deposit exists and cycleStart is set.
+        var elapsedMonths = ((today.Year - cycleStart!.Value.Year) * 12) + today.Month - cycleStart.Value.Month;
 
         var intervalMonths = interval switch
         {
@@ -325,7 +363,15 @@ public sealed class SavingsPlanService : ISavingsPlanService
         var observedPeriodRate = Median(positiveMonthlyTotals);
         var observedMonthlyRate = observedPeriodRate / intervalMonths;
         var expectedToDate = observedPeriodRate * expectedPeriods;
-        var scheduleDeficit = Math.Max(0m, expectedToDate - received);
+
+        // A revolving plan (in-cycle disbursements roughly balancing the deposits, e.g. a
+        // credit-card settlement reserve) carries no backlog: null states "cyclically balanced".
+        decimal? scheduleDeficit = Math.Max(0m, expectedToDate - received);
+        if (received > 0m && cycleDisbursements < 0m
+            && Math.Abs(received + cycleDisbursements) <= 0.2m * Math.Max(received, Math.Abs(cycleDisbursements)))
+        {
+            scheduleDeficit = null;
+        }
 
         return new ContributionSchedule(received, disbursements, observedMonthlyRate, expectedToDate, scheduleDeficit);
     }

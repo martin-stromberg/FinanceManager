@@ -12,6 +12,8 @@ Sparpläne und Kategorien werden in der Sparplanverwaltung gepflegt. Buchungen k
 
 Die Detailansicht eines bestehenden Sparplans zeigt neben den Stammdaten den aktuellen Saldo und den noch offenen Restbetrag an. Bei einmaligen Sparplänen wird zusätzlich der benötigte Monatsbetrag bis zum Zieldatum angezeigt, wenn noch ein Restbetrag offen ist und das Zieldatum in der Zukunft liegt. Die Kennzahlen sind reine Informationsfelder und können in der Detailansicht nicht direkt bearbeitet werden.
 
+Die Sparplan-Analyse bewertet den Einzahlungsrhythmus zyklusbasiert: Fälligkeitspläne laufen in Finanzierungszyklen — Einzahlungen finanzieren den nächsten Zielbetrag, eine Entnahme in etwa Zielhöhe (oder ein erreichtes Zieldatum) schließt den Zyklus ab und eröffnet den nächsten. Der ausgewiesene Rückstand (`ScheduleDeficit`) zählt daher nur den laufenden Zyklus; revolvierende Pläne, deren Entnahmen die Einzahlungen etwa ausgleichen, gelten als zyklisch ausgeglichen und melden keinen Deficit.
+
 ## Beispiele
 
 - Monatlicher Sparplan mit Zielbetrag und Kategorie.
