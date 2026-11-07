@@ -200,7 +200,8 @@ public sealed class SavingsPlanService : ISavingsPlanService
     }
 
     /// <summary>
-    /// Computes an analysis for the savings plan (accumulated contributions, forecast and required monthly amount).
+    /// Computes an analysis for the savings plan (accumulated contributions, forecast, required monthly
+    /// amount and the schedule deficit against the observed contribution rhythm).
     /// </summary>
     /// <param name="id">Identifier of the plan to analyze.</param>
     /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
@@ -219,15 +220,17 @@ public sealed class SavingsPlanService : ISavingsPlanService
         // Past contributions up to today for this plan (always compute accumulated amount)
         var history = await _db.Postings.AsNoTracking()
             .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
-            .Select(p => new { p.BookingDate, p.Amount })
+            .Select(p => new PostingObservation(p.BookingDate, p.Amount, p.ReversedByPostingId != null, p.ReversalForPostingId != null))
             .ToListAsync(ct);
 
         var accumulated = history.Sum(x => x.Amount);
+        var schedule = ComputeSchedule(history, plan.Interval, today);
 
         // If no target defined, return accumulated amount and no forecast
         if (plan.TargetAmount is null || plan.TargetDate is null)
         {
-            return new SavingsPlanAnalysisDto(id, true, plan.TargetAmount, plan.TargetDate, accumulated, 0m, 0);
+            return new SavingsPlanAnalysisDto(id, true, plan.TargetAmount, plan.TargetDate, accumulated, 0m, 0,
+                schedule.ScheduleDeficit, schedule.ExpectedToDate, schedule.ReceivedToDate, schedule.ObservedMonthlyRate, schedule.Disbursements);
         }
 
         var endDate = plan.TargetDate.Value.Date;
@@ -238,7 +241,8 @@ public sealed class SavingsPlanService : ISavingsPlanService
         if (monthsRemaining <= 0)
         {
             var reached = accumulated >= target;
-            return new SavingsPlanAnalysisDto(id, reached, target, endDate, accumulated, 0m, 0);
+            return new SavingsPlanAnalysisDto(id, reached, target, endDate, accumulated, 0m, 0,
+                schedule.ScheduleDeficit, schedule.ExpectedToDate, schedule.ReceivedToDate, schedule.ObservedMonthlyRate, schedule.Disbursements);
         }
 
         // Average monthly saving based on history grouped by month
@@ -255,7 +259,92 @@ public sealed class SavingsPlanService : ISavingsPlanService
         var remaining = Math.Max(0m, target - accumulated);
         var requiredMonthly = monthsRemaining > 0 ? remaining / monthsRemaining : 0m;
 
-        return new SavingsPlanAnalysisDto(id, reachable, target, endDate, accumulated, requiredMonthly, monthsRemaining);
+        return new SavingsPlanAnalysisDto(id, reachable, target, endDate, accumulated, requiredMonthly, monthsRemaining,
+            schedule.ScheduleDeficit, schedule.ExpectedToDate, schedule.ReceivedToDate, schedule.ObservedMonthlyRate, schedule.Disbursements);
+    }
+
+    /// <summary>
+    /// Derives the plan's observed contribution rhythm and the backlog against it.
+    /// Effective postings are those neither reversed themselves nor a reversal of another posting,
+    /// so a reversed deposit and its cancellation drop out of both sides. Positive effective
+    /// postings feed <c>ReceivedToDate</c>, negative ones are reported separately as
+    /// <c>Disbursements</c> (advance payments/withdrawals never enter the deficit). The observed
+    /// rate is the median of the monthly totals of contributing months - a month holding the full
+    /// interval payment - normalized to a monthly rate via the plan interval (Monthly=1,
+    /// BiMonthly=2, Quarterly=3, SemiAnnually=6, Annually=12). Expected periods count every
+    /// fully elapsed contribution month since the first deposit (the current month is not due
+    /// yet); for multi-month intervals every n-th elapsed month since the first deposit counts.
+    /// Without an explicit interval a rhythm is only assumed when deposits cover at least half
+    /// of the elapsed months in at least two distinct months - irregular one-off top-ups then
+    /// yield <see langword="null"/> instead of a bogus deficit.
+    /// </summary>
+    private static ContributionSchedule ComputeSchedule(
+        IReadOnlyList<PostingObservation> history, SavingsPlanInterval? interval, DateTime today)
+    {
+        if (history.Count == 0)
+        {
+            return ContributionSchedule.Empty;
+        }
+
+        var effective = history.Where(h => h is { IsReversed: false, IsReversal: false }).ToList();
+        var received = effective.Where(h => h.Amount > 0m).Sum(h => h.Amount);
+        var disbursements = effective.Where(h => h.Amount < 0m).Sum(h => h.Amount);
+
+        var positiveMonthlyTotals = effective
+            .Where(h => h.Amount > 0m)
+            .GroupBy(h => (h.BookingDate.Year, h.BookingDate.Month))
+            .Select(g => g.Sum(x => x.Amount))
+            .OrderBy(total => total)
+            .ToList();
+        if (positiveMonthlyTotals.Count == 0)
+        {
+            return new ContributionSchedule(received, disbursements, null, null, null);
+        }
+
+        var firstContribution = effective.Where(h => h.Amount > 0m).Min(h => h.BookingDate);
+        var elapsedMonths = ((today.Year - firstContribution.Year) * 12) + today.Month - firstContribution.Month;
+
+        var intervalMonths = interval switch
+        {
+            SavingsPlanInterval.Monthly => 1,
+            SavingsPlanInterval.BiMonthly => 2,
+            SavingsPlanInterval.Quarterly => 3,
+            SavingsPlanInterval.SemiAnnually => 6,
+            SavingsPlanInterval.Annually => 12,
+            _ => 1
+        };
+
+        var rhythmDetected = interval.HasValue
+            || (elapsedMonths >= 1 && positiveMonthlyTotals.Count >= 2 && positiveMonthlyTotals.Count * 2 >= elapsedMonths);
+        if (!rhythmDetected)
+        {
+            return new ContributionSchedule(received, disbursements, null, null, null);
+        }
+
+        var expectedPeriods = elapsedMonths >= 1 ? ((elapsedMonths - 1) / intervalMonths) + 1 : 0;
+        var observedPeriodRate = Median(positiveMonthlyTotals);
+        var observedMonthlyRate = observedPeriodRate / intervalMonths;
+        var expectedToDate = observedPeriodRate * expectedPeriods;
+        var scheduleDeficit = Math.Max(0m, expectedToDate - received);
+
+        return new ContributionSchedule(received, disbursements, observedMonthlyRate, expectedToDate, scheduleDeficit);
+    }
+
+    private static decimal Median(IReadOnlyList<decimal> sortedValues)
+        => sortedValues.Count % 2 == 1
+            ? sortedValues[sortedValues.Count / 2]
+            : (sortedValues[(sortedValues.Count / 2) - 1] + sortedValues[sortedValues.Count / 2]) / 2m;
+
+    private sealed record PostingObservation(DateTime BookingDate, decimal Amount, bool IsReversed, bool IsReversal);
+
+    private sealed record ContributionSchedule(
+        decimal? ReceivedToDate,
+        decimal? Disbursements,
+        decimal? ObservedMonthlyRate,
+        decimal? ExpectedToDate,
+        decimal? ScheduleDeficit)
+    {
+        public static readonly ContributionSchedule Empty = new(null, null, null, null, null);
     }
 
     /// <summary>

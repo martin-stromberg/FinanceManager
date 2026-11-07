@@ -31,6 +31,11 @@
 | Eigenschaft | Typ | Beschreibung |
 |-------------|-----|--------------|
 | `RequiredMonthly` | `decimal` | Durchschnittlich benötigter Monatsbetrag bis zum Zieldatum |
+| `ScheduleDeficit` | `decimal?` | Rückstand gegenüber dem erkannten Einzahlungsrhythmus (erwartete minus erhaltene Einzahlungen, min. 0); `null` ohne Buchungen bzw. ohne erkennbaren Rhythmus |
+| `ExpectedToDate` | `decimal?` | Erwartete Summe der Einzahlungen bis heute (beobachtete Rate × abgelaufene Perioden) |
+| `ReceivedToDate` | `decimal?` | Summe positiver, nicht stornierter Einzahlungsbuchungen |
+| `ObservedMonthlyRate` | `decimal?` | Median der Einzahlungssummen pro Belegmonat, über das Plan-Intervall auf Monatsrate normiert |
+| `Disbursements` | `decimal?` | Summe außerordentlicher negativer Buchungen (Vorleistung/Entnahme), separat ausgewiesen — fließt nie ins Deficit |
 
 ### `SavingsPlanCategory`
 
