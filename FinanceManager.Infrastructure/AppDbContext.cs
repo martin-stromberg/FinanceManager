@@ -969,7 +969,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 26;
+        var total = 27;
         var count = 0;
 
         // Notifications
@@ -1133,7 +1133,6 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
         var budgetRules = await BudgetRules
             .Where(x => x.OwnerUserId == userId)
-            .Where(x => x.BudgetPurposeId != null && budgetPurposeIds.Contains(x.BudgetPurposeId.Value))
             .ToListAsync(ct);
         var budgetOverrides = await BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToListAsync(ct);
 

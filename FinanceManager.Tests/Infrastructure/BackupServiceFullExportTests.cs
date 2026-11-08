@@ -3,6 +3,7 @@ using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments;
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Notifications;
+using FinanceManager.Domain.Portfolio;
 using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Reports;
 using FinanceManager.Domain.Savings;
@@ -221,6 +222,17 @@ namespace FinanceManager.Tests.Infrastructure
             SetDateProps(accountShare, fixedDate);
             db.AccountShares.Add(accountShare);
 
+            // Linked IBAN of the collection account (ownership derives via the account - no OwnerUserId)
+            var linkedIban = new AccountLinkedIban(account.Id, "DE02120300000000202051");
+            SetGuid(linkedIban, "Id", Guid.Parse("20000000-0000-0000-0000-000000000021"));
+            SetDateProps(linkedIban, fixedDate);
+            db.AccountLinkedIbans.Add(linkedIban);
+
+            var kpiConfig = new PortfolioKpiConfiguration(owner, "[\"tile.a\"]", "[\"tile.a\"]");
+            SetGuid(kpiConfig, "Id", Guid.Parse("20000000-0000-0000-0000-000000000022"));
+            SetDateProps(kpiConfig, fixedDate);
+            db.PortfolioKpiConfigurations.Add(kpiConfig);
+
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var temp = Path.Combine(Path.GetTempPath(), "fmtests", Guid.NewGuid().ToString());
@@ -278,7 +290,9 @@ namespace FinanceManager.Tests.Infrastructure
                 ["ReportFavorites"] = typeof(ReportFavorite),
                 ["HomeKpis"] = typeof(HomeKpi),
                 ["Notifications"] = typeof(Notification),
-                ["AccountShares"] = typeof(object) // handled dynamically
+                ["AccountShares"] = typeof(object), // handled dynamically
+                ["AccountLinkedIbans"] = typeof(AccountLinkedIban),
+                ["PortfolioKpiConfigurations"] = typeof(PortfolioKpiConfiguration)
             };
 
             foreach (var kv in map)
@@ -290,9 +304,13 @@ namespace FinanceManager.Tests.Infrastructure
                 Type? dtoType = null;
                 if (kv.Value == typeof(object))
                 {
-                    // account share: try to find backup dto type by name convention
-                    var acctShareType = typeof(Account).Assembly.GetType("FinanceManager.Domain.Accounts.AccountShare");
-                    dtoType = acctShareType?.GetNestedType("AccountShareBackupDto", BindingFlags.Public | BindingFlags.NonPublic);
+                    dtoType = kv.Key switch
+                    {
+                        // account share: nested backup dto type resolved by name convention
+                        "AccountShares" => typeof(Account).Assembly.GetType("FinanceManager.Domain.Accounts.AccountShare")
+                            ?.GetNestedType("AccountShareBackupDto", BindingFlags.Public | BindingFlags.NonPublic),
+                        _ => null
+                    };
                 }
                 else
                 {
@@ -330,6 +348,8 @@ namespace FinanceManager.Tests.Infrastructure
                     case "HomeKpis": originalObj = homeKpi; break;
                     case "Notifications": originalObj = notification; break;
                     case "AccountShares": originalObj = null; break;
+                    case "AccountLinkedIbans": originalObj = linkedIban; break;
+                    case "PortfolioKpiConfigurations": originalObj = kpiConfig; break;
                 }
 
                 // obtain original's DTO

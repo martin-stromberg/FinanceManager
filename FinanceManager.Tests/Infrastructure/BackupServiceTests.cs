@@ -422,7 +422,7 @@ namespace FinanceManager.Tests.Infrastructure
             var userId = Guid.NewGuid();
             var category = new BudgetCategory(userId, "Arbeit");
             var purpose = new BudgetPurpose(userId, "Gehalt", BudgetSourceType.Contact, Guid.NewGuid());
-            var categoryRule = new BudgetRule(userId, null, category.Id, 100m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
+            var categoryRule = new BudgetRule(userId, null, category.Id, 100m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1), null, null, "^Gehalt.*", true);
             var purposeRule = new BudgetRule(userId, purpose.Id, null, 200m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
 
             db.BudgetCategories.Add(category);
@@ -462,6 +462,13 @@ namespace FinanceManager.Tests.Infrastructure
 
             Assert.True(hasCategoryRule, "Expected a budget rule for a category.");
             Assert.True(hasPurposeRule, "Expected a budget rule for a purpose.");
+
+            var hasPattern = rules.EnumerateArray().Any(r =>
+                r.TryGetProperty("PurposePattern", out var pp) &&
+                pp.GetString() == "^Gehalt.*" &&
+                r.TryGetProperty("PurposePatternIsRegex", out var re) &&
+                re.GetBoolean());
+            Assert.True(hasPattern, "Expected the purpose pattern fields to be exported.");
 
             try { Directory.Delete(temp, true); } catch { }
         }

@@ -1,3 +1,11 @@
+## 2026-11-08 — Backup/Restore: Vollständige Import- und DTO-Abdeckung (Issue #496)
+
+- Der Restore stellt jetzt auch die Kontoauszugs-Import-Historie (`StatementImports`/`StatementEntries`), `Notifications` und `AccountShares` wieder her — diese Sektionen wurden bisher exportiert und beim destruktiven Restore gelöscht, aber nicht zurückgeschrieben.
+- Die neuen optionalen Backup-Sektionen `AccountLinkedIbans` (Unter-IBANs von Sammelkonten) und `PortfolioKpiConfigurations` werden exportiert und per Guard-Import bzw. Upsert wiederhergestellt; alte Backups ohne diese Sektionen bleiben lesbar.
+- `BudgetRuleBackupDto` und `SecurityBackupDto` wurden vervollständigt (`PurposePattern`/`PurposePatternIsRegex` sowie Preisfehler- und Notified-Felder); neue DTO-Felder tragen Default-Werte für alte Backups.
+- `AppDbContext.ClearUserDataAsync` löscht nun alle Budgetregeln des Benutzers — auch ausschließlich kategoriegebundene Regeln — und verhindert Duplikate beim Re-Import.
+- Der Merge-Import (`replaceExisting: false`) toleriert Duplikate (`RawHash`-Unique-Index, vorhandene Notifications, Shares, Importe, Linked-IBANs) statt mit Constraint-Verletzungen abzubrechen.
+
 ## 2026-10-31 — Sicherheitshärtung (Issues #450–#461)
 
 - Die Selbstregistrierung ist jetzt opt-in: nur der erste Benutzer registriert sich selbst, weitere Konten legt ein Administrator an; `Auth:AllowSelfRegistration` öffnet die Registrierung wieder.
