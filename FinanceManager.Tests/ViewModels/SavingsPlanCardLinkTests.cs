@@ -99,6 +99,48 @@ public sealed class SavingsPlanCardLinkTests
     }
 
     /// <summary>
+    /// Only savings accounts are offered for linking - giro and credit-card accounts are
+    /// filtered out of the linkable list while a savings account remains selectable.
+    /// </summary>
+    [Fact]
+    public async Task LoadAsync_NonSavingsAccounts_NotLinkable()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        var savings = NewAccount(Guid.NewGuid(), "spar");
+        var giro = NewAccount(Guid.NewGuid(), "giro") with { Type = AccountType.Giro };
+        var card = NewAccount(Guid.NewGuid(), "karte") with { Type = AccountType.CreditCard };
+        SetupLoad(apiMock, planId, Array.Empty<Guid>(), new[] { savings, giro, card });
+
+        await vm.LoadAsync(planId);
+
+        vm.LinkableAccounts.Should().ContainSingle(a => a.Id == savings.Id);
+        vm.LinkableAccounts.Should().NotContain(a => a.Type == AccountType.Giro);
+        vm.LinkableAccounts.Should().NotContain(a => a.Type == AccountType.CreditCard);
+    }
+
+    /// <summary>
+    /// Opening a linked account raises the OpenAccountDetails navigation action.
+    /// </summary>
+    [Fact]
+    public async Task OpenLinkedAccount_RaisesOpenAccountDetails()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        var linked = NewAccount(Guid.NewGuid(), "bsv");
+        SetupLoad(apiMock, planId, new[] { linked.Id }, new[] { linked });
+        await vm.LoadAsync(planId);
+        string? action = null;
+        string? param = null;
+        vm.UiActionRequested += (_, e) => { action = e.Action; param = e.Payload; };
+
+        vm.OpenLinkedAccount(linked.Id);
+
+        action.Should().Be("OpenAccountDetails");
+        param.Should().Be(linked.Id.ToString());
+    }
+
+    /// <summary>
     /// Adding the selected account calls the link endpoint and refreshes the link state
     /// and the analysis (account-based accumulated amount).
     /// </summary>

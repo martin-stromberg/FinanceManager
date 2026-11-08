@@ -34,7 +34,8 @@ public sealed record ReportFavoriteUpdateRequest(
     bool Expandable,
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     ReportFavoriteFiltersDto? Filters = null,
-    bool UseValutaDate = false
+    bool UseValutaDate = false,
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
 )
 {
     /// <summary>

@@ -393,4 +393,7 @@
   <data name="Ribbon_Tab" xml:space="preserve">
     <value>Dashboard</value>
   </data>
+  <data name="Label_SavingsPlanPostingSource" xml:space="preserve"><value>Savings plan posting source</value></data>
+  <data name="SavingsPlanPostingSource_PlanPostings" xml:space="preserve"><value>Savings plan postings</value></data>
+  <data name="SavingsPlanPostingSource_LinkedAccountPostings" xml:space="preserve"><value>Linked account postings</value></data>
 </root>

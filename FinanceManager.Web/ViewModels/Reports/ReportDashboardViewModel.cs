@@ -93,6 +93,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     public bool UseValutaDate { get; set; }
 
     /// <summary>
+    /// Posting source used for emitted savings plans (plan postings vs. postings of linked accounts).
+    /// </summary>
+    public SavingsPlanPostingSource SavingsPlanPostingSource { get; set; } = SavingsPlanPostingSource.PlanPostings;
+
+    /// <summary>
     /// Active favorite id currently selected or <c>null</c> when none.
     /// </summary>
     public Guid? ActiveFavoriteId { get; set; }
@@ -324,7 +329,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 CompareProjection = false;
             }
-            var result = await LoadAsync(PrimaryKind, Interval, Take, IncludeCategory, ComparePrevious, CompareYear, CompareProjection, IsMulti ? SelectedKinds : null, analysisDate, BuildFiltersPayload(), UseValutaDate, ct);
+            var result = await LoadAsync(PrimaryKind, Interval, Take, IncludeCategory, ComparePrevious, CompareYear, CompareProjection, IsMulti ? SelectedKinds : null, analysisDate, BuildFiltersPayload(), UseValutaDate, ct, SavingsPlanPostingSource);
             ComparedProjection = result.ComparedProjection;
             Points = result.Points
                 .OrderBy(p => p.GroupKey)
@@ -522,10 +527,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date instead of booking date.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>A <see cref="ReportAggregationResult"/> containing aggregated points and metadata.</returns>
-    public async Task<ReportAggregationResult> LoadAsync(PostingKind primaryKind, int interval, int take, bool includeCategory, bool comparePrevious, bool compareYear, bool compareProjection, IReadOnlyCollection<PostingKind>? postingKinds, DateTime? analysisDate, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportAggregationResult> LoadAsync(PostingKind primaryKind, int interval, int take, bool includeCategory, bool comparePrevious, bool compareYear, bool compareProjection, IReadOnlyCollection<PostingKind>? postingKinds, DateTime? analysisDate, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
-        var req = new ReportAggregatesQueryRequest(primaryKind, (ReportInterval)interval, take, includeCategory, comparePrevious, compareYear, compareProjection, useValutaDate, postingKinds, analysisDate, filters);
+        var req = new ReportAggregatesQueryRequest(primaryKind, (ReportInterval)interval, take, includeCategory, comparePrevious, compareYear, compareProjection, useValutaDate, postingKinds, analysisDate, filters, savingsPlanPostingSource);
         var result = await _api.Reports_QueryAggregatesAsync(req, ct);
         return result ?? new ReportAggregationResult((ReportInterval)interval, Array.Empty<ReportAggregatePointDto>(), false, false, false);
     }
@@ -547,8 +553,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>The created <see cref="ReportFavoriteDto"/> or <c>null</c> when creation failed.</returns>
-    public async Task<ReportFavoriteDto?> SaveFavoriteAsync(string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportFavoriteDto?> SaveFavoriteAsync(string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
         var payload = new ReportFavoriteCreateApiRequest
         {
@@ -574,7 +581,8 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 filters.SecuritySubTypes,
                 filters.IncludeDividendRelated
             ),
-            UseValutaDate = useValutaDate
+            UseValutaDate = useValutaDate,
+            SavingsPlanPostingSource = savingsPlanPostingSource
         };
         return await _api.Reports_CreateFavoriteAsync(payload, ct);
     }
@@ -597,8 +605,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>The updated <see cref="ReportFavoriteDto"/> or <c>null</c> when update failed.</returns>
-    public async Task<ReportFavoriteDto?> UpdateFavoriteAsync(Guid id, string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportFavoriteDto?> UpdateFavoriteAsync(Guid id, string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
         var payload = new ReportFavoriteUpdateApiRequest
         {
@@ -624,7 +633,8 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 filters.SecuritySubTypes,
                 filters.IncludeDividendRelated
             ),
-            UseValutaDate = useValutaDate
+            UseValutaDate = useValutaDate,
+            SavingsPlanPostingSource = savingsPlanPostingSource
         };
         return await _api.Reports_UpdateFavoriteAsync(id, payload, ct);
     }
@@ -1115,8 +1125,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>The created or updated <see cref="ReportFavoriteDto"/>, or <c>null</c> when the operation failed.</returns>
-    public async Task<ReportFavoriteDto?> SubmitFavoriteDialogAsync(string defaultName, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportFavoriteDto?> SubmitFavoriteDialogAsync(string defaultName, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
         FavoriteError = null;
         try
@@ -1125,7 +1136,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 var res = await UpdateFavoriteAsync(ActiveFavoriteId.Value,
                     FavoriteName.Trim(), primaryKind, includeCategory, interval, take,
-                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct);
+                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource);
                 if (res is null)
                 {
                     FavoriteError = "Error_UpdateFavorite";
@@ -1141,7 +1152,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 var name = string.IsNullOrWhiteSpace(FavoriteName) ? defaultName : FavoriteName.Trim();
                 var res = await SaveFavoriteAsync(name, primaryKind, includeCategory, interval, take,
-                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct);
+                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource);
                 if (res is null)
                 {
                     FavoriteError = "Error_SaveFavorite";

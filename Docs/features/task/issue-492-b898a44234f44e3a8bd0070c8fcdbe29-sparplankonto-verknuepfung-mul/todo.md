@@ -10,20 +10,20 @@ Hinweis: Es stehen keine Unteragenten zur Verfügung; alle Schritte werden vom H
 | [x] | 2 | Verzeichnisstruktur vorbereiten | `Docs/features/.../` |
 | [x] | – | Einstiegspunkt ermitteln (nur `continue.md` vorhanden → Schritt 3, Eingabe = continue.md) | – |
 | [x] | 3 | Anforderung übersetzen | `requirement.md` |
-| [ ] | 4 | Bestandsaufnahme | `inventory.md`, `inventory/` |
-| [ ] | 5 | Umsetzungsplanung | `plan.md` |
-| [ ] | 5a | Offene Punkte prüfen | `plan.md` |
-| [ ] | 5b | Plan gegen Anforderung prüfen | `plan-check.md` |
-| [ ] | 5c | Planungscommit | – |
-| [ ] | 6 | Implementierung | Codeänderungen |
-| [ ] | 7 | Plan-Review | `review.md` |
-| [ ] | 8 | Usability-Review (UI-Änderungen vorhanden) | `review-usability.md` |
-| [ ] | 9 | Code-Review | `review-code.md` |
-| [ ] | 10 | Tests ausführen | `test-results.md` |
-| [ ] | – | Iteration oder Abschluss entscheiden | – |
-| [ ] | 11 | Folgeaufgaben dokumentieren (bei Abbruch) | `continue.md` (aktualisiert) |
-| [ ] | 12 | Dokumentation | `Docs/help/` |
-| [ ] | 12b | README aktualisieren | `README.md` |
-| [ ] | 12c | Release Notes aktualisieren | `Docs/RELEASE_NOTES.md` |
-| [ ] | – | Feature-Verzeichnis löschen (nur wenn alles erledigt, continue.md wird nicht gelöscht) | – |
-| [ ] | – | Commit durchführen | – |
+| [x] | 4 | Bestandsaufnahme | `inventory.md`, `inventory/` |
+| [x] | 5 | Umsetzungsplanung | `plan.md` |
+| [x] | 5a | Offene Punkte prüfen | `plan.md` |
+| [x] | 5b | Plan gegen Anforderung prüfen | `plan-check.md` |
+| [x] | 5c | Planungscommit | – |
+| [x] | 6 | Implementierung | Codeänderungen |
+| [x] | 7 | Plan-Review | `review.md` |
+| [x] | 8 | Usability-Review (UI-Änderungen vorhanden) | `review-usability.md` |
+| [x] | 9 | Code-Review | `review-code.md` |
+| [x] | 10 | Tests ausführen | `test-results.md` |
+| [x] | – | Iteration oder Abschluss entscheiden | – |
+| [x] | 11 | Folgeaufgaben dokumentieren (bei Abbruch) | `continue.md` (aktualisiert) |
+| [x] | 12 | Dokumentation | `Docs/help/` |
+| [x] | 12b | README aktualisieren | `README.md` |
+| [x] | 12c | Release Notes aktualisieren | `Docs/RELEASE_NOTES.md` |
+| [x] | – | Feature-Verzeichnis beibehalten (continue.md bleibt per Vorgabe erhalten) | – |
+| [x] | – | Commit durchführen | – |

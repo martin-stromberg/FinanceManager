@@ -229,7 +229,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             var accounts = await ApiClient.GetAccountsAsync(0, 500, ct: ct) ?? Array.Empty<AccountDto>();
             var linkedSet = linkedIds.ToHashSet();
             LinkedAccounts = accounts.Where(a => linkedSet.Contains(a.Id)).ToList();
-            LinkableAccounts = accounts.Where(a => !linkedSet.Contains(a.Id)).ToList();
+            LinkableAccounts = accounts.Where(a => !linkedSet.Contains(a.Id) && a.Type == FinanceManager.Shared.Dtos.Accounts.AccountType.Savings).ToList();
         }
         catch
         {
@@ -301,6 +301,19 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
         }
         finally { RaiseStateChanged(); }
+    }
+
+    /// <summary>
+    /// Requests navigation to the card of a linked bank account.
+    /// </summary>
+    /// <param name="accountId">Identifier of the linked account to open.</param>
+    public void OpenLinkedAccount(Guid accountId)
+    {
+        if (accountId == Guid.Empty)
+        {
+            return;
+        }
+        RaiseUiActionRequested("OpenAccountDetails", accountId.ToString());
     }
 
     /// <summary>
@@ -632,6 +645,11 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         if (dto != null)
         {
             fields.Add(new CardField("Card_Caption_SavingsPlan_CurrentAmount", CardFieldKind.Currency, amount: dto.CurrentAmount));
+
+            if (dto.OwnAmount.HasValue)
+            {
+                fields.Add(new CardField("Card_Caption_SavingsPlan_OwnAmount", CardFieldKind.Currency, amount: dto.OwnAmount.Value));
+            }
 
             if (dto.RemainingAmount > 0m)
             {

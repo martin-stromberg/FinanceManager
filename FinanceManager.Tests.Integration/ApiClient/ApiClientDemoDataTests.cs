@@ -6,7 +6,9 @@ using FinanceManager.Application.Demo;
 using FinanceManager.Infrastructure;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.HomeKpi;
+using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Reports;
 using FinanceManager.Shared.Dtos.Securities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -301,7 +303,7 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
             .AsNoTracking()
             .Where(x => x.OwnerUserId == userId && x.Status == StatementDraftStatus.Draft)
             .ToListAsync(CancellationToken.None);
-        currentMonthDrafts.Should().HaveCount(3);
+        currentMonthDrafts.Should().HaveCount(4);
     }
 
     /// <summary>
@@ -354,6 +356,97 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
         sampleA.Should().HaveCount(40);
         sampleB.Should().HaveCount(40);
         sampleA.Should().BeEquivalentTo(sampleB);
+    }
+
+    /// <summary>
+    /// Verifies the Bauspar demo scenario: dedicated savings account and savings plan linked
+    /// together, monthly transfers from the giro account with counter-postings, year-end
+    /// interest on both balances, a monthly budget and the report favorite using linked
+    /// account postings as its source.
+    /// </summary>
+    [Fact]
+    public async Task CreateDemoDataAsync_ShouldCreateBausparSet_WhenCreatePostingsTrue()
+    {
+        var (_, userId) = await CreateAuthenticatedUserAsync();
+        await CreateDemoDataForUserAsync(userId);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var bausparAccount = await db.Accounts
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Name == "Bausparkonto", CancellationToken.None);
+        bausparAccount.Type.Should().Be(AccountType.Savings);
+
+        var giroAccount = await db.Accounts
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Name == "Girokonto", CancellationToken.None);
+
+        var bausparenPlan = await db.SavingsPlans
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Name == "Bausparen", CancellationToken.None);
+        bausparenPlan.Type.Should().Be(SavingsPlanType.Recurring);
+        bausparenPlan.Interval.Should().Be(SavingsPlanInterval.Monthly);
+        bausparenPlan.TargetAmount.Should().Be(40000.00m);
+
+        var link = await db.SavingsPlanAccountLinks
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.SavingsPlanId == bausparenPlan.Id && x.AccountId == bausparAccount.Id, CancellationToken.None);
+        link.Should().NotBeNull();
+
+        // monthly transfers: giro -> bauspar with informal plan posting on the giro side
+        var bausparInflows = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == bausparAccount.Id && x.Subject == "Bauspareinlage")
+            .ToListAsync(CancellationToken.None);
+        var giroOutflows = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == giroAccount.Id && x.Subject == "Bauspareinlage")
+            .ToListAsync(CancellationToken.None);
+        bausparInflows.Should().NotBeEmpty().And.OnlyContain(x => x.Amount == 200.00m);
+        giroOutflows.Should().NotBeEmpty().And.OnlyContain(x => x.Amount == -200.00m);
+
+        var planPostings = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.SavingsPlan && x.SavingsPlanId == bausparenPlan.Id)
+            .ToListAsync(CancellationToken.None);
+        planPostings.Should().HaveCount(bausparInflows.Count);
+        planPostings.Should().OnlyContain(x => x.Amount == 200.00m);
+
+        // year-end interest on both balances
+        var giroInterest = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == giroAccount.Id && x.Subject == "Jahresendzinsen 1 %")
+            .ToListAsync(CancellationToken.None);
+        var bausparInterest = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == bausparAccount.Id && x.Subject == "Jahresendzinsen 1 %")
+            .ToListAsync(CancellationToken.None);
+        giroInterest.Should().NotBeEmpty().And.OnlyContain(x => x.Amount > 0m);
+        bausparInterest.Should().NotBeEmpty().And.OnlyContain(x => x.Amount > 0m);
+
+        // both balances are consistent: sum of own postings equals the stored balance
+        var giroSum = await db.Postings.AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == giroAccount.Id && x.BookingDate <= DateTime.Today)
+            .SumAsync(x => x.Amount, CancellationToken.None);
+        var bausparSum = await db.Postings.AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == bausparAccount.Id && x.BookingDate <= DateTime.Today)
+            .SumAsync(x => x.Amount, CancellationToken.None);
+        giroAccount.CurrentBalance.Should().Be(giroSum);
+        bausparAccount.CurrentBalance.Should().Be(bausparSum);
+
+        var bausparBudget = await db.BudgetPurposes
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.OwnerUserId == userId && x.Name == "Bausparen" && x.SourceType == BudgetSourceType.SavingsPlan, CancellationToken.None);
+        bausparBudget.Should().NotBeNull();
+
+        var favorite = await db.ReportFavorites
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.OwnerUserId == userId && x.Name == "Sparplanbuchungen (monatlich)", CancellationToken.None);
+        favorite.Should().NotBeNull();
+        favorite!.PostingKind.Should().Be(PostingKind.SavingsPlan);
+        favorite.Interval.Should().Be(ReportInterval.Month);
+        favorite.SavingsPlanPostingSource.Should().Be(SavingsPlanPostingSource.LinkedAccountPostings);
     }
 
     private static int CountBusinessDays(DateTime start, DateTime end)

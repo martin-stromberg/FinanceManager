@@ -23,9 +23,12 @@ public sealed class FmReportsConfigurationManageDescriptor : McpToolDescriptorBa
     /// <summary>Tool name.</summary>
     public const string ToolName = "fm_reports_configuration_manage";
 
+    private const string JsonSchema = "{\"type\":\"object\",\"properties\":{\"entity\":{\"type\":\"string\",\"enum\":[\"reportFavorite\",\"homeKpi\"],\"description\":\"Configuration entity family (required).\"},\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"delete\"],\"description\":\"Operation (required); delete requires approval and has no effect until EP-09.\"},\"favoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target report favorite (required for entity=reportFavorite update/delete).\"},\"kpiId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target home KPI (required for entity=homeKpi update/delete).\"},\"name\":{\"type\":\"string\",\"description\":\"Favorite name (required for reportFavorite create; optional overwrite for update).\"},\"postingKind\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"],\"description\":\"Primary posting kind (required for reportFavorite create).\"},\"postingKinds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"]},\"description\":\"Multi posting-kind filter set; explicit null resets it to the primary postingKind on update.\"},\"includeCategory\":{\"type\":\"boolean\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Month\",\"Quarter\",\"HalfYear\",\"Year\",\"Ytd\",\"AllHistory\"],\"description\":\"Report interval (required for reportFavorite create).\"},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":120,\"description\":\"Result window size 1-120 (domain bound of ReportFavorite.SetTake — the domain clamps, the tool validates).\"},\"comparePrevious\":{\"type\":\"boolean\"},\"compareYear\":{\"type\":\"boolean\"},\"compareProjection\":{\"type\":\"boolean\"},\"showChart\":{\"type\":\"boolean\"},\"expandable\":{\"type\":\"boolean\"},\"useValutaDate\":{\"type\":\"boolean\"},\"filters\":{\"type\":\"object\",\"properties\":{\"accountIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securitySubTypes\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"}},\"includeDividendRelated\":{\"type\":\"boolean\"}},\"additionalProperties\":false,\"description\":\"Favorite filter sets; explicit null clears them on update.\"},\"kind\":{\"type\":\"string\",\"enum\":[\"Predefined\",\"ReportFavorite\"],\"description\":\"HomeKpi kind (required for homeKpi create).\"},\"reportFavoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Favorite reference (required when kind=ReportFavorite); explicit null clears it on update.\"},\"predefinedType\":{\"type\":\"string\",\"description\":\"Predefined KPI type (required when kind=Predefined): AccountsAggregates, SavingsPlanAggregates, SecuritiesDividends, MonthlyBudget, ActiveSavingsPlansCount, ContactsCount, SecuritiesCount, OpenStatementDraftsCount; explicit null clears it on update.\"},\"title\":{\"type\":\"string\",\"description\":\"Display title (max 120 characters — domain limit of HomeKpi.SetTitle; the domain truncates, the tool rejects); explicit null clears it on update.\"},\"displayMode\":{\"type\":\"string\",\"enum\":[\"TotalOnly\",\"TotalWithComparisons\",\"ReportGraph\"],\"description\":\"Display mode (required for homeKpi create).\"},\"sortOrder\":{\"type\":\"integer\",\"description\":\"Sort position (default 0).\"}},\"required\":[\"entity\",\"operation\"],\"additionalProperties\":false}";
+
     /// <summary>Creates the descriptor.</summary>
+    /// <param name="JsonSchema">JSON schema describing the tool arguments (passed to the base descriptor).</param>
     public FmReportsConfigurationManageDescriptor() : base(
-        "{\"type\":\"object\",\"properties\":{\"entity\":{\"type\":\"string\",\"enum\":[\"reportFavorite\",\"homeKpi\"],\"description\":\"Configuration entity family (required).\"},\"operation\":{\"type\":\"string\",\"enum\":[\"create\",\"update\",\"delete\"],\"description\":\"Operation (required); delete requires approval and has no effect until EP-09.\"},\"favoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target report favorite (required for entity=reportFavorite update/delete).\"},\"kpiId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Target home KPI (required for entity=homeKpi update/delete).\"},\"name\":{\"type\":\"string\",\"description\":\"Favorite name (required for reportFavorite create; optional overwrite for update).\"},\"postingKind\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"],\"description\":\"Primary posting kind (required for reportFavorite create).\"},\"postingKinds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"]},\"description\":\"Multi posting-kind filter set; explicit null resets it to the primary postingKind on update.\"},\"includeCategory\":{\"type\":\"boolean\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Month\",\"Quarter\",\"HalfYear\",\"Year\",\"Ytd\",\"AllHistory\"],\"description\":\"Report interval (required for reportFavorite create).\"},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":120,\"description\":\"Result window size 1-120 (domain bound of ReportFavorite.SetTake — the domain clamps, the tool validates).\"},\"comparePrevious\":{\"type\":\"boolean\"},\"compareYear\":{\"type\":\"boolean\"},\"compareProjection\":{\"type\":\"boolean\"},\"showChart\":{\"type\":\"boolean\"},\"expandable\":{\"type\":\"boolean\"},\"useValutaDate\":{\"type\":\"boolean\"},\"filters\":{\"type\":\"object\",\"properties\":{\"accountIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securitySubTypes\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"}},\"includeDividendRelated\":{\"type\":\"boolean\"}},\"additionalProperties\":false,\"description\":\"Favorite filter sets; explicit null clears them on update.\"},\"kind\":{\"type\":\"string\",\"enum\":[\"Predefined\",\"ReportFavorite\"],\"description\":\"HomeKpi kind (required for homeKpi create).\"},\"reportFavoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Favorite reference (required when kind=ReportFavorite); explicit null clears it on update.\"},\"predefinedType\":{\"type\":\"string\",\"description\":\"Predefined KPI type (required when kind=Predefined): AccountsAggregates, SavingsPlanAggregates, SecuritiesDividends, MonthlyBudget, ActiveSavingsPlansCount, ContactsCount, SecuritiesCount, OpenStatementDraftsCount; explicit null clears it on update.\"},\"title\":{\"type\":\"string\",\"description\":\"Display title (max 120 characters — domain limit of HomeKpi.SetTitle; the domain truncates, the tool rejects); explicit null clears it on update.\"},\"displayMode\":{\"type\":\"string\",\"enum\":[\"TotalOnly\",\"TotalWithComparisons\",\"ReportGraph\"],\"description\":\"Display mode (required for homeKpi create).\"},\"sortOrder\":{\"type\":\"integer\",\"description\":\"Sort position (default 0).\"}},\"required\":[\"entity\",\"operation\"],\"additionalProperties\":false}")
+        JsonSchema)
     { }
 
     /// <inheritdoc />
@@ -75,6 +78,11 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
     private readonly McpRecordScopeFilter _recordFilter;
 
     /// <summary>Creates the handler.</summary>
+    /// <param name="favorites">Report favorite service for favorite CRUD.</param>
+    /// <param name="kpis">Home KPI service for KPI CRUD.</param>
+    /// <param name="scopeEvaluator">Evaluator for MCP scope checks.</param>
+    /// <param name="auditWriter">Audit writer used for staged change tracking.</param>
+    /// <param name="recordFilter">Record-level scope filter.</param>
     public FmReportsConfigurationManageHandler(
         IReportFavoriteService favorites,
         IHomeKpiService kpis,
@@ -188,6 +196,10 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
         var effShowChart = Flag(arguments, "showChart", existing.ShowChart);
         var effExpandable = Flag(arguments, "expandable", existing.Expandable);
         var effUseValuta = Flag(arguments, "useValutaDate", existing.UseValutaDate);
+        var effSavingsPlanSource = McpToolArguments.Has(arguments, "savingsPlanPostingSource")
+            ? McpToolArguments.OptionalEnum<SavingsPlanPostingSource>(arguments, "savingsPlanPostingSource")
+                ?? throw new McpToolException("Err_Mcp_InvalidArguments", "Argument 'savingsPlanPostingSource' must not be null.")
+            : existing.SavingsPlanPostingSource;
         var effKinds = McpToolArguments.Has(arguments, "postingKinds")
             ? ParsePostingKinds(arguments)
             : existing.PostingKinds;
@@ -207,6 +219,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
         McpMasterDataGuards.AddChange(changes, EntityFavorite, favoriteId, "ShowChart", existing.ShowChart, effShowChart);
         McpMasterDataGuards.AddChange(changes, EntityFavorite, favoriteId, "Expandable", existing.Expandable, effExpandable);
         McpMasterDataGuards.AddChange(changes, EntityFavorite, favoriteId, "UseValutaDate", existing.UseValutaDate, effUseValuta);
+        McpMasterDataGuards.AddChange(changes, EntityFavorite, favoriteId, "SavingsPlanPostingSource", existing.SavingsPlanPostingSource, effSavingsPlanSource);
         if (McpToolArguments.Has(arguments, "postingKinds"))
         {
             McpMasterDataGuards.AddChange(changes, EntityFavorite, favoriteId, "PostingKinds",
@@ -224,7 +237,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
         var request = new ReportFavoriteUpdateRequest(
             effName, effKind, effIncludeCategory, effInterval, effTake,
             effComparePrevious, effCompareYear, effCompareProjection, effShowChart, effExpandable,
-            effKinds, effFilters, effUseValuta);
+            effKinds, effFilters, effUseValuta, effSavingsPlanSource);
         var staged = await McpWriteAudit.StageDataChangeAsync(
             _auditWriter, context, "ReportFavoriteUpdated", ToolName, changes, 1,
             JsonSerializer.Serialize(new { entity = "reportFavorite", operation = "update", favoriteId }), ct);
@@ -501,7 +514,8 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
             McpToolArguments.OptionalBool(arguments, "expandable") ?? false,
             McpToolArguments.Has(arguments, "postingKinds") ? ParsePostingKinds(arguments) : null,
             McpToolArguments.Has(arguments, "filters") ? ParseFilters(arguments.GetProperty("filters")) : null,
-            McpToolArguments.OptionalBool(arguments, "useValutaDate") ?? false);
+            McpToolArguments.OptionalBool(arguments, "useValutaDate") ?? false,
+            McpToolArguments.OptionalEnum<SavingsPlanPostingSource>(arguments, "savingsPlanPostingSource") ?? SavingsPlanPostingSource.PlanPostings);
     }
 
     private static IReadOnlyCollection<PostingKind>? ParsePostingKinds(JsonElement arguments)
@@ -569,6 +583,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
             showChart = f.ShowChart,
             expandable = f.Expandable,
             useValutaDate = f.UseValutaDate,
+            savingsPlanPostingSource = f.SavingsPlanPostingSource.ToString(),
             createdUtc = f.CreatedUtc,
             modifiedUtc = f.ModifiedUtc,
             untrusted_data = new { name = f.Name }

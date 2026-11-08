@@ -74,13 +74,23 @@ public sealed class SavingsPlanService : ISavingsPlanService
         // accounts the sum of the linked account balances is the only source instead
         var accumulated = await SavingsPlanLinkAnalysis.GetCurrentAmountAsync(_db, id, today, ct);
 
+        // "Eigenanteil": the balance built from the plan's own postings, only reported
+        // when the plan has linked accounts (the saldo then follows the account balances)
+        decimal? ownAmount = null;
+        if ((await SavingsPlanLinkAnalysis.GetLinkedAccountIdsAsync(_db, id, ct)).Count > 0)
+        {
+            ownAmount = await _db.Postings.AsNoTracking()
+                .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
+                .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+        }
+
         decimal remaining = 0m;
         if (plan.TargetAmount is not null)
         {
             remaining = Math.Max(0m, plan.TargetAmount.Value - accumulated);
         }
 
-        return new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId, remaining, accumulated);
+        return new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId, remaining, accumulated, ownAmount);
     }
 
     /// <summary>

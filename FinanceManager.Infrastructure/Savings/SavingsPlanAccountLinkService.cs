@@ -36,9 +36,15 @@ public sealed class SavingsPlanAccountLinkService : ISavingsPlanAccountLinkServi
             .AnyAsync(p => p.Id == savingsPlanId && p.OwnerUserId == ownerUserId, ct);
         if (!planExists) { throw new ArgumentException("Savings plan not found", nameof(savingsPlanId)); }
 
-        var accountExists = await _db.Accounts.AsNoTracking()
-            .AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
-        if (!accountExists) { throw new ArgumentException("Account not found", nameof(accountId)); }
+        var accountType = await _db.Accounts.AsNoTracking()
+            .Where(a => a.Id == accountId && a.OwnerUserId == ownerUserId)
+            .Select(a => (FinanceManager.Shared.Dtos.Accounts.AccountType?)a.Type)
+            .FirstOrDefaultAsync(ct);
+        if (accountType is null) { throw new ArgumentException("Account not found", nameof(accountId)); }
+        if (accountType != FinanceManager.Shared.Dtos.Accounts.AccountType.Savings)
+        {
+            throw new ArgumentException("Only savings accounts can be linked to a savings plan", nameof(accountId));
+        }
 
         var duplicate = await _db.SavingsPlanAccountLinks.AsNoTracking()
             .AnyAsync(l => l.SavingsPlanId == savingsPlanId && l.AccountId == accountId, ct);

@@ -63,12 +63,14 @@
 
 **Bedingungen:**
 - Plan und Konto gehören demselben Eigentümer; doppelte Verknüpfungen werden abgewiesen.
+- Es sind ausschließlich Konten vom Typ `Savings` (Sparkonto) verknüpfbar — die Auswahl und der Service lehnen andere Kontotypen ab.
 
 **Verhalten:**
 - Ab dem ersten Link ist `CurrentAmount`/`accumulatedAmount` die Summe der verknüpften Kontosalden (additive Summe, keine Aufteilung bei Sammelkonten).
 - Die Rhythmus-/Defizitanalyse nutzt den Konto-Inflow (alle Zuflüsse inkl. Einzüge, VL, Zinsen).
 - Plan-Buchungen mit Funding-Buchungsgruppe (Bank-Gegenposting) werden als „informell" gekennzeichnet und zählen nicht in `accumulated`/`expectedToDate`.
 - Nach Entfernen des letzten Links gilt wieder die buchungsbasierte Auswertung.
+- Bei verknüpften Plänen wird zusätzlich der „Eigenanteil" (Summe der Plan-eigenen Buchungen) in den Kopfdaten ausgewiesen (`SavingsPlanDto.OwnAmount`).
 
 **Umsetzung:** `SavingsPlanAccountLinkService`, `SavingsPlanLinkAnalysis`, Endpunkte `…/linked-accounts`, UI-Abschnitt `SavingsPlanLinkedAccountsPanel`.
 

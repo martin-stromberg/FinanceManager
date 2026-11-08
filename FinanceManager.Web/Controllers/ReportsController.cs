@@ -103,7 +103,7 @@ public sealed class ReportsController : ControllerBase
             {
                 filters = new ReportAggregationFilters(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
             }
-            var query = new ReportAggregationQuery(_current.UserId, req.PostingKind, req.Interval, req.Take, req.IncludeCategory, req.ComparePrevious, req.CompareYear, req.CompareProjection, multi, analysisDate, req.UseValutaDate, filters);
+            var query = new ReportAggregationQuery(_current.UserId, req.PostingKind, req.Interval, req.Take, req.IncludeCategory, req.ComparePrevious, req.CompareYear, req.CompareProjection, multi, analysisDate, req.UseValutaDate, filters, req.SavingsPlanPostingSource);
             var result = await _agg.QueryAsync(query, ct);
             return Ok(result);
         }

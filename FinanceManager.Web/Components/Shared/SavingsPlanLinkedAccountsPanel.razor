@@ -5,22 +5,44 @@
     <table class="fm-table card card-table" style="width:100%;">
         <thead>
             <tr>
-                <th colspan="2" style="text-align:left;padding:.5rem .6rem;font-weight:700;font-size:1rem;border-bottom:1px solid var(--border);">
+                <th colspan="3" style="text-align:left;padding:.5rem .6rem;font-weight:700;font-size:1rem;border-bottom:1px solid var(--border);">
                     @(Localizer?["LinkedAccounts_Section_Title"] ?? "Linked accounts")
+                    <button type="button"
+                            class="icon-btn small"
+                            style="margin-left:.5rem;vertical-align:middle;"
+                            title="@(Localizer?["LinkedAccounts_Info_Button"] ?? "What is this link for?")"
+                            aria-expanded="@_showInfo"
+                            @onclick="() => _showInfo = !_showInfo">
+                        <svg><use href="/icons/sprite.svg#info"/></svg>
+                    </button>
                 </th>
             </tr>
         </thead>
         <tbody>
+            @if (_showInfo)
+            {
+                <tr>
+                    <td colspan="3" style="padding:.5rem .6rem;color:var(--muted);font-size:.85rem;">
+                        <ul style="margin:0;padding-left:1.1rem;">
+                            <li>@(Localizer?["LinkedAccounts_Info_Balance"] ?? "Linked accounts provide the plan's actual balance.")</li>
+                            <li>@(Localizer?["LinkedAccounts_Info_Inflow"] ?? "The account inflow is the basis for rhythm and deficit analysis.")</li>
+                            <li>@(Localizer?["LinkedAccounts_Info_Informal"] ?? "Funding postings on other accounts can be marked as informal documentation.")</li>
+                            <li>@(Localizer?["LinkedAccounts_Info_Fallback"] ?? "Without linked accounts the posting-based evaluation stays active.")</li>
+                        </ul>
+                    </td>
+                </tr>
+            }
             @if (Vm?.LinkedAccounts == null || !Vm.LinkedAccounts.Any())
             {
                 <tr>
-                    <td colspan="2" style="padding:.5rem .6rem;color:var(--muted);font-style:italic;">
+                    <td colspan="3" style="padding:.5rem .6rem;color:var(--muted);font-style:italic;">
                         @(Localizer?["LinkedAccounts_Empty"] ?? "No linked accounts. The accumulated amount is computed from the plan's postings.")
                     </td>
                 </tr>
             }
             else
             {
+                var showDetails = Vm.LinkedAccounts.Count > 1;
                 @foreach (var account in Vm.LinkedAccounts)
                 {
                     var accountCapture = account;
@@ -32,14 +54,40 @@
                                 <span style="color:var(--muted);font-family:monospace;margin-left:.5rem;">@account.Iban</span>
                             }
                         </td>
-                        <td style="padding:.4rem .6rem;text-align:right;white-space:nowrap;">
-                            <button class="btn btn-sm btn-danger"
-                                    style="font-size:.8rem;padding:.2rem .6rem;"
-                                    @onclick="() => RemoveLinkAsync(accountCapture.Id)"
-                                    disabled="@_busy">
-                                @(Localizer?["LinkedAccounts_Remove_Button"] ?? "Unlink")
-                            </button>
-                        </td>
+                        @if (showDetails)
+                        {
+                            <td style="padding:.4rem .6rem;text-align:right;white-space:nowrap;">
+                                @account.CurrentBalance.ToString("N2")
+                            </td>
+                            <td style="padding:.4rem .6rem;text-align:right;white-space:nowrap;">
+                                <button type="button"
+                                        class="icon-btn small"
+                                        title="@(Localizer?["LinkedAccounts_OpenAccount_Button"] ?? "Open account")"
+                                        @onclick="() => OpenAccountAsync(accountCapture.Id)"
+                                        disabled="@_busy">
+                                    <svg><use href="/icons/sprite.svg#external"/></svg>
+                                </button>
+                                <button type="button"
+                                        class="icon-btn small"
+                                        title="@(Localizer?["LinkedAccounts_Remove_Button"] ?? "Unlink")"
+                                        @onclick="() => RemoveLinkAsync(accountCapture.Id)"
+                                        disabled="@_busy">
+                                    <svg><use href="/icons/sprite.svg#unlink"/></svg>
+                                </button>
+                            </td>
+                        }
+                        else
+                        {
+                            <td colspan="2" style="padding:.4rem .6rem;text-align:right;white-space:nowrap;">
+                                <button type="button"
+                                        class="icon-btn small"
+                                        title="@(Localizer?["LinkedAccounts_OpenAccount_Button"] ?? "Open account")"
+                                        @onclick="() => OpenAccountAsync(accountCapture.Id)"
+                                        disabled="@_busy">
+                                    <svg><use href="/icons/sprite.svg#external"/></svg>
+                                </button>
+                            </td>
+                        }
                     </tr>
                 }
             }
@@ -63,7 +111,7 @@
                         }
                     </select>
                 </td>
-                <td style="padding:.5rem .6rem;text-align:right;white-space:nowrap;">
+                <td colspan="2" style="padding:.5rem .6rem;text-align:right;white-space:nowrap;">
                     <button class="btn btn-sm btn-primary"
                             style="font-size:.8rem;padding:.2rem .6rem;"
                             @onclick="AddLinkAsync"
@@ -84,6 +132,7 @@
     [Parameter] public IStringLocalizer? Localizer { get; set; }
 
     private bool _busy;
+    private bool _showInfo;
 
     private void OnAccountSelected(ChangeEventArgs e)
     {
@@ -92,6 +141,12 @@
             return;
         }
         Vm.NewLinkedAccountId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    }
+
+    private Task OpenAccountAsync(Guid accountId)
+    {
+        Vm?.OpenLinkedAccount(accountId);
+        return Task.CompletedTask;
     }
 
     private async Task AddLinkAsync()

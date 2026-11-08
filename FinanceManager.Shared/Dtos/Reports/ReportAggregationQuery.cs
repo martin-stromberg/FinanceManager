@@ -14,6 +14,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="PostingKinds">Optional multi-kind extension (falls back to single kind when omitted).</param>
 /// <param name="AnalysisDate">Optional analysis month (first day is used as anchor).</param>
 /// <param name="UseValutaDate">When true, aggregate by ValutaDate, falling back to BookingDate where needed.</param>
+/// <param name="SavingsPlanPostingSource">Posting source used for emitted savings plans.</param>
 /// <param name="Filters">Optional top-level filters.</param>
 /// <returns>The result.</returns>
 public sealed record ReportAggregationQuery(
@@ -28,5 +29,6 @@ public sealed record ReportAggregationQuery(
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     DateTime? AnalysisDate = null,
     bool UseValutaDate = false,
-    ReportAggregationFilters? Filters = null
+    ReportAggregationFilters? Filters = null,
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
 );

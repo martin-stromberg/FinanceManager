@@ -1317,6 +1317,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("SavingsPlanIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("SavingsPlanPostingSource")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("SecurityCategoryIdsCsv")
                         .HasColumnType("TEXT");
 

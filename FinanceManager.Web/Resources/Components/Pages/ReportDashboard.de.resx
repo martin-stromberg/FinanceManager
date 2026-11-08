@@ -393,4 +393,7 @@
   <data name="Ribbon_Tab" xml:space="preserve">
     <value>Dashboard</value>
   </data>
+  <data name="Label_SavingsPlanPostingSource" xml:space="preserve"><value>Sparplan-Postenquelle</value></data>
+  <data name="SavingsPlanPostingSource_PlanPostings" xml:space="preserve"><value>Sparplanposten</value></data>
+  <data name="SavingsPlanPostingSource_LinkedAccountPostings" xml:space="preserve"><value>Posten der verknüpften Konten</value></data>
 </root>
