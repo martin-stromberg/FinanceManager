@@ -132,7 +132,7 @@ public sealed class SavingsPlanCardLinkTests
         await vm.LoadAsync(planId);
         string? action = null;
         string? param = null;
-        vm.UiActionRequested += (_, e) => { action = e.Action; param = e.Payload; };
+        vm.UiActionRequested += (_, e) => { action = e?.Action; param = e?.Payload; };
 
         vm.OpenLinkedAccount(linked.Id);
 

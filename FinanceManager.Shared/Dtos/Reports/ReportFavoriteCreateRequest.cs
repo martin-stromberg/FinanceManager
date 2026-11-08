@@ -19,6 +19,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="PostingKinds">Optional collection of posting kinds to include (overrides primary PostingKind when provided).</param>
 /// <param name="Filters">Optional additional filters to apply to the report (categories, contacts, accounts, etc.).</param>
 /// <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
+/// <param name="SavingsPlanPostingSource">Source used for savings-plan report points.</param>
 /// <returns>The result.</returns>
 [method: JsonConstructor]
 public sealed record ReportFavoriteCreateRequest(
