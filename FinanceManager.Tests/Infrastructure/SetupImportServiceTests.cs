@@ -106,5 +106,74 @@ namespace FinanceManager.Tests.Infrastructure
             rules.Should().ContainSingle(r => r.BudgetCategoryId.HasValue);
             rules.Should().ContainSingle(r => r.BudgetPurposeId.HasValue);
         }
+
+        /// <summary>
+        /// Verifies that importing a budget rule payload carrying <c>PurposePattern</c> and
+        /// <c>PurposePatternIsRegex</c> restores both fields - previously the DTO fields were
+        /// silently dropped on restore.
+        /// </summary>
+        [Fact]
+        public async Task ImportAsync_RestoresBudgetRulePattern()
+        {
+            // Arrange
+            var conn = new SqliteConnection("DataSource=:memory:");
+            conn.Open();
+            var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
+            await using var db = new AppDbContext(options);
+            db.Database.EnsureCreated();
+
+            var userId = Guid.NewGuid();
+            var categoryId = Guid.NewGuid();
+
+            var data = new
+            {
+                BudgetCategories = new[]
+                {
+                    new { Id = categoryId, Name = "Arbeit" }
+                },
+                BudgetRules = new[]
+                {
+                    new
+                    {
+                        Id = Guid.NewGuid(),
+                        BudgetCategoryId = (Guid?)categoryId,
+                        BudgetPurposeId = (Guid?)null,
+                        Amount = 5000m,
+                        Interval = 0,
+                        CustomIntervalMonths = (int?)null,
+                        StartDate = new DateOnly(2026, 1, 1),
+                        EndDate = (DateOnly?)null,
+                        PurposePattern = (string?)"^Gehalt.*",
+                        PurposePatternIsRegex = true
+                    }
+                }
+            };
+
+            var dataJson = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var meta = "{\"Type\":\"Backup\",\"Version\":3}";
+            var fullJson = meta + "\n" + dataJson;
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(fullJson));
+
+            var statementDraftMock = new Mock<IStatementDraftService>();
+            var aggregateMock = new Mock<IPostingAggregateService>();
+            aggregateMock
+                .Setup(x => x.RebuildForUserAsync(It.IsAny<Guid>(), It.IsAny<Action<int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var svc = new global::SetupImportService(
+                db,
+                statementDraftMock.Object,
+                aggregateMock.Object,
+                NullLogger<global::SetupImportService>.Instance);
+
+            // Act
+            await svc.ImportAsync(userId, stream, replaceExisting: false, CancellationToken.None);
+
+            // Assert
+            var rule = db.BudgetRules.Single();
+            rule.PurposePattern.Should().Be("^Gehalt.*");
+            rule.PurposePatternIsRegex.Should().BeTrue();
+        }
     }
 }

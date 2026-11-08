@@ -202,7 +202,9 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            Total = 30 - (replaceExisting ? 0 : 1),
+            // Total must match the number of progress.Inc() calls below (currently 42);
+            // the "Clearing user data" step only runs when replaceExisting is true.
+            Total = 42 - (replaceExisting ? 0 : 1),
             SubStep = 0,
             SubTotal = 0
         };
@@ -239,6 +241,7 @@ public sealed class SetupImportService : ISetupImportService
         var attachmentCatMap = new Dictionary<Guid, Guid>();
         var budgetCategoryMap = new Dictionary<Guid, Guid>();
         var budgetPurposeMap = new Dictionary<Guid, Guid>();
+        var statementImportMap = new Dictionary<Guid, Guid>();
 
         var jsonOptions = new JsonSerializerOptions
         {
@@ -465,6 +468,106 @@ public sealed class SetupImportService : ISetupImportService
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
+        // AccountLinkedIbans (optional section - backups predating the feature omit it)
+        ProgressChanged?.Invoke(this, progress.SetDescription("Account Linked Ibans"));
+        if (root.TryGetProperty("AccountLinkedIbans", out var linkedIbansEl) && linkedIbansEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<AccountLinkedIban.AccountLinkedIbanBackupDto>>(linkedIbansEl.GetRawText(), jsonOptions) ?? new List<AccountLinkedIban.AccountLinkedIbanBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                _logger.LogDebug("ImportVersion3: AccountLinkedIban create - BackupId={BackupId}, AccountId={AccountId}", dto.Id, dto.AccountId);
+                // Skip linked ibans whose account did not survive the id remapping (FK target required).
+                if (!accountMap.TryGetValue(dto.AccountId, out var mappedAccountId))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var iban = dto.Iban?.Trim();
+                // (AccountId, Iban) is a unique index - tolerate duplicates to keep the import resilient.
+                if (string.IsNullOrWhiteSpace(iban)
+                    || await _db.AccountLinkedIbans.AnyAsync(l => l.AccountId == mappedAccountId && l.Iban == iban, ct))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var entity = new AccountLinkedIban(mappedAccountId, iban);
+                entity.AssignBackupDto(dto with { AccountId = mappedAccountId });
+                _db.AccountLinkedIbans.Add(entity);
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // StatementImports
+        ProgressChanged?.Invoke(this, progress.SetDescription("Statement Imports"));
+        if (root.TryGetProperty("StatementImports", out var stmtImportsEl) && stmtImportsEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Statements.StatementImport.StatementImportBackupDto>>(stmtImportsEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Statements.StatementImport.StatementImportBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                _logger.LogDebug("ImportVersion3: StatementImport create - BackupId={BackupId}, OriginalFileName={OriginalFileName}", dto.Id, dto.OriginalFileName);
+                // Imports without a remappable account would be invisible (visibility runs via account ownership).
+                if (!accountMap.TryGetValue(dto.AccountId, out var mappedAccountId) || string.IsNullOrWhiteSpace(dto.OriginalFileName))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                // No unique index on (AccountId, OriginalFileName, ImportedAtUtc) - tolerate duplicates
+                // so a merge import (replaceExisting: false) stays resilient.
+                if (await _db.StatementImports.AnyAsync(i => i.AccountId == mappedAccountId && i.OriginalFileName == dto.OriginalFileName && i.ImportedAtUtc == dto.ImportedAtUtc, ct))
+                {
+                    _logger.LogWarning("ImportVersion3: StatementImport skipped - duplicate (AccountId={AccountId}, OriginalFileName={OriginalFileName}, ImportedAtUtc={ImportedAtUtc}) (BackupId={BackupId})", mappedAccountId, dto.OriginalFileName, dto.ImportedAtUtc, dto.Id);
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var entity = new StatementImport(mappedAccountId, dto.Format, dto.OriginalFileName);
+                entity.AssignBackupDto(dto with { AccountId = mappedAccountId });
+                _db.StatementImports.Add(entity);
+                await _db.SaveChangesAsync(ct);
+                statementImportMap[dto.Id] = entity.Id;
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // AccountShares
+        ProgressChanged?.Invoke(this, progress.SetDescription("Account Shares"));
+        if (root.TryGetProperty("AccountShares", out var accSharesEl) && accSharesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Accounts.AccountShare.AccountShareBackupDto>>(accSharesEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Accounts.AccountShare.AccountShareBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                _logger.LogDebug("ImportVersion3: AccountShare create - BackupId={BackupId}, AccountId={AccountId}, UserId={UserId}", dto.Id, dto.AccountId, dto.UserId);
+                // Remap the account id when the account belongs to this backup; keep the original
+                // id otherwise (no FK on AccountId/UserId - shares on foreign accounts or for
+                // users unknown to this instance stay valid on the same instance and must not be lost).
+                var accountId = accountMap.TryGetValue(dto.AccountId, out var mappedAccountId) ? mappedAccountId : dto.AccountId;
+                if (accountId == Guid.Empty || dto.UserId == Guid.Empty)
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                // No unique index on (AccountId, UserId) - tolerate duplicates so a merge import
+                // (replaceExisting: false) stays resilient.
+                if (await _db.AccountShares.AnyAsync(s => s.AccountId == accountId && s.UserId == dto.UserId, ct))
+                {
+                    _logger.LogWarning("ImportVersion3: AccountShare skipped - duplicate (AccountId={AccountId}, UserId={UserId}) (BackupId={BackupId})", accountId, dto.UserId, dto.Id);
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var entity = new AccountShare(accountId, dto.UserId, dto.Role);
+                entity.AssignBackupDto(dto with { AccountId = accountId });
+                _db.AccountShares.Add(entity);
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
         // BudgetCategories
         ProgressChanged?.Invoke(this, progress.SetDescription("Budget Categories"));
         if (root.TryGetProperty("BudgetCategories", out var budgetCategoriesEl) && budgetCategoriesEl.ValueKind == JsonValueKind.Array)
@@ -564,6 +667,15 @@ public sealed class SetupImportService : ISetupImportService
                 }
 
                 var entity = new BudgetRule(userId, mappedPurposeId, mappedCategoryId, dto.Amount, dto.Interval, dto.StartDate, dto.EndDate, dto.CustomIntervalMonths);
+                try
+                {
+                    // Old or manipulated backups may carry an invalid regex pattern - import the rule without it.
+                    entity.SetPurposePattern(dto.PurposePattern, dto.PurposePatternIsRegex);
+                }
+                catch (ArgumentException ex)
+                {
+                    _logger.LogWarning("ImportVersion3: BudgetRule {BudgetRuleId} imported without purpose pattern: {Message}", dto.Id, ex.Message);
+                }
                 _db.BudgetRules.Add(entity);
                 await _db.SaveChangesAsync(ct);
                 ProgressChanged?.Invoke(this, progress.IncSub());
@@ -643,6 +755,48 @@ public sealed class SetupImportService : ISetupImportService
             foreach (var kvp in postingMapCollection)
                 postingMap[kvp.Key] = kvp.Value.Id;
             postingMapCollection.Clear();
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // StatementEntries
+        ProgressChanged?.Invoke(this, progress.SetDescription("Statement Entries"));
+        if (root.TryGetProperty("StatementEntries", out var stmtEntriesEl) && stmtEntriesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Statements.StatementEntry.StatementEntryBackupDto>>(stmtEntriesEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Statements.StatementEntry.StatementEntryBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                _logger.LogDebug("ImportVersion3: StatementEntry create - BackupId={BackupId}, BookingDate={BookingDate}, Amount={Amount}", dto.Id, dto.BookingDate, dto.Amount);
+                if (!statementImportMap.TryGetValue(dto.StatementImportId, out var mappedImportId)
+                    || string.IsNullOrWhiteSpace(dto.Subject)
+                    || string.IsNullOrWhiteSpace(dto.RawHash))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                // RawHash has a global unique index - tolerate duplicates so a merge import
+                // (replaceExisting: false) stays resilient.
+                if (await _db.StatementEntries.AnyAsync(e => e.RawHash == dto.RawHash, ct))
+                {
+                    _logger.LogWarning("ImportVersion3: StatementEntry skipped - duplicate RawHash {RawHash} (BackupId={BackupId})", dto.RawHash, dto.Id);
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                Guid? contactId = dto.ContactId.HasValue && contactMap.TryGetValue(dto.ContactId.Value, out var mc) ? mc : null;
+                Guid? savingsPlanId = dto.SavingsPlanId.HasValue && savingsMap.TryGetValue(dto.SavingsPlanId.Value, out var ms) ? ms : null;
+                // SecurityTransactionId has no FK; remap it when the referenced posting was
+                // imported, keep the original value otherwise (read-only reference).
+                Guid? securityTransactionId = dto.SecurityTransactionId.HasValue && postingMap.TryGetValue(dto.SecurityTransactionId.Value, out var mp) ? mp : dto.SecurityTransactionId;
+                var entity = new StatementEntry(mappedImportId, dto.BookingDate, dto.Amount, dto.Subject, dto.RawHash, dto.RecipientName, dto.ValutaDate, dto.CurrencyCode, dto.BookingDescription, dto.IsAnnounced, dto.IsCostNeutral);
+                entity.AssignBackupDto(dto with { StatementImportId = mappedImportId, ContactId = contactId, SavingsPlanId = savingsPlanId, SecurityTransactionId = securityTransactionId });
+                _db.StatementEntries.Add(entity);
+                if (progress.SubStep % 100 == 0)
+                {
+                    await _db.SaveChangesAsync(ct);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
@@ -753,6 +907,73 @@ public sealed class SetupImportService : ISetupImportService
                 _db.HomeKpis.Add(entity);
             }
             await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // Notifications
+        ProgressChanged?.Invoke(this, progress.SetDescription("Notifications"));
+        if (root.TryGetProperty("Notifications", out var notificationsEl) && notificationsEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Notifications.Notification.NotificationBackupDto>>(notificationsEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Notifications.Notification.NotificationBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                _logger.LogDebug("ImportVersion3: Notification create - BackupId={BackupId}, OwnerUserId={OwnerUserId}, Title={Title}", dto.Id, dto.OwnerUserId, dto.Title);
+                if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Message))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                // Backup ids are reused via AssignBackupDto; skip already existing notifications
+                // so a merge import stays idempotent instead of failing on the primary key.
+                if (await _db.Notifications.AnyAsync(n => n.Id == dto.Id, ct))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var entity = new FinanceManager.Domain.Notifications.Notification();
+                entity.AssignBackupDto(dto);
+                // AssignBackupDto intentionally does not carry OwnerUserId - bind the notification
+                // to the importing user so it does not become global.
+                entity.OwnerUserId = userId;
+                _db.Notifications.Add(entity);
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
+        // PortfolioKpiConfigurations (optional section - backups predating the feature omit it).
+        // Upsert semantics: exactly one configuration row exists per user (unique OwnerUserId) and
+        // ClearUserDataAsync deliberately leaves it untouched, so an existing row is updated in
+        // place while old backups without this section keep the current configuration.
+        ProgressChanged?.Invoke(this, progress.SetDescription("Portfolio KPI Configuration"));
+        if (root.TryGetProperty("PortfolioKpiConfigurations", out var portfolioKpiEl) && portfolioKpiEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Portfolio.PortfolioKpiConfiguration.PortfolioKpiConfigurationBackupDto>>(portfolioKpiEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Portfolio.PortfolioKpiConfiguration.PortfolioKpiConfigurationBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                _logger.LogDebug("ImportVersion3: PortfolioKpiConfiguration create - BackupId={BackupId}, OwnerUserId={OwnerUserId}", dto.Id, dto.OwnerUserId);
+                if (string.IsNullOrWhiteSpace(dto.ActiveTileIds) || string.IsNullOrWhiteSpace(dto.TileOrder))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var existing = await _db.PortfolioKpiConfigurations.FirstOrDefaultAsync(c => c.OwnerUserId == userId, ct);
+                if (existing is null)
+                {
+                    var entity = new FinanceManager.Domain.Portfolio.PortfolioKpiConfiguration(userId, dto.ActiveTileIds, dto.TileOrder);
+                    entity.AssignBackupDto(dto);
+                    _db.PortfolioKpiConfigurations.Add(entity);
+                }
+                else
+                {
+                    existing.AssignBackupDto(dto);
+                }
+                await _db.SaveChangesAsync(ct);
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 

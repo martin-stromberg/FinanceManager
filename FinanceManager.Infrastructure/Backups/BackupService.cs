@@ -755,6 +755,19 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var aiActionRequests = aiActionRequestEntities.Select(r => r.ToBackupDto()).ToList();
 
+        // Linked IBANs (sub-IBANs) of the user's collection accounts; ownership is
+        // derived via the account (the entity has no OwnerUserId itself).
+        var accountLinkedIbanEntities = await _db.AccountLinkedIbans.AsNoTracking()
+            .Where(l => importAccountIds.Contains(l.AccountId))
+            .ToListAsync(ct);
+        var accountLinkedIbans = accountLinkedIbanEntities.Select(l => l.ToBackupDto()).ToList();
+
+        // Portfolio KPI configuration: exactly one row exists per user.
+        var portfolioKpiConfigurationEntities = await _db.PortfolioKpiConfigurations.AsNoTracking()
+            .Where(c => c.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var portfolioKpiConfigurations = portfolioKpiConfigurationEntities.Select(c => c.ToBackupDto()).ToList();
+
         return new
         {
             Accounts = accounts,
@@ -790,7 +803,11 @@ public sealed class BackupService : IBackupService
             AiActionRequests = aiActionRequests,
             // Optional payload section: backups created before the plan-account-link feature
             // simply omit it - the restore treats it as empty.
-            SavingsPlanAccountLinks = savingsPlanAccountLinks
+            SavingsPlanAccountLinks = savingsPlanAccountLinks,
+            // Optional payload sections: backups created before these features existed
+            // simply omit them - the restore treats them as empty.
+            AccountLinkedIbans = accountLinkedIbans,
+            PortfolioKpiConfigurations = portfolioKpiConfigurations
         };
     }
 

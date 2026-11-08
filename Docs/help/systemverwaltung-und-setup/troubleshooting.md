@@ -117,6 +117,30 @@
 1. Die Anwendungslogs nach dem Start auf Warnungen der Backup-Storage-Migration prüfen.
 2. Die Datei manuell aus `backups/` in das Verzeichnis `backups/{userId}` des Besitzers verschieben und die Anwendung neu starten (die Migration ist idempotent).
 
+## Nach einem Restore fehlen einzelne Einträge
+
+**Symptom:** Nach dem Wiederherstellen eines Backups fehlen einzelne Kontoauszugs-Einträge, Benachrichtigungen, Kontofreigaben oder verknüpfte IBANs — obwohl sie im Backup enthalten waren.
+
+**Ursache:** Der Import toleriert Dubletten und nicht auflösbare Verweise, statt den Restore abzubrechen. Übersprungen werden unter anderem `StatementEntries` mit bereits vorhandenem `RawHash` (globaler Unique-Index), bereits vorhandene `Notifications`, doppelte `StatementImports`/`AccountShares`/`AccountLinkedIbans` sowie Einträge, deren Konto oder Kontoauszugs-Import nicht im Backup enthalten ist.
+
+**Lösung:**
+1. Die Anwendungslogs auf Warnungen der Form `ImportVersion3: ... skipped - duplicate` prüfen — dort steht, welche Einträge übersprungen wurden.
+2. Soll der Bestand vollständig ersetzt werden, den destruktiven Restore (Vorhandene Daten ersetzen) verwenden statt eines Merge-Imports.
+
+> **Hinweis:** Kontofreigaben auf Konten anderer Benutzer behalten beim Restore ihre ursprüngliche Referenz und bleiben auf derselben Installation gültig; auf einer anderen Installation können sie ins Leere zeigen.
+
+## Restore mit einer älteren Programmversion hat Daten verloren
+
+**Symptom:** Nach einem Restore, der mit einer Programmversion vor dieser Korrektur ausgeführt wurde, fehlen die Kontoauszugs-Import-Historie, die Benachrichtigungen und die Kontofreigaben — obwohl sie im Backup enthalten waren.
+
+**Ursache:** Frühere Versionen löschten `StatementImports`/`StatementEntries`, `Notifications` und `AccountShares` beim Restore, schrieben die Sektionen aber nicht zurück. Zusätzlich waren `AccountLinkedIbans` und `PortfolioKpiConfigurations` gar nicht im Backup enthalten.
+
+**Lösung:**
+1. Die Programmversion aktualisieren — ab dieser Version werden alle Sektionen wiederhergestellt.
+2. Verlorene Daten lassen sich nicht nachträglich aus dem Restore zurückholen: Die Kontoauszugs-Import-Historie kann durch erneutes Einlesen der Kontoauszugsdateien neu aufgebaut werden; Benachrichtigungen und Freigaben müssen neu entstehen beziehungsweise neu vergeben werden.
+
+> **Hinweis:** Vor jedem Restore empfiehlt es sich, ein frisches Backup anzulegen — erst recht vor dem ersten Restore nach einem Programmupdate.
+
 ## `/.well-known/change-password` leitet nicht auf das gewünschte Ziel weiter
 
 **Symptom:** Der Aufruf von `/.well-known/change-password` landet auf einer anderen Seite als erwartet.

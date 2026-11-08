@@ -219,6 +219,8 @@ public sealed class BudgetRule : Entity, IAggregateRoot
     /// <param name="CustomIntervalMonths">Custom interval months.</param>
     /// <param name="StartDate">Start date.</param>
     /// <param name="EndDate">Optional end date.</param>
+    /// <param name="PurposePattern">Optional pattern used to match postings for this rule.</param>
+    /// <param name="PurposePatternIsRegex">Whether <paramref name="PurposePattern"/> is a regular expression.</param>
     /// <returns>The result.</returns>
     public sealed record BudgetRuleBackupDto(
         Guid Id,
@@ -229,14 +231,16 @@ public sealed class BudgetRule : Entity, IAggregateRoot
         BudgetIntervalType Interval,
         int? CustomIntervalMonths,
         DateOnly StartDate,
-        DateOnly? EndDate);
+        DateOnly? EndDate,
+        string? PurposePattern = null,
+        bool PurposePatternIsRegex = false);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this budget rule.
     /// </summary>
     /// <returns>The result.</returns>
     public BudgetRuleBackupDto ToBackupDto()
-        => new BudgetRuleBackupDto(Id, OwnerUserId, BudgetPurposeId, BudgetCategoryId, Amount, Interval, CustomIntervalMonths, StartDate, EndDate);
+        => new BudgetRuleBackupDto(Id, OwnerUserId, BudgetPurposeId, BudgetCategoryId, Amount, Interval, CustomIntervalMonths, StartDate, EndDate, PurposePattern, PurposePatternIsRegex);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this entity.
@@ -253,5 +257,6 @@ public sealed class BudgetRule : Entity, IAggregateRoot
         CustomIntervalMonths = dto.CustomIntervalMonths;
         StartDate = dto.StartDate;
         EndDate = dto.EndDate;
+        SetPurposePattern(dto.PurposePattern, dto.PurposePatternIsRegex);
     }
 }
