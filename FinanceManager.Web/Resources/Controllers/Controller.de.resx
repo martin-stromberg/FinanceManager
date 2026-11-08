@@ -158,4 +158,7 @@
 	<data name="API_McpApproval_Err_Unexpected" xml:space="preserve">
 		<value>Unerwarteter Fehler bei der Genehmigungsanfrage.</value>
 	</data>
+	<data name="API_StatementDraft_SAVINGSPLAN_ACCOUNT_LINKED" xml:space="preserve">
+		<value>Ein Sparplan kann nicht zugeordnet werden, da das erkannte Konto mit einem Sparplan verknüpft ist. Seine Buchungen werden bereits über den Kontostand erfasst.</value>
+	</data>
 </root>

@@ -33,4 +33,6 @@ public sealed class ReportFavoriteCreateApiRequest
     public ReportFavoriteFiltersDto? Filters { get; set; }
     /// <summary>Aggregate by ValutaDate when true.</summary>
     public bool UseValutaDate { get; set; }
+    /// <summary>Posting source used for emitted savings plans (plan postings vs. linked account postings).</summary>
+    public SavingsPlanPostingSource SavingsPlanPostingSource { get; set; }
 }

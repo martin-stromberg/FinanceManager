@@ -82,6 +82,16 @@
                         <option value="valuta">@Localizer["DateKind_Valuta"]</option>
                     </select>
                 </div>
+                @if (_selectedKinds.Contains(PostingKind.SavingsPlan))
+                {
+                    <div class="row inline" style="margin-top:.5rem;align-items:center;">
+                        <label style="margin-right:.5rem;">@Localizer["Label_SavingsPlanPostingSource"]</label>
+                        <select value="@_savingsPlanPostingSourceString" @onchange="OnSavingsPlanPostingSourceChange">
+                            <option value="plan">@Localizer["SavingsPlanPostingSource_PlanPostings"]</option>
+                            <option value="linked">@Localizer["SavingsPlanPostingSource_LinkedAccountPostings"]</option>
+                        </select>
+                    </div>
+                }
             </div>
             <div class="filter-group">
                 <div class="group-title">@Localizer["FilterGroup_Comparisons"]</div>
@@ -491,6 +501,7 @@
     private bool _includeDividendRelated; // new
 
     private bool _useValutaDate; // new: whether to use valuta date for analysis
+    private bool _savingsPlanLinkedPostings; // new: use linked account postings as source for savings plans
     private string? _projectionDetailsTitle;
     private decimal _projectionDetailsActualAmount;
     private decimal _projectionDetailsExpectedAmount;
@@ -672,6 +683,7 @@
         }
 
         _vm!.EditMode = Edit.GetValueOrDefault(false);
+        _editMode = _vm!.EditMode;
 
         if (FavoriteId.HasValue)
         {
@@ -706,6 +718,7 @@
             _vm.Take = _take;
             _vm.IncludeDividendRelated = _includeDividendRelated; // new
             _vm.UseValutaDate = _useValutaDate; // new: propagate date kind to VM
+            _vm.SavingsPlanPostingSource = _savingsPlanLinkedPostings ? SavingsPlanPostingSource.LinkedAccountPostings : SavingsPlanPostingSource.PlanPostings;
 
             await _vm.ReloadAsync(_analysisMonth, default);
             
@@ -918,6 +931,16 @@
         SetUseValuta(string.Equals(v, "valuta", StringComparison.OrdinalIgnoreCase));
     }
 
+    private string _savingsPlanPostingSourceString => _savingsPlanLinkedPostings ? "linked" : "plan";
+    private void OnSavingsPlanPostingSourceChange(ChangeEventArgs e)
+    {
+        var v = e?.Value?.ToString();
+        var linked = string.Equals(v, "linked", StringComparison.OrdinalIgnoreCase);
+        if (_savingsPlanLinkedPostings == linked) { return; }
+        _savingsPlanLinkedPostings = linked;
+        _ = LoadAsync();
+    }
+
     private void OnToggleKind(PostingKind value, bool isChecked)
     {
         var beforePrimary = PrimaryKind;
@@ -948,7 +971,7 @@
 
     private async Task SubmitFavoriteDialogAsync()
     {
-        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _compareProjection && CanCompareProjection, _showChart, true, IsMulti ? _selectedKinds : null, BuildFilters(), _useValutaDate);
+        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _compareProjection && CanCompareProjection, _showChart, true, IsMulti ? _selectedKinds : null, BuildFilters(), _useValutaDate, default, _savingsPlanLinkedPostings ? SavingsPlanPostingSource.LinkedAccountPostings : SavingsPlanPostingSource.PlanPostings);
         if (res is not null)
         {
             _vm!.ActiveFavoriteId = res.Id;
@@ -1019,6 +1042,8 @@
         // restore date kind selection from favorite
         _useValutaDate = fav.UseValutaDate;
         _vm!.UseValutaDate = _useValutaDate;
+        _savingsPlanLinkedPostings = fav.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings;
+        _vm!.SavingsPlanPostingSource = fav.SavingsPlanPostingSource;
         _vm!.CompareProjection = _compareProjection;
           _ = _vm!.LoadFilterOptionsAsync();
        _ = LoadAsync();

@@ -142,6 +142,50 @@ public sealed class ReportAggregationService : IReportAggregationService
         }
         // From here on use 'rawAnon' instead of previous 'raw' anonymous objects
 
+        // Posting source switch for savings plans: when the caller requests the postings of the
+        // linked bank accounts, the SavingsPlan rows of linked plans are replaced by rows derived
+        // from the Bank aggregates of their linked accounts (same period + date kind). Plans
+        // without links keep their own plan postings.
+        if (query.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings && kinds.Contains(PostingKind.SavingsPlan))
+        {
+            var links = await _db.SavingsPlanAccountLinks.AsNoTracking()
+                .Where(l => l.OwnerUserId == query.OwnerUserId)
+                .Select(l => new { l.SavingsPlanId, l.AccountId })
+                .ToListAsync(ct);
+            var linksByPlan = links
+                .GroupBy(l => l.SavingsPlanId)
+                .ToDictionary(g => g.Key, g => g.Select(l => l.AccountId).Distinct().ToList());
+
+            if (linksByPlan.Count > 0)
+            {
+                var linkedAccountIds = linksByPlan.Values.SelectMany(x => x).Distinct().ToList();
+                var dateKind = query.UseValutaDate ? AggregateDateKind.Valuta : AggregateDateKind.Booking;
+                var bankRows = await _db.PostingAggregates.AsNoTracking()
+                    .Where(a => a.Period == sourcePeriod
+                        && a.Kind == PostingKind.Bank
+                        && a.DateKind == dateKind
+                        && a.AccountId != null
+                        && linkedAccountIds.Contains(a.AccountId.Value))
+                    .Select(a => new { a.PeriodStart, a.Amount, AccountId = a.AccountId!.Value })
+                    .ToListAsync(ct);
+
+                var derived = new List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>();
+                foreach (var (planId, accountIdsForPlan) in linksByPlan)
+                {
+                    foreach (var row in bankRows)
+                    {
+                        if (!accountIdsForPlan.Contains(row.AccountId)) { continue; }
+                        derived.Add((PostingKind.SavingsPlan, row.PeriodStart, row.Amount, null, null, planId, null, null));
+                    }
+                }
+
+                rawAnon = rawAnon
+                    .Where(r => r.Kind != PostingKind.SavingsPlan || !r.SavingsPlanId.HasValue || !linksByPlan.ContainsKey(r.SavingsPlanId.Value))
+                    .Concat(derived)
+                    .ToList();
+            }
+        }
+
         // Collect entity ids per kind for ownership filtering & name/category lookup
         var accountIds = rawAnon.Where(r => r.AccountId.HasValue).Select(r => r.AccountId!.Value).Distinct().ToList();
         var contactIds = rawAnon.Where(r => r.ContactId.HasValue).Select(r => r.ContactId!.Value).Distinct().ToList();

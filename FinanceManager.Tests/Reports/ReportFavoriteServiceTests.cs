@@ -165,6 +165,99 @@ public sealed class ReportFavoriteServiceTests
     }
 
     /// <summary>
+    /// The <c>SavingsPlanPostingSource</c> selection must round-trip correctly through the full lifecycle:
+    /// set to <see cref="SavingsPlanPostingSource.LinkedAccountPostings"/> on create and reflected in the
+    /// create response, the persisted entity, a subsequent list, and a subsequent get - kept unchanged when
+    /// other fields are updated, then flipped back to <see cref="SavingsPlanPostingSource.PlanPostings"/>
+    /// via update and again reflected everywhere.
+    /// </summary>
+    [Fact]
+    public async Task CreateGetListAndUpdate_ShouldRoundtripSavingsPlanPostingSource()
+    {
+        using var db = CreateDb();
+        var user = new FinanceManager.Domain.Users.User("posting-source-user", "pw", false);
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var svc = new ReportFavoriteService(db);
+
+        var created = await svc.CreateAsync(
+            user.Id,
+            new ReportFavoriteCreateRequest(
+                "SP-Source",
+                PostingKind.SavingsPlan,
+                false,
+                ReportInterval.Month,
+                24,
+                false,
+                false,
+                false,
+                true,
+                true,
+                null,
+                null,
+                false,
+                SavingsPlanPostingSource.LinkedAccountPostings),
+            CancellationToken.None);
+
+        Assert.Equal(SavingsPlanPostingSource.LinkedAccountPostings, created.SavingsPlanPostingSource);
+        Assert.Equal(SavingsPlanPostingSource.LinkedAccountPostings, (await db.ReportFavorites.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).SavingsPlanPostingSource);
+
+        var listed = await svc.ListAsync(user.Id, CancellationToken.None);
+        Assert.Equal(SavingsPlanPostingSource.LinkedAccountPostings, listed.Single().SavingsPlanPostingSource);
+
+        var fetched = await svc.GetAsync(created.Id, user.Id, CancellationToken.None);
+        Assert.Equal(SavingsPlanPostingSource.LinkedAccountPostings, fetched!.SavingsPlanPostingSource);
+
+        // Updating other fields while keeping the source must not reset it to PlanPostings.
+        var updated = await svc.UpdateAsync(
+            created.Id,
+            user.Id,
+            new ReportFavoriteUpdateRequest(
+                "SP-Source",
+                PostingKind.SavingsPlan,
+                false,
+                ReportInterval.Month,
+                12,
+                true,
+                true,
+                false,
+                true,
+                true,
+                null,
+                null,
+                false,
+                SavingsPlanPostingSource.LinkedAccountPostings),
+            CancellationToken.None);
+
+        Assert.Equal(SavingsPlanPostingSource.LinkedAccountPostings, updated!.SavingsPlanPostingSource);
+        Assert.Equal(SavingsPlanPostingSource.LinkedAccountPostings, (await svc.GetAsync(created.Id, user.Id, CancellationToken.None))!.SavingsPlanPostingSource);
+
+        // Switching back to PlanPostings must persist as well.
+        var switched = await svc.UpdateAsync(
+            created.Id,
+            user.Id,
+            new ReportFavoriteUpdateRequest(
+                "SP-Source",
+                PostingKind.SavingsPlan,
+                false,
+                ReportInterval.Month,
+                12,
+                true,
+                true,
+                false,
+                true,
+                true,
+                null,
+                null,
+                false,
+                SavingsPlanPostingSource.PlanPostings),
+            CancellationToken.None);
+
+        Assert.Equal(SavingsPlanPostingSource.PlanPostings, switched!.SavingsPlanPostingSource);
+        Assert.Equal(SavingsPlanPostingSource.PlanPostings, (await db.ReportFavorites.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).SavingsPlanPostingSource);
+        Assert.Equal(SavingsPlanPostingSource.PlanPostings, (await svc.GetAsync(created.Id, user.Id, CancellationToken.None))!.SavingsPlanPostingSource);
+    }
+
+    /// <summary>
     /// Deleting a favorite must return false (not throw) both when a different user attempts to delete someone
     /// else's favorite and when the given id doesn't exist at all, while the actual owner deleting their own
     /// favorite must succeed and return true.

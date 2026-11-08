@@ -163,4 +163,7 @@
 	<data name="API_McpApproval_Err_Unexpected" xml:space="preserve">
 		<value>Unexpected error while processing the approval request.</value>
 	</data>
+	<data name="API_StatementDraft_SAVINGSPLAN_ACCOUNT_LINKED" xml:space="preserve">
+		<value>A savings plan cannot be assigned because the detected account is linked to a savings plan. Its postings already count via the account balance.</value>
+	</data>
 </root>

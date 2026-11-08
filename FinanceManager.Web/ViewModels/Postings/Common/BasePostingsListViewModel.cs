@@ -24,6 +24,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
             var descriptionLabel = Localizer?["List_Th_Postings_Description"].Value ?? "Description";
             var stornoLabel = Localizer?["List_Th_Postings_IsReversal"].Value ?? "Storno";
             var preliminaryLabel = Localizer?["List_Th_Postings_IsPreliminary"].Value ?? "Vorläufig";
+            var marksLabel = Localizer?["List_Th_Postings_Marks"].Value ?? "Merkmale";
 
             Columns = new[] {
                 new ListColumn("date", dateLabel, Align: ListColumnAlign.Left, Width: "8rem"),
@@ -33,6 +34,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                 new ListColumn("recipient", recipientLabel),
                 new ListColumn("subject", subjectLabel, Width: "22%"),
                 new ListColumn("description", descriptionLabel),
+                new ListColumn("marks", marksLabel, Align: ListColumnAlign.Left, Width: "8rem"),
                 new ListColumn("preliminary", preliminaryLabel, Align: ListColumnAlign.Left, Width: "5rem"),
                 new ListColumn("storno", stornoLabel, Align: ListColumnAlign.Left, Width: "5rem")
             };
@@ -116,10 +118,36 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                     new ListCell(ListCellKind.Text, Text: i.RecipientName ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Subject ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty),
+                    new ListCell(ListCellKind.Text, Text: BuildMarksText(i)),
                     new ListCell(ListCellKind.Text, Text: i.IsPreliminary ? "✓" : string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.IsReversal ? "✓" : (i.IsReversed ? "—" : string.Empty))
                 }, navItem);
             }).ToList();
+        }
+
+        /// <summary>
+        /// Builds the localized flag text for the marks column: informal funding postings of
+        /// account-linked savings plans and actual-balance reports ("Istmeldung") are marked
+        /// so they stay distinguishable from regular postings.
+        /// </summary>
+        /// <param name="p">The posting to describe.</param>
+        /// <returns>The result.</returns>
+        private string BuildMarksText(PostingServiceDto p)
+        {
+            var marks = new List<string>(2);
+            if (p.Informal)
+            {
+                marks.Add(Localizer?["Posting_Flag_Informal"].Value ?? "informell");
+            }
+            if (p.SavingsPlanSubType.HasValue)
+            {
+                var key = $"Posting_Flag_{p.SavingsPlanSubType.Value}";
+                var localized = Localizer?[key];
+                marks.Add(localized is { ResourceNotFound: false } && !string.IsNullOrWhiteSpace(localized.Value)
+                    ? localized.Value
+                    : p.SavingsPlanSubType.Value.ToString());
+            }
+            return string.Join(", ", marks);
         }
 
         // navigation wrapper record for postings

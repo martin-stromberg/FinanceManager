@@ -240,7 +240,9 @@ public sealed class BudgetImpactEvaluationService : IBudgetImpactEvaluationServi
         }
         else if (sourceType == BudgetSourceType.SavingsPlan)
         {
-            query = query.Where(x => x.SavingsPlanId == sourceId);
+            // Actual-balance reports ("Istmeldung") are balance corrections, not cost flows:
+            // they must not move budget actuals.
+            query = query.Where(x => x.SavingsPlanId == sourceId && x.SavingsPlanSubType != SavingsPlanPostingSubType.ActualReport);
         }
         else if (sourceType == BudgetSourceType.ContactGroup)
         {

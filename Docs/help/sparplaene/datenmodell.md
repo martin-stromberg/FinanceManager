@@ -44,3 +44,29 @@
 | `Id` | `Guid` | Kategorie-ID |
 | `OwnerUserId` | `Guid` | Eigentümer |
 | `Name` | `string` | Name |
+
+### `SavingsPlanAccountLink`
+
+Explizite n:m-Verknüpfung zwischen `SavingsPlan` und `Account` (eigene Tabelle
+`SavingsPlanAccountLinks`). Ein Sparplan kann mehrere Konten bedienen lassen, ein Konto kann
+mehrere Sparpläne bedienen (z. B. Sammelkonto). Die Paarung `(SavingsPlanId, AccountId)` ist
+eindeutig; Verknüpfungen sind nur zwischen Plan und Konto desselben Eigentümers zulässig.
+Beim Löschen von Plan oder Konto werden die Verknüpfungen per Cascade mitentfernt.
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `Id` | `Guid` | Verknüpfungs-ID |
+| `SavingsPlanId` | `Guid` | Verknüpfter Sparplan |
+| `AccountId` | `Guid` | Verknüpftes Konto |
+| `OwnerUserId` | `Guid` | Eigentümer (redundant, für Owner-Prüfung/Indizes) |
+| `CreatedUtc` | `DateTime` | Erstellungszeitpunkt (UTC) |
+| `ModifiedUtc` | `DateTime?` | Letzter Änderungszeitpunkt (UTC) |
+
+### `Posting.SavingsPlanSubType`
+
+Optionale Unterart auf Plan-Buchungen (`Kind == SavingsPlan`). Derzeit ein Wert:
+`ActualReport` — kennzeichnet eine Istmeldung (Korrekturbuchung ohne Kontobewegung,
+nur für Pläne ohne verknüpfte Konten). Buchungen ohne Unterart sind reguläre
+Einzahlungs- oder Entnahmebuchungen. Informelle Funding-Buchungen werden nicht
+persistiert markiert, sondern aus dem Konto-Link abgeleitet (`informal` in der
+Postings-Ausgabe).

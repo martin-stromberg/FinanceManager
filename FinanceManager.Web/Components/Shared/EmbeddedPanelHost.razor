@@ -61,6 +61,14 @@
 
     private readonly List<BaseViewModel.EmbeddedPanelSpec> _specs = new();
 
+    private static readonly Type[] KnownDynamicComponentTypes =
+    [
+        typeof(McpApprovalsPanel),
+        typeof(McpAuditPanel),
+        typeof(McpSecurityOverviewPanel),
+        typeof(SavingsPlanActualReportPanel)
+    ];
+
     private BaseViewModel? _subscribed;
 
     protected override void OnParametersSet()

@@ -107,6 +107,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
         services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
         services.AddScoped<ISavingsPlanService, SavingsPlanService>();
+        services.AddScoped<ISavingsPlanAccountLinkService, SavingsPlanAccountLinkService>();
         services.AddScoped<ISavingsPlanCategoryService, SavingsPlanCategoryService>();
         services.AddScoped<ISetupImportService, SetupImportService>();
         services.AddScoped<ISecurityService, SecurityService>();

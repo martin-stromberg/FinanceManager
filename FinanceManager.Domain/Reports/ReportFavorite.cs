@@ -196,6 +196,12 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     public bool UseValutaDate { get; private set; }
 
     /// <summary>
+    /// Selects which postings a report uses as the data source for emitted savings plans:
+    /// the plan's own postings or the bank postings on the accounts linked to the plan.
+    /// </summary>
+    public FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource SavingsPlanPostingSource { get; private set; }
+
+    /// <summary>
     /// Renames the favorite.
     /// </summary>
     /// <param name="name">New name. Must not be null or whitespace.</param>
@@ -219,7 +225,8 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// <param name="expandable">Expandable in UI.</param>
     /// <param name="take">Number of intervals to include; will be clamped.</param>
     /// <param name="useValutaDate">Whether to aggregate by ValutaDate.</param>
-    public void Update(PostingKind postingKind, bool includeCategory, ReportInterval interval, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, int take, bool useValutaDate)
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
+    public void Update(PostingKind postingKind, bool includeCategory, ReportInterval interval, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, int take, bool useValutaDate, FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource savingsPlanPostingSource = FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource.PlanPostings)
     {
         PostingKind = postingKind;
         IncludeCategory = includeCategory;
@@ -231,6 +238,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         Expandable = expandable;
         SetTake(take);
         UseValutaDate = useValutaDate;
+        SavingsPlanPostingSource = savingsPlanPostingSource;
         Touch();
     }
 
@@ -387,14 +395,15 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         string? SecurityCategoryIdsCsv,
         string? SecuritySubTypesCsv,
         bool? IncludeDividendRelated,
-        bool UseValutaDate);
+        bool UseValutaDate,
+        FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource SavingsPlanPostingSource = FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource.PlanPostings);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this ReportFavorite.
     /// </summary>
     /// <returns>A <see cref="ReportFavoriteBackupDto"/> containing the backup data.</returns>
     public ReportFavoriteBackupDto ToBackupDto()
-        => new ReportFavoriteBackupDto(Id, OwnerUserId, Name, PostingKind, IncludeCategory, Interval, Take, ComparePrevious, CompareYear, CompareProjection, ShowChart, Expandable, PostingKindsCsv, AccountIdsCsv, ContactIdsCsv, SavingsPlanIdsCsv, SecurityIdsCsv, ContactCategoryIdsCsv, SavingsPlanCategoryIdsCsv, SecurityCategoryIdsCsv, SecuritySubTypesCsv, IncludeDividendRelated, UseValutaDate);
+        => new ReportFavoriteBackupDto(Id, OwnerUserId, Name, PostingKind, IncludeCategory, Interval, Take, ComparePrevious, CompareYear, CompareProjection, ShowChart, Expandable, PostingKindsCsv, AccountIdsCsv, ContactIdsCsv, SavingsPlanIdsCsv, SecurityIdsCsv, ContactCategoryIdsCsv, SavingsPlanCategoryIdsCsv, SecurityCategoryIdsCsv, SecuritySubTypesCsv, IncludeDividendRelated, UseValutaDate, SavingsPlanPostingSource);
 
     /// <summary>
     /// Assigns values from a backup DTO to this entity. Uses existing setters to preserve invariants where applicable.
@@ -424,5 +433,6 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         SecuritySubTypesCsv = dto.SecuritySubTypesCsv;
         IncludeDividendRelated = dto.IncludeDividendRelated;
         UseValutaDate = dto.UseValutaDate;
+        SavingsPlanPostingSource = dto.SavingsPlanPostingSource;
     }
 }

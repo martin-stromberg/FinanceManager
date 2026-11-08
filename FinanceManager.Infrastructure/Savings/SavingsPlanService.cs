@@ -1,6 +1,8 @@
 using System.Linq;
+using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Savings;
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Savings;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,12 +14,14 @@ namespace FinanceManager.Infrastructure.Savings;
 public sealed class SavingsPlanService : ISavingsPlanService
 {
     private readonly AppDbContext _db;
+    private readonly IPostingAggregateService? _aggregateService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SavingsPlanService"/> class.
     /// </summary>
     /// <param name="db">The application's <see cref="AppDbContext"/> used to query and persist savings plans and related entities.</param>
-    public SavingsPlanService(AppDbContext db) { _db = db; }
+    /// <param name="aggregateService">Optional aggregate service used to feed posting aggregates when the service creates postings itself (actual-balance reports).</param>
+    public SavingsPlanService(AppDbContext db, IPostingAggregateService? aggregateService = null) { _db = db; _aggregateService = aggregateService; }
 
     /// <summary>
     /// Lists savings plans for a user, optionally filtering to only active plans.
@@ -66,10 +70,19 @@ public sealed class SavingsPlanService : ISavingsPlanService
         if (plan == null) { return null; }
 
         var today = DateTime.Today;
-        // sum of postings for this savings plan up to today
-        var accumulated = await _db.Postings.AsNoTracking()
-            .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
-            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+        // sum of postings for this savings plan up to today; for plans with linked
+        // accounts the sum of the linked account balances is the only source instead
+        var accumulated = await SavingsPlanLinkAnalysis.GetCurrentAmountAsync(_db, id, today, ct);
+
+        // "Eigenanteil": the balance built from the plan's own postings, only reported
+        // when the plan has linked accounts (the saldo then follows the account balances)
+        decimal? ownAmount = null;
+        if ((await SavingsPlanLinkAnalysis.GetLinkedAccountIdsAsync(_db, id, ct)).Count > 0)
+        {
+            ownAmount = await _db.Postings.AsNoTracking()
+                .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
+                .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+        }
 
         decimal remaining = 0m;
         if (plan.TargetAmount is not null)
@@ -77,7 +90,7 @@ public sealed class SavingsPlanService : ISavingsPlanService
             remaining = Math.Max(0m, plan.TargetAmount.Value - accumulated);
         }
 
-        return new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId, remaining, accumulated);
+        return new SavingsPlanDto(plan.Id, plan.Name, plan.Type, plan.TargetAmount, plan.TargetDate, plan.Interval, plan.IsActive, plan.CreatedUtc, plan.ArchivedUtc, plan.CategoryId, plan.ContractNumber, plan.SymbolAttachmentId, remaining, accumulated, ownAmount);
     }
 
     /// <summary>
@@ -217,13 +230,83 @@ public sealed class SavingsPlanService : ISavingsPlanService
 
         var today = DateTime.Today;
 
-        // Past contributions up to today for this plan (always compute accumulated amount)
-        var history = await _db.Postings.AsNoTracking()
-            .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
-            .Select(p => new PostingObservation(p.BookingDate, p.Amount, p.ReversedByPostingId != null, p.ReversalForPostingId != null))
-            .ToListAsync(ct);
+        var linkedAccountIds = await SavingsPlanLinkAnalysis.GetLinkedAccountIdsAsync(_db, id, ct);
 
-        var accumulated = history.Sum(x => x.Amount);
+        decimal accumulated;
+        IReadOnlyList<PostingObservation> history;
+        if (linkedAccountIds.Count > 0)
+        {
+            // Account-linked plan: the contract account balances are the single source of truth
+            // for the accumulated amount (additive over all linked accounts; a collection account
+            // contributes its full balance to every linked plan - no split).
+            accumulated = await _db.Accounts.AsNoTracking()
+                .Where(a => linkedAccountIds.Contains(a.Id))
+                .SumAsync(a => (decimal?)a.CurrentBalance, ct) ?? 0m;
+
+            // The contribution rhythm follows the inflow on the linked accounts (own debits,
+            // employer-funded VL, interest and any other positive postings), not the
+            // giro-side funding outflow.
+            var accountInflow = await _db.Postings.AsNoTracking()
+                .Where(p => p.Kind == PostingKind.Bank
+                    && p.AccountId != null
+                    && linkedAccountIds.Contains(p.AccountId.Value)
+                    && p.Amount > 0m
+                    && p.BookingDate <= today)
+                .Select(p => new PostingObservation(p.BookingDate, p.Amount, p.ReversedByPostingId != null, p.ReversalForPostingId != null))
+                .ToListAsync(ct);
+
+            var planPostings = await _db.Postings.AsNoTracking()
+                .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.GroupId,
+                    p.BookingDate,
+                    p.Amount,
+                    IsReversed = p.ReversedByPostingId != null,
+                    IsReversal = p.ReversalForPostingId != null
+                })
+                .ToListAsync(ct);
+
+            var groupIds = planPostings.Where(x => x.GroupId != Guid.Empty).Select(x => x.GroupId).Distinct().ToList();
+            var groupBankAccounts = await SavingsPlanLinkAnalysis.GetGroupBankAccountIdsAsync(_db, groupIds, ct);
+            var linkedSet = linkedAccountIds.ToHashSet();
+
+            var planObservations = new List<PostingObservation>(planPostings.Count);
+            foreach (var x in planPostings)
+            {
+                var bankAccounts = x.GroupId != Guid.Empty && groupBankAccounts.TryGetValue(x.GroupId, out var b) ? b : null;
+                var hasForeignBankCounterpart = bankAccounts?.Any(a => !linkedSet.Contains(a)) == true;
+                var hasLinkedBankCounterpart = bankAccounts?.Any(a => linkedSet.Contains(a)) == true;
+                if (hasForeignBankCounterpart)
+                {
+                    // Informal funding posting: the same money flow already counts via the
+                    // linked account balance/inflow - skip to avoid double counting.
+                    continue;
+                }
+                if (x.Amount > 0m && hasLinkedBankCounterpart)
+                {
+                    // Positive plan posting whose bank counterpart sits on a linked account:
+                    // the inflow is already part of the account observations above.
+                    continue;
+                }
+                // Non-informal plan postings needed for cycle/disbursement detection - in
+                // particular negative disbursements without a bank counterpart.
+                planObservations.Add(new PostingObservation(x.BookingDate, x.Amount, x.IsReversed, x.IsReversal));
+            }
+
+            history = accountInflow.Concat(planObservations).ToList();
+        }
+        else
+        {
+            // Past contributions up to today for this plan (always compute accumulated amount)
+            history = await _db.Postings.AsNoTracking()
+                .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
+                .Select(p => new PostingObservation(p.BookingDate, p.Amount, p.ReversedByPostingId != null, p.ReversalForPostingId != null))
+                .ToListAsync(ct);
+
+            accumulated = history.Sum(x => x.Amount);
+        }
         var schedule = ComputeSchedule(history, plan.Interval, plan.TargetAmount, plan.TargetDate, today);
 
         // If no target defined, return accumulated amount and no forecast
@@ -302,6 +385,12 @@ public sealed class SavingsPlanService : ISavingsPlanService
     /// one-off top-ups then yield <see langword="null"/> instead of a bogus deficit, and
     /// so does a history in which every deposit amount occurred at most once (no
     /// detectable dominant class).
+    /// <param name="history">Observed postings (booking date, amount and reversal flags) feeding the analysis.</param>
+    /// <param name="interval">Optional contribution interval of the plan - used only as cadence fallback.</param>
+    /// <param name="targetAmount">Optional target amount - qualifies due disbursements for the cycle boundary.</param>
+    /// <param name="targetDate">Optional target date - bounds the current cycle when reached.</param>
+    /// <param name="today">Reference date of the evaluation.</param>
+    /// <returns>The computed contribution schedule.</returns>
     /// </summary>
     private static ContributionSchedule ComputeSchedule(
         IReadOnlyList<PostingObservation> history, SavingsPlanInterval? interval, decimal? targetAmount, DateTime? targetDate, DateTime today)
@@ -517,5 +606,68 @@ public sealed class SavingsPlanService : ISavingsPlanService
         if (plan == null) throw new ArgumentException("Savings plan not found", nameof(id));
         plan.SetSymbolAttachment(attachmentId);
         await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Captures an actual-balance report ("Istmeldung") for a savings plan without linked accounts:
+    /// creates a plan posting for the difference between the reported balance and the current
+    /// accumulated amount - marked with <see cref="SavingsPlanPostingSubType.ActualReport"/> and
+    /// without an account id, so no account movement is produced. For plans with linked accounts
+    /// the account balance is the single source of truth, so reports are rejected.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan.</param>
+    /// <param name="ownerUserId">Owner user identifier for ownership validation.</param>
+    /// <param name="reportedBalance">The real balance reported by the user.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="SavingsPlanActualReportResponse"/> describing the created correction posting.</returns>
+    /// <exception cref="ArgumentException">Thrown when the savings plan is not found or not owned by the user.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the plan has linked accounts.</exception>
+    public async Task<SavingsPlanActualReportResponse> ReportActualBalanceAsync(Guid id, Guid ownerUserId, decimal reportedBalance, CancellationToken ct)
+    {
+        var plan = await _db.SavingsPlans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && p.OwnerUserId == ownerUserId, ct);
+        if (plan == null) { throw new ArgumentException("Savings plan not found", nameof(id)); }
+
+        var hasLinkedAccounts = await _db.SavingsPlanAccountLinks.AsNoTracking()
+            .AnyAsync(l => l.SavingsPlanId == id, ct);
+        if (hasLinkedAccounts)
+        {
+            throw new InvalidOperationException("Actual-balance reports are only allowed for savings plans without linked accounts");
+        }
+
+        var today = DateTime.Today;
+        var accumulated = await _db.Postings.AsNoTracking()
+            .Where(p => p.SavingsPlanId == id && p.Kind == PostingKind.SavingsPlan && p.BookingDate <= today)
+            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+        var difference = reportedBalance - accumulated;
+
+        // Booked at today's date so the correction is effective in the "current" view (which
+        // includes postings with BookingDate <= today) immediately.
+        var now = DateTime.UtcNow.Date;
+        var posting = new Posting(
+            id, // source: the plan itself is the origin of the correction
+            PostingKind.SavingsPlan,
+            null,
+            null,
+            id,
+            null,
+            now,
+            now,
+            difference,
+            "Istmeldung",
+            null,
+            null,
+            null,
+            null)
+            .SetSavingsPlanSubType(SavingsPlanPostingSubType.ActualReport);
+        _db.Postings.Add(posting);
+        await _db.SaveChangesAsync(ct);
+
+        if (_aggregateService != null)
+        {
+            await _aggregateService.UpsertForPostingAsync(posting, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return new SavingsPlanActualReportResponse(posting.Id, difference, accumulated + difference);
     }
 }

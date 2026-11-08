@@ -9,6 +9,7 @@ using FinanceManager.Domain.Accounts; // added for Account type
 using FinanceManager.Domain.Attachments; // added
 using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Statements;
+using FinanceManager.Infrastructure.Savings;
 using FinanceManager.Infrastructure.Statements.Files;
 using FinanceManager.Infrastructure.Statements.Parsers;
 using FinanceManager.Shared.Extensions;
@@ -256,6 +257,15 @@ public sealed partial class StatementDraftService : IStatementDraftService
             if (accountForSavings == null || accountForSavings.SavingsPlanExpectation == SavingsPlanExpectation.None)
             {
                 throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_ACCOUNT_NOT_ALLOWED", "The detected account does not allow assigning a savings plan.");
+            }
+            // A statement of a linked bank account must not assign entries to a savings plan:
+            // the account balance is the plan's source of truth and its postings would be
+            // counted twice (once via the balance, once as the plan's own share).
+            var detectedAccountLinked = await _db.SavingsPlanAccountLinks.AsNoTracking()
+                .AnyAsync(l => l.AccountId == draft.DetectedAccountId.Value && l.OwnerUserId == ownerUserId, ct);
+            if (detectedAccountLinked)
+            {
+                throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_ACCOUNT_LINKED", "Cannot assign a savings plan because the detected account is linked to a savings plan.");
             }
         }
         // Apply incoming assignment/clear after validation
@@ -1612,6 +1622,17 @@ public sealed partial class StatementDraftService : IStatementDraftService
         if (draft == null) { return null!; }
         var entry = draft.Entries.FirstOrDefault(e => e.Id == entryId);
         if (entry == null) { return null!; }
+        // Same rule as SaveEntryAllAsync: entries of a statement belonging to a linked
+        // bank account must not be assigned to a savings plan (balance is the source of truth).
+        if (savingsPlanId.HasValue && draft.DetectedAccountId.HasValue)
+        {
+            var detectedAccountLinked = await _db.SavingsPlanAccountLinks.AsNoTracking()
+                .AnyAsync(l => l.AccountId == draft.DetectedAccountId.Value && l.OwnerUserId == ownerUserId, ct);
+            if (detectedAccountLinked)
+            {
+                throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_ACCOUNT_LINKED", "Cannot assign a savings plan because the detected account is linked to a savings plan.");
+            }
+        }
         entry.AssignSavingsPlan(savingsPlanId);
         await _db.SaveChangesAsync(ct);
         return (await GetDraftAsync(draftId, ownerUserId, ct))!;
@@ -2123,9 +2144,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
             {
                 bool wantsArchive = entries.Any(e => e.SavingsPlanId == plan.Id && e.ArchiveSavingsPlanOnBooking);
                 if (plan.TargetAmount is not decimal target) { continue; }
-                var current = await _db.Postings.AsNoTracking()
-                    .Where(p => p.SavingsPlanId == plan.Id && p.Kind == PostingKind.SavingsPlan)
-                    .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+                // Unified "current" source: linked account balances when the plan has account
+                // links, plan postings otherwise - same as the analysis reads it.
+                var current = await SavingsPlanLinkAnalysis.GetCurrentAmountAsync(_db, plan.Id, null, ct);
                 var planned = plannedByPlan.TryGetValue(plan.Id, out var val) ? val : 0m;
                 var remaining = target - current;
                 if (remaining > 0m && planned == remaining)
@@ -2160,13 +2181,27 @@ public sealed partial class StatementDraftService : IStatementDraftService
             {
                 var effectiveDue = AdjustDueDate(plan.TargetDate!.Value.Date);
                 if (effectiveDue > latestBookingDate) { continue; }
-                var currentAmount = await _db.Postings.AsNoTracking()
-                    .Where(p => p.SavingsPlanId == plan.Id && p.Kind == PostingKind.SavingsPlan)
-                    .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+                var currentAmount = await SavingsPlanLinkAnalysis.GetCurrentAmountAsync(_db, plan.Id, null, ct);
                 var target = plan.TargetAmount!.Value;
                 if (currentAmount >= target) { continue; }
                 var hasPostingThisMonth = await _db.Postings.AsNoTracking()
                     .AnyAsync(p => p.SavingsPlanId == plan.Id && p.Kind == PostingKind.SavingsPlan && p.BookingDate >= monthStart && p.BookingDate < nextMonth, ct);
+                if (!hasPostingThisMonth)
+                {
+                    // For account-linked plans a positive inflow on a linked contract account also
+                    // counts as a received contribution this month.
+                    var linkedIds = await SavingsPlanLinkAnalysis.GetLinkedAccountIdsAsync(_db, plan.Id, ct);
+                    if (linkedIds.Count > 0)
+                    {
+                        hasPostingThisMonth = await _db.Postings.AsNoTracking()
+                            .AnyAsync(p => p.Kind == PostingKind.Bank
+                                && p.AccountId != null
+                                && linkedIds.Contains(p.AccountId.Value)
+                                && p.Amount > 0m
+                                && p.BookingDate >= monthStart
+                                && p.BookingDate < nextMonth, ct);
+                    }
+                }
                 if (hasPostingThisMonth) { continue; }
                 var assignedInOpenDraft = await _db.StatementDraftEntries
                     .Join(_db.StatementDrafts, e => e.DraftId, d => d.Id, (e, d) => new { e, d })
@@ -2607,7 +2642,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p => p.Id == pid, ct);
                 if (plan == null || !plan.IsActive) { continue; }
                 var target = plan.TargetAmount ?? 0m;
-                var current = await _db.Postings.AsNoTracking().Where(p => p.SavingsPlanId == plan.Id && p.Kind == PostingKind.SavingsPlan).SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+                // Unified "current" source: linked account balances when the plan has account
+                // links, plan postings otherwise - same as the analysis reads it.
+                var current = await SavingsPlanLinkAnalysis.GetCurrentAmountAsync(_db, plan.Id, null, ct);
                 if (current == target)
                 {
                     plan.Archive();

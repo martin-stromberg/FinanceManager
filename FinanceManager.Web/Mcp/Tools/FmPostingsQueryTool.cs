@@ -30,7 +30,7 @@ public sealed class FmPostingsQueryDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Queries postings of one context (account | contact | savings plan | security) with period and text filters. Scope: (Buchungen, Lesen).";
+        => "Queries postings of one context (account | contact | savings plan | security) with period and text filters. In the savings-plan context each posting carries 'informal' (true for funding postings of an account-linked plan — they document the funding source but never count into the plan's accumulated/expected amounts) and 'savingsPlanSubType' ('ActualReport' marks an actual-balance correction, 'Istmeldung'). Scope: (Buchungen, Lesen).";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Lesend;
@@ -60,6 +60,12 @@ public sealed class FmPostingsQueryHandler : IMcpToolHandler
     private readonly McpRecordScopeFilter _recordFilter;
 
     /// <summary>Creates the handler.</summary>
+    /// <param name="postings">Query service for context postings.</param>
+    /// <param name="accounts">Account service used for record-scope resolution.</param>
+    /// <param name="contacts">Contact service used for record-scope resolution.</param>
+    /// <param name="savingsPlans">Savings plan service used for record-scope resolution.</param>
+    /// <param name="securities">Security service used for record-scope resolution.</param>
+    /// <param name="recordFilter">Record-level scope filter applied to results.</param>
     public FmPostingsQueryHandler(
         IPostingsQueryService postings,
         IAccountService accounts,
@@ -151,6 +157,8 @@ public sealed class FmPostingsQueryHandler : IMcpToolHandler
             reversedByPostingId = p.ReversedByPostingId,
             reversalForPostingId = p.ReversalForPostingId,
             isPreliminary = p.IsPreliminary,
+            informal = p.Informal,
+            savingsPlanSubType = p.SavingsPlanSubType?.ToString(),
             // Posting texts are imported/user-entered content: they can carry prompt
             // injection and are separated into the marked untrusted_data wrapper
             // (sicherheitskonzept.md §5.2).

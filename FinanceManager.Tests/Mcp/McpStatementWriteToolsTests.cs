@@ -319,10 +319,11 @@ public sealed class McpStatementWriteToolsTests
         Mock<IStatementDraftService> drafts, Mock<IContactService>? contacts = null,
         Mock<ISavingsPlanService>? plans = null, Mock<ISecurityService>? securities = null,
         Mock<IAccountService>? accounts = null, Mock<IMcpAuditWriter>? audit = null,
-        McpRecordScopeFilter? filter = null)
+        McpRecordScopeFilter? filter = null, Mock<ISavingsPlanAccountLinkService>? planLinks = null)
         => new(drafts.Object,
             (contacts ?? new Mock<IContactService>()).Object,
             (plans ?? new Mock<ISavingsPlanService>()).Object,
+            (planLinks ?? new Mock<ISavingsPlanAccountLinkService>()).Object,
             (securities ?? new Mock<ISecurityService>()).Object,
             (accounts ?? new Mock<IAccountService>()).Object,
             (audit ?? NullAudit()).Object,

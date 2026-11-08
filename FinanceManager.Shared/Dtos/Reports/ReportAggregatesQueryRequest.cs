@@ -15,6 +15,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="UseValutaDate">The use valuta date.</param>
 /// <param name="PostingKinds">The posting kinds.</param>
 /// <param name="AnalysisDate">The analysis date.</param>
+/// <param name="SavingsPlanPostingSource">Posting source used for emitted savings plans.</param>
 /// <param name="Filters">The filters.</param>
 /// <returns>The result.</returns>
 [method: JsonConstructor]
@@ -29,7 +30,8 @@ public sealed record ReportAggregatesQueryRequest(
     bool UseValutaDate = false,
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     DateTime? AnalysisDate = null,
-    ReportAggregatesFiltersRequest? Filters = null
+    ReportAggregatesFiltersRequest? Filters = null,
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
 )
 {
     /// <summary>

@@ -42,6 +42,9 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
     private bool _contactIsPaymentIntermediary = false;
     private bool _accountAllowsSavings = true;
     private bool _accountAllowsSecurity = true;
+    // True when the draft's detected account is linked to a savings plan: the account balance
+    // is the plan's source of truth, so its entries must not be assigned to a plan.
+    private bool _accountLinkedToSavingsPlan = false;
 
     /// <summary>
     /// Initializes a new instance of <see cref="StatementDraftEntryCardViewModel"/>.
@@ -104,8 +107,11 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             new CardField("Card_Caption_StatementDrafts_CostNeutral", CardFieldKind.Boolean, boolValue: entry.IsCostNeutral, editable: !isLocked),
         };
 
-        // Conditionally include savings plan field when contact is Self and account allows savings
-        if (_contactIsSelf && _accountAllowsSavings)
+        // Conditionally include savings plan field when contact is Self and account allows savings.
+        // When the detected account is linked to a savings plan the field stays hidden — the linked
+        // balance already captures the postings — unless a plan was assigned before the link existed
+        // (kept visible so the stale assignment can be cleared; the server rejects new assignments).
+        if (_contactIsSelf && _accountAllowsSavings && (!_accountLinkedToSavingsPlan || entry.SavingsPlanId.HasValue))
         {
             var insertIndex = 9; // after Contact and CostNeutral by default ordering
             if (insertIndex > fields.Count) insertIndex = fields.Count;
@@ -284,6 +290,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             }
 
             // Try to detect account settings via draft header
+            _accountLinkedToSavingsPlan = false;
             try
             {
                 var draftHeader = await ApiClient.StatementDrafts_GetAsync(DraftId, headerOnly: true, src: null, fromEntryDraftId: null, fromEntryId: null, CancellationToken.None);
@@ -295,6 +302,8 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                         _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
                         _accountAllowsSecurity = detectedAccount.SecurityProcessingEnabled;
                     }
+                    var linkedPlanIds = await ApiClient.GetSavingsPlanLinksAsync(acctId, CancellationToken.None);
+                    _accountLinkedToSavingsPlan = linkedPlanIds is { Count: > 0 };
                 }
             }
             catch { /* ignore */ }
@@ -817,6 +826,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 try
                 {
                     var draftHeader = await ApiClient.StatementDrafts_GetAsync(DraftId, headerOnly: true, src: null, fromEntryDraftId: null, fromEntryId: null, CancellationToken.None);
+                    _accountLinkedToSavingsPlan = false;
                     if (draftHeader?.DetectedAccountId is Guid acctId)
                     {
                         var detectedAccount = await ApiClient.GetAccountAsync(acctId, CancellationToken.None);
@@ -825,6 +835,8 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                             _accountAllowsSavings = detectedAccount.SavingsPlanExpectation != SavingsPlanExpectation.None;
                             _accountAllowsSecurity = detectedAccount.SecurityProcessingEnabled;
                         }
+                        var linkedPlanIds = await ApiClient.GetSavingsPlanLinksAsync(acctId, CancellationToken.None);
+                        _accountLinkedToSavingsPlan = linkedPlanIds is { Count: > 0 };
                     }
                 }
                 catch { /* ignore */ }

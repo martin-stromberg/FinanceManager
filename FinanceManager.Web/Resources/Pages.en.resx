@@ -2968,6 +2968,8 @@
   <data name="Confirmation_Archive_Message" xml:space="preserve"><value>The object will be archived.</value></data>
   <data name="Confirmation_Book_Title" xml:space="preserve"><value>Confirm booking</value></data>
   <data name="Confirmation_Book_Message" xml:space="preserve"><value>The postings will be finalized.</value></data>
+  <data name="Confirmation_RemoveAccountLink_Title" xml:space="preserve"><value>Unlink account</value></data>
+  <data name="Confirmation_RemoveAccountLink_Message" xml:space="preserve"><value>The account link will be removed. The savings plan balance then follows the plan postings again.</value></data>
   <data name="Err_InvalidCurrentPassword" xml:space="preserve">
     <value>The current password is not correct.</value>
   </data>
@@ -3329,4 +3331,32 @@
   <data name="Ribbon_Group_Mcp" xml:space="preserve"><value>AI</value></data>
   <data name="McpSetup_Section_Accesses" xml:space="preserve"><value>Your AI accesses</value></data>
   <data name="McpSetup_DisabledHint" xml:space="preserve"><value>AI features are currently disabled. Use the activation switches above to enable MCP.</value></data>
+  <data name="LinkedAccounts_Section_Title" xml:space="preserve"><value>Linked accounts</value></data>
+  <data name="LinkedAccounts_Empty" xml:space="preserve"><value>No linked accounts. The accumulated amount is computed from the plan's postings.</value></data>
+  <data name="LinkedAccounts_Add_Button" xml:space="preserve"><value>Link</value></data>
+  <data name="LinkedAccounts_Remove_Button" xml:space="preserve"><value>Unlink</value></data>
+  <data name="LinkedAccounts_Select_Placeholder" xml:space="preserve"><value>Select account...</value></data>
+  <data name="LinkedAccounts_None_Available" xml:space="preserve"><value>No account available</value></data>
+  <data name="Ribbon_SavingsPlan_ActualReport" xml:space="preserve"><value>Actual-balance report</value></data>
+  <data name="ActualReport_Title" xml:space="preserve"><value>Actual-balance report</value></data>
+  <data name="ActualReport_Description" xml:space="preserve"><value>Enter the real balance of this savings plan. The difference to the current amount is booked as a correction posting - no account movement is created.</value></data>
+  <data name="ActualReport_Balance_Placeholder" xml:space="preserve"><value>Reported balance</value></data>
+  <data name="ActualReport_Error_InvalidAmount" xml:space="preserve"><value>Please enter a valid amount.</value></data>
+  <data name="ActualReport_Error_Failed" xml:space="preserve"><value>The actual-balance report could not be captured.</value></data>
+  <data name="ActualReport_Error_Linked" xml:space="preserve"><value>Actual-balance reports are only available for plans without linked accounts.</value></data>
+  <data name="ActualReport_Disabled_Linked" xml:space="preserve"><value>Not available for plans with linked accounts - the account balance is the source of truth.</value></data>
+  <data name="List_Th_Postings_Marks" xml:space="preserve"><value>Marks</value></data>
+  <data name="Posting_Flag_Informal" xml:space="preserve"><value>informal</value></data>
+  <data name="Posting_Flag_ActualReport" xml:space="preserve"><value>actual report</value></data>
+  <data name="Card_Caption_Posting_Informal" xml:space="preserve"><value>Informal</value></data>
+  <data name="Card_Caption_Posting_SavingsPlanSubType" xml:space="preserve"><value>Plan posting type</value></data>
+  <data name="EnumType_SavingsPlanPostingSubType_ActualReport" xml:space="preserve"><value>Actual report</value></data>
+  <data name="Card_Caption_SavingsPlan_OwnAmount" xml:space="preserve"><value>Own share</value></data>
+  <data name="LinkedAccounts_Info_Button" xml:space="preserve"><value>What is this link for?</value></data>
+  <data name="LinkedAccounts_Info_Balance" xml:space="preserve"><value>The savings plan balance is coupled to the balances of the linked bank accounts.</value></data>
+  <data name="LinkedAccounts_Info_OwnShare" xml:space="preserve"><value>Postings assigned to the savings plan in bank statements count as the own share.</value></data>
+  <data name="LinkedAccounts_Info_Inflow" xml:space="preserve"><value>The account inflow is the basis for rhythm and deficit analysis.</value></data>
+  <data name="LinkedAccounts_Info_Informal" xml:space="preserve"><value>Funding postings on other accounts can be marked as informal documentation.</value></data>
+  <data name="LinkedAccounts_Info_Fallback" xml:space="preserve"><value>Without linked accounts the posting-based evaluation stays active.</value></data>
+  <data name="LinkedAccounts_OpenAccount_Button" xml:space="preserve"><value>Open account</value></data>
 </root>

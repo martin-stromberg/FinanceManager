@@ -241,6 +241,26 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <value>The security posting subtype or null.</value>
     public SecurityPostingSubType? SecuritySubType { get; private set; }
 
+    /// <summary>
+    /// Optional savings plan posting subtype. Set only on postings with
+    /// <see cref="PostingKind.SavingsPlan"/> - currently used to mark actual-balance report
+    /// ("Istmeldung") correction postings created without an account movement.
+    /// </summary>
+    /// <value>The savings plan posting subtype or null.</value>
+    public SavingsPlanPostingSubType? SavingsPlanSubType { get; private set; }
+
+    /// <summary>
+    /// Sets the savings plan posting subtype marker (e.g. actual-balance report).
+    /// </summary>
+    /// <param name="subType">The savings plan posting subtype to set.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
+    public Posting SetSavingsPlanSubType(SavingsPlanPostingSubType subType)
+    {
+        SavingsPlanSubType = subType;
+        Touch();
+        return this;
+    }
+
     // Neu: Menge (nur f�r Wertpapier-Postings belegt)
     /// <summary>
     /// Optional quantity, primarily used for securities postings.
@@ -484,15 +504,16 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="ReversedByUserId">Optional user ID who reversed this posting.</param>
     /// <param name="ReversedAtUtc">Optional timestamp when this posting was reversed.</param>
     /// <param name="IsPreliminary">Indicates whether this posting is a preliminary (provisional) booking.</param>
+    /// <param name="SavingsPlanSubType">Optional savings plan posting subtype (e.g. actual-balance report).</param>
     /// <returns>The result.</returns>
-    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc, bool IsPreliminary = false);
+    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc, bool IsPreliminary = false, SavingsPlanPostingSubType? SavingsPlanSubType = null);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this posting.
     /// </summary>
     /// <returns>A <see cref="PostingBackupDto"/> containing values required to restore this posting.</returns>
     public PostingBackupDto ToBackupDto()
-        => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc, IsPreliminary);
+        => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc, IsPreliminary, SavingsPlanSubType);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this posting instance.
@@ -525,5 +546,6 @@ public sealed class Posting : Entity, IAggregateRoot
         ReversedByUserId = dto.ReversedByUserId;
         ReversedAtUtc = dto.ReversedAtUtc;
         IsPreliminary = dto.IsPreliminary;
+        SavingsPlanSubType = dto.SavingsPlanSubType;
     }
 }

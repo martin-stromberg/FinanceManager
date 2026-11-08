@@ -39,6 +39,7 @@ public sealed class DemoDataService : IDemoDataService
     private readonly IBudgetRuleService _budgetRuleService;
     private readonly IHomeKpiService _homeKpiService;
     private readonly IReportFavoriteService _reportFavoriteService;
+    private readonly ISavingsPlanAccountLinkService _savingsPlanLinkService;
     private readonly ILogger<DemoDataService> _logger;
 
     /// <summary>
@@ -58,6 +59,7 @@ public sealed class DemoDataService : IDemoDataService
     /// <param name="budgetRuleService">Service used to create budget rules.</param>
     /// <param name="homeKpiService">Service used to create default home KPI tiles.</param>
     /// <param name="reportFavoriteService">Service used to create default report favorites.</param>
+    /// <param name="savingsPlanLinkService">Service used to link demo savings plans to their bank accounts.</param>
     /// <param name="logger">Logger instance.</param>
     public DemoDataService(
         IAccountService accountService,
@@ -74,6 +76,7 @@ public sealed class DemoDataService : IDemoDataService
         IBudgetRuleService budgetRuleService,
         IHomeKpiService homeKpiService,
         IReportFavoriteService reportFavoriteService,
+        ISavingsPlanAccountLinkService savingsPlanLinkService,
         ILogger<DemoDataService> logger)
     {
         _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
@@ -90,6 +93,7 @@ public sealed class DemoDataService : IDemoDataService
         _budgetRuleService = budgetRuleService ?? throw new ArgumentNullException(nameof(budgetRuleService));
         _homeKpiService = homeKpiService ?? throw new ArgumentNullException(nameof(homeKpiService));
         _reportFavoriteService = reportFavoriteService ?? throw new ArgumentNullException(nameof(reportFavoriteService));
+        _savingsPlanLinkService = savingsPlanLinkService ?? throw new ArgumentNullException(nameof(savingsPlanLinkService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -112,6 +116,7 @@ public sealed class DemoDataService : IDemoDataService
         var (
             selfContact,
             giroBankContact,
+            bausparBankContact,
             mamaContact,
             telkommiContact,
             employerContact,
@@ -129,6 +134,8 @@ public sealed class DemoDataService : IDemoDataService
             generalPlan,
             vacationPlan,
             securityBuySavingPlan,
+            bausparenPlan,
+            bausparAccount,
             worldSecurity,
             postSecurity,
             worldPriceHistory,
@@ -143,6 +150,7 @@ public sealed class DemoDataService : IDemoDataService
                 random,
                 selfContact,
                 giroBankContact,
+                bausparBankContact,
                 mamaContact,
                 telkommiContact,
                 employerContact,
@@ -160,6 +168,8 @@ public sealed class DemoDataService : IDemoDataService
                 generalPlan,
                 vacationPlan,
                 securityBuySavingPlan,
+                bausparenPlan,
+                bausparAccount,
                 worldSecurity,
                 postSecurity,
                 worldPriceHistory,
@@ -169,12 +179,13 @@ public sealed class DemoDataService : IDemoDataService
         }
 
         await EnsureDefaultHomeKpisAsync(userId, ct);
-        await EnsureDefaultReportFavoritesAsync(userId, ct);
+        await EnsureDefaultReportFavoritesAsync(userId, bausparenPlan.Id, ct);
     }
 
     private async Task<(
         ContactDto selfContact,
         ContactDto giroBankContact,
+        ContactDto bausparBankContact,
         ContactDto mamaContact,
         ContactDto telkommiContact,
         ContactDto employerContact,
@@ -192,6 +203,8 @@ public sealed class DemoDataService : IDemoDataService
         SavingsPlanDto generalPlan,
         SavingsPlanDto vacationPlan,
         SavingsPlanDto securityBuySavingPlan,
+        SavingsPlanDto bausparenPlan,
+        AccountDto bausparAccount,
         SecurityDto worldSecurity,
         SecurityDto postSecurity,
         Dictionary<DateTime, decimal> worldPriceHistory,
@@ -225,6 +238,7 @@ public sealed class DemoDataService : IDemoDataService
 
         var giroBankContact = await _contactService.CreateAsync(userId, "Musterbank Nord", ContactType.Bank, banksGroup.Id, null, false, ct);
         var secondBankContact = await _contactService.CreateAsync(userId, "Musterbank Süd", ContactType.Bank, banksGroup.Id, null, false, ct);
+        var bausparBankContact = await _contactService.CreateAsync(userId, "Musterbausparkasse", ContactType.Bank, banksGroup.Id, null, false, ct);
         var mamaContact = await _contactService.CreateAsync(userId, "Mama", ContactType.Person, null, null, false, ct);
         var telkommiContact = await _contactService.CreateAsync(userId, "Telkommi", ContactType.Organization, serviceGroup.Id, null, false, ct);
         var employerContact = await _contactService.CreateAsync(userId, "Arbeitgeber GmbH", ContactType.Organization, workGroup.Id, null, false, ct);
@@ -255,6 +269,7 @@ public sealed class DemoDataService : IDemoDataService
 
         var sdacContractNumber = $"{random.Next(100000, 999999)}-{random.Next(1000, 9999)}";
         var householdContractNumber = $"{random.Next(100000, 999999)}-{random.Next(1000, 9999)}";
+        var bausparContractNumber = $"{random.Next(100000, 999999)}-{random.Next(1000, 9999)}";
 
         var sdacPlan = await _savingsPlanService.CreateAsync(
             userId,
@@ -320,6 +335,17 @@ public sealed class DemoDataService : IDemoDataService
             null,
             null,
             null,
+            ct);
+
+        var bausparenPlan = await _savingsPlanService.CreateAsync(
+            userId,
+            "Bausparen",
+            SavingsPlanType.Recurring,
+            40000.00m,
+            new DateTime(referenceMonthStart.Year + 10, 12, 31),
+            SavingsPlanInterval.Monthly,
+            investmentCategory.Id,
+            bausparContractNumber,
             ct);
 
         var budgetCategoryWork = await _budgetCategoryService.CreateAsync(userId, "Arbeit", ct);
@@ -439,9 +465,26 @@ public sealed class DemoDataService : IDemoDataService
             false,
             ct);
 
+        var bausparAccount = await _accountService.CreateAsync(
+            userId,
+            "Bausparkonto",
+            AccountType.Savings,
+            "DE98500105170000112233",
+            bausparBankContact.Id,
+            SavingsPlanExpectation.None,
+            true,
+            false,
+            ct);
+
+        await _savingsPlanLinkService.AddLinkAsync(bausparenPlan.Id, bausparAccount.Id, userId, ct);
+
+        var bausparenPurpose = await _budgetPurposeService.CreateAsync(userId, "Bausparen", BudgetSourceType.SavingsPlan, bausparenPlan.Id, null, budgetCategoryInsurance.Id, ct);
+        await _budgetRuleService.CreateAsync(userId, bausparenPurpose.Id, -200.00m, BudgetIntervalType.Monthly, null, budgetStart, null, null, false, ct);
+
         return (
             selfContact,
             giroBankContact,
+            bausparBankContact,
             mamaContact,
             telkommiContact,
             employerContact,
@@ -459,6 +502,8 @@ public sealed class DemoDataService : IDemoDataService
             generalPlan,
             vacationPlan,
             securityBuySavingPlan,
+            bausparenPlan,
+            bausparAccount,
             worldSecurity,
             postSecurity,
             worldPriceHistory,
@@ -472,6 +517,7 @@ public sealed class DemoDataService : IDemoDataService
         Random random,
         ContactDto selfContact,
         ContactDto giroBankContact,
+        ContactDto bausparBankContact,
         ContactDto mamaContact,
         ContactDto telkommiContact,
         ContactDto employerContact,
@@ -489,6 +535,8 @@ public sealed class DemoDataService : IDemoDataService
         SavingsPlanDto generalPlan,
         SavingsPlanDto vacationPlan,
         SavingsPlanDto securityBuySavingPlan,
+        SavingsPlanDto bausparenPlan,
+        AccountDto bausparAccount,
         SecurityDto worldSecurity,
         SecurityDto postSecurity,
         Dictionary<DateTime, decimal> worldPriceHistory,
@@ -500,6 +548,10 @@ public sealed class DemoDataService : IDemoDataService
         var firstMonth = referenceMonthStart.AddMonths(-23);
         var now = DateTime.UtcNow.Date;
 
+        var accountByDraft = new Dictionary<Guid, Guid>();
+        var balanceByAccount = new Dictionary<Guid, decimal>();
+        decimal BalanceOf(Guid accountId) => balanceByAccount.TryGetValue(accountId, out var b) ? b : 0m;
+
         async Task<Guid> CreateDraftAsync(AccountDto account, DateTime monthStart)
         {
             var draft = await _statementDraftService.CreateEmptyDraftAsync(userId, $"{account.Name}-{monthStart:yyyy-MM}.csv", ct);
@@ -507,6 +559,7 @@ public sealed class DemoDataService : IDemoDataService
             {
                 throw new InvalidOperationException("Statement draft could not be created.");
             }
+            accountByDraft[draft.DraftId] = account.Id;
 
             var withAccount = await _statementDraftService.SetAccountAsync(draft.DraftId, userId, account.Id, ct);
             if (withAccount is null)
@@ -537,6 +590,10 @@ public sealed class DemoDataService : IDemoDataService
             }
 
             var entry = draft.Entries.OrderByDescending(x => x.EntryNumber).First();
+            if (accountByDraft.TryGetValue(draftId, out var accId))
+            {
+                balanceByAccount[accId] = BalanceOf(accId) + amount;
+            }
             var withContact = await _statementDraftService.SetEntryContactAsync(draftId, entry.Id, contactId, userId, ct);
             if (withContact is null)
             {
@@ -651,6 +708,7 @@ public sealed class DemoDataService : IDemoDataService
             var giroDraftId = await CreateDraftAsync(giroAccount, monthStart);
             var primarySavingsDraftId = await CreateDraftAsync(primarySavingsAccount, monthStart);
             var secondarySavingsDraftId = await CreateDraftAsync(secondarySavingsAccount, monthStart);
+            var bausparDraftId = await CreateDraftAsync(bausparAccount, monthStart);
 
             if (!isCurrentMonth || now >= lastBusinessDay)
             {
@@ -674,6 +732,9 @@ public sealed class DemoDataService : IDemoDataService
 
             await AddDraftEntryAsync(giroDraftId, firstBusinessDay, -70.00m, "Rückstellung Auto", selfContact.Id, autoPlan.Id);
             await AddDraftEntryAsync(primarySavingsDraftId, firstBusinessDay, 70.00m, "Rückstellung Auto", selfContact.Id);
+
+            await AddDraftEntryAsync(giroDraftId, firstBusinessDay, -200.00m, "Bauspareinlage", selfContact.Id, bausparenPlan.Id);
+            await AddDraftEntryAsync(bausparDraftId, firstBusinessDay, 200.00m, "Bauspareinlage", selfContact.Id);
 
             await AddDraftEntryAsync(giroDraftId, firstBusinessDay, -8.25m, "Rückstellung SDAC Jahresgebühr", selfContact.Id, sdacPlan.Id);
             await AddDraftEntryAsync(primarySavingsDraftId, firstBusinessDay, 8.25m, "Rückstellung SDAC Jahresgebühr", selfContact.Id);
@@ -879,11 +940,26 @@ public sealed class DemoDataService : IDemoDataService
                     giroBankContact.Id);
             }
 
+            if (monthStart.Month == 12 && !isCurrentMonth)
+            {
+                var giroInterest = Math.Round(BalanceOf(giroAccount.Id) * 0.01m, 2, MidpointRounding.AwayFromZero);
+                if (giroInterest > 0m)
+                {
+                    await AddDraftEntryAsync(giroDraftId, lastBusinessDay, giroInterest, "Jahresendzinsen 1 %", giroBankContact.Id);
+                }
+                var bausparInterest = Math.Round(BalanceOf(bausparAccount.Id) * 0.01m, 2, MidpointRounding.AwayFromZero);
+                if (bausparInterest > 0m)
+                {
+                    await AddDraftEntryAsync(bausparDraftId, lastBusinessDay, bausparInterest, "Jahresendzinsen 1 %", bausparBankContact.Id);
+                }
+            }
+
             if (!isCurrentMonth)
             {
                 await BookDraftAsync(giroDraftId);
                 await BookDraftAsync(primarySavingsDraftId);
                 await BookDraftAsync(secondarySavingsDraftId);
+                await BookDraftAsync(bausparDraftId);
             }
         }
     }
@@ -920,7 +996,7 @@ public sealed class DemoDataService : IDemoDataService
         }
     }
 
-    private async Task EnsureDefaultReportFavoritesAsync(Guid userId, CancellationToken ct)
+    private async Task EnsureDefaultReportFavoritesAsync(Guid userId, Guid bausparenPlanId, CancellationToken ct)
     {
         var existingFavorites = await _reportFavoriteService.ListAsync(userId, ct);
         if (existingFavorites.Count > 0)
@@ -954,6 +1030,25 @@ public sealed class DemoDataService : IDemoDataService
                 compareProjection: true,
                 showChart: true,
                 expandable: true),
+            ct);
+
+        await _reportFavoriteService.CreateAsync(
+            userId,
+            new ReportFavoriteCreateRequest(
+                "Sparplanbwegungen (Monatlich)",
+                PostingKind.SavingsPlan,
+                IncludeCategory: false,
+                ReportInterval.Month,
+                Take: 24,
+                ComparePrevious: true,
+                CompareYear: true,
+                CompareProjection: false,
+                ShowChart: true,
+                Expandable: true,
+                PostingKinds: null,
+                Filters: new ReportFavoriteFiltersDto(null, null, new[] { bausparenPlanId }, null, null, null, null, null, null),
+                UseValutaDate: false,
+                SavingsPlanPostingSource: SavingsPlanPostingSource.LinkedAccountPostings),
             ct);
     }
 
