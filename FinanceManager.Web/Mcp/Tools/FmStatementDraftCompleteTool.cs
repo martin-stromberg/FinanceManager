@@ -80,16 +80,26 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
     private readonly IStatementDraftService _drafts;
     private readonly IContactService _contacts;
     private readonly ISavingsPlanService _savingsPlans;
+    private readonly ISavingsPlanAccountLinkService _savingsPlanLinks;
     private readonly ISecurityService _securities;
     private readonly IAccountService _accounts;
     private readonly IMcpAuditWriter _auditWriter;
     private readonly McpRecordScopeFilter _recordFilter;
 
     /// <summary>Creates the handler.</summary>
+    /// <param name="drafts">Statement-draft service used for reads and entry updates.</param>
+    /// <param name="contacts">Contact service for owner-scoped reference resolution.</param>
+    /// <param name="savingsPlans">Savings-plan service for owner-scoped reference resolution.</param>
+    /// <param name="savingsPlanLinks">Link service used to detect accounts linked to a savings plan.</param>
+    /// <param name="securities">Security service for owner-scoped reference resolution.</param>
+    /// <param name="accounts">Account service for owner-scoped reference resolution.</param>
+    /// <param name="auditWriter">Audit writer used to stage data-change records.</param>
+    /// <param name="recordFilter">Record-level scope filter for scope checks.</param>
     public FmStatementDraftCompleteHandler(
         IStatementDraftService drafts,
         IContactService contacts,
         ISavingsPlanService savingsPlans,
+        ISavingsPlanAccountLinkService savingsPlanLinks,
         ISecurityService securities,
         IAccountService accounts,
         IMcpAuditWriter auditWriter,
@@ -98,6 +108,7 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
         _drafts = drafts;
         _contacts = contacts;
         _savingsPlans = savingsPlans;
+        _savingsPlanLinks = savingsPlanLinks;
         _securities = securities;
         _accounts = accounts;
         _auditWriter = auditWriter;
@@ -407,7 +418,9 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
         }
         if (effSavingsPlan.HasValue && savingsPlanFill)
         {
-            McpStatementDraftGuards.ValidateSavingsPlanAssignment(effContactDto, effectiveAccount);
+            var accountLinkedToPlan = effectiveAccount is not null
+                && (await _savingsPlanLinks.GetLinkedSavingsPlanIdsAsync(effectiveAccount.Id, owner, ct)) is { Count: > 0 };
+            McpStatementDraftGuards.ValidateSavingsPlanAssignment(effContactDto, effectiveAccount, accountLinkedToPlan);
         }
 
         var securityFill = fills.Any(f => f.Field is "SecurityId" or "SecurityTransactionType"
@@ -486,6 +499,16 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
     /// to <c>fm_statement_draft_edit</c>), reports <c>unchanged</c> on equal values and
     /// <c>skipped(alreadySet|requiresEdit)</c> otherwise. Never silently overwrites.
     /// </summary>
+    /// <typeparam name="T">The field value type.</typeparam>
+    /// <param name="current">The current effective value.</param>
+    /// <param name="requested">The requested value.</param>
+    /// <param name="requestedSet">Whether the caller explicitly provided the value.</param>
+    /// <param name="field">The logical field name used in the plan result.</param>
+    /// <param name="render">Renderer converting a value to its plan string form.</param>
+    /// <param name="fills">Accumulator for decided fills.</param>
+    /// <param name="skipped">Accumulator for skipped decisions.</param>
+    /// <param name="unchanged">Accumulator for unchanged decisions.</param>
+    /// <returns>The result.</returns>
     private static T? Gap<T>(
         T? current, T? requested, bool requestedSet, string field,
         Func<T?, string?> render,

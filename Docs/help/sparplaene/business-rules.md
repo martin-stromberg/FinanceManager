@@ -71,8 +71,9 @@
 - Plan-Buchungen mit Funding-Buchungsgruppe (Bank-Gegenposting) werden als „informell" gekennzeichnet und zählen nicht in `accumulated`/`expectedToDate`.
 - Nach Entfernen des letzten Links gilt wieder die buchungsbasierte Auswertung.
 - Bei verknüpften Plänen wird zusätzlich der „Eigenanteil" (Summe der Plan-eigenen Buchungen) in den Kopfdaten ausgewiesen (`SavingsPlanDto.OwnAmount`).
+- Kontoauszugszeilen eines verknüpften Kontos können keinem Sparplan zugeordnet werden (manuell und per Auto-Klassifizierung); die Zuordnung wird mit `SAVINGSPLAN_ACCOUNT_LINKED` abgelehnt.
 
-**Umsetzung:** `SavingsPlanAccountLinkService`, `SavingsPlanLinkAnalysis`, Endpunkte `…/linked-accounts`, UI-Abschnitt `SavingsPlanLinkedAccountsPanel`.
+**Umsetzung:** `SavingsPlanAccountLinkService`, `SavingsPlanLinkAnalysis`, Endpunkte `…/linked-accounts` sowie `GET /api/accounts/{id}/savings-plan-links`, UI-Abschnitt `SavingsPlanLinkedAccountsPanel`.
 
 ## Istmeldung korrigiert den Plan-Saldo ohne Kontobewegung
 

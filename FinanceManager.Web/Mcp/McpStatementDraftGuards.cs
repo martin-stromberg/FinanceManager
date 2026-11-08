@@ -23,6 +23,7 @@ namespace FinanceManager.Web.Mcp;
 /// <param name="Code">Stable rule code (<c>MCP_*</c>).</param>
 /// <param name="Severity"><c>Error</c> or <c>Warning</c>.</param>
 /// <param name="Message">System-generated finding text.</param>
+/// <returns>The result.</returns>
 internal sealed record McpRuleFinding(string Code, string Severity, string Message);
 
 /// <summary>
@@ -53,6 +54,7 @@ internal static class McpStatementDraftGuards
     /// <summary>Tolerated backwards distance between valuta date and booking date —
     /// the MCP-side plausibility convention covered by toolkatalog §4.4 Datumslogik;
     /// the domain itself does not relate the two dates.</summary>
+    /// <returns>The result.</returns>
     internal static readonly TimeSpan ValutaTolerance = TimeSpan.FromDays(7);
 
     /// <summary>
@@ -290,12 +292,14 @@ internal static class McpStatementDraftGuards
     /// <summary>
     /// Enforces the savings-plan assignment side conditions of the pipeline
     /// (<c>SaveEntryAllAsync</c>): a savings plan requires the effective contact to be the
-    /// owner's self contact and a detected account that accepts savings plans.
+    /// owner's self contact and a detected account that accepts savings plans and is not
+    /// itself linked to a savings plan (the linked balance is the plan's source of truth).
     /// </summary>
     /// <param name="effectiveContact">Effective entry contact (may be <see langword="null"/>).</param>
     /// <param name="account">Effective detected account (may be <see langword="null"/>).</param>
+    /// <param name="accountLinkedToSavingsPlan">Whether the detected account is linked to a savings plan.</param>
     /// <exception cref="McpToolException">A side condition is violated.</exception>
-    public static void ValidateSavingsPlanAssignment(ContactDto? effectiveContact, AccountDto? account)
+    public static void ValidateSavingsPlanAssignment(ContactDto? effectiveContact, AccountDto? account, bool accountLinkedToSavingsPlan = false)
     {
         if (effectiveContact is null)
         {
@@ -316,6 +320,11 @@ internal static class McpStatementDraftGuards
         {
             throw new McpToolException("Err_Mcp_InvalidArguments",
                 "The detected account does not allow savings-plan assignments.");
+        }
+        if (accountLinkedToSavingsPlan)
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments",
+                "The detected account is linked to a savings plan — its statement entries cannot be assigned to a savings plan.");
         }
     }
 

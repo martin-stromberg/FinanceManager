@@ -3353,7 +3353,8 @@
   <data name="EnumType_SavingsPlanPostingSubType_ActualReport" xml:space="preserve"><value>Actual report</value></data>
   <data name="Card_Caption_SavingsPlan_OwnAmount" xml:space="preserve"><value>Own share</value></data>
   <data name="LinkedAccounts_Info_Button" xml:space="preserve"><value>What is this link for?</value></data>
-  <data name="LinkedAccounts_Info_Balance" xml:space="preserve"><value>Linked accounts provide the plan's actual balance.</value></data>
+  <data name="LinkedAccounts_Info_Balance" xml:space="preserve"><value>The savings plan balance is coupled to the balances of the linked bank accounts.</value></data>
+  <data name="LinkedAccounts_Info_OwnShare" xml:space="preserve"><value>Postings assigned to the savings plan in bank statements count as the own share.</value></data>
   <data name="LinkedAccounts_Info_Inflow" xml:space="preserve"><value>The account inflow is the basis for rhythm and deficit analysis.</value></data>
   <data name="LinkedAccounts_Info_Informal" xml:space="preserve"><value>Funding postings on other accounts can be marked as informal documentation.</value></data>
   <data name="LinkedAccounts_Info_Fallback" xml:space="preserve"><value>Without linked accounts the posting-based evaluation stays active.</value></data>

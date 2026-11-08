@@ -125,6 +125,14 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     Task RemoveLinkedIbanAsync(Guid accountId, string iban, CancellationToken ct = default);
 
+    /// <summary>
+    /// Returns the identifiers of the savings plans linked to the account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of savings plan ids, or <c>null</c> when the account was not found.</returns>
+    Task<IReadOnlyList<Guid>?> GetSavingsPlanLinksAsync(Guid accountId, CancellationToken ct = default);
+
     // Auth
 
     /// <summary>

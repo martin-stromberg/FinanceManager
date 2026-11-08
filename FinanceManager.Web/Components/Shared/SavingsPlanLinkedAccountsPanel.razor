@@ -24,7 +24,8 @@
                 <tr>
                     <td colspan="3" style="padding:.5rem .6rem;color:var(--muted);font-size:.85rem;">
                         <ul style="margin:0;padding-left:1.1rem;">
-                            <li>@(Localizer?["LinkedAccounts_Info_Balance"] ?? "Linked accounts provide the plan's actual balance.")</li>
+                            <li>@(Localizer?["LinkedAccounts_Info_Balance"] ?? "The savings plan balance is coupled to the balances of the linked bank accounts.")</li>
+                            <li>@(Localizer?["LinkedAccounts_Info_OwnShare"] ?? "Postings assigned to the savings plan in bank statements count as the own share.")</li>
                             <li>@(Localizer?["LinkedAccounts_Info_Inflow"] ?? "The account inflow is the basis for rhythm and deficit analysis.")</li>
                             <li>@(Localizer?["LinkedAccounts_Info_Informal"] ?? "Funding postings on other accounts can be marked as informal documentation.")</li>
                             <li>@(Localizer?["LinkedAccounts_Info_Fallback"] ?? "Without linked accounts the posting-based evaluation stays active.")</li>
@@ -85,6 +86,13 @@
                                         @onclick="() => OpenAccountAsync(accountCapture.Id)"
                                         disabled="@_busy">
                                     <svg><use href="/icons/sprite.svg#external"/></svg>
+                                </button>
+                                <button type="button"
+                                        class="icon-btn small"
+                                        title="@(Localizer?["LinkedAccounts_Remove_Button"] ?? "Unlink")"
+                                        @onclick="() => RemoveLinkAsync(accountCapture.Id)"
+                                        disabled="@_busy">
+                                    <svg><use href="/icons/sprite.svg#unlink"/></svg>
                                 </button>
                             </td>
                         }

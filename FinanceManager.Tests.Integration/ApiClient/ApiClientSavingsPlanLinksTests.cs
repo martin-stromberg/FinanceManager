@@ -84,6 +84,67 @@ public class ApiClientSavingsPlanLinksTests : IClassFixture<TestWebApplicationFa
     }
 
     /// <summary>
+    /// Fachliche Regel: entries of a statement draft whose detected account is linked to a
+    /// savings plan must not be assigned to a savings plan — both the dedicated savingsplan
+    /// endpoint and the save-all endpoint reject it with SAVINGSPLAN_ACCOUNT_LINKED (409),
+    /// while an entry on an unlinked account's draft can still be assigned.
+    /// </summary>
+    [Fact]
+    public async Task StatementEntry_SavingsPlanAssignment_RejectedOnLinkedAccount()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+        var ct = TestContext.Current.CancellationToken;
+
+        var plan = await api.SavingsPlans_CreateAsync(
+            new FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanCreateRequest("Plan", FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanType.Open, null, null, null, null, null),
+            ct);
+        var linkedAccount = await api.CreateAccountAsync(
+            new AccountCreateRequest("Verknüpft", AccountType.Savings, null, null, "Bank", null, SavingsPlanExpectation.Optional),
+            ct);
+        var plainAccount = await api.CreateAccountAsync(
+            new AccountCreateRequest("Unverknüpft", AccountType.Savings, null, null, "Bank", null, SavingsPlanExpectation.Optional),
+            ct);
+        (await api.SavingsPlans_AddAccountLinkAsync(plan.Id, linkedAccount.Id, ct)).Should().BeTrue();
+
+        var self = (await api.Contacts_ListAsync(all: true, ct: ct)).First(x => x.Type == FinanceManager.Shared.Dtos.Contacts.ContactType.Self);
+
+        async Task<(Guid DraftId, Guid EntryId)> NewEntryOnAsync(Guid accountId, string fileName)
+        {
+            var draft = await api.StatementDrafts_CreateAsync(fileName, ct);
+            draft.Should().NotBeNull();
+            var withAccount = await api.StatementDrafts_SetAccountAsync(draft!.DraftId, accountId, ct);
+            withAccount.Should().NotBeNull();
+            var withEntry = await api.StatementDrafts_AddEntryAsync(draft.DraftId, new StatementDraftAddEntryRequest(DateTime.UtcNow.Date, -10m, "Einzahlung"), ct);
+            withEntry.Should().NotBeNull();
+            var entry = withEntry!.Entries.Single();
+            (await api.StatementDrafts_SetEntryContactAsync(draft.DraftId, entry.Id, new StatementDraftSetContactRequest(self.Id), ct)).Should().NotBeNull();
+            return (draft.DraftId, entry.Id);
+        }
+
+        var linked = await NewEntryOnAsync(linkedAccount.Id, "linked.csv");
+        var saveAll = await NewEntryOnAsync(linkedAccount.Id, "linked2.csv");
+        var plain = await NewEntryOnAsync(plainAccount.Id, "plain.csv");
+
+        // dedicated endpoint: linked account -> 409 with the domain code
+        await Assert.ThrowsAsync<HttpRequestException>(
+            () => api.StatementDrafts_SetEntrySavingsPlanAsync(linked.DraftId, linked.EntryId, new StatementDraftSetSavingsPlanRequest(plan.Id), ct));
+        api.LastErrorCode.Should().Be("SAVINGSPLAN_ACCOUNT_LINKED");
+        api.LastError.Should().NotBeNullOrEmpty();
+
+        // save-all endpoint: same rejection on the linked account
+        await Assert.ThrowsAsync<HttpRequestException>(
+            () => api.StatementDrafts_SaveEntryAllAsync(saveAll.DraftId, saveAll.EntryId,
+                new StatementDraftSaveEntryAllRequest(self.Id, null, plan.Id, null, null, null, null, null, null), ct));
+        api.LastErrorCode.Should().Be("SAVINGSPLAN_ACCOUNT_LINKED");
+
+        // unlinked account: assignment works
+        var assigned = await api.StatementDrafts_SetEntrySavingsPlanAsync(plain.DraftId, plain.EntryId, new StatementDraftSetSavingsPlanRequest(plan.Id), ct);
+        assigned.Should().NotBeNull();
+        assigned!.SavingsPlanId.Should().Be(plan.Id);
+    }
+
+    /// <summary>
     /// Error handling of the link endpoints: unknown plans yield null/not-found semantics and a
     /// duplicate link is rejected.
     /// </summary>

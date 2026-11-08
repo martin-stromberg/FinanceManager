@@ -3353,7 +3353,8 @@
   <data name="EnumType_SavingsPlanPostingSubType_ActualReport" xml:space="preserve"><value>Istmeldung</value></data>
   <data name="Card_Caption_SavingsPlan_OwnAmount" xml:space="preserve"><value>Eigenanteil</value></data>
   <data name="LinkedAccounts_Info_Button" xml:space="preserve"><value>Wozu dient die Verknüpfung?</value></data>
-  <data name="LinkedAccounts_Info_Balance" xml:space="preserve"><value>Verknüpfte Konten liefern den tatsächlichen Saldo des Plans.</value></data>
+  <data name="LinkedAccounts_Info_Balance" xml:space="preserve"><value>Der Saldo des Sparplans wird mit den Salden der verknüpften Bankkonten gekoppelt.</value></data>
+  <data name="LinkedAccounts_Info_OwnShare" xml:space="preserve"><value>Dem Sparplan in Kontoauszügen zugeordnete Buchungen werden als Eigenanteil gewertet.</value></data>
   <data name="LinkedAccounts_Info_Inflow" xml:space="preserve"><value>Der Kontozufluss dient als Grundlage für Rhythmus- und Defizitanalyse.</value></data>
   <data name="LinkedAccounts_Info_Informal" xml:space="preserve"><value>Finanzierende Buchungen auf anderen Konten können als informelle Belegquelle gekennzeichnet werden.</value></data>
   <data name="LinkedAccounts_Info_Fallback" xml:space="preserve"><value>Ohne verknüpfte Konten bleibt die buchungsbasierte Betrachtung aktiv.</value></data>
