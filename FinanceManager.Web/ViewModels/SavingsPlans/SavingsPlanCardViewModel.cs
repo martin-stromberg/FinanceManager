@@ -275,13 +275,23 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     /// <summary>
     /// Removes the link between the plan and <paramref name="accountId"/> and refreshes
     /// link state and analysis (the plan falls back to posting-based evaluation once the
-    /// last link is removed).
+    /// last link is removed). The unlink is confirmed via <see cref="Services.IConfirmationService"/>
+    /// first because it switches the plan's balance source back to the posting-based
+    /// evaluation.
     /// </summary>
     /// <param name="accountId">Identifier of the account to unlink.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task RemoveAccountLinkAsync(Guid accountId, CancellationToken ct = default)
     {
         if (!IsEdit)
+        {
+            return;
+        }
+        if (!await ConfirmationService.ConfirmAsync(new(
+            TitleResourceKey: "Confirmation_RemoveAccountLink_Title",
+            MessageResourceKey: "Confirmation_RemoveAccountLink_Message",
+            ContextId: $"RemoveAccountLink:{accountId}",
+            Severity: ConfirmationSeverity.Warning), ct))
         {
             return;
         }

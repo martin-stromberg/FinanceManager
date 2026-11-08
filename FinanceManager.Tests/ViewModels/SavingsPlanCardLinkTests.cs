@@ -41,13 +41,18 @@ public sealed class SavingsPlanCardLinkTests
         public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => this;
     }
 
-    private static (SavingsPlanCardViewModel vm, Mock<IApiClient> apiMock) CreateVm()
+    private static (SavingsPlanCardViewModel vm, Mock<IApiClient> apiMock) CreateVm(
+        Mock<FinanceManager.Web.Services.IConfirmationService>? confirmations = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<ICurrentUserService>(new TestCurrentUserService());
         var apiMock = new Mock<IApiClient>();
         services.AddSingleton(apiMock.Object);
         services.AddSingleton(typeof(IStringLocalizer<>), typeof(PassthroughLocalizer<>));
+        if (confirmations != null)
+        {
+            services.AddSingleton(confirmations.Object);
+        }
         var sp = services.BuildServiceProvider();
         return (new SavingsPlanCardViewModel(sp), apiMock);
     }
@@ -191,6 +196,59 @@ public sealed class SavingsPlanCardLinkTests
         apiMock.Verify(a => a.SavingsPlans_RemoveAccountLinkAsync(planId, account.Id, It.IsAny<CancellationToken>()), Times.Once);
         vm.HasLinkedAccounts.Should().BeFalse();
         vm.CanReportActualBalance.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Removing a link asks the shared confirmation service first; only a confirmed
+    /// request reaches the unlink endpoint.
+    /// </summary>
+    [Fact]
+    public async Task RemoveAccountLinkAsync_ConfirmedViaService_CallsApi()
+    {
+        var confirmations = new Mock<FinanceManager.Web.Services.IConfirmationService>();
+        confirmations.Setup(c => c.ConfirmAsync(It.IsAny<FinanceManager.Web.Services.ConfirmationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var (vm, apiMock) = CreateVm(confirmations);
+        var planId = Guid.NewGuid();
+        var account = NewAccount(Guid.NewGuid());
+        SetupLoad(apiMock, planId, new[] { account.Id }, new[] { account });
+        await vm.LoadAsync(planId);
+
+        apiMock.Setup(a => a.SavingsPlans_RemoveAccountLinkAsync(planId, account.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        apiMock.Setup(a => a.SavingsPlans_GetLinkedAccountsAsync(planId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Guid>());
+
+        await vm.RemoveAccountLinkAsync(account.Id, TestContext.Current.CancellationToken);
+
+        confirmations.Verify(c => c.ConfirmAsync(
+            It.Is<FinanceManager.Web.Services.ConfirmationRequest>(r =>
+                r.TitleResourceKey == "Confirmation_RemoveAccountLink_Title"
+                && r.MessageResourceKey == "Confirmation_RemoveAccountLink_Message"),
+            It.IsAny<CancellationToken>()), Times.Once);
+        apiMock.Verify(a => a.SavingsPlans_RemoveAccountLinkAsync(planId, account.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// A cancelled confirmation aborts the unlink: the endpoint is never called and the
+    /// link state stays untouched.
+    /// </summary>
+    [Fact]
+    public async Task RemoveAccountLinkAsync_Cancelled_DoesNotCallApi()
+    {
+        var confirmations = new Mock<FinanceManager.Web.Services.IConfirmationService>();
+        confirmations.Setup(c => c.ConfirmAsync(It.IsAny<FinanceManager.Web.Services.ConfirmationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        var (vm, apiMock) = CreateVm(confirmations);
+        var planId = Guid.NewGuid();
+        var account = NewAccount(Guid.NewGuid());
+        SetupLoad(apiMock, planId, new[] { account.Id }, new[] { account });
+        await vm.LoadAsync(planId);
+
+        await vm.RemoveAccountLinkAsync(account.Id, TestContext.Current.CancellationToken);
+
+        apiMock.Verify(a => a.SavingsPlans_RemoveAccountLinkAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        vm.HasLinkedAccounts.Should().BeTrue();
     }
 
     /// <summary>

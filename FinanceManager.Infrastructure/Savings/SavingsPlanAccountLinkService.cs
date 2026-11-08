@@ -99,6 +99,32 @@ public sealed class SavingsPlanAccountLinkService : ISavingsPlanAccountLinkServi
     }
 
     /// <summary>
+    /// Lists the linked account identifiers for a set of savings plans of the same owner in one
+    /// query. Plans without links or not owned by <paramref name="ownerUserId"/> are absent from
+    /// the result map.
+    /// </summary>
+    /// <param name="savingsPlanIds">Identifiers of the savings plans to inspect.</param>
+    /// <param name="ownerUserId">Identifier of the owner performing the query.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A map from savings plan id to its linked account ids (only plans with links).</returns>
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetLinkedAccountIdsByPlanAsync(
+        IReadOnlyCollection<Guid> savingsPlanIds, Guid ownerUserId, CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, IReadOnlyList<Guid>>();
+        if (savingsPlanIds.Count == 0) { return map; }
+
+        var links = await _db.SavingsPlanAccountLinks.AsNoTracking()
+            .Where(l => l.OwnerUserId == ownerUserId && savingsPlanIds.Contains(l.SavingsPlanId))
+            .Select(l => new { l.SavingsPlanId, l.AccountId })
+            .ToListAsync(ct);
+        foreach (var group in links.GroupBy(l => l.SavingsPlanId))
+        {
+            map[group.Key] = group.Select(l => l.AccountId).ToList();
+        }
+        return map;
+    }
+
+    /// <summary>
     /// Lists the identifiers of all savings plans linked to the specified account.
     /// </summary>
     /// <param name="accountId">Identifier of the account.</param>

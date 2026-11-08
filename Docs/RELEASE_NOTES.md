@@ -11,6 +11,7 @@
 
 ## What's New
 
+- Savings plans: removing an account link now asks for confirmation first. MCP: `fm_savings_plan_analysis` reports each plan's `linkedAccountIds`, and `fm_savings_plans_manage` link operations return the current `linkedAccountIds` — linked plans keep reporting the account-balance-based `accumulatedAmount`.
 - Savings plans: account links can now only target savings accounts (service-enforced); the linked-accounts panel gains an info button explaining the link's purpose, icon buttons for unlinking and opening an account, a per-account balance column when multiple accounts are linked, and a new "own share" (Eigenanteil) figure in the plan header showing the plan's own posting balance while the saldo follows the linked account balances.
 - Reports: new setting "savings plan posting source" lets a report choose whether emitted savings plans aggregate their own plan postings or the postings of their linked bank accounts (available when savings plans are selected; persisted in report favorites, `fm_reports_configuration_manage`/`fm_reporting_aggregate`).
 - Demo data: new Bauspar scenario — savings account "Bausparkonto" linked to plan "Bausparen" with monthly giro transfers, 1% year-end interest on giro and Bauspar balances, a monthly deposit budget and a "Sparplanbuchungen (monatlich)" report favorite.
@@ -62,6 +63,7 @@
 
 ## Neuerungen
 
+- Sparpläne: Das Entfernen einer Kontoverknüpfung erfordert jetzt eine Sicherheitsabfrage. MCP: `fm_savings_plan_analysis` gibt je Plan die `linkedAccountIds` aus, und `fm_savings_plans_manage`-Linkoperationen liefern die aktuellen `linkedAccountIds` — verknüpfte Pläne melden weiterhin den kontenbasierten `accumulatedAmount`.
 - Sparpläne: Kontoverknüpfungen sind nur noch für Sparkonten möglich (dienstseitig abgesichert); das Verknüpfungs-Panel erhält einen Info-Button mit Zweckerklärung, Symbolbuttons zum Entfernen und Öffnen des Kontos, eine Saldospalte je Konto bei mehreren Verknüpfungen sowie den neuen „Eigenanteil" (Summe der Planeigenen Buchungen) in den Kopfdaten, während der Saldo den verknüpften Kontosalden folgt.
 - Reports: neue Einstellung „Sparplan-Postenquelle" legt fest, ob ausgegebene Sparpläne ihre eigenen Planposten oder die Posten der verknüpften Bankkonten aggregieren (verfügbar bei Sparplan-Auswahl, in Report-Favoriten persistiert, `fm_reports_configuration_manage`/`fm_reporting_aggregate`).
 - Demodaten: neues Bauspar-Szenario — Sparkonto „Bausparkonto" mit Plan „Bausparen" verknüpft, monatliche Umbuchungen vom Girokonto, 1-%-Jahresendzinsen auf Giro- und Bausparsaldo, Budget für die Einzahlungen und Report-Favorit „Sparplanbuchungen (monatlich)".

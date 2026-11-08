@@ -333,7 +333,9 @@ public sealed class FmSavingsPlansManageHandler : IMcpToolHandler
             McpWriteAudit.DiscardStaged(context, staged);
             throw;
         }
-        return new { operation, applied = true, savingsPlanId = planId, accountId };
+        var linkedIds = await _accountLinks.GetLinkedAccountIdsAsync(planId, owner, ct)
+            ?? (IReadOnlyList<Guid>)[];
+        return new { operation, applied = true, savingsPlanId = planId, accountId, linkedAccountIds = linkedIds };
     }
 
     private async Task<object> ReportActualBalanceAsync(

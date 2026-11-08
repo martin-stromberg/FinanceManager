@@ -45,6 +45,18 @@ public interface ISavingsPlanAccountLinkService
     Task<IReadOnlyList<Guid>?> GetLinkedAccountIdsAsync(Guid savingsPlanId, Guid ownerUserId, CancellationToken ct);
 
     /// <summary>
+    /// Lists the linked account identifiers for a set of savings plans of the same owner in one
+    /// query. Plans without links or not owned by <paramref name="ownerUserId"/> are absent from
+    /// the result map.
+    /// </summary>
+    /// <param name="savingsPlanIds">Identifiers of the savings plans to inspect.</param>
+    /// <param name="ownerUserId">Identifier of the owner performing the query.</param>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>A map from savings plan id to its linked account ids (only plans with links).</returns>
+    Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetLinkedAccountIdsByPlanAsync(
+        IReadOnlyCollection<Guid> savingsPlanIds, Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
     /// Lists the identifiers of all savings plans linked to the specified account.
     /// </summary>
     /// <param name="accountId">Identifier of the account.</param>

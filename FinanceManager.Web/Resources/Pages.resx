@@ -2968,6 +2968,8 @@
   <data name="Confirmation_Archive_Message" xml:space="preserve"><value>Das Objekt wird archiviert.</value></data>
   <data name="Confirmation_Book_Title" xml:space="preserve"><value>Verbuchen bestätigen</value></data>
   <data name="Confirmation_Book_Message" xml:space="preserve"><value>Die Buchungen werden finalisiert.</value></data>
+  <data name="Confirmation_RemoveAccountLink_Title" xml:space="preserve"><value>Verknüpfung lösen</value></data>
+  <data name="Confirmation_RemoveAccountLink_Message" xml:space="preserve"><value>Die Kontoverknüpfung wird entfernt. Der Saldo des Sparplans folgt danach wieder den Sparplanposten.</value></data>
   <data name="Err_InvalidCurrentPassword" xml:space="preserve">
     <value>The current password is not correct.</value>
   </data>

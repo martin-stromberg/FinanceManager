@@ -2968,6 +2968,8 @@
   <data name="Confirmation_Archive_Message" xml:space="preserve"><value>The object will be archived.</value></data>
   <data name="Confirmation_Book_Title" xml:space="preserve"><value>Confirm booking</value></data>
   <data name="Confirmation_Book_Message" xml:space="preserve"><value>The postings will be finalized.</value></data>
+  <data name="Confirmation_RemoveAccountLink_Title" xml:space="preserve"><value>Unlink account</value></data>
+  <data name="Confirmation_RemoveAccountLink_Message" xml:space="preserve"><value>The account link will be removed. The savings plan balance then follows the plan postings again.</value></data>
   <data name="Err_InvalidCurrentPassword" xml:space="preserve">
     <value>The current password is not correct.</value>
   </data>

@@ -92,6 +92,42 @@ public sealed class SavingsPlanAccountLinkServiceTests_Queries
         conn.Dispose();
     }
 
+    /// <summary>
+    /// The bulk read view maps each linked plan to its account ids; unlinked plans are
+    /// absent and foreign plans are invisible.
+    /// </summary>
+    [Fact]
+    public async Task GetLinkedAccountIdsByPlan_MapsOnlyOwnedLinkedPlans()
+    {
+        var (sut, db, conn) = Create();
+        var owner = Guid.NewGuid();
+        var foreign = Guid.NewGuid();
+        var plan1 = AddPlan(db, owner, "Plan1");
+        var plan2 = AddPlan(db, owner, "Plan2");
+        var plan3 = AddPlan(db, owner, "Plan3"); // no links
+        var foreignPlan = AddPlan(db, foreign, "Fremd");
+        var account1 = AddAccount(db, owner, "Konto1");
+        var account2 = AddAccount(db, owner, "Konto2");
+        var foreignAccount = AddAccount(db, foreign, "Fremdkonto");
+        await db.SaveChangesAsync(CancellationToken.None);
+        await sut.AddLinkAsync(plan1.Id, account1.Id, owner, CancellationToken.None);
+        await sut.AddLinkAsync(plan1.Id, account2.Id, owner, CancellationToken.None);
+        await sut.AddLinkAsync(plan2.Id, account1.Id, owner, CancellationToken.None);
+        await sut.AddLinkAsync(foreignPlan.Id, foreignAccount.Id, foreign, CancellationToken.None);
+
+        var map = await sut.GetLinkedAccountIdsByPlanAsync(
+            new[] { plan1.Id, plan2.Id, plan3.Id, foreignPlan.Id }, owner, CancellationToken.None);
+
+        Assert.Equal(2, map.Count);
+        Assert.Equal(2, map[plan1.Id].Count);
+        Assert.Contains(account1.Id, map[plan1.Id]);
+        Assert.Contains(account2.Id, map[plan1.Id]);
+        Assert.Equal(new[] { account1.Id }, map[plan2.Id].ToArray());
+        Assert.False(map.ContainsKey(plan3.Id));
+        Assert.False(map.ContainsKey(foreignPlan.Id));
+        conn.Dispose();
+    }
+
     /// <summary>Verifies all plans linked to an account are returned (collection-account direction).</summary>
     [Fact]
     public async Task GetLinkedSavingsPlanIds_AccountWithLinks_ReturnsPlanIds()

@@ -43,6 +43,7 @@ public sealed class FmSavingsPlanAnalysisDescriptor : McpToolDescriptorBase
            "Plan-linked postings that document the funding of a linked plan from a non-linked account (a bank posting in the same booking group) are INFORMAL: they stay visible via fm_postings_query with informal: true but never count into accumulatedAmount/expectedToDate/receivedToDate — the linked accounts' balances already carry that money; removing the last link makes them regular again (informal is derived, nothing is rewritten). " +
            "Plan-linked postings without a funding group (e.g. a loan disbursement) keep counting as disbursements only. Postings with savingsPlanSubType 'ActualReport' are actual-balance corrections ('Istmeldung', booked via fm_savings_plans_manage reportActualBalance — allowed for plans WITHOUT links only): they adjust accumulatedAmount without any account movement, are never informal and never touch budget actuals. " +
            "Once the last link is removed, accumulatedAmount and the rhythm analysis fall back to the posting-based evaluation described above. " +
+           "Every listed plan carries linkedAccountIds — the ids of the bank accounts it is linked to (empty for unlinked plans; resolvable via fm_accounts_overview). " +
            "The list-level currentAmount field is not populated — the real balance lives in analysis.accumulatedAmount (pass includeAnalysis: true). " +
            "Scopes: (Sparpläne, Lesen), (Sparplankategorien, Lesen).";
 
@@ -67,16 +68,20 @@ public sealed class FmSavingsPlanAnalysisHandler : IMcpToolHandler
 {
     private readonly ISavingsPlanService _plans;
     private readonly ISavingsPlanCategoryService _categories;
+    private readonly ISavingsPlanAccountLinkService _accountLinks;
     private readonly McpRecordScopeFilter _recordFilter;
 
     /// <summary>Creates the handler.</summary>
     /// <param name="plans">Savings plan service.</param>
     /// <param name="categories">Savings plan category service.</param>
+    /// <param name="accountLinks">Plan↔account link service (linkedAccountIds read view).</param>
     /// <param name="recordFilter">Record-level scope filter.</param>
-    public FmSavingsPlanAnalysisHandler(ISavingsPlanService plans, ISavingsPlanCategoryService categories, McpRecordScopeFilter recordFilter)
+    public FmSavingsPlanAnalysisHandler(ISavingsPlanService plans, ISavingsPlanCategoryService categories,
+        ISavingsPlanAccountLinkService accountLinks, McpRecordScopeFilter recordFilter)
     {
         _plans = plans;
         _categories = categories;
+        _accountLinks = accountLinks;
         _recordFilter = recordFilter;
     }
 
@@ -125,6 +130,12 @@ public sealed class FmSavingsPlanAnalysisHandler : IMcpToolHandler
             context.Access, McpDataType.SavingsPlans, plans,
             p => new McpRecordContext { SavingsPlanCategoryId = p.CategoryId }, ct);
 
+        // Read view of the plan↔account links: each listed plan carries its linked account
+        // ids (empty array for unlinked plans) so clients can resolve the ACCOUNT-LINK MODE
+        // described above and reach the accounts via fm_accounts_overview.
+        var linkedByPlan = await _accountLinks.GetLinkedAccountIdsByPlanAsync(
+            visible.Select(p => p.Id).ToList(), owner, ct);
+
         var result = new List<object>(visible.Count);
         foreach (var p in visible)
         {
@@ -152,6 +163,7 @@ public sealed class FmSavingsPlanAnalysisHandler : IMcpToolHandler
             {
                 id = p.Id,
                 type = p.Type.ToString(),
+                linkedAccountIds = linkedByPlan.TryGetValue(p.Id, out var linked) ? linked : (IReadOnlyList<Guid>)[],
                 targetAmount = p.TargetAmount,
                 targetDate = p.TargetDate,
                 interval = p.Interval?.ToString(),
