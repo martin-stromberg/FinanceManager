@@ -179,7 +179,7 @@ public sealed class ReportsController : ControllerBase
         try
         {
             var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
-            var dto = await _favorites.CreateAsync(_current.UserId, new ReportFavoriteCreateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate), ct);
+            var dto = await _favorites.CreateAsync(_current.UserId, new ReportFavoriteCreateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource), ct);
             return CreatedAtRoute("GetReportFavorite", new { id = dto.Id }, dto);
         }
         catch (InvalidOperationException ex)
@@ -233,7 +233,7 @@ public sealed class ReportsController : ControllerBase
         try
         {
             var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
-            var dto = await _favorites.UpdateAsync(id, _current.UserId, new ReportFavoriteUpdateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate), ct);
+            var dto = await _favorites.UpdateAsync(id, _current.UserId, new ReportFavoriteUpdateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource), ct);
             return dto == null ? NotFound() : Ok(dto);
         }
         catch (InvalidOperationException ex)

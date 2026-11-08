@@ -1,6 +1,8 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
@@ -344,5 +346,92 @@ public sealed class ReportDashboardViewModelTests
     {
         var p = new ReportAggregatePointDto(DateTime.UtcNow, "x", "n", null, 0m, null, null, -10m, -5m);
         Assert.True(ReportDashboardViewModel.IsNegative(p));
+    }
+
+    /// <summary>
+    /// Verifies that the chosen <c>SavingsPlanPostingSource</c> is forwarded into the API payloads for
+    /// both favorite creation and update, so the server receives the selection instead of silently
+    /// falling back to <c>PlanPostings</c>.
+    /// </summary>
+    [Fact]
+    public async Task SaveAndUpdateFavorite_ForwardSavingsPlanPostingSource()
+    {
+        var (vm, apiMock) = CreateVm();
+        var fav = new ReportFavoriteDto(Guid.NewGuid(), "Fav", PostingKind.SavingsPlan, false, ReportInterval.Month, 24, false, false, false, true, true, DateTime.UtcNow, null, new[] { PostingKind.SavingsPlan }, null, false, SavingsPlanPostingSource.LinkedAccountPostings);
+
+        apiMock.Setup(a => a.Reports_CreateFavoriteAsync(It.IsAny<ReportFavoriteCreateApiRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(fav);
+        apiMock.Setup(a => a.Reports_UpdateFavoriteAsync(It.IsAny<Guid>(), It.IsAny<ReportFavoriteUpdateApiRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(fav);
+
+        await vm.SaveFavoriteAsync("n", PostingKind.SavingsPlan, false, 0, 24, false, false, false, true, true, new[] { PostingKind.SavingsPlan }, null, ct: TestContext.Current.CancellationToken, savingsPlanPostingSource: SavingsPlanPostingSource.LinkedAccountPostings);
+        apiMock.Verify(a => a.Reports_CreateFavoriteAsync(
+            It.Is<ReportFavoriteCreateApiRequest>(r => r.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.SavingsPlan, false, 0, 24, false, false, false, true, true, new[] { PostingKind.SavingsPlan }, null, ct: TestContext.Current.CancellationToken, savingsPlanPostingSource: SavingsPlanPostingSource.LinkedAccountPostings);
+        apiMock.Verify(a => a.Reports_UpdateFavoriteAsync(
+            It.IsAny<Guid>(),
+            It.Is<ReportFavoriteUpdateApiRequest>(r => r.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that the ribbon's "open filters" action stays enabled outside edit mode so a filter can be
+    /// edited (not only cleared via "clear filters"), matching the requirement that filters are editable
+    /// for the currently displayed report.
+    /// </summary>
+    [Fact]
+    public void FiltersOpen_StaysEnabled_OutsideEditMode()
+    {
+        var (vm, _) = CreateVm();
+        vm.EditMode = false;
+
+        var localizerMock = new Mock<IStringLocalizer>();
+        localizerMock.Setup(l => l[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key));
+
+        var actions = vm.GetRibbonRegisters(localizerMock.Object)!
+            .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+            .SelectMany(t => t.Items)
+            .ToList();
+
+        var filtersOpen = actions.First(a => a.Id == "FiltersOpen");
+        Assert.False(filtersOpen.Disabled);
+    }
+
+    /// <summary>
+    /// Verifies the filter-editing flow: opening the filter dialog copies the active selection into the
+    /// temporary buffers, toggling an option changes only the temporary state, and applying writes the
+    /// temporary selection back to the active filters and triggers a reload.
+    /// </summary>
+    [Fact]
+    public async Task FilterDialog_TempChanges_ApplyToActiveFilters()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.SavingsPlan };
+
+        apiMock.Setup(a => a.SavingsPlans_ListAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SavingsPlanDto> { new() { Id = planId, Name = "Bausparen" } });
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportAggregationResult(ReportInterval.Month, Array.Empty<ReportAggregatePointDto>(), false, false, false));
+
+        vm.OpenFilterDialog();
+        Assert.True(vm.ShowFilterDialog);
+        Assert.Empty(vm.TempSavings);
+        Assert.Empty(vm.SelectedSavingsPlans);
+
+        vm.ToggleTempForKind(PostingKind.SavingsPlan, planId, true);
+        Assert.Contains(planId, vm.TempSavings);
+        Assert.Empty(vm.SelectedSavingsPlans); // not applied yet
+
+        await vm.ApplyTempAndReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
+
+        Assert.False(vm.ShowFilterDialog);
+        Assert.Contains(planId, vm.SelectedSavingsPlans);
+        apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
+            It.Is<ReportAggregatesQueryRequest>(r => r.Filters != null && r.Filters.SavingsPlanIds != null && r.Filters.SavingsPlanIds.Contains(planId)),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }

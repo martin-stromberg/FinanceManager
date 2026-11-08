@@ -1075,7 +1075,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         // Filters
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Filter"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("FiltersOpen", localizer["Ribbon_OpenFilters"].Value, "<svg><use href='/icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, FilterOptionsLoading || !EditMode, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersOpen"); return Task.CompletedTask; })),
+            new UiRibbonAction("FiltersOpen", localizer["Ribbon_OpenFilters"].Value, "<svg><use href='/icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, FilterOptionsLoading, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersOpen"); return Task.CompletedTask; })),
             new UiRibbonAction("FiltersClear", localizer["Ribbon_ClearFilters"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, GetSelectedFiltersCount()==0, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersClear"); return Task.CompletedTask; }))
         }));
 

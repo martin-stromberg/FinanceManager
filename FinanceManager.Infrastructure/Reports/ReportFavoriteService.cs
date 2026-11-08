@@ -214,7 +214,8 @@ public sealed class ReportFavoriteService : IReportFavoriteService
             r.ModifiedUtc,
             ParseKinds(r.PostingKindsCsv, r.PostingKind),
             ToDtoFilters(entity)
-            , r.UseValutaDate
+            , r.UseValutaDate,
+            r.SavingsPlanPostingSource
         );
     }
 
@@ -284,7 +285,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
         }
 
         entity.Rename(name);
-        entity.Update(request.PostingKind, request.IncludeCategory, request.Interval, request.ComparePrevious, request.CompareYear, request.CompareProjection, request.ShowChart, request.Expandable, request.Take, request.UseValutaDate);
+        entity.Update(request.PostingKind, request.IncludeCategory, request.Interval, request.ComparePrevious, request.CompareYear, request.CompareProjection, request.ShowChart, request.Expandable, request.Take, request.UseValutaDate, request.SavingsPlanPostingSource);
         if (request.PostingKinds is { Count: > 0 })
         {
             entity.SetPostingKinds(request.PostingKinds);

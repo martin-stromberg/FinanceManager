@@ -65,3 +65,27 @@ Erstellt am: 2026-11-08
   - Tests: `StatementDraftSavingsPlanLinkedAccountTests` (SaveAll/Assign/Klassifizierung, verknüpft + unverknüpft + Leeren erlaubt) und Integration `ApiClientSavingsPlanLinksTests.StatementEntry_SavingsPlanAssignment_RejectedOnLinkedAccount` (beide Endpunkte, 409-Code).
 - [x] Auch eine einzelne Kontoverknüpfung muss wieder entfernbar sein; der Entfernen-Button darf bei genau einem Link nicht fehlen.
   - `SavingsPlanLinkedAccountsPanel.razor`: Ein-Link-Zeile zeigt jetzt neben „Konto öffnen" auch den Unlink-Symbolbutton (Saldospalte bleibt ausgeblendet); Sicherheitsabfrage über `RemoveAccountLinkAsync` unverändert. Abgesichert durch `SavingsPlanLinkedAccountsPanelTests` (bUnit: Buttons im Ein-/Mehr-Link-Layout, Klick löst bestätigtes Entfernen aus).
+
+## Nachbesserungen Reportfavorit
+
+- [x] Demodaten-Report „Sparplanbuchungen (monatlich)“ in „Sparplanbwegungen (Monatlich)“ umbenennen.
+  - `DemoDataService.EnsureDefaultReportFavoritesAsync`: Favorit umbenannt (gilt für neu erzeugte Demodaten; vorhandene Favoriten werden nicht angefasst, da das Seeding bei vorhandenen Favoriten abbricht).
+- [x] Im Demodaten-Report sollen „Vorperiode vergleichen“ und „Vorjahr vergleichen“ aktiviert sein.
+  - `ComparePrevious: true` und `CompareYear: true` im selben Seed-Block.
+- [x] Als Postenquelle soll „Posten der verknüpften Konten“ gewählt sein.
+  - `SavingsPlanPostingSource.LinkedAccountPostings` war bereits gesetzt und bleibt es.
+- [x] Fehler beheben: Im Bericht kann ein Filter nur entfernt, aber nicht bearbeitet werden.
+  - Ursache (UI/Ribbon): `ReportDashboardViewModel.GetRibbonRegisterDefinition` deaktivierte `FiltersOpen` bei `!EditMode`, während `FiltersClear` aktiv blieb. `FiltersOpen` ist jetzt nur noch bei laufendem Optionsladevorgang deaktiviert; der Filterdialog (`OpenFilterDialog` → Temp-Puffer → `ApplyTempAndReloadAsync`) steht damit auch im Ansichtsmodus zur Verfügung.
+  - Zusätzlich (UI-Binding): `ReportDashboard.razor` synchronisierte `_editMode` nicht aus dem `edit`-Query-Parameter — bei direktem Aufruf mit `?edit=true` (z. B. Ribbon „Neu“ auf `/reports`) blieb das Bearbeitungspanel inkl. Postenquelle-Auswahl unsichtbar. `_editMode` wird jetzt in `OnParametersSetAsync` aus `_vm.EditMode` gesetzt.
+- [x] Fehler beheben: Die Postenquelle lässt sich nicht ändern; beim Speichern springt die Auswahl auf „Sparplanposten“ zurück.
+  - Ursache war ein verteilter Wertverlust auf dem Übertragungs-/Persistenzpfad, nicht das UI-Binding:
+    - `ReportsController.CreateFavoriteAsync`/`UpdateFavoriteAsync` übergaben `req.SavingsPlanPostingSource` nicht an `ReportFavoriteCreateRequest`/`ReportFavoriteUpdateRequest` (DTO-Default `PlanPostings` griff).
+    - `ReportFavoriteService.UpdateAsync` rief `entity.Update(...)` ohne `request.SavingsPlanPostingSource` auf — der Domain-Default `PlanPostings` überschrieb den persistierten Wert bei jedem Update.
+    - `ReportFavoriteService.GetAsync` baute das `ReportFavoriteDto` ohne `r.SavingsPlanPostingSource` — Einzelabrufe meldeten immer `PlanPostings` (ListAsync und Create/Update-Antworten waren korrekt).
+    - `HomeKpiGrid.razor` übergab `fav.SavingsPlanPostingSource` nicht an `ReportAggregatesQueryRequest` — KPI-Kacheln ignorierten die Quelle.
+  - Alle vier Stellen reichen den Wert jetzt durch; UI-Selekt (`OnSavingsPlanPostingSourceChange`) und `ApplyFavorite` waren bereits korrekt verdrahtet.
+- [x] Report-Bearbeitung und Demodaten-Favorit durch Tests absichern.
+  - `ReportFavoriteServiceTests.CreateGetListAndUpdate_ShouldRoundtripSavingsPlanPostingSource` (Create/Get/List/Update-Roundtrip inkl. „Update ohne Quellenwechsel setzt nicht zurück“).
+  - `ApiClientReportsTests.Reports_Favorites_SavingsPlanPostingSource_Roundtrips` (API-End-to-End: Create → Get → Update → Get).
+  - `ApiClientDemoDataTests`: erwartet neuen Namen und `ComparePrevious`/`CompareYear = true`.
+  - `ReportDashboardViewModelTests`: `SaveAndUpdateFavorite_ForwardSavingsPlanPostingSource` (VM → ApiRequest-Payload), `FiltersOpen_StaysEnabled_OutsideEditMode` (Ribbon), `FilterDialog_TempChanges_ApplyToActiveFilters` (Filterbearbeitung Temp → Apply → Reload-Payload).

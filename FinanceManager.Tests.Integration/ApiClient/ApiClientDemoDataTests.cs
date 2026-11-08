@@ -442,10 +442,12 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
 
         var favorite = await db.ReportFavorites
             .AsNoTracking()
-            .SingleOrDefaultAsync(x => x.OwnerUserId == userId && x.Name == "Sparplanbuchungen (monatlich)", CancellationToken.None);
+            .SingleOrDefaultAsync(x => x.OwnerUserId == userId && x.Name == "Sparplanbwegungen (Monatlich)", CancellationToken.None);
         favorite.Should().NotBeNull();
         favorite!.PostingKind.Should().Be(PostingKind.SavingsPlan);
         favorite.Interval.Should().Be(ReportInterval.Month);
+        favorite.ComparePrevious.Should().BeTrue();
+        favorite.CompareYear.Should().BeTrue();
         favorite.SavingsPlanPostingSource.Should().Be(SavingsPlanPostingSource.LinkedAccountPostings);
     }
 

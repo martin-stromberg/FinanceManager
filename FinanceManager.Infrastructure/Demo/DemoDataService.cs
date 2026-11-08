@@ -1035,13 +1035,13 @@ public sealed class DemoDataService : IDemoDataService
         await _reportFavoriteService.CreateAsync(
             userId,
             new ReportFavoriteCreateRequest(
-                "Sparplanbuchungen (monatlich)",
+                "Sparplanbwegungen (Monatlich)",
                 PostingKind.SavingsPlan,
                 IncludeCategory: false,
                 ReportInterval.Month,
                 Take: 24,
-                ComparePrevious: false,
-                CompareYear: false,
+                ComparePrevious: true,
+                CompareYear: true,
                 CompareProjection: false,
                 ShowChart: true,
                 Expandable: true,

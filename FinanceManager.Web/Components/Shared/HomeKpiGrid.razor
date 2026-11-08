@@ -604,7 +604,8 @@
                 fav.Filters == null ? null : new ReportAggregatesFiltersRequest(
                     fav.Filters.AccountIds, fav.Filters.ContactIds, fav.Filters.SavingsPlanIds, fav.Filters.SecurityIds,
                     fav.Filters.ContactCategoryIds, fav.Filters.SavingsPlanCategoryIds, fav.Filters.SecurityCategoryIds, fav.Filters.SecuritySubTypes,
-                    fav.Filters.IncludeDividendRelated)
+                    fav.Filters.IncludeDividendRelated),
+                fav.SavingsPlanPostingSource
             );
             var agg = await Api.Reports_QueryAggregatesAsync(req);
             if (agg == null) { return; }
