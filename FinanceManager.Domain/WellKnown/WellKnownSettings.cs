@@ -5,6 +5,11 @@ namespace FinanceManager.Domain.WellKnown;
 /// <summary>
 /// Stores the configurable well-known endpoint settings.
 /// </summary>
+/// <remarks>
+/// Global, cross-user data pool — deliberately without an <c>OwnerUserId</c>: the well-known
+/// endpoint settings apply to the whole installation and are a documented exception from the
+/// per-user ownership rule.
+/// </remarks>
 public sealed class WellKnownSettings : Entity, IAggregateRoot
 {
     /// <summary>Default redirect target for the change-password well-known endpoint.</summary>

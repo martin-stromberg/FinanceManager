@@ -2,6 +2,7 @@
 
 ## Important Notes Before Update
 
+- The update adds the database check constraint `CK_Postings_HasReference`: every posting must reference an account, contact, savings plan or security. If an existing database contained postings without any reference, the migration — and thus the app start — would fail deliberately; such rows cannot be produced by the application, but should the update abort for this reason, the orphaned postings must be removed manually first (issue #497).
 - New opt-in feature: the MCP server (`/mcp`) lets external AI assistants access the owner's financial data through scoped, audited tools. It ships **disabled by default** — an administrator enables it anytime in the admin security settings (`/card/mcp-security`, database-stored `Enabled`/`WriteAccessEnabled` switches). Existing installations keep working unchanged.
 - The MCP settings are stored in the database, not in `appsettings.json`; write access has a separate opt-in kill switch so an admin can enable read-only MCP access first.
 
@@ -11,6 +12,7 @@
 
 ## What's New
 
+- Data-integrity hardening: a posting must now reference at least one target (account, contact, savings plan or security) — enforced by a domain guard and the database check constraint `CK_Postings_HasReference`; backup imports skip postings whose references cannot be remapped, and the intentionally user-independent data pools (`IpBlock`, `SecurityTxtSettings`, `WellKnownSettings`, `McpSettings`) are now documented explicitly as global (issue #497).
 - Savings plans: removing an account link now asks for confirmation first. MCP: `fm_savings_plan_analysis` reports each plan's `linkedAccountIds`, and `fm_savings_plans_manage` link operations return the current `linkedAccountIds` — linked plans keep reporting the account-balance-based `accumulatedAmount`.
 - Savings plans: account links can now only target savings accounts (service-enforced); the linked-accounts panel gains an info button explaining the link's purpose, icon buttons for unlinking and opening an account, a per-account balance column when multiple accounts are linked, and a new "own share" (Eigenanteil) figure in the plan header showing the plan's own posting balance while the saldo follows the linked account balances.
 - Reports: new setting "savings plan posting source" lets a report choose whether emitted savings plans aggregate their own plan postings or the postings of their linked bank accounts (available when savings plans are selected; persisted in report favorites, `fm_reports_configuration_manage`/`fm_reporting_aggregate`).
@@ -55,6 +57,7 @@
 
 ## Wichtige Hinweise vor dem Update
 
+- Das Update führt den Datenbank-Check-Constraint `CK_Postings_HasReference` ein: Jede Buchung muss ein Konto, einen Kontakt, einen Sparplan oder ein Wertpapier referenzieren. Enthielte eine Bestandsdatenbank Buchungen ganz ohne Referenz, würde die Migration — und damit der App-Start — bewusst fehlschlagen; die Anwendung kann solche Zeilen nicht erzeugen, sollte das Update dennoch daran scheitern, sind die verwaisten Buchungen zuvor manuell zu entfernen (Issue #497).
 - Neue Opt-in-Funktion: Der MCP-Server (`/mcp`) gibt externen KI-Assistenten über abgestufte, protokollierte Werkzeuge Zugriff auf die Finanzdaten des jeweiligen Besitzers. Er ist **standardmäßig deaktiviert** — ein Administrator aktiviert ihn jederzeit in den Admin-Sicherheitseinstellungen (`/card/mcp-security`, datenbankgestützte Schalter `Enabled`/`WriteAccessEnabled`). Bestehende Installationen bleiben unverändert funktionsfähig.
 - Die MCP-Einstellungen liegen in der Datenbank, nicht in `appsettings.json`; der Schreibzugriff hat einen eigenen Opt-in-Schalter, sodass zunächst reiner Lesezugriff freigegeben werden kann.
 - Sicherheitshärtung: Forwarded-Headers (`X-Forwarded-For`/`X-Forwarded-Proto`) werden nur noch von ausdrücklich vertrauenswürdigen Proxies berücksichtigt. Wird FinanceManager hinter einem Reverse-Proxy betrieben, sind dessen IPs unter `ReverseProxy:KnownProxies` bzw. dessen Subnetze unter `ReverseProxy:KnownNetworks` einzutragen (semikolongetrennt). Ohne diese Einträge ignoriert die Anwendung Forwarded-Headers — Client-IPs erscheinen dann als Adresse des Proxys. Direkter HTTP-Zugriff im lokalen Netzwerk funktioniert unverändert.
@@ -63,6 +66,7 @@
 
 ## Neuerungen
 
+- Datenintegritäts-Härtung: Eine Buchung muss nun mindestens ein Ziel referenzieren (Konto, Kontakt, Sparplan oder Wertpapier) — erzwungen über einen Domain-Guard und den Datenbank-Check-Constraint `CK_Postings_HasReference`; der Backup-Import überspringt Buchungen, deren Referenzen nicht zugeordnet werden können, und die bewusst benutzerübergreifenden Datenpools (`IpBlock`, `SecurityTxtSettings`, `WellKnownSettings`, `McpSettings`) sind jetzt ausdrücklich als global dokumentiert (Issue #497).
 - Sparpläne: Das Entfernen einer Kontoverknüpfung erfordert jetzt eine Sicherheitsabfrage. MCP: `fm_savings_plan_analysis` gibt je Plan die `linkedAccountIds` aus, und `fm_savings_plans_manage`-Linkoperationen liefern die aktuellen `linkedAccountIds` — verknüpfte Pläne melden weiterhin den kontenbasierten `accumulatedAmount`.
 - Sparpläne: Kontoverknüpfungen sind nur noch für Sparkonten möglich (dienstseitig abgesichert); das Verknüpfungs-Panel erhält einen Info-Button mit Zweckerklärung, Symbolbuttons zum Entfernen und Öffnen des Kontos, eine Saldospalte je Konto bei mehreren Verknüpfungen sowie den neuen „Eigenanteil" (Summe der Planeigenen Buchungen) in den Kopfdaten, während der Saldo den verknüpften Kontosalden folgt.
 - Reports: neue Einstellung „Sparplan-Postenquelle" legt fest, ob ausgegebene Sparpläne ihre eigenen Planposten oder die Posten der verknüpften Bankkonten aggregieren (verfügbar bei Sparplan-Auswahl, in Report-Favoriten persistiert, `fm_reports_configuration_manage`/`fm_reporting_aggregate`).

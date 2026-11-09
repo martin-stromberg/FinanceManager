@@ -107,7 +107,7 @@ Zustandsautomat: `Pending → Approved | Rejected | Expired`; `Approved → Exec
 
 ### `McpSettings`
 
-Genau eine Zeile mit fester ID (`SingletonId`); administratorpflegbar über `/card/mcp-security`.
+Genau eine Zeile mit fester ID (`SingletonId`); administratorpflegbar über `/card/mcp-security`. `McpSettings` ist ein globaler, benutzerübergreifender Datenpool — die Schalter gelten installationsweit und tragen bewusst kein `OwnerUserId` (dokumentierte Ausnahme vom Besitzerprinzip).
 
 | Eigenschaft | Typ | Beschreibung |
 |-------------|-----|--------------|

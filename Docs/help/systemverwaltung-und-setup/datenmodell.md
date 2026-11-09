@@ -27,6 +27,8 @@
 | `AddressOrRange` | `string` | Einzel-IP oder Bereich |
 | `IsBlocked` | `bool` | Aktiver Blockstatus |
 
+`IpBlock` ist ein globaler, benutzerübergreifender Datenpool — die Einträge gelten installationsweit und tragen bewusst kein `OwnerUserId` (dokumentierte Ausnahme vom Besitzerprinzip).
+
 ### `Notification`
 
 | Eigenschaft | Typ | Beschreibung |
@@ -92,7 +94,7 @@ Die Backup-Datei besteht aus einer NDJSON-Metazeile (`Type = "Backup"`, `Version
 | `Hiring` | `string?` | `Hiring`-Direktive; URI zur Stellenausschreibungsseite |
 | `Canonical` | `string?` | Optionale vollständige HTTPS-URL für die `Canonical`-Direktive |
 
-Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). Beim ersten Aufruf eines öffentlichen Endpunkts oder des Admin-GET-Endpunkts wird die Zeile automatisch mit `Contact = ""` und `Expires = DateTimeOffset.MaxValue` angelegt, sofern noch keine Zeile vorhanden ist.
+Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). `SecurityTxtSettings` ist ein globaler, benutzerübergreifender Datenpool — die Direktiven gelten installationsweit und tragen bewusst kein `OwnerUserId` (dokumentierte Ausnahme vom Besitzerprinzip). Beim ersten Aufruf eines öffentlichen Endpunkts oder des Admin-GET-Endpunkts wird die Zeile automatisch mit `Contact = ""` und `Expires = DateTimeOffset.MaxValue` angelegt, sofern noch keine Zeile vorhanden ist.
 
 Ist `Canonical` leer, wird die Direktive zur Laufzeit weiterhin aus `IConfiguration["Api:BaseAddress"]` als `<BaseAddress>/.well-known/security.txt` abgeleitet.
 
@@ -105,7 +107,7 @@ Ist `Canonical` leer, wird die Direktive zur Laufzeit weiterhin aus `IConfigurat
 | `CreatedUtc` | `DateTime` | Erzeugungszeit (Basisspalte `Entity`) |
 | `ModifiedUtc` | `DateTime?` | Letzte Änderung (Basisspalte `Entity`, via `Touch()`) |
 
-Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). Beim ersten Zugriff (`GetEntityAsync` in `WellKnownSettingsService`) wird die Zeile automatisch über `WellKnownSettings.CreateDefault()` mit `ChangePasswordUrl = "/change-password"` (`DefaultChangePasswordUrl`) angelegt.
+Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). `WellKnownSettings` ist ein globaler, benutzerübergreifender Datenpool — die Einstellungen gelten installationsweit und tragen bewusst kein `OwnerUserId` (dokumentierte Ausnahme vom Besitzerprinzip). Beim ersten Zugriff (`GetEntityAsync` in `WellKnownSettingsService`) wird die Zeile automatisch über `WellKnownSettings.CreateDefault()` mit `ChangePasswordUrl = "/change-password"` (`DefaultChangePasswordUrl`) angelegt.
 
 Ungültige gespeicherte Werte werden beim Lesen für den öffentlichen Endpunkt durch den Standard `/change-password` ersetzt (`WellKnownSettings.IsValidUrl` über `WellKnownUrlValidator`). Schreibzugriffe validieren zusätzlich in `WellKnownSettings.Update` als Domain-Guard.
 

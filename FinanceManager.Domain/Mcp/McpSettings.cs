@@ -8,6 +8,10 @@ namespace FinanceManager.Domain.Mcp;
 /// All other <c>Mcp:*</c> configuration (rate limits, retention, SSE, anomaly, token hash,
 /// approval) remains appsettings-bound via <c>McpOptions</c>.
 /// </summary>
+/// <remarks>
+/// Global, cross-user data pool — deliberately without an <c>OwnerUserId</c>: the switches apply
+/// to the whole installation and are a documented exception from the per-user ownership rule.
+/// </remarks>
 public sealed class McpSettings : Entity, IAggregateRoot
 {
     /// <summary>

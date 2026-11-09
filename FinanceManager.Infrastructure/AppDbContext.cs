@@ -516,6 +516,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => new { x.SecurityId, x.BookingDate });
             b.Property(p => p.ParentId);
             b.Property(p => p.OriginalAmount).HasPrecision(18, 2);
+            b.ToTable(t => t.HasCheckConstraint("CK_Postings_HasReference", "[AccountId] IS NOT NULL OR [ContactId] IS NOT NULL OR [SavingsPlanId] IS NOT NULL OR [SecurityId] IS NOT NULL"));
         });
 
         modelBuilder.Entity<StatementDraft>(b =>

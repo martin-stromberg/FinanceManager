@@ -364,6 +364,7 @@ oder aus der Profil-API lesen koennen.
 
 **Verhalten:**
 - `StatementImports`, `StatementEntries` und `AccountLinkedIbans` hängen an gemappten Verweisen; Einträge, deren Konto bzw. Import nicht im Backup enthalten ist, werden übersprungen.
+- `Postings`, deren vier Zielreferenzen (`AccountId`, `ContactId`, `SavingsPlanId`, `SecurityId`) nach dem Remapping allesamt `null` sind, werden übersprungen und per `LogWarning` protokolliert — ein solcher Datensatz wäre nach dem Restore ein verwaistes Posting ohne Besitzerpfad (siehe Referenzinvariante in `konten-und-buchungen/business-rules.md`). Geskippte Postings erhalten keinen Eintrag in `postingMap`; der zweite Durchlauf (Apply-Block mit `AssignBackupDto`) über denselben Abschnitt lässt sie damit automatisch aus.
 - `AccountShares` und `StatementEntry.SecurityTransactionId` besitzen keinen Fremdschlüssel — bei fehlendem Map-Treffer bleibt die Original-ID erhalten (auf derselben Instanz gültig).
 - Dubletten werden vor dem Einfügen geprüft und übersprungen: `StatementEntries` über den globalen `RawHash`-Unique-Index, `Notifications` über die übernommene Backup-`Id`, `StatementImports` über `(AccountId, OriginalFileName, ImportedAtUtc)`, `AccountShares` über `(AccountId, UserId)` und `AccountLinkedIbans` über `(AccountId, Iban)`. Übersprungene Dubletten werden teilweise per `LogWarning` protokolliert.
 - `Notifications` erhalten als `OwnerUserId` den wiederherstellenden Benutzer, damit sie nicht global sichtbar werden.
