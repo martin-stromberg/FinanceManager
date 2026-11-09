@@ -40,7 +40,18 @@ Beteiligte Komponenten:
 - `FinanceManager.Web/Components/Shared/Ribbon.razor` — filtert sichtbare Aktionen, wendet die Ein-Aktions-Regel an und rendert die mobilen Header-Shortcuts.
 - `FinanceManager.Web/wwwroot/css/ribbon.css` — begrenzt und positioniert Titel, Toggle und Icon-Shortcuts im mobilen Header.
 
-### 4. Seitenbezogene Mobile-Regeln
+### 4. Gruppenreihenfolge im Ribbon
+
+Jedes `IRibbonProvider`-ViewModel liefert über `GetRibbonRegisters(...)` Register mit geordneten `UiRibbonTab`-Listen; jeder Tab wird zu einer sichtbaren Ribbon-Gruppe. `Ribbon.BuildTabsToRender()` merged Gruppen registerübergreifend nach Titel (`groupMap`) und hält die First-Seen-Reihenfolge in `groupOrder` fest. Die Darstellung sortiert per `Groups.OrderBy(g => g.Sort)` stabil — da die Tabs projektweit den Standardwert `Sort = 0` tragen, entscheidet allein die Reihenfolge der Tab-Liste über die sichtbare Gruppenreihenfolge.
+
+Die in `AGENT.md` festgelegte Konvention sieht eine `Navigation`-Gruppe (Zurück-Aktion, `Ribbon_Group_Navigation`) stets an Position 0 vor, danach Entitätsaktionen (`Ribbon_Group_Manage`), weiterführende Aktionen (z. B. `Ribbon_Group_Actions`, `Ribbon_Group_Bookings`, `Ribbon_Group_Analysis`) und abschließend `Ribbon_Group_Linked` als letzte Gruppe. Mit Issue #498 wurden die Tab-Listen von `SavingsPlanCardViewModel`, `BankAccountCardViewModel` und `PostingsCardViewModel` entsprechend korrigiert; die Einhaltung wird durch Reihenfolge-Assertions in ViewModel-Tests, einen bUnit-Test (`RibbonTests.Groups_RenderInTabListOrder`) und den Playwright-Test `RibbonGroupOrderPlaywrightTests` abgesichert.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/ViewModels/Common/RibbonModels.cs` — `UiRibbonTab` mit `Sort`-Eigenschaft (Standard `0`).
+- `FinanceManager.Web/Components/Shared/Ribbon.razor` — `BuildTabsToRender()` merged Gruppen nach Titel und rendert sie in stabiler First-Seen-/Sort-Reihenfolge.
+- `AGENT.md` — dokumentiert die verbindliche Gruppenreihenfolge inklusive der `Navigation`-Position-0-Regel.
+
+### 5. Seitenbezogene Mobile-Regeln
 
 Seiten mit komplexen Inhalten erhalten ergänzende Styles für Mobile-Breakpoints.
 
@@ -49,7 +60,7 @@ Beteiligte Komponenten:
 - CSS-Dateien wie `app.Home.css`, `app.ReportDashboard.css`, `app.ReportsHome.css`, `app.BudgetReport.css`, `app.Setup.css`, `app.ReturnAnalysis.css`.
 - Dark-Theme-Pendants: `theme.Dark.*.css`.
 
-### 5. Mobile E2E-Ausführung
+### 6. Mobile E2E-Ausführung
 
 Tests erzeugen mobile Browserkontexte und führen bestehende End-to-End-Flows unter Mobile-Bedingungen aus.
 
@@ -58,7 +69,7 @@ Beteiligte Komponenten:
 - `PlaywrightWebAppFixture.CreateMobileSessionAsync()` — startet Sessions mit `390x844`, Touch und Mobile-Flag.
 - Testmethoden mit Suffix `_OnMobileViewport` in `AuthenticationFlowPlaywrightTests`, `ListNavigationPlaywrightTests`, `ReportingFlowPlaywrightTests`, `HomeMassImportPlaywrightTests`.
 
-### 6. Globale Ladeleiste
+### 7. Globale Ladeleiste
 
 Die globale Ladeleiste wird als wiederverwendbare Blazor-Komponente aus `msTools.Web.Blazor` im Dokumentrahmen gerendert. FinanceManager konfiguriert Farben, Höhe, Z-Index und mobile Positionierung hostseitig über `AddLoadingBar(...)`. Native Klick- und Submit-Listener in `financeManager.js` erkennen relevante interne Navigationen und Formularvorgänge frühzeitig; die JavaScript-Schicht liest die Farbpalette aus der gerenderten Komponente und definiert keine projektspezifischen Farben mehr. `MainLayout` startet die Leiste zusätzlich über `RegisterLocationChangingHandler` und beendet sie über `LocationChanged`; Validierungs- und Abschlussfälle stoppen sie ebenfalls über die JavaScript-Schnittstelle. Länger laufende Blazor-Aktionen werden über `LoadingBarService.RunAsync(...)` zentral umschlossen, damit auch komponenteninterne Ladevorgänge wie der Budgetbericht dieselbe globale Anzeige nutzen.
 
@@ -72,7 +83,7 @@ Beteiligte Komponenten:
 - `FinanceManager.Web/ProgramExtensions.cs` — registriert `AddLoadingBar(...)` mit der FinanceManager-Farbpalette.
 - `FinanceManager.Web/wwwroot/js/financeManager.js` — stellt `financeManager.loadingBar.start`, `restart` und `stop` bereit, erkennt globale Browserereignisse und verhindert doppelte Listener.
 
-### 7. Bestätigungsdialog oberhalb von Overlays
+### 8. Bestätigungsdialog oberhalb von Overlays
 
 Overlay-Container (z. B. `OverlayHost`, das Listen-Overlay in `ListPage`, die `.modal-overlay`-/`.modal-backdrop`-Dialoge) und der Bestätigungsdialog teilen die Grundklasse `.split-center` mit `z-index: 1000`. Damit die Bestätigung unabhängig von der DOM-Reihenfolge der Hosts immer im Vordergrund liegt, trägt der äußere Container von `ConfirmDialog` zusätzlich die Klasse `confirm-dialog-layer` mit `z-index: 1100`. Die Schichtung gilt seitenübergreifend (`CardPage`, `ListPage`, `Home`, `ReportDashboard`), ohne dass die Host-Reihenfolge pro Seite gepflegt werden muss.
 

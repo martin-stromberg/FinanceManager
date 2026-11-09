@@ -237,4 +237,30 @@ public sealed class PostingsCardViewModelReversalTests
         vm.LastError.Should().Be("Already reversed");
         navigationRaised.Should().BeFalse("navigation must not occur when reversal fails");
     }
+
+    /// <summary>
+    /// The posting card's action register must order its groups per the project grouping convention:
+    /// navigation first, the entity action group ("Reverse") next, and the linked-entities group
+    /// as the last tab across all returned registers.
+    /// </summary>
+    [Fact]
+    public void GetRibbonRegisters_GroupOrder_PlacesLinkedLast()
+    {
+        // Arrange
+        var (vm, _) = CreateVm();
+
+        // Act
+        var registers = vm.GetRibbonRegisters(new DummyLocalizer());
+
+        // Assert
+        registers.Should().NotBeNull();
+        var actionsRegister = registers!.Single(r => r.Kind == UiRibbonRegisterKind.Actions);
+        actionsRegister.Tabs!.Select(t => t.Title).Should().Equal(
+            "Ribbon_Group_Navigation",
+            "Ribbon_Group_Actions",
+            "Ribbon_Group_Linked");
+
+        var allTabs = registers!.SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>()).ToList();
+        allTabs[^1].Title.Should().Be("Ribbon_Group_Linked");
+    }
 }
