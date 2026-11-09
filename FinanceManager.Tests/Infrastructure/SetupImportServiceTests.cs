@@ -175,5 +175,83 @@ namespace FinanceManager.Tests.Infrastructure
             rule.PurposePattern.Should().Be("^Gehalt.*");
             rule.PurposePatternIsRegex.Should().BeTrue();
         }
+
+        /// <summary>
+        /// Verifies that a backup posting whose four target references (<c>AccountId</c>, <c>ContactId</c>,
+        /// <c>SavingsPlanId</c>, <c>SecurityId</c>) cannot be remapped - because the referenced entities are
+        /// not part of the backup - is skipped instead of being imported as an orphaned row: the import
+        /// completes successfully and <c>db.Postings</c> stays empty.
+        /// </summary>
+        [Fact]
+        public async Task ImportAsync_SkipsPosting_WhenAllRemappedReferencesAreNull()
+        {
+            // Arrange
+            var conn = new SqliteConnection("DataSource=:memory:");
+            conn.Open();
+            var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
+            await using var db = new AppDbContext(options);
+            db.Database.EnsureCreated();
+
+            var userId = Guid.NewGuid();
+
+            var data = new
+            {
+                Postings = new[]
+                {
+                    new
+                    {
+                        Id = Guid.NewGuid(),
+                        SourceId = Guid.NewGuid(),
+                        Kind = 0,
+                        AccountId = (Guid?)Guid.NewGuid(),
+                        ContactId = (Guid?)null,
+                        SavingsPlanId = (Guid?)null,
+                        SecurityId = (Guid?)null,
+                        BookingDate = new DateTime(2025, 1, 15),
+                        ValutaDate = new DateTime(2025, 1, 15),
+                        Amount = 100m,
+                        OriginalAmount = (decimal?)null,
+                        Subject = (string?)null,
+                        RecipientName = (string?)null,
+                        Description = (string?)null,
+                        SecuritySubType = (int?)null,
+                        Quantity = (decimal?)null,
+                        GroupId = (Guid?)null,
+                        ParentId = (Guid?)null,
+                        LinkedPostingId = (Guid?)null,
+                        ReversedByPostingId = (Guid?)null,
+                        ReversalForPostingId = (Guid?)null,
+                        ReversedByUserId = (Guid?)null,
+                        ReversedAtUtc = (DateTime?)null,
+                        IsPreliminary = false,
+                        SavingsPlanSubType = (int?)null
+                    }
+                }
+            };
+
+            var dataJson = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var meta = "{\"Type\":\"Backup\",\"Version\":3}";
+            var fullJson = meta + "\n" + dataJson;
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(fullJson));
+
+            var statementDraftMock = new Mock<IStatementDraftService>();
+            var aggregateMock = new Mock<IPostingAggregateService>();
+            aggregateMock
+                .Setup(x => x.RebuildForUserAsync(It.IsAny<Guid>(), It.IsAny<Action<int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var svc = new global::SetupImportService(
+                db,
+                statementDraftMock.Object,
+                aggregateMock.Object,
+                NullLogger<global::SetupImportService>.Instance);
+
+            // Act
+            await svc.ImportAsync(userId, stream, replaceExisting: false, CancellationToken.None);
+
+            // Assert
+            db.Postings.Should().BeEmpty();
+        }
     }
 }

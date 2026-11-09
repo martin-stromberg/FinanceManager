@@ -1099,7 +1099,10 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.HasIndex("SecurityId", "BookingDate");
 
-                    b.ToTable("Postings");
+                    b.ToTable("Postings", t =>
+                        {
+                            t.HasCheckConstraint("CK_Postings_HasReference", "[AccountId] IS NOT NULL OR [ContactId] IS NOT NULL OR [SavingsPlanId] IS NOT NULL OR [SecurityId] IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Postings.PostingAggregate", b =>

@@ -724,6 +724,12 @@ public sealed class SetupImportService : ISetupImportService
                 Guid? contactId = dto.ContactId.HasValue && contactMap.TryGetValue(dto.ContactId.Value, out var c) ? c : null;
                 Guid? savingsPlanId = dto.SavingsPlanId.HasValue && savingsMap.TryGetValue(dto.SavingsPlanId.Value, out var s) ? s : null;
                 Guid? securityId = dto.SecurityId.HasValue && securityMap.TryGetValue(dto.SecurityId.Value, out var sd) ? sd : null;
+                if (accountId is null && contactId is null && savingsPlanId is null && securityId is null)
+                {
+                    _logger.LogWarning("ImportVersion3: Posting skipped - BackupId={BackupId}, no remappable target reference", dto.Id);
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
                 var entity = new FinanceManager.Domain.Postings.Posting(
                     dto.SourceId,
                     dto.Kind,

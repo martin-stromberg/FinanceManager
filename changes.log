@@ -1,3 +1,10 @@
+## 2026-11-09 — Datenbesitz: Posting-Referenzinvariante erzwungen, globale Pools dokumentiert (Issue #497)
+
+- `Posting` erzwingt jetzt die Invariante „mindestens eine Zielreferenz gesetzt": Der Konstruktor wirft eine `ArgumentException`, wenn `AccountId`, `ContactId`, `SavingsPlanId` und `SecurityId` alle `null` sind; zusätzlich lehnt der neue Check-Constraint `CK_Postings_HasReference` entsprechende `INSERT`/`UPDATE`-Statements auf Datenbankebene ab (EF-Migration `AddPostingReferenceCheckConstraint`). Damit können keine verwaisten Buchungen entstehen, die weder im Backup exportiert noch beim Löschen der Benutzerdaten erfasst würden.
+- Der Backup-Import (`SetupImportService`) überspringt Postings, deren remappte Referenzen allesamt `null` sind, und protokolliert den Fall per `LogWarning`, statt einen Waisendatensatz anzulegen.
+- Die bewusst benutzerübergreifenden Entitäten `IpBlock`, `SecurityTxtSettings`, `WellKnownSettings` und `McpSettings` sind jetzt in XML-Dokumentation und `Docs/help/*/datenmodell.md` explizit als globale Datenpools ohne `OwnerUserId` gekennzeichnet.
+- Keine UI- oder Verhaltensänderung für Anwender.
+
 ## 2026-11-08 — Backup/Restore: Vollständige Import- und DTO-Abdeckung (Issue #496)
 
 - Der Restore stellt jetzt auch die Kontoauszugs-Import-Historie (`StatementImports`/`StatementEntries`), `Notifications` und `AccountShares` wieder her — diese Sektionen wurden bisher exportiert und beim destruktiven Restore gelöscht, aber nicht zurückgeschrieben.

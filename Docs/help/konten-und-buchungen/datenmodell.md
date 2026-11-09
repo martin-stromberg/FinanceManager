@@ -41,6 +41,8 @@
 | `Amount` | `decimal` | Betrag |
 | `ReversalForPostingId` | `Guid?` | Referenz auf Original bei Storno |
 
+Invariante: Mindestens eine der vier Zielreferenzen `AccountId`, `ContactId`, `SavingsPlanId` oder `SecurityId` muss gesetzt sein. Der `Posting`-Konstruktor wirft bei vier `null`-Referenzen eine `ArgumentException`, und der Datenbank-Check-Constraint `CK_Postings_HasReference` lehnt `INSERT`/`UPDATE` mit vier `NULL`-Referenzspalten ab. Der Besitzerbezug ergibt sich indirekt über die referenzierten Aggregate (alle mit `OwnerUserId`); ein `Posting` trägt selbst kein `OwnerUserId`.
+
 ## Beziehungen
 
 - Ein `Account` hat viele `Posting`-Einträge.
