@@ -392,6 +392,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     /// every user once the feature is enabled. When the status call failed the feature is
     /// treated as disabled so normal users never see a dead register.
     /// </summary>
+    /// <returns><c>true</c> when the MCP section may be shown; otherwise <c>false</c>.</returns>
     private bool IsMcpSectionVisible()
         => IsCurrentUserAdmin() || _mcpEnabled == true;
 
@@ -455,7 +456,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     }
 
     /// <summary>
-    /// Provides the ribbon register definition for the setup card. Adds an Actions register with the RebuildAggregates action.
+    /// Provides the ribbon register definition for the setup card. Adds a Manage group with the global setup actions.
     /// </summary>
     /// <param name="localizer">Localizer used to obtain localized display text for ribbon items.</param>
     /// <returns>A list of <see cref="UiRibbonRegister"/> instances describing the ribbon layout, or <c>null</c> when no ribbon is needed.</returns>
@@ -519,7 +520,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                         }
                         catch (Exception ex) { _logger?.LogError(ex, "ResetReportCache ribbon action failed"); }
                     }))
-            }, int.MaxValue)
+            })
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

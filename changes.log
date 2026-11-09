@@ -2,7 +2,8 @@
 
 - Auf den Karten-Detailseiten für Sparpläne, Bankkonten und Posten erscheint die Ribbon-Gruppe „Verknüpfte Informationen“ jetzt durchgehend als letzte Gruppe; zuvor stand sie dort vor den Aktions- bzw. Buchungsgruppen.
 - Die sichtbare Gruppenreihenfolge auf Detailseiten folgt damit einheitlich der Projektkonvention: Navigationsgruppe zuerst, dann Entitätsaktionen, dann weiterführende Aktionen, zuletzt verknüpfte Informationen. Die Konvention inklusive der Position der Navigationsgruppe ist in `AGENT.md` festgehalten.
-- Keine neuen Funktionen oder Aktionen — es wurde ausschließlich die Reihenfolge vorhandener Ribbon-Gruppen korrigiert.
+- Zusätzlich steht die Gruppe „Verwalten“ auf der Setup-Seite jetzt als erste Ribbon-Gruppe; die Kontaktübersicht verwendet dieselbe Gruppe und zeigt alle Aktionen als große Buttons.
+- Keine neuen Funktionen oder Aktionen — es wurde ausschließlich die Darstellung und Reihenfolge vorhandener Ribbon-Gruppen korrigiert.
 
 ## 2026-11-09 — Datenbesitz: Posting-Referenzinvariante erzwungen, globale Pools dokumentiert (Issue #497)
 

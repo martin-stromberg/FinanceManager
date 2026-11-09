@@ -93,3 +93,17 @@ Quelle: `Coverage-Daten` (unit-coverage.cobertura.xml)
 Projektweit weisen 427 von 960 instrumentierten Quelldateien 0 % Zeilenabdeckung in der Unit-Suite auf — Verteilung: `FinanceManager.Infrastructure` 227 (darunter sämtliche generierten EF-Migrationen), `FinanceManager.Web` 129 (u. a. `.razor`-Seiten ohne bUnit-Test), `FinanceManager.Shared` 66 (v. a. DTOs), `FinanceManager.Application` 3, `FinanceManager.Domain` 2. Dies ist ein **preexisting, change-unabhängiger** Projektzustand (Baseline `baseline-unit-tests.trx` ohne Befundabweichung); große Teile dieser Dateien werden durch die Integrations- und E2E-Suiten ausgeübt.
 
 - Keine change-bezogene Lücke: Der Change fügt **keine neue Quelldatei** hinzu; alle drei geänderten ViewModel-Dateien haben Coverage (49–63 %) und die geänderten Zeilen sind direkt überdeckt (drei dedizierte Reihenfolge-Unit-Tests + bUnit-Test + drei E2E-Tests).
+
+## Nachbereitung PR-Kommentar 6749030735
+
+Nach dem vollständig grünen Zwischenstand der PR-Checks wurden zwei zusätzliche Ribbon-Korrekturen umgesetzt:
+
+- **Setup-Seite:** Die globale Gruppe `Ribbon_Group_Manage` nutzt keinen End-sortierenden `int.MaxValue`-Wert mehr und steht damit als erste Ribbon-Gruppe vor den einzelnen Settings-Bereichen.
+- **Kontaktübersicht:** Die einzige Ribbon-Gruppe heißt jetzt `Ribbon_Group_Manage` statt `Ribbon_Group_Navigation`; alle vier Aktionen werden als große Buttons gerendert.
+- **AGENT.md:** Die Regel wurde um die Klarstellung ergänzt, dass Seiten ohne Zurück-/Navigationsaktion keine `Navigation`-Gruppe führen und mit der ersten kategorisierten Gruppe beginnen.
+
+Verifikation der Nachbereitung:
+
+- `dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj -- --filter-method "*GetRibbon_UsesManageGroup_WithAllActionsLarge" --filter-method "*GetRibbonRegisters_AfterLoad_PlacesManageGroupFirst"` → **2/2 bestanden**
+- `dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -- --filter-class "*SetupCardViewModelTests" --filter-class "*ContactsViewModelTests"` → **22/22 bestanden**
+- `dotnet format FinanceManager.sln --verify-no-changes --no-restore --severity error` → **sauber, Exit 0**
