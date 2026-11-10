@@ -471,7 +471,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     "Save",
                     localizer["Ribbon_Save"].Value,
                     "<svg><use href='/icons/sprite.svg#save'/></svg>",
-                    UiRibbonItemSize.Small,
+                    UiRibbonItemSize.Large,
                     Saving || !HasPendingChanges,
                     null,
                     new Func<Task>(async ()
@@ -491,7 +491,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,
                     "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
-                    UiRibbonItemSize.Large,
+                    UiRibbonItemSize.Small,
                     false,
                     localizer["Hint_RebuildAggregates"].Value,
                     new Func<Task>(async () =>

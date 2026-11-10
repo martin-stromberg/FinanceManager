@@ -107,3 +107,13 @@ Verifikation der Nachbereitung:
 - `dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj -- --filter-method "*GetRibbon_UsesManageGroup_WithAllActionsLarge" --filter-method "*GetRibbonRegisters_AfterLoad_PlacesManageGroupFirst"` → **2/2 bestanden**
 - `dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -- --filter-class "*SetupCardViewModelTests" --filter-class "*ContactsViewModelTests"` → **22/22 bestanden**
 - `dotnet format FinanceManager.sln --verify-no-changes --no-restore --severity error` → **sauber, Exit 0**
+
+## Nachbereitung PR-Kommentar 6759623660
+
+Zusätzlich wurde die visuelle Gewichtung der Setup-Ribbon-Aktionen angepasst: `Save` wird als primäre Aktion groß dargestellt, `Reset` und `RebuildAggregates` bleiben klein.
+
+Verifikation der zweiten Nachbereitung:
+
+- `dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj -- --filter-method "*GetRibbonRegisters_AfterLoad_UsesExpectedActionSizes"` → **1/1 bestanden**
+- `dotnet test FinanceManager.Tests/FinanceManager.Tests.csproj --no-build -- --filter-class "*SetupCardViewModelTests"` → **18/18 bestanden**
+- `dotnet format FinanceManager.sln --verify-no-changes --no-restore --severity error` → **sauber, Exit 0**
