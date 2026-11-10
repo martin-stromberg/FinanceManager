@@ -151,7 +151,7 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
                 await ReverseAsync();
             })
         });
-        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, linked, actions }) };
+        return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, actions, linked }) };
     }
 
     // Postings do not support symbol assignment via the card UI; provide no-op implementations for abstract hooks

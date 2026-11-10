@@ -322,4 +322,33 @@ public sealed class SavingsPlanCardLinkTests
         apiMock.Verify(a => a.SavingsPlans_ReportActualBalanceAsync(
             It.IsAny<Guid>(), It.IsAny<SavingsPlanActualReportRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    /// <summary>
+    /// The savings plan card's action register must order its groups per the project grouping
+    /// convention: navigation and entity actions first, then the larger record actions
+    /// (analysis, bookings), and the linked-entities group as the last tab across all
+    /// returned registers.
+    /// </summary>
+    [Fact]
+    public async Task GetRibbonRegisters_GroupOrder_PlacesLinkedLast()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        SetupLoad(apiMock, planId, Array.Empty<Guid>(), Array.Empty<AccountDto>());
+        await vm.LoadAsync(planId);
+
+        var registers = vm.GetRibbonRegisters(new DummyLocalizer());
+
+        registers.Should().NotBeNull();
+        var actionsRegister = registers!.Single(r => r.Kind == UiRibbonRegisterKind.Actions);
+        actionsRegister.Tabs!.Select(t => t.Title).Should().Equal(
+            "Ribbon_Group_Navigation",
+            "Ribbon_Group_Manage",
+            "Ribbon_Group_Analysis",
+            "Ribbon_Group_Bookings",
+            "Ribbon_Group_Linked");
+
+        var allTabs = registers!.SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>()).ToList();
+        allTabs[^1].Title.Should().Be("Ribbon_Group_Linked");
+    }
 }

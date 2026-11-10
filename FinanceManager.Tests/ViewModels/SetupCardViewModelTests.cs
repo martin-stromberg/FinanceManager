@@ -219,6 +219,58 @@ namespace FinanceManager.Tests.ViewModels
         }
 
         /// <summary>
+        /// Verifies that the setup-wide "Manage" group renders before the per-section groups. The
+        /// ribbon sorts groups by <see cref="UiRibbonTab.Sort" /> with a stable first-seen order, so the
+        /// global actions must share the default sort value instead of being pushed to the end.
+        /// </summary>
+        [Fact]
+        public async Task GetRibbonRegisters_AfterLoad_PlacesManageGroupFirst()
+        {
+            var sp = BuildServices();
+            var vm = new SetupCardViewModel(sp);
+            await vm.LoadAsync(Guid.Empty);
+
+            var localizerMock = new Mock<IStringLocalizer>();
+            localizerMock.Setup(l => l[It.IsAny<string>()])
+                .Returns((string key) => new LocalizedString(key, key));
+
+            var orderedTabs = vm.GetRibbonRegisters(localizerMock.Object)!
+                .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+                .OrderBy(t => t.Sort)
+                .ToList();
+
+            orderedTabs.Should().NotBeEmpty();
+            orderedTabs[0].Title.Should().Be("Ribbon_Group_Manage");
+            orderedTabs[0].Sort.Should().Be(0);
+        }
+
+        /// <summary>
+        /// Verifies the intended visual emphasis of the setup-wide actions: Save is the primary
+        /// large action, while Reset and the maintenance action RebuildAggregates stay compact.
+        /// </summary>
+        [Fact]
+        public async Task GetRibbonRegisters_AfterLoad_UsesExpectedActionSizes()
+        {
+            var sp = BuildServices();
+            var vm = new SetupCardViewModel(sp);
+            await vm.LoadAsync(Guid.Empty);
+
+            var localizerMock = new Mock<IStringLocalizer>();
+            localizerMock.Setup(l => l[It.IsAny<string>()])
+                .Returns((string key) => new LocalizedString(key, key));
+
+            var actions = vm.GetRibbonRegisters(localizerMock.Object)!
+                .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+                .Where(t => t.Title == "Ribbon_Group_Manage")
+                .SelectMany(t => t.Items)
+                .ToDictionary(a => a.Id, a => a.Size);
+
+            actions["Save"].Should().Be(UiRibbonItemSize.Large);
+            actions["Reset"].Should().Be(UiRibbonItemSize.Small);
+            actions["RebuildAggregates"].Should().Be(UiRibbonItemSize.Small);
+        }
+
+        /// <summary>
         /// Verifies that a non-admin user does not see the "mcp" register while the feature is
         /// disabled: it is absent from <c>SettingSections</c>, its component type cannot be
         /// resolved, and its view model cannot be created - matching the requirement that the

@@ -892,7 +892,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             )
         });
 
-        var tabs = new List<UiRibbonTab> { nav, manage, linked, analysis, bookings };
+        var tabs = new List<UiRibbonTab> { nav, manage, analysis, bookings, linked };
         var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
         var baseRegs = base.GetRibbonRegisterDefinition(localizer);
         if (baseRegs != null) registers.AddRange(baseRegs);

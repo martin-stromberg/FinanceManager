@@ -18,7 +18,7 @@ Jedes neue persistierte Feld muss im Benutzer-Backup enthalten sein, und alte Ba
 
 ## Gruppierung des Ribbon-Menüs
 
-Ribbon-Inhalte liefert `IRibbonProvider.GetRibbonRegisters(...)`; jeder `UiRibbonTab` wird zu einer Gruppe, deren Reihenfolge über die Tab-Liste bzw. `Sort` gesteuert wird. Die Gruppen sind stets in dieser Reihenfolge zu platzieren:
+Ribbon-Inhalte liefert `IRibbonProvider.GetRibbonRegisters(...)`; jeder `UiRibbonTab` wird zu einer Gruppe, deren Reihenfolge über die Tab-Liste bzw. `Sort` gesteuert wird. Eine vorhandene `Navigation`-Gruppe (Zurück-Aktion, `Ribbon_Group_Navigation`) steht stets an Position 0 — vor den drei kategorisierten Gruppen. Seiten ohne Zurück-/Navigationsaktion lassen diese Gruppe entfallen und beginnen mit der ersten kategorisierten Gruppe. Die übrigen Gruppen sind stets in dieser Reihenfolge zu platzieren:
 
 1. **Aktionen, die die aktuelle Entität direkt betreffen** — Neu, Speichern, Löschen, Archivieren (Gruppe `Ribbon_Group_Manage`).
 2. **Größere Aktionen mit dem Datensatz** — z. B. Buchungen vorbereiten, Kurse aktualisieren (Gruppen wie `Ribbon_Group_Actions` / `Ribbon_Group_Bookings`).
