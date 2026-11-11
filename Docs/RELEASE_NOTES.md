@@ -12,6 +12,7 @@
 
 ## What's New
 
+- Bugfix: on the posting detail card the five "Linked Information" ribbon actions now work — Open Account/Contact/Savings Plan/Security navigate to the linked record's card (with return navigation to the posting), and Attachments opens the posting's attachments overlay; the actions stay disabled when the respective link is missing or no posting is loaded (issue #502).
 - Ribbon: the "Linked Information" group is now the last group on the savings-plan, bank-account and posting detail cards; the settings page leads with "Manage" and shows Save as the large primary action, and the contacts overview uses the "Manage" group with large actions (issue #498).
 - Data-integrity hardening: a posting must now reference at least one target (account, contact, savings plan or security) — enforced by a domain guard and the database check constraint `CK_Postings_HasReference`; backup imports skip postings whose references cannot be remapped, and the intentionally user-independent data pools (`IpBlock`, `SecurityTxtSettings`, `WellKnownSettings`, `McpSettings`) are now documented explicitly as global (issue #497).
 - Savings plans: removing an account link now asks for confirmation first. MCP: `fm_savings_plan_analysis` reports each plan's `linkedAccountIds`, and `fm_savings_plans_manage` link operations return the current `linkedAccountIds` — linked plans keep reporting the account-balance-based `accumulatedAmount`.
@@ -67,6 +68,7 @@
 
 ## Neuerungen
 
+- Bugfix: Auf der Posten-Detailkarte funktionieren die fünf Ribbon-Aktionen der Gruppe „Verknüpfte Informationen“ jetzt — „Konto/Kontakt/Sparplan/Wertpapier öffnen“ navigieren zur Karte des verknüpften Datensatzes (mit Rücksprung zur Posten-Karte) und „Anhänge“ öffnet das Anhangs-Overlay des Postens; die Aktionen bleiben deaktiviert, wenn die jeweilige Verknüpfung fehlt oder kein Posten geladen ist (Issue #502).
 - Ribbon: Die Gruppe „Verknüpfte Informationen“ steht jetzt an letzter Stelle auf der Sparplan-, Bankkonto- und Posten-Karte; die Einstellungen beginnen mit „Verwalten“ und zeigen „Speichern“ als große Primäraktion, und die Kontaktübersicht nutzt die Gruppe „Verwalten“ mit großen Aktionen (Issue #498).
 - Datenintegritäts-Härtung: Eine Buchung muss nun mindestens ein Ziel referenzieren (Konto, Kontakt, Sparplan oder Wertpapier) — erzwungen über einen Domain-Guard und den Datenbank-Check-Constraint `CK_Postings_HasReference`; der Backup-Import überspringt Buchungen, deren Referenzen nicht zugeordnet werden können, und die bewusst benutzerübergreifenden Datenpools (`IpBlock`, `SecurityTxtSettings`, `WellKnownSettings`, `McpSettings`) sind jetzt ausdrücklich als global dokumentiert (Issue #497).
 - Sparpläne: Das Entfernen einer Kontoverknüpfung erfordert jetzt eine Sicherheitsabfrage. MCP: `fm_savings_plan_analysis` gibt je Plan die `linkedAccountIds` aus, und `fm_savings_plans_manage`-Linkoperationen liefern die aktuellen `linkedAccountIds` — verknüpfte Pläne melden weiterhin den kontenbasierten `accumulatedAmount`.

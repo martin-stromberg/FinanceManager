@@ -1,3 +1,11 @@
+## 2026-11-11 — Posten-Karte: Aktionen der Gruppe „Verknüpfte Informationen“ funktionsfähig verdrahtet (Issue #502)
+
+- Die fünf Ribbon-Aktionen der Gruppe „Verknüpfte Informationen“ auf der Posten-Detailkarte waren bisher wirkungslos (kein Handler). „Konto öffnen“, „Kontakt öffnen“, „Sparplan öffnen“ und „Wertpapier öffnen“ navigieren jetzt zur Karte des jeweils verknüpften Datensatzes und übergeben die Posten-Karte als Rücksprungziel; „Anhänge“ öffnet das Anhangs-Overlay für den Posten.
+- Die Aktionen bleiben deaktiviert, wenn die jeweilige Verknüpfung am Posten nicht gesetzt ist; „Anhänge“ ist neu zusätzlich deaktiviert, solange kein Posten geladen ist (z. B. bei Ladefehler).
+- Die URL-Navigation läuft über die neue gemeinsame Basismethode `RequestOpenLinkedCard` in `BaseViewModel` und den bereits vorhandenen generischen `OpenPostings`-Handler der Karten-Hostseite; `CardPage.razor`, `OverlayHost` und die Ribbon-Infrastruktur blieben unverändert.
+- `StatementDraftEntryCardViewModel` nutzt dieselbe Basismethode statt dreifach dupliziertem URL-Aufbau — reine Konsolidierung ohne Verhaltensänderung.
+- Abgesichert durch neue ViewModel-Tests (`PostingsCardViewModelLinkedTests`) und Playwright-Tests (`PostingsCardLinkedActionsPlaywrightTests`); der E2E-Seed-Helfer `AccountsApiSeedHelper` kann Posten nun mit Verknüpfungs-Ids anlegen.
+
 ## 2026-11-09 — Ribbon-Gruppierung: „Verknüpfte Informationen“ einheitlich an letzter Position (Issue #498)
 
 - Auf den Karten-Detailseiten für Sparpläne, Bankkonten und Posten erscheint die Ribbon-Gruppe „Verknüpfte Informationen“ jetzt durchgehend als letzte Gruppe; zuvor stand sie dort vor den Aktions- bzw. Buchungsgruppen.

@@ -995,60 +995,15 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         var linkedActions = new List<UiRibbonAction>
         {
             new UiRibbonAction("OpenContact", localizer["Ribbon_OpenContact"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.ContactId == null, null, new Func<Task>(() => {
-                if (Entry?.ContactId != null)
-                {
-                    try
-                    {
-                        var nav = ServiceProvider.GetService<NavigationManager>();
-                        var back = nav?.Uri ?? string.Empty;
-                        var url = $"/card/contacts/{Entry.ContactId}";
-                        if (!string.IsNullOrEmpty(back)) url += "?back=" + System.Uri.EscapeDataString(back);
-                        RaiseUiActionRequested("OpenPostings", url);
-                    }
-                    catch
-                    {
-                        var url = $"/card/contacts/{Entry.ContactId}";
-                        RaiseUiActionRequested("OpenPostings", url);
-                    }
-                }
+                RequestOpenLinkedCard("contacts", Entry?.ContactId);
                 return Task.CompletedTask;
             })) { MobileShortcut = true },
             new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SavingsPlanId == null, null, new Func<Task>(() => {
-                if (Entry?.SavingsPlanId != null)
-                {
-                    try
-                    {
-                        var nav = ServiceProvider.GetService<NavigationManager>();
-                        var back = nav?.Uri ?? string.Empty;
-                        var url = $"/card/savings-plans/{Entry.SavingsPlanId}";
-                        if (!string.IsNullOrEmpty(back)) url += "?back=" + System.Uri.EscapeDataString(back);
-                        RaiseUiActionRequested("OpenPostings", url);
-                    }
-                    catch
-                    {
-                        var url = $"/card/savings-plans/{Entry.SavingsPlanId}";
-                        RaiseUiActionRequested("OpenPostings", url);
-                    }
-                }
+                RequestOpenLinkedCard("savings-plans", Entry?.SavingsPlanId);
                 return Task.CompletedTask;
             })) { MobileShortcut = true },
             new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Entry == null || Entry.SecurityId == null, null, new Func<Task>(() => {
-                 if (Entry?.SecurityId != null)
-                 {
-                     try
-                     {
-                         var nav = ServiceProvider.GetService<NavigationManager>();
-                         var back = nav?.Uri ?? string.Empty;
-                         var url = $"/card/securities/{Entry.SecurityId}";
-                         if (!string.IsNullOrEmpty(back)) url += "?back=" + System.Uri.EscapeDataString(back);
-                         RaiseUiActionRequested("OpenPostings", url);
-                     }
-                     catch
-                     {
-                         var url = $"/card/securities/{Entry.SecurityId}";
-                         RaiseUiActionRequested("OpenPostings", url);
-                     }
-                 }
+                 RequestOpenLinkedCard("securities", Entry?.SecurityId);
                  return Task.CompletedTask;
              })) { MobileShortcut = true }
         };

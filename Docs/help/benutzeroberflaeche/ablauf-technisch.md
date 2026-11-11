@@ -51,7 +51,24 @@ Beteiligte Komponenten:
 - `FinanceManager.Web/Components/Shared/Ribbon.razor` — `BuildTabsToRender()` merged Gruppen nach Titel und rendert sie in stabiler First-Seen-/Sort-Reihenfolge.
 - `AGENT.md` — dokumentiert die verbindliche Gruppenreihenfolge inklusive der `Navigation`-Position-0-Regel.
 
-### 5. Seitenbezogene Mobile-Regeln
+### 5. Aktionsverdrahtung der Gruppe `Ribbon_Group_Linked`
+
+Die Aktionen der `Linked`-Gruppe folgen zwei festen Verdrahtungsmustern, die mit Issue #502 zentral in `BaseViewModel` verankert wurden:
+
+- **Navigation zur Karte eines verknüpften Datensatzes:** `BaseViewModel.RequestOpenLinkedCard(string route, Guid? linkedId)` baut die Ziel-URL `/card/{route}/{linkedId}` und hängt — sofern ein `NavigationManager` über `ServiceProvider` auflösbar ist — die aktuelle URI URL-kodiert als `?back=`-Rücksprungziel an. Anschließend feuert die Methode `RaiseUiActionRequested("OpenPostings", url)`; der generische `case "OpenPostings"` in `CardPage.razor` navigiert per `NavigationManager.NavigateTo(payload)` zur Zielkarte, deren `Back`-Aktion über den `back`-Parameter zur Ausgangskarte zurückführt. Ist `linkedId` `null` (Guard), wird keine Aktion ausgelöst; die zugehörige `UiRibbonAction` ist in diesem Fall ohnehin deaktiviert (`Disabled`-Flag auf die jeweilige Verknüpfungs-Id). Kann kein `NavigationManager` aufgelöst werden (z. B. Unit-Tests), wird die URL ohne `?back=` gefeuert.
+- **Anhangs-Overlay:** `BaseViewModel.RequestOpenAttachments(AttachmentEntityKind parentKind, Guid parentId)` erzeugt ein `UiOverlaySpec` für `AttachmentsPanel` mit den Parametern `ParentKind`/`ParentId` und feuert `RaiseUiActionRequested("OpenAttachments", spec)`. `OverlayHost` rendert die Spec als Overlay; `case "OpenAttachments"` in `CardPage.razor` ist bewusst eine No-Op.
+
+Mit Issue #502 nutzt `PostingsCardViewModel` diese Basismethoden für alle fünf `Linked`-Aktionen (`OpenAccount` → `accounts`, `OpenContact` → `contacts`, `OpenSavingsPlan` → `savings-plans`, `OpenSecurity` → `securities`, `OpenAttachments` → `AttachmentEntityKind.Posting`); zuvor feuerten die Callbacks nutzlose Action-Ids ohne Handler. `StatementDraftEntryCardViewModel` wurde auf `RequestOpenLinkedCard` umgestellt und ersetzt damit dreifach duplizierten URL-Aufbau. Das `Disabled`-Flag von `OpenAttachments` folgt dem Geschwistermuster „Entität nicht geladen → deaktiviert" (`Posting == null`), damit kein Overlay mit leerer `ParentId` geöffnet wird.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/ViewModels/Common/BaseViewModel.cs` — `RequestOpenLinkedCard` (URL-Payload inkl. `?back=`) und `RequestOpenAttachments` (`UiOverlaySpec`).
+- `FinanceManager.Web/ViewModels/Postings/Common/PostingsCardViewModel.cs` — `Linked`-Tab in `GetRibbonRegisterDefinition` mit den fünf verdrahteten Aktionen.
+- `FinanceManager.Web/ViewModels/StatementDrafts/StatementDraftEntryCardViewModel.cs` — `Linked`-Aktionen über dieselbe Basismethode.
+- `FinanceManager.Web/Components/Pages/CardPage.razor` — generischer `case "OpenPostings"` (URL-Navigation) und bewusster No-Op-`case "OpenAttachments"`.
+- `FinanceManager.Web/Components/Shared/OverlayHost.razor` — rendert `UiOverlaySpec`-Payloads (`AttachmentsPanel`).
+- Tests: `PostingsCardViewModelLinkedTests` (Action-Ids, Payloads, `Disabled`-Konstellationen), `PostingsCardLinkedActionsPlaywrightTests` (Klick-Navigation inkl. `?back=`-Rückweg, Overlay, deaktivierte Buttons).
+
+### 6. Seitenbezogene Mobile-Regeln
 
 Seiten mit komplexen Inhalten erhalten ergänzende Styles für Mobile-Breakpoints.
 
@@ -60,7 +77,7 @@ Beteiligte Komponenten:
 - CSS-Dateien wie `app.Home.css`, `app.ReportDashboard.css`, `app.ReportsHome.css`, `app.BudgetReport.css`, `app.Setup.css`, `app.ReturnAnalysis.css`.
 - Dark-Theme-Pendants: `theme.Dark.*.css`.
 
-### 6. Mobile E2E-Ausführung
+### 7. Mobile E2E-Ausführung
 
 Tests erzeugen mobile Browserkontexte und führen bestehende End-to-End-Flows unter Mobile-Bedingungen aus.
 
@@ -69,7 +86,7 @@ Beteiligte Komponenten:
 - `PlaywrightWebAppFixture.CreateMobileSessionAsync()` — startet Sessions mit `390x844`, Touch und Mobile-Flag.
 - Testmethoden mit Suffix `_OnMobileViewport` in `AuthenticationFlowPlaywrightTests`, `ListNavigationPlaywrightTests`, `ReportingFlowPlaywrightTests`, `HomeMassImportPlaywrightTests`.
 
-### 7. Globale Ladeleiste
+### 8. Globale Ladeleiste
 
 Die globale Ladeleiste wird als wiederverwendbare Blazor-Komponente aus `msTools.Web.Blazor` im Dokumentrahmen gerendert. FinanceManager konfiguriert Farben, Höhe, Z-Index und mobile Positionierung hostseitig über `AddLoadingBar(...)`. Native Klick- und Submit-Listener in `financeManager.js` erkennen relevante interne Navigationen und Formularvorgänge frühzeitig; die JavaScript-Schicht liest die Farbpalette aus der gerenderten Komponente und definiert keine projektspezifischen Farben mehr. `MainLayout` startet die Leiste zusätzlich über `RegisterLocationChangingHandler` und beendet sie über `LocationChanged`; Validierungs- und Abschlussfälle stoppen sie ebenfalls über die JavaScript-Schnittstelle. Länger laufende Blazor-Aktionen werden über `LoadingBarService.RunAsync(...)` zentral umschlossen, damit auch komponenteninterne Ladevorgänge wie der Budgetbericht dieselbe globale Anzeige nutzen.
 
@@ -83,7 +100,7 @@ Beteiligte Komponenten:
 - `FinanceManager.Web/ProgramExtensions.cs` — registriert `AddLoadingBar(...)` mit der FinanceManager-Farbpalette.
 - `FinanceManager.Web/wwwroot/js/financeManager.js` — stellt `financeManager.loadingBar.start`, `restart` und `stop` bereit, erkennt globale Browserereignisse und verhindert doppelte Listener.
 
-### 8. Bestätigungsdialog oberhalb von Overlays
+### 9. Bestätigungsdialog oberhalb von Overlays
 
 Overlay-Container (z. B. `OverlayHost`, das Listen-Overlay in `ListPage`, die `.modal-overlay`-/`.modal-backdrop`-Dialoge) und der Bestätigungsdialog teilen die Grundklasse `.split-center` mit `z-index: 1000`. Damit die Bestätigung unabhängig von der DOM-Reihenfolge der Hosts immer im Vordergrund liegt, trägt der äußere Container von `ConfirmDialog` zusätzlich die Klasse `confirm-dialog-layer` mit `z-index: 1100`. Die Schichtung gilt seitenübergreifend (`CardPage`, `ListPage`, `Home`, `ReportDashboard`), ohne dass die Host-Reihenfolge pro Seite gepflegt werden muss.
 
