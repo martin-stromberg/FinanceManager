@@ -17,7 +17,7 @@ public sealed class FmReportingAggregateDescriptor : McpToolDescriptorBase
     /// <summary>Tool name.</summary>
     public const string ToolName = "fm_reporting_aggregate";
 
-    private const string JsonSchema = "{\"type\":\"object\",\"properties\":{\"favoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Execute a stored report favorite instead of an inline query.\"},\"postingKind\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"],\"description\":\"Required for inline queries.\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Month\",\"Quarter\",\"HalfYear\",\"Year\",\"Ytd\",\"AllHistory\"],\"description\":\"Period granularity. 'Ytd' compares year-to-date slices across ALL years (one bucket per calendar year) — it is NOT limited to the current year; filter points by periodStart or pass 'year'. 'Year' returns one bucket per calendar year, 'AllHistory' a single total.\"},\"year\":{\"type\":\"integer\",\"minimum\":1900,\"maximum\":9999,\"description\":\"Optional calendar-year filter applied to the returned points' periodStart (e.g. 2026). Without it the result may span many years — the 'coverage' field states the span.\"},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":200,\"description\":\"Max periods/groups (clamped to 200).\"},\"includeCategory\":{\"type\":\"boolean\"},\"comparePrevious\":{\"type\":\"boolean\"},\"compareYear\":{\"type\":\"boolean\"},\"compareProjection\":{\"type\":\"boolean\"},\"useValutaDate\":{\"type\":\"boolean\"},\"accountIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securitySubTypes\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"},\"description\":\"Restrict security postings to these sub type codes (0=Buy,1=Sell,2=Dividend,3=Fee,4=Tax). Security detail points are always split per sub type — see 'postingType' on each returned point.\"}},\"additionalProperties\":false}";
+    private const string JsonSchema = "{\"type\":\"object\",\"properties\":{\"favoriteId\":{\"type\":\"string\",\"format\":\"uuid\",\"description\":\"Execute a stored report favorite instead of an inline query.\"},\"postingKind\":{\"type\":\"string\",\"enum\":[\"Bank\",\"Contact\",\"SavingsPlan\",\"Security\"],\"description\":\"Required for inline queries.\"},\"interval\":{\"type\":\"string\",\"enum\":[\"Month\",\"Quarter\",\"HalfYear\",\"Year\",\"Ytd\",\"AllHistory\"],\"description\":\"Period granularity. 'Ytd' compares year-to-date slices across ALL years (one bucket per calendar year) — it is NOT limited to the current year; filter points by periodStart or pass 'year'. 'Year' returns one bucket per calendar year, 'AllHistory' a single total.\"},\"year\":{\"type\":\"integer\",\"minimum\":1900,\"maximum\":9999,\"description\":\"Optional calendar-year filter applied to the returned points' periodStart (e.g. 2026). Without it the result may span many years — the 'coverage' field states the span.\"},\"take\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":200,\"description\":\"Max periods/groups (clamped to 200).\"},\"includeCategory\":{\"type\":\"boolean\"},\"comparePrevious\":{\"type\":\"boolean\"},\"compareYear\":{\"type\":\"boolean\"},\"compareProjection\":{\"type\":\"boolean\"},\"useValutaDate\":{\"type\":\"boolean\"},\"accountIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"contactCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"savingsPlanCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securityCategoryIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"uuid\"}},\"securitySubTypes\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"},\"description\":\"Restrict security postings to these sub type codes (0=Buy,1=Sell,2=Dividend,3=Fee,4=Tax). Security detail points are always split per sub type — see 'postingType' on each returned point.\"},\"bankTextFilters\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"maxLength\":500},\"description\":\"Free text filters for bank postings (OR linked; matches subject/description, case-insensitive substring).\"},\"contactTextFilters\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"maxLength\":500},\"description\":\"Free text filters for contact postings (OR linked; matches subject/description, case-insensitive substring).\"},\"savingsPlanTextFilters\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"maxLength\":500},\"description\":\"Free text filters for savings plan postings (OR linked; matches subject/description, case-insensitive substring).\"},\"securityTextFilters\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"maxLength\":500},\"description\":\"Free text filters for security postings (OR linked; matches subject/description, case-insensitive substring).\"}},\"additionalProperties\":false}";
 
     /// <summary>Creates the descriptor.</summary>
     public FmReportingAggregateDescriptor()
@@ -104,9 +104,19 @@ public sealed class FmReportingAggregateHandler : IMcpToolHandler
                 AnalysisDate: null,
                 favorite.UseValutaDate,
                 f is null ? null : new ReportAggregationFilters(
-                    f.AccountIds, f.ContactIds, f.SavingsPlanIds, f.SecurityIds,
-                    f.ContactCategoryIds, f.SavingsPlanCategoryIds, f.SecurityCategoryIds,
-                    f.SecuritySubTypes, f.IncludeDividendRelated),
+                    AccountIds: f.AccountIds,
+                    ContactIds: f.ContactIds,
+                    SavingsPlanIds: f.SavingsPlanIds,
+                    SecurityIds: f.SecurityIds,
+                    ContactCategoryIds: f.ContactCategoryIds,
+                    SavingsPlanCategoryIds: f.SavingsPlanCategoryIds,
+                    SecurityCategoryIds: f.SecurityCategoryIds,
+                    SecuritySubTypes: f.SecuritySubTypes,
+                    IncludeDividendRelated: f.IncludeDividendRelated,
+                    BankTextFilters: f.BankTextFilters,
+                    ContactTextFilters: f.ContactTextFilters,
+                    SavingsPlanTextFilters: f.SavingsPlanTextFilters,
+                    SecurityTextFilters: f.SecurityTextFilters),
                 favorite.SavingsPlanPostingSource);
         }
         else
@@ -124,15 +134,19 @@ public sealed class FmReportingAggregateHandler : IMcpToolHandler
             var savingsPlanSource = McpToolArguments.OptionalEnum<SavingsPlanPostingSource>(arguments, "savingsPlanPostingSource") ?? SavingsPlanPostingSource.PlanPostings;
 
             var filters = new ReportAggregationFilters(
-                McpToolArguments.OptionalGuidList(arguments, "accountIds"),
-                McpToolArguments.OptionalGuidList(arguments, "contactIds"),
-                McpToolArguments.OptionalGuidList(arguments, "savingsPlanIds"),
-                McpToolArguments.OptionalGuidList(arguments, "securityIds"),
-                McpToolArguments.OptionalGuidList(arguments, "contactCategoryIds"),
-                McpToolArguments.OptionalGuidList(arguments, "savingsPlanCategoryIds"),
-                McpToolArguments.OptionalGuidList(arguments, "securityCategoryIds"),
-                McpToolArguments.OptionalIntList(arguments, "securitySubTypes"),
-                null);
+                AccountIds: McpToolArguments.OptionalGuidList(arguments, "accountIds"),
+                ContactIds: McpToolArguments.OptionalGuidList(arguments, "contactIds"),
+                SavingsPlanIds: McpToolArguments.OptionalGuidList(arguments, "savingsPlanIds"),
+                SecurityIds: McpToolArguments.OptionalGuidList(arguments, "securityIds"),
+                ContactCategoryIds: McpToolArguments.OptionalGuidList(arguments, "contactCategoryIds"),
+                SavingsPlanCategoryIds: McpToolArguments.OptionalGuidList(arguments, "savingsPlanCategoryIds"),
+                SecurityCategoryIds: McpToolArguments.OptionalGuidList(arguments, "securityCategoryIds"),
+                SecuritySubTypes: McpToolArguments.OptionalIntList(arguments, "securitySubTypes"),
+                IncludeDividendRelated: null,
+                BankTextFilters: McpToolArguments.OptionalStringList(arguments, "bankTextFilters"),
+                ContactTextFilters: McpToolArguments.OptionalStringList(arguments, "contactTextFilters"),
+                SavingsPlanTextFilters: McpToolArguments.OptionalStringList(arguments, "savingsPlanTextFilters"),
+                SecurityTextFilters: McpToolArguments.OptionalStringList(arguments, "securityTextFilters"));
 
             query = new ReportAggregationQuery(
                 owner, postingKind, interval, take, includeCategory,

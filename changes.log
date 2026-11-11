@@ -1,3 +1,11 @@
+## 2026-11-11 — Berichtswesen: Textfilter je Buchungsart in Berichten und KPI-Kacheln (Issue #506)
+
+- Im Filterdialog des Berichts-Dashboards lassen sich je aktiver Buchungsart (Bank, Kontakt, Sparplan, Wertpapier) beliebig viele freie Textfilter pflegen. Die Einträge sind ODER-verknüpft und matchen als Substring (Groß-/Kleinschreibung egal) auf Verwendungszweck und Buchungsbeschreibung der Buchungen; jeder Eintrag ist auf 500 Zeichen begrenzt.
+- Buchungsarten mit gesetzten Textfiltern werden bei der Aggregation aus den Rohbuchungen verdichtet (`ReportAggregationService.LoadTextFilteredRowsAsync`), da die vorberechneten `PostingAggregates` keine Textfelder enthalten; ungefilterte Buchungsarten bleiben auf dem Aggregatpfad. Bei verknüpften Sparplan-Konten wirkt der Sparplan-Textfilter auf die Quell-Bankbuchungen, im Netto-Dividendenpfad selektieren Wertpapier-Textfilter ganze Dividendengruppen über die Anker-Buchung.
+- Die Textfilter werden am `ReportFavorite` in vier neuen JSON-Spalten (`*TextFiltersJson`, Migration `AddReportFavoriteTextFilters`) persistiert und sind über `ReportFavoriteBackupDto` im Benutzer-Backup enthalten; alte Backups bleiben ladbar.
+- KPI-Kacheln der Startseite, die auf einem Berichts-Favoriten beruhen, wenden gespeicherte Textfilter automatisch an. Der LocalStorage-KPI-Cache wird über `FavKpiData.FavoriteModifiedUtc` versioniert und nach jeder Favoriten-Änderung verworfen.
+- Die Filterlisten werden in `ReportAggregatesFiltersRequest`, `ReportAggregationFilters` und `ReportFavoriteFiltersDto` transportiert; die MCP-Tools `fm_reporting_aggregate` und `fm_reports_configuration_manage` unterstützen sie ebenfalls (`bankTextFilters` u. a.).
+
 ## 2026-11-11 — Posten-Karte: Aktionen der Gruppe „Verknüpfte Informationen“ funktionsfähig verdrahtet (Issue #502)
 
 - Die fünf Ribbon-Aktionen der Gruppe „Verknüpfte Informationen“ auf der Posten-Detailkarte waren bisher wirkungslos (kein Handler). „Konto öffnen“, „Kontakt öffnen“, „Sparplan öffnen“ und „Wertpapier öffnen“ navigieren jetzt zur Karte des jeweils verknüpften Datensatzes und übergeben die Posten-Karte als Rücksprungziel; „Anhänge“ öffnet das Anhangs-Overlay für den Posten.

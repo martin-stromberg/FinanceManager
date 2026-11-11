@@ -59,3 +59,59 @@
 - Wechselt die Auswahl im Dashboard auf eine nicht gültige Buchungsartenauswahl, wird die Option deaktiviert und nicht an die Aggregation übergeben.
 
 **Umsetzung:** `ReportFavorite.CompareProjection` und die Favoriten-DTOs.
+
+## Textfilter matchen Verwendungszweck und Buchungsbeschreibung
+
+**Beschreibung:** Pro Buchungsart können beliebig viele freie Textfilter gesetzt werden, die Buchungen anhand ihres Textes auswählen.
+
+**Bedingungen:**
+- Ein Eintrag ist getrimmt nicht leer und maximal `TextFilterList.MaxEntryLength` = 500 Zeichen lang.
+- Leere Einträge werden verworfen; Duplikate werden `OrdinalIgnoreCase` dedupliziert.
+
+**Verhalten:**
+- Ein Eintrag matcht, wenn er als Substring (`OrdinalIgnoreCase`) im kombinierten Text aus `Subject` (Verwendungszweck) und `Description` (Buchungsbeschreibung) vorkommt; `RecipientName` wird nicht durchsucht.
+- Mehrere Einträge einer Buchungsart sind ODER-verknüpft — ein Treffer genügt.
+- Textfilter gelten kumulativ zu den übrigen Filtern (Entitäten, Kategorien, `SecuritySubTypes`), auch im `IncludeCategory`-Modus.
+- `null` oder eine leere Liste bedeutet „keine Filterung" für diese Buchungsart.
+- Kein Regex-Modus — die Einträge sind reine Suchbegriffe.
+
+**Umsetzung:** `BudgetRulePatternMatcher.MatchesPosting(subject, description, pattern, useRegex: false)`; Normalisierung/Validierung in `TextFilterList` (`Normalize`, `ToJson` wirft `ArgumentException` bei >500 Zeichen).
+
+## Textgefilterte Buchungsarten werden aus Rohbuchungen verdichtet
+
+**Beschreibung:** Da `PostingAggregates` keine Textfelder enthalten, werden Buchungsarten mit gesetztem Textfilter aus den Rohpostings aggregiert — ungefilterte Arten bleiben auf dem schnellen Aggregatpfad.
+
+**Bedingungen:**
+- `textFiltersByKind` enthält nur Kinds aus der aktuellen Buchungsartenauswahl mit nicht-leeren Filterlisten.
+
+**Verhalten:**
+- Buchungsarten mit Textfilter: `_db.Postings` wird auf die kind-eigene Fremdschlüssel-Ids der Eigentümer-Entitäten eingeschränkt (Server-seitige Besitzerfilterung, da `Posting` kein `OwnerUserId` trägt), auf das Effektivdatum-Fenster begrenzt (nur Obergrenze `postingWindowEnd`) und im Speicher gematcht.
+- Die Verdichtung folgt denselben Regeln wie `PostingAggregateService`: `Amount == 0` wird übersprungen, Effektivdatum `BookingDate` bzw. `ValutaDate` mit `MinValue`-Fallback bei `UseValutaDate`, `PeriodStart` über `PostingAggregateService.GetPeriodStart`, keine Sonderbehandlung von Stornos oder vorläufigen Buchungen — ein „Alles-matcht"-Filter liefert daher exakt die Aggregat-Summen.
+- Es existiert keine Untergrenze des Lade-Fensters: `Take` begrenzt die letzten N Perioden *mit Daten*, was aus einem Kalenderfenster nicht ableitbar ist.
+
+**Umsetzung:** `ReportAggregationService.LoadTextFilteredRowsAsync`, `ReportAggregationService.ApplyDateWindow`.
+
+## Sonderfälle der Textfilter-Aggregation
+
+**Beschreibung:** Zwei Sonderpfade wenden Textfilter abweichend vom Standard an.
+
+**Bedingungen und Verhalten:**
+- **`SavingsPlanPostingSource.LinkedAccountPostings`:** Werden Sparplan-Reihen aus den Bank-Buchungen verknüpfter Konten abgeleitet, matcht `SavingsPlanTextFilters` gegen diese Quell-Bankbuchungen (die emittierten Zeilen tragen `Kind = SavingsPlan`); `BankTextFilters` greifen auf diesem Pfad nicht.
+- **Netto-Dividendenpfad (`QuerySecurityDividendsNetAsync`):** `SecurityTextFilters` werden auf die Anker-Buchung (`SecuritySubType == Dividend`) je `GroupId` angewendet. Matcht die Anker-Buchung, bleibt die gesamte Dividendengruppe inklusive Fee-/Tax-Netting erhalten; sonst entfällt die Gruppe komplett.
+
+**Umsetzung:** `ReportAggregationService.QueryAsync` (Linked-Account-Block), `ReportAggregationService.QuerySecurityDividendsNetAsync` (`dividendGroupIds`).
+
+## KPI-Cache ist über die Favoriten-Version abgesichert
+
+**Beschreibung:** KPI-Kacheln der Startseite cachen Favoriten-Auswertungen im LocalStorage; ohne Versionsprüfung würden sie nach einer Filteränderung am Favoriten veraltete Werte zeigen.
+
+**Bedingungen:**
+- `HomeKpiGrid` schreibt `FavKpiData` inklusive `FavoriteModifiedUtc` in den Cache-Schlüssel `home.kpi.favorite-{k.Id}`.
+
+**Verhalten:**
+- `RestoreFavoriteCacheAsync` übernimmt einen Cache-Eintrag nur, wenn `FavoriteModifiedUtc` mit `fav.ModifiedUtc` übereinstimmt; `SetFilters`, `Update` und `Rename` am Favoriten rufen `Touch()` auf und ändern den Stempel zuverlässig.
+- Bei Abweichung oder fehlendem Favoriten wird der Eintrag verworfen (`RemoveAsync`) und frisch geladen.
+- Alte Cache-Einträge ohne das Feld deserialisieren mit `default(DateTime)` und werden einmalig automatisch verworfen.
+- Bei einem Ladefehler der Favoritenliste bleiben die Cache-Einträge erhalten (kein Verlust bei transienten Fehlern).
+
+**Umsetzung:** `HomeKpiGrid.FavKpiData.FavoriteModifiedUtc`, `HomeKpiGrid.RestoreFavoriteCacheAsync`, `ReportFavorite.Touch`.

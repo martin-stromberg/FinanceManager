@@ -330,6 +330,21 @@
   <data name="FilterGroup_SecurityTypes" xml:space="preserve">
     <value>Booking subtypes</value>
   </data>
+  <data name="FilterGroup_TextFilters" xml:space="preserve">
+    <value>Text filters</value>
+  </data>
+  <data name="TextFilter_Placeholder" xml:space="preserve">
+    <value>Enter search text…</value>
+  </data>
+  <data name="TextFilter_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="TextFilter_Remove" xml:space="preserve">
+    <value>Remove text filter</value>
+  </data>
+  <data name="TextFilter_Hint" xml:space="preserve">
+    <value>Matches the posting's purpose text and description (OR linked).</value>
+  </data>
   <data name="SecurityType_Buy" xml:space="preserve">
     <value>Buy</value>
   </data>

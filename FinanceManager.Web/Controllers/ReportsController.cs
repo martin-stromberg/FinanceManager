@@ -101,7 +101,20 @@ public sealed class ReportsController : ControllerBase
             ReportAggregationFilters? filters = null;
             if (req.Filters != null)
             {
-                filters = new ReportAggregationFilters(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
+                filters = new ReportAggregationFilters(
+                    AccountIds: req.Filters.AccountIds,
+                    ContactIds: req.Filters.ContactIds,
+                    SavingsPlanIds: req.Filters.SavingsPlanIds,
+                    SecurityIds: req.Filters.SecurityIds,
+                    ContactCategoryIds: req.Filters.ContactCategoryIds,
+                    SavingsPlanCategoryIds: req.Filters.SavingsPlanCategoryIds,
+                    SecurityCategoryIds: req.Filters.SecurityCategoryIds,
+                    SecuritySubTypes: req.Filters.SecuritySubTypes,
+                    IncludeDividendRelated: req.Filters.IncludeDividendRelated,
+                    BankTextFilters: req.Filters.BankTextFilters,
+                    ContactTextFilters: req.Filters.ContactTextFilters,
+                    SavingsPlanTextFilters: req.Filters.SavingsPlanTextFilters,
+                    SecurityTextFilters: req.Filters.SecurityTextFilters);
             }
             var query = new ReportAggregationQuery(_current.UserId, req.PostingKind, req.Interval, req.Take, req.IncludeCategory, req.ComparePrevious, req.CompareYear, req.CompareProjection, multi, analysisDate, req.UseValutaDate, filters, req.SavingsPlanPostingSource);
             var result = await _agg.QueryAsync(query, ct);
@@ -178,7 +191,20 @@ public sealed class ReportsController : ControllerBase
 
         try
         {
-            var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
+            var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(
+                AccountIds: req.Filters.AccountIds,
+                ContactIds: req.Filters.ContactIds,
+                SavingsPlanIds: req.Filters.SavingsPlanIds,
+                SecurityIds: req.Filters.SecurityIds,
+                ContactCategoryIds: req.Filters.ContactCategoryIds,
+                SavingsPlanCategoryIds: req.Filters.SavingsPlanCategoryIds,
+                SecurityCategoryIds: req.Filters.SecurityCategoryIds,
+                SecuritySubTypes: req.Filters.SecuritySubTypes,
+                IncludeDividendRelated: req.Filters.IncludeDividendRelated,
+                BankTextFilters: req.Filters.BankTextFilters,
+                ContactTextFilters: req.Filters.ContactTextFilters,
+                SavingsPlanTextFilters: req.Filters.SavingsPlanTextFilters,
+                SecurityTextFilters: req.Filters.SecurityTextFilters);
             var dto = await _favorites.CreateAsync(_current.UserId, new ReportFavoriteCreateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource), ct);
             return CreatedAtRoute("GetReportFavorite", new { id = dto.Id }, dto);
         }
@@ -232,7 +258,20 @@ public sealed class ReportsController : ControllerBase
 
         try
         {
-            var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(req.Filters.AccountIds, req.Filters.ContactIds, req.Filters.SavingsPlanIds, req.Filters.SecurityIds, req.Filters.ContactCategoryIds, req.Filters.SavingsPlanCategoryIds, req.Filters.SecurityCategoryIds, req.Filters.SecuritySubTypes, req.Filters.IncludeDividendRelated);
+            var filters = req.Filters == null ? null : new ReportFavoriteFiltersDto(
+                AccountIds: req.Filters.AccountIds,
+                ContactIds: req.Filters.ContactIds,
+                SavingsPlanIds: req.Filters.SavingsPlanIds,
+                SecurityIds: req.Filters.SecurityIds,
+                ContactCategoryIds: req.Filters.ContactCategoryIds,
+                SavingsPlanCategoryIds: req.Filters.SavingsPlanCategoryIds,
+                SecurityCategoryIds: req.Filters.SecurityCategoryIds,
+                SecuritySubTypes: req.Filters.SecuritySubTypes,
+                IncludeDividendRelated: req.Filters.IncludeDividendRelated,
+                BankTextFilters: req.Filters.BankTextFilters,
+                ContactTextFilters: req.Filters.ContactTextFilters,
+                SavingsPlanTextFilters: req.Filters.SavingsPlanTextFilters,
+                SecurityTextFilters: req.Filters.SecurityTextFilters);
             var dto = await _favorites.UpdateAsync(id, _current.UserId, new ReportFavoriteUpdateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource), ct);
             return dto == null ? NotFound() : Ok(dto);
         }

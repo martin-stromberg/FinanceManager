@@ -17,6 +17,10 @@
 | `UseValutaDate` | `bool` | Aggregation nach Valuta |
 | `CompareProjection` | `bool` | Speichert die Hochrechnungsoption für Dividendenanalysen |
 | `...IdsCsv` | `string?` | Persistierte Filterlisten |
+| `BankTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Bank-Buchungen |
+| `ContactTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Kontakt-Buchungen |
+| `SavingsPlanTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Sparplan-Buchungen |
+| `SecurityTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Wertpapier-Buchungen |
 
 ### Report-Aggregation
 
@@ -24,6 +28,7 @@
 |--------|-------------|-----|--------------|
 | `ReportAggregationQuery` | `CompareProjection` | `bool` | Fordert die Dividendenhochrechnung für gültige Wertpapierberichte an |
 | `ReportAggregatesQueryRequest` | `CompareProjection` | `bool` | API-Eingabefeld für das Dashboard |
+| `ReportAggregatesFiltersRequest` / `ReportAggregationFilters` | `BankTextFilters`, `ContactTextFilters`, `SavingsPlanTextFilters`, `SecurityTextFilters` | `IReadOnlyCollection<string>?` | Optionale Freitext-Filterlisten je Buchungsart (`Subject`/`Description`) |
 | `ReportAggregationResult` | `ComparedProjection` | `bool` | Meldet, ob die Hochrechnung im Ergebnis tatsächlich aktiv ist |
 | `ReportAggregatePointDto` | `ProjectionAmount` | `decimal?` | Hochgerechneter Betrag direkt nach `Amount` |
 
@@ -34,6 +39,9 @@
 | `ReportFavoriteDto` | `CompareProjection` | `bool` | Gibt die gespeicherte Hochrechnungsoption zurück |
 | `ReportFavoriteCreateRequest` / `ReportFavoriteUpdateRequest` | `CompareProjection` | `bool` | Persistiert die Option beim Anlegen oder Aktualisieren |
 | `ReportFavoriteCreateApiRequest` / `ReportFavoriteUpdateApiRequest` | `CompareProjection` | `bool` | Transportiert die Option über die API |
+| `ReportFavoriteFiltersDto` | `BankTextFilters`, `ContactTextFilters`, `SavingsPlanTextFilters`, `SecurityTextFilters` | `IReadOnlyCollection<string>?` | Persistierte Textfilterlisten des Favoriten |
+| `ReportFavoriteBackupDto` | `...TextFiltersJson` | `string?` | Backup-Felder der Textfilter (Defaults `null`, Alt-Backups bleiben ladbar) |
+| `FavKpiData` (KPI-Cache) | `FavoriteModifiedUtc` | `DateTime` | Versionsmarke des Favoriten für die Cache-Invalidierung auf der Startseite |
 
 ### `HomeKpi`
 

@@ -1,5 +1,7 @@
 using FinanceManager.Application.Reports;
 using FinanceManager.Domain.Postings;
+using FinanceManager.Infrastructure.Aggregates;
+using FinanceManager.Shared.Dtos.Budget;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -90,56 +92,115 @@ public sealed class ReportAggregationService : IReportAggregationService
         var analysis = (query.AnalysisDate?.Date) ?? DateTime.UtcNow.Date;
         analysis = new DateTime(analysis.Year, analysis.Month, 1);
 
+        // Per-kind free text filters: kinds with configured patterns are aggregated from raw
+        // postings (PostingAggregates carry no text fields); all other kinds keep the
+        // precomputed aggregate path.
+        var textFiltersByKind = new Dictionary<PostingKind, IReadOnlyCollection<string>>();
+        if (query.Filters is { } textFilterSource)
+        {
+            void AddTextFilters(PostingKind kind, IReadOnlyCollection<string>? src)
+            {
+                if (!kinds.Contains(kind)) { return; }
+                if (TextFilterList.Normalize(src) is { Count: > 0 } patterns) { textFiltersByKind[kind] = patterns; }
+            }
+            AddTextFilters(PostingKind.Bank, textFilterSource.BankTextFilters);
+            AddTextFilters(PostingKind.Contact, textFilterSource.ContactTextFilters);
+            AddTextFilters(PostingKind.SavingsPlan, textFilterSource.SavingsPlanTextFilters);
+            AddTextFilters(PostingKind.Security, textFilterSource.SecurityTextFilters);
+        }
+        var aggregateKinds = kinds.Where(k => !textFiltersByKind.ContainsKey(k)).ToArray();
+
+        // Upper bound of the raw posting load: postings in periods after the latest
+        // analysis period can never contribute a point (they are trimmed by the
+        // "PeriodStart <= latestPeriod" rule below) and comparisons only look
+        // backwards, so they are excluded up front. No lower bound is applied: the
+        // take limit keeps the last N periods *with data*, which cannot be derived
+        // from a static calendar window (sparse data would silently drop valid
+        // postings). AllHistory and Take <= 0 legitimately need every posting.
+        DateTime? postingWindowEnd = null;
+        if (textFiltersByKind.Count > 0 && query.Take > 0 && query.Interval != ReportInterval.AllHistory)
+        {
+            if (query.Interval == ReportInterval.Ytd)
+            {
+                // YTD sums only months up to the analysis month; years after the
+                // analysis year are dropped as well.
+                postingWindowEnd = analysis.AddMonths(1);
+            }
+            else
+            {
+                var intervalMonths = query.Interval switch
+                {
+                    ReportInterval.Month => 1,
+                    ReportInterval.Quarter => 3,
+                    ReportInterval.HalfYear => 6,
+                    _ => 12 // Year produces yearly periods
+                };
+                var latest = ComputeLatestPeriod(query.Interval, analysis);
+                postingWindowEnd = latest.AddMonths(intervalMonths);
+            }
+        }
+
         // Pull raw aggregates for selected kinds & period OR build raw rows from postings using ValutaDate when requested
         var rawAnon = new List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>();
-        if (query.UseValutaDate)
+        if (aggregateKinds.Length > 0)
         {
-            // Use precomputed aggregates for Valuta date kind (consistent with booking-case)
-            var aggsValuta = await _db.PostingAggregates.AsNoTracking()
-                .Where(a => a.Period == sourcePeriod && kinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Valuta)
-                .Select(a => new
-                {
-                    a.Kind,
-                    a.PeriodStart,
-                    a.Amount,
-                    a.AccountId,
-                    a.ContactId,
-                    a.SavingsPlanId,
-                    a.SecurityId,
-                    a.SecuritySubType
-                })
-                .ToListAsync(ct);
-
-            if (aggsValuta.Count == 0)
+            if (query.UseValutaDate)
             {
-                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
-            }
+                // Use precomputed aggregates for Valuta date kind (consistent with booking-case)
+                var aggsValuta = await _db.PostingAggregates.AsNoTracking()
+                    .Where(a => a.Period == sourcePeriod && aggregateKinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Valuta)
+                    .Select(a => new
+                    {
+                        a.Kind,
+                        a.PeriodStart,
+                        a.Amount,
+                        a.AccountId,
+                        a.ContactId,
+                        a.SavingsPlanId,
+                        a.SecurityId,
+                        a.SecuritySubType
+                    })
+                    .ToListAsync(ct);
 
-            rawAnon = aggsValuta.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+                rawAnon = aggsValuta.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+            }
+            else
+            {
+                var aggs = await _db.PostingAggregates.AsNoTracking()
+                    .Where(a => a.Period == sourcePeriod && aggregateKinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Booking)
+                    .Select(a => new
+                    {
+                        a.Kind,
+                        a.PeriodStart,
+                        a.Amount,
+                        a.AccountId,
+                        a.ContactId,
+                        a.SavingsPlanId,
+                        a.SecurityId,
+                        a.SecuritySubType
+                    }).ToListAsync(ct);
+
+                rawAnon = aggs.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+            }
         }
-        else
+
+        // Text-filtered kinds: load owned entity ids per kind, then condense matching raw postings
+        // into the same tuple schema as the aggregate rows.
+        foreach (var (textKind, patterns) in textFiltersByKind)
         {
-            var aggs = await _db.PostingAggregates.AsNoTracking()
-                .Where(a => a.Period == sourcePeriod && kinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Booking)
-                .Select(a => new
-                {
-                    a.Kind,
-                    a.PeriodStart,
-                    a.Amount,
-                    a.AccountId,
-                    a.ContactId,
-                    a.SavingsPlanId,
-                    a.SecurityId,
-                    a.SecuritySubType
-                }).ToListAsync(ct);
-
-            if (aggs.Count == 0)
+            var ownerEntityIds = textKind switch
             {
-                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
-            }
-
-            rawAnon = aggs.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+                PostingKind.Bank => await _db.Accounts.AsNoTracking().Where(a => a.OwnerUserId == query.OwnerUserId).Select(a => a.Id).ToListAsync(ct),
+                PostingKind.Contact => await _db.Contacts.AsNoTracking().Where(c => c.OwnerUserId == query.OwnerUserId).Select(c => c.Id).ToListAsync(ct),
+                PostingKind.SavingsPlan => await _db.SavingsPlans.AsNoTracking().Where(s => s.OwnerUserId == query.OwnerUserId).Select(s => s.Id).ToListAsync(ct),
+                PostingKind.Security => await _db.Securities.AsNoTracking().Where(s => s.OwnerUserId == query.OwnerUserId).Select(s => s.Id).ToListAsync(ct),
+                _ => throw new ArgumentOutOfRangeException(nameof(textKind), textKind, "Unsupported posting kind for text filters.")
+            };
+            if (ownerEntityIds.Count == 0) { continue; }
+            var textRows = await LoadTextFilteredRowsAsync(textKind, patterns, sourcePeriod, query.UseValutaDate, ownerEntityIds, null, postingWindowEnd, ct);
+            rawAnon.AddRange(textRows);
         }
+
         // From here on use 'rawAnon' instead of previous 'raw' anonymous objects
 
         // Posting source switch for savings plans: when the caller requests the postings of the
@@ -159,15 +220,47 @@ public sealed class ReportAggregationService : IReportAggregationService
             if (linksByPlan.Count > 0)
             {
                 var linkedAccountIds = linksByPlan.Values.SelectMany(x => x).Distinct().ToList();
-                var dateKind = query.UseValutaDate ? AggregateDateKind.Valuta : AggregateDateKind.Booking;
-                var bankRows = await _db.PostingAggregates.AsNoTracking()
-                    .Where(a => a.Period == sourcePeriod
-                        && a.Kind == PostingKind.Bank
-                        && a.DateKind == dateKind
-                        && a.AccountId != null
-                        && linkedAccountIds.Contains(a.AccountId.Value))
-                    .Select(a => new { a.PeriodStart, a.Amount, AccountId = a.AccountId!.Value })
-                    .ToListAsync(ct);
+                List<(DateTime PeriodStart, decimal Amount, Guid AccountId)> bankRows;
+                if (textFiltersByKind.TryGetValue(PostingKind.SavingsPlan, out var savingsPlanTextPatterns))
+                {
+                    // Savings plan text filters apply to the source bank postings of the linked accounts
+                    // (the emitted rows carry Kind = SavingsPlan, so the filter of the target kind applies).
+                    var linkedBankPostings = await ApplyDateWindow(
+                            _db.Postings.AsNoTracking()
+                                .Where(p => p.Kind == PostingKind.Bank
+                                    && p.AccountId != null
+                                    && linkedAccountIds.Contains(p.AccountId.Value)),
+                            query.UseValutaDate, null, postingWindowEnd)
+                        .Select(p => new { p.BookingDate, p.ValutaDate, p.Amount, p.AccountId, p.Subject, p.Description })
+                        .ToListAsync(ct);
+                    bankRows = linkedBankPostings
+                        .Where(p => p.Amount != 0m)
+                        .Where(p => savingsPlanTextPatterns.Any(pat => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, pat, useRegex: false)))
+                        .Select(p =>
+                        {
+                            var effective = query.UseValutaDate
+                                ? (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate)
+                                : p.BookingDate;
+                            return (PostingAggregateService.GetPeriodStart(effective, sourcePeriod), p.Amount, p.AccountId!.Value);
+                        })
+                        .GroupBy(x => (x.Item1, x.Item3))
+                        .Select(g => (g.Key.Item1, g.Sum(x => x.Item2), g.Key.Item2))
+                        .ToList();
+                }
+                else
+                {
+                    var dateKind = query.UseValutaDate ? AggregateDateKind.Valuta : AggregateDateKind.Booking;
+                    bankRows = (await _db.PostingAggregates.AsNoTracking()
+                        .Where(a => a.Period == sourcePeriod
+                            && a.Kind == PostingKind.Bank
+                            && a.DateKind == dateKind
+                            && a.AccountId != null
+                            && linkedAccountIds.Contains(a.AccountId.Value))
+                        .Select(a => new { a.PeriodStart, a.Amount, AccountId = a.AccountId!.Value })
+                        .ToListAsync(ct))
+                        .Select(a => (a.PeriodStart, a.Amount, a.AccountId))
+                        .ToList();
+                }
 
                 var derived = new List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>();
                 foreach (var (planId, accountIdsForPlan) in linksByPlan)
@@ -184,6 +277,11 @@ public sealed class ReportAggregationService : IReportAggregationService
                     .Concat(derived)
                     .ToList();
             }
+        }
+
+        if (rawAnon.Count == 0)
+        {
+            return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
         }
 
         // Collect entity ids per kind for ownership filtering & name/category lookup
@@ -744,6 +842,106 @@ public sealed class ReportAggregationService : IReportAggregationService
     }
 
     /// <summary>
+    /// Loads postings of a single <see cref="PostingKind"/>, keeps only rows matching at least one of the
+    /// supplied text patterns (OR) against subject/description and condenses them into the same tuple
+    /// schema used by the aggregate rows. The postings are restricted to the supplied owner entity ids
+    /// because <see cref="Posting"/> carries no owner column itself.
+    /// </summary>
+    /// <param name="kind">The posting kind to load.</param>
+    /// <param name="patterns">Non-empty text filter patterns (OR linked).</param>
+    /// <param name="sourcePeriod">Aggregate period used for period bucketing.</param>
+    /// <param name="useValutaDate">When true the valuta date (with booking date fallback) determines the period.</param>
+    /// <param name="ownerEntityIds">Ids of the kind's entities owned by the querying user.</param>
+    /// <param name="windowStart">Inclusive lower bound of the effective posting date; <c>null</c> = unbounded.</param>
+    /// <param name="windowEnd">Exclusive upper bound of the effective posting date; <c>null</c> = unbounded.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Condensed rows in the same schema as the aggregate rows.</returns>
+    private async Task<List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>> LoadTextFilteredRowsAsync(
+        PostingKind kind,
+        IReadOnlyCollection<string> patterns,
+        AggregatePeriod sourcePeriod,
+        bool useValutaDate,
+        IReadOnlyCollection<Guid> ownerEntityIds,
+        DateTime? windowStart,
+        DateTime? windowEnd,
+        CancellationToken ct)
+    {
+        var postingsQuery = _db.Postings.AsNoTracking().Where(p => p.Kind == kind);
+        postingsQuery = kind switch
+        {
+            PostingKind.Bank => postingsQuery.Where(p => p.AccountId != null && ownerEntityIds.Contains(p.AccountId.Value)),
+            PostingKind.Contact => postingsQuery.Where(p => p.ContactId != null && ownerEntityIds.Contains(p.ContactId.Value)),
+            PostingKind.SavingsPlan => postingsQuery.Where(p => p.SavingsPlanId != null && ownerEntityIds.Contains(p.SavingsPlanId.Value)),
+            PostingKind.Security => postingsQuery.Where(p => p.SecurityId != null && ownerEntityIds.Contains(p.SecurityId.Value)),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
+        };
+        postingsQuery = ApplyDateWindow(postingsQuery, useValutaDate, windowStart, windowEnd);
+
+        var postings = await postingsQuery
+            .Select(p => new
+            {
+                p.BookingDate,
+                p.ValutaDate,
+                p.Amount,
+                p.AccountId,
+                p.ContactId,
+                p.SavingsPlanId,
+                p.SecurityId,
+                p.SecuritySubType,
+                p.Subject,
+                p.Description
+            })
+            .ToListAsync(ct);
+
+        var rows = new List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>();
+        foreach (var p in postings)
+        {
+            if (p.Amount == 0m) { continue; }
+            if (!patterns.Any(pat => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, pat, useRegex: false))) { continue; }
+            var effective = useValutaDate
+                ? (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate)
+                : p.BookingDate;
+            var periodStart = PostingAggregateService.GetPeriodStart(effective, sourcePeriod);
+            rows.Add((
+                kind,
+                periodStart,
+                p.Amount,
+                kind == PostingKind.Bank ? p.AccountId : null,
+                kind == PostingKind.Contact ? p.ContactId : null,
+                kind == PostingKind.SavingsPlan ? p.SavingsPlanId : null,
+                kind == PostingKind.Security ? p.SecurityId : null,
+                kind == PostingKind.Security ? p.SecuritySubType : null));
+        }
+
+        return rows
+            .GroupBy(r => (r.PeriodStart, r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId, r.SecuritySubType))
+            .Select(g => (kind, g.Key.PeriodStart, g.Sum(x => x.Amount), g.Key.AccountId, g.Key.ContactId, g.Key.SavingsPlanId, g.Key.SecurityId, g.Key.SecuritySubType))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Restricts a postings query to an effective-date window: the effective date is the
+    /// booking date, or the valuta date when <paramref name="useValutaDate"/> is set
+    /// (<see cref="DateTime.MinValue"/> counts as "no valuta date" and falls back to the
+    /// booking date - identical to the in-memory bucketing logic).
+    /// </summary>
+    /// <param name="source">Postings query to restrict.</param>
+    /// <param name="useValutaDate">Whether the valuta date determines the effective date.</param>
+    /// <param name="startInclusive">Inclusive lower bound; <c>null</c> = unbounded.</param>
+    /// <param name="endExclusive">Exclusive upper bound; <c>null</c> = unbounded.</param>
+    /// <returns>The restricted query.</returns>
+    private static IQueryable<Posting> ApplyDateWindow(IQueryable<Posting> source, bool useValutaDate, DateTime? startInclusive, DateTime? endExclusive)
+    {
+        if (startInclusive is null && endExclusive is null) { return source; }
+        var start = startInclusive ?? DateTime.MinValue;
+        var end = endExclusive ?? DateTime.MaxValue;
+        return useValutaDate
+            ? source.Where(p => (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate) >= start
+                && (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate) < end)
+            : source.Where(p => p.BookingDate >= start && p.BookingDate < end);
+    }
+
+    /// <summary>
     /// Specialized path that computes net dividend amounts per security by grouping postings by GroupId and applying subtype netting
     /// (dividend + fees + taxes). Used for security-focused dividend reports.
     /// </summary>
@@ -799,16 +997,37 @@ public sealed class ReportAggregationService : IReportAggregationService
             .Where(p => (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) >= loadStartMonth && (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) < endExclusive)
             .Where(p => p.SecuritySubType != null);
 
-        var dividendGroups = postings
-            .Where(p => (int)p.SecuritySubType! == SecurityPostingSubType_Dividend2)
-            .Select(p => p.GroupId)
-            .Distinct();
+        var securityTextPatterns = TextFilterList.Normalize(f?.SecurityTextFilters);
+
+        HashSet<Guid> dividendGroupIds;
+        if (securityTextPatterns is { Count: > 0 })
+        {
+            // Text filters select dividend events via their anchor posting (subtype Dividend);
+            // a matching anchor keeps the whole group including fee/tax netting.
+            var anchors = await postings
+                .Where(p => (int)p.SecuritySubType! == SecurityPostingSubType_Dividend2)
+                .Select(p => new { p.GroupId, p.Subject, p.Description })
+                .ToListAsync(ct);
+            dividendGroupIds = anchors
+                .Where(a => securityTextPatterns.Any(pat => BudgetRulePatternMatcher.MatchesPosting(a.Subject, a.Description, pat, useRegex: false)))
+                .Select(a => a.GroupId)
+                .ToHashSet();
+        }
+        else
+        {
+            dividendGroupIds = (await postings
+                .Where(p => (int)p.SecuritySubType! == SecurityPostingSubType_Dividend2)
+                .Select(p => p.GroupId)
+                .Distinct()
+                .ToListAsync(ct))
+                .ToHashSet();
+        }
 
         var allowedSubTypes = new[] { SecurityPostingSubType_Dividend2, SecurityPostingSubType_Fee2, SecurityPostingSubType_Tax2 };
 
         // For each dividend group, compute net = sum(dividend + fee + tax) and take the dividend's booking date as anchor
         var groupNets = await postings
-            .Where(p => dividendGroups.Contains(p.GroupId))
+            .Where(p => dividendGroupIds.Contains(p.GroupId))
             .GroupBy(p => p.GroupId)
             .Select(g => new
             {

@@ -1267,6 +1267,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("AccountIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BankTextFiltersJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("ComparePrevious")
                         .HasColumnType("INTEGER");
 
@@ -1280,6 +1283,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ContactIdsCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContactTextFiltersJson")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedUtc")
@@ -1323,6 +1329,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<int>("SavingsPlanPostingSource")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("SavingsPlanTextFiltersJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SecurityCategoryIdsCsv")
                         .HasColumnType("TEXT");
 
@@ -1330,6 +1339,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SecuritySubTypesCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityTextFiltersJson")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("ShowChart")

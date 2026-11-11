@@ -330,6 +330,21 @@
   <data name="FilterGroup_SecurityTypes" xml:space="preserve">
     <value>Buchungsuntertypen</value>
   </data>
+  <data name="FilterGroup_TextFilters" xml:space="preserve">
+    <value>Textfilter</value>
+  </data>
+  <data name="TextFilter_Placeholder" xml:space="preserve">
+    <value>Suchtext eingeben…</value>
+  </data>
+  <data name="TextFilter_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="TextFilter_Remove" xml:space="preserve">
+    <value>Textfilter entfernen</value>
+  </data>
+  <data name="TextFilter_Hint" xml:space="preserve">
+    <value>Wirkt auf Verwendungszweck und Buchungsbeschreibung der Buchungen (ODER-verknüpft).</value>
+  </data>
   <data name="SecurityType_Buy" xml:space="preserve">
     <value>Kauf</value>
   </data>

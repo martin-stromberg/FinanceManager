@@ -247,6 +247,41 @@ internal static class McpToolArguments
     }
 
     /// <summary>
+    /// Reads an optional array of strings with a per-item length cap (defense against
+    /// oversized untrusted input).
+    /// </summary>
+    /// <param name="args">Tool arguments.</param>
+    /// <param name="name">Property name.</param>
+    /// <param name="maxItems">Maximum accepted item count.</param>
+    /// <param name="maxItemLength">Maximum accepted length per item.</param>
+    /// <returns>The parsed list or <see langword="null"/>.</returns>
+    /// <exception cref="McpToolException">Malformed element, too many items or an item exceeding the length cap.</exception>
+    public static IReadOnlyList<string>? OptionalStringList(JsonElement args, string name, int maxItems = 200, int maxItemLength = FinanceManager.Shared.Dtos.Reports.TextFilterList.MaxEntryLength)
+    {
+        if (!HasNonNull(args, name))
+        {
+            return null;
+        }
+        var el = args.GetProperty(name);
+        if (el.ValueKind != JsonValueKind.Array || el.GetArrayLength() > maxItems)
+        {
+            throw new McpToolException("Err_Mcp_InvalidArguments",
+                $"Argument '{name}' must be an array of at most {maxItems} strings.");
+        }
+        var list = new List<string>(el.GetArrayLength());
+        foreach (var item in el.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String || item.GetString() is not { } value || value.Length > maxItemLength)
+            {
+                throw new McpToolException("Err_Mcp_InvalidArguments",
+                    $"Argument '{name}' must contain strings of at most {maxItemLength} characters only.");
+            }
+            list.Add(value);
+        }
+        return list;
+    }
+
+    /// <summary>
     /// Reads an optional array of integers.
     /// </summary>
     /// <param name="args">Tool arguments.</param>

@@ -151,6 +151,19 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <returns>The result.</returns>
     public HashSet<int> SelectedSecuritySubTypes { get; private set; } = new();
 
+    /// <summary>Selected free text filters for bank postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedBankTextFilters { get; private set; } = new();
+    /// <summary>Selected free text filters for contact postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedContactTextFilters { get; private set; } = new();
+    /// <summary>Selected free text filters for savings plan postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedSavingsPlanTextFilters { get; private set; } = new();
+    /// <summary>Selected free text filters for security postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedSecurityTextFilters { get; private set; } = new();
+
     /// <summary>
     /// Aggregated result points returned from the API and used for rendering table and chart.
     /// </summary>
@@ -258,41 +271,50 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         var hasEntity = SelectedAccounts.Count > 0 || SelectedContacts.Count > 0 || SelectedSavingsPlans.Count > 0 || SelectedSecurities.Count > 0;
         var hasCats = SelectedContactCategories.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSecurityCategories.Count > 0 || SelectedAccounts.Count > 0;
         var hasSecTypes = SelectedSecuritySubTypes.Count > 0;
+        var hasText = SelectedBankTextFilters.Count > 0 || SelectedContactTextFilters.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0 || SelectedSecurityTextFilters.Count > 0;
         var includeDiv = IncludeDividendRelated;
-        if (!IncludeCategory && !hasEntity && !hasSecTypes && !includeDiv)
+        if (!IncludeCategory && !hasEntity && !hasSecTypes && !includeDiv && !hasText)
         {
             return null;
         }
-        if (IncludeCategory && !hasCats && !hasSecTypes && !includeDiv)
+        if (IncludeCategory && !hasCats && !hasSecTypes && !includeDiv && !hasText)
         {
             return null;
         }
         if (IncludeCategory)
         {
             return new ReportAggregatesFiltersRequest(
-                SelectedAccounts.ToList(),
-                null,
-                null,
-                null,
-                SelectedContactCategories.ToList(),
-                SelectedSavingsCategories.ToList(),
-                SelectedSecurityCategories.ToList(),
-                SelectedSecuritySubTypes.ToList(),
-                includeDiv
+                AccountIds: SelectedAccounts.ToList(),
+                ContactIds: null,
+                SavingsPlanIds: null,
+                SecurityIds: null,
+                ContactCategoryIds: SelectedContactCategories.ToList(),
+                SavingsPlanCategoryIds: SelectedSavingsCategories.ToList(),
+                SecurityCategoryIds: SelectedSecurityCategories.ToList(),
+                SecuritySubTypes: SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: includeDiv,
+                BankTextFilters: SelectedBankTextFilters.ToList(),
+                ContactTextFilters: SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: SelectedSecurityTextFilters.ToList()
             );
         }
         else
         {
             return new ReportAggregatesFiltersRequest(
-                SelectedAccounts.ToList(),
-                SelectedContacts.ToList(),
-                SelectedSavingsPlans.ToList(),
-                SelectedSecurities.ToList(),
-                null,
-                null,
-                null,
-                SelectedSecuritySubTypes.ToList(),
-                includeDiv
+                AccountIds: SelectedAccounts.ToList(),
+                ContactIds: SelectedContacts.ToList(),
+                SavingsPlanIds: SelectedSavingsPlans.ToList(),
+                SecurityIds: SelectedSecurities.ToList(),
+                ContactCategoryIds: null,
+                SavingsPlanCategoryIds: null,
+                SecurityCategoryIds: null,
+                SecuritySubTypes: SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: includeDiv,
+                BankTextFilters: SelectedBankTextFilters.ToList(),
+                ContactTextFilters: SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: SelectedSecurityTextFilters.ToList()
             );
         }
     }
@@ -310,6 +332,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         SelectedSavingsCategories.Clear();
         SelectedSecurityCategories.Clear();
         SelectedSecuritySubTypes.Clear();
+        SelectedBankTextFilters.Clear();
+        SelectedContactTextFilters.Clear();
+        SelectedSavingsPlanTextFilters.Clear();
+        SelectedSecurityTextFilters.Clear();
         IncludeDividendRelated = false;
     }
 
@@ -571,15 +597,19 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             Expandable = expandable,
             PostingKinds = postingKinds,
             Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                filters.AccountIds,
-                filters.ContactIds,
-                filters.SavingsPlanIds,
-                filters.SecurityIds,
-                filters.ContactCategoryIds,
-                filters.SavingsPlanCategoryIds,
-                filters.SecurityCategoryIds,
-                filters.SecuritySubTypes,
-                filters.IncludeDividendRelated
+                AccountIds: filters.AccountIds,
+                ContactIds: filters.ContactIds,
+                SavingsPlanIds: filters.SavingsPlanIds,
+                SecurityIds: filters.SecurityIds,
+                ContactCategoryIds: filters.ContactCategoryIds,
+                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
+                SecurityCategoryIds: filters.SecurityCategoryIds,
+                SecuritySubTypes: filters.SecuritySubTypes,
+                IncludeDividendRelated: filters.IncludeDividendRelated,
+                BankTextFilters: filters.BankTextFilters,
+                ContactTextFilters: filters.ContactTextFilters,
+                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
+                SecurityTextFilters: filters.SecurityTextFilters
             ),
             UseValutaDate = useValutaDate,
             SavingsPlanPostingSource = savingsPlanPostingSource
@@ -623,15 +653,19 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             Expandable = expandable,
             PostingKinds = postingKinds,
             Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                filters.AccountIds,
-                filters.ContactIds,
-                filters.SavingsPlanIds,
-                filters.SecurityIds,
-                filters.ContactCategoryIds,
-                filters.SavingsPlanCategoryIds,
-                filters.SecurityCategoryIds,
-                filters.SecuritySubTypes,
-                filters.IncludeDividendRelated
+                AccountIds: filters.AccountIds,
+                ContactIds: filters.ContactIds,
+                SavingsPlanIds: filters.SavingsPlanIds,
+                SecurityIds: filters.SecurityIds,
+                ContactCategoryIds: filters.ContactCategoryIds,
+                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
+                SecurityCategoryIds: filters.SecurityCategoryIds,
+                SecuritySubTypes: filters.SecuritySubTypes,
+                IncludeDividendRelated: filters.IncludeDividendRelated,
+                BankTextFilters: filters.BankTextFilters,
+                ContactTextFilters: filters.ContactTextFilters,
+                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
+                SecurityTextFilters: filters.SecurityTextFilters
             ),
             UseValutaDate = useValutaDate,
             SavingsPlanPostingSource = savingsPlanPostingSource
@@ -799,6 +833,23 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <returns>The result.</returns>
     public HashSet<int> TempSecuritySubTypes { get; private set; } = new();
 
+    /// <summary>Temporary free text filters for bank postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempBankTextFilters { get; private set; } = new();
+    /// <summary>Temporary free text filters for contact postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempContactTextFilters { get; private set; } = new();
+    /// <summary>Temporary free text filters for savings plan postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempSavingsPlanTextFilters { get; private set; } = new();
+    /// <summary>Temporary free text filters for security postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempSecurityTextFilters { get; private set; } = new();
+
+    /// <summary>Current input of the text filter editor in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public string NewTextFilterInput { get; set; } = string.Empty;
+
     /// <summary>
     /// Opens the filter dialog and prepares temporary buffers with current selections.
     /// </summary>
@@ -812,6 +863,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         TempSavingsCats = new HashSet<Guid>(SelectedSavingsCategories);
         TempSecurityCats = new HashSet<Guid>(SelectedSecurityCategories);
         TempSecuritySubTypes = new HashSet<int>(SelectedSecuritySubTypes);
+        TempBankTextFilters = new List<string>(SelectedBankTextFilters);
+        TempContactTextFilters = new List<string>(SelectedContactTextFilters);
+        TempSavingsPlanTextFilters = new List<string>(SelectedSavingsPlanTextFilters);
+        TempSecurityTextFilters = new List<string>(SelectedSecurityTextFilters);
+        NewTextFilterInput = string.Empty;
         ShowFilterDialog = true;
         ActiveFilterTabKind = SelectedKinds.FirstOrDefault();
         _ = LoadFilterOptionsAsync();
@@ -917,6 +973,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         TempSavingsCats.Clear();
         TempSecurityCats.Clear();
         TempSecuritySubTypes.Clear();
+        TempBankTextFilters.Clear();
+        TempContactTextFilters.Clear();
+        TempSavingsPlanTextFilters.Clear();
+        TempSecurityTextFilters.Clear();
         RaiseStateChanged();
     }
 
@@ -931,12 +991,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             var entityCount = TempAccounts.Count + TempContacts.Count + TempSavings.Count + TempSecurities.Count;
             var catCount = TempContactCats.Count + TempSavingsCats.Count + TempSecurityCats.Count;
             var typeCount = TempSecuritySubTypes.Count;
-            return IncludeCategory ? (catCount + TempAccounts.Count + typeCount) : (entityCount + typeCount);
+            return IncludeCategory ? (catCount + TempAccounts.Count + typeCount + GetTempTextFilterCount()) : (entityCount + typeCount + GetTempTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
             var typeCount = TempSecuritySubTypes.Count;
+            var textCount = GetTempTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
                 var baseCount = kind switch
@@ -946,7 +1007,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => TempSecurityCats.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
             else
             {
@@ -958,7 +1019,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => TempSecurities.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
         }
     }
@@ -979,6 +1040,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         SelectedSavingsCategories.Clear(); foreach (var id in TempSavingsCats) { SelectedSavingsCategories.Add(id); }
         SelectedSecurityCategories.Clear(); foreach (var id in TempSecurityCats) { SelectedSecurityCategories.Add(id); }
         SelectedSecuritySubTypes.Clear(); foreach (var t in TempSecuritySubTypes) { SelectedSecuritySubTypes.Add(t); }
+        SelectedBankTextFilters.Clear(); SelectedBankTextFilters.AddRange(TempBankTextFilters);
+        SelectedContactTextFilters.Clear(); SelectedContactTextFilters.AddRange(TempContactTextFilters);
+        SelectedSavingsPlanTextFilters.Clear(); SelectedSavingsPlanTextFilters.AddRange(TempSavingsPlanTextFilters);
+        SelectedSecurityTextFilters.Clear(); SelectedSecurityTextFilters.AddRange(TempSecurityTextFilters);
         ShowFilterDialog = false;
         await ReloadAsync(analysisDate, ct);
     }
@@ -1015,12 +1080,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             var entityCount = SelectedAccounts.Count + SelectedContacts.Count + SelectedSavingsPlans.Count + SelectedSecurities.Count;
             var catCount = SelectedContactCategories.Count + SelectedSavingsCategories.Count + SelectedSecurityCategories.Count;
             var typeCount = SelectedSecuritySubTypes.Count;
-            return IncludeCategory ? (catCount + SelectedAccounts.Count + typeCount) : (entityCount + typeCount);
+            return IncludeCategory ? (catCount + SelectedAccounts.Count + typeCount + GetSelectedTextFilterCount()) : (entityCount + typeCount + GetSelectedTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
             var typeCount = SelectedSecuritySubTypes.Count;
+            var textCount = GetSelectedTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
                 var baseCount = kind switch
@@ -1030,7 +1096,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => SelectedSecurityCategories.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
             else
             {
@@ -1042,7 +1108,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => SelectedSecurities.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
         }
     }
@@ -1173,4 +1239,73 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             return null;
         }
     }
+
+    /// <summary>
+    /// Returns the temporary text filters of the specified posting kind as shown in the filter dialog.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <returns>The temporary text filter entries of the kind.</returns>
+    public IReadOnlyList<string> GetTempTextFilters(PostingKind kind)
+        => GetTempTextFilterList(kind);
+
+    /// <summary>
+    /// Adds a text filter to the temporary buffer of the specified posting kind.
+    /// Empty (after trim), overlong (&gt; <see cref="TextFilterList.MaxEntryLength"/> characters)
+    /// or duplicate (<see cref="StringComparison.OrdinalIgnoreCase"/>) entries are ignored.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <param name="value">Text filter to add; trimmed before use.</param>
+    public void AddTempTextFilter(PostingKind kind, string? value)
+    {
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed)) { return; }
+        if (trimmed.Length > TextFilterList.MaxEntryLength) { return; }
+        var list = GetTempTextFilterList(kind);
+        if (list.Any(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase))) { return; }
+        list.Add(trimmed!);
+        NewTextFilterInput = string.Empty;
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Removes a text filter from the temporary buffer of the specified posting kind.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <param name="value">Text filter to remove.</param>
+    public void RemoveTempTextFilter(PostingKind kind, string value)
+    {
+        var list = GetTempTextFilterList(kind);
+        var index = list.FindIndex(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+        {
+            list.RemoveAt(index);
+            RaiseStateChanged();
+        }
+    }
+
+    private List<string> GetSelectedTextFilterList(PostingKind kind)
+        => kind switch
+        {
+            PostingKind.Bank => SelectedBankTextFilters,
+            PostingKind.Contact => SelectedContactTextFilters,
+            PostingKind.SavingsPlan => SelectedSavingsPlanTextFilters,
+            PostingKind.Security => SelectedSecurityTextFilters,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
+        };
+
+    private List<string> GetTempTextFilterList(PostingKind kind)
+        => kind switch
+        {
+            PostingKind.Bank => TempBankTextFilters,
+            PostingKind.Contact => TempContactTextFilters,
+            PostingKind.SavingsPlan => TempSavingsPlanTextFilters,
+            PostingKind.Security => TempSecurityTextFilters,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
+        };
+
+    private int GetSelectedTextFilterCount()
+        => SelectedKinds.Sum(k => GetSelectedTextFilterList(k).Count);
+
+    private int GetTempTextFilterCount()
+        => SelectedKinds.Sum(k => GetTempTextFilterList(k).Count);
 }
