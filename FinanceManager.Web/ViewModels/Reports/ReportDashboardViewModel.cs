@@ -320,10 +320,22 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// True when the currently applied filter state differs from the last loaded or saved
+    /// favorite state. Enables the save actions in view mode so ad-hoc filter changes can
+    /// be persisted explicitly; reset when a favorite is applied or saved.
+    /// </summary>
+    public bool FiltersDirty { get; set; }
+
+    /// <summary>
     /// Clears all applied filters and resets filter-related flags.
     /// </summary>
     public void ClearFilters()
     {
+        var hadFilters = SelectedAccounts.Count > 0 || SelectedContacts.Count > 0 || SelectedSavingsPlans.Count > 0 || SelectedSecurities.Count > 0
+            || SelectedContactCategories.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSecurityCategories.Count > 0
+            || SelectedSecuritySubTypes.Count > 0
+            || SelectedBankTextFilters.Count > 0 || SelectedContactTextFilters.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0 || SelectedSecurityTextFilters.Count > 0;
+        if (hadFilters) { FiltersDirty = true; }
         SelectedAccounts.Clear();
         SelectedContacts.Clear();
         SelectedSavingsPlans.Clear();
@@ -1032,6 +1044,20 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <returns>A task that completes when the applied filters have been applied and reload finished.</returns>
     public async Task ApplyTempAndReloadAsync(DateTime? analysisDate, CancellationToken ct = default)
     {
+        var filtersChanged =
+            !TempAccounts.SetEquals(SelectedAccounts)
+            || !TempContacts.SetEquals(SelectedContacts)
+            || !TempSavings.SetEquals(SelectedSavingsPlans)
+            || !TempSecurities.SetEquals(SelectedSecurities)
+            || !TempContactCats.SetEquals(SelectedContactCategories)
+            || !TempSavingsCats.SetEquals(SelectedSavingsCategories)
+            || !TempSecurityCats.SetEquals(SelectedSecurityCategories)
+            || !TempSecuritySubTypes.SetEquals(SelectedSecuritySubTypes)
+            || !TempBankTextFilters.SequenceEqual(SelectedBankTextFilters)
+            || !TempContactTextFilters.SequenceEqual(SelectedContactTextFilters)
+            || !TempSavingsPlanTextFilters.SequenceEqual(SelectedSavingsPlanTextFilters)
+            || !TempSecurityTextFilters.SequenceEqual(SelectedSecurityTextFilters);
+        if (filtersChanged) { FiltersDirty = true; }
         SelectedAccounts.Clear(); foreach (var id in TempAccounts) { SelectedAccounts.Add(id); }
         SelectedContacts.Clear(); foreach (var id in TempContacts) { SelectedContacts.Add(id); }
         SelectedSavingsPlans.Clear(); foreach (var id in TempSavings) { SelectedSavingsPlans.Add(id); }
@@ -1132,8 +1158,8 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         tabs.Add(new UiRibbonTab(localizer["Ribbon_ReportActions"], new List<UiRibbonAction>
         {
             new UiRibbonAction("ToggleEdit", (EditMode ? localizer["Ribbon_View"].Value : localizer["Ribbon_Edit"].Value), EditMode? "<svg><use href='/icons/sprite.svg#eye'/></svg>":"<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(() => { RaiseUiActionRequested("ToggleEdit"); return Task.CompletedTask; })),
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, !EditMode, null, new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })) { MobileShortcut = true },
-            new UiRibbonAction("SaveAs", localizer["Ribbon_SaveAs"].Value, "<svg><use href='/icons/sprite.svg#save-as'/></svg>", UiRibbonItemSize.Small, !EditMode, null, new Func<Task>(() => { RaiseUiActionRequested("SaveAs"); return Task.CompletedTask; })),
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })) { MobileShortcut = true },
+            new UiRibbonAction("SaveAs", localizer["Ribbon_SaveAs"].Value, "<svg><use href='/icons/sprite.svg#save-as'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("SaveAs"); return Task.CompletedTask; })),
             new UiRibbonAction("DeleteFavorite", localizer["Ribbon_DeleteFavorite"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, !ActiveFavoriteId.HasValue, null, new Func<Task>(() => { RaiseUiActionRequested("DeleteFavorite"); return Task.CompletedTask; })),
             new UiRibbonAction("Reload", localizer["Ribbon_ReloadData"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(() => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; })) { MobileShortcut = true }
         }));
@@ -1211,6 +1237,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 }
                 FavoriteName = res.Name;
                 ShowFavoriteDialog = false;
+                FiltersDirty = false;
                 RaiseStateChanged();
                 return res;
             }
@@ -1228,6 +1255,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 ActiveFavoriteId = res.Id;
                 FavoriteName = res.Name;
                 ShowFavoriteDialog = false;
+                FiltersDirty = false;
                 RaiseStateChanged();
                 return res;
             }

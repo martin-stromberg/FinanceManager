@@ -1037,6 +1037,7 @@
     {
         _vm!.ActiveFavoriteId = fav.Id;
         _vm!.FavoriteName = fav.Name;
+        _vm!.FiltersDirty = false;
         _selectedKinds = fav.PostingKinds?.Count > 0 ? fav.PostingKinds.Select(x => x).ToList() : new List<PostingKind> { fav.PostingKind };
         _includeCategory = fav.IncludeCategory;
         _includeDividendRelated = fav.Filters?.IncludeDividendRelated ?? false;
