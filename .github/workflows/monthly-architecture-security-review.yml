@@ -1,0 +1,65 @@
+name: Monthly Architecture & Security Review
+
+# Scheduled issue automation: on the first day of each month an issue is created that
+# mentions @softwarewerkstatt to trigger the automated analysis. The issue is only
+# created when no open issue of the same type (same title prefix) exists, so a review
+# that is still being processed is never duplicated by the next cycle.
+on:
+  schedule:
+    # 1st of every month, 05:00 UTC.
+    - cron: '0 5 1 * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: monthly-architecture-security-review
+  cancel-in-progress: false
+
+jobs:
+  create-review-issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TITLE_PREFIX: 'Architektur- & Sicherheitsreview'
+
+    steps:
+      - name: Check for existing open review issue
+        id: check
+        run: |
+          count=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --search "in:title \"${TITLE_PREFIX}\"" \
+            --json number --jq 'length')
+          echo "Found $count open issue(s) with title prefix '${TITLE_PREFIX}'."
+          echo "open=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Create review issue
+        if: steps.check.outputs.open == '0'
+        run: |
+          title="${TITLE_PREFIX} – $(date -u +%Y-%m)"
+          body=$(cat <<'BODY'
+          @softwarewerkstatt
+
+          Bitte führe ein Architektur- und Sicherheitsreview durch.
+
+          Prüfe insbesondere:
+
+          - Neue Sicherheitsrisiken in verwendeten Frameworks und Bibliotheken
+          - Bekannte Schwachstellen (CVEs) in NuGet-Abhängigkeiten
+          - Neue Empfehlungen für ASP.NET Core, Blazor, .NET und verwandte Technologien
+          - Änderungen bei Authentifizierung und Autorisierung
+          - Neue oder inzwischen bevorzugte Design Patterns
+          - Veraltete, abgekündigte oder problematische APIs
+          - Verbesserungsmöglichkeiten hinsichtlich Wartbarkeit, Erweiterbarkeit und Testbarkeit
+          - Aktuelle Empfehlungen zu Logging, Telemetrie und Monitoring
+          - Relevante Erkenntnisse aus der Community, Microsoft-Dokumentation und Sicherheitsmeldungen
+
+          Erstelle eine priorisierte Liste konkreter Handlungsempfehlungen.
+          BODY
+          )
+          gh issue create --repo "${{ github.repository }}" --title "$title" --body "$body"
