@@ -826,11 +826,56 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             return adjusted with { Id = newId };
         }).ToList();
 
+        // Report favorites keep entity references in CSV lists which are remapped to the new
+        // entity ids on import - align the before snapshot the same way.
+        var savingsPlanIdMap = new Dictionary<Guid, Guid>();
+        foreach (var sp in before.SavingsPlans)
+        {
+            if (savingsPlanNameToId.TryGetValue(sp.Name, out var nsp)) savingsPlanIdMap[sp.Id] = nsp;
+        }
+        var contactCategoryIdMap = new Dictionary<Guid, Guid>();
+        foreach (var c in before.ContactCategories)
+        {
+            if (contactCategoryNameToId.TryGetValue(c.Name, out var ncc)) contactCategoryIdMap[c.Id] = ncc;
+        }
+        var savingsPlanCategoryIdMap = new Dictionary<Guid, Guid>();
+        foreach (var c in before.SavingsPlanCategories)
+        {
+            if (savingsPlanCategoryNameToId.TryGetValue(c.Name, out var nspc)) savingsPlanCategoryIdMap[c.Id] = nspc;
+        }
+        var securityCategoryIdMap = new Dictionary<Guid, Guid>();
+        foreach (var c in before.SecurityCategories)
+        {
+            if (securityCategoryNameToId.TryGetValue(c.Name, out var nscc)) securityCategoryIdMap[c.Id] = nscc;
+        }
+
+        static string? RemapCsvIds(string? csv, IReadOnlyDictionary<Guid, Guid> map)
+        {
+            if (string.IsNullOrWhiteSpace(csv)) { return csv; }
+            var mapped = csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var g) && map.TryGetValue(g, out var n) ? n : (Guid?)null)
+                .Where(g => g.HasValue)
+                .Select(g => g!.Value)
+                .Distinct()
+                .ToArray();
+            return mapped.Length == 0 ? null : string.Join(',', mapped);
+        }
+
         var reportFavoriteNameToId = after.ReportFavorites.ToDictionary(r => r.Name, r => r.Id);
         var reportFavorites = before.ReportFavorites.Select(rf =>
         {
-            if (reportFavoriteNameToId.TryGetValue(rf.Name, out var nid)) return rf with { Id = nid };
-            return rf;
+            var adjusted = rf with
+            {
+                AccountIdsCsv = RemapCsvIds(rf.AccountIdsCsv, accountIdMap),
+                ContactIdsCsv = RemapCsvIds(rf.ContactIdsCsv, contactIdMap),
+                SavingsPlanIdsCsv = RemapCsvIds(rf.SavingsPlanIdsCsv, savingsPlanIdMap),
+                SecurityIdsCsv = RemapCsvIds(rf.SecurityIdsCsv, securityIdMap),
+                ContactCategoryIdsCsv = RemapCsvIds(rf.ContactCategoryIdsCsv, contactCategoryIdMap),
+                SavingsPlanCategoryIdsCsv = RemapCsvIds(rf.SavingsPlanCategoryIdsCsv, savingsPlanCategoryIdMap),
+                SecurityCategoryIdsCsv = RemapCsvIds(rf.SecurityCategoryIdsCsv, securityCategoryIdMap)
+            };
+            if (reportFavoriteNameToId.TryGetValue(rf.Name, out var nid)) return adjusted with { Id = nid };
+            return adjusted;
         }).ToList();
         var homeKpis = before.HomeKpis.ToList();
         var attachmentCategories = remappedAttachmentCategories;
