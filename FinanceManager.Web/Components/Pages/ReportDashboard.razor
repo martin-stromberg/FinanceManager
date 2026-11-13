@@ -457,6 +457,22 @@
                         </div>
                     </div>
                 }
+                <div class="subtype-list" style="margin-top:.5rem;">
+                    <div class="group-title" style="margin-bottom:.25rem;">@Localizer["FilterGroup_TextFilters"]</div>
+                    @foreach (var tf in _vm!.GetTempTextFilters(_vm!.GetActiveFilterTabKind()))
+                    {
+                        var entry = tf;
+                        <div class="mk-item line" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;">
+                            <span>@entry</span>
+                            <button type="button" class="btn secondary" style="padding:.1rem .4rem;" title="@Localizer["TextFilter_Remove"]" aria-label="@Localizer["TextFilter_Remove"]" @onclick="(()=> _vm!.RemoveTempTextFilter(_vm!.GetActiveFilterTabKind(), entry))"><svg style="width:1rem;height:1rem;vertical-align:middle;"><use href="/icons/sprite.svg#close"/></svg></button>
+                        </div>
+                    }
+                    <div style="display:flex;gap:.5rem;align-items:center;margin-top:.25rem;">
+                        <input type="text" maxlength="@TextFilterList.MaxEntryLength" style="flex:1;" placeholder="@Localizer["TextFilter_Placeholder"]" @bind="_vm!.NewTextFilterInput" @bind:event="oninput" />
+                        <button type="button" class="btn" disabled="@string.IsNullOrWhiteSpace(_vm!.NewTextFilterInput)" @onclick="(()=> _vm!.AddTempTextFilter(_vm!.GetActiveFilterTabKind(), _vm!.NewTextFilterInput))">@Localizer["TextFilter_Add"]</button>
+                    </div>
+                    <div class="small-empty" style="margin-top:.25rem;">@Localizer["TextFilter_Hint"]</div>
+                </div>
             }
             <div class="dialog-actions">
                 <button class="btn" @onclick="(()=> _vm!.ApplyTempAndReloadAsync(_analysisMonth))" disabled="@(_vm!.FilterOptionsLoading)">@Localizer["FilterDialog_Apply"]</button>
@@ -1021,6 +1037,7 @@
     {
         _vm!.ActiveFavoriteId = fav.Id;
         _vm!.FavoriteName = fav.Name;
+        _vm!.FiltersDirty = false;
         _selectedKinds = fav.PostingKinds?.Count > 0 ? fav.PostingKinds.Select(x => x).ToList() : new List<PostingKind> { fav.PostingKind };
         _includeCategory = fav.IncludeCategory;
         _includeDividendRelated = fav.Filters?.IncludeDividendRelated ?? false;
@@ -1038,6 +1055,10 @@
         _vm!.SelectedSavingsCategories.Clear(); foreach (var id in fav.Filters?.SavingsPlanCategoryIds ?? Array.Empty<Guid>()) { _vm.SelectedSavingsCategories.Add(id); }
         _vm!.SelectedSecurityCategories.Clear(); foreach (var id in fav.Filters?.SecurityCategoryIds ?? Array.Empty<Guid>()) { _vm.SelectedSecurityCategories.Add(id); }
         _vm!.SelectedSecuritySubTypes.Clear(); foreach (var st in fav.Filters?.SecuritySubTypes ?? Array.Empty<int>()) { _vm.SelectedSecuritySubTypes.Add(st); }
+        _vm!.SelectedBankTextFilters.Clear(); _vm.SelectedBankTextFilters.AddRange(fav.Filters?.BankTextFilters ?? Array.Empty<string>());
+        _vm!.SelectedContactTextFilters.Clear(); _vm.SelectedContactTextFilters.AddRange(fav.Filters?.ContactTextFilters ?? Array.Empty<string>());
+        _vm!.SelectedSavingsPlanTextFilters.Clear(); _vm.SelectedSavingsPlanTextFilters.AddRange(fav.Filters?.SavingsPlanTextFilters ?? Array.Empty<string>());
+        _vm!.SelectedSecurityTextFilters.Clear(); _vm.SelectedSecurityTextFilters.AddRange(fav.Filters?.SecurityTextFilters ?? Array.Empty<string>());
         _vm!.IncludeDividendRelated = _includeDividendRelated;
         // restore date kind selection from favorite
         _useValutaDate = fav.UseValutaDate;
@@ -1058,10 +1079,34 @@
     private FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest? BuildFilters()
     {
         var payload = _includeCategory
-            ? new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(_vm!.SelectedAccounts.ToList(), null, null, null,
-                _vm.SelectedContactCategories.ToList(), _vm.SelectedSavingsCategories.ToList(), _vm.SelectedSecurityCategories.ToList(), _vm.SelectedSecuritySubTypes.ToList(), _includeDividendRelated)
-            : new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(_vm!.SelectedAccounts.ToList(), _vm.SelectedContacts.ToList(), _vm.SelectedSavingsPlans.ToList(), _vm.SelectedSecurities.ToList(),
-                null, null, null, _vm.SelectedSecuritySubTypes.ToList(), _includeDividendRelated);
+            ? new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(
+                AccountIds: _vm!.SelectedAccounts.ToList(),
+                ContactIds: null,
+                SavingsPlanIds: null,
+                SecurityIds: null,
+                ContactCategoryIds: _vm.SelectedContactCategories.ToList(),
+                SavingsPlanCategoryIds: _vm.SelectedSavingsCategories.ToList(),
+                SecurityCategoryIds: _vm.SelectedSecurityCategories.ToList(),
+                SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: _includeDividendRelated,
+                BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
+                ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: _vm.SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: _vm.SelectedSecurityTextFilters.ToList())
+            : new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(
+                AccountIds: _vm!.SelectedAccounts.ToList(),
+                ContactIds: _vm.SelectedContacts.ToList(),
+                SavingsPlanIds: _vm.SelectedSavingsPlans.ToList(),
+                SecurityIds: _vm.SelectedSecurities.ToList(),
+                ContactCategoryIds: null,
+                SavingsPlanCategoryIds: null,
+                SecurityCategoryIds: null,
+                SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: _includeDividendRelated,
+                BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
+                ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: _vm.SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: _vm.SelectedSecurityTextFilters.ToList());
         return payload;
     }
 }

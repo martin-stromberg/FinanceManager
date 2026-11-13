@@ -50,6 +50,8 @@ public sealed class FmConfigurationReadHandler : IMcpToolHandler
     private readonly IHomeKpiService _homeKpis;
 
     /// <summary>Creates the handler.</summary>
+    /// <param name="favorites">Service used to read report favorites of the current user.</param>
+    /// <param name="homeKpis">Service used to read home KPI tiles of the current user.</param>
     public FmConfigurationReadHandler(IReportFavoriteService favorites, IHomeKpiService homeKpis)
     {
         _favorites = favorites;
@@ -137,7 +139,11 @@ public sealed class FmConfigurationReadHandler : IMcpToolHandler
                 savingsPlanCategoryIds = f.Filters.SavingsPlanCategoryIds,
                 securityCategoryIds = f.Filters.SecurityCategoryIds,
                 securitySubTypes = f.Filters.SecuritySubTypes,
-                includeDividendRelated = f.Filters.IncludeDividendRelated
+                includeDividendRelated = f.Filters.IncludeDividendRelated,
+                bankTextFilters = f.Filters.BankTextFilters,
+                contactTextFilters = f.Filters.ContactTextFilters,
+                savingsPlanTextFilters = f.Filters.SavingsPlanTextFilters,
+                securityTextFilters = f.Filters.SecurityTextFilters
             },
             untrusted_data = new { name = f.Name }
         };

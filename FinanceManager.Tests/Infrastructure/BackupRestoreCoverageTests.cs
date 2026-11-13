@@ -9,6 +9,7 @@ using FinanceManager.Domain.Contacts;
 using FinanceManager.Domain.Notifications;
 using FinanceManager.Domain.Portfolio;
 using FinanceManager.Domain.Postings;
+using FinanceManager.Domain.Reports;
 using FinanceManager.Domain.Savings;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Domain.Statements;
@@ -593,6 +594,118 @@ namespace FinanceManager.Tests.Infrastructure
                 await db.ClearUserDataAsync(userId, (step, count) => { }, CancellationToken.None);
 
                 (await db.BudgetRules.CountAsync(CancellationToken.None)).Should().Be(0);
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// A report favorite's four free text filter lists survive the export/clear/import
+        /// round trip: the JSON columns are exported via <c>ToBackupDto</c> and re-applied
+        /// via <c>AssignBackupDto</c> during import.
+        /// </summary>
+        [Fact]
+        public async Task ReportFavorite_TextFilters_SurviveBackupRestore()
+        {
+            await using var db = CreateDb(out var conn);
+            var userId = Guid.NewGuid();
+
+            var favorite = new ReportFavorite(userId, "TextFilter-Fav", PostingKind.Bank, false, ReportInterval.Month, false, false, false, true, true);
+            favorite.SetFilters(null, null, null, null, null, null, null, null, null,
+                bankTextFilters: new[] { "Miete", "Tankstelle" },
+                contactTextFilters: new[] { "Amazon" },
+                savingsPlanTextFilters: new[] { "Sparen" },
+                securityTextFilters: new[] { "Dividende" });
+            db.ReportFavorites.Add(favorite);
+            await db.SaveChangesAsync(CancellationToken.None);
+            var expectedDto = favorite.ToBackupDto();
+            db.ChangeTracker.Clear();
+
+            var temp = Path.Combine(Path.GetTempPath(), "fmtests", Guid.NewGuid().ToString());
+            try
+            {
+                var svc = CreateBackupService(db, temp);
+                var ndjson = await ReadBackupNdjsonAsync(db, svc, userId, temp);
+                db.ChangeTracker.Clear();
+
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ndjson));
+                var importer = CreateImportService(db);
+                await importer.ImportAsync(userId, stream, replaceExisting: true, CancellationToken.None);
+
+                var restored = await db.ReportFavorites.SingleAsync(CancellationToken.None);
+                restored.Name.Should().Be("TextFilter-Fav");
+                restored.BankTextFiltersJson.Should().Be(expectedDto.BankTextFiltersJson);
+                restored.ContactTextFiltersJson.Should().Be(expectedDto.ContactTextFiltersJson);
+                restored.SavingsPlanTextFiltersJson.Should().Be(expectedDto.SavingsPlanTextFiltersJson);
+                restored.SecurityTextFiltersJson.Should().Be(expectedDto.SecurityTextFiltersJson);
+                var restoredFilters = restored.GetFilters();
+                restoredFilters.BankTextFilters.Should().BeEquivalentTo(new[] { "Miete", "Tankstelle" });
+                restoredFilters.ContactTextFilters.Should().BeEquivalentTo(new[] { "Amazon" });
+                restoredFilters.SavingsPlanTextFilters.Should().BeEquivalentTo(new[] { "Sparen" });
+                restoredFilters.SecurityTextFilters.Should().BeEquivalentTo(new[] { "Dividende" });
+            }
+            finally
+            {
+                try { Directory.Delete(temp, true); } catch { /* best effort cleanup */ }
+                conn.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// A version-3 payload whose <c>ReportFavorites</c> entries were written before the
+        /// text filter columns existed (the four <c>*TextFiltersJson</c> properties are
+        /// absent) still imports cleanly and leaves all text filters unset.
+        /// </summary>
+        [Fact]
+        public async Task ImportAsync_OldBackupWithoutTextFilterFields_StillWorks()
+        {
+            await using var db = CreateDb(out var conn);
+            try
+            {
+                var userId = Guid.NewGuid();
+                using var doc = JsonDocument.Parse("""
+                {
+                    "ReportFavorites": [
+                    {
+                        "Id": "11111111-1111-1111-1111-111111111111",
+                        "OwnerUserId": "22222222-2222-2222-2222-222222222222",
+                        "Name": "Alt-Favorit",
+                        "PostingKind": 0,
+                        "IncludeCategory": false,
+                        "Interval": 0,
+                        "Take": 24,
+                        "ComparePrevious": false,
+                        "CompareYear": false,
+                        "CompareProjection": false,
+                        "ShowChart": true,
+                        "Expandable": true,
+                        "PostingKindsCsv": null,
+                        "AccountIdsCsv": null,
+                        "ContactIdsCsv": null,
+                        "SavingsPlanIdsCsv": null,
+                        "SecurityIdsCsv": null,
+                        "ContactCategoryIdsCsv": null,
+                        "SavingsPlanCategoryIdsCsv": null,
+                        "SecurityCategoryIdsCsv": null,
+                        "SecuritySubTypesCsv": null,
+                        "IncludeDividendRelated": null,
+                        "UseValutaDate": false,
+                        "SavingsPlanPostingSource": 0
+                    }]
+                }
+                """);
+
+                await ImportPayloadAsync(db, userId, doc.RootElement);
+
+                var restored = await db.ReportFavorites.SingleAsync(CancellationToken.None);
+                restored.Name.Should().Be("Alt-Favorit");
+                restored.OwnerUserId.Should().Be(userId);
+                restored.BankTextFiltersJson.Should().BeNull();
+                restored.ContactTextFiltersJson.Should().BeNull();
+                restored.SavingsPlanTextFiltersJson.Should().BeNull();
+                restored.SecurityTextFiltersJson.Should().BeNull();
             }
             finally
             {

@@ -179,12 +179,52 @@
             return;
         }
 
+        // Collect the favorite KPIs that actually hold a cache entry first, so the
+        // favorites list is only fetched when a version comparison is needed at all.
+        var pending = new List<(HomeKpiDto Kpi, string CacheKey, FavKpiData Cached)>();
         foreach (var k in _kpis.Where(k => k.Kind == HomeKpiKind.ReportFavorite))
         {
-            var cached = await _kpiCache.GetAsync<FavKpiData>($"home.kpi.favorite-{k.Id}");
+            var cacheKey = $"home.kpi.favorite-{k.Id}";
+            var cached = await _kpiCache.GetAsync<FavKpiData>(cacheKey);
             if (cached != null)
             {
+                pending.Add((k, cacheKey, cached));
+            }
+        }
+        if (pending.Count == 0)
+        {
+            return;
+        }
+
+        // One list call for all favorites instead of one Reports_GetFavoriteAsync per KPI
+        // tile (N+1). The DTOs are kept in _favorites so the regular miss path
+        // (LoadFavoriteKpiDataAsync) can reuse them instead of fetching each favorite again.
+        try
+        {
+            var list = await Api.Reports_ListFavoritesAsync();
+            _favorites = (list ?? Array.Empty<ReportFavoriteDto>()).OrderBy(f => f.Name).ToList();
+        }
+        catch
+        {
+            // Transient load failure: keep the cached entries instead of discarding them.
+            return;
+        }
+
+        foreach (var (k, cacheKey, cached) in pending)
+        {
+            // The cached value is only valid for the favorite version it was computed from;
+            // a ModifiedUtc mismatch (or a missing favorite) discards the entry so that a
+            // fresh load happens via the regular miss path.
+            var fav = k.ReportFavoriteId.HasValue
+                ? _favorites.FirstOrDefault(f => f.Id == k.ReportFavoriteId.Value)
+                : null;
+            if (fav != null && cached.FavoriteModifiedUtc == (fav.ModifiedUtc ?? DateTime.MinValue))
+            {
                 _favData[k.Id] = cached;
+            }
+            else
+            {
+                await _kpiCache.RemoveAsync(cacheKey);
             }
         }
     }
@@ -587,7 +627,10 @@
         try
         {
             if (!k.ReportFavoriteId.HasValue) { return; }
-            var fav = await Api.Reports_GetFavoriteAsync(k.ReportFavoriteId.Value);
+            // Prefer the favorites already loaded by RestoreFavoriteCacheAsync to avoid a
+            // redundant fetch; fall back to a direct load when the list was never populated.
+            var fav = _favorites.FirstOrDefault(f => f.Id == k.ReportFavoriteId.Value)
+                      ?? await Api.Reports_GetFavoriteAsync(k.ReportFavoriteId.Value);
             if (fav == null) { return; }
             var disablePrev = fav.Interval == ReportInterval.Ytd || fav.Interval == ReportInterval.Year;
             var req = new ReportAggregatesQueryRequest(
@@ -602,9 +645,19 @@
                 fav.PostingKinds?.Count > 0 ? fav.PostingKinds : null,
                 null,
                 fav.Filters == null ? null : new ReportAggregatesFiltersRequest(
-                    fav.Filters.AccountIds, fav.Filters.ContactIds, fav.Filters.SavingsPlanIds, fav.Filters.SecurityIds,
-                    fav.Filters.ContactCategoryIds, fav.Filters.SavingsPlanCategoryIds, fav.Filters.SecurityCategoryIds, fav.Filters.SecuritySubTypes,
-                    fav.Filters.IncludeDividendRelated),
+                    AccountIds: fav.Filters.AccountIds,
+                    ContactIds: fav.Filters.ContactIds,
+                    SavingsPlanIds: fav.Filters.SavingsPlanIds,
+                    SecurityIds: fav.Filters.SecurityIds,
+                    ContactCategoryIds: fav.Filters.ContactCategoryIds,
+                    SavingsPlanCategoryIds: fav.Filters.SavingsPlanCategoryIds,
+                    SecurityCategoryIds: fav.Filters.SecurityCategoryIds,
+                    SecuritySubTypes: fav.Filters.SecuritySubTypes,
+                    IncludeDividendRelated: fav.Filters.IncludeDividendRelated,
+                    BankTextFilters: fav.Filters.BankTextFilters,
+                    ContactTextFilters: fav.Filters.ContactTextFilters,
+                    SavingsPlanTextFilters: fav.Filters.SavingsPlanTextFilters,
+                    SecurityTextFilters: fav.Filters.SecurityTextFilters),
                 fav.SavingsPlanPostingSource
             );
             var agg = await Api.Reports_QueryAggregatesAsync(req);
@@ -635,7 +688,7 @@
                               .OrderBy(g => g.Key).LastOrDefault()?
                               .Where(p => p.YearAgoAmount.HasValue).Sum(p => p.YearAgoAmount!.Value);
             }
-            _favData[k.Id] = new FavKpiData(amount, prev, year, series, (int)fav.PostingKind);
+            _favData[k.Id] = new FavKpiData(amount, prev, year, series, (int)fav.PostingKind, fav.ModifiedUtc.GetValueOrDefault());
 
             if (_kpiCache?.Context.Enabled == true)
             {
@@ -650,6 +703,6 @@
         }
     }
 
-    public sealed record FavKpiData(decimal Amount, decimal? Prev, decimal? Year, List<SeriesPoint> Series, int Kind);
+    public sealed record FavKpiData(decimal Amount, decimal? Prev, decimal? Year, List<SeriesPoint> Series, int Kind, DateTime FavoriteModifiedUtc);
     public sealed record SeriesPoint(DateTime Date, decimal Amount);
 }

@@ -253,5 +253,101 @@ namespace FinanceManager.Tests.Infrastructure
             // Assert
             db.Postings.Should().BeEmpty();
         }
+
+        /// <summary>
+        /// Verifies that entity references stored in a report favorite's filter lists
+        /// (<c>ContactIdsCsv</c>, <c>AccountIdsCsv</c>, ...) are remapped to the ids of the newly
+        /// imported entities: imported entities always receive fresh ids, so keeping the backup
+        /// ids would leave the favorite filtering on non-existent rows (empty selection, "No data").
+        /// Filter ids without a counterpart in the backup are dropped.
+        /// </summary>
+        [Fact]
+        public async Task ImportAsync_RemapsReportFavoriteFilterEntityIds()
+        {
+            // Arrange
+            var conn = new SqliteConnection("DataSource=:memory:");
+            conn.Open();
+            var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
+            await using var db = new AppDbContext(options);
+            db.Database.EnsureCreated();
+
+            var userId = Guid.NewGuid();
+            var contactId = Guid.NewGuid();
+            var staleId = Guid.NewGuid();
+
+            var data = new
+            {
+                Contacts = new[]
+                {
+                    new
+                    {
+                        Id = contactId,
+                        OwnerUserId = Guid.NewGuid(),
+                        Name = "Alice",
+                        Type = 2,
+                        CategoryId = (Guid?)null,
+                        Description = (string?)null,
+                        IsPaymentIntermediary = false,
+                        SymbolAttachmentId = (Guid?)null
+                    }
+                },
+                ReportFavorites = new[]
+                {
+                    new
+                    {
+                        Id = Guid.NewGuid(),
+                        OwnerUserId = Guid.NewGuid(),
+                        Name = "Kontaktbericht",
+                        PostingKind = 1,
+                        IncludeCategory = false,
+                        Interval = 0,
+                        Take = 24,
+                        ComparePrevious = false,
+                        CompareYear = false,
+                        CompareProjection = false,
+                        ShowChart = true,
+                        Expandable = true,
+                        PostingKindsCsv = (string?)null,
+                        AccountIdsCsv = (string?)null,
+                        ContactIdsCsv = $"{contactId},{staleId}",
+                        SavingsPlanIdsCsv = (string?)null,
+                        SecurityIdsCsv = (string?)null,
+                        ContactCategoryIdsCsv = (string?)null,
+                        SavingsPlanCategoryIdsCsv = (string?)null,
+                        SecurityCategoryIdsCsv = (string?)null,
+                        SecuritySubTypesCsv = (string?)null,
+                        IncludeDividendRelated = (bool?)null,
+                        UseValutaDate = false
+                    }
+                }
+            };
+
+            var dataJson = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var meta = "{\"Type\":\"Backup\",\"Version\":3}";
+            var fullJson = meta + "\n" + dataJson;
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(fullJson));
+
+            var statementDraftMock = new Mock<IStatementDraftService>();
+            var aggregateMock = new Mock<IPostingAggregateService>();
+            aggregateMock
+                .Setup(x => x.RebuildForUserAsync(It.IsAny<Guid>(), It.IsAny<Action<int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var svc = new global::SetupImportService(
+                db,
+                statementDraftMock.Object,
+                aggregateMock.Object,
+                NullLogger<global::SetupImportService>.Instance);
+
+            // Act
+            await svc.ImportAsync(userId, stream, replaceExisting: false, CancellationToken.None);
+
+            // Assert
+            var contact = db.Contacts.Single();
+            contact.Id.Should().NotBe(contactId);
+            var fav = db.ReportFavorites.Single();
+            fav.GetFilters().ContactIds.Should().BeEquivalentTo(new[] { contact.Id });
+        }
     }
 }

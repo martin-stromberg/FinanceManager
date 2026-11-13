@@ -434,4 +434,90 @@ public sealed class ReportDashboardViewModelTests
             It.Is<ReportAggregatesQueryRequest>(r => r.Filters != null && r.Filters.SavingsPlanIds != null && r.Filters.SavingsPlanIds.Contains(planId)),
             It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    /// <summary>
+    /// Verifies that applying the filter dialog marks the filter state as dirty only when the
+    /// temporary selection actually differs from the applied one, so the save actions can
+    /// distinguish real changes from a no-op apply.
+    /// </summary>
+    [Fact]
+    public async Task ApplyTempAndReload_SetsFiltersDirty_OnlyOnChange()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportAggregationResult(ReportInterval.Month, Array.Empty<ReportAggregatePointDto>(), false, false, false));
+
+        await vm.ApplyTempAndReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
+        Assert.False(vm.FiltersDirty);
+
+        vm.TempContacts.Add(Guid.NewGuid());
+        await vm.ApplyTempAndReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
+        Assert.True(vm.FiltersDirty);
+    }
+
+    /// <summary>
+    /// Verifies that clearing previously active filters marks the filter state as dirty while
+    /// clearing an already empty filter state leaves the clean flag untouched.
+    /// </summary>
+    [Fact]
+    public void ClearFilters_SetsFiltersDirty_OnlyWhenFiltersWereActive()
+    {
+        var (vm, _) = CreateVm();
+        vm.ClearFilters();
+        Assert.False(vm.FiltersDirty);
+
+        vm.SelectedContacts.Add(Guid.NewGuid());
+        vm.ClearFilters();
+        Assert.True(vm.FiltersDirty);
+    }
+
+    /// <summary>
+    /// Verifies the save action enablement matrix: outside edit mode the save actions stay
+    /// disabled while the filter state is clean but become available once filters were changed
+    /// (ad-hoc changes can then be persisted explicitly); in edit mode they are always enabled.
+    /// </summary>
+    [Fact]
+    public void SaveActions_EnabledInViewMode_OnlyWhenFiltersDirty()
+    {
+        var (vm, _) = CreateVm();
+        var localizerMock = new Mock<IStringLocalizer>();
+        localizerMock.Setup(l => l[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key));
+
+        List<UiRibbonAction> GetSaveActions() => vm.GetRibbonRegisters(localizerMock.Object)!
+            .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+            .SelectMany(t => t.Items)
+            .Where(a => a.Id is "Save" or "SaveAs")
+            .ToList();
+
+        vm.EditMode = false;
+        Assert.All(GetSaveActions(), a => Assert.True(a.Disabled));
+
+        vm.FiltersDirty = true;
+        Assert.All(GetSaveActions(), a => Assert.False(a.Disabled));
+
+        vm.FiltersDirty = false;
+        vm.EditMode = true;
+        Assert.All(GetSaveActions(), a => Assert.False(a.Disabled));
+    }
+
+    /// <summary>
+    /// Verifies that successfully saving a favorite resets the dirty flag so the save actions
+    /// return to their disabled state in view mode after the change has been persisted.
+    /// </summary>
+    [Fact]
+    public async Task SubmitFavoriteDialog_ResetsFiltersDirty_AfterSave()
+    {
+        var (vm, apiMock) = CreateVm();
+        var fav = new ReportFavoriteDto(Guid.NewGuid(), "Fav", PostingKind.Bank, false, 0, 24, false, false, true, true, DateTime.UtcNow, null, new[] { PostingKind.Bank }, null, false);
+        apiMock.Setup(a => a.Reports_CreateFavoriteAsync(It.IsAny<ReportFavoriteCreateApiRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(fav);
+
+        vm.FiltersDirty = true;
+        vm.OpenFavoriteDialog(false, "Fav");
+        var res = await vm.SubmitFavoriteDialogAsync("def", PostingKind.Bank, false, 0, 24, false, false, false, true, true, null, null, ct: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(res);
+        Assert.False(vm.FiltersDirty);
+    }
 }

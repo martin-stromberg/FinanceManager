@@ -888,7 +888,18 @@ public sealed class SetupImportService : ISetupImportService
             {
                 _logger.LogDebug("ImportVersion3: ReportFavorite create - BackupId={BackupId}, Name={Name}", dto.Id, dto.Name);
                 var entity = new ReportFavorite(userId, dto.Name, dto.PostingKind, dto.IncludeCategory, dto.Interval, dto.ComparePrevious, dto.CompareYear, dto.ShowChart, dto.Expandable, dto.Take);
-                entity.AssignBackupDto(dto);
+                // remap entity references in the filter lists to the newly created ids
+                var adjusted = dto with
+                {
+                    AccountIdsCsv = RemapCsvIds(dto.AccountIdsCsv, accountMap),
+                    ContactIdsCsv = RemapCsvIds(dto.ContactIdsCsv, contactMap),
+                    SavingsPlanIdsCsv = RemapCsvIds(dto.SavingsPlanIdsCsv, savingsMap),
+                    SecurityIdsCsv = RemapCsvIds(dto.SecurityIdsCsv, securityMap),
+                    ContactCategoryIdsCsv = RemapCsvIds(dto.ContactCategoryIdsCsv, contactCatMap),
+                    SavingsPlanCategoryIdsCsv = RemapCsvIds(dto.SavingsPlanCategoryIdsCsv, savingsCatMap),
+                    SecurityCategoryIdsCsv = RemapCsvIds(dto.SecurityCategoryIdsCsv, securityCatMap)
+                };
+                entity.AssignBackupDto(adjusted);
                 _db.ReportFavorites.Add(entity);
                 reportMap[dto.Id] = entity.Id;
             }
@@ -1472,6 +1483,18 @@ public sealed class SetupImportService : ISetupImportService
             ProgressChanged?.Invoke(this, progress);
         }, ct);
         ProgressChanged?.Invoke(this, progress.Inc());
+    }
+
+    private static string? RemapCsvIds(string? csv, IReadOnlyDictionary<Guid, Guid> idMap)
+    {
+        if (string.IsNullOrWhiteSpace(csv)) { return null; }
+        var mapped = csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => Guid.TryParse(s, out var g) && idMap.TryGetValue(g, out var mappedId) ? mappedId : (Guid?)null)
+            .Where(g => g.HasValue)
+            .Select(g => g!.Value)
+            .Distinct()
+            .ToArray();
+        return mapped.Length == 0 ? null : string.Join(',', mapped);
     }
 
     private static DateTime GetPeriodStart(DateTime date, AggregatePeriod p)

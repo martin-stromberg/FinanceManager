@@ -59,12 +59,28 @@ public sealed class ReportFavoriteService : IReportFavoriteService
     /// <returns>A <see cref="ReportFavoriteFiltersDto"/> instance or <c>null</c> if no filters are set.</returns>
     private static ReportFavoriteFiltersDto? ToDtoFilters(ReportFavorite e)
     {
-        var (acc, con, sp, sec, ccat, scat, secat, secTypes, includeDiv) = e.GetFilters();
-        if (acc == null && con == null && sp == null && sec == null && ccat == null && scat == null && secat == null && secTypes == null && includeDiv != true)
+        var f = e.GetFilters();
+        if (f.AccountIds == null && f.ContactIds == null && f.SavingsPlanIds == null && f.SecurityIds == null
+            && f.ContactCategoryIds == null && f.SavingsPlanCategoryIds == null && f.SecurityCategoryIds == null
+            && f.SecuritySubTypes == null && f.IncludeDividendRelated != true
+            && f.BankTextFilters == null && f.ContactTextFilters == null && f.SavingsPlanTextFilters == null && f.SecurityTextFilters == null)
         {
             return null;
         }
-        return new ReportFavoriteFiltersDto(acc, con, sp, sec, ccat, scat, secat, secTypes, includeDiv);
+        return new ReportFavoriteFiltersDto(
+            AccountIds: f.AccountIds,
+            ContactIds: f.ContactIds,
+            SavingsPlanIds: f.SavingsPlanIds,
+            SecurityIds: f.SecurityIds,
+            ContactCategoryIds: f.ContactCategoryIds,
+            SavingsPlanCategoryIds: f.SavingsPlanCategoryIds,
+            SecurityCategoryIds: f.SecurityCategoryIds,
+            SecuritySubTypes: f.SecuritySubTypes,
+            IncludeDividendRelated: f.IncludeDividendRelated,
+            BankTextFilters: f.BankTextFilters,
+            ContactTextFilters: f.ContactTextFilters,
+            SavingsPlanTextFilters: f.SavingsPlanTextFilters,
+            SecurityTextFilters: f.SecurityTextFilters);
     }
 
     /// <summary>
@@ -80,7 +96,20 @@ public sealed class ReportFavoriteService : IReportFavoriteService
             e.SetFilters(null, null, null, null, null, null, null, null, null);
             return;
         }
-        e.SetFilters(f.AccountIds, f.ContactIds, f.SavingsPlanIds, f.SecurityIds, f.ContactCategoryIds, f.SavingsPlanCategoryIds, f.SecurityCategoryIds, f.SecuritySubTypes, f.IncludeDividendRelated);
+        e.SetFilters(
+            accountIds: f.AccountIds,
+            contactIds: f.ContactIds,
+            savingsPlanIds: f.SavingsPlanIds,
+            securityIds: f.SecurityIds,
+            contactCategoryIds: f.ContactCategoryIds,
+            savingsPlanCategoryIds: f.SavingsPlanCategoryIds,
+            securityCategoryIds: f.SecurityCategoryIds,
+            securitySubTypes: f.SecuritySubTypes,
+            includeDividendRelated: f.IncludeDividendRelated,
+            bankTextFilters: f.BankTextFilters,
+            contactTextFilters: f.ContactTextFilters,
+            savingsPlanTextFilters: f.SavingsPlanTextFilters,
+            securityTextFilters: f.SecurityTextFilters);
     }
 
     /// <summary>
@@ -120,7 +149,11 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 r.SecuritySubTypesCsv,
                 r.IncludeDividendRelated,
                 r.UseValutaDate,
-                r.SavingsPlanPostingSource
+                r.SavingsPlanPostingSource,
+                r.BankTextFiltersJson,
+                r.ContactTextFiltersJson,
+                r.SavingsPlanTextFiltersJson,
+                r.SecurityTextFiltersJson
             })
             .ToListAsync(ct);
 
@@ -128,7 +161,20 @@ public sealed class ReportFavoriteService : IReportFavoriteService
         {
             var entity = new ReportFavorite(ownerUserId, r.Name, r.PostingKind, r.IncludeCategory, r.Interval, r.ComparePrevious, r.CompareYear, r.CompareProjection, r.ShowChart, r.Expandable, r.Take);
             if (!string.IsNullOrWhiteSpace(r.PostingKindsCsv)) { entity.SetPostingKinds(ParseKinds(r.PostingKindsCsv, r.PostingKind)); }
-            entity.SetFilters(ParseCsv(r.AccountIdsCsv), ParseCsv(r.ContactIdsCsv), ParseCsv(r.SavingsPlanIdsCsv), ParseCsv(r.SecurityIdsCsv), ParseCsv(r.ContactCategoryIdsCsv), ParseCsv(r.SavingsPlanCategoryIdsCsv), ParseCsv(r.SecurityCategoryIdsCsv), ParseCsvInt(r.SecuritySubTypesCsv), r.IncludeDividendRelated);
+            entity.SetFilters(
+                accountIds: ParseCsv(r.AccountIdsCsv),
+                contactIds: ParseCsv(r.ContactIdsCsv),
+                savingsPlanIds: ParseCsv(r.SavingsPlanIdsCsv),
+                securityIds: ParseCsv(r.SecurityIdsCsv),
+                contactCategoryIds: ParseCsv(r.ContactCategoryIdsCsv),
+                savingsPlanCategoryIds: ParseCsv(r.SavingsPlanCategoryIdsCsv),
+                securityCategoryIds: ParseCsv(r.SecurityCategoryIdsCsv),
+                securitySubTypes: ParseCsvInt(r.SecuritySubTypesCsv),
+                includeDividendRelated: r.IncludeDividendRelated,
+                bankTextFilters: TextFilterList.FromJson(r.BankTextFiltersJson),
+                contactTextFilters: TextFilterList.FromJson(r.ContactTextFiltersJson),
+                savingsPlanTextFilters: TextFilterList.FromJson(r.SavingsPlanTextFiltersJson),
+                securityTextFilters: TextFilterList.FromJson(r.SecurityTextFiltersJson));
             // apply persisted UseValutaDate onto entity state for DTO creation
             if (r.UseValutaDate || r.SavingsPlanPostingSource != SavingsPlanPostingSource.PlanPostings) { entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, r.UseValutaDate, r.SavingsPlanPostingSource); }
             return new ReportFavoriteDto(
@@ -190,13 +236,30 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 r.SecuritySubTypesCsv,
                 r.IncludeDividendRelated,
                 r.UseValutaDate,
-                r.SavingsPlanPostingSource
+                r.SavingsPlanPostingSource,
+                r.BankTextFiltersJson,
+                r.ContactTextFiltersJson,
+                r.SavingsPlanTextFiltersJson,
+                r.SecurityTextFiltersJson
             })
             .FirstOrDefaultAsync(ct);
         if (r == null) { return null; }
         var entity = new ReportFavorite(ownerUserId, r.Name, r.PostingKind, r.IncludeCategory, r.Interval, r.ComparePrevious, r.CompareYear, r.CompareProjection, r.ShowChart, r.Expandable, r.Take);
         if (!string.IsNullOrWhiteSpace(r.PostingKindsCsv)) { entity.SetPostingKinds(ParseKinds(r.PostingKindsCsv, r.PostingKind)); }
-        entity.SetFilters(ParseCsv(r.AccountIdsCsv), ParseCsv(r.ContactIdsCsv), ParseCsv(r.SavingsPlanIdsCsv), ParseCsv(r.SecurityIdsCsv), ParseCsv(r.ContactCategoryIdsCsv), ParseCsv(r.SavingsPlanCategoryIdsCsv), ParseCsv(r.SecurityCategoryIdsCsv), ParseCsvInt(r.SecuritySubTypesCsv), r.IncludeDividendRelated);
+        entity.SetFilters(
+            accountIds: ParseCsv(r.AccountIdsCsv),
+            contactIds: ParseCsv(r.ContactIdsCsv),
+            savingsPlanIds: ParseCsv(r.SavingsPlanIdsCsv),
+            securityIds: ParseCsv(r.SecurityIdsCsv),
+            contactCategoryIds: ParseCsv(r.ContactCategoryIdsCsv),
+            savingsPlanCategoryIds: ParseCsv(r.SavingsPlanCategoryIdsCsv),
+            securityCategoryIds: ParseCsv(r.SecurityCategoryIdsCsv),
+            securitySubTypes: ParseCsvInt(r.SecuritySubTypesCsv),
+            includeDividendRelated: r.IncludeDividendRelated,
+            bankTextFilters: TextFilterList.FromJson(r.BankTextFiltersJson),
+            contactTextFilters: TextFilterList.FromJson(r.ContactTextFiltersJson),
+            savingsPlanTextFilters: TextFilterList.FromJson(r.SavingsPlanTextFiltersJson),
+            securityTextFilters: TextFilterList.FromJson(r.SecurityTextFiltersJson));
         if (r.UseValutaDate || r.SavingsPlanPostingSource != SavingsPlanPostingSource.PlanPostings) { entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, r.UseValutaDate, r.SavingsPlanPostingSource); }
         return new ReportFavoriteDto(
             r.Id,
