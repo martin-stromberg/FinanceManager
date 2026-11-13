@@ -475,6 +475,20 @@ public sealed class EnumCoverageTests
             nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.ToolError));
 
     /// <summary>
+    /// Verifies the declared values of the internal report group-key target enum.
+    /// </summary>
+    [Fact]
+    public void ReportGroupKeyTargetKind_Values()
+    {
+        var enumType = typeof(FinanceManager.Infrastructure.Reports.ReportPostingsQueryService).Assembly
+            .GetType("FinanceManager.Infrastructure.Reports.ReportGroupKeyTargetKind");
+        Assert.NotNull(enumType);
+        Assert.Equal(
+            new[] { "Category", "Entity", "Total", "Type" },
+            Enum.GetNames(enumType!).OrderBy(x => x, StringComparer.Ordinal).ToArray());
+    }
+
+    /// <summary>
     /// Verifies the declared values of the enum covered by this test.
     /// </summary>
     [Fact]
