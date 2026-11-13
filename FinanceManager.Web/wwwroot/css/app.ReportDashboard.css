@@ -256,6 +256,14 @@
     overflow-x: hidden;
 }
 
+/* Postings drill-down dialog: keep long lists inside the viewport on all screen sizes */
+.postings-modal {
+    box-sizing: border-box;
+    max-height: 92vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 .projection-detail-header {
     display: flex;
     align-items: center;

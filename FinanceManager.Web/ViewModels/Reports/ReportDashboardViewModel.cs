@@ -505,6 +505,139 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return new ReportTotals(amount, projection, prev, year);
     }
 
+    // Postings drill-down overlay state
+
+    /// <summary>
+    /// Indicates whether the postings overlay is visible.
+    /// </summary>
+    public bool PostingsOverlayVisible { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the postings for the overlay are currently loading.
+    /// </summary>
+    public bool PostingsOverlayLoading { get; private set; }
+
+    /// <summary>
+    /// Localized overlay title (row name and column) supplied by the page.
+    /// </summary>
+    public string PostingsOverlayTitle { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Postings loaded for the currently inspected report cell.
+    /// </summary>
+    public IReadOnlyList<ReportPostingDto> PostingsOverlayRows { get; private set; } = [];
+
+    /// <summary>
+    /// True when the server truncated the posting list at its limit.
+    /// </summary>
+    public bool PostingsOverlayTruncated { get; private set; }
+
+    /// <summary>
+    /// Exact server-side amount sum of all postings of the cell (independent of truncation).
+    /// </summary>
+    public decimal PostingsOverlayTotalAmount { get; private set; }
+
+    /// <summary>
+    /// True when the last postings load failed (see <see cref="PostingsOverlayError"/>).
+    /// </summary>
+    public bool PostingsOverlayFailed { get; private set; }
+
+    /// <summary>
+    /// Server-side error message of the last postings load, or <c>null</c> when the load did
+    /// not fail or the failure carried no API error (the page shows a generic localized
+    /// message for the latter).
+    /// </summary>
+    public string? PostingsOverlayError { get; private set; }
+
+    /// <summary>
+    /// Opens the postings overlay and loads the postings composing the given report cell.
+    /// </summary>
+    /// <param name="groupKey">Group key of the report row or <c>null</c> for the total row.</param>
+    /// <param name="periodStart">Period anchor of the displayed row.</param>
+    /// <param name="period">Value column the drill-down refers to.</param>
+    /// <param name="title">Localized overlay title.</param>
+    /// <param name="analysisMonth">Analysis month anchor used for the current report.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the postings have been loaded.</returns>
+    public async Task ShowPostingsAsync(string? groupKey, DateTime periodStart, ReportPostingsPeriod period, string title, DateTime? analysisMonth, CancellationToken ct = default)
+    {
+        if (!IsAuthenticated)
+        {
+            RequireAuthentication();
+            return;
+        }
+
+        PostingsOverlayVisible = true;
+        PostingsOverlayLoading = true;
+        PostingsOverlayTitle = title;
+        PostingsOverlayRows = Array.Empty<ReportPostingDto>();
+        PostingsOverlayTruncated = false;
+        PostingsOverlayTotalAmount = 0m;
+        PostingsOverlayFailed = false;
+        PostingsOverlayError = null;
+        RaiseStateChanged();
+
+        try
+        {
+            var req = new ReportPostingsQueryRequest(
+                GroupKey: groupKey,
+                PeriodStart: periodStart,
+                Period: period,
+                PostingKind: PrimaryKind,
+                Interval: (ReportInterval)Interval,
+                IncludeCategory: IncludeCategory,
+                CompareProjection: CompareProjection,
+                UseValutaDate: UseValutaDate,
+                PostingKinds: IsMulti ? SelectedKinds.ToList() : null,
+                AnalysisDate: analysisMonth,
+                Filters: BuildFiltersPayload(),
+                SavingsPlanPostingSource: SavingsPlanPostingSource,
+                Take: Take,
+                CompareYear: CompareYear);
+            var result = await _api.Reports_QueryPostingsAsync(req, ct);
+            PostingsOverlayRows = result?.Postings ?? Array.Empty<ReportPostingDto>();
+            PostingsOverlayTruncated = result?.Truncated ?? false;
+            PostingsOverlayTotalAmount = result?.TotalAmount ?? 0m;
+        }
+        catch (OperationCanceledException)
+        {
+            // Aborts are no overlay errors: the loading flag is cleared in finally and the
+            // cancellation propagates to the caller unchanged.
+            throw;
+        }
+        catch (Exception)
+        {
+            PostingsOverlayRows = Array.Empty<ReportPostingDto>();
+            PostingsOverlayTruncated = false;
+            PostingsOverlayTotalAmount = 0m;
+            PostingsOverlayFailed = true;
+            // Only server-issued error details are shown; other failures get a generic
+            // localized message in the page (no raw exception text).
+            PostingsOverlayError = _api.LastError;
+        }
+        finally
+        {
+            PostingsOverlayLoading = false;
+            RaiseStateChanged();
+        }
+    }
+
+    /// <summary>
+    /// Closes the postings overlay and resets its state.
+    /// </summary>
+    public void HidePostings()
+    {
+        PostingsOverlayVisible = false;
+        PostingsOverlayLoading = false;
+        PostingsOverlayTitle = string.Empty;
+        PostingsOverlayRows = Array.Empty<ReportPostingDto>();
+        PostingsOverlayTruncated = false;
+        PostingsOverlayTotalAmount = 0m;
+        PostingsOverlayFailed = false;
+        PostingsOverlayError = null;
+        RaiseStateChanged();
+    }
+
     /// <summary>
     /// Returns an ordered sequence of period sums for charting.
     /// </summary>

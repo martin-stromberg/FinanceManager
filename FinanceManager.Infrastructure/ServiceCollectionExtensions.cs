@@ -119,6 +119,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPostingReversalService, PostingReversalService>();
         services.AddScoped<IReportFavoriteService, ReportFavoriteService>();
         services.AddScoped<IReportAggregationService, ReportAggregationService>();
+        services.AddScoped<IReportPostingsQueryService, ReportPostingsQueryService>();
         services.AddScoped<IHomeKpiService, HomeKpiService>();
         services.AddScoped<IIpBlockService, IpBlockService>();
         services.AddScoped<INotificationService, NotificationService>();

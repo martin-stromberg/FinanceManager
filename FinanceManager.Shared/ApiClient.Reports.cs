@@ -20,6 +20,19 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Lists the individual postings that compose a single report cell (drill-down).
+    /// </summary>
+    /// <param name="req">Postings query request (cell coordinates plus aggregation context).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The postings result.</returns>
+    public async Task<ReportPostingsResult> Reports_QueryPostingsAsync(ReportPostingsQueryRequest req, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync("/api/report-postings", req, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return (await resp.Content.ReadFromJsonAsync<ReportPostingsResult>(cancellationToken: ct))!;
+    }
+
+    /// <summary>
     /// Lists saved report favorites for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>

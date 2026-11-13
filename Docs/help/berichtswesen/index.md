@@ -1,6 +1,6 @@
 # Berichtswesen
 
-Dieser Bereich stellt KPI- und Aggregatberichte mit Favoriten bereit. Neben Entitäts-, Kategorie- und Untertypfiltern lassen sich je Buchungsart beliebig viele Textfilter pflegen, die Buchungen über Verwendungszweck und Buchungsbeschreibung auswählen — in der Berichtsansicht wie auch auf KPI-Kacheln der Startseite.
+Dieser Bereich stellt KPI- und Aggregatberichte mit Favoriten bereit. Neben Entitäts-, Kategorie- und Untertypfiltern lassen sich je Buchungsart beliebig viele Textfilter pflegen, die Buchungen über Verwendungszweck und Buchungsbeschreibung auswählen — in der Berichtsansicht wie auch auf KPI-Kacheln der Startseite. Zu jedem angezeigten Betragswert können die zugrunde liegenden Einzelposten per Drill-down direkt im Bericht eingesehen werden.
 
 ## Inhalt
 

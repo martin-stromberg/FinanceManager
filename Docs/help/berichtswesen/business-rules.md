@@ -101,6 +101,35 @@
 
 **Umsetzung:** `ReportAggregationService.QueryAsync` (Linked-Account-Block), `ReportAggregationService.QuerySecurityDividendsNetAsync` (`dividendGroupIds`).
 
+## Posteneinsicht listet exakt die Selektion der Betragszelle
+
+**Beschreibung:** Der Symbolbutton an einer Betragszelle öffnet ein Overlay mit den Einzelposten, aus denen sich der Zellwert zusammensetzt.
+
+**Bedingungen:**
+- Der Button steht an den Spalten `Betrag` (immer) sowie `Vorperiode` und `Vorjahr` (nur bei vorhandenem Wert) — an Entitäts-, Kategorie-, Detail- und Summenzeilen.
+- Delta-Spalten, die Hochrechnungsspalte und Zellen ohne Wert („-") besitzen keinen Button.
+
+**Verhalten:**
+- Die Postenmenge entspricht der Aggregationsselektion der Zelle: gleiche Entitäts-, Kategorie-, Untertyp- und Textfilter, gleiche Besitzereinschränkung sowie das der Spalte zugeordnete Fenster — `Vorperiode` und `Vorjahr` liefern die Posten der jeweiligen Vergleichsperiode.
+- Die Summenzeile liefert die Posten der Spaltenperiode über alle angefragten Buchungsarten (`GroupKey = null`).
+- Bei `AllHistory` ist nur die `Betrag`-Spalte abfragbar; Vergleichsspalten werden serverseitig mit 400 abgelehnt.
+- Die Fußzeilensumme entspricht dem Zellwert; `TotalAmount` ist die exakte Serversumme aller Treffer.
+
+**Umsetzung:** `ReportPostingsQueryService.QueryAsync` (Selektion identisch zu `ReportAggregationService`; gemeinsame Semantik in `ReportQuerySemantics`), `ReportDashboardViewModel.ShowPostingsAsync`, `ReportDashboard.razor`.
+
+## Postenliste ist serverseitig auf 5000 Einträge begrenzt
+
+**Beschreibung:** Große Zellen (Summenzeilen, Typ-Zeilen, `AllHistory`) werden gekürzt übertragen.
+
+**Bedingungen:**
+- `MaxPostings = 5000` ist serverseitig fixiert und wird nicht vom Client beeinflusst.
+
+**Verhalten:**
+- `TotalCount` und `TotalAmount` bleiben exakt; `Truncated` signalisiert die Kürzung.
+- Das Overlay blendet bei `Truncated` den Hinweis `Postings_Truncated` ein; die Fußzeilensumme bleibt korrekt.
+
+**Umsetzung:** `ReportPostingsQueryService` (`MaxPostings`, `PostingSelection`), `ReportPostingsResult.Truncated`, `ReportDashboard.razor`.
+
 ## KPI-Cache ist über die Favoriten-Version abgesichert
 
 **Beschreibung:** KPI-Kacheln der Startseite cachen Favoriten-Auswertungen im LocalStorage; ohne Versionsprüfung würden sie nach einer Filteränderung am Favoriten veraltete Werte zeigen.

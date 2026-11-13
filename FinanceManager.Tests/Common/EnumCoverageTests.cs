@@ -473,4 +473,14 @@ public sealed class EnumCoverageTests
             nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.DefinedError),
             nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.ProtocolError),
             nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.ToolError));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void ReportPostingsPeriod_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod>(
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.Current),
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.Previous),
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.YearAgo));
 }

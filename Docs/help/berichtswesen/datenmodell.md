@@ -32,6 +32,16 @@
 | `ReportAggregationResult` | `ComparedProjection` | `bool` | Meldet, ob die Hochrechnung im Ergebnis tatsächlich aktiv ist |
 | `ReportAggregatePointDto` | `ProjectionAmount` | `decimal?` | Hochgerechneter Betrag direkt nach `Amount` |
 
+### Posteneinsicht (Drill-down)
+
+| Modell | Eigenschaft | Typ | Beschreibung |
+|--------|-------------|-----|--------------|
+| `ReportPostingsPeriod` | `Current` / `Previous` / `YearAgo` | `enum` | Wertespalte, auf die sich die Postenabfrage bezieht |
+| `ReportPostingsQueryRequest` | `GroupKey`, `PeriodStart`, `Period`, `Take`, `CompareYear`, `Filters`, … | `record` | Zellkontext plus vollständiger Aggregationskontext; `Take`/`CompareYear` steuern das Ladefenster des Dividenden-Nettings |
+| `ReportPostingsQuery` | `OwnerUserId` | `Guid` | Interne Query; Besitzer aus dem Auth-Kontext |
+| `ReportPostingDto` | `BookingDate`, `ValutaDate`, `Amount`, `Subject`, `RecipientName`, `Description`, `EntityName`, `SecuritySubType`, Verknüpfungs-Ids | `record` | Zeile der Postenliste; `EntityName` = Name der referenzierten Entität |
+| `ReportPostingsResult` | `Postings`, `TotalCount`, `TotalAmount`, `Truncated` | `record` | Ergebnis der Postenabfrage; `TotalAmount` ist die exakte Serversumme aller Treffer |
+
 ### Favoriten-DTOs
 
 | Modell | Eigenschaft | Typ | Beschreibung |
