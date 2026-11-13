@@ -799,6 +799,11 @@ public interface IApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The result.</returns>
     Task<ReportAggregationResult> Reports_QueryAggregatesAsync(ReportAggregatesQueryRequest req, CancellationToken ct = default);
+    /// <summary>Lists the individual postings composing a single report cell.</summary>
+    /// <param name="req">Request payload (cell coordinates plus aggregation context).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    Task<ReportPostingsResult> Reports_QueryPostingsAsync(ReportPostingsQueryRequest req, CancellationToken ct = default);
     /// <summary>Lists all report favorites for the current user.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The result.</returns>

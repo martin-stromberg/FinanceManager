@@ -520,4 +520,181 @@ public sealed class ReportDashboardViewModelTests
         Assert.NotNull(res);
         Assert.False(vm.FiltersDirty);
     }
+
+    /// <summary>
+    /// Verifies that <see cref="ReportDashboardViewModel.ShowPostingsAsync"/> opens the overlay, exposes the
+    /// returned postings and truncation flag, forwards the title, and clears the loading state afterwards.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_PopulatesOverlayState()
+    {
+        var (vm, apiMock) = CreateVm();
+        var postings = new List<ReportPostingDto>
+        {
+            new(Guid.NewGuid(), new DateTime(2025, 9, 10), new DateTime(2025, 9, 10), 100m, PostingKind.Bank, "s", null, null, Guid.NewGuid(), null, null, null, null, "Konto"),
+            new(Guid.NewGuid(), new DateTime(2025, 9, 5), new DateTime(2025, 9, 5), -40m, PostingKind.Bank, null, null, "d", Guid.NewGuid(), null, null, null, null, "Konto")
+        };
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPostingsResult(postings, 6000, 1234.5m, true));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync("Account:x", month, ReportPostingsPeriod.Current, "Posten – Konto (Betrag)", month, TestContext.Current.CancellationToken);
+
+        Assert.True(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.Equal("Posten – Konto (Betrag)", vm.PostingsOverlayTitle);
+        Assert.Equal(2, vm.PostingsOverlayRows.Count);
+        Assert.True(vm.PostingsOverlayTruncated);
+        // the footer total comes from the exact server-side sum, not the truncated rows
+        Assert.Equal(1234.5m, vm.PostingsOverlayTotalAmount);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="ReportDashboardViewModel.ShowPostingsAsync"/> builds the request from the
+    /// current report context: cell coordinates, kinds, interval, valuta/category flags, savings plan
+    /// posting source, analysis date and the active filters from <c>BuildFiltersPayload</c>.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_ForwardsCurrentReportContext()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPostingsResult(Array.Empty<ReportPostingDto>(), 0, 0m, false));
+
+        var accountId = Guid.NewGuid();
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.Bank, PostingKind.Contact };
+        vm.Interval = (int)ReportInterval.Quarter;
+        vm.Take = 12;
+        vm.CompareYear = true;
+        vm.IncludeCategory = true;
+        vm.UseValutaDate = true;
+        vm.SavingsPlanPostingSource = SavingsPlanPostingSource.LinkedAccountPostings;
+        vm.SelectedAccounts.Add(accountId);
+        var month = new DateTime(2025, 7, 1);
+        var analysis = new DateTime(2025, 9, 1);
+
+        await vm.ShowPostingsAsync("Account:x", month, ReportPostingsPeriod.Previous, "t", analysis, TestContext.Current.CancellationToken);
+
+        apiMock.Verify(a => a.Reports_QueryPostingsAsync(
+            It.Is<ReportPostingsQueryRequest>(r =>
+                r.GroupKey == "Account:x"
+                && r.PeriodStart == month
+                && r.Period == ReportPostingsPeriod.Previous
+                && r.PostingKind == PostingKind.Bank
+                && r.Interval == ReportInterval.Quarter
+                && r.IncludeCategory
+                && r.UseValutaDate
+                && r.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings
+                && r.AnalysisDate == analysis
+                && r.Take == 12
+                && r.CompareYear
+                && r.PostingKinds != null && r.PostingKinds.Count == 2
+                && r.Filters != null && r.Filters.AccountIds != null && r.Filters.AccountIds.Contains(accountId)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that a failing postings query keeps the overlay open, resets the rows and clears the
+    /// loading flag instead of surfacing stale data. Without an API error the error text stays
+    /// <c>null</c> so the page falls back to a generic localized message (no raw exception text).
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_ApiError_ClearsRows()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("boom"));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+
+        Assert.True(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.Empty(vm.PostingsOverlayRows);
+        Assert.False(vm.PostingsOverlayTruncated);
+        Assert.True(vm.PostingsOverlayFailed);
+        Assert.Null(vm.PostingsOverlayError);
+    }
+
+    /// <summary>
+    /// Verifies that a server-issued error message (<see cref="IApiClient.LastError"/>) is surfaced
+    /// in the overlay instead of the generic fallback.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_ApiErrorText_IsSurfaced()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.SetupGet(a => a.LastError).Returns("server-side validation failed");
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("bad request"));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+
+        Assert.True(vm.PostingsOverlayFailed);
+        Assert.Equal("server-side validation failed", vm.PostingsOverlayError);
+    }
+
+    /// <summary>
+    /// Verifies that a cancellation of the postings load is not swallowed as an overlay error:
+    /// the <see cref="OperationCanceledException"/> propagates to the caller while the loading
+    /// flag is still cleared.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_Cancellation_Rethrows()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        var month = new DateTime(2025, 9, 1);
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken));
+
+        Assert.True(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.False(vm.PostingsOverlayFailed);
+        Assert.Null(vm.PostingsOverlayError);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="ReportDashboardViewModel.HidePostings"/> resets the complete overlay state.
+    /// </summary>
+    [Fact]
+    public async Task HidePostings_ResetsOverlayState()
+    {
+        var (vm, apiMock) = CreateVm();
+        var postings = new List<ReportPostingDto>
+        {
+            new(Guid.NewGuid(), DateTime.UtcNow, DateTime.UtcNow, 1m, PostingKind.Bank, null, null, null, Guid.NewGuid(), null, null, null, null, "K")
+        };
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPostingsResult(postings, 1, 1m, false));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+        Assert.True(vm.PostingsOverlayVisible);
+
+        vm.HidePostings();
+
+        Assert.False(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.Equal(string.Empty, vm.PostingsOverlayTitle);
+        Assert.Empty(vm.PostingsOverlayRows);
+    }
+
+    /// <summary>
+    /// Verifies that an unauthenticated session never reaches the API for the postings drill-down.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_NotAuthenticated_DoesNotQuery()
+    {
+        var (vm, apiMock) = CreateVm(authenticated: false);
+        var month = new DateTime(2025, 9, 1);
+
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+
+        Assert.False(vm.PostingsOverlayVisible);
+        apiMock.Verify(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

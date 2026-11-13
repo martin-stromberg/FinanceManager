@@ -6,6 +6,8 @@
 
 Die Textfilter je Buchungsart wandern als neue Filterdimension durch die bestehende Pipeline: Filterdialog (`ReportDashboardViewModel`) → `ReportAggregatesFiltersRequest` → `ReportsController` → `ReportAggregationFilters` → `ReportAggregationService`. Buchungsarten mit gesetzten Textfiltern werden aus den Rohbuchungen (`Postings`) verdichtet, weil die vorberechneten `PostingAggregates` keine Textfelder führen; alle übrigen Buchungsarten bleiben auf dem Aggregatpfad. Gespeicherte Textfilter liegen als JSON-Spalten am `ReportFavorite` und wirken damit automatisch auf KPI-Kacheln der Startseite sowie auf den MCP-Pfad.
 
+Unabhängig davon liefert die Posteneinsicht zu jeder Betragszelle die zugehörigen Einzelposten über einen eigenen Abfragepfad (Abschnitt 7).
+
 ## Ablauf
 
 ### 1. Textfilter im Filterdialog pflegen und anwenden
@@ -81,6 +83,29 @@ Beteiligte Komponenten:
 
 `FmReportingAggregateHandler.InvokeAsync` unterstützt Textfilter in beiden Pfaden: im Favoriten-Pfad werden `favorite.Filters.*TextFilters` in `ReportAggregationFilters` durchgereicht; im Inline-Pfad akzeptiert `fm_reporting_aggregate` die Argumente `bankTextFilters`, `contactTextFilters`, `savingsPlanTextFilters`, `securityTextFilters` (String-Arrays, `maxLength` 500 je Element). `FmReportsConfigurationManageTool` pflegt dieselben Felder im `filters`-Objekt beim Anlegen/Aktualisieren von Favoriten, und `FmConfigurationReadTool` gibt sie beim Auslesen zurück. Das Parsen übernimmt `McpToolArguments.OptionalStringList` (max. 200 Einträge, max. 500 Zeichen je Eintrag).
 
+### 7. Posteneinsicht — Drill-down auf die Einzelposten einer Betragszelle
+
+Der Symbolbutton an einer Betragszelle ruft die Page-Methode `ShowCellPostingsAsync` (Entitäts-/Kategorie-/Detailzeile) bzw. `ShowTotalPostingsAsync` (Summenzeile, `GroupKey = null`) auf. `ReportDashboardViewModel.ShowPostingsAsync` baut daraus einen `ReportPostingsQueryRequest`, der neben dem Zellkontext (`GroupKey`, `PeriodStart`, `Period` als `ReportPostingsPeriod` = `Current`/`Previous`/`YearAgo`) den vollständigen Aggregationskontext trägt — `PostingKind`/`PostingKinds`, `Interval`, `IncludeCategory`, `CompareProjection`, `UseValutaDate`, `AnalysisDate`, `SavingsPlanPostingSource`, `Take`, `CompareYear` und `BuildFiltersPayload()`.
+
+Der Abruf läuft über `IApiClient.Reports_QueryPostingsAsync` → `POST /api/report-postings` → `ReportsController.QueryPostingsAsync` (setzt `OwnerUserId` aus `ICurrentUserService`, validiert Enums, `GroupKey`, `Take` und die Fenster-Kombination → `400` via `ApiErrorFactory`) → `IReportPostingsQueryService.QueryAsync`.
+
+`ReportPostingsQueryService` liest die rohen `Postings` (nie `PostingAggregates`) und reproduziert die Selektionssemantik der Aggregation, damit die Postensumme dem Zellwert entspricht:
+
+- **Fenster und Schlüssel** stammen aus `ReportQuerySemantics` — den verhaltensneutral aus `ReportAggregationService` extrahierten Helfern (`ComputeCellWindow` je Intervall × Spalte inkl. Ytd-Sonderfenster, `TryParseGroupKey` → `Total`/`Type`/`Category`/`Entity` inkl. `Security:{id}:{subType}`-Suffix, `ApplyDateWindow` mit Valuta-`MinValue`-Fallback).
+- **Ownership** wird über die referenzierten Entitäten geprüft (`Posting` trägt kein `OwnerUserId`); `Amount == 0` wird wie in der Aggregation ausgeschlossen.
+- **Sonderpfade** identisch zur Aggregation: `LinkedAccountPostings` (verlinkte Sparpläne liefern die Bank-Posten der verknüpften Konten; Sparplan-Textfilter greifen auf diesen Bank-Posten, `Herkunft` = Kontoname) und der Netto-Dividendenpfad (Anker-Posten `SecuritySubType == Dividend` im Zellfenster → `GroupId`s → Gruppenmitglieder `Dividend`/`Fee`/`Tax`; das Ladefenster reproduziert die Aggregationsgrenzen über `Take` und `CompareYear`).
+- **Ergebnis:** Sortierung nach effektivem Datum absteigend, datenbankseitiges `Take(MaxPostings = 5000)`, `TotalCount` und `TotalAmount` exakt, `Truncated = TotalCount > MaxPostings`; `EntityName` wird serverseitig als Name der referenzierten Entität aufgelöst.
+
+Das Overlay (`modal-overlay`/`modal postings-modal` auf `ReportDashboard.razor`) kennt die Zustände Laden (`Loading`), Fehler (`Postings_LoadFailed` bzw. der Server-Fehlertext), leer (`Postings_None`) und gekürzt (`Postings_Truncated`); die Fußzeile bindet `PostingsOverlayTotalAmount` — die exakte Serversumme, nicht die Summe der sichtbaren Zeilen.
+
+Beteiligte Komponenten:
+
+- `ReportDashboardViewModel.ShowPostingsAsync` / `HidePostings` + Overlay-State (`PostingsOverlayVisible`/`Loading`/`Failed`/`Error`/`Rows`/`Truncated`/`TotalAmount`/`Title`)
+- `ReportsController.QueryPostingsAsync` — `POST /api/report-postings`
+- `IReportPostingsQueryService` / `ReportPostingsQueryService` — `MaxPostings = 5000`, `PostingSelection`
+- `ReportQuerySemantics` — `ComputeCellWindow`, `TryParseGroupKey`, `ApplyDateWindow` u. a.
+- `IApiClient.Reports_QueryPostingsAsync` (`ApiClient.Reports.cs`)
+
 ## Diagramm
 
 ```mermaid
@@ -109,3 +134,5 @@ flowchart TD
 - **Fehlerhaftes persistiertes JSON** (z. B. manipuliertes Backup): `TextFilterList.FromJson` fängt `JsonException` und liefert `null`, sodass eine beschädigte Spalte die Favoriten-Verarbeitung nicht blockiert.
 - **`null`/leere Filterliste:** keine Filterung für diese Buchungsart (Allow-List-Konvention); `Filters = null` beim Favoriten-Update leert auch die Textfilter.
 - **MCP-Argumente:** `McpToolArguments.OptionalStringList` lehnt nicht-string Elemente, mehr als 200 Einträge oder überlange Einträge mit `McpToolException` (`Err_Mcp_InvalidArguments`) ab.
+- **Ungültige Posten-Anfrage:** unbekanntes `GroupKey`-Format, undefinierte Enum-Werte (`Period`, `Interval`, `PostingKind`, `PostingKinds`, `SavingsPlanPostingSource`), `Take < 0` sowie `Interval == AllHistory` mit `Period != Current` werden sowohl im Controller als auch im Service geprüft und mit `400 BadRequest` beantwortet.
+- **Fehler beim Postenabruf:** Das Overlay zeigt bei einem Fehlschlag den lokalisierten Text `Postings_LoadFailed` bzw. den serverseitigen Fehlertext — keine rohen Exception-Meldungen; `OperationCanceledException` wird nicht als Fehler behandelt.

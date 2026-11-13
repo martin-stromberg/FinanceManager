@@ -128,15 +128,8 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
             else
             {
-                var intervalMonths = query.Interval switch
-                {
-                    ReportInterval.Month => 1,
-                    ReportInterval.Quarter => 3,
-                    ReportInterval.HalfYear => 6,
-                    _ => 12 // Year produces yearly periods
-                };
-                var latest = ComputeLatestPeriod(query.Interval, analysis);
-                postingWindowEnd = latest.AddMonths(intervalMonths);
+                var latest = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
+                postingWindowEnd = latest.AddMonths(ReportQuerySemantics.IntervalLengthMonths(query.Interval));
             }
         }
 
@@ -225,7 +218,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 {
                     // Savings plan text filters apply to the source bank postings of the linked accounts
                     // (the emitted rows carry Kind = SavingsPlan, so the filter of the target kind applies).
-                    var linkedBankPostings = await ApplyDateWindow(
+                    var linkedBankPostings = await ReportQuerySemantics.ApplyDateWindow(
                             _db.Postings.AsNoTracking()
                                 .Where(p => p.Kind == PostingKind.Bank
                                     && p.AccountId != null
@@ -608,7 +601,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         {
             var groups = points
                 .Where(p => !p.GroupKey.StartsWith("Type:"))
-                .GroupBy(p => new { p.PeriodStart, Kind = ParseKindFromKey(p.GroupKey) })
+                .GroupBy(p => new { p.PeriodStart, Kind = ReportQuerySemantics.ParseKindFromKey(p.GroupKey) })
                 .Where(g => g.Key.Kind.HasValue)
                 .ToList();
             foreach (var g in groups)
@@ -672,7 +665,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             // Additionally: add Type-level aggregates even for single-kind mode to provide top-level totals for AllHistory
             var typeSums = points
                 .Where(p => !p.GroupKey.StartsWith("Type:"))
-                .GroupBy(p => new { p.PeriodStart, Kind = ParseKindFromKey(p.GroupKey) })
+                .GroupBy(p => new { p.PeriodStart, Kind = ReportQuerySemantics.ParseKindFromKey(p.GroupKey) })
                 .Where(g => g.Key.Kind.HasValue)
                 .Select(g => new { g.Key.PeriodStart, Kind = g.Key.Kind!.Value, Amount = g.Sum(x => x.Amount) })
                 .ToList();
@@ -694,34 +687,10 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
         }
 
-        // Helper to compute the latest anchoring period based on interval --------
-        DateTime ComputeLatestPeriod(ReportInterval interval, DateTime analysisDate)
-        {
-            if (interval == ReportInterval.Month)
-            {
-                return analysisDate;
-            }
-            if (interval == ReportInterval.Ytd)
-            {
-                return new DateTime(analysisDate.Year, 1, 1);
-            }
-            if (interval == ReportInterval.Quarter)
-            {
-                var qIndex = (analysisDate.Month - 1) / 3; // 0..3
-                return new DateTime(analysisDate.Year, qIndex * 3 + 1, 1);
-            }
-            if (interval == ReportInterval.HalfYear)
-            {
-                var hIndex = (analysisDate.Month - 1) / 6; // 0..1
-                return new DateTime(analysisDate.Year, hIndex * 6 + 1, 1);
-            }
-            return new DateTime(analysisDate.Year, 1, 1);
-        }
-
         // Ensure latest period row based on analysis month ------------------------
         if (!allHistoryMode && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
 
             // Remove any points beyond the latest analysis period (bugfix: ensure future PeriodStarts are excluded)
             points = points.Where(p => p.PeriodStart <= latestPeriod).ToList();
@@ -739,42 +708,13 @@ public sealed class ReportAggregationService : IReportAggregationService
         // Previous comparison ----------------------------------------------------
         if (query.ComparePrevious)
         {
-            DateTime AlignToQuarterStart(DateTime d)
-            {
-                var qIndex = (d.Month - 1) / 3; // 0..3
-                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{qIndex * 3 + 1}-1");
-                return new DateTime(d.Year, qIndex * 3 + 1, 1);
-            }
-            DateTime AlignToHalfYearStart(DateTime d)
-            {
-                var hIndex = (d.Month - 1) / 6; // 0..1
-                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{hIndex * 6 + 1}-1");
-                return new DateTime(d.Year, hIndex * 6 + 1, 1);
-            }
-
-            DateTime PrevPeriod(DateTime d)
-            {
-                logger.LogDebug($"PrevPeriod({d})");
-                if (d == DateTime.MinValue)
-                    return DateTime.MinValue;
-                return query.Interval switch
-                {
-                    ReportInterval.Month => d.AddMonths(-1),
-                    ReportInterval.Quarter => AlignToQuarterStart(d).AddMonths(-3),
-                    ReportInterval.HalfYear => AlignToHalfYearStart(d).AddMonths(-6),
-                    ReportInterval.Year => new DateTime(d.Year - 1, 1, 1),
-                    ReportInterval.Ytd => new DateTime(d.Year - 1, 1, 1),
-                    _ => d.AddMonths(-1)
-                };
-            }
-
             var byGroup = points
                 .GroupBy(p => p.GroupKey)
                 .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.PeriodStart, x => x.Amount));
             for (int i = 0; i < points.Count; i++)
             {
                 var p = points[i];
-                var prevDate = PrevPeriod(p.PeriodStart);
+                var prevDate = ReportQuerySemantics.PrevPeriod(query.Interval, p.PeriodStart);
                 if (byGroup.TryGetValue(p.GroupKey, out var map) && map.TryGetValue(prevDate, out var prevAmount))
                 {
                     points[i] = p with { PreviousAmount = prevAmount };
@@ -801,7 +741,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         if (query.Take > 0 && points.Count > 0)
         {
             var distinct = points.Select(p => p.PeriodStart).Distinct().OrderBy(d => d).ToList();
-            var latest = ComputeLatestPeriod(query.Interval, analysis);
+            var latest = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             distinct = distinct.Where(d => d <= latest).ToList();
             if (distinct.Count > query.Take)
             {
@@ -813,7 +753,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         // Remove empty latest groups (same rule as default)
         if (!allHistoryMode && (query.ComparePrevious || query.CompareYear) && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             var removable = points.Where(p => p.PeriodStart == latestPeriod)
                 .GroupBy(p => p.GroupKey)
                 .Where(g =>
@@ -875,7 +815,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             PostingKind.Security => postingsQuery.Where(p => p.SecurityId != null && ownerEntityIds.Contains(p.SecurityId.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
         };
-        postingsQuery = ApplyDateWindow(postingsQuery, useValutaDate, windowStart, windowEnd);
+        postingsQuery = ReportQuerySemantics.ApplyDateWindow(postingsQuery, useValutaDate, windowStart, windowEnd);
 
         var postings = await postingsQuery
             .Select(p => new
@@ -917,28 +857,6 @@ public sealed class ReportAggregationService : IReportAggregationService
             .GroupBy(r => (r.PeriodStart, r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId, r.SecuritySubType))
             .Select(g => (kind, g.Key.PeriodStart, g.Sum(x => x.Amount), g.Key.AccountId, g.Key.ContactId, g.Key.SavingsPlanId, g.Key.SecurityId, g.Key.SecuritySubType))
             .ToList();
-    }
-
-    /// <summary>
-    /// Restricts a postings query to an effective-date window: the effective date is the
-    /// booking date, or the valuta date when <paramref name="useValutaDate"/> is set
-    /// (<see cref="DateTime.MinValue"/> counts as "no valuta date" and falls back to the
-    /// booking date - identical to the in-memory bucketing logic).
-    /// </summary>
-    /// <param name="source">Postings query to restrict.</param>
-    /// <param name="useValutaDate">Whether the valuta date determines the effective date.</param>
-    /// <param name="startInclusive">Inclusive lower bound; <c>null</c> = unbounded.</param>
-    /// <param name="endExclusive">Exclusive upper bound; <c>null</c> = unbounded.</param>
-    /// <returns>The restricted query.</returns>
-    private static IQueryable<Posting> ApplyDateWindow(IQueryable<Posting> source, bool useValutaDate, DateTime? startInclusive, DateTime? endExclusive)
-    {
-        if (startInclusive is null && endExclusive is null) { return source; }
-        var start = startInclusive ?? DateTime.MinValue;
-        var end = endExclusive ?? DateTime.MaxValue;
-        return useValutaDate
-            ? source.Where(p => (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate) >= start
-                && (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate) < end)
-            : source.Where(p => p.BookingDate >= start && p.BookingDate < end);
     }
 
     /// <summary>
@@ -1161,7 +1079,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 // Add Type-level rows for AllHistory to provide totals even in single-kind mode
                 var typeSums = hist
                     .Where(p => !p.GroupKey.StartsWith("Type:"))
-                    .GroupBy(p => new { p.PeriodStart, Kind = ParseKindFromKey(p.GroupKey) })
+                    .GroupBy(p => new { p.PeriodStart, Kind = ReportQuerySemantics.ParseKindFromKey(p.GroupKey) })
                     .Where(g => g.Key.Kind.HasValue)
                     .Select(g => new { g.Key.PeriodStart, Kind = g.Key.Kind!.Value, Amount = g.Sum(x => x.Amount) })
                     .ToList();
@@ -1289,32 +1207,9 @@ public sealed class ReportAggregationService : IReportAggregationService
         // it should be handled at aggregate level.
 
         // Ensure latest period exists
-        DateTime ComputeLatestPeriod(ReportInterval interval, DateTime analysisDate)
-        {
-            if (interval == ReportInterval.Month)
-            {
-                return analysisDate;
-            }
-            if (interval == ReportInterval.Ytd)
-            {
-                return new DateTime(analysisDate.Year, 1, 1);
-            }
-            if (interval == ReportInterval.Quarter)
-            {
-                var qIndex = (analysisDate.Month - 1) / 3; // 0..3
-                return new DateTime(analysisDate.Year, qIndex * 3 + 1, 1);
-            }
-            if (interval == ReportInterval.HalfYear)
-            {
-                var hIndex = (analysisDate.Month - 1) / 6; // 0..1
-                return new DateTime(analysisDate.Year, hIndex * 6 + 1, 1);
-            }
-            return new DateTime(analysisDate.Year, 1, 1);
-        }
-
         if (query.Interval != ReportInterval.AllHistory && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             var groups2 = points.GroupBy(p => p.GroupKey).Select(g => new { Key = g.Key, Latest = g.OrderBy(x => x.PeriodStart).Last() }).ToList();
             foreach (var g in groups2)
             {
@@ -1333,24 +1228,16 @@ public sealed class ReportAggregationService : IReportAggregationService
         // Compute comparisons
         if (query.ComparePrevious)
         {
-            DateTime AlignToQuarterStart(DateTime d) => new DateTime(d.Year, ((d.Month - 1) / 3) * 3 + 1, 1);
-            DateTime AlignToHalfYearStart(DateTime d) => new DateTime(d.Year, ((d.Month - 1) / 6) * 6 + 1, 1);
-            DateTime PrevPeriod(DateTime d) => query.Interval switch
-            {
-                ReportInterval.Month => d.AddMonths(-1),
-                ReportInterval.Quarter => AlignToQuarterStart(d).AddMonths(-3),
-                ReportInterval.HalfYear => AlignToHalfYearStart(d).AddMonths(-6),
-                ReportInterval.Year => new DateTime(d.Year - 1, 1, 1),
-                ReportInterval.Ytd => new DateTime(d.Year - 1, 1, 1),
-                _ => d.AddMonths(-1)
-            };
             var byGroup = points
                 .GroupBy(p => p.GroupKey)
                 .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.PeriodStart, x => x.Amount));
             for (int i = 0; i < points.Count; i++)
             {
                 var p = points[i];
-                var prevDate = PrevPeriod(p.PeriodStart);
+                // clampMinValue: false keeps parity with the pre-extraction local PrevPeriod
+                // of this method, which had no MinValue guard (unreachable either way:
+                // all-history rows anchor at 2000-01-01 and never carry comparison columns).
+                var prevDate = ReportQuerySemantics.PrevPeriod(query.Interval, p.PeriodStart, clampMinValue: false);
                 if (byGroup.TryGetValue(p.GroupKey, out var map) && map.TryGetValue(prevDate, out var prevAmount))
                 {
                     points[i] = p with { PreviousAmount = prevAmount };
@@ -1376,7 +1263,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         if (query.Take > 0 && points.Count > 0)
         {
             var distinct = points.Select(p => p.PeriodStart).Distinct().OrderBy(d => d).ToList();
-            var latest = ComputeLatestPeriod(query.Interval, analysis);
+            var latest = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             distinct = distinct.Where(d => d <= latest).ToList();
             if (distinct.Count > query.Take)
             {
@@ -1387,7 +1274,7 @@ public sealed class ReportAggregationService : IReportAggregationService
 
         if (query.Interval != ReportInterval.AllHistory && (query.ComparePrevious || query.CompareYear) && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             var removable = points.Where(p => p.PeriodStart == latestPeriod)
                 .GroupBy(p => p.GroupKey)
                 .Where(g =>
@@ -1646,7 +1533,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             for (var i = 0; i < targetPoints.Count; i++)
             {
                 var point = targetPoints[i];
-                if (!TryParseSecurityKey(point.GroupKey, out var securityId))
+                if (!ReportQuerySemantics.TryParseSecurityKey(point.GroupKey, out var securityId))
                 {
                     continue;
                 }
@@ -1688,11 +1575,11 @@ public sealed class ReportAggregationService : IReportAggregationService
 
             var categoryProjectionByType = targetPoints
                 .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionAmount.HasValue)
-                .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
+                .GroupBy(p => ($"Type:{ReportQuerySemantics.ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
                 .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
             var categoryDetailsByType = targetPoints
                 .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionExpectedDividends is { Count: > 0 })
-                .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
+                .GroupBy(p => ($"Type:{ReportQuerySemantics.ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
                 .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
                     .SelectMany(x => x.ProjectionExpectedDividends!)
                     .OrderBy(x => x.ExpectedDate)
@@ -1747,47 +1634,5 @@ public sealed class ReportAggregationService : IReportAggregationService
         Quarterly,
         Annual,
         Irregular
-    }
-
-    private static bool TryParseSecurityKey(string groupKey, out Guid securityId)
-    {
-        securityId = Guid.Empty;
-        if (!groupKey.StartsWith("Security:", StringComparison.Ordinal))
-        {
-            return false;
-        }
-        // Group keys may carry a posting-sub-type suffix ("Security:{id}:{SubType}") — parse only the id segment.
-        var idPart = groupKey["Security:".Length..];
-        var colonIndex = idPart.IndexOf(':');
-        if (colonIndex >= 0)
-        {
-            idPart = idPart[..colonIndex];
-        }
-        return Guid.TryParse(idPart, out securityId);
-    }
-
-    private static PostingKind? ParseKindFromKey(string groupKey)
-    {
-        // Formats:
-        // Type:Kind
-        // Category:Kind:<id|_none>
-        // Account:GUID / Contact:GUID / SavingsPlan:GUID / Security:GUID (derive kind)
-        if (groupKey.StartsWith("Type:"))
-        {
-            var part = groupKey.Split(':')[1];
-            if (Enum.TryParse<PostingKind>(part, out var pk)) { return pk; }
-            return null;
-        }
-        if (groupKey.StartsWith("Category:"))
-        {
-            var part = groupKey.Split(':')[1];
-            if (Enum.TryParse<PostingKind>(part, out var pk)) { return pk; }
-            return null;
-        }
-        if (groupKey.StartsWith("Account:")) return PostingKind.Bank;
-        if (groupKey.StartsWith("Contact:")) return PostingKind.Contact;
-        if (groupKey.StartsWith("SavingsPlan:")) return PostingKind.SavingsPlan;
-        if (groupKey.StartsWith("Security:")) return PostingKind.Security;
-        return null;
     }
 }
