@@ -32,7 +32,7 @@ Kennzahlen Ihres gesamten Depots.
 
 ### 3. Kacheln ansehen
 
-Je nach Konfiguration werden bis zu vier Kacheln angezeigt. Jede Kachel
+Je nach Konfiguration werden bis zu fünf Kacheln angezeigt. Jede Kachel
 kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
 
 - **Depotstruktur** — ein Ringdiagramm der Asset Allocation mit dem
@@ -45,6 +45,16 @@ kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
   Jahr-zu-Datum.
 - **Cashflow** — ein Balkendiagramm mit Netto-Einzahlungen, Dividenden und
   realisierten Gewinnen/Verlusten des laufenden Jahres.
+- **Depotentwicklung Jahreswechsel** — ein kombiniertes Diagramm (Linie:
+  Depotwert zum Jahresende; Balken: Netto-Dividenden je Jahr) und eine
+  Tabelle, die je Kalenderjahr Depotwert, Veränderung zum Vorjahr,
+  Netto-Dividende sowie Verhältnis und Rendite ausweist. Über das
+  Auswahlfeld **"Zeitraum"** lässt sich die Anzeige auf die letzten 5
+  oder 10 Jahre eingrenzen; über **"Rendite-Basis"** wählen Sie, ob die
+  Rendite auf den Depotwert zum Jahresanfang oder auf das eingezahlte
+  Kapital (Anschaffungskosten der gehaltenen Positionen) bezogen wird —
+  die Tabelle und die Fußnote darunter passen sich sofort an. Das
+  laufende Jahr ist mit "*" gekennzeichnet.
 - **Risikoanalyse** — zeigt aktuell einen Hinweis, dass Risikokennzahlen
   (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk) für eine
   spätere Ausbaustufe geplant sind.
@@ -93,6 +103,12 @@ berechnen zu lassen, statt auf die automatische Aktualisierung zu warten
 
 > **Hinweis:** Mindestens eine Kachel muss aktiv bleiben — der Speichern-
 > Versuch mit null aktiven Kacheln wird abgelehnt.
+
+> **Hinweis:** Kacheln, die mit einer neuen Programmversion hinzukommen,
+> erscheinen automatisch am Ende der Kachelreihenfolge — auch wenn Sie
+> die Anzeige bereits einmal angepasst haben. Wenn Sie eine solche Kachel
+> nicht sehen möchten, blenden Sie sie hier aus; die Ausblendung bleibt
+> dauerhaft gespeichert.
 
 ### 7. Zurück zur Wertpapierübersicht
 

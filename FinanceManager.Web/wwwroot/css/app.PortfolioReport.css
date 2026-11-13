@@ -426,6 +426,86 @@
     margin: .3rem 0 .75rem 0;
 }
 
+/* ---------- Depot development tile ---------- */
+
+.portfolio-dev-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .75rem;
+    margin-bottom: .75rem;
+    font-size: .85rem;
+}
+
+.portfolio-dev-filter-select {
+    font-size: .85rem;
+    padding: .15rem .3rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.portfolio-dev-table {
+    min-width: 560px;
+}
+
+/* ---------- Bar/line combination chart ---------- */
+
+.portfolio-bar-line-chart {
+    margin-bottom: .75rem;
+}
+
+.portfolio-bar-line-chart-svg {
+    width: 100%;
+    display: block;
+}
+
+.portfolio-bar-line-chart-grid line {
+    stroke-width: 1;
+}
+
+.portfolio-bar-line-chart-line {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.portfolio-bar-line-chart-labels text {
+    font-size: 18px;
+}
+
+.portfolio-bar-line-chart-legend {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: .75rem;
+    margin-top: .3rem;
+}
+
+.portfolio-bar-line-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.portfolio-bar-line-chart-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.portfolio-bar-line-chart-swatch.line {
+    border-radius: 50%;
+    height: 4px;
+    width: 14px;
+}
+
+.portfolio-bar-line-chart-empty {
+    font-size: .8rem;
+    opacity: .7;
+}
+
 /* ---------- Risk gauges ---------- */
 
 .portfolio-risk-gauge-row {

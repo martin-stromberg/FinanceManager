@@ -56,11 +56,12 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
         var performance = BuildPerformance(positions);
         var cashflow = BuildCashflow(positions, depotCashBalance, structure.TotalMarketValue);
         var risk = new PortfolioRiskDto(null, null, null, null, null);
+        var depotDevelopment = BuildDepotDevelopment(positions);
 
         var now = DateTime.UtcNow;
         var validUntil = EndOfMonthUtc(now);
 
-        return new PortfolioAnalysisReportDto(structure, performance, cashflow, risk, now, validUntil);
+        return new PortfolioAnalysisReportDto(structure, performance, cashflow, risk, depotDevelopment, now, validUntil);
     }
 
     /// <summary>
@@ -290,25 +291,17 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
             return new PortfolioPerformanceDto(null, null, [], []);
         }
 
-        var firstDate = positions.SelectMany(p => p.Transactions).Min(t => t.Date).Date;
-        var today = DateTime.UtcNow.Date;
-        int currentYear = today.Year;
-
-        decimal sharesHeldToday = positions.Sum(p => SecurityValuationHelper.SharesHeldOnDate(p.Transactions, today));
-        int lastYear = sharesHeldToday > 0m
-            ? currentYear
-            : positions.SelectMany(p => p.Transactions).Max(t => t.Date).Year;
+        var (firstYear, lastYear, today, sharesHeldToday) = GetSeriesYearRange(positions);
 
         var annualReturns = new List<PortfolioAnnualReturnPoint>();
         var monthlyReturns = new List<PortfolioMonthlyReturnPoint>();
         var twrPeriods = new List<TwrPeriodInput>();
         decimal? ytdReturn = null;
 
-        for (int year = firstDate.Year; year <= lastYear; year++)
+        for (int year = firstYear; year <= lastYear; year++)
         {
-            bool isYtd = year == currentYear && sharesHeldToday > 0m;
+            var (isYtd, yearEnd) = GetYearReferenceDate(year, today, sharesHeldToday);
             var yearStart = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            var yearEnd = isYtd ? today : new DateTime(year, 12, 31, 0, 0, 0, DateTimeKind.Utc);
 
             var (startValue, endValue, cashflow, periodReturn) = ComputePeriodMetrics(positions, yearStart, yearEnd);
 
@@ -409,6 +402,38 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Shared series year range
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Computes the shared series bounds for the per-year KPI builders: the year of the first
+    // transaction, the last year of the series (the current year while shares are still held,
+    // otherwise the year of the last transaction) and the shares held today which decide YTD treatment.
+    // Returns (first series year, last series year, today's date, shares held today).
+    private static (int, int, DateTime, decimal) GetSeriesYearRange(
+        IReadOnlyList<PositionSnapshot> positions)
+    {
+        var firstDate = positions.SelectMany(p => p.Transactions).Min(t => t.Date).Date;
+        var today = DateTime.UtcNow.Date;
+
+        decimal sharesHeldToday = positions.Sum(p => SecurityValuationHelper.SharesHeldOnDate(p.Transactions, today));
+        int lastYear = sharesHeldToday > 0m
+            ? today.Year
+            : positions.SelectMany(p => p.Transactions).Max(t => t.Date).Year;
+
+        return (firstDate.Year, lastYear, today, sharesHeldToday);
+    }
+
+    // Determines whether a series year is the still-running current year (YTD) and the reference date
+    // its values are evaluated on: today for the YTD year, otherwise December 31st of that year.
+    // Returns (YTD flag, year's reference date).
+    private static (bool, DateTime) GetYearReferenceDate(
+        int year, DateTime today, decimal sharesHeldToday)
+    {
+        bool isYtd = year == today.Year && sharesHeldToday > 0m;
+        return (isYtd, isYtd ? today : new DateTime(year, 12, 31, 0, 0, 0, DateTimeKind.Utc));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Cashflow
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -452,6 +477,57 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
             CalculateLiquidityRatio(depotCashBalance, totalMarketValue),
             depotCashBalance,
             totalMarketValue);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Depot development
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Builds the year-over-year depot development series: for every calendar year from the first
+    // transaction year up to the current year (or the last transaction year when nothing is held
+    // anymore) one row with the year-end market value, the year's net dividends and the FIFO-based
+    // cumulative invested capital at that reference date. The start value of the first year is the
+    // year's own cumulative invested capital; later years reuse the previous year's end value.
+    private PortfolioDepotDevelopmentDto BuildDepotDevelopment(IReadOnlyList<PositionSnapshot> positions)
+    {
+        if (positions.Count == 0)
+        {
+            return new PortfolioDepotDevelopmentDto([]);
+        }
+
+        var (firstYear, lastYear, today, sharesHeldToday) = GetSeriesYearRange(positions);
+
+        var years = new List<PortfolioDepotDevelopmentYear>();
+        decimal previousYearEndValue = 0m;
+
+        for (int year = firstYear; year <= lastYear; year++)
+        {
+            var (isYtd, referenceDate) = GetYearReferenceDate(year, today, sharesHeldToday);
+
+            decimal yearEndValue = GetPortfolioValueOnDate(positions, referenceDate);
+            decimal netDividends = 0m;
+            decimal cumulativeInvestedCapital = 0m;
+
+            foreach (var p in positions)
+            {
+                netDividends += p.Transactions
+                    .Where(t => t.Date.Year == year && t.Type == SecurityPostingSubType.Dividend)
+                    .Sum(t => t.Amount);
+                netDividends -= p.Transactions
+                    .Where(t => t.Date.Year == year && t.Type == SecurityPostingSubType.Tax)
+                    .Sum(t => Math.Abs(t.Amount));
+
+                var fifo = _fifo.Calculate(p.Transactions.Where(t => t.Date.Date <= referenceDate).ToList());
+                cumulativeInvestedCapital += fifo.TotalCostBasis - fifo.StandaloneFeeTotal;
+            }
+
+            decimal yearStartValue = year == firstYear ? cumulativeInvestedCapital : previousYearEndValue;
+
+            years.Add(new PortfolioDepotDevelopmentYear(year, isYtd, yearStartValue, yearEndValue, netDividends, cumulativeInvestedCapital));
+            previousYearEndValue = yearEndValue;
+        }
+
+        return new PortfolioDepotDevelopmentDto(years);
     }
 
     private static decimal? CalculateLiquidityRatio(decimal depotCashBalance, decimal totalMarketValue)

@@ -8,6 +8,7 @@ namespace FinanceManager.Shared.Dtos.Portfolio;
 /// <param name="Performance">Performance KPIs (TWR, annual/monthly returns).</param>
 /// <param name="Cashflow">Cashflow KPIs (deposits, dividends, realized gains, liquidity).</param>
 /// <param name="Risk">Risk analysis KPIs (Phase 2 placeholder).</param>
+/// <param name="DepotDevelopment">Year-over-year depot development series (year-end values and net dividends).</param>
 /// <param name="GeneratedUtc">UTC timestamp when the report was computed.</param>
 /// <param name="CacheValidUntilUtc">UTC timestamp until which the report is considered valid (end of the current month).</param>
 /// <returns>A portfolio analysis report record.</returns>
@@ -16,5 +17,6 @@ public sealed record PortfolioAnalysisReportDto(
     PortfolioPerformanceDto Performance,
     PortfolioCashflowDto Cashflow,
     PortfolioRiskDto Risk,
+    PortfolioDepotDevelopmentDto DepotDevelopment,
     DateTime GeneratedUtc,
     DateTime CacheValidUntilUtc);

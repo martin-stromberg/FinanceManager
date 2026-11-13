@@ -53,6 +53,20 @@ Einzelpositionen samt Marktwert auf:
   zeigt Bedeutung und Herleitung mit den aktuell berechneten Werten. Bei
   negativem Cash-Bestand, fehlendem Marktwert oder nicht positivem Nenner
   wird keine Quote berechnet und `n/a` angezeigt.
+- **Depotentwicklung Jahreswechsel** — ein kombiniertes Diagramm mit
+  einer Linie für den Depotwert zum Jahresende und Balken für die
+  vereinnahmten Netto-Dividenden je Kalenderjahr, darunter eine
+  Jahrestabelle mit den Spalten Jahreswechsel, Depotwert, Veränderung
+  (absolut und prozentual zum Vorjahr), Netto-Dividende, Verhältnis (€/€)
+  und Rendite. Zwei Auswahlfelder steuern die Anzeige: Über "Zeitraum"
+  lässt sich die Historie auf "Gesamte Historie", "Letzte 5 Jahre" oder
+  "Letzte 10 Jahre" eingrenzen; über "Rendite-Basis" wird gewählt, ob die
+  Rendite auf den "Jahresanfangswert" oder auf das "Eingezahltes Kapital
+  (Yield on Cost)" — die historischen Anschaffungskosten der gehaltenen
+  Positionen — bezogen wird. Beide Umschaltungen wirken sofort, ohne die
+  Seite neu zu laden. Eine Fußnote erläutert die jeweils verwendete
+  Berechnungsgrundlage; das laufende, noch nicht abgeschlossene Jahr ist
+  mit "*" markiert.
 - **Risikoanalyse** — als Kachel bereits vorhanden, die eigentlichen
   Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
   sind für eine spätere Phase vorgesehen und werden aktuell nicht berechnet
@@ -69,10 +83,13 @@ festlegen, welche Kacheln sichtbar sind und in welcher Reihenfolge sie
 erscheinen (Auf-/Ab-Buttons je Kachel, kein Drag & Drop). Die Konfiguration
 wird pro Benutzer gespeichert; beim Speichern wird der Berichts-Cache
 verworfen, sodass der Bericht beim nächsten Aufruf mit der neuen Konfiguration
-neu berechnet wird.
+neu berechnet wird. Kacheln, die erst nach dem Speichern einer eigenen
+Konfiguration zur Verfügung gekommen sind, werden automatisch am Ende der
+Reihenfolge ergänzt und eingeblendet; einmal bewusst ausgeblendete Kacheln
+bleiben ausgeblendet.
 
-Der Bericht wird pro Benutzer bis Monatsende zwischengespeichert
-(`CacheValidUntilUtc`). Der Cache wird automatisch verworfen, wenn sich
+Der Bericht wird pro Benutzer bis Monatsende zwischengespeichert.
+Der Cache wird automatisch verworfen, wenn sich
 Wertpapierkurse ändern (Kursimport/-eingabe) oder eine Wertpapierbuchung
 storniert wird. Beim Buchen von Kontoauszugsentwürfen wird der Cache
 ebenfalls verworfen, wenn das betroffene Konto Wertpapierverarbeitung erlaubt
@@ -96,17 +113,22 @@ Kachel-Konfiguration verworfen werden.
 - Ein Benutzer blendet in der Bearbeitungsansicht des Depot-Analyseberichts
   die Cashflow-Kachel aus und sortiert die verbleibenden Kacheln neu; nach dem
   Speichern zeigt der Bericht sofort die neue Auswahl und Reihenfolge.
+- Ein Benutzer verfolgt in der Kachel „Depotentwicklung Jahreswechsel" den
+  Depotwert-Verlauf und die Dividenden der vergangenen Jahre und schaltet
+  die Rendite-Basis auf „Eingezahltes Kapital" um, um die
+  Ausschüttungsrendite auf seine historischen Anschaffungskosten zu sehen.
 
 ## Einschränkungen
 
 - Fehlerhafte Kursabfragen markieren das Wertpapier als Preisfehlerzustand.
-- Symbol-Uploads und der Kurs-CSV-Import sind auf die Anhang-Größenbegrenzung (`Attachments:MaxSizeBytes`, Standard 10 MB) beschränkt.
+- Symbol-Uploads und der Kurs-CSV-Import sind auf die Anhang-Größenbegrenzung (standardmäßig 10 MB) beschränkt.
 - Renditeberechnungen hängen von vorhandenen Buchungs- und Kursdaten ab.
 - AlphaVantage-Abrufe benötigen entweder einen persönlichen API Key oder
   einen durch einen Administrator freigegebenen Key.
 - Die Risikoanalyse-Kachel des Depot-Analyseberichts liefert noch keine
-  Werte (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk sind
-  `null`); sie ist als Platzhalter für eine spätere Phase angelegt.
+  Werte (Volatilität, Max. Drawdown, Sharpe Ratio, Beta und Value at Risk
+  werden derzeit nicht berechnet); sie ist als Platzhalter für eine
+  spätere Phase angelegt.
 - Die Liquiditätsquote ordnet den vollständigen aktuellen Saldo eines
   gefundenen Verrechnungskontos dem Depot zu. Bei gemischt genutzten Konten
   kann die Quote deshalb auch nicht depotbezogene Liquidität enthalten. Ist
@@ -122,3 +144,11 @@ Kachel-Konfiguration verworfen werden.
 - Die Auflistung von Positionen und FIFO-Kauf-Lots im Depot-Analysebericht
   ist auf jeweils 200 Einträge gedeckelt; bei Überschreitung wird dies mit
   einem „und N weitere"-Hinweis angezeigt.
+- Der Depotwert in der Kachel „Depotentwicklung Jahreswechsel" umfasst
+  ausschließlich den Marktwert der Wertpapierpositionen — der Saldo von
+  Verrechnungskonten fließt nur in die Liquiditätsquote der Cashflow-Kachel
+  ein.
+- Die Auswahl der Auswahlfelder in der Kachel „Depotentwicklung
+  Jahreswechsel" (Zeitraum und Rendite-Basis) wird nicht gespeichert; beim
+  nächsten Aufruf steht sie wieder auf „Gesamte Historie" bzw.
+  „Jahresanfangswert".

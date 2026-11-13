@@ -1,0 +1,141 @@
+@using FinanceManager.Shared.Dtos.Portfolio
+@using FinanceManager.Web.Components.Shared
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+
+<PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_DepotDevelopment"].Value">
+    <div class="portfolio-dev-filters">
+        <label class="portfolio-dev-filter-label" for="dev-period-filter">@Localizer["PortfolioReport_Dev_Filter_Period"]</label>
+        <select id="dev-period-filter" class="portfolio-dev-filter-select" @bind="_periodFilter">
+            <option value="@DepotDevelopmentPeriodFilter.AllHistory">@Localizer["PortfolioReport_Dev_Period_AllHistory"]</option>
+            <option value="@DepotDevelopmentPeriodFilter.Last5Years">@Localizer["PortfolioReport_Dev_Period_Last5Years"]</option>
+            <option value="@DepotDevelopmentPeriodFilter.Last10Years">@Localizer["PortfolioReport_Dev_Period_Last10Years"]</option>
+        </select>
+        <label class="portfolio-dev-filter-label" for="dev-yield-basis">@Localizer["PortfolioReport_Dev_Filter_YieldBasis"]</label>
+        <select id="dev-yield-basis" class="portfolio-dev-filter-select" @bind="_yieldBasis">
+            <option value="@DepotDevelopmentYieldBasis.YearStartValue">@Localizer["PortfolioReport_Dev_Basis_YearStartValue"]</option>
+            <option value="@DepotDevelopmentYieldBasis.InvestedCapital">@Localizer["PortfolioReport_Dev_Basis_InvestedCapital"]</option>
+        </select>
+    </div>
+
+    @if (FilteredYears.Count == 0)
+    {
+        <div class="mini-bar-chart-empty">@Localizer["PortfolioReport_Dev_Empty"]</div>
+    }
+    else
+    {
+        <PortfolioBarLineChart Points="@ChartPoints"
+                               AriaLabel="@Localizer["PortfolioReport_Dev_Chart_Aria"].Value"
+                               LineLabel="@Localizer["PortfolioReport_Dev_Legend_DepotValue"].Value"
+                               BarLabel="@Localizer["PortfolioReport_Dev_Legend_NetDividends"].Value"
+                               EmptyText="@Localizer["PortfolioReport_Dev_Empty"].Value"
+                               TooltipFormatter="@FormatChartTooltip" />
+
+        <div class="portfolio-table-scroll">
+            <table class="portfolio-return-table portfolio-dev-table">
+                <thead>
+                    <tr>
+                        <th>@Localizer["PortfolioReport_Dev_Th_Year"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_DepotValue"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_ChangeAbs"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_ChangePct"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_NetDividend"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_Ratio"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_Yield"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var year in FilteredYears)
+                    {
+                        var changeAbs = year.YearEndValue - year.YearStartValue;
+                        var changePct = year.YearStartValue != 0m ? changeAbs / year.YearStartValue : (decimal?)null;
+                        var basis = BasisOf(year);
+                        var yield = basis != 0m ? year.NetDividends / basis : (decimal?)null;
+                        <tr>
+                            <td>@year.Year@(year.IsYtd ? Localizer["PortfolioReport_Dev_YtdSuffix"].Value : string.Empty)</td>
+                            <td>@FormatCurrency(year.YearEndValue)</td>
+                            <td class="@(changeAbs >= 0m ? "positive" : "negative")">@FormatSignedCurrency(changeAbs)</td>
+                            <td class="@(changePct.HasValue ? (changePct >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(changePct)</td>
+                            <td>@FormatCurrency(year.NetDividends)</td>
+                            <td>@FormatRatio(year, basis)</td>
+                            <td class="@(yield.HasValue ? (yield >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(yield)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <p class="portfolio-chart-footnote">@FootnoteText</p>
+    }
+</PortfolioKpiCard>
+
+@code {
+    /// <summary>Yield basis mode selectable inside the card: year-start value or cumulative invested capital.</summary>
+    private enum DepotDevelopmentYieldBasis
+    {
+        /// <summary>Portfolio value at the start of the year (initial invested capital in the first year).</summary>
+        YearStartValue,
+        /// <summary>Cumulative invested capital (FIFO acquisition costs) up to the year's reference date.</summary>
+        InvestedCapital
+    }
+
+    /// <summary>Time range filter selectable inside the card.</summary>
+    private enum DepotDevelopmentPeriodFilter
+    {
+        /// <summary>Show all years of the series.</summary>
+        AllHistory,
+        /// <summary>Show only the last five years.</summary>
+        Last5Years,
+        /// <summary>Show only the last ten years.</summary>
+        Last10Years
+    }
+
+    /// <summary>Depot development data to display.</summary>
+    [Parameter, EditorRequired] public PortfolioDepotDevelopmentDto Data { get; set; } = null!;
+
+    private DepotDevelopmentYieldBasis _yieldBasis = DepotDevelopmentYieldBasis.YearStartValue;
+    private DepotDevelopmentPeriodFilter _periodFilter = DepotDevelopmentPeriodFilter.AllHistory;
+
+    private IReadOnlyList<PortfolioDepotDevelopmentYear> FilteredYears
+    {
+        get
+        {
+            // Anchored to the last year of the series, not the current calendar year, so a depot
+            // history that ended in the past still shows its final years under "last N years".
+            var lastYear = Data.Years.Count > 0 ? Data.Years[^1].Year : 0;
+            return _periodFilter switch
+            {
+                DepotDevelopmentPeriodFilter.Last5Years => Data.Years.Where(y => y.Year > lastYear - 5).ToList(),
+                DepotDevelopmentPeriodFilter.Last10Years => Data.Years.Where(y => y.Year > lastYear - 10).ToList(),
+                _ => Data.Years
+            };
+        }
+    }
+
+    private IReadOnlyList<PortfolioBarLineChart.PortfolioBarLineChartPoint> ChartPoints
+        => FilteredYears
+            .Select(y => new PortfolioBarLineChart.PortfolioBarLineChartPoint(
+                y.Year.ToString() + (y.IsYtd ? Localizer["PortfolioReport_Dev_YtdSuffix"].Value : string.Empty),
+                y.YearEndValue,
+                y.NetDividends))
+            .ToList();
+
+    private decimal BasisOf(PortfolioDepotDevelopmentYear year)
+        => _yieldBasis == DepotDevelopmentYieldBasis.InvestedCapital ? year.CumulativeInvestedCapital : year.YearStartValue;
+
+    private string FootnoteText
+        => _yieldBasis == DepotDevelopmentYieldBasis.InvestedCapital
+            ? Localizer["PortfolioReport_Dev_Footnote_InvestedCapital"].Value
+            : Localizer["PortfolioReport_Dev_Footnote_YearStartValue"].Value;
+
+    private string FormatChartTooltip(PortfolioBarLineChart.PortfolioBarLineChartPoint p)
+        => $"{p.Label}: {Localizer["PortfolioReport_Dev_Legend_DepotValue"].Value} {p.LineValue:N0} €, {Localizer["PortfolioReport_Dev_Legend_NetDividends"].Value} {p.BarValue:N0} €";
+
+    private string FormatRatio(PortfolioDepotDevelopmentYear year, decimal basis)
+        => basis != 0m ? $"{year.NetDividends:N0} € / {basis:N0} €" : "—";
+
+    private static string FormatCurrency(decimal value) => $"{value:N0} €";
+
+    private static string FormatSignedCurrency(decimal value) => $"{value:+#,##0;-#,##0;0} €";
+
+    private static string FormatSignedPercent(decimal? value) => value.HasValue ? value.Value.ToString("+0.00%;-0.00%") : "—";
+}

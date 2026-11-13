@@ -13,6 +13,9 @@
     --chart-7: #9085e9;
     --chart-8: #e66767;
     --chart-muted: #555a61;
+    /* Depot development bar/line chart: dark blue line, green bars */
+    --dev-line-color: #3a6ea8;
+    --dev-bar-color: #2f9e63;
 }
 
 .portfolio-tile {
@@ -117,4 +120,41 @@
 
 .portfolio-edit-item {
     background: var(--bg-alt);
+}
+
+.portfolio-dev-filter-select {
+    background: var(--bg-alt);
+    color: var(--text);
+}
+
+.portfolio-bar-line-chart-grid line {
+    stroke: rgba(255, 255, 255, .08);
+}
+
+.portfolio-bar-line-chart-line {
+    stroke: var(--dev-line-color, var(--chart-1));
+}
+
+.portfolio-bar-line-chart-dot {
+    fill: var(--dev-line-color, var(--chart-1));
+}
+
+.portfolio-bar-line-chart-bar {
+    fill: var(--dev-bar-color, var(--chart-3));
+}
+
+.portfolio-bar-line-chart-bar.negative {
+    fill: var(--danger);
+}
+
+.portfolio-bar-line-chart-labels text {
+    fill: var(--muted);
+}
+
+.portfolio-bar-line-chart-swatch.line {
+    background: var(--dev-line-color, var(--chart-1));
+}
+
+.portfolio-bar-line-chart-swatch.bar {
+    background: var(--dev-bar-color, var(--chart-3));
 }
