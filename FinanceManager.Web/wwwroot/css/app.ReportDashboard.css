@@ -256,12 +256,46 @@
     overflow-x: hidden;
 }
 
-/* Postings drill-down dialog: keep long lists inside the viewport on all screen sizes */
-.postings-modal {
+/* Postings drill-down dialog: keep long lists inside the viewport on all screen sizes.
+   Two-class selector so page-generic .modal rules loading later (e.g. SecurityPrices)
+   cannot shrink the dialog or re-enable horizontal scrolling. */
+.modal.postings-modal {
     box-sizing: border-box;
+    width: min(1100px, calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
     max-height: 92vh;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* Fixed layout lets the description column wrap instead of overflowing the dialog */
+.postings-table {
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: .5rem;
+}
+
+.postings-table th,
+.postings-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.postings-table th:nth-child(1),
+.postings-table td:nth-child(1) {
+    width: 5.5rem;
+    white-space: nowrap;
+}
+
+.postings-table th:nth-child(2),
+.postings-table td:nth-child(2) {
+    width: 24%;
+}
+
+.postings-table th:nth-child(4),
+.postings-table td:nth-child(4) {
+    width: 7rem;
+    white-space: nowrap;
 }
 
 .projection-detail-header {

@@ -57,7 +57,7 @@ public sealed class ReportPostingsOverlayPlaywrightTests
             var account = new Account(user.Id, AccountType.Giro, "E2E Giro", null, Guid.NewGuid());
             db.Accounts.Add(account);
             db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, month.AddDays(4), 100m, "E2E Gehalt", null, null, null));
-            db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, month.AddDays(10), 50m, "E2E Bonus", null, null, null));
+            db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, month.AddDays(10), 50m, "E2E Bonus Sonderzahlung mit einer bewusst ausführlichen und langen Beschreibung des Verwendungszwecks", null, null, null));
             db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, month.AddMonths(-1).AddDays(3), -20m, "E2E Miete", null, null, null));
             db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, month.AddYears(-1).AddDays(6), 30m, "E2E Zinsen", null, null, null));
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -261,6 +261,8 @@ public sealed class ReportPostingsOverlayPlaywrightTests
     /// expected text fragments and the footer sum, and returns the overlay locator for further use.
     /// The amount check is culture-proof: the footer text is reduced to digits and minus signs, so
     /// "1.497,00", "1,497.00" and "1 497,00" all match an expected sum of 1497.
+    /// Also asserts the dialog layout: it must use the available viewport width (up to 1100 px)
+    /// instead of the generic 520 px modal cap, and its content must never overflow horizontally.
     /// </summary>
     /// <param name="page">Playwright page containing the report dashboard.</param>
     /// <param name="expectedRows">Expected number of posting rows.</param>
@@ -273,6 +275,19 @@ public sealed class ReportPostingsOverlayPlaywrightTests
         var rows = overlay.Locator("table tbody tr");
         await rows.First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
         (await rows.CountAsync()).Should().Be(expectedRows);
+
+        var metrics = await overlay.Locator(".postings-modal").EvaluateAsync<PostingsDialogMetrics>(
+            @"el => {
+                const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+                return {
+                    scrollWidth: el.scrollWidth,
+                    clientWidth: el.clientWidth,
+                    width: el.getBoundingClientRect().width,
+                    expectedWidth: Math.min(1100, window.innerWidth - 2.5 * rem)
+                };
+            }");
+        metrics.ScrollWidth.Should().BeLessThanOrEqualTo(metrics.ClientWidth + 1, "the dialog content must not overflow horizontally");
+        metrics.Width.Should().BeApproximately(metrics.ExpectedWidth, 2, "the dialog should use the available viewport width");
 
         var overlayText = await overlay.InnerTextAsync();
         foreach (var text in expectedTexts)
@@ -300,5 +315,13 @@ public sealed class ReportPostingsOverlayPlaywrightTests
             .UseSqlite($"Data Source={_fixture.DatabasePath}")
             .Options;
         return new AppDbContext(options);
+    }
+
+    private sealed class PostingsDialogMetrics
+    {
+        public double ScrollWidth { get; set; }
+        public double ClientWidth { get; set; }
+        public double Width { get; set; }
+        public double ExpectedWidth { get; set; }
     }
 }
