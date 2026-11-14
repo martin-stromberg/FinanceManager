@@ -48,7 +48,7 @@ kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
 - **Depotentwicklung Jahreswechsel** — ein kombiniertes Diagramm (Linie:
   Depotwert zum Jahresende; Balken: Netto-Dividenden je Jahr) und eine
   Tabelle, die je Kalenderjahr Depotwert, Veränderung zum Vorjahr,
-  Netto-Dividende sowie Verhältnis und Rendite ausweist. Über das
+  Netto-Dividende und Rendite ausweist. Über das
   Auswahlfeld **"Zeitraum"** lässt sich die Anzeige auf die letzten 5
   oder 10 Jahre eingrenzen; über **"Rendite-Basis"** wählen Sie zwischen
   "Jahresanfangswert" und "Eingezahltes Kapital (Yield on Cost)". Im
@@ -57,8 +57,8 @@ kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
   Dividenden) und eine Tabelle mit der Summe der Ein-/Auszahlungen,
   Netto-Dividende und der Ausschüttungsrendite auf das eingezahlte
   Kapital — Tabelle, Diagramm und Fußnote passen sich sofort an. Das
-  laufende Jahr ist mit "*" gekennzeichnet. Auf schmalen Bildschirmen
-  reduziert sich die Tabelle automatisch auf vier Spalten. Beide
+  laufende Jahr ist mit "*" gekennzeichnet. Passt die Tabelle nicht in
+  die Kachel, reduziert sie sich automatisch auf vier Spalten. Beide
   Auswahlen bleiben lokal gespeichert und werden beim nächsten Aufruf
   der Seite wiederhergestellt.
 - **Risikoanalyse** — zeigt aktuell einen Hinweis, dass Risikokennzahlen

@@ -57,8 +57,8 @@ Einzelpositionen samt Marktwert auf:
   einer Linie für den Depotwert zum Jahresende und Balken für die
   vereinnahmten Netto-Dividenden je Kalenderjahr, darunter eine
   Jahrestabelle mit den Spalten Jahreswechsel, Depotwert, Veränderung
-  (absolut und prozentual zum Vorjahr), Netto-Dividende, Verhältnis (€/€)
-  und Rendite. Zwei Auswahlfelder steuern die Anzeige: Über "Zeitraum"
+  (absolut und prozentual zum Vorjahr), Netto-Dividende und Rendite.
+  Zwei Auswahlfelder steuern die Anzeige: Über "Zeitraum"
   lässt sich die Historie auf "Gesamte Historie", "Letzte 5 Jahre" oder
   "Letzte 10 Jahre" eingrenzen; über "Rendite-Basis" wird zwischen
   "Jahresanfangswert" und "Eingezahltes Kapital (Yield on Cost)"
@@ -71,10 +71,11 @@ Einzelpositionen samt Marktwert auf:
   Rendite-Basis wird im LocalStorage des Browsers gespeichert und beim
   nächsten Aufruf wiederhergestellt. Eine Fußnote erläutert die jeweils
   verwendete Berechnungsgrundlage; das laufende, noch nicht
-  abgeschlossene Jahr ist mit "*" markiert. Auf schmalen Bildschirmen
-  (unter 640 px) reduziert sich die Jahrestabelle automatisch auf vier
-  Spalten — Jahr, Dividende/Depotwert, Veränderung €/% und Rendite —,
-  ohne dass horizontal gescrollt werden muss.
+  abgeschlossene Jahr ist mit "*" markiert. Reicht die Kachelbreite
+  nicht aus (unter ~560 px, z. B. auf schmalen Bildschirmen), reduziert
+  sich die Jahrestabelle automatisch auf vier Spalten — Jahr,
+  Dividende/Depotwert, Veränderung €/% und Rendite —, ohne dass
+  horizontal gescrollt werden muss oder kann.
 - **Risikoanalyse** — als Kachel bereits vorhanden, die eigentlichen
   Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
   sind für eine spätere Phase vorgesehen und werden aktuell nicht berechnet

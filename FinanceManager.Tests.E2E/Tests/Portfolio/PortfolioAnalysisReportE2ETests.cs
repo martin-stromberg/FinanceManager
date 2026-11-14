@@ -291,6 +291,41 @@ public sealed class PortfolioAnalysisReportE2ETests
     }
 
     /// <summary>
+    /// On a narrow (mobile) viewport the depot development table collapses to its four visible
+    /// columns and never overflows its tile: the table wrapper's scroll width stays within its
+    /// client width in both yield-basis modes — horizontal scrolling is never offered.
+    /// </summary>
+    [Fact]
+    public async Task DepotDevelopmentScenario_NarrowViewport_TableFitsWithoutHorizontalScroll()
+    {
+        await using var session = await _fixture.CreateMobileSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"portfolio-depot-mobile-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        var user = await seeder.EnsureUserAsync(username, password);
+        await SeedDepotHistoryAsync(user.Id, DateTime.UtcNow.Year - 2);
+        await auth.LoginAsync(username, password);
+
+        await page.GotoAsync("/portfolio/analysis-report");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var wrap = page.Locator(".portfolio-dev-table-wrap");
+        await wrap.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+
+        (await wrap.EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth")).Should().BeTrue();
+        (await page.Locator("table.portfolio-dev-table thead th:visible").CountAsync()).Should().Be(4);
+
+        await page.Locator("select#dev-yield-basis").SelectOptionAsync("InvestedCapital");
+        await Microsoft.Playwright.Assertions.Expect(page.Locator("svg.portfolio-grouped-bar-chart-svg")).ToHaveCountAsync(1);
+
+        (await page.Locator(".portfolio-dev-table-wrap").EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth")).Should().BeTrue();
+        (await page.Locator("table.portfolio-dev-table thead th:visible").CountAsync()).Should().Be(4);
+    }
+
+    /// <summary>
     /// A user who saved a KPI configuration before the depot development tile existed still gets the
     /// new tile: the read endpoint merges missing tile ids into the stored order and activates
     /// default-active tiles.

@@ -124,12 +124,18 @@ bzw. 10 Jahre — verankert am letzten Jahr der Serie, damit auch eine in
 der Vergangenheit endende Depot-Historie ihre Abschlussjahre zeigt.
 
 Im Modus „Jahresanfangswert" zeigt die Jahrestabelle Depotwert,
-Veränderung (absolut/prozentual), Netto-Dividende, Verhältnis (€/€) und
-Rendite (`NetDividends / YearStartValue`; `—` bei Basis 0). Unter
-640 px Breite blendet CSS die Spalten „Veränderung %", „Netto-Dividende"
-und „Verhältnis" aus und fasst ihre Werte als zweiten Wert in den
-Zellen „Dividende/Depotwert" bzw. „Veränderung €/%" zusammen — vier
-Spalten ohne horizontales Scrollen.
+Veränderung (absolut/prozentual), Netto-Dividende und Rendite
+(`NetDividends / YearStartValue`; `—` bei Basis 0). Der
+Tabellen-Wrapper `.portfolio-dev-table-wrap` ist ein CSS-Container
+(`container-type: inline-size`): unter ~560 px Kachelbreite blendet
+eine Container-Query die Spalten „Veränderung %" und „Netto-Dividende"
+aus und fasst ihre Werte als zweiten Wert in den Zellen
+„Dividende/Depotwert" bzw. „Veränderung €/%" zusammen — vier Spalten,
+gesteuert durch die zur Verfügung stehende Kachelbreite statt der
+Viewport-Breite (zusätzlich greift bei schmalem Viewport eine
+Media-Query als Fallback). Die Tabelle arbeitet mit
+`table-layout: fixed` und `overflow-x: hidden`, sodass horizontales
+Scrollen in keinem Fall entsteht.
 
 Im Modus „Eingezahltes Kapital (Yield on Cost)" wechselt die Kachel auf
 `PortfolioGroupedBarChart` (Balken `NetFlow` und `NetDividends` je Jahr)

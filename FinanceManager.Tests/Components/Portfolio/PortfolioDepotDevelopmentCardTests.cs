@@ -39,7 +39,7 @@ public sealed class PortfolioDepotDevelopmentCardTests : BunitContext
             var data = new PortfolioDepotDevelopmentDto([Year(2023, dividends: 50m, netFlow: 800m)]);
             var cut = Render<PortfolioDepotDevelopmentCard>(builder => builder.Add(c => c.Data, data));
 
-            var yieldBefore = cut.FindAll("tbody tr td")[6].TextContent;
+            var yieldBefore = cut.FindAll("tbody tr td")[5].TextContent;
             cut.Find("select#dev-yield-basis").Change("InvestedCapital");
 
             var headers = cut.FindAll("thead th");
@@ -191,8 +191,8 @@ public sealed class PortfolioDepotDevelopmentCardTests : BunitContext
     }
 
     /// <summary>
-    /// When the selected yield basis is zero the ratio and yield cells render a dash instead
-    /// of dividing by zero.
+    /// When the selected yield basis is zero the change-percent and yield cells render a dash
+    /// instead of dividing by zero.
     /// </summary>
     [Fact]
     public void ZeroBasis_RendersDashInsteadOfYield()
@@ -204,8 +204,8 @@ public sealed class PortfolioDepotDevelopmentCardTests : BunitContext
             var cut = Render<PortfolioDepotDevelopmentCard>(builder => builder.Add(c => c.Data, data));
 
             var cells = cut.FindAll("tbody tr td");
+            Assert.Equal("—", cells[3].TextContent);
             Assert.Equal("—", cells[5].TextContent);
-            Assert.Equal("—", cells[6].TextContent);
         });
     }
 
@@ -224,9 +224,9 @@ public sealed class PortfolioDepotDevelopmentCardTests : BunitContext
 
             var cells = cut.FindAll("tbody tr td");
             Assert.Equal("—", cells[3].TextContent);
-            Assert.Equal("—", cells[6].TextContent);
+            Assert.Equal("—", cells[5].TextContent);
             Assert.DoesNotContain("negative", cells[3].GetAttribute("class") ?? string.Empty);
-            Assert.DoesNotContain("negative", cells[6].GetAttribute("class") ?? string.Empty);
+            Assert.DoesNotContain("negative", cells[5].GetAttribute("class") ?? string.Empty);
         });
     }
 
@@ -253,7 +253,7 @@ public sealed class PortfolioDepotDevelopmentCardTests : BunitContext
 
     /// <summary>
     /// Monetary values are rendered culture-aware as rounded euro amounts and the derived
-    /// change, ratio and yield columns use signed percent formatting.
+    /// change and yield columns use signed percent formatting.
     /// </summary>
     [Fact]
     public void Formatting_CurrencyAndSignedPercent()
@@ -272,8 +272,7 @@ public sealed class PortfolioDepotDevelopmentCardTests : BunitContext
             Assert.Equal("+100 € / +10.00%", cells[2].TextContent);
             Assert.Equal("+10.00%", cells[3].TextContent);
             Assert.Equal("50 €", cells[4].TextContent);
-            Assert.Equal("50 € / 1,000 €", cells[5].TextContent);
-            Assert.Equal("+5.00%", cells[6].TextContent);
+            Assert.Equal("+5.00%", cells[5].TextContent);
         });
     }
 
@@ -290,7 +289,8 @@ public sealed class PortfolioDepotDevelopmentCardTests : BunitContext
             var data = new PortfolioDepotDevelopmentDto([Year(2023)]);
             var cut = Render<PortfolioDepotDevelopmentCard>(builder => builder.Add(c => c.Data, data));
 
-            Assert.Equal(3, cut.FindAll("th.dev-col-changepct, th.dev-col-dividend, th.dev-col-ratio").Count);
+            Assert.Equal(6, cut.FindAll("thead th").Count);
+            Assert.Equal(2, cut.FindAll("th.dev-col-changepct, th.dev-col-dividend").Count);
             Assert.NotEmpty(cut.FindAll("td .dev-mobile-only"));
             Assert.Equal(2, cut.FindAll("th .dev-mobile-only").Count);
             Assert.Equal(2, cut.FindAll("th .dev-desktop-only").Count);

@@ -969,9 +969,6 @@
   <data name="PortfolioReport_Dev_Th_NetDividend" xml:space="preserve">
     <value>Net dividends</value>
   </data>
-  <data name="PortfolioReport_Dev_Th_Ratio" xml:space="preserve">
-    <value>Ratio (€/€)</value>
-  </data>
   <data name="PortfolioReport_Dev_Th_Yield" xml:space="preserve">
     <value>Yield</value>
   </data>

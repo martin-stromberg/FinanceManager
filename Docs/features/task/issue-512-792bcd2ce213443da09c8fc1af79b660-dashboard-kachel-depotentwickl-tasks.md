@@ -45,3 +45,12 @@
 | 36 | Tests | bUnit: Karte (YoC-Tabelle, Compact-Klassen, Persistenz), GroupedChart, Service `NetFlow` | Erledigt | alle bestanden (2283 Unit-Tests gesamt) |
 | 37 | E2E | YoC-Umschaltung (Grouped-Chart + 4 Header) und Persistenz über Reload | Erledigt | 7 DepotDevelopment-E2E-Tests bestanden |
 | 38 | Doku | `Docs/help/wertpapiermanagement/*` + `RELEASE_NOTES.md` an YoC-Modus, Mobile-Layout und localStorage-Persistenz anpassen | Erledigt | – |
+
+## Nachbesserungen aus IssueComment (PR #513, comment-6873954751)
+
+| # | Bereich | Aufgabe | Status | Testnachweis |
+|---|---------|---------|--------|--------------|
+| 39 | UI | „Verhältnis (€/€)"-Spalte auch in der Desktopansicht entfernen (Jahresanfangs-Tabelle: 6 Spalten; Key `PortfolioReport_Dev_Th_Ratio` und `FormatRatio` entfernt) | Erledigt | `PortfolioDepotDevelopmentCardTests` (angepasste Zell-/Header-Assertions, 19 Tests bestanden) |
+| 40 | CSS | Spaltenreduktion an Kachelbreite koppeln statt Viewport: `.portfolio-dev-table-wrap` als `container-type: inline-size` + `@container (max-width: 560px)`; `min-width` und `overflow-x: auto` ersetzt durch `table-layout: fixed` + `overflow-x: hidden` (Scrollen unmöglich) | Erledigt | E2E `DepotDevelopmentScenario_NarrowViewport_TableFitsWithoutHorizontalScroll` (390-px-Viewport: `scrollWidth <= clientWidth`, 4 sichtbare Spalten in beiden Modi) |
+| 41 | Tests | E2E-Mobile-Test ergänzt; bUnit-Assertions auf 6-Spalten-Tabelle angepasst | Erledigt | 8/8 DepotDevelopment-E2E-Tests bestanden |
+| 42 | Doku | `beschreibung.md`, `ablauf-anwender.md`, `ablauf-technisch.md`, `business-rules.md`, `RELEASE_NOTES.md` an Verhältnis-Entfernung und Container-Query-Mechanik angepasst | Erledigt | – |

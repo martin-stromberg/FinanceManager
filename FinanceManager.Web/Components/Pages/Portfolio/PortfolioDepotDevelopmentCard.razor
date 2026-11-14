@@ -31,7 +31,7 @@
                                 EmptyText="@Localizer["PortfolioReport_Dev_Empty"].Value"
                                 TooltipFormatter="@FormatFlowChartTooltip" />
 
-        <div class="portfolio-table-scroll">
+        <div class="portfolio-dev-table-wrap">
             <table class="portfolio-return-table portfolio-dev-table">
                 <thead>
                     <tr>
@@ -67,7 +67,7 @@
                                EmptyText="@Localizer["PortfolioReport_Dev_Empty"].Value"
                                TooltipFormatter="@FormatChartTooltip" />
 
-        <div class="portfolio-table-scroll">
+        <div class="portfolio-dev-table-wrap">
             <table class="portfolio-return-table portfolio-dev-table">
                 <thead>
                     <tr>
@@ -82,7 +82,6 @@
                         </th>
                         <th class="dev-col-changepct">@Localizer["PortfolioReport_Dev_Th_ChangePct"]</th>
                         <th class="dev-col-dividend">@Localizer["PortfolioReport_Dev_Th_NetDividend"]</th>
-                        <th class="dev-col-ratio">@Localizer["PortfolioReport_Dev_Th_Ratio"]</th>
                         <th>@Localizer["PortfolioReport_Dev_Th_Yield"]</th>
                     </tr>
                 </thead>
@@ -98,7 +97,6 @@
                             <td class="@(changeAbs >= 0m ? "positive" : "negative")">@FormatSignedCurrency(changeAbs)<span class="dev-mobile-only"> / @FormatSignedPercent(changePct)</span></td>
                             <td class="dev-col-changepct @(changePct.HasValue ? (changePct >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(changePct)</td>
                             <td class="dev-col-dividend">@FormatCurrency(year.NetDividends)</td>
-                            <td class="dev-col-ratio">@FormatRatio(year, year.YearStartValue)</td>
                             <td class="@(yield.HasValue ? (yield >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(yield)</td>
                         </tr>
                     }
@@ -202,9 +200,6 @@
 
     private string FormatFlowChartTooltip(PortfolioGroupedBarChart.PortfolioGroupedBarChartPoint p)
         => $"{p.Label}: {Localizer["PortfolioReport_Dev_Legend_NetFlow"].Value} {p.FirstValue:N0} €, {Localizer["PortfolioReport_Dev_Legend_NetDividends"].Value} {p.SecondValue:N0} €";
-
-    private string FormatRatio(PortfolioDepotDevelopmentYear year, decimal basis)
-        => basis != 0m ? $"{year.NetDividends:N0} € / {basis:N0} €" : "—";
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)

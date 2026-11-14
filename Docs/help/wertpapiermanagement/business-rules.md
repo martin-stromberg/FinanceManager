@@ -222,9 +222,8 @@ unter Verwendung von `GetSeriesYearRange`, `GetYearReferenceDate`,
 
 ## Depot-Analysebericht: Rendite-Basis der Depotentwicklung
 
-**Beschreibung:** Die Spalten „Verhältnis (€/€)" und „Rendite" der
-Jahrestabelle beziehen die Netto-Dividende auf eine vom Anwender
-wählbare Basis.
+**Beschreibung:** Die Spalte „Rendite" der Jahrestabelle bezieht die
+Netto-Dividende auf eine vom Anwender wählbare Basis.
 
 **Bedingungen:**
 - Auswahl „Jahresanfangswert" (Standard) oder „Eingezahltes Kapital
@@ -232,22 +231,24 @@ wählbare Basis.
 
 **Verhalten:**
 - Jahresanfangswert: `Rendite = NetDividends / YearStartValue`; die
-  Jahrestabelle zeigt zusätzlich Depotwert, Veränderung zum Vorjahr und
-  das Verhältnis (€/€) als Operandenpaar.
+  Jahrestabelle zeigt zusätzlich Depotwert, Veränderung zum Vorjahr
+  (absolut und prozentual) und die Netto-Dividende.
 - Eingezahltes Kapital: `Rendite = NetDividends / Σ NetFlow` (kumulierte
   Ein-/Auszahlungen bis zum Jahresstichtag über die gesamte Historie,
   unabhängig vom Zeitraum-Filter); die Tabelle zeigt statt Depotwert
   und Veränderung die Spalten Jahr, Ein-/Auszahlungen (Summe),
   Netto-Dividende und Rendite, das Diagramm wechselt auf zwei Balken
   je Jahr (`NetFlow` und `NetDividends`).
-- Ist die Basis 0, steht in den Spalten „Verhältnis (€/€)" bzw.
-  „Rendite" `—` statt eines Prozentwerts.
-- Unter 640 px Breite reduziert sich die Tabelle im Modus
-  „Jahresanfangswert" auf vier Spalten („Jahr", „Dividende/Depotwert",
-  „Veränderung €/%", „Rendite"): die Zellen für Depotwert und
-  Veränderung zeigen je zwei Werte, die Spalten „Veränderung %",
-  „Netto-Dividende" und „Verhältnis" entfallen; horizontales Scrollen
-  ist nicht erforderlich.
+- Ist die Basis 0, steht in der Spalte „Rendite" `—` statt eines
+  Prozentwerts.
+- Reicht die Breite der Kachel nicht aus (unter ~560 px — etwa auf
+  schmalen Bildschirmen oder in mehrspaltigen Kachel-Rastern), reduziert
+  sich die Tabelle im Modus „Jahresanfangswert" per CSS-Container-Query
+  auf vier Spalten („Jahr", „Dividende/Depotwert", „Veränderung €/%",
+  „Rendite"): die Zellen für Depotwert und Veränderung zeigen je zwei
+  Werte, die Spalten „Veränderung %" und „Netto-Dividende" entfallen.
+  Die Tabelle verwendet `table-layout: fixed` bei `overflow-x: hidden`,
+  sodass horizontales Scrollen niemals erforderlich oder möglich ist.
 - Umschalten der Basis ebenso wie der Zeitraum-Filter („Gesamte
   Historie", „Letzte 5 Jahre", „Letzte 10 Jahre" — verankert am letzten
   Jahr der Serie, nicht am Kalenderjahr) erfolgen rein clientseitig;

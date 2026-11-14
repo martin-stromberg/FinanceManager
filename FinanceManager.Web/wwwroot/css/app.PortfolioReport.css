@@ -444,14 +444,53 @@
     border: 1px solid var(--border);
 }
 
-.portfolio-dev-table {
-    min-width: 560px;
+/* The wrapper is a CSS container so the column reduction reacts to the tile's
+   available width, not the viewport width. Horizontal scrolling is never used:
+   overflow-x stays hidden and the fixed table layout keeps the table inside
+   its container at any width. */
+.portfolio-dev-table-wrap {
+    max-width: 100%;
+    overflow-x: hidden;
+    container-type: inline-size;
 }
 
-/* Mobile column reduction helpers: values/columns hidden or merged by width,
+.portfolio-dev-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.portfolio-dev-table th:first-child,
+.portfolio-dev-table td:first-child {
+    width: 14%;
+}
+
+.portfolio-dev-table th,
+.portfolio-dev-table td {
+    overflow-wrap: break-word;
+}
+
+/* Compact column reduction helpers: values/columns hidden or merged by width,
    never by horizontal scrolling. */
 .dev-mobile-only {
     display: none;
+}
+
+/* Narrow tile (container-driven) or narrow viewport (fallback): collapse the
+   year-start table to four columns — year, dividend/depot value, change €/%,
+   yield. */
+@container (max-width: 560px) {
+    .dev-mobile-only {
+        display: inline;
+    }
+
+    .dev-desktop-only {
+        display: none;
+    }
+
+    .dev-col-changepct,
+    .dev-col-dividend {
+        display: none;
+    }
 }
 
 /* ---------- Bar/line combination chart ---------- */
@@ -621,12 +660,10 @@
         gap: .3rem;
     }
 
-    /* Depot development table: collapse to 4 columns (year, dividend/depot value,
-       change €/%, yield) instead of scrolling horizontally. */
-    .portfolio-dev-table {
-        min-width: 0;
-    }
-
+    /* Viewport fallback for the depot development table: collapse to 4 columns
+       (year, dividend/depot value, change €/%, yield) instead of scrolling
+       horizontally. The container query on .portfolio-dev-table-wrap handles
+       narrow tiles inside wider viewports. */
     .dev-mobile-only {
         display: inline;
     }
@@ -636,8 +673,7 @@
     }
 
     .dev-col-changepct,
-    .dev-col-dividend,
-    .dev-col-ratio {
+    .dev-col-dividend {
         display: none;
     }
 }
