@@ -29,3 +29,19 @@
 | 25 | Tests | `PortfolioAnalysisReportServiceTests`: Serienende-Test `…_AllPositionsSold_SeriesEndsAtLastTransactionYear` (keine Phantom-YTD-Zeile nach Komplettverkauf) | Erledigt | Bestanden |
 | 26 | Tests | `PortfolioBarLineChartTests` (bUnit, neu in `FinanceManager.Tests/Components/Shared/`): getrennte Skalierung, `<title>`-Tooltips mit exakt formatiertem Wert, Legende, `EmptyText`/`AriaLabel` | Erledigt | 4 Tests, bestanden |
 | 27 | UI | YTD-`*`-Suffix lokalisieren: resx-Key `PortfolioReport_Dev_YtdSuffix` (Wert `*`) in `Pages.resx`/`Pages.de.resx`/`Pages.en.resx` anlegen (oder `PortfolioReport_YtdSuffix` wiederverwenden, falls geänderte Markierung akzeptabel) und in `PortfolioDepotDevelopmentCard.razor` (Tabellenzelle Z. 54, Chart-Label Z. 115) statt des hartkodierten `"*"` verwenden | Erledigt | Neuer Key `PortfolioReport_Dev_YtdSuffix` = `*` in allen drei resx angelegt; beide Stellen umgestellt. `PortfolioDepotDevelopmentCardTests.YtdRow_RendersAsteriskAndFootnote` bestanden (8/8 Card-Tests) |
+
+## Nachbesserungen aus IssueComment (PR #513, comment-6873507722)
+
+| # | Bereich | Aufgabe | Status | Testnachweis |
+|---|---------|---------|--------|--------------|
+| 28 | Logik | `PortfolioDepotDevelopmentYear` um `NetFlow` (Buy−Sell des Jahres) erweitern; `BuildDepotDevelopment` füllt es je Jahr; `CacheSchemaVersion` `"6"`→`"7"` | Erledigt | `…DepotDevelopment.NetFlow_*` (2 Tests, bestanden) |
+| 29 | UI | `PortfolioGroupedBarChart.razor` (2 Balken/Jahr: Ein-/Auszahlungen + Dividenden, gemeinsame Skala mit Baseline 0, Tooltips, Legende, Empty) | Erledigt | `PortfolioGroupedBarChartTests` (bUnit, bestanden) |
+| 30 | UI | Karte: YoC-Modus nutzt Grouped-Chart + 4-Spalten-Tabelle (Jahr, Σ Ein-/Auszahlungen, Netto-Dividende, Rendite) | Erledigt | `PortfolioDepotDevelopmentCardTests` YoC-Tests + E2E `…_SwitchingYieldBasisUpdatesTable` |
+| 31 | UI | Karte: Mobile (<640 px) auf 4 Spalten reduzieren (Jahr, Dividende/Depotwert, Veränderung €/%, Rendite), „Verhältnis" weg, kein horizontales Scrollen | Erledigt | Compact-Klassen-Tests (bUnit); `overflow-x` auf `hidden` |
+| 32 | UI | Anzeigemodus + Zeitraum im `localStorage` persistieren (`fm.portfolio.dev.yieldBasis`, `fm.portfolio.dev.period`), Restore beim ersten Render, Fehler tolerant | Erledigt | bUnit-Restore/Persist-Tests (FakeJSRuntime) + E2E `…_FilterChoicesPersistAcrossReload` |
+| 33 | Recht | Impressum: Hinweis auf localStorage-Nutzung für UI-Einstellungen (`Privacy_UiPreferences`, de+en) | Erledigt | resx-Keys vorhanden; Render in `Legal.razor` |
+| 34 | resx | Neue Keys (Chart-Legende Ein-/Auszahlungen, Spaltenkopf Ein-/Auszahlungen, Mobile-Kombiköpfe, YoC-Fußnote) in `Pages.resx`/`.de`/`.en` | Erledigt | bUnit rendern über Localizer |
+| 35 | CSS | `.dev-mobile-only`/`.dev-col-*`-Umschaltung, `overflow-x: hidden` für dev-Tabelle, Grouped-Chart-Theme-Variablen (Light+Dark) | Erledigt | Kein direkter Test (Layout via E2E geprüft) |
+| 36 | Tests | bUnit: Karte (YoC-Tabelle, Compact-Klassen, Persistenz), GroupedChart, Service `NetFlow` | Erledigt | alle bestanden (2283 Unit-Tests gesamt) |
+| 37 | E2E | YoC-Umschaltung (Grouped-Chart + 4 Header) und Persistenz über Reload | Erledigt | 7 DepotDevelopment-E2E-Tests bestanden |
+| 38 | Doku | `Docs/help/wertpapiermanagement/*` + `RELEASE_NOTES.md` an YoC-Modus, Mobile-Layout und localStorage-Persistenz anpassen | Erledigt | – |

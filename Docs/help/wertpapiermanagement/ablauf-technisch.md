@@ -70,7 +70,9 @@ Beteiligte Komponenten:
     im laufenden Jahr, sonst der 31.12.). `YearEndValue` kommt aus
     `GetPortfolioValueOnDate` zum Stichtag, `NetDividends` als Summe der
     `Dividend`-Buchungen minus Summe der `|Amount|` der `Tax`-Buchungen
-    des Jahres und `CumulativeInvestedCapital` als je Position auf die
+    des Jahres, `NetFlow` als Summe der `|Amount|` der `Buy`-Buchungen
+    minus Summe der `Sell`-Buchungsbeträge des Jahres und
+    `CumulativeInvestedCapital` als je Position auf die
     Transaktionen `<= Stichtag` berechnete FIFO-Basis
     (`TotalCostBasis - StandaloneFeeTotal`). `YearStartValue` ist der
     `YearEndValue` des Vorjahres; im ersten Jahr der Serie dient das
@@ -106,7 +108,12 @@ Diagramm-Komponenten aus `FinanceManager.Web/Components/Shared/`:
 - `PortfolioBarLineChart` (kombiniertes SVG-Linien-/Balkendiagramm mit
   getrennt skalierten Serien — die Linie nutzt die volle Zeichenhöhe, die
   Balken die untere Hälfte —, Legende und `<title>`-Tooltips je
-  Datenpunkt) — Jahresserie in `PortfolioDepotDevelopmentCard`.
+  Datenpunkt) — Jahresserie in `PortfolioDepotDevelopmentCard` im Modus
+  „Jahresanfangswert".
+- `PortfolioGroupedBarChart` (SVG-Gruppenbalkendiagramm mit zwei Balken
+  je Datenpunkt auf gemeinsamer Skala, Basislinie bei 0, Legende und
+  `<title>`-Tooltips) — Ein-/Auszahlungen und Netto-Dividenden je Jahr in
+  `PortfolioDepotDevelopmentCard` im Modus „Eingezahltes Kapital".
 
 `PortfolioDepotDevelopmentCard` erhält die Jahresserie als Parameter
 `Data` (`PortfolioDepotDevelopmentDto`) und hält die beiden
@@ -115,11 +122,32 @@ Auswahlwerte als komponenteninternen Zustand (private Enums
 Zeitraum-Filter begrenzt die Anzeige clientseitig auf die letzten 5
 bzw. 10 Jahre — verankert am letzten Jahr der Serie, damit auch eine in
 der Vergangenheit endende Depot-Historie ihre Abschlussjahre zeigt.
-Die Spalten „Verhältnis (€/€)" und „Rendite" werden aus den gelieferten
-Jahreswerten abgeleitet (`NetDividends` geteilt durch `YearStartValue`
-bzw. `CumulativeInvestedCapital`; `—` bei Basis 0), sodass der Wechsel
-der Rendite-Basis ohne Server-Roundtrip erfolgt; die Fußnote unter der
+
+Im Modus „Jahresanfangswert" zeigt die Jahrestabelle Depotwert,
+Veränderung (absolut/prozentual), Netto-Dividende, Verhältnis (€/€) und
+Rendite (`NetDividends / YearStartValue`; `—` bei Basis 0). Unter
+640 px Breite blendet CSS die Spalten „Veränderung %", „Netto-Dividende"
+und „Verhältnis" aus und fasst ihre Werte als zweiten Wert in den
+Zellen „Dividende/Depotwert" bzw. „Veränderung €/%" zusammen — vier
+Spalten ohne horizontales Scrollen.
+
+Im Modus „Eingezahltes Kapital (Yield on Cost)" wechselt die Kachel auf
+`PortfolioGroupedBarChart` (Balken `NetFlow` und `NetDividends` je Jahr)
+und eine Vier-Spalten-Tabelle: Jahr, Summe der Ein-/Auszahlungen
+(kumulierter `NetFlow` über die gesamte Historie bis zur jeweiligen
+Zeile, clientseitig berechnet), Netto-Dividende und Rendite
+(`NetDividends / kumulierter NetFlow`; `—` bei Basis 0). Der Wechsel der
+Rendite-Basis erfolgt ohne Server-Roundtrip; die Fußnote unter der
 Tabelle wechselt auf den modusspezifischen Text.
+
+Beide Auswahlwerte werden bei Änderung über `IJSRuntime` in den
+`localStorage` des Browsers geschrieben (Schlüssel
+`fm.portfolio.dev.yieldBasis` und `fm.portfolio.dev.period`) und in
+`OnAfterRenderAsync(firstRender)` wieder eingelesen, sodass die letzte
+Auswahl beim nächsten Seitenaufruf wiederhergestellt wird. Der Zugriff
+ist try/catch-geschützt und prerender-sicher; der Speicher-Mechanismus
+ist unabhängig vom optionalen KPI-Cache und wird im Impressum
+(Rechtliches-Seite) dokumentiert.
 
 Kennzahlen mit einer sinnvollen Herleitung (z. B. Gesamtmarktwert, investiertes
 Kapital, unrealisierter Gewinn/Verlust, TWR, YTD-Rendite, Netto-Einzahlungen,

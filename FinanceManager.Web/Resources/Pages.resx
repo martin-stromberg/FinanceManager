@@ -975,11 +975,20 @@
   <data name="PortfolioReport_Dev_Th_Yield" xml:space="preserve">
     <value>Yield</value>
   </data>
+  <data name="PortfolioReport_Dev_Th_NetFlow" xml:space="preserve">
+    <value>Deposits/withdrawals</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_DividendDepotValue" xml:space="preserve">
+    <value>Dividend/depot value</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_ChangeCombined" xml:space="preserve">
+    <value>Change €/%</value>
+  </data>
   <data name="PortfolioReport_Dev_Footnote_YearStartValue" xml:space="preserve">
     <value>Yield basis: depot value at the start of the year; for the first year the initial invested capital (acquisition costs) is used instead. * Current, not yet completed year (YTD).</value>
   </data>
   <data name="PortfolioReport_Dev_Footnote_InvestedCapital" xml:space="preserve">
-    <value>Yield basis: cumulative invested capital (FIFO acquisition costs of the positions held at the year's reference date). * Current, not yet completed year (YTD).</value>
+    <value>Yield basis: cumulative deposits minus withdrawals (net buys minus sells up to the year's reference date). * Current, not yet completed year (YTD).</value>
   </data>
   <data name="PortfolioReport_Dev_Empty" xml:space="preserve">
     <value>No security postings available yet.</value>
@@ -990,11 +999,17 @@
   <data name="PortfolioReport_Dev_Chart_Aria" xml:space="preserve">
     <value>Combined line and bar chart of depot value and net dividends per year</value>
   </data>
+  <data name="PortfolioReport_Dev_Chart_Aria_Invested" xml:space="preserve">
+    <value>Bar chart of deposits/withdrawals and net dividends per year</value>
+  </data>
   <data name="PortfolioReport_Dev_Legend_DepotValue" xml:space="preserve">
     <value>Depot value</value>
   </data>
   <data name="PortfolioReport_Dev_Legend_NetDividends" xml:space="preserve">
     <value>Net dividends</value>
+  </data>
+  <data name="PortfolioReport_Dev_Legend_NetFlow" xml:space="preserve">
+    <value>Deposits/withdrawals</value>
   </data>
   <data name="Dlg_Backfill_Title" xml:space="preserve">
     <value>Backfill prices</value>

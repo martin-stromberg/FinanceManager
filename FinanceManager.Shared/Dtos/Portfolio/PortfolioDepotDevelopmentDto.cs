@@ -24,6 +24,10 @@ public sealed record PortfolioDepotDevelopmentDto(IReadOnlyList<PortfolioDepotDe
 /// Cumulative invested capital up to the year's reference date: FIFO cost basis of the positions held
 /// on that date, net of standalone fees.
 /// </param>
+/// <param name="NetFlow">
+/// Net deposits and withdrawals of the year: the sum of buy posting amounts (absolute) minus the sum
+/// of sell posting amounts. Positive values mean more money flowed into positions than out of them.
+/// </param>
 /// <returns>A depot development year record.</returns>
 public sealed record PortfolioDepotDevelopmentYear(
     int Year,
@@ -31,4 +35,5 @@ public sealed record PortfolioDepotDevelopmentYear(
     decimal YearStartValue,
     decimal YearEndValue,
     decimal NetDividends,
-    decimal CumulativeInvestedCapital);
+    decimal CumulativeInvestedCapital,
+    decimal NetFlow);

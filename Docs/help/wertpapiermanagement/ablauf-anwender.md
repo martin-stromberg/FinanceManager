@@ -50,11 +50,17 @@ kombiniert eine grafische Darstellung mit den zugehörigen Kennzahlen:
   Tabelle, die je Kalenderjahr Depotwert, Veränderung zum Vorjahr,
   Netto-Dividende sowie Verhältnis und Rendite ausweist. Über das
   Auswahlfeld **"Zeitraum"** lässt sich die Anzeige auf die letzten 5
-  oder 10 Jahre eingrenzen; über **"Rendite-Basis"** wählen Sie, ob die
-  Rendite auf den Depotwert zum Jahresanfang oder auf das eingezahlte
-  Kapital (Anschaffungskosten der gehaltenen Positionen) bezogen wird —
-  die Tabelle und die Fußnote darunter passen sich sofort an. Das
-  laufende Jahr ist mit "*" gekennzeichnet.
+  oder 10 Jahre eingrenzen; über **"Rendite-Basis"** wählen Sie zwischen
+  "Jahresanfangswert" und "Eingezahltes Kapital (Yield on Cost)". Im
+  Modus "Eingezahltes Kapital" zeigt die Kachel stattdessen ein
+  Balkendiagramm mit je zwei Balken pro Jahr (Ein-/Auszahlungen und
+  Dividenden) und eine Tabelle mit der Summe der Ein-/Auszahlungen,
+  Netto-Dividende und der Ausschüttungsrendite auf das eingezahlte
+  Kapital — Tabelle, Diagramm und Fußnote passen sich sofort an. Das
+  laufende Jahr ist mit "*" gekennzeichnet. Auf schmalen Bildschirmen
+  reduziert sich die Tabelle automatisch auf vier Spalten. Beide
+  Auswahlen bleiben lokal gespeichert und werden beim nächsten Aufruf
+  der Seite wiederhergestellt.
 - **Risikoanalyse** — zeigt aktuell einen Hinweis, dass Risikokennzahlen
   (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk) für eine
   spätere Ausbaustufe geplant sind.

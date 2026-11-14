@@ -506,6 +506,7 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
 
             decimal yearEndValue = GetPortfolioValueOnDate(positions, referenceDate);
             decimal netDividends = 0m;
+            decimal netFlow = 0m;
             decimal cumulativeInvestedCapital = 0m;
 
             foreach (var p in positions)
@@ -517,13 +518,20 @@ public sealed class PortfolioAnalysisReportService : IPortfolioAnalysisReportSer
                     .Where(t => t.Date.Year == year && t.Type == SecurityPostingSubType.Tax)
                     .Sum(t => Math.Abs(t.Amount));
 
+                netFlow += p.Transactions
+                    .Where(t => t.Date.Year == year && t.Type == SecurityPostingSubType.Buy)
+                    .Sum(t => Math.Abs(t.Amount));
+                netFlow -= p.Transactions
+                    .Where(t => t.Date.Year == year && t.Type == SecurityPostingSubType.Sell)
+                    .Sum(t => t.Amount);
+
                 var fifo = _fifo.Calculate(p.Transactions.Where(t => t.Date.Date <= referenceDate).ToList());
                 cumulativeInvestedCapital += fifo.TotalCostBasis - fifo.StandaloneFeeTotal;
             }
 
             decimal yearStartValue = year == firstYear ? cumulativeInvestedCapital : previousYearEndValue;
 
-            years.Add(new PortfolioDepotDevelopmentYear(year, isYtd, yearStartValue, yearEndValue, netDividends, cumulativeInvestedCapital));
+            years.Add(new PortfolioDepotDevelopmentYear(year, isYtd, yearStartValue, yearEndValue, netDividends, cumulativeInvestedCapital, netFlow));
             previousYearEndValue = yearEndValue;
         }
 

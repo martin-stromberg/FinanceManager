@@ -193,8 +193,8 @@ public sealed class PortfolioAnalysisReportE2ETests
     }
 
     /// <summary>
-    /// Switching the yield-basis dropdown updates the ratio/yield columns and the basis footnote
-    /// client-side without reloading the page.
+    /// Switching the yield-basis dropdown to invested capital swaps the combined chart for the
+    /// grouped bar chart and updates the basis footnote client-side without reloading the page.
     /// </summary>
     [Fact]
     public async Task DepotDevelopmentScenario_SwitchingYieldBasisUpdatesTable()
@@ -220,6 +220,45 @@ public sealed class PortfolioAnalysisReportE2ETests
         await page.Locator("select#dev-yield-basis").SelectOptionAsync("InvestedCapital");
 
         await Microsoft.Playwright.Assertions.Expect(footnote).Not.ToHaveTextAsync(footnoteBefore!);
+        await Microsoft.Playwright.Assertions.Expect(page.Locator("svg.portfolio-grouped-bar-chart-svg")).ToHaveCountAsync(1);
+        (await page.Locator("svg.portfolio-bar-line-chart-svg").CountAsync()).Should().Be(0);
+        (await page.Locator("table.portfolio-dev-table thead th").CountAsync()).Should().Be(4);
+    }
+
+    /// <summary>
+    /// The chosen yield basis and period filter are stored in the browser's local storage and
+    /// restored on the next visit of the report page.
+    /// </summary>
+    [Fact]
+    public async Task DepotDevelopmentScenario_FilterChoicesPersistAcrossReload()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"portfolio-depot-persist-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        var user = await seeder.EnsureUserAsync(username, password);
+        await SeedDepotHistoryAsync(user.Id, DateTime.UtcNow.Year - 6);
+        await auth.LoginAsync(username, password);
+
+        await page.GotoAsync("/portfolio/analysis-report");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var yieldBasisSelect = page.Locator("select#dev-yield-basis");
+        await yieldBasisSelect.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await yieldBasisSelect.SelectOptionAsync("InvestedCapital");
+        await page.Locator("select#dev-period-filter").SelectOptionAsync("Last5Years");
+
+        await page.ReloadAsync();
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var restoredBasis = page.Locator("select#dev-yield-basis");
+        await restoredBasis.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await Microsoft.Playwright.Assertions.Expect(restoredBasis).ToHaveValueAsync("InvestedCapital");
+        await Microsoft.Playwright.Assertions.Expect(page.Locator("select#dev-period-filter")).ToHaveValueAsync("Last5Years");
+        (await page.Locator("table.portfolio-dev-table tbody tr").CountAsync()).Should().Be(5);
     }
 
     /// <summary>

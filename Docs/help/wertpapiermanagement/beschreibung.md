@@ -60,13 +60,21 @@ Einzelpositionen samt Marktwert auf:
   (absolut und prozentual zum Vorjahr), Netto-Dividende, Verhältnis (€/€)
   und Rendite. Zwei Auswahlfelder steuern die Anzeige: Über "Zeitraum"
   lässt sich die Historie auf "Gesamte Historie", "Letzte 5 Jahre" oder
-  "Letzte 10 Jahre" eingrenzen; über "Rendite-Basis" wird gewählt, ob die
-  Rendite auf den "Jahresanfangswert" oder auf das "Eingezahltes Kapital
-  (Yield on Cost)" — die historischen Anschaffungskosten der gehaltenen
-  Positionen — bezogen wird. Beide Umschaltungen wirken sofort, ohne die
-  Seite neu zu laden. Eine Fußnote erläutert die jeweils verwendete
-  Berechnungsgrundlage; das laufende, noch nicht abgeschlossene Jahr ist
-  mit "*" markiert.
+  "Letzte 10 Jahre" eingrenzen; über "Rendite-Basis" wird zwischen
+  "Jahresanfangswert" und "Eingezahltes Kapital (Yield on Cost)"
+  gewählt. Im Modus "Eingezahltes Kapital" zeigt die Kachel ein
+  Balkendiagramm mit je zwei Balken pro Jahr (Ein-/Auszahlungen und
+  Dividenden) und eine reduzierte Tabelle mit der Summe der
+  Ein-/Auszahlungen bis zum jeweiligen Jahr, der Netto-Dividende und der
+  Rendite auf das eingezahlte Kapital. Beide Umschaltungen wirken
+  sofort, ohne die Seite neu zu laden; die Auswahl von Zeitraum und
+  Rendite-Basis wird im LocalStorage des Browsers gespeichert und beim
+  nächsten Aufruf wiederhergestellt. Eine Fußnote erläutert die jeweils
+  verwendete Berechnungsgrundlage; das laufende, noch nicht
+  abgeschlossene Jahr ist mit "*" markiert. Auf schmalen Bildschirmen
+  (unter 640 px) reduziert sich die Jahrestabelle automatisch auf vier
+  Spalten — Jahr, Dividende/Depotwert, Veränderung €/% und Rendite —,
+  ohne dass horizontal gescrollt werden muss.
 - **Risikoanalyse** — als Kachel bereits vorhanden, die eigentlichen
   Kennzahlen (Volatilität, Max. Drawdown, Sharpe Ratio, Beta, Value at Risk)
   sind für eine spätere Phase vorgesehen und werden aktuell nicht berechnet
@@ -149,6 +157,7 @@ Kachel-Konfiguration verworfen werden.
   Verrechnungskonten fließt nur in die Liquiditätsquote der Cashflow-Kachel
   ein.
 - Die Auswahl der Auswahlfelder in der Kachel „Depotentwicklung
-  Jahreswechsel" (Zeitraum und Rendite-Basis) wird nicht gespeichert; beim
-  nächsten Aufruf steht sie wieder auf „Gesamte Historie" bzw.
-  „Jahresanfangswert".
+  Jahreswechsel" (Zeitraum und Rendite-Basis) wird im LocalStorage des
+  Browsers gespeichert und beim nächsten Aufruf wiederhergestellt; ein
+  geleerter oder blockierter LocalStorage führt zum Standard
+  („Gesamte Historie" bzw. „Jahresanfangswert").

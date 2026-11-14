@@ -1,17 +1,18 @@
 @using FinanceManager.Shared.Dtos.Portfolio
 @using FinanceManager.Web.Components.Shared
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> Localizer
+@inject IJSRuntime JS
 
 <PortfolioKpiCard Title="@Localizer["PortfolioReport_Tile_DepotDevelopment"].Value">
     <div class="portfolio-dev-filters">
         <label class="portfolio-dev-filter-label" for="dev-period-filter">@Localizer["PortfolioReport_Dev_Filter_Period"]</label>
-        <select id="dev-period-filter" class="portfolio-dev-filter-select" @bind="_periodFilter">
+        <select id="dev-period-filter" class="portfolio-dev-filter-select" value="@_periodFilter" @onchange="OnPeriodFilterChanged">
             <option value="@DepotDevelopmentPeriodFilter.AllHistory">@Localizer["PortfolioReport_Dev_Period_AllHistory"]</option>
             <option value="@DepotDevelopmentPeriodFilter.Last5Years">@Localizer["PortfolioReport_Dev_Period_Last5Years"]</option>
             <option value="@DepotDevelopmentPeriodFilter.Last10Years">@Localizer["PortfolioReport_Dev_Period_Last10Years"]</option>
         </select>
         <label class="portfolio-dev-filter-label" for="dev-yield-basis">@Localizer["PortfolioReport_Dev_Filter_YieldBasis"]</label>
-        <select id="dev-yield-basis" class="portfolio-dev-filter-select" @bind="_yieldBasis">
+        <select id="dev-yield-basis" class="portfolio-dev-filter-select" value="@_yieldBasis" @onchange="OnYieldBasisChanged">
             <option value="@DepotDevelopmentYieldBasis.YearStartValue">@Localizer["PortfolioReport_Dev_Basis_YearStartValue"]</option>
             <option value="@DepotDevelopmentYieldBasis.InvestedCapital">@Localizer["PortfolioReport_Dev_Basis_InvestedCapital"]</option>
         </select>
@@ -20,6 +21,42 @@
     @if (FilteredYears.Count == 0)
     {
         <div class="mini-bar-chart-empty">@Localizer["PortfolioReport_Dev_Empty"]</div>
+    }
+    else if (_yieldBasis == DepotDevelopmentYieldBasis.InvestedCapital)
+    {
+        <PortfolioGroupedBarChart Points="@FlowChartPoints"
+                                AriaLabel="@Localizer["PortfolioReport_Dev_Chart_Aria_Invested"].Value"
+                                FirstLabel="@Localizer["PortfolioReport_Dev_Legend_NetFlow"].Value"
+                                SecondLabel="@Localizer["PortfolioReport_Dev_Legend_NetDividends"].Value"
+                                EmptyText="@Localizer["PortfolioReport_Dev_Empty"].Value"
+                                TooltipFormatter="@FormatFlowChartTooltip" />
+
+        <div class="portfolio-table-scroll">
+            <table class="portfolio-return-table portfolio-dev-table">
+                <thead>
+                    <tr>
+                        <th>@Localizer["PortfolioReport_Dev_Th_Year"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_NetFlow"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_NetDividend"]</th>
+                        <th>@Localizer["PortfolioReport_Dev_Th_Yield"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in InvestedRows)
+                    {
+                        var yield = row.CumulativeNetFlow != 0m ? row.Year.NetDividends / row.CumulativeNetFlow : (decimal?)null;
+                        <tr>
+                            <td>@row.Year.Year@(row.Year.IsYtd ? Localizer["PortfolioReport_Dev_YtdSuffix"].Value : string.Empty)</td>
+                            <td>@FormatCurrency(row.CumulativeNetFlow)</td>
+                            <td>@FormatCurrency(row.Year.NetDividends)</td>
+                            <td class="@(yield.HasValue ? (yield >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(yield)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <p class="portfolio-chart-footnote">@FootnoteText</p>
     }
     else
     {
@@ -35,11 +72,17 @@
                 <thead>
                     <tr>
                         <th>@Localizer["PortfolioReport_Dev_Th_Year"]</th>
-                        <th>@Localizer["PortfolioReport_Dev_Th_DepotValue"]</th>
-                        <th>@Localizer["PortfolioReport_Dev_Th_ChangeAbs"]</th>
-                        <th>@Localizer["PortfolioReport_Dev_Th_ChangePct"]</th>
-                        <th>@Localizer["PortfolioReport_Dev_Th_NetDividend"]</th>
-                        <th>@Localizer["PortfolioReport_Dev_Th_Ratio"]</th>
+                        <th>
+                            <span class="dev-desktop-only">@Localizer["PortfolioReport_Dev_Th_DepotValue"]</span>
+                            <span class="dev-mobile-only">@Localizer["PortfolioReport_Dev_Th_DividendDepotValue"]</span>
+                        </th>
+                        <th>
+                            <span class="dev-desktop-only">@Localizer["PortfolioReport_Dev_Th_ChangeAbs"]</span>
+                            <span class="dev-mobile-only">@Localizer["PortfolioReport_Dev_Th_ChangeCombined"]</span>
+                        </th>
+                        <th class="dev-col-changepct">@Localizer["PortfolioReport_Dev_Th_ChangePct"]</th>
+                        <th class="dev-col-dividend">@Localizer["PortfolioReport_Dev_Th_NetDividend"]</th>
+                        <th class="dev-col-ratio">@Localizer["PortfolioReport_Dev_Th_Ratio"]</th>
                         <th>@Localizer["PortfolioReport_Dev_Th_Yield"]</th>
                     </tr>
                 </thead>
@@ -48,15 +91,14 @@
                     {
                         var changeAbs = year.YearEndValue - year.YearStartValue;
                         var changePct = year.YearStartValue != 0m ? changeAbs / year.YearStartValue : (decimal?)null;
-                        var basis = BasisOf(year);
-                        var yield = basis != 0m ? year.NetDividends / basis : (decimal?)null;
+                        var yield = year.YearStartValue != 0m ? year.NetDividends / year.YearStartValue : (decimal?)null;
                         <tr>
                             <td>@year.Year@(year.IsYtd ? Localizer["PortfolioReport_Dev_YtdSuffix"].Value : string.Empty)</td>
-                            <td>@FormatCurrency(year.YearEndValue)</td>
-                            <td class="@(changeAbs >= 0m ? "positive" : "negative")">@FormatSignedCurrency(changeAbs)</td>
-                            <td class="@(changePct.HasValue ? (changePct >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(changePct)</td>
-                            <td>@FormatCurrency(year.NetDividends)</td>
-                            <td>@FormatRatio(year, basis)</td>
+                            <td><span class="dev-mobile-only">@FormatCurrency(year.NetDividends) / </span>@FormatCurrency(year.YearEndValue)</td>
+                            <td class="@(changeAbs >= 0m ? "positive" : "negative")">@FormatSignedCurrency(changeAbs)<span class="dev-mobile-only"> / @FormatSignedPercent(changePct)</span></td>
+                            <td class="dev-col-changepct @(changePct.HasValue ? (changePct >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(changePct)</td>
+                            <td class="dev-col-dividend">@FormatCurrency(year.NetDividends)</td>
+                            <td class="dev-col-ratio">@FormatRatio(year, year.YearStartValue)</td>
                             <td class="@(yield.HasValue ? (yield >= 0m ? "positive" : "negative") : null)">@FormatSignedPercent(yield)</td>
                         </tr>
                     }
@@ -69,12 +111,15 @@
 </PortfolioKpiCard>
 
 @code {
+    private const string YieldBasisStorageKey = "fm.portfolio.dev.yieldBasis";
+    private const string PeriodFilterStorageKey = "fm.portfolio.dev.period";
+
     /// <summary>Yield basis mode selectable inside the card: year-start value or cumulative invested capital.</summary>
     private enum DepotDevelopmentYieldBasis
     {
         /// <summary>Portfolio value at the start of the year (initial invested capital in the first year).</summary>
         YearStartValue,
-        /// <summary>Cumulative invested capital (FIFO acquisition costs) up to the year's reference date.</summary>
+        /// <summary>Cumulative deposits and withdrawals up to the year's reference date.</summary>
         InvestedCapital
     }
 
@@ -119,8 +164,33 @@
                 y.NetDividends))
             .ToList();
 
-    private decimal BasisOf(PortfolioDepotDevelopmentYear year)
-        => _yieldBasis == DepotDevelopmentYieldBasis.InvestedCapital ? year.CumulativeInvestedCapital : year.YearStartValue;
+    private IReadOnlyList<PortfolioGroupedBarChart.PortfolioGroupedBarChartPoint> FlowChartPoints
+        => FilteredYears
+            .Select(y => new PortfolioGroupedBarChart.PortfolioGroupedBarChartPoint(
+                y.Year.ToString() + (y.IsYtd ? Localizer["PortfolioReport_Dev_YtdSuffix"].Value : string.Empty),
+                y.NetFlow,
+                y.NetDividends))
+            .ToList();
+
+    // The cumulative deposits/withdrawals sum always spans the full history, even when the
+    // period filter trims the visible rows — the column answers "how much capital was put in
+    // up to that year", not "how much within the filtered window".
+    private IEnumerable<(PortfolioDepotDevelopmentYear Year, decimal CumulativeNetFlow)> InvestedRows
+    {
+        get
+        {
+            var visibleYears = FilteredYears;
+            decimal sum = 0m;
+            foreach (var y in Data.Years)
+            {
+                sum += y.NetFlow;
+                if (visibleYears.Contains(y))
+                {
+                    yield return (y, sum);
+                }
+            }
+        }
+    }
 
     private string FootnoteText
         => _yieldBasis == DepotDevelopmentYieldBasis.InvestedCapital
@@ -130,8 +200,83 @@
     private string FormatChartTooltip(PortfolioBarLineChart.PortfolioBarLineChartPoint p)
         => $"{p.Label}: {Localizer["PortfolioReport_Dev_Legend_DepotValue"].Value} {p.LineValue:N0} €, {Localizer["PortfolioReport_Dev_Legend_NetDividends"].Value} {p.BarValue:N0} €";
 
+    private string FormatFlowChartTooltip(PortfolioGroupedBarChart.PortfolioGroupedBarChartPoint p)
+        => $"{p.Label}: {Localizer["PortfolioReport_Dev_Legend_NetFlow"].Value} {p.FirstValue:N0} €, {Localizer["PortfolioReport_Dev_Legend_NetDividends"].Value} {p.SecondValue:N0} €";
+
     private string FormatRatio(PortfolioDepotDevelopmentYear year, decimal basis)
         => basis != 0m ? $"{year.NetDividends:N0} € / {basis:N0} €" : "—";
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var changed = false;
+        if (Enum.TryParse<DepotDevelopmentYieldBasis>(await ReadPreferenceAsync(YieldBasisStorageKey), out var basis)
+            && basis != _yieldBasis)
+        {
+            _yieldBasis = basis;
+            changed = true;
+        }
+
+        if (Enum.TryParse<DepotDevelopmentPeriodFilter>(await ReadPreferenceAsync(PeriodFilterStorageKey), out var period)
+            && period != _periodFilter)
+        {
+            _periodFilter = period;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnYieldBasisChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<DepotDevelopmentYieldBasis>(e.Value?.ToString(), out var basis))
+        {
+            _yieldBasis = basis;
+            await SavePreferenceAsync(YieldBasisStorageKey, basis.ToString());
+        }
+    }
+
+    private async Task OnPeriodFilterChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<DepotDevelopmentPeriodFilter>(e.Value?.ToString(), out var period))
+        {
+            _periodFilter = period;
+            await SavePreferenceAsync(PeriodFilterStorageKey, period.ToString());
+        }
+    }
+
+    private async Task<string?> ReadPreferenceAsync(string key)
+    {
+        try
+        {
+            return await JS.InvokeAsync<string?>("localStorage.getItem", key);
+        }
+        catch
+        {
+            // localStorage is best-effort UI state; a failure must never break the card.
+            return null;
+        }
+    }
+
+    private async Task SavePreferenceAsync(string key, string value)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", key, value);
+        }
+        catch
+        {
+            // See ReadPreferenceAsync.
+        }
+    }
 
     private static string FormatCurrency(decimal value) => $"{value:N0} €";
 

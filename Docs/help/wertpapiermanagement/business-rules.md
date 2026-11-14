@@ -208,6 +208,8 @@ Netto-Dividenden und kumuliert eingezahltem Kapital.
 - `CumulativeInvestedCapital` = FIFO-Anschaffungskostenbasis
   (`TotalCostBasis - StandaloneFeeTotal`), je Position auf die
   Transaktionen bis zum Stichtag berechnet.
+- `NetFlow` = Summe der `Buy`-Buchungsbeträge (absolut) minus Summe der
+  `Sell`-Buchungsbeträge des Jahres; positiv bedeutet Netto-Einzahlung.
 - `YearStartValue` ist der `YearEndValue` des Vorjahres; im ersten Jahr
   der Serie dient das eigene `CumulativeInvestedCapital` als Startwert.
 - Der Depotwert umfasst nur den Wertpapier-Marktwert, nicht den Saldo
@@ -229,18 +231,32 @@ wählbare Basis.
   (Yield on Cost)" im Auswahlfeld „Rendite-Basis".
 
 **Verhalten:**
-- Jahresanfangswert: `Rendite = NetDividends / YearStartValue`.
-- Eingezahltes Kapital: `Rendite = NetDividends / CumulativeInvestedCapital`.
-- Die Spalte „Verhältnis (€/€)" zeigt beide Operanden als Wertepaar
-  (`Netto-Dividende / Basis`); ist die Basis 0, steht in beiden Spalten
-  `—` statt eines Prozentwerts.
+- Jahresanfangswert: `Rendite = NetDividends / YearStartValue`; die
+  Jahrestabelle zeigt zusätzlich Depotwert, Veränderung zum Vorjahr und
+  das Verhältnis (€/€) als Operandenpaar.
+- Eingezahltes Kapital: `Rendite = NetDividends / Σ NetFlow` (kumulierte
+  Ein-/Auszahlungen bis zum Jahresstichtag über die gesamte Historie,
+  unabhängig vom Zeitraum-Filter); die Tabelle zeigt statt Depotwert
+  und Veränderung die Spalten Jahr, Ein-/Auszahlungen (Summe),
+  Netto-Dividende und Rendite, das Diagramm wechselt auf zwei Balken
+  je Jahr (`NetFlow` und `NetDividends`).
+- Ist die Basis 0, steht in den Spalten „Verhältnis (€/€)" bzw.
+  „Rendite" `—` statt eines Prozentwerts.
+- Unter 640 px Breite reduziert sich die Tabelle im Modus
+  „Jahresanfangswert" auf vier Spalten („Jahr", „Dividende/Depotwert",
+  „Veränderung €/%", „Rendite"): die Zellen für Depotwert und
+  Veränderung zeigen je zwei Werte, die Spalten „Veränderung %",
+  „Netto-Dividende" und „Verhältnis" entfallen; horizontales Scrollen
+  ist nicht erforderlich.
 - Umschalten der Basis ebenso wie der Zeitraum-Filter („Gesamte
   Historie", „Letzte 5 Jahre", „Letzte 10 Jahre" — verankert am letzten
   Jahr der Serie, nicht am Kalenderjahr) erfolgen rein clientseitig;
-  die Auswahl wird nicht persistiert.
+  beide Auswahlen werden im `localStorage` des Browsers persistiert und
+  beim nächsten Aufruf der Seite wiederhergestellt.
 
 **Umsetzung:** `PortfolioDepotDevelopmentCard.razor` (komponenteninterne
-Enums `DepotDevelopmentYieldBasis` und `DepotDevelopmentPeriodFilter`).
+Enums `DepotDevelopmentYieldBasis` und `DepotDevelopmentPeriodFilter`,
+Persistenz über `IJSRuntime`/`localStorage`).
 
 ## Depot-Analysebericht: Nachträglich eingeführte Kacheln werden in gespeicherte Konfigurationen gemergt
 

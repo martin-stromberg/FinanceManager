@@ -127,6 +127,7 @@ monatlichen Cache; bei Cache-Miss wird der Bericht neu berechnet.
 | `YearEndValue` | `decimal` | Depot-Marktwert zum 31.12. des Jahres (im YTD-Jahr zum Tagesdatum) |
 | `NetDividends` | `decimal` | Netto-Dividenden des Jahres (Dividenden- minus Steuerbuchungen) |
 | `CumulativeInvestedCapital` | `decimal` | Kumuliertes eingezahltes Kapital zum Stichtag: FIFO-Anschaffungskostenbasis der gehaltenen Positionen abzüglich Standalone-Gebühren |
+| `NetFlow` | `decimal` | Netto-Ein-/Auszahlungen des Jahres: Summe der `Buy`-Buchungsbeträge (absolut) minus Summe der `Sell`-Buchungsbeträge |
 
 ### `GET /api/portfolio/kpi-configuration`
 

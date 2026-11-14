@@ -448,6 +448,12 @@
     min-width: 560px;
 }
 
+/* Mobile column reduction helpers: values/columns hidden or merged by width,
+   never by horizontal scrolling. */
+.dev-mobile-only {
+    display: none;
+}
+
 /* ---------- Bar/line combination chart ---------- */
 
 .portfolio-bar-line-chart {
@@ -502,6 +508,55 @@
 }
 
 .portfolio-bar-line-chart-empty {
+    font-size: .8rem;
+    opacity: .7;
+}
+
+/* ---------- Grouped bar chart (two bars per year) ---------- */
+
+.portfolio-grouped-bar-chart {
+    margin-bottom: .75rem;
+}
+
+.portfolio-grouped-bar-chart-svg {
+    width: 100%;
+    display: block;
+}
+
+.portfolio-grouped-bar-chart-grid line {
+    stroke-width: 1;
+}
+
+.portfolio-grouped-bar-chart-baseline {
+    stroke-width: 1;
+}
+
+.portfolio-grouped-bar-chart-labels text {
+    font-size: 18px;
+}
+
+.portfolio-grouped-bar-chart-legend {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: .75rem;
+    margin-top: .3rem;
+}
+
+.portfolio-grouped-bar-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.portfolio-grouped-bar-chart-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.portfolio-grouped-bar-chart-empty {
     font-size: .8rem;
     opacity: .7;
 }
@@ -564,5 +619,25 @@
     .portfolio-risk-gauge-row {
         grid-template-columns: 1fr;
         gap: .3rem;
+    }
+
+    /* Depot development table: collapse to 4 columns (year, dividend/depot value,
+       change €/%, yield) instead of scrolling horizontally. */
+    .portfolio-dev-table {
+        min-width: 0;
+    }
+
+    .dev-mobile-only {
+        display: inline;
+    }
+
+    .dev-desktop-only {
+        display: none;
+    }
+
+    .dev-col-changepct,
+    .dev-col-dividend,
+    .dev-col-ratio {
+        display: none;
     }
 }

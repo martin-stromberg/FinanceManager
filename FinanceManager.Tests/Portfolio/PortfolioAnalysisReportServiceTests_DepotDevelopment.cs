@@ -181,6 +181,28 @@ public sealed class PortfolioAnalysisReportServiceTests_DepotDevelopment : IDisp
     }
 
     /// <summary>
+    /// The net flow of a year is the sum of buy posting amounts minus the sum of sell posting
+    /// amounts: a year with only a buy shows a positive inflow, a year with a larger sell than
+    /// buy shows a net withdrawal.
+    /// </summary>
+    [Fact]
+    public async Task GetPortfolioReport_DepotDevelopment_NetFlow_BuysMinusSells()
+    {
+        var user = CreateUser();
+        var security = CreateSecurity(user.Id, "Apple");
+        AddBuyPosting(security.Id, new DateTime(CurrentYear - 2, 3, 10), 1000m, 10m);
+        AddBuyPosting(security.Id, new DateTime(CurrentYear - 1, 2, 10), 400m, 4m);
+        AddSellPosting(security.Id, new DateTime(CurrentYear - 1, 5, 10), 650m, 5m);
+        AddPrice(security.Id, DateTime.UtcNow, 110m);
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var report = await _sut.GetPortfolioAnalysisReportAsync(user.Id, CancellationToken.None);
+
+        report.DepotDevelopment.Years.Single(y => y.Year == CurrentYear - 2).NetFlow.Should().Be(1000m);
+        report.DepotDevelopment.Years.Single(y => y.Year == CurrentYear - 1).NetFlow.Should().Be(-250m);
+    }
+
+    /// <summary>
     /// While positions are still held, the current year appears as a marked YTD row.
     /// </summary>
     [Fact]

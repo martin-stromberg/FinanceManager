@@ -16,6 +16,8 @@
     /* Depot development bar/line chart: dark blue line, green bars */
     --dev-line-color: #3a6ea8;
     --dev-bar-color: #2f9e63;
+    /* Depot development grouped bar chart: blue flow bars */
+    --dev-flow-color: #3987e5;
 }
 
 .portfolio-tile {
@@ -156,5 +158,37 @@
 }
 
 .portfolio-bar-line-chart-swatch.bar {
+    background: var(--dev-bar-color, var(--chart-3));
+}
+
+.portfolio-grouped-bar-chart-grid line {
+    stroke: rgba(255, 255, 255, .08);
+}
+
+.portfolio-grouped-bar-chart-baseline {
+    stroke: rgba(255, 255, 255, .18);
+}
+
+.portfolio-grouped-bar-chart-bar.first {
+    fill: var(--dev-flow-color, var(--chart-1));
+}
+
+.portfolio-grouped-bar-chart-bar.second {
+    fill: var(--dev-bar-color, var(--chart-3));
+}
+
+.portfolio-grouped-bar-chart-bar.negative {
+    fill: var(--danger);
+}
+
+.portfolio-grouped-bar-chart-labels text {
+    fill: var(--muted);
+}
+
+.portfolio-grouped-bar-chart-swatch.first {
+    background: var(--dev-flow-color, var(--chart-1));
+}
+
+.portfolio-grouped-bar-chart-swatch.second {
     background: var(--dev-bar-color, var(--chart-3));
 }
