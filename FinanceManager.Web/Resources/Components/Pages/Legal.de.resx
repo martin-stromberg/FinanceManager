@@ -177,6 +177,9 @@
   <data name="Privacy_KpiCache" xml:space="preserve">
     <value>Wenn in den Profileinstellungen die Option "Startseiten-KPIs zwischenspeichern" aktiviert ist, werden abgerufene KPI-Daten der Startseite im LocalStorage des Browsers zwischengespeichert, um sie beim nächsten Aufruf schneller anzuzeigen. Die Daten bleiben im Browser gespeichert, bis die Funktion in den Profileinstellungen deaktiviert oder der Browser-LocalStorage manuell geleert wird.</value>
   </data>
+  <data name="Privacy_UiPreferences" xml:space="preserve">
+    <value>Ausgewählte Anzeigeeinstellungen (z. B. Anzeigemodus und Zeitraum der Kachel "Depotentwicklung" im Depot-Bericht) werden im LocalStorage des Browsers gespeichert, damit sie beim nächsten Aufruf der Seite wiederhergestellt werden. Es werden ausschließlich technische Einstellungswerte ohne personenbezogene Inhalte gespeichert; die Daten bleiben im Browser, bis der LocalStorage manuell geleert wird.</value>
+  </data>
   <data name="Section_Other" xml:space="preserve">
     <value>Weitere Hinweise</value>
   </data>

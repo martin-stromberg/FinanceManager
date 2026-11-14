@@ -67,7 +67,7 @@ monatlichen Cache; bei Cache-Miss wird der Bericht neu berechnet.
 
 | Typ | Beschreibung |
 |-----|--------------|
-| `PortfolioAnalysisReportDto` | Enthält `Structure`, `Performance`, `Cashflow`, `Risk`, `GeneratedUtc`, `CacheValidUntilUtc`. |
+| `PortfolioAnalysisReportDto` | Enthält `Structure`, `Performance`, `Cashflow`, `Risk`, `DepotDevelopment`, `GeneratedUtc`, `CacheValidUntilUtc`. |
 
 **DTO-Struktur `PortfolioCashflowDto` (in `PortfolioAnalysisReportDto.Cashflow`):**
 
@@ -111,12 +111,35 @@ monatlichen Cache; bei Cache-Miss wird der Bericht neu berechnet.
 | `CostPerUnit` | `decimal` | Kosten pro Einheit |
 | `TotalCost` | `decimal` | Gesamtkosten für diesen Lot |
 
+**DTO-Struktur `PortfolioDepotDevelopmentDto` (in `PortfolioAnalysisReportDto.DepotDevelopment`):**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `Years` | `IReadOnlyList<PortfolioDepotDevelopmentYear>` | Jahreszeilen in aufsteigender Reihenfolge; leer, wenn keine Wertpapierbuchungen vorliegen |
+
+**DTO-Struktur `PortfolioDepotDevelopmentYear` (in `PortfolioDepotDevelopmentDto.Years`):**
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `Year` | `int` | Kalenderjahr der Zeile |
+| `IsYtd` | `bool` | `true` für das laufende, noch nicht abgeschlossene Jahr (Werte bis zum Tagesdatum) |
+| `YearStartValue` | `decimal` | Depot-Marktwert zum Jahresanfang (= `YearEndValue` des Vorjahres); im ersten Jahr der Serie das kumulierte eingezahlte Kapital dieses Jahres |
+| `YearEndValue` | `decimal` | Depot-Marktwert zum 31.12. des Jahres (im YTD-Jahr zum Tagesdatum) |
+| `NetDividends` | `decimal` | Netto-Dividenden des Jahres (Dividenden- minus Steuerbuchungen) |
+| `CumulativeInvestedCapital` | `decimal` | Kumuliertes eingezahltes Kapital zum Stichtag: FIFO-Anschaffungskostenbasis der gehaltenen Positionen abzüglich Standalone-Gebühren |
+| `NetFlow` | `decimal` | Netto-Ein-/Auszahlungen des Jahres: Summe der `Buy`-Buchungsbeträge (absolut) minus Summe der `Sell`-Buchungsbeträge |
+
 ### `GET /api/portfolio/kpi-configuration`
 
 **Beschreibung:** Liefert die gespeicherte Kachel-Konfiguration
 (`PortfolioKpiConfigurationDto`) des aktuellen Benutzers, oder eine
-Default-Konfiguration (`Structure`, `Performance`, `Cashflow` aktiv; `Risk`
-inaktiv), wenn noch keine gespeichert wurde.
+Default-Konfiguration (`Structure`, `Performance`, `Cashflow`,
+`DepotDevelopment` aktiv; `Risk` inaktiv), wenn noch keine gespeichert
+wurde. Vor der Auslieferung werden `PortfolioTileId`-Werte, die in der
+`TileOrder` fehlen (z. B. nachträglich eingeführte Kacheln), ans Ende
+angefügt; fehlende Werte der Default-Aktiv-Menge werden zusätzlich in
+`ActiveTileIds` ergänzt. Dieses Merge-Ergebnis wird nicht persistiert —
+es greift erst mit dem nächsten `POST` dauerhaft.
 
 ### `POST /api/portfolio/kpi-configuration`
 

@@ -37,13 +37,13 @@ Goldenes-Kreuz-Hinweise auf der Startseite erzeugt werden.
 | `UpdatedUtc` | `DateTime` | Zeitpunkt der letzten Änderung |
 
 `PortfolioTileId` ist ein Enum mit den Werten `Structure`, `Performance`,
-`Cashflow`, `Risk`.
+`Cashflow`, `Risk`, `DepotDevelopment`.
 
 ### `ReportCacheEntry` (erweitert)
 
 | Eigenschaft | Typ | Beschreibung |
 |-------------|-----|--------------|
-| `CacheValidUntilUtc` | `DateTime?` | Zeitpunkt, bis zu dem der Cache-Eintrag gültig ist (z. B. Monatsende für den Depot-Analysebericht); `null` bedeutet keine zeitliche Begrenzung (bestehendes Verhalten anderer Berichte). Der Depot-Analysebericht wird unter dem Schlüssel `portfolio-analysis-report-{OwnerUserId:N}` abgelegt. |
+| `CacheValidUntilUtc` | `DateTime?` | Zeitpunkt, bis zu dem der Cache-Eintrag gültig ist (z. B. Monatsende für den Depot-Analysebericht); `null` bedeutet keine zeitliche Begrenzung (bestehendes Verhalten anderer Berichte). Der Depot-Analysebericht wird unter dem Schlüssel `portfolio-analysis-report-{OwnerUserId:N}` abgelegt; `Parameter` trägt dabei die DTO-Schema-Version (`CacheSchemaVersion`, aktuell `"6"`) — abweichende Versionen gelten als Cache-Miss. |
 
 ### `SecurityPrice`
 

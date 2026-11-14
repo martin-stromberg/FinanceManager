@@ -497,4 +497,16 @@ public sealed class EnumCoverageTests
             nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.Current),
             nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.Previous),
             nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.YearAgo));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void PortfolioTileId_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId>(
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Structure),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Performance),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Cashflow),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Risk),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.DepotDevelopment));
 }

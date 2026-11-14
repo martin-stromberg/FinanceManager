@@ -930,6 +930,84 @@
   <data name="PortfolioReport_Explain_ValueAtRisk_Text" xml:space="preserve">
     <value>Geschätzter maximaler Verlust über einen bestimmten Zeithorizont bei einem bestimmten Konfidenzniveau (z. B. „95 % Konfidenz, an einem Tag nicht mehr als X zu verlieren“). Noch nicht berechnet – für eine spätere Phase geplant.</value>
   </data>
+  <data name="PortfolioReport_Tile_DepotDevelopment" xml:space="preserve">
+    <value>Depotentwicklung Jahreswechsel</value>
+  </data>
+  <data name="PortfolioReport_Dev_Filter_Period" xml:space="preserve">
+    <value>Zeitraum</value>
+  </data>
+  <data name="PortfolioReport_Dev_Filter_YieldBasis" xml:space="preserve">
+    <value>Rendite-Basis</value>
+  </data>
+  <data name="PortfolioReport_Dev_Period_AllHistory" xml:space="preserve">
+    <value>Gesamte Historie</value>
+  </data>
+  <data name="PortfolioReport_Dev_Period_Last5Years" xml:space="preserve">
+    <value>Letzte 5 Jahre</value>
+  </data>
+  <data name="PortfolioReport_Dev_Period_Last10Years" xml:space="preserve">
+    <value>Letzte 10 Jahre</value>
+  </data>
+  <data name="PortfolioReport_Dev_Basis_YearStartValue" xml:space="preserve">
+    <value>Jahresanfangswert</value>
+  </data>
+  <data name="PortfolioReport_Dev_Basis_InvestedCapital" xml:space="preserve">
+    <value>Eingezahltes Kapital (Yield on Cost)</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_Year" xml:space="preserve">
+    <value>Jahreswechsel</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_DepotValue" xml:space="preserve">
+    <value>Depotwert</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_ChangeAbs" xml:space="preserve">
+    <value>Veränderung</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_ChangePct" xml:space="preserve">
+    <value>Veränderung %</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_NetDividend" xml:space="preserve">
+    <value>Netto-Dividende</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_Yield" xml:space="preserve">
+    <value>Rendite</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_NetFlow" xml:space="preserve">
+    <value>Ein-/Auszahlungen</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_DividendDepotValue" xml:space="preserve">
+    <value>Dividende/Depotwert</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_ChangeCombined" xml:space="preserve">
+    <value>Veränderung €/%</value>
+  </data>
+  <data name="PortfolioReport_Dev_Footnote_YearStartValue" xml:space="preserve">
+    <value>Rendite-Basis: Depotwert zum Jahresanfang; im ersten Jahr wird stattdessen das initial eingezahlte Kapital (Anschaffungskosten) verwendet. * Laufendes, noch nicht abgeschlossenes Jahr (YTD).</value>
+  </data>
+  <data name="PortfolioReport_Dev_Footnote_InvestedCapital" xml:space="preserve">
+    <value>Rendite-Basis: kumulierte Ein-/Auszahlungen (Netto-Käufe abzüglich Verkäufe bis zum Stichtag des Jahres). * Laufendes, noch nicht abgeschlossenes Jahr (YTD).</value>
+  </data>
+  <data name="PortfolioReport_Dev_Empty" xml:space="preserve">
+    <value>Noch keine Wertpapierbuchungen vorhanden.</value>
+  </data>
+  <data name="PortfolioReport_Dev_YtdSuffix" xml:space="preserve">
+    <value>*</value>
+  </data>
+  <data name="PortfolioReport_Dev_Chart_Aria" xml:space="preserve">
+    <value>Kombiniertes Linien- und Balkendiagramm aus Depotwert und Netto-Dividenden je Jahr</value>
+  </data>
+  <data name="PortfolioReport_Dev_Chart_Aria_Invested" xml:space="preserve">
+    <value>Balkendiagramm aus Ein-/Auszahlungen und Netto-Dividenden je Jahr</value>
+  </data>
+  <data name="PortfolioReport_Dev_Legend_DepotValue" xml:space="preserve">
+    <value>Depotwert</value>
+  </data>
+  <data name="PortfolioReport_Dev_Legend_NetDividends" xml:space="preserve">
+    <value>Netto-Dividenden</value>
+  </data>
+  <data name="PortfolioReport_Dev_Legend_NetFlow" xml:space="preserve">
+    <value>Ein-/Auszahlungen</value>
+  </data>
   <data name="Dlg_Backfill_Title" xml:space="preserve">
     <value>Kurse nachfüllen</value>
   </data>
