@@ -330,6 +330,21 @@
   <data name="FilterGroup_SecurityTypes" xml:space="preserve">
     <value>Buchungsuntertypen</value>
   </data>
+  <data name="FilterGroup_TextFilters" xml:space="preserve">
+    <value>Textfilter</value>
+  </data>
+  <data name="TextFilter_Placeholder" xml:space="preserve">
+    <value>Suchtext eingeben…</value>
+  </data>
+  <data name="TextFilter_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="TextFilter_Remove" xml:space="preserve">
+    <value>Textfilter entfernen</value>
+  </data>
+  <data name="TextFilter_Hint" xml:space="preserve">
+    <value>Wirkt auf Verwendungszweck und Buchungsbeschreibung der Buchungen (ODER-verknüpft).</value>
+  </data>
   <data name="SecurityType_Buy" xml:space="preserve">
     <value>Kauf</value>
   </data>
@@ -393,4 +408,17 @@
   <data name="Ribbon_Tab" xml:space="preserve">
     <value>Dashboard</value>
   </data>
+  <data name="Label_SavingsPlanPostingSource" xml:space="preserve"><value>Sparplan-Postenquelle</value></data>
+  <data name="SavingsPlanPostingSource_PlanPostings" xml:space="preserve"><value>Sparplanposten</value></data>
+  <data name="SavingsPlanPostingSource_LinkedAccountPostings" xml:space="preserve"><value>Posten der verknüpften Konten</value></data>
+  <data name="Postings_Open" xml:space="preserve"><value>Posten anzeigen</value></data>
+  <data name="Postings_Title" xml:space="preserve"><value>Posten – {0} ({1})</value></data>
+  <data name="Postings_Th_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="Postings_Th_Origin" xml:space="preserve"><value>Herkunft</value></data>
+  <data name="Postings_Th_Description" xml:space="preserve"><value>Beschreibung</value></data>
+  <data name="Postings_Th_Amount" xml:space="preserve"><value>Betrag</value></data>
+  <data name="Postings_Total" xml:space="preserve"><value>Summe</value></data>
+  <data name="Postings_None" xml:space="preserve"><value>Keine Posten gefunden.</value></data>
+  <data name="Postings_Truncated" xml:space="preserve"><value>Die Liste wurde auf die maximal zulässige Anzahl gekürzt.</value></data>
+  <data name="Postings_LoadFailed" xml:space="preserve"><value>Die Posten konnten nicht geladen werden.</value></data>
 </root>

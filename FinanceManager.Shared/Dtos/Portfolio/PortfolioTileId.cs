@@ -12,5 +12,7 @@ public enum PortfolioTileId
     /// <summary>Cashflow tile (net deposits, dividends, realized gains, liquidity ratio).</summary>
     Cashflow = 2,
     /// <summary>Risk analysis tile (Phase 2: volatility, drawdown, beta, VaR, Sharpe ratio).</summary>
-    Risk = 3
+    Risk = 3,
+    /// <summary>Depot development tile (year-over-year portfolio value and net dividends).</summary>
+    DepotDevelopment = 4
 }

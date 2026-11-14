@@ -348,4 +348,165 @@ public sealed class EnumCoverageTests
         => AssertValues<FinanceManager.Application.Reports.PostingExportFormat>(
             nameof(FinanceManager.Application.Reports.PostingExportFormat.Csv),
             nameof(FinanceManager.Application.Reports.PostingExportFormat.Xlsx));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void SecurityPriceRefreshStatus_Values()
+        => AssertValues<FinanceManager.Application.Securities.SecurityPriceRefreshStatus>(
+            nameof(FinanceManager.Application.Securities.SecurityPriceRefreshStatus.Stored),
+            nameof(FinanceManager.Application.Securities.SecurityPriceRefreshStatus.NoData),
+            nameof(FinanceManager.Application.Securities.SecurityPriceRefreshStatus.ProviderError));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpAccessLevel_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpAccessLevel>(
+            nameof(FinanceManager.Domain.Mcp.McpAccessLevel.Analyse),
+            nameof(FinanceManager.Domain.Mcp.McpAccessLevel.Assistent),
+            nameof(FinanceManager.Domain.Mcp.McpAccessLevel.Sachbearbeiter),
+            nameof(FinanceManager.Domain.Mcp.McpAccessLevel.Buchhalter),
+            nameof(FinanceManager.Domain.Mcp.McpAccessLevel.Individuell));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpDataType_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpDataType>(
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Accounts),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.AccountTypes),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.StatementImports),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.StatementDrafts),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Postings),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Contacts),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.ContactCategories),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.SavingsPlans),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.SavingsPlanCategories),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Securities),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.SecurityCategories),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Budgets),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.BudgetCategories),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.BudgetRules),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Reports),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.KpiConfigurations),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Attachments),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.AttachmentCategories),
+            nameof(FinanceManager.Domain.Mcp.McpDataType.Administration));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpRightKind_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpRightKind>(
+            nameof(FinanceManager.Domain.Mcp.McpRightKind.Read),
+            nameof(FinanceManager.Domain.Mcp.McpRightKind.Suggest),
+            nameof(FinanceManager.Domain.Mcp.McpRightKind.Complete),
+            nameof(FinanceManager.Domain.Mcp.McpRightKind.Modify),
+            nameof(FinanceManager.Domain.Mcp.McpRightKind.Create),
+            nameof(FinanceManager.Domain.Mcp.McpRightKind.Book),
+            nameof(FinanceManager.Domain.Mcp.McpRightKind.Delete));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpApprovalMode_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpApprovalMode>(
+            nameof(FinanceManager.Domain.Mcp.McpApprovalMode.PerAction),
+            nameof(FinanceManager.Domain.Mcp.McpApprovalMode.PreApproved));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpAccessStatus_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpAccessStatus>(
+            nameof(FinanceManager.Domain.Mcp.McpAccessStatus.Active),
+            nameof(FinanceManager.Domain.Mcp.McpAccessStatus.Deactivated),
+            nameof(FinanceManager.Domain.Mcp.McpAccessStatus.Revoked));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpAuditCategory_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpAuditCategory>(
+            nameof(FinanceManager.Domain.Mcp.McpAuditCategory.ToolCall),
+            nameof(FinanceManager.Domain.Mcp.McpAuditCategory.DataChange),
+            nameof(FinanceManager.Domain.Mcp.McpAuditCategory.AccessEvent),
+            nameof(FinanceManager.Domain.Mcp.McpAuditCategory.ApprovalEvent),
+            nameof(FinanceManager.Domain.Mcp.McpAuditCategory.SecurityEvent));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpToolSecurityClass_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.McpToolSecurityClass>(
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Lesend),
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Vorschlagend),
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Schreibvorbereitend),
+            nameof(FinanceManager.Domain.Mcp.McpToolSecurityClass.Genehmigungspflichtig));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpAccessVerdict_Values()
+        => AssertValues<FinanceManager.Application.Mcp.McpAccessVerdict>(
+            nameof(FinanceManager.Application.Mcp.McpAccessVerdict.Allowed),
+            nameof(FinanceManager.Application.Mcp.McpAccessVerdict.Denied),
+            nameof(FinanceManager.Application.Mcp.McpAccessVerdict.NotFound));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void McpDispatchResultKind_Values()
+        => AssertValues<FinanceManager.Web.Mcp.McpDispatchResultKind>(
+            nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.Success),
+            nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.DefinedError),
+            nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.ProtocolError),
+            nameof(FinanceManager.Web.Mcp.McpDispatchResultKind.ToolError));
+
+    /// <summary>
+    /// Verifies the declared values of the internal report group-key target enum.
+    /// </summary>
+    [Fact]
+    public void ReportGroupKeyTargetKind_Values()
+    {
+        var enumType = typeof(FinanceManager.Infrastructure.Reports.ReportPostingsQueryService).Assembly
+            .GetType("FinanceManager.Infrastructure.Reports.ReportGroupKeyTargetKind");
+        Assert.NotNull(enumType);
+        Assert.Equal(
+            new[] { "Category", "Entity", "Total", "Type" },
+            Enum.GetNames(enumType!).OrderBy(x => x, StringComparer.Ordinal).ToArray());
+    }
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void ReportPostingsPeriod_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod>(
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.Current),
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.Previous),
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.YearAgo));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void PortfolioTileId_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId>(
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Structure),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Performance),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Cashflow),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Risk),
+            nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.DepotDevelopment));
 }

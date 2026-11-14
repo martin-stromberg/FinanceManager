@@ -93,6 +93,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     public bool UseValutaDate { get; set; }
 
     /// <summary>
+    /// Posting source used for emitted savings plans (plan postings vs. postings of linked accounts).
+    /// </summary>
+    public SavingsPlanPostingSource SavingsPlanPostingSource { get; set; } = SavingsPlanPostingSource.PlanPostings;
+
+    /// <summary>
     /// Active favorite id currently selected or <c>null</c> when none.
     /// </summary>
     public Guid? ActiveFavoriteId { get; set; }
@@ -145,6 +150,19 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <summary>Selected security subtype values (enum int representation).</summary>
     /// <returns>The result.</returns>
     public HashSet<int> SelectedSecuritySubTypes { get; private set; } = new();
+
+    /// <summary>Selected free text filters for bank postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedBankTextFilters { get; private set; } = new();
+    /// <summary>Selected free text filters for contact postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedContactTextFilters { get; private set; } = new();
+    /// <summary>Selected free text filters for savings plan postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedSavingsPlanTextFilters { get; private set; } = new();
+    /// <summary>Selected free text filters for security postings.</summary>
+    /// <returns>The result.</returns>
+    public List<string> SelectedSecurityTextFilters { get; private set; } = new();
 
     /// <summary>
     /// Aggregated result points returned from the API and used for rendering table and chart.
@@ -253,50 +271,71 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         var hasEntity = SelectedAccounts.Count > 0 || SelectedContacts.Count > 0 || SelectedSavingsPlans.Count > 0 || SelectedSecurities.Count > 0;
         var hasCats = SelectedContactCategories.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSecurityCategories.Count > 0 || SelectedAccounts.Count > 0;
         var hasSecTypes = SelectedSecuritySubTypes.Count > 0;
+        var hasText = SelectedBankTextFilters.Count > 0 || SelectedContactTextFilters.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0 || SelectedSecurityTextFilters.Count > 0;
         var includeDiv = IncludeDividendRelated;
-        if (!IncludeCategory && !hasEntity && !hasSecTypes && !includeDiv)
+        if (!IncludeCategory && !hasEntity && !hasSecTypes && !includeDiv && !hasText)
         {
             return null;
         }
-        if (IncludeCategory && !hasCats && !hasSecTypes && !includeDiv)
+        if (IncludeCategory && !hasCats && !hasSecTypes && !includeDiv && !hasText)
         {
             return null;
         }
         if (IncludeCategory)
         {
             return new ReportAggregatesFiltersRequest(
-                SelectedAccounts.ToList(),
-                null,
-                null,
-                null,
-                SelectedContactCategories.ToList(),
-                SelectedSavingsCategories.ToList(),
-                SelectedSecurityCategories.ToList(),
-                SelectedSecuritySubTypes.ToList(),
-                includeDiv
+                AccountIds: SelectedAccounts.ToList(),
+                ContactIds: null,
+                SavingsPlanIds: null,
+                SecurityIds: null,
+                ContactCategoryIds: SelectedContactCategories.ToList(),
+                SavingsPlanCategoryIds: SelectedSavingsCategories.ToList(),
+                SecurityCategoryIds: SelectedSecurityCategories.ToList(),
+                SecuritySubTypes: SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: includeDiv,
+                BankTextFilters: SelectedBankTextFilters.ToList(),
+                ContactTextFilters: SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: SelectedSecurityTextFilters.ToList()
             );
         }
         else
         {
             return new ReportAggregatesFiltersRequest(
-                SelectedAccounts.ToList(),
-                SelectedContacts.ToList(),
-                SelectedSavingsPlans.ToList(),
-                SelectedSecurities.ToList(),
-                null,
-                null,
-                null,
-                SelectedSecuritySubTypes.ToList(),
-                includeDiv
+                AccountIds: SelectedAccounts.ToList(),
+                ContactIds: SelectedContacts.ToList(),
+                SavingsPlanIds: SelectedSavingsPlans.ToList(),
+                SecurityIds: SelectedSecurities.ToList(),
+                ContactCategoryIds: null,
+                SavingsPlanCategoryIds: null,
+                SecurityCategoryIds: null,
+                SecuritySubTypes: SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: includeDiv,
+                BankTextFilters: SelectedBankTextFilters.ToList(),
+                ContactTextFilters: SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: SelectedSecurityTextFilters.ToList()
             );
         }
     }
+
+    /// <summary>
+    /// True when the currently applied filter state differs from the last loaded or saved
+    /// favorite state. Enables the save actions in view mode so ad-hoc filter changes can
+    /// be persisted explicitly; reset when a favorite is applied or saved.
+    /// </summary>
+    public bool FiltersDirty { get; set; }
 
     /// <summary>
     /// Clears all applied filters and resets filter-related flags.
     /// </summary>
     public void ClearFilters()
     {
+        var hadFilters = SelectedAccounts.Count > 0 || SelectedContacts.Count > 0 || SelectedSavingsPlans.Count > 0 || SelectedSecurities.Count > 0
+            || SelectedContactCategories.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSecurityCategories.Count > 0
+            || SelectedSecuritySubTypes.Count > 0
+            || SelectedBankTextFilters.Count > 0 || SelectedContactTextFilters.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0 || SelectedSecurityTextFilters.Count > 0;
+        if (hadFilters) { FiltersDirty = true; }
         SelectedAccounts.Clear();
         SelectedContacts.Clear();
         SelectedSavingsPlans.Clear();
@@ -305,6 +344,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         SelectedSavingsCategories.Clear();
         SelectedSecurityCategories.Clear();
         SelectedSecuritySubTypes.Clear();
+        SelectedBankTextFilters.Clear();
+        SelectedContactTextFilters.Clear();
+        SelectedSavingsPlanTextFilters.Clear();
+        SelectedSecurityTextFilters.Clear();
         IncludeDividendRelated = false;
     }
 
@@ -324,7 +367,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 CompareProjection = false;
             }
-            var result = await LoadAsync(PrimaryKind, Interval, Take, IncludeCategory, ComparePrevious, CompareYear, CompareProjection, IsMulti ? SelectedKinds : null, analysisDate, BuildFiltersPayload(), UseValutaDate, ct);
+            var result = await LoadAsync(PrimaryKind, Interval, Take, IncludeCategory, ComparePrevious, CompareYear, CompareProjection, IsMulti ? SelectedKinds : null, analysisDate, BuildFiltersPayload(), UseValutaDate, ct, SavingsPlanPostingSource);
             ComparedProjection = result.ComparedProjection;
             Points = result.Points
                 .OrderBy(p => p.GroupKey)
@@ -462,6 +505,139 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         return new ReportTotals(amount, projection, prev, year);
     }
 
+    // Postings drill-down overlay state
+
+    /// <summary>
+    /// Indicates whether the postings overlay is visible.
+    /// </summary>
+    public bool PostingsOverlayVisible { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the postings for the overlay are currently loading.
+    /// </summary>
+    public bool PostingsOverlayLoading { get; private set; }
+
+    /// <summary>
+    /// Localized overlay title (row name and column) supplied by the page.
+    /// </summary>
+    public string PostingsOverlayTitle { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Postings loaded for the currently inspected report cell.
+    /// </summary>
+    public IReadOnlyList<ReportPostingDto> PostingsOverlayRows { get; private set; } = [];
+
+    /// <summary>
+    /// True when the server truncated the posting list at its limit.
+    /// </summary>
+    public bool PostingsOverlayTruncated { get; private set; }
+
+    /// <summary>
+    /// Exact server-side amount sum of all postings of the cell (independent of truncation).
+    /// </summary>
+    public decimal PostingsOverlayTotalAmount { get; private set; }
+
+    /// <summary>
+    /// True when the last postings load failed (see <see cref="PostingsOverlayError"/>).
+    /// </summary>
+    public bool PostingsOverlayFailed { get; private set; }
+
+    /// <summary>
+    /// Server-side error message of the last postings load, or <c>null</c> when the load did
+    /// not fail or the failure carried no API error (the page shows a generic localized
+    /// message for the latter).
+    /// </summary>
+    public string? PostingsOverlayError { get; private set; }
+
+    /// <summary>
+    /// Opens the postings overlay and loads the postings composing the given report cell.
+    /// </summary>
+    /// <param name="groupKey">Group key of the report row or <c>null</c> for the total row.</param>
+    /// <param name="periodStart">Period anchor of the displayed row.</param>
+    /// <param name="period">Value column the drill-down refers to.</param>
+    /// <param name="title">Localized overlay title.</param>
+    /// <param name="analysisMonth">Analysis month anchor used for the current report.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the postings have been loaded.</returns>
+    public async Task ShowPostingsAsync(string? groupKey, DateTime periodStart, ReportPostingsPeriod period, string title, DateTime? analysisMonth, CancellationToken ct = default)
+    {
+        if (!IsAuthenticated)
+        {
+            RequireAuthentication();
+            return;
+        }
+
+        PostingsOverlayVisible = true;
+        PostingsOverlayLoading = true;
+        PostingsOverlayTitle = title;
+        PostingsOverlayRows = Array.Empty<ReportPostingDto>();
+        PostingsOverlayTruncated = false;
+        PostingsOverlayTotalAmount = 0m;
+        PostingsOverlayFailed = false;
+        PostingsOverlayError = null;
+        RaiseStateChanged();
+
+        try
+        {
+            var req = new ReportPostingsQueryRequest(
+                GroupKey: groupKey,
+                PeriodStart: periodStart,
+                Period: period,
+                PostingKind: PrimaryKind,
+                Interval: (ReportInterval)Interval,
+                IncludeCategory: IncludeCategory,
+                CompareProjection: CompareProjection,
+                UseValutaDate: UseValutaDate,
+                PostingKinds: IsMulti ? SelectedKinds.ToList() : null,
+                AnalysisDate: analysisMonth,
+                Filters: BuildFiltersPayload(),
+                SavingsPlanPostingSource: SavingsPlanPostingSource,
+                Take: Take,
+                CompareYear: CompareYear);
+            var result = await _api.Reports_QueryPostingsAsync(req, ct);
+            PostingsOverlayRows = result?.Postings ?? Array.Empty<ReportPostingDto>();
+            PostingsOverlayTruncated = result?.Truncated ?? false;
+            PostingsOverlayTotalAmount = result?.TotalAmount ?? 0m;
+        }
+        catch (OperationCanceledException)
+        {
+            // Aborts are no overlay errors: the loading flag is cleared in finally and the
+            // cancellation propagates to the caller unchanged.
+            throw;
+        }
+        catch (Exception)
+        {
+            PostingsOverlayRows = Array.Empty<ReportPostingDto>();
+            PostingsOverlayTruncated = false;
+            PostingsOverlayTotalAmount = 0m;
+            PostingsOverlayFailed = true;
+            // Only server-issued error details are shown; other failures get a generic
+            // localized message in the page (no raw exception text).
+            PostingsOverlayError = _api.LastError;
+        }
+        finally
+        {
+            PostingsOverlayLoading = false;
+            RaiseStateChanged();
+        }
+    }
+
+    /// <summary>
+    /// Closes the postings overlay and resets its state.
+    /// </summary>
+    public void HidePostings()
+    {
+        PostingsOverlayVisible = false;
+        PostingsOverlayLoading = false;
+        PostingsOverlayTitle = string.Empty;
+        PostingsOverlayRows = Array.Empty<ReportPostingDto>();
+        PostingsOverlayTruncated = false;
+        PostingsOverlayTotalAmount = 0m;
+        PostingsOverlayFailed = false;
+        PostingsOverlayError = null;
+        RaiseStateChanged();
+    }
+
     /// <summary>
     /// Returns an ordered sequence of period sums for charting.
     /// </summary>
@@ -522,10 +698,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date instead of booking date.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>A <see cref="ReportAggregationResult"/> containing aggregated points and metadata.</returns>
-    public async Task<ReportAggregationResult> LoadAsync(PostingKind primaryKind, int interval, int take, bool includeCategory, bool comparePrevious, bool compareYear, bool compareProjection, IReadOnlyCollection<PostingKind>? postingKinds, DateTime? analysisDate, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportAggregationResult> LoadAsync(PostingKind primaryKind, int interval, int take, bool includeCategory, bool comparePrevious, bool compareYear, bool compareProjection, IReadOnlyCollection<PostingKind>? postingKinds, DateTime? analysisDate, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
-        var req = new ReportAggregatesQueryRequest(primaryKind, (ReportInterval)interval, take, includeCategory, comparePrevious, compareYear, compareProjection, useValutaDate, postingKinds, analysisDate, filters);
+        var req = new ReportAggregatesQueryRequest(primaryKind, (ReportInterval)interval, take, includeCategory, comparePrevious, compareYear, compareProjection, useValutaDate, postingKinds, analysisDate, filters, savingsPlanPostingSource);
         var result = await _api.Reports_QueryAggregatesAsync(req, ct);
         return result ?? new ReportAggregationResult((ReportInterval)interval, Array.Empty<ReportAggregatePointDto>(), false, false, false);
     }
@@ -547,8 +724,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>The created <see cref="ReportFavoriteDto"/> or <c>null</c> when creation failed.</returns>
-    public async Task<ReportFavoriteDto?> SaveFavoriteAsync(string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportFavoriteDto?> SaveFavoriteAsync(string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
         var payload = new ReportFavoriteCreateApiRequest
         {
@@ -564,17 +742,22 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             Expandable = expandable,
             PostingKinds = postingKinds,
             Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                filters.AccountIds,
-                filters.ContactIds,
-                filters.SavingsPlanIds,
-                filters.SecurityIds,
-                filters.ContactCategoryIds,
-                filters.SavingsPlanCategoryIds,
-                filters.SecurityCategoryIds,
-                filters.SecuritySubTypes,
-                filters.IncludeDividendRelated
+                AccountIds: filters.AccountIds,
+                ContactIds: filters.ContactIds,
+                SavingsPlanIds: filters.SavingsPlanIds,
+                SecurityIds: filters.SecurityIds,
+                ContactCategoryIds: filters.ContactCategoryIds,
+                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
+                SecurityCategoryIds: filters.SecurityCategoryIds,
+                SecuritySubTypes: filters.SecuritySubTypes,
+                IncludeDividendRelated: filters.IncludeDividendRelated,
+                BankTextFilters: filters.BankTextFilters,
+                ContactTextFilters: filters.ContactTextFilters,
+                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
+                SecurityTextFilters: filters.SecurityTextFilters
             ),
-            UseValutaDate = useValutaDate
+            UseValutaDate = useValutaDate,
+            SavingsPlanPostingSource = savingsPlanPostingSource
         };
         return await _api.Reports_CreateFavoriteAsync(payload, ct);
     }
@@ -597,8 +780,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>The updated <see cref="ReportFavoriteDto"/> or <c>null</c> when update failed.</returns>
-    public async Task<ReportFavoriteDto?> UpdateFavoriteAsync(Guid id, string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportFavoriteDto?> UpdateFavoriteAsync(Guid id, string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
         var payload = new ReportFavoriteUpdateApiRequest
         {
@@ -614,17 +798,22 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             Expandable = expandable,
             PostingKinds = postingKinds,
             Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                filters.AccountIds,
-                filters.ContactIds,
-                filters.SavingsPlanIds,
-                filters.SecurityIds,
-                filters.ContactCategoryIds,
-                filters.SavingsPlanCategoryIds,
-                filters.SecurityCategoryIds,
-                filters.SecuritySubTypes,
-                filters.IncludeDividendRelated
+                AccountIds: filters.AccountIds,
+                ContactIds: filters.ContactIds,
+                SavingsPlanIds: filters.SavingsPlanIds,
+                SecurityIds: filters.SecurityIds,
+                ContactCategoryIds: filters.ContactCategoryIds,
+                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
+                SecurityCategoryIds: filters.SecurityCategoryIds,
+                SecuritySubTypes: filters.SecuritySubTypes,
+                IncludeDividendRelated: filters.IncludeDividendRelated,
+                BankTextFilters: filters.BankTextFilters,
+                ContactTextFilters: filters.ContactTextFilters,
+                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
+                SecurityTextFilters: filters.SecurityTextFilters
             ),
-            UseValutaDate = useValutaDate
+            UseValutaDate = useValutaDate,
+            SavingsPlanPostingSource = savingsPlanPostingSource
         };
         return await _api.Reports_UpdateFavoriteAsync(id, payload, ct);
     }
@@ -789,6 +978,23 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <returns>The result.</returns>
     public HashSet<int> TempSecuritySubTypes { get; private set; } = new();
 
+    /// <summary>Temporary free text filters for bank postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempBankTextFilters { get; private set; } = new();
+    /// <summary>Temporary free text filters for contact postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempContactTextFilters { get; private set; } = new();
+    /// <summary>Temporary free text filters for savings plan postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempSavingsPlanTextFilters { get; private set; } = new();
+    /// <summary>Temporary free text filters for security postings used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public List<string> TempSecurityTextFilters { get; private set; } = new();
+
+    /// <summary>Current input of the text filter editor in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public string NewTextFilterInput { get; set; } = string.Empty;
+
     /// <summary>
     /// Opens the filter dialog and prepares temporary buffers with current selections.
     /// </summary>
@@ -802,6 +1008,11 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         TempSavingsCats = new HashSet<Guid>(SelectedSavingsCategories);
         TempSecurityCats = new HashSet<Guid>(SelectedSecurityCategories);
         TempSecuritySubTypes = new HashSet<int>(SelectedSecuritySubTypes);
+        TempBankTextFilters = new List<string>(SelectedBankTextFilters);
+        TempContactTextFilters = new List<string>(SelectedContactTextFilters);
+        TempSavingsPlanTextFilters = new List<string>(SelectedSavingsPlanTextFilters);
+        TempSecurityTextFilters = new List<string>(SelectedSecurityTextFilters);
+        NewTextFilterInput = string.Empty;
         ShowFilterDialog = true;
         ActiveFilterTabKind = SelectedKinds.FirstOrDefault();
         _ = LoadFilterOptionsAsync();
@@ -907,6 +1118,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         TempSavingsCats.Clear();
         TempSecurityCats.Clear();
         TempSecuritySubTypes.Clear();
+        TempBankTextFilters.Clear();
+        TempContactTextFilters.Clear();
+        TempSavingsPlanTextFilters.Clear();
+        TempSecurityTextFilters.Clear();
         RaiseStateChanged();
     }
 
@@ -921,12 +1136,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             var entityCount = TempAccounts.Count + TempContacts.Count + TempSavings.Count + TempSecurities.Count;
             var catCount = TempContactCats.Count + TempSavingsCats.Count + TempSecurityCats.Count;
             var typeCount = TempSecuritySubTypes.Count;
-            return IncludeCategory ? (catCount + TempAccounts.Count + typeCount) : (entityCount + typeCount);
+            return IncludeCategory ? (catCount + TempAccounts.Count + typeCount + GetTempTextFilterCount()) : (entityCount + typeCount + GetTempTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
             var typeCount = TempSecuritySubTypes.Count;
+            var textCount = GetTempTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
                 var baseCount = kind switch
@@ -936,7 +1152,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => TempSecurityCats.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
             else
             {
@@ -948,7 +1164,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => TempSecurities.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
         }
     }
@@ -961,6 +1177,20 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <returns>A task that completes when the applied filters have been applied and reload finished.</returns>
     public async Task ApplyTempAndReloadAsync(DateTime? analysisDate, CancellationToken ct = default)
     {
+        var filtersChanged =
+            !TempAccounts.SetEquals(SelectedAccounts)
+            || !TempContacts.SetEquals(SelectedContacts)
+            || !TempSavings.SetEquals(SelectedSavingsPlans)
+            || !TempSecurities.SetEquals(SelectedSecurities)
+            || !TempContactCats.SetEquals(SelectedContactCategories)
+            || !TempSavingsCats.SetEquals(SelectedSavingsCategories)
+            || !TempSecurityCats.SetEquals(SelectedSecurityCategories)
+            || !TempSecuritySubTypes.SetEquals(SelectedSecuritySubTypes)
+            || !TempBankTextFilters.SequenceEqual(SelectedBankTextFilters)
+            || !TempContactTextFilters.SequenceEqual(SelectedContactTextFilters)
+            || !TempSavingsPlanTextFilters.SequenceEqual(SelectedSavingsPlanTextFilters)
+            || !TempSecurityTextFilters.SequenceEqual(SelectedSecurityTextFilters);
+        if (filtersChanged) { FiltersDirty = true; }
         SelectedAccounts.Clear(); foreach (var id in TempAccounts) { SelectedAccounts.Add(id); }
         SelectedContacts.Clear(); foreach (var id in TempContacts) { SelectedContacts.Add(id); }
         SelectedSavingsPlans.Clear(); foreach (var id in TempSavings) { SelectedSavingsPlans.Add(id); }
@@ -969,6 +1199,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         SelectedSavingsCategories.Clear(); foreach (var id in TempSavingsCats) { SelectedSavingsCategories.Add(id); }
         SelectedSecurityCategories.Clear(); foreach (var id in TempSecurityCats) { SelectedSecurityCategories.Add(id); }
         SelectedSecuritySubTypes.Clear(); foreach (var t in TempSecuritySubTypes) { SelectedSecuritySubTypes.Add(t); }
+        SelectedBankTextFilters.Clear(); SelectedBankTextFilters.AddRange(TempBankTextFilters);
+        SelectedContactTextFilters.Clear(); SelectedContactTextFilters.AddRange(TempContactTextFilters);
+        SelectedSavingsPlanTextFilters.Clear(); SelectedSavingsPlanTextFilters.AddRange(TempSavingsPlanTextFilters);
+        SelectedSecurityTextFilters.Clear(); SelectedSecurityTextFilters.AddRange(TempSecurityTextFilters);
         ShowFilterDialog = false;
         await ReloadAsync(analysisDate, ct);
     }
@@ -1005,12 +1239,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             var entityCount = SelectedAccounts.Count + SelectedContacts.Count + SelectedSavingsPlans.Count + SelectedSecurities.Count;
             var catCount = SelectedContactCategories.Count + SelectedSavingsCategories.Count + SelectedSecurityCategories.Count;
             var typeCount = SelectedSecuritySubTypes.Count;
-            return IncludeCategory ? (catCount + SelectedAccounts.Count + typeCount) : (entityCount + typeCount);
+            return IncludeCategory ? (catCount + SelectedAccounts.Count + typeCount + GetSelectedTextFilterCount()) : (entityCount + typeCount + GetSelectedTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
             var typeCount = SelectedSecuritySubTypes.Count;
+            var textCount = GetSelectedTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
                 var baseCount = kind switch
@@ -1020,7 +1255,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => SelectedSecurityCategories.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
             else
             {
@@ -1032,7 +1267,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                     PostingKind.Security => SelectedSecurities.Count,
                     _ => 0
                 };
-                return baseCount + typeCount;
+                return baseCount + typeCount + textCount;
             }
         }
     }
@@ -1056,8 +1291,8 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         tabs.Add(new UiRibbonTab(localizer["Ribbon_ReportActions"], new List<UiRibbonAction>
         {
             new UiRibbonAction("ToggleEdit", (EditMode ? localizer["Ribbon_View"].Value : localizer["Ribbon_Edit"].Value), EditMode? "<svg><use href='/icons/sprite.svg#eye'/></svg>":"<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(() => { RaiseUiActionRequested("ToggleEdit"); return Task.CompletedTask; })),
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, !EditMode, null, new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })) { MobileShortcut = true },
-            new UiRibbonAction("SaveAs", localizer["Ribbon_SaveAs"].Value, "<svg><use href='/icons/sprite.svg#save-as'/></svg>", UiRibbonItemSize.Small, !EditMode, null, new Func<Task>(() => { RaiseUiActionRequested("SaveAs"); return Task.CompletedTask; })),
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })) { MobileShortcut = true },
+            new UiRibbonAction("SaveAs", localizer["Ribbon_SaveAs"].Value, "<svg><use href='/icons/sprite.svg#save-as'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("SaveAs"); return Task.CompletedTask; })),
             new UiRibbonAction("DeleteFavorite", localizer["Ribbon_DeleteFavorite"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, !ActiveFavoriteId.HasValue, null, new Func<Task>(() => { RaiseUiActionRequested("DeleteFavorite"); return Task.CompletedTask; })),
             new UiRibbonAction("Reload", localizer["Ribbon_ReloadData"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(() => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; })) { MobileShortcut = true }
         }));
@@ -1065,7 +1300,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         // Filters
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Filter"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("FiltersOpen", localizer["Ribbon_OpenFilters"].Value, "<svg><use href='/icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, FilterOptionsLoading || !EditMode, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersOpen"); return Task.CompletedTask; })),
+            new UiRibbonAction("FiltersOpen", localizer["Ribbon_OpenFilters"].Value, "<svg><use href='/icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, FilterOptionsLoading, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersOpen"); return Task.CompletedTask; })),
             new UiRibbonAction("FiltersClear", localizer["Ribbon_ClearFilters"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, GetSelectedFiltersCount()==0, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersClear"); return Task.CompletedTask; }))
         }));
 
@@ -1115,8 +1350,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="filters">Optional filters payload.</param>
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
     /// <returns>The created or updated <see cref="ReportFavoriteDto"/>, or <c>null</c> when the operation failed.</returns>
-    public async Task<ReportFavoriteDto?> SubmitFavoriteDialogAsync(string defaultName, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default)
+    public async Task<ReportFavoriteDto?> SubmitFavoriteDialogAsync(string defaultName, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
         FavoriteError = null;
         try
@@ -1125,7 +1361,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 var res = await UpdateFavoriteAsync(ActiveFavoriteId.Value,
                     FavoriteName.Trim(), primaryKind, includeCategory, interval, take,
-                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct);
+                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource);
                 if (res is null)
                 {
                     FavoriteError = "Error_UpdateFavorite";
@@ -1134,6 +1370,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 }
                 FavoriteName = res.Name;
                 ShowFavoriteDialog = false;
+                FiltersDirty = false;
                 RaiseStateChanged();
                 return res;
             }
@@ -1141,7 +1378,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 var name = string.IsNullOrWhiteSpace(FavoriteName) ? defaultName : FavoriteName.Trim();
                 var res = await SaveFavoriteAsync(name, primaryKind, includeCategory, interval, take,
-                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct);
+                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource);
                 if (res is null)
                 {
                     FavoriteError = "Error_SaveFavorite";
@@ -1151,6 +1388,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 ActiveFavoriteId = res.Id;
                 FavoriteName = res.Name;
                 ShowFavoriteDialog = false;
+                FiltersDirty = false;
                 RaiseStateChanged();
                 return res;
             }
@@ -1162,4 +1400,73 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             return null;
         }
     }
+
+    /// <summary>
+    /// Returns the temporary text filters of the specified posting kind as shown in the filter dialog.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <returns>The temporary text filter entries of the kind.</returns>
+    public IReadOnlyList<string> GetTempTextFilters(PostingKind kind)
+        => GetTempTextFilterList(kind);
+
+    /// <summary>
+    /// Adds a text filter to the temporary buffer of the specified posting kind.
+    /// Empty (after trim), overlong (&gt; <see cref="TextFilterList.MaxEntryLength"/> characters)
+    /// or duplicate (<see cref="StringComparison.OrdinalIgnoreCase"/>) entries are ignored.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <param name="value">Text filter to add; trimmed before use.</param>
+    public void AddTempTextFilter(PostingKind kind, string? value)
+    {
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed)) { return; }
+        if (trimmed.Length > TextFilterList.MaxEntryLength) { return; }
+        var list = GetTempTextFilterList(kind);
+        if (list.Any(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase))) { return; }
+        list.Add(trimmed!);
+        NewTextFilterInput = string.Empty;
+        RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// Removes a text filter from the temporary buffer of the specified posting kind.
+    /// </summary>
+    /// <param name="kind">Posting kind.</param>
+    /// <param name="value">Text filter to remove.</param>
+    public void RemoveTempTextFilter(PostingKind kind, string value)
+    {
+        var list = GetTempTextFilterList(kind);
+        var index = list.FindIndex(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+        {
+            list.RemoveAt(index);
+            RaiseStateChanged();
+        }
+    }
+
+    private List<string> GetSelectedTextFilterList(PostingKind kind)
+        => kind switch
+        {
+            PostingKind.Bank => SelectedBankTextFilters,
+            PostingKind.Contact => SelectedContactTextFilters,
+            PostingKind.SavingsPlan => SelectedSavingsPlanTextFilters,
+            PostingKind.Security => SelectedSecurityTextFilters,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
+        };
+
+    private List<string> GetTempTextFilterList(PostingKind kind)
+        => kind switch
+        {
+            PostingKind.Bank => TempBankTextFilters,
+            PostingKind.Contact => TempContactTextFilters,
+            PostingKind.SavingsPlan => TempSavingsPlanTextFilters,
+            PostingKind.Security => TempSecurityTextFilters,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
+        };
+
+    private int GetSelectedTextFilterCount()
+        => SelectedKinds.Sum(k => GetSelectedTextFilterList(k).Count);
+
+    private int GetTempTextFilterCount()
+        => SelectedKinds.Sum(k => GetTempTextFilterList(k).Count);
 }

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
 	<!-- 
 		Microsoft ResX Schema
@@ -145,5 +145,20 @@
 	</data>
 	<data name="Budget_PurposePattern_InvalidRegex" xml:space="preserve">
 		<value>Ungültiger regulärer Ausdruck</value>
+	</data>
+	<data name="API_McpAudit_Err_Invalid_format" xml:space="preserve">
+		<value>Ungültiges Exportformat. Unterstützt werden 'csv' und 'json'.</value>
+	</data>
+	<data name="API_McpApproval_Err_Mcp_InvalidArguments" xml:space="preserve">
+		<value>Ungültige Argumente für die Genehmigungsanfrage.</value>
+	</data>
+	<data name="API_McpApproval_Err_Mcp_InvalidState" xml:space="preserve">
+		<value>Die Anfrage befindet sich nicht mehr in einem entscheidbaren Zustand.</value>
+	</data>
+	<data name="API_McpApproval_Err_Unexpected" xml:space="preserve">
+		<value>Unerwarteter Fehler bei der Genehmigungsanfrage.</value>
+	</data>
+	<data name="API_StatementDraft_SAVINGSPLAN_ACCOUNT_LINKED" xml:space="preserve">
+		<value>Ein Sparplan kann nicht zugeordnet werden, da das erkannte Konto mit einem Sparplan verknüpft ist. Seine Buchungen werden bereits über den Kontostand erfasst.</value>
 	</data>
 </root>

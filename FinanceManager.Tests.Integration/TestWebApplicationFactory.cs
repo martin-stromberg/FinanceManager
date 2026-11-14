@@ -263,6 +263,24 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 {
                     throw new InvalidOperationException($"Failed to assign bootstrap admin role: {string.Join("; ", addToRoleResult.Errors.Select(e => e.Description))}");
                 }
+
+                // The MCP switches are database-stored (McpSettings singleton row) — the
+                // legacy "Mcp:Enabled"/"Mcp:WriteAccess:Enabled" configuration overrides are
+                // mapped onto the row so tests keep their previous semantics (write access
+                // defaults to enabled when only the kill switch is set, matching the old
+                // appsettings defaults).
+                if (ConfigurationOverrides.TryGetValue("Mcp:Enabled", out var mcpEnabledRaw)
+                    || ConfigurationOverrides.TryGetValue("Mcp:WriteAccess:Enabled", out _))
+                {
+                    var mcpEnabled = bool.TryParse(mcpEnabledRaw, out var parsedEnabled) && parsedEnabled;
+                    var mcpWrite = !ConfigurationOverrides.TryGetValue("Mcp:WriteAccess:Enabled", out var mcpWriteRaw)
+                        || (bool.TryParse(mcpWriteRaw, out var parsedWrite) && parsedWrite);
+                    var mcpSettings = scope.ServiceProvider
+                        .GetRequiredService<FinanceManager.Application.Mcp.IMcpSettingsService>();
+                    mcpSettings.UpdateAsync(
+                        new FinanceManager.Shared.Dtos.Mcp.McpSettingsUpdateRequest(mcpEnabled, mcpWrite),
+                        CancellationToken.None).GetAwaiter().GetResult();
+                }
             }
             finally
             {

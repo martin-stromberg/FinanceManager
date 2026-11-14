@@ -4,6 +4,7 @@ using FinanceManager.Domain.Accounts;
 using FinanceManager.Domain.Attachments; // new
 using FinanceManager.Domain.Budget;
 using FinanceManager.Domain.Contacts;
+using FinanceManager.Domain.Mcp;
 using FinanceManager.Domain.Notifications; // new
 using FinanceManager.Domain.Portfolio;
 using FinanceManager.Domain.Postings;
@@ -157,6 +158,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     }
     /// <summary>Savings plan categories.</summary>
     public DbSet<SavingsPlanCategory> SavingsPlanCategories { get; set; } = null!;
+    /// <summary>Explicit many-to-many links between savings plans and accounts.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<SavingsPlanAccountLink> SavingsPlanAccountLinks
+    {
+        get
+        {
+            return Set<SavingsPlanAccountLink>();
+        }
+    }
     /// <summary>Securities / stocks.</summary>
     /// <returns>The result.</returns>
     public DbSet<FinanceManager.Domain.Securities.Security> Securities => Set<FinanceManager.Domain.Securities.Security>();
@@ -325,6 +335,66 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         }
     }
 
+    /// <summary>MCP accesses (token-authenticated channels for MCP clients).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAccess> McpAccesses
+    {
+        get
+        {
+            return Set<McpAccess>();
+        }
+    }
+
+    /// <summary>Scope tuples of individually configured MCP accesses.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAccessScope> McpAccessScopes
+    {
+        get
+        {
+            return Set<McpAccessScope>();
+        }
+    }
+
+    /// <summary>Append-only MCP audit entries (hash-chained).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAuditEntry> McpAuditEntries
+    {
+        get
+        {
+            return Set<McpAuditEntry>();
+        }
+    }
+
+    /// <summary>Field deltas of MCP audit entries.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAuditEntryChange> McpAuditEntryChanges
+    {
+        get
+        {
+            return Set<McpAuditEntryChange>();
+        }
+    }
+
+    /// <summary>MCP approval requests — the persistent execution queue.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<AiActionRequest> AiActionRequests
+    {
+        get
+        {
+            return Set<AiActionRequest>();
+        }
+    }
+
+    /// <summary>Database-stored, admin-editable MCP switches (singleton row).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpSettings> McpSettings
+    {
+        get
+        {
+            return Set<McpSettings>();
+        }
+    }
+
     /// <summary>
     /// Configure the EF Core model: indexes, constraints and relationships.
     /// </summary>
@@ -446,6 +516,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => new { x.SecurityId, x.BookingDate });
             b.Property(p => p.ParentId);
             b.Property(p => p.OriginalAmount).HasPrecision(18, 2);
+            b.ToTable(t => t.HasCheckConstraint("CK_Postings_HasReference", "[AccountId] IS NOT NULL OR [ContactId] IS NOT NULL OR [SavingsPlanId] IS NOT NULL OR [SecurityId] IS NOT NULL"));
         });
 
         modelBuilder.Entity<StatementDraft>(b =>
@@ -489,6 +560,25 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
                   .WithMany()
                   .HasForeignKey(e => e.CategoryId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // SavingsPlanAccountLink (explicit n:m join between SavingsPlan and Account)
+        modelBuilder.Entity<SavingsPlanAccountLink>(entity =>
+        {
+            entity.ToTable("SavingsPlanAccountLinks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OwnerUserId).IsRequired();
+            entity.HasIndex(e => new { e.SavingsPlanId, e.AccountId }).IsUnique();
+            entity.HasIndex(e => e.AccountId);
+            entity.HasIndex(e => e.OwnerUserId);
+            entity.HasOne(e => e.SavingsPlan)
+                  .WithMany()
+                  .HasForeignKey(e => e.SavingsPlanId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Account)
+                  .WithMany()
+                  .HasForeignKey(e => e.AccountId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<StatementDraftEntry>(b =>
@@ -754,6 +844,111 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.PeriodMonth).IsRequired();
             b.HasIndex(x => new { x.OwnerUserId, x.BudgetPurposeId, x.PeriodYear, x.PeriodMonth }).IsUnique();
         });
+
+        // MCP access (datenmodell-erweiterungen.md §3)
+        modelBuilder.Entity<McpAccess>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => x.AccessKeyHint).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.Name }).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.Status });
+            b.HasIndex(x => x.ExpiresUtc);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.AccessKeyHint).HasMaxLength(12).IsRequired();
+            b.Property(x => x.TokenHash).HasMaxLength(256).IsRequired();
+            b.Property(x => x.Level).HasConversion<short>().IsRequired();
+            b.Property(x => x.ApprovalMode).HasConversion<short>().IsRequired();
+            b.Property(x => x.Status).HasConversion<short>().HasDefaultValue(McpAccessStatus.Active).IsRequired();
+            b.Property(x => x.AllowedIpRanges).HasMaxLength(500);
+            b.Property(x => x.RevocationReason).HasMaxLength(500);
+            b.HasMany(x => x.Scopes)
+                .WithOne(x => x.Access)
+                .HasForeignKey(x => x.McpAccessId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // MCP access scopes (datenmodell-erweiterungen.md §4)
+        modelBuilder.Entity<McpAccessScope>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.McpAccessId, x.DataType, x.Right });
+            b.HasIndex(x => x.OwnerUserId);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.DataType).HasConversion<short>().IsRequired();
+            b.Property(x => x.Right).HasConversion<short>().IsRequired();
+        });
+
+        // MCP audit entries (datenmodell-erweiterungen.md §6.1)
+        modelBuilder.Entity<McpAuditEntry>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.OwnerUserId, x.Utc });
+            b.HasIndex(x => x.CorrelationId);
+            b.HasIndex(x => x.McpAccessId);
+            b.HasIndex(x => new { x.Category, x.EventType });
+            b.HasIndex(x => new { x.OwnerUserId, x.SequenceNo }).IsUnique();
+            // Global chain (OwnerUserId IS NULL): composite unique indexes do not enforce
+            // sequence uniqueness for NULL owners under SQLite — a filtered index closes
+            // the gap (F-0302, datenmodell-erweiterungen.md §6.1).
+            b.HasIndex(x => x.SequenceNo).IsUnique().HasFilter("[OwnerUserId] IS NULL");
+            b.Property(x => x.Utc).IsRequired();
+            b.Property(x => x.SequenceNo).IsRequired();
+            b.Property(x => x.Category).HasConversion<short>().IsRequired();
+            b.Property(x => x.EventType).HasMaxLength(100).IsRequired();
+            b.Property(x => x.McpAccessName).HasMaxLength(100);
+            b.Property(x => x.ToolName).HasMaxLength(100);
+            b.Property(x => x.CatalogVersion).HasMaxLength(40);
+            b.Property(x => x.Context).HasMaxLength(40);
+            b.Property(x => x.ResultStatus).HasMaxLength(50).IsRequired();
+            b.Property(x => x.SourceIp).HasMaxLength(64);
+            b.Property(x => x.PrevHash).HasMaxLength(128);
+            b.Property(x => x.EntryHash).HasMaxLength(128).IsRequired();
+            b.HasMany(x => x.Changes)
+                .WithOne(x => x.Entry)
+                .HasForeignKey(x => x.EntryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // MCP audit entry changes (datenmodell-erweiterungen.md §6.2)
+        modelBuilder.Entity<McpAuditEntryChange>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => x.EntryId);
+            b.HasIndex(x => new { x.EntityType, x.EntityId });
+            b.Property(x => x.EntityType).HasMaxLength(100).IsRequired();
+            b.Property(x => x.Field).HasMaxLength(100).IsRequired();
+        });
+
+        // MCP approval requests = persistent execution queue (datenmodell-erweiterungen.md §5).
+        // McpAccessId is deliberately a soft reference (no FK constraint): requests stay
+        // readable as audit substrate after the access is deleted (approval-konzept.md §6.3).
+        modelBuilder.Entity<AiActionRequest>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.OwnerUserId, x.IdempotencyKey }).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.Status, x.RequestedUtc });
+            b.HasIndex(x => new { x.Status, x.ExpiresUtc });
+            b.HasIndex(x => x.CorrelationId);
+            b.HasIndex(x => x.McpAccessId);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.McpAccessId).IsRequired();
+            b.Property(x => x.McpAccessName).HasMaxLength(100).IsRequired();
+            b.Property(x => x.ToolName).HasMaxLength(100).IsRequired();
+            b.Property(x => x.ActionKey).HasMaxLength(60).IsRequired();
+            b.Property(x => x.CatalogVersion).HasMaxLength(40).IsRequired();
+            b.Property(x => x.ParameterSnapshot).IsRequired();
+            b.Property(x => x.ReasonText).HasMaxLength(1000);
+            b.Property(x => x.Status).HasConversion<short>().IsRequired();
+            b.Property(x => x.RequestedUtc).IsRequired();
+            b.Property(x => x.ExpiresUtc).IsRequired();
+            b.Property(x => x.DecisionNote).HasMaxLength(500);
+            b.Property(x => x.FailureReason).HasMaxLength(100);
+            b.Property(x => x.CorrelationId).IsRequired();
+            b.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+            b.Property(x => x.AttemptCount).HasDefaultValue(0).IsRequired();
+        });
     }
     /// <summary>
     /// Configure warnings and other runtime options for the DbContext.
@@ -775,7 +970,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 26;
+        var total = 27;
         var count = 0;
 
         // Notifications
@@ -783,6 +978,12 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             .Where(n => n.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
+
+        // MCP state (accesses, scopes, audit entries/changes, ai action requests) is
+        // intentionally NOT cleared: it is operational/installation state — credentials,
+        // the approval queue and the revision-safe audit chain — not user finance data.
+        // Deleting it during a restore would invalidate live PATs and the very request
+        // executing the restore.
 
         // AliasNames (vor Contacts zur Sicherheit – alternativ würde FK-Cascade greifen)
         await AliasNames
@@ -933,7 +1134,6 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
         var budgetRules = await BudgetRules
             .Where(x => x.OwnerUserId == userId)
-            .Where(x => x.BudgetPurposeId != null && budgetPurposeIds.Contains(x.BudgetPurposeId.Value))
             .ToListAsync(ct);
         var budgetOverrides = await BudgetOverrides.Where(x => x.OwnerUserId == userId && budgetPurposeIds.Contains(x.BudgetPurposeId)).ToListAsync(ct);
 

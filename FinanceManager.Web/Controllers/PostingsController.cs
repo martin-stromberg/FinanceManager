@@ -2,6 +2,7 @@ using FinanceManager.Application;
 using FinanceManager.Application.Reports; // export service + time series
 using FinanceManager.Domain.Postings; // PostingKind for export and aggregates
 using FinanceManager.Infrastructure;
+using FinanceManager.Infrastructure.Savings;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Web.Infrastructure; // StreamCallbackResult
 using FinanceManager.Web.Services;
@@ -115,6 +116,14 @@ public sealed class PostingsController : ControllerBase
             }
         }
 
+        // Informal funding posting? Only savings plan postings of account-linked plans whose
+        // group holds a bank posting on a non-linked account qualify - derived, not persisted.
+        var informal = p.Kind == PostingKind.SavingsPlan && p.SavingsPlanId.HasValue
+            && (await SavingsPlanLinkAnalysis.GetInformalPostingIdsAsync(
+                _db,
+                new[] { new SavingsPlanLinkAnalysis.PlanPostingRef(p.Id, p.SavingsPlanId.Value, p.GroupId) },
+                ct)).Count > 0;
+
         var dto = new PostingServiceDto(
             p.Id,
             p.BookingDate,
@@ -144,7 +153,9 @@ public sealed class PostingsController : ControllerBase
             p.IsReversal,
             p.ReversedByPostingId,
             p.ReversalForPostingId,
-            p.IsPreliminary);
+            p.IsPreliminary,
+            informal,
+            p.SavingsPlanSubType);
         return Ok(dto);
     }
 

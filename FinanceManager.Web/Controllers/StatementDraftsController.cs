@@ -527,11 +527,15 @@ public sealed class StatementDraftsController : ControllerBase
     [ProducesResponseType(typeof(StatementDraftDetailDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> SetAccountAsync(Guid draftId, Guid accountId, CancellationToken ct)
     {
-        var draft = await _drafts.SetAccountAsync(draftId, _current.UserId, accountId, ct);
-        if (draft is null) return NotFound();
-        var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draft.DraftId, _current.UserId, ct);
-        var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
-        return Ok(dto);
+        try
+        {
+            var draft = await _drafts.SetAccountAsync(draftId, _current.UserId, accountId, ct);
+            if (draft is null) return NotFound();
+            var neighbors = await _drafts.GetUploadGroupNeighborsAsync(draft.DraftId, _current.UserId, ct);
+            var dto = new StatementDraftDetailDto(draft.DraftId, draft.OriginalFileName, draft.Description, draft.DetectedAccountId, draft.Status, draft.TotalAmount, draft.IsSplitDraft, draft.ParentDraftId, draft.ParentEntryId, draft.ParentEntryAmount, draft.UploadGroupId, draft.Entries, neighbors.prevId, neighbors.nextId);
+            return Ok(dto);
+        }
+        catch (Exception ex) { return BadRequest(ex); }
     }
 
     /// <summary>
@@ -615,17 +619,27 @@ public sealed class StatementDraftsController : ControllerBase
     /// <param name="entryId">Entry id.</param>
     /// <param name="body">Request containing savings plan id to assign.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 OK with updated entry or 404 Not Found when draft/entry missing.</returns>
+    /// <returns>200 OK with updated entry, 404 Not Found when draft/entry missing, or 409 Conflict on domain validation.</returns>
     /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="409">The HTTP 409 response.</response>
     [HttpPost("{draftId:guid}/entries/{entryId:guid}/savingsplan")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SetEntrySavingPlanAsync(Guid draftId, Guid entryId, [FromBody] StatementDraftSetSavingsPlanRequest body, CancellationToken ct)
     {
-        var draft = await _drafts.AssignSavingsPlanAsync(draftId, entryId, body.SavingsPlanId, _current.UserId, ct);
-        if (draft == null) { return NotFound(); }
-        var entry = draft.Entries.First(e => e.Id == entryId);
-        var impact = _budgetImpact == null ? null : await _budgetImpact.EvaluateEntryImpactAsync(draftId, entryId, _current.UserId, ct);
-        return Ok(entry with { BudgetImpact = impact });
+        try
+        {
+            var draft = await _drafts.AssignSavingsPlanAsync(draftId, entryId, body.SavingsPlanId, _current.UserId, ct);
+            if (draft == null) { return NotFound(); }
+            var entry = draft.Entries.First(e => e.Id == entryId);
+            var impact = _budgetImpact == null ? null : await _budgetImpact.EvaluateEntryImpactAsync(draftId, entryId, _current.UserId, ct);
+            return Ok(entry with { BudgetImpact = impact });
+        }
+        catch (DomainValidationException dex)
+        {
+            _logger.LogInformation("Domain validation when assigning savings plan to entry {EntryId} in draft {DraftId}: {Code} - {Message}", entryId, draftId, dex.Code, dex.Message);
+            return Conflict(ApiErrorFactory.FromDomainValidationException(Origin, dex, _localizer));
+        }
     }
 
     /// <summary>

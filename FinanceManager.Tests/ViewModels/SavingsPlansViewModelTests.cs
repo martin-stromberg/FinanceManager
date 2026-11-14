@@ -88,6 +88,30 @@ public sealed class SavingsPlansViewModelTests
     }
 
     /// <summary>
+    /// Verifies that the target-date cell of recurring plans allows trusted HTML so the generated
+    /// calendar SVG renders instead of being escaped.
+    /// </summary>
+    [Fact]
+    public async Task InitializeAsync_RecurringPlan_TargetDateCell_AllowsTrustedSvg()
+    {
+        var plan = new SavingsPlanDto(Guid.NewGuid(), "P1", SavingsPlanType.Recurring, 1000m, new DateTime(2036, 12, 31), SavingsPlanInterval.Monthly, true, DateTime.UtcNow, null, null, null, null);
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.SavingsPlans_ListAsync(true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SavingsPlanDto> { plan });
+        apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SavingsPlanCategoryDto>());
+        apiMock.Setup(a => a.SavingsPlans_AnalyzeAsync(plan.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SavingsPlanAnalysisDto(plan.Id, true, 1000m, plan.TargetDate, 300m, 50m, 14));
+
+        var vm = new SavingsPlansListViewModel(CreateSp(apiMock));
+        await vm.InitializeAsync();
+
+        var dateCell = vm.Records.Single().Cells[5];
+        Assert.Contains("<svg", dateCell.Text);
+        Assert.True(dateCell.AllowHtml);
+    }
+
+    /// <summary>
     /// Smoke test verifying that <c>GetRibbonRegisters</c> returns a non-null result for the savings plan
     /// list screen.
     /// </summary>

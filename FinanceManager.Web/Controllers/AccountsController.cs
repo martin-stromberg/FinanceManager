@@ -1,6 +1,7 @@
 using FinanceManager.Application;
 using FinanceManager.Application.Accounts;
 using FinanceManager.Application.Contacts;
+using FinanceManager.Application.Savings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,7 @@ public sealed class AccountsController : ControllerBase
     private readonly IAccountService _accounts;
     private readonly IContactService _contacts;
     private readonly ICurrentUserService _current;
+    private readonly ISavingsPlanAccountLinkService _savingsPlanLinks;
     private readonly ILogger<AccountsController> _logger;
 
     /// <summary>
@@ -28,12 +30,14 @@ public sealed class AccountsController : ControllerBase
     /// <param name="accounts">Service for account operations.</param>
     /// <param name="contacts">Service for contact operations used to create or lookup bank contacts.</param>
     /// <param name="current">Service providing information about the current user.</param>
+    /// <param name="savingsPlanLinks">Service resolving the savings plans linked to an account.</param>
     /// <param name="logger">Logger instance for the controller.</param>
-    public AccountsController(IAccountService accounts, IContactService contacts, ICurrentUserService current, ILogger<AccountsController> logger)
+    public AccountsController(IAccountService accounts, IContactService contacts, ICurrentUserService current, ISavingsPlanAccountLinkService savingsPlanLinks, ILogger<AccountsController> logger)
     {
         _accounts = accounts;
         _contacts = contacts;
         _current = current;
+        _savingsPlanLinks = savingsPlanLinks;
         _logger = logger;
     }
 
@@ -400,6 +404,34 @@ public sealed class AccountsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "RemoveLinkedIban failed for account {AccountId}", id);
+            return Problem("Unexpected error", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Returns the identifiers of the savings plans linked to the account. An account linked to a
+    /// savings plan derives the plan's balance from its postings, so statement drafts of such an
+    /// account must not assign entries to a savings plan.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>HTTP 200 with a list of savings plan ids; HTTP 404 when account not found.</returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpGet("{id:guid}/savings-plan-links")]
+    [ProducesResponseType(typeof(IReadOnlyList<Guid>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSavingsPlanLinksAsync(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var planIds = await _savingsPlanLinks.GetLinkedSavingsPlanIdsAsync(id, _current.UserId, ct);
+            if (planIds is null) return NotFound();
+            return Ok(planIds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetSavingsPlanLinks failed for account {AccountId}", id);
             return Problem("Unexpected error", statusCode: 500);
         }
     }

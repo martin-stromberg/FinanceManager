@@ -1,3 +1,49 @@
+## 2026-11-14 — Depot-Bericht: Neue Kachel „Depotentwicklung Jahreswechsel" (Issue #512)
+
+- Der Depot-Analysebericht (`/portfolio/analysis-report`) erhält eine fünfte, standardmäßig aktive Kachel „Depotentwicklung Jahreswechsel": ein kombiniertes Linien-/Balkendiagramm (Depotwert zum Jahresende als Linie, Netto-Dividenden als Balken) und eine Jahrestabelle mit Depotwert, Veränderung zum Vorjahr (absolut und prozentual), Netto-Dividende, Verhältnis und Rendite.
+- Die Jahresserie wird serverseitig in `PortfolioAnalysisReportService.BuildDepotDevelopment` berechnet und als `PortfolioDepotDevelopmentDto` im Berichts-DTO mitgeliefert: Netto-Dividende = Dividenden- minus Steuerbuchungen des Jahres; „eingezahltes Kapital" = FIFO-Anschaffungskostenbasis (`TotalCostBasis − StandaloneFeeTotal`) zum jeweiligen Stichtag; der `YearStartValue` des ersten Jahres ist das eigene Anschaffungskapital; das laufende Jahr wird mit `IsYtd`/`*` markiert, die Serie endet nach Komplettverkauf im letzten Transaktionsjahr.
+- Zwei Dropdowns in der Kachel steuern den Zeitraum („Gesamte Historie" / „Letzte 5 Jahre" / „Letzte 10 Jahre") und die Rendite-Basis („Jahresanfangswert" / „Eingezahltes Kapital (Yield on Cost)"); das Umschalten aktualisiert Verhältnis- und Rendite-Spalten sowie die modusabhängige Fußnote clientseitig ohne Neuladen. Die Auswahl wird nicht persistiert.
+- `PortfolioTileId.DepotDevelopment = 4` wurde ergänzt; die neue Shared-Komponente `PortfolioBarLineChart` rendert das SVG-Diagramm mit getrennt skalierter Linie (volle Höhe) und Balken (untere Hälfte), Legende und `<title>`-Tooltips.
+- `GET api/portfolio/kpi-configuration` zieht fehlende Kachel-IDs in gespeicherten Benutzerkonfigurationen nach (`MergeMissingTiles`): neue Kacheln werden ans Ende von `TileOrder` angehängt und — wenn Mitglied der Default-Aktiv-Menge — aktiviert; bewusst deaktivierte Kacheln bleiben deaktiviert. Die `CacheSchemaVersion` des Berichts-Cache wurde auf `"6"` erhöht.
+
+## 2026-11-11 — Berichtswesen: Textfilter je Buchungsart in Berichten und KPI-Kacheln (Issue #506)
+
+- Im Filterdialog des Berichts-Dashboards lassen sich je aktiver Buchungsart (Bank, Kontakt, Sparplan, Wertpapier) beliebig viele freie Textfilter pflegen. Die Einträge sind ODER-verknüpft und matchen als Substring (Groß-/Kleinschreibung egal) auf Verwendungszweck und Buchungsbeschreibung der Buchungen; jeder Eintrag ist auf 500 Zeichen begrenzt.
+- Buchungsarten mit gesetzten Textfiltern werden bei der Aggregation aus den Rohbuchungen verdichtet (`ReportAggregationService.LoadTextFilteredRowsAsync`), da die vorberechneten `PostingAggregates` keine Textfelder enthalten; ungefilterte Buchungsarten bleiben auf dem Aggregatpfad. Bei verknüpften Sparplan-Konten wirkt der Sparplan-Textfilter auf die Quell-Bankbuchungen, im Netto-Dividendenpfad selektieren Wertpapier-Textfilter ganze Dividendengruppen über die Anker-Buchung.
+- Die Textfilter werden am `ReportFavorite` in vier neuen JSON-Spalten (`*TextFiltersJson`, Migration `AddReportFavoriteTextFilters`) persistiert und sind über `ReportFavoriteBackupDto` im Benutzer-Backup enthalten; alte Backups bleiben ladbar.
+- KPI-Kacheln der Startseite, die auf einem Berichts-Favoriten beruhen, wenden gespeicherte Textfilter automatisch an. Der LocalStorage-KPI-Cache wird über `FavKpiData.FavoriteModifiedUtc` versioniert und nach jeder Favoriten-Änderung verworfen.
+- Die Filterlisten werden in `ReportAggregatesFiltersRequest`, `ReportAggregationFilters` und `ReportFavoriteFiltersDto` transportiert; die MCP-Tools `fm_reporting_aggregate` und `fm_reports_configuration_manage` unterstützen sie ebenfalls (`bankTextFilters` u. a.).
+
+## 2026-11-11 — Posten-Karte: Aktionen der Gruppe „Verknüpfte Informationen“ funktionsfähig verdrahtet (Issue #502)
+
+- Die fünf Ribbon-Aktionen der Gruppe „Verknüpfte Informationen“ auf der Posten-Detailkarte waren bisher wirkungslos (kein Handler). „Konto öffnen“, „Kontakt öffnen“, „Sparplan öffnen“ und „Wertpapier öffnen“ navigieren jetzt zur Karte des jeweils verknüpften Datensatzes und übergeben die Posten-Karte als Rücksprungziel; „Anhänge“ öffnet das Anhangs-Overlay für den Posten.
+- Die Aktionen bleiben deaktiviert, wenn die jeweilige Verknüpfung am Posten nicht gesetzt ist; „Anhänge“ ist neu zusätzlich deaktiviert, solange kein Posten geladen ist (z. B. bei Ladefehler).
+- Die URL-Navigation läuft über die neue gemeinsame Basismethode `RequestOpenLinkedCard` in `BaseViewModel` und den bereits vorhandenen generischen `OpenPostings`-Handler der Karten-Hostseite; `CardPage.razor`, `OverlayHost` und die Ribbon-Infrastruktur blieben unverändert.
+- `StatementDraftEntryCardViewModel` nutzt dieselbe Basismethode statt dreifach dupliziertem URL-Aufbau — reine Konsolidierung ohne Verhaltensänderung.
+- Abgesichert durch neue ViewModel-Tests (`PostingsCardViewModelLinkedTests`) und Playwright-Tests (`PostingsCardLinkedActionsPlaywrightTests`); der E2E-Seed-Helfer `AccountsApiSeedHelper` kann Posten nun mit Verknüpfungs-Ids anlegen.
+
+## 2026-11-09 — Ribbon-Gruppierung: „Verknüpfte Informationen“ einheitlich an letzter Position (Issue #498)
+
+- Auf den Karten-Detailseiten für Sparpläne, Bankkonten und Posten erscheint die Ribbon-Gruppe „Verknüpfte Informationen“ jetzt durchgehend als letzte Gruppe; zuvor stand sie dort vor den Aktions- bzw. Buchungsgruppen.
+- Die sichtbare Gruppenreihenfolge auf Detailseiten folgt damit einheitlich der Projektkonvention: Navigationsgruppe zuerst, dann Entitätsaktionen, dann weiterführende Aktionen, zuletzt verknüpfte Informationen. Die Konvention inklusive der Position der Navigationsgruppe ist in `AGENT.md` festgehalten.
+- Zusätzlich steht die Gruppe „Verwalten“ auf der Setup-Seite jetzt als erste Ribbon-Gruppe und zeigt „Speichern“ als große Primäraktion; die Kontaktübersicht verwendet dieselbe Gruppe und zeigt alle Aktionen als große Buttons.
+- Keine neuen Funktionen oder Aktionen — es wurde ausschließlich die Darstellung und Reihenfolge vorhandener Ribbon-Gruppen korrigiert.
+
+## 2026-11-09 — Datenbesitz: Posting-Referenzinvariante erzwungen, globale Pools dokumentiert (Issue #497)
+
+- `Posting` erzwingt jetzt die Invariante „mindestens eine Zielreferenz gesetzt": Der Konstruktor wirft eine `ArgumentException`, wenn `AccountId`, `ContactId`, `SavingsPlanId` und `SecurityId` alle `null` sind; zusätzlich lehnt der neue Check-Constraint `CK_Postings_HasReference` entsprechende `INSERT`/`UPDATE`-Statements auf Datenbankebene ab (EF-Migration `AddPostingReferenceCheckConstraint`). Damit können keine verwaisten Buchungen entstehen, die weder im Backup exportiert noch beim Löschen der Benutzerdaten erfasst würden.
+- Der Backup-Import (`SetupImportService`) überspringt Postings, deren remappte Referenzen allesamt `null` sind, und protokolliert den Fall per `LogWarning`, statt einen Waisendatensatz anzulegen.
+- Die bewusst benutzerübergreifenden Entitäten `IpBlock`, `SecurityTxtSettings`, `WellKnownSettings` und `McpSettings` sind jetzt in XML-Dokumentation und `Docs/help/*/datenmodell.md` explizit als globale Datenpools ohne `OwnerUserId` gekennzeichnet.
+- Keine UI- oder Verhaltensänderung für Anwender.
+
+## 2026-11-08 — Backup/Restore: Vollständige Import- und DTO-Abdeckung (Issue #496)
+
+- Der Restore stellt jetzt auch die Kontoauszugs-Import-Historie (`StatementImports`/`StatementEntries`), `Notifications` und `AccountShares` wieder her — diese Sektionen wurden bisher exportiert und beim destruktiven Restore gelöscht, aber nicht zurückgeschrieben.
+- Die neuen optionalen Backup-Sektionen `AccountLinkedIbans` (Unter-IBANs von Sammelkonten) und `PortfolioKpiConfigurations` werden exportiert und per Guard-Import bzw. Upsert wiederhergestellt; alte Backups ohne diese Sektionen bleiben lesbar.
+- `BudgetRuleBackupDto` und `SecurityBackupDto` wurden vervollständigt (`PurposePattern`/`PurposePatternIsRegex` sowie Preisfehler- und Notified-Felder); neue DTO-Felder tragen Default-Werte für alte Backups.
+- `AppDbContext.ClearUserDataAsync` löscht nun alle Budgetregeln des Benutzers — auch ausschließlich kategoriegebundene Regeln — und verhindert Duplikate beim Re-Import.
+- Der Merge-Import (`replaceExisting: false`) toleriert Duplikate (`RawHash`-Unique-Index, vorhandene Notifications, Shares, Importe, Linked-IBANs) statt mit Constraint-Verletzungen abzubrechen.
+
 ## 2026-10-31 — Sicherheitshärtung (Issues #450–#461)
 
 - Die Selbstregistrierung ist jetzt opt-in: nur der erste Benutzer registriert sich selbst, weitere Konten legt ein Administrator an; `Auth:AllowSelfRegistration` öffnet die Registrierung wieder.

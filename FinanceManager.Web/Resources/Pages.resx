@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -152,6 +152,9 @@
   </data>
   <data name="EnumType_AccountType_Savings" xml:space="preserve">
     <value>Savings account</value>
+  </data>
+  <data name="EnumType_AccountType_CreditCard" xml:space="preserve">
+    <value>Credit card account</value>
   </data>
   <data name="Err_Invalid_bankContactId" xml:space="preserve">
     <value>The specified bank contact is invalid.</value>
@@ -926,6 +929,84 @@
   </data>
   <data name="PortfolioReport_Explain_ValueAtRisk_Text" xml:space="preserve">
     <value>Estimated maximum loss over a given time horizon at a given confidence level (e.g. "95% confidence not to lose more than X in one day"). Not yet calculated - planned for a future phase.</value>
+  </data>
+  <data name="PortfolioReport_Tile_DepotDevelopment" xml:space="preserve">
+    <value>Depot development year-over-year</value>
+  </data>
+  <data name="PortfolioReport_Dev_Filter_Period" xml:space="preserve">
+    <value>Time period</value>
+  </data>
+  <data name="PortfolioReport_Dev_Filter_YieldBasis" xml:space="preserve">
+    <value>Yield basis</value>
+  </data>
+  <data name="PortfolioReport_Dev_Period_AllHistory" xml:space="preserve">
+    <value>Entire history</value>
+  </data>
+  <data name="PortfolioReport_Dev_Period_Last5Years" xml:space="preserve">
+    <value>Last 5 years</value>
+  </data>
+  <data name="PortfolioReport_Dev_Period_Last10Years" xml:space="preserve">
+    <value>Last 10 years</value>
+  </data>
+  <data name="PortfolioReport_Dev_Basis_YearStartValue" xml:space="preserve">
+    <value>Year start value</value>
+  </data>
+  <data name="PortfolioReport_Dev_Basis_InvestedCapital" xml:space="preserve">
+    <value>Invested capital (yield on cost)</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_Year" xml:space="preserve">
+    <value>Year</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_DepotValue" xml:space="preserve">
+    <value>Depot value</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_ChangeAbs" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_ChangePct" xml:space="preserve">
+    <value>Change %</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_NetDividend" xml:space="preserve">
+    <value>Net dividends</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_Yield" xml:space="preserve">
+    <value>Yield</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_NetFlow" xml:space="preserve">
+    <value>Deposits/withdrawals</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_DividendDepotValue" xml:space="preserve">
+    <value>Dividend/depot value</value>
+  </data>
+  <data name="PortfolioReport_Dev_Th_ChangeCombined" xml:space="preserve">
+    <value>Change €/%</value>
+  </data>
+  <data name="PortfolioReport_Dev_Footnote_YearStartValue" xml:space="preserve">
+    <value>Yield basis: depot value at the start of the year; for the first year the initial invested capital (acquisition costs) is used instead. * Current, not yet completed year (YTD).</value>
+  </data>
+  <data name="PortfolioReport_Dev_Footnote_InvestedCapital" xml:space="preserve">
+    <value>Yield basis: cumulative deposits minus withdrawals (net buys minus sells up to the year's reference date). * Current, not yet completed year (YTD).</value>
+  </data>
+  <data name="PortfolioReport_Dev_Empty" xml:space="preserve">
+    <value>No security postings available yet.</value>
+  </data>
+  <data name="PortfolioReport_Dev_YtdSuffix" xml:space="preserve">
+    <value>*</value>
+  </data>
+  <data name="PortfolioReport_Dev_Chart_Aria" xml:space="preserve">
+    <value>Combined line and bar chart of depot value and net dividends per year</value>
+  </data>
+  <data name="PortfolioReport_Dev_Chart_Aria_Invested" xml:space="preserve">
+    <value>Bar chart of deposits/withdrawals and net dividends per year</value>
+  </data>
+  <data name="PortfolioReport_Dev_Legend_DepotValue" xml:space="preserve">
+    <value>Depot value</value>
+  </data>
+  <data name="PortfolioReport_Dev_Legend_NetDividends" xml:space="preserve">
+    <value>Net dividends</value>
+  </data>
+  <data name="PortfolioReport_Dev_Legend_NetFlow" xml:space="preserve">
+    <value>Deposits/withdrawals</value>
   </data>
   <data name="Dlg_Backfill_Title" xml:space="preserve">
     <value>Backfill prices</value>
@@ -2676,6 +2757,9 @@
   <data name="Validation_NO_ACCOUNT" xml:space="preserve">
     <value>No account assigned.</value>
   </data>
+  <data name="Validation_CARD_REQUIRES_PARENT" xml:space="preserve">
+    <value>Credit card statement drafts must be assigned as a split of a parent statement entry (the debiting giro line) and can never be booked standalone.</value>
+  </data>
   <data name="Validation_SPLIT_CYCLE_DETECTED" xml:space="preserve">
     <value>[Split] Cycles detected in split connections.</value>
   </data>
@@ -2962,6 +3046,8 @@
   <data name="Confirmation_Archive_Message" xml:space="preserve"><value>Das Objekt wird archiviert.</value></data>
   <data name="Confirmation_Book_Title" xml:space="preserve"><value>Verbuchen bestätigen</value></data>
   <data name="Confirmation_Book_Message" xml:space="preserve"><value>Die Buchungen werden finalisiert.</value></data>
+  <data name="Confirmation_RemoveAccountLink_Title" xml:space="preserve"><value>Verknüpfung lösen</value></data>
+  <data name="Confirmation_RemoveAccountLink_Message" xml:space="preserve"><value>Die Kontoverknüpfung wird entfernt. Der Saldo des Sparplans folgt danach wieder den Sparplanposten.</value></data>
   <data name="Err_InvalidCurrentPassword" xml:space="preserve">
     <value>The current password is not correct.</value>
   </data>
@@ -2971,4 +3057,384 @@
   <data name="Err_UserNotFound" xml:space="preserve">
     <value>The user was not found.</value>
   </data>
+  <data name="Nav_McpAccesses" xml:space="preserve"><value>AI accesses</value></data>
+  <data name="General_Title_McpAccesses" xml:space="preserve"><value>AI accesses</value></data>
+  <data name="McpAccess_Title" xml:space="preserve"><value>AI access</value></data>
+  <data name="McpList_Th_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="McpList_Th_Level" xml:space="preserve"><value>Access level</value></data>
+  <data name="McpList_Th_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="McpList_Th_Expires" xml:space="preserve"><value>Expires</value></data>
+  <data name="McpList_Th_LastUsed" xml:space="preserve"><value>Last used</value></data>
+  <data name="Mcp_Disabled_Hint" xml:space="preserve"><value>The AI integration (MCP) is currently not activated. An administrator can enable it in the MCP settings under 'AI security'.</value></data>
+  <data name="Mcp_Value_NeverUsed" xml:space="preserve"><value>never</value></data>
+  <data name="Mcp_Level_Analyse" xml:space="preserve"><value>Analysis</value></data>
+  <data name="Mcp_Level_Assistent" xml:space="preserve"><value>Assistant</value></data>
+  <data name="Mcp_Level_Sachbearbeiter" xml:space="preserve"><value>Clerk</value></data>
+  <data name="Mcp_Level_Buchhalter" xml:space="preserve"><value>Accountant</value></data>
+  <data name="Mcp_Level_Individuell" xml:space="preserve"><value>Custom</value></data>
+  <data name="Mcp_LevelDesc_Analyse" xml:space="preserve"><value>Can view and analyze all data. Cannot change anything.</value></data>
+  <data name="Mcp_LevelDesc_Assistent" xml:space="preserve"><value>Like Analysis, plus suggestions may be created (e.g. categorization ideas). Changes nothing.</value></data>
+  <data name="Mcp_LevelDesc_Sachbearbeiter" xml:space="preserve"><value>May prepare and complete statement drafts - changes go through your approval. Does not post or delete.</value></data>
+  <data name="Mcp_LevelDesc_Buchhalter" xml:space="preserve"><value>Full process rights incl. posting and reversal - always via your approval (or durably pre-approved).</value></data>
+  <data name="Mcp_LevelDesc_Individuell" xml:space="preserve"><value>Compose rights per data type yourself (expert mode).</value></data>
+  <data name="Mcp_Status_Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Mcp_Status_Deactivated" xml:space="preserve"><value>Deactivated</value></data>
+  <data name="Mcp_Status_Revoked" xml:space="preserve"><value>Revoked</value></data>
+  <data name="Mcp_Status_Expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Mcp_ApprovalMode_PerAction" xml:space="preserve"><value>Approve each action</value></data>
+  <data name="Mcp_ApprovalMode_PreApproved" xml:space="preserve"><value>Durably pre-approve</value></data>
+  <data name="Mcp_ApprovalModeDesc_PerAction" xml:space="preserve"><value>The AI system files requests; you decide in the approval center.</value></data>
+  <data name="Mcp_ApprovalModeDesc_PreApproved" xml:space="preserve"><value>Allowed actions run directly - every execution is still logged.</value></data>
+  <data name="Mcp_Right_Read" xml:space="preserve"><value>Read</value></data>
+  <data name="Mcp_Right_Suggest" xml:space="preserve"><value>Suggest</value></data>
+  <data name="Mcp_Right_Complete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Mcp_Right_Modify" xml:space="preserve"><value>Modify</value></data>
+  <data name="Mcp_Right_Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Mcp_Right_Book" xml:space="preserve"><value>Post</value></data>
+  <data name="Mcp_Right_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Mcp_RightInfo_Read" xml:space="preserve"><value>Lesende Werkzeuge liefern Datensätze, ohne etwas zu verändern.</value></data>
+  <data name="Mcp_RightInfo_Suggest" xml:space="preserve"><value>Werkzeuge erzeugen Vorschläge (z. B. Zuordnungen, Kategorien, Duplikate); es wird nichts gespeichert.</value></data>
+  <data name="Mcp_RightInfo_Complete" xml:space="preserve"><value>Werkzeuge ergänzen nur leere Felder und unaufgelöste Zuordnungen; bestehende Werte bleiben unverändert.</value></data>
+  <data name="Mcp_RightInfo_Modify" xml:space="preserve"><value>Werkzeuge verändern bestehende Feldwerte gezielt.</value></data>
+  <data name="Mcp_RightInfo_Create" xml:space="preserve"><value>Werkzeuge legen neue Datensätze an.</value></data>
+  <data name="Mcp_RightInfo_Book" xml:space="preserve"><value>Werkzeuge führen Verbuchungen aus — nur nach Genehmigung bzw. als vorab genehmigte Aktion.</value></data>
+  <data name="Mcp_RightInfo_Delete" xml:space="preserve"><value>Werkzeuge löschen oder verschmelzen Datensätze — immer nur nach Genehmigung.</value></data>
+  <data name="Mcp_DataType_Accounts" xml:space="preserve"><value>Accounts</value></data>
+  <data name="Mcp_DataType_AccountTypes" xml:space="preserve"><value>Account types</value></data>
+  <data name="Mcp_DataType_StatementImports" xml:space="preserve"><value>Statement imports</value></data>
+  <data name="Mcp_DataType_StatementDrafts" xml:space="preserve"><value>Statement drafts</value></data>
+  <data name="Mcp_DataType_Postings" xml:space="preserve"><value>Postings</value></data>
+  <data name="Mcp_DataType_Contacts" xml:space="preserve"><value>Contacts</value></data>
+  <data name="Mcp_DataType_ContactCategories" xml:space="preserve"><value>Contact categories</value></data>
+  <data name="Mcp_DataType_SavingsPlans" xml:space="preserve"><value>Savings plans</value></data>
+  <data name="Mcp_DataType_SavingsPlanCategories" xml:space="preserve"><value>Savings plan categories</value></data>
+  <data name="Mcp_DataType_Securities" xml:space="preserve"><value>Securities</value></data>
+  <data name="Mcp_DataType_SecurityCategories" xml:space="preserve"><value>Security categories</value></data>
+  <data name="Mcp_DataType_Budgets" xml:space="preserve"><value>Budgets</value></data>
+  <data name="Mcp_DataType_BudgetCategories" xml:space="preserve"><value>Budget categories</value></data>
+  <data name="Mcp_DataType_BudgetRules" xml:space="preserve"><value>Budget rules</value></data>
+  <data name="Mcp_DataType_Reports" xml:space="preserve"><value>Reports</value></data>
+  <data name="Mcp_DataType_KpiConfigurations" xml:space="preserve"><value>KPI configurations</value></data>
+  <data name="Mcp_DataType_Attachments" xml:space="preserve"><value>Attachments</value></data>
+  <data name="Mcp_DataType_AttachmentCategories" xml:space="preserve"><value>Attachment categories</value></data>
+  <data name="Mcp_DataType_Administration" xml:space="preserve"><value>Administration</value></data>
+  <data name="EnumType_McpAccessLevel_Analyse" xml:space="preserve"><value>Analysis</value></data>
+  <data name="EnumType_McpAccessLevel_Assistent" xml:space="preserve"><value>Assistant</value></data>
+  <data name="EnumType_McpAccessLevel_Sachbearbeiter" xml:space="preserve"><value>Clerk</value></data>
+  <data name="EnumType_McpAccessLevel_Buchhalter" xml:space="preserve"><value>Accountant</value></data>
+  <data name="EnumType_McpAccessLevel_Individuell" xml:space="preserve"><value>Custom</value></data>
+  <data name="EnumType_McpApprovalMode_PerAction" xml:space="preserve"><value>Approve each action</value></data>
+  <data name="EnumType_McpApprovalMode_PreApproved" xml:space="preserve"><value>Durably pre-approve</value></data>
+  <data name="Mcp_Card_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Mcp_Card_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Mcp_Card_Description_Hint" xml:space="preserve"><value>What is this access used for (which AI system, which purpose)?</value></data>
+  <data name="Mcp_Card_Level" xml:space="preserve"><value>Access level</value></data>
+  <data name="Mcp_Card_ApprovalMode" xml:space="preserve"><value>Approval mode</value></data>
+  <data name="Mcp_Card_ApprovalMode_Hint" xml:space="preserve"><value>Approve each: every approval-requiring action creates a request. Pre-approved: allowed actions run immediately (logged).</value></data>
+  <data name="Mcp_Card_ExpiresUtc" xml:space="preserve"><value>Expiry date</value></data>
+  <data name="Mcp_Card_ExpiresUtc_Hint" xml:space="preserve"><value>Optional. The token is rejected after this point. Empty = no expiry.</value></data>
+  <data name="Mcp_Card_AllowedIpRanges" xml:space="preserve"><value>IP binding</value></data>
+  <data name="Mcp_Card_AllowedIpRanges_Hint" xml:space="preserve"><value>Optional: comma-separated list of IP addresses or CIDR ranges allowed to use this access.</value></data>
+  <data name="Mcp_Card_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Mcp_Card_LastUsedUtc" xml:space="preserve"><value>Last used</value></data>
+  <data name="Mcp_Card_TokenIssuedUtc" xml:space="preserve"><value>Token issued</value></data>
+  <data name="Mcp_Card_CreatedUtc" xml:space="preserve"><value>Created</value></data>
+  <data name="Mcp_Section_Token" xml:space="preserve"><value>Token</value></data>
+  <data name="Mcp_Section_Rights" xml:space="preserve"><value>Rights</value></data>
+  <data name="Mcp_Section_StatusActions" xml:space="preserve"><value>Status actions</value></data>
+  <data name="Mcp_Section_Usage" xml:space="preserve"><value>Usage</value></data>
+  <data name="Mcp_Token_IssuedUtc" xml:space="preserve"><value>Issued</value></data>
+  <data name="Mcp_Token_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Mcp_Token_NoPlaintext" xml:space="preserve"><value>For security reasons the token is not stored and cannot be shown again.</value></data>
+  <data name="Mcp_Token_TlsWarning" xml:space="preserve"><value>Warning: the connection is not TLS-encrypted - the token is transmitted unencrypted. TLS setup and short expiry dates are recommended.</value></data>
+  <data name="Mcp_Rights_Level" xml:space="preserve"><value>Access level:</value></data>
+  <data name="Mcp_Rights_DataType" xml:space="preserve"><value>Data type</value></data>
+  <data name="Mcp_Rights_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Mcp_Rights_Empty" xml:space="preserve"><value>No rights configured.</value></data>
+  <data name="Mcp_Rights_CapHint" xml:space="preserve"><value>These rights apply only up to the limit of your own user rights - an account shared read-only stays read-only for the AI as well.</value></data>
+  <data name="Mcp_StatusActions_Hint" xml:space="preserve"><value>Deactivation and revocation take effect immediately: running calls of this access are rejected.</value></data>
+  <data name="Mcp_Usage_HistoryPlaceholder" xml:space="preserve"><value>The detailed history (which AI system did what when) follows with the audit view.</value></data>
+  <data name="McpToken_Title_Rotated" xml:space="preserve"><value>New token</value></data>
+  <data name="McpToken_OnceWarning_Title" xml:space="preserve"><value>Token shown only once</value></data>
+  <data name="McpToken_OnceWarning_Message" xml:space="preserve"><value>This token is shown only now and cannot be retrieved again. Store it in a safe place now.</value></data>
+  <data name="McpToken_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="McpToken_Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="McpToken_ConfirmSaved" xml:space="preserve"><value>I have stored the token safely.</value></data>
+  <data name="McpToken_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="McpToken_NoToken" xml:space="preserve"><value>No token available.</value></data>
+  <data name="McpWizard_Title" xml:space="preserve"><value>New AI access</value></data>
+  <data name="McpWizard_Step_MasterData" xml:space="preserve"><value>Master data</value></data>
+  <data name="McpWizard_Step_Level" xml:space="preserve"><value>Access level</value></data>
+  <data name="McpWizard_Step_Token" xml:space="preserve"><value>Token</value></data>
+  <data name="McpWizard_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="McpWizard_Description" xml:space="preserve"><value>Description (optional)</value></data>
+  <data name="McpWizard_Advanced" xml:space="preserve"><value>Advanced settings</value></data>
+  <data name="McpWizard_ExpiresUtc" xml:space="preserve"><value>Expiry date (optional)</value></data>
+  <data name="McpWizard_AllowedIpRanges" xml:space="preserve"><value>IP binding (optional)</value></data>
+  <data name="McpWizard_ApprovalMode" xml:space="preserve"><value>Approval mode</value></data>
+  <data name="McpWizard_Create" xml:space="preserve"><value>Create access</value></data>
+  <data name="Mcp_Rights_ApprovalMode" xml:space="preserve"><value>Approval mode:</value></data>
+  <data name="Mcp_Approval_KillSwitchHint" xml:space="preserve"><value>Even durably pre-approved executions can be held back globally by the write-stop (Mcp:WriteAccess:Enabled) - the approval mode never expands rights.</value></data>
+  <data name="Mcp_Matrix_ReadOnly" xml:space="preserve"><value>Profile derived from the level (read-only).</value></data>
+  <data name="Mcp_Matrix_Customize" xml:space="preserve"><value>Customize from template</value></data>
+  <data name="Mcp_Matrix_Reset" xml:space="preserve"><value>Discard changes</value></data>
+  <data name="Mcp_Matrix_Dirty" xml:space="preserve"><value>Unsaved right changes.</value></data>
+  <data name="Mcp_Matrix_EditHint" xml:space="preserve"><value>Check or uncheck cells to compose the rights of this access.</value></data>
+  <data name="Mcp_Matrix_ReadImplication" xml:space="preserve"><value>Every right other than Read requires the Read cell of the same row - it is selected automatically.</value></data>
+  <data name="Mcp_Matrix_Lock_Book" xml:space="preserve"><value>Booking exists only on statement drafts.</value></data>
+  <data name="Mcp_Matrix_Lock_Postings" xml:space="preserve"><value>Postings are write-protected - created via draft booking, removed via reversal.</value></data>
+  <data name="Mcp_Matrix_Lock_Imports" xml:space="preserve"><value>Committed imports are revision-safe documents - no write or delete path.</value></data>
+  <data name="Mcp_Matrix_Lock_AccountTypes" xml:space="preserve"><value>Account types are enum values only - no write path.</value></data>
+  <data name="Mcp_Matrix_Lock_Generic" xml:space="preserve"><value>This combination does not exist in the rights matrix.</value></data>
+  <data name="Mcp_Section_Filters" xml:space="preserve"><value>Restrictions (filters)</value></data>
+  <data name="Mcp_Filters_Hint" xml:space="preserve"><value>No filter = the right applies to all records. Set dimensions restrict further (AND); several rows of the same right combine with OR.</value></data>
+  <data name="Mcp_Filters_Indirect" xml:space="preserve"><value>Filters on account types and categories also restrict dependent data (e.g. postings of these accounts).</value></data>
+  <data name="Mcp_Filters_NeedsIndividual" xml:space="preserve"><value>Filters are stored per scope row - switch to the Custom level to restrict rights by filter.</value></data>
+  <data name="Mcp_Filters_PendingMatrix" xml:space="preserve"><value>Save the rights matrix first.</value></data>
+  <data name="Mcp_Filters_Unclassified" xml:space="preserve"><value>Records without a category are not matched by a set filter.</value></data>
+  <data name="Mcp_Filters_Set" xml:space="preserve"><value>set</value></data>
+  <data name="Mcp_Ribbon_RotateToken" xml:space="preserve"><value>Rotate token</value></data>
+  <data name="Mcp_Ribbon_Revoke" xml:space="preserve"><value>Revoke access</value></data>
+  <data name="Confirmation_McpRotate_Title" xml:space="preserve"><value>Rotate token</value></data>
+  <data name="Confirmation_McpRotate_Message" xml:space="preserve"><value>The current token becomes invalid immediately. The new token is shown only once.</value></data>
+  <data name="Confirmation_McpActivate_Title" xml:space="preserve"><value>Activate access</value></data>
+  <data name="Confirmation_McpActivate_Message" xml:space="preserve"><value>The token of this access will be accepted again.</value></data>
+  <data name="Confirmation_McpDeactivate_Title" xml:space="preserve"><value>Deactivate access</value></data>
+  <data name="Confirmation_McpDeactivate_Message" xml:space="preserve"><value>All calls of this access will be rejected immediately until it is reactivated.</value></data>
+  <data name="Confirmation_McpRevoke_Title" xml:space="preserve"><value>Revoke access</value></data>
+  <data name="Confirmation_McpRevoke_Message" xml:space="preserve"><value>The access is permanently deleted. All calls are rejected immediately and pending requests are withdrawn. This cannot be undone.</value></data>
+  <data name="Confirmation_McpLevelDowngrade_Title" xml:space="preserve"><value>Lower access level</value></data>
+  <data name="Confirmation_McpLevelDowngrade_Message" xml:space="preserve"><value>The lower level removes rights of this access. Continue?</value></data>
+  <data name="Confirmation_McpScopeExpand_Title" xml:space="preserve"><value>Extend rights</value></data>
+  <data name="Confirmation_McpScopeExpand_Message" xml:space="preserve"><value>The change grants additional rights to this access. An access can never exceed the limits of your own user rights or of shared accounts. Continue?</value></data>
+  <data name="Confirmation_McpPreApproved_Title" xml:space="preserve"><value>Durably pre-approve</value></data>
+  <data name="Confirmation_McpPreApproved_Message" xml:space="preserve"><value>With 'durably pre-approved', booking and deletion run without a per-action approval - every execution is still logged. Enable?</value></data>
+  <data name="Btn_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Btn_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Err_NotFound" xml:space="preserve"><value>Not found.</value></data>
+  <data name="Err_Mcp_Disabled" xml:space="preserve"><value>The AI integration (MCP) is disabled on the server.</value></data>
+  <data name="Err_Mcp_NameInUse" xml:space="preserve"><value>An access with this name already exists.</value></data>
+  <data name="Err_Mcp_InvalidScope" xml:space="preserve"><value>The given rights profile is invalid.</value></data>
+  <data name="Err_Mcp_InvalidState" xml:space="preserve"><value>The operation is not possible in the current state of the access.</value></data>
+  <data name="Err_Mcp_Unauthorized" xml:space="preserve"><value>Access was denied.</value></data>
+  <data name="Err_Mcp_UnknownTool" xml:space="preserve"><value>The requested tool is unknown.</value></data>
+  <data name="Err_Mcp_ToolNotImplemented" xml:space="preserve"><value>The requested tool is not available yet.</value></data>
+  <data name="Err_Mcp_WriteAccessDisabled" xml:space="preserve"><value>Write access is disabled for MCP.</value></data>
+  <data name="Err_Mcp_RateLimited" xml:space="preserve"><value>Too many requests - please try again later.</value></data>
+  <data name="Err_Mcp_ScopeDenied" xml:space="preserve"><value>The right was denied by the rights profile.</value></data>
+  <data name="Err_Mcp_AdminRequired" xml:space="preserve"><value>The Administration scope is restricted to owners with administrative privileges.</value></data>
+  <data name="Panel_Label_McpAccess" xml:space="preserve"><value>AI access</value></data>
+  <data name="General_Title_McpAudit" xml:space="preserve"><value>Usage log</value></data>
+  <data name="McpAudit_Title" xml:space="preserve"><value>Usage log</value></data>
+  <data name="McpAudit_Section_Filters" xml:space="preserve"><value>Filter</value></data>
+  <data name="McpAudit_Section_Integrity" xml:space="preserve"><value>Protocol chain integrity</value></data>
+  <data name="McpAudit_Section_Timeline" xml:space="preserve"><value>Timeline</value></data>
+  <data name="McpAudit_Filter_Access" xml:space="preserve"><value>Access</value></data>
+  <data name="McpAudit_Filter_AllAccesses" xml:space="preserve"><value>All accesses</value></data>
+  <data name="McpAudit_Filter_Category" xml:space="preserve"><value>Category</value></data>
+  <data name="McpAudit_Filter_AllCategories" xml:space="preserve"><value>All categories</value></data>
+  <data name="McpAudit_Filter_Result" xml:space="preserve"><value>Result</value></data>
+  <data name="McpAudit_Filter_AllResults" xml:space="preserve"><value>All results</value></data>
+  <data name="McpAudit_Filter_Tool" xml:space="preserve"><value>Tool</value></data>
+  <data name="McpAudit_Filter_From" xml:space="preserve"><value>From</value></data>
+  <data name="McpAudit_Filter_To" xml:space="preserve"><value>To</value></data>
+  <data name="McpAudit_Filter_CorrelationId" xml:space="preserve"><value>Correlation id</value></data>
+  <data name="McpAudit_Filter_OnlyDenied" xml:space="preserve"><value>Denied only</value></data>
+  <data name="McpAudit_Filter_Apply" xml:space="preserve"><value>Apply filter</value></data>
+  <data name="McpAudit_Filter_Clear" xml:space="preserve"><value>Reset</value></data>
+  <data name="McpAudit_LoadMore" xml:space="preserve"><value>Load more</value></data>
+  <data name="McpAudit_Empty" xml:space="preserve"><value>No activity yet – events appear here as soon as an AI system acts via your accesses.</value></data>
+  <data name="McpAudit_Verify" xml:space="preserve"><value>Verify chain</value></data>
+  <data name="McpAudit_Verify_Running" xml:space="preserve"><value>Verifying…</value></data>
+  <data name="McpAudit_Integrity_Intact" xml:space="preserve"><value>Chain intact ({0} entries checked).</value></data>
+  <data name="McpAudit_Integrity_Broken" xml:space="preserve"><value>Chain breach at entry {0}: {1}</value></data>
+  <data name="McpAudit_Integrity_Gaps" xml:space="preserve"><value>Sequence gaps:</value></data>
+  <data name="McpAudit_Export_Csv" xml:space="preserve"><value>Export (CSV)</value></data>
+  <data name="McpAudit_Export_Json" xml:space="preserve"><value>Export (JSON)</value></data>
+  <data name="McpAudit_Detail_Show" xml:space="preserve"><value>Details</value></data>
+  <data name="McpAudit_Detail_Hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="McpAudit_Detail_CorrelationId" xml:space="preserve"><value>Correlation id</value></data>
+  <data name="McpAudit_Detail_SourceIp" xml:space="preserve"><value>Source IP</value></data>
+  <data name="McpAudit_Detail_Duration" xml:space="preserve"><value>Duration</value></data>
+  <data name="McpAudit_Detail_Affected" xml:space="preserve"><value>Affected records</value></data>
+  <data name="McpAudit_Detail_Request" xml:space="preserve"><value>Request</value></data>
+  <data name="McpAudit_Detail_Hash" xml:space="preserve"><value>Entry hash</value></data>
+  <data name="McpAudit_Detail_Changes" xml:space="preserve"><value>Field changes (before/after)</value></data>
+  <data name="McpAudit_Detail_Payload" xml:space="preserve"><value>Parameters (raw data)</value></data>
+  <data name="McpAudit_Detail_References" xml:space="preserve"><value>Linked records</value></data>
+  <data name="McpAudit_Changes_EntityType" xml:space="preserve"><value>Entity</value></data>
+  <data name="McpAudit_Changes_EntityId" xml:space="preserve"><value>Record</value></data>
+  <data name="McpAudit_Changes_Field" xml:space="preserve"><value>Field</value></data>
+  <data name="McpAudit_Changes_Old" xml:space="preserve"><value>Before</value></data>
+  <data name="McpAudit_Changes_New" xml:space="preserve"><value>After</value></data>
+  <data name="McpAudit_Category_ToolCall" xml:space="preserve"><value>Tool call</value></data>
+  <data name="McpAudit_Category_DataChange" xml:space="preserve"><value>Change</value></data>
+  <data name="McpAudit_Category_AccessEvent" xml:space="preserve"><value>Access event</value></data>
+  <data name="McpAudit_Category_ApprovalEvent" xml:space="preserve"><value>Approval</value></data>
+  <data name="McpAudit_Category_SecurityEvent" xml:space="preserve"><value>Security</value></data>
+  <data name="McpAudit_Result_Success" xml:space="preserve"><value>Success</value></data>
+  <data name="McpAudit_Result_Denied" xml:space="preserve"><value>Denied</value></data>
+  <data name="McpAudit_Result_Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="McpAudit_Result_RateLimited" xml:space="preserve"><value>Rate limited</value></data>
+  <data name="McpAudit_Result_RedirectedToApproval" xml:space="preserve"><value>Approval required</value></data>
+  <data name="McpAudit_Line_Generic" xml:space="preserve"><value>{0}</value></data>
+  <data name="McpAudit_Line_ToolCall" xml:space="preserve"><value>Tool {0} called – {2} records</value></data>
+  <data name="McpAudit_Line_AccessCreated" xml:space="preserve"><value>Access "{1}" created</value></data>
+  <data name="McpAudit_Line_AccessUpdated" xml:space="preserve"><value>Access "{1}" updated</value></data>
+  <data name="McpAudit_Line_AccessActivated" xml:space="preserve"><value>Access "{1}" activated</value></data>
+  <data name="McpAudit_Line_AccessDeactivated" xml:space="preserve"><value>Access "{1}" deactivated</value></data>
+  <data name="McpAudit_Line_AccessRevoked" xml:space="preserve"><value>Access "{1}" revoked</value></data>
+  <data name="McpAudit_Line_TokenRotated" xml:space="preserve"><value>Token of "{1}" rotated</value></data>
+  <data name="McpAudit_Line_ScopesChanged" xml:space="preserve"><value>Scopes of "{1}" changed</value></data>
+  <data name="McpAudit_Line_FiltersChanged" xml:space="preserve"><value>Filters of "{1}" changed</value></data>
+  <data name="McpAudit_Line_AuthFailed" xml:space="preserve"><value>Authentication failed</value></data>
+  <data name="McpAudit_Line_AuditExported" xml:space="preserve"><value>Protocol exported</value></data>
+  <data name="Mcp_Usage_TotalCalls" xml:space="preserve"><value>Total calls</value></data>
+  <data name="Mcp_Usage_Success" xml:space="preserve"><value>Succeeded</value></data>
+  <data name="Mcp_Usage_Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Mcp_Usage_FailureRate" xml:space="preserve"><value>Failure rate</value></data>
+  <data name="Mcp_Usage_LastCall" xml:space="preserve"><value>Last call</value></data>
+  <data name="Mcp_Usage_TopTools" xml:space="preserve"><value>Top tools</value></data>
+  <data name="Mcp_Usage_RecentCalls" xml:space="preserve"><value>Recent calls</value></data>
+  <data name="Mcp_Usage_Empty" xml:space="preserve"><value>No calls via this access yet.</value></data>
+  <data name="Mcp_Usage_OpenHistory" xml:space="preserve"><value>Open history</value></data>
+  <data name="Mcp_Ribbon_AuditLog" xml:space="preserve"><value>Audit log</value></data>
+  <data name="Err_Mcp_InvalidArguments" xml:space="preserve"><value>The request contains invalid arguments.</value></data>
+  <data name="Setup_Section_Mcp" xml:space="preserve"><value>AI accesses</value></data>
+  <data name="Ribbon_Group_Mcp" xml:space="preserve"><value>AI</value></data>
+  <data name="McpSetup_Section_Accesses" xml:space="preserve"><value>Your AI accesses</value></data>
+  <data name="McpSetup_DisabledHint" xml:space="preserve"><value>AI features are currently disabled. Use the activation switches above to enable MCP.</value></data>
+  <data name="Nav_McpSecurity" xml:space="preserve"><value>AI security</value></data>
+  <data name="Nav_McpApprovals" xml:space="preserve"><value>Approvals</value></data>
+  <data name="Confirmation_McpApproveDestructive_Message" xml:space="preserve"><value>This action has a final, partly irreversible effect (delete, archive, merge, booking or reversal). The execution cannot be undone. Really approve?</value></data>
+  <data name="Confirmation_McpApproveDestructive_Title" xml:space="preserve"><value>Approve final action</value></data>
+  <data name="Confirmation_McpApprove_Message" xml:space="preserve"><value>The requested action enters the execution queue and runs exactly once. Continue?</value></data>
+  <data name="Confirmation_McpApprove_Title" xml:space="preserve"><value>Approve action</value></data>
+  <data name="Confirmation_McpBatchApprove_Message" xml:space="preserve"><value>All selected requests will be approved — each enters the execution queue individually. Continue?</value></data>
+  <data name="Confirmation_McpBatchApprove_Title" xml:space="preserve"><value>Approve multiple requests</value></data>
+  <data name="Confirmation_McpWriteAccess_Message" xml:space="preserve"><value>Write access unlocks all write-preparing and approval-requiring tools for every AI access. Continue?</value></data>
+  <data name="Confirmation_McpWriteAccess_Title" xml:space="preserve"><value>Enable write access</value></data>
+  <data name="Err_AlreadyReversed" xml:space="preserve"><value>The posting was already reversed.</value></data>
+  <data name="Err_ExecutionTimeout" xml:space="preserve"><value>The execution exceeded the time limit.</value></data>
+  <data name="Err_Internal" xml:space="preserve"><value>An internal error occurred.</value></data>
+  <data name="Err_Mcp_ApprovalRequired" xml:space="preserve"><value>This action requires your approval.</value></data>
+  <data name="Err_Mcp_PendingLimit" xml:space="preserve"><value>The limit of open approval requests is reached.</value></data>
+  <data name="Err_RightsRevoked" xml:space="preserve"><value>The required right has since been revoked from the access.</value></data>
+  <data name="Err_TargetGone" xml:space="preserve"><value>The target of the action no longer exists.</value></data>
+  <data name="Err_ValidationFailed" xml:space="preserve"><value>The business validation failed.</value></data>
+  <data name="General_Title_McpApprovals" xml:space="preserve"><value>Approval center</value></data>
+  <data name="General_Title_McpSecurity" xml:space="preserve"><value>AI security</value></data>
+  <data name="McpApproval_Action_Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="McpApproval_Action_Cancel" xml:space="preserve"><value>Withdraw</value></data>
+  <data name="McpApproval_Action_Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="McpApproval_Batch_Approve" xml:space="preserve"><value>Approve selected</value></data>
+  <data name="McpApproval_Batch_Reject" xml:space="preserve"><value>Reject selected</value></data>
+  <data name="McpApproval_Batch_Result" xml:space="preserve"><value>{0} of {1} requests decided.</value></data>
+  <data name="McpApproval_Batch_Selected" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="McpApproval_Comment_Hint" xml:space="preserve"><value>The comment is played back to the AI system as decision feedback.</value></data>
+  <data name="McpApproval_Comment_Placeholder" xml:space="preserve"><value>Comment (required for rejection)</value></data>
+  <data name="McpApproval_Destructive" xml:space="preserve"><value>final</value></data>
+  <data name="McpApproval_Detail_Access" xml:space="preserve"><value>Access</value></data>
+  <data name="McpApproval_Detail_DecisionNote" xml:space="preserve"><value>Decision note</value></data>
+  <data name="McpApproval_Detail_Effect" xml:space="preserve"><value>Effect preview (parameters)</value></data>
+  <data name="McpApproval_Detail_Failure" xml:space="preserve"><value>Failure reason</value></data>
+  <data name="McpApproval_Detail_Kind" xml:space="preserve"><value>Effect</value></data>
+  <data name="McpApproval_Detail_ReasonText" xml:space="preserve"><value>Message from the AI system (untrusted content):</value></data>
+  <data name="McpApproval_Detail_RequestId" xml:space="preserve"><value>Request</value></data>
+  <data name="McpApproval_Detail_Result" xml:space="preserve"><value>Execution result</value></data>
+  <data name="McpApproval_Detail_Tool" xml:space="preserve"><value>Tool (technical)</value></data>
+  <data name="McpApproval_ExpiresIn" xml:space="preserve"><value>expires in {0} h {1} min</value></data>
+  <data name="McpApproval_Filter_AllStatuses" xml:space="preserve"><value>All decided</value></data>
+  <data name="McpApproval_Filter_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="McpApproval_History_Empty" xml:space="preserve"><value>No decided requests yet.</value></data>
+  <data name="McpApproval_Inbox_Empty" xml:space="preserve"><value>No open requests — new approval requests from your AI systems appear here.</value></data>
+  <data name="McpApproval_Kind_Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="McpApproval_Kind_Book" xml:space="preserve"><value>Book draft</value></data>
+  <data name="McpApproval_Kind_Commit" xml:space="preserve"><value>Commit draft</value></data>
+  <data name="McpApproval_Kind_Delete" xml:space="preserve"><value>Delete permanently</value></data>
+  <data name="McpApproval_Kind_Discard" xml:space="preserve"><value>Discard draft</value></data>
+  <data name="McpApproval_Kind_Generic" xml:space="preserve"><value>Action</value></data>
+  <data name="McpApproval_Kind_Merge" xml:space="preserve"><value>Merge (irreversible)</value></data>
+  <data name="McpApproval_Kind_Reverse" xml:space="preserve"><value>Reverse posting</value></data>
+  <data name="McpApproval_PreApproved_Banner" xml:space="preserve"><value>Note: at least one of your accesses uses "durable pre-approval". Its actions run without per-action approval and appear here only in the history view.</value></data>
+  <data name="McpApproval_Status_Approved" xml:space="preserve"><value>approved</value></data>
+  <data name="McpApproval_Status_Executed" xml:space="preserve"><value>executed</value></data>
+  <data name="McpApproval_Status_Expired" xml:space="preserve"><value>expired</value></data>
+  <data name="McpApproval_Status_Failed" xml:space="preserve"><value>failed</value></data>
+  <data name="McpApproval_Status_Pending" xml:space="preserve"><value>pending</value></data>
+  <data name="McpApproval_Status_Rejected" xml:space="preserve"><value>rejected</value></data>
+  <data name="McpApproval_Title" xml:space="preserve"><value>Approval center</value></data>
+  <data name="McpApproval_ToolLabel_fm_accounts_manage" xml:space="preserve"><value>Accounts</value></data>
+  <data name="McpApproval_ToolLabel_fm_attachments_manage" xml:space="preserve"><value>Attachments</value></data>
+  <data name="McpApproval_ToolLabel_fm_budgets_manage" xml:space="preserve"><value>Budgets</value></data>
+  <data name="McpApproval_ToolLabel_fm_categories_manage" xml:space="preserve"><value>Categories</value></data>
+  <data name="McpApproval_ToolLabel_fm_contacts_manage" xml:space="preserve"><value>Contacts</value></data>
+  <data name="McpApproval_ToolLabel_fm_posting_reverse" xml:space="preserve"><value>Posting</value></data>
+  <data name="McpApproval_ToolLabel_fm_reports_configuration_manage" xml:space="preserve"><value>Report configuration</value></data>
+  <data name="McpApproval_ToolLabel_fm_savings_plans_manage" xml:space="preserve"><value>Savings plans</value></data>
+  <data name="McpApproval_ToolLabel_fm_securities_manage" xml:space="preserve"><value>Securities</value></data>
+  <data name="McpApproval_ToolLabel_fm_statement_draft_book" xml:space="preserve"><value>Statement draft</value></data>
+  <data name="McpApproval_ToolLabel_fm_statement_draft_discard" xml:space="preserve"><value>Statement draft</value></data>
+  <data name="McpApproval_View_History" xml:space="preserve"><value>History</value></data>
+  <data name="McpApproval_View_Inbox" xml:space="preserve"><value>Inbox</value></data>
+  <data name="McpSecurity_Accesses_Empty" xml:space="preserve"><value>No accesses configured.</value></data>
+  <data name="McpSecurity_Agg_Accesses" xml:space="preserve"><value>Accesses</value></data>
+  <data name="McpSecurity_Agg_Active" xml:space="preserve"><value>active</value></data>
+  <data name="McpSecurity_Agg_Denied24" xml:space="preserve"><value>Denied calls</value></data>
+  <data name="McpSecurity_Agg_Failed24" xml:space="preserve"><value>Failed calls</value></data>
+  <data name="McpSecurity_Agg_Pending" xml:space="preserve"><value>Pending requests</value></data>
+  <data name="McpSecurity_Agg_Queued" xml:space="preserve"><value>In execution</value></data>
+  <data name="McpSecurity_Agg_RateLimited24" xml:space="preserve"><value>Rate limits</value></data>
+  <data name="McpSecurity_Col_Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="McpSecurity_Col_Pending" xml:space="preserve"><value>Open</value></data>
+  <data name="McpSecurity_Events_Empty" xml:space="preserve"><value>No security events.</value></data>
+  <data name="McpSecurity_NotAuthorized" xml:space="preserve"><value>This overview is available to administrators only.</value></data>
+  <data name="McpSecurity_Section_Accesses" xml:space="preserve"><value>Accesses (all users, metadata only)</value></data>
+  <data name="McpSecurity_Section_Aggregates" xml:space="preserve"><value>Aggregates (24 h)</value></data>
+  <data name="McpSecurity_Section_Events" xml:space="preserve"><value>Security events (newest)</value></data>
+  <data name="McpSecurity_Section_Settings" xml:space="preserve"><value>MCP settings</value></data>
+  <data name="McpSecurity_Section_Switches" xml:space="preserve"><value>Global switches</value></data>
+  <data name="McpSecurity_Settings_Enabled" xml:space="preserve"><value>Enable MCP</value></data>
+  <data name="McpSecurity_Settings_Enabled_Hint" xml:space="preserve"><value>Enables the /mcp endpoint. While off, every MCP request is rejected with 503.</value></data>
+  <data name="McpSecurity_Settings_WriteAccess" xml:space="preserve"><value>Allow write access</value></data>
+  <data name="McpSecurity_Settings_WriteAccess_Hint" xml:space="preserve"><value>Allows write-preparing and approval-requiring tools. Read and suggest tools are unaffected.</value></data>
+  <data name="McpSecurity_State_Off" xml:space="preserve"><value>off</value></data>
+  <data name="McpSecurity_State_On" xml:space="preserve"><value>on</value></data>
+  <data name="McpSecurity_Switches_Hint" xml:space="preserve"><value>The switches are stored in the database and take effect immediately — write access is a separate opt-in switch.</value></data>
+  <data name="McpSecurity_Title" xml:space="preserve"><value>MCP security overview</value></data>
+  <data name="Mcp_Monitor_Approved" xml:space="preserve"><value>In execution queue</value></data>
+  <data name="Mcp_Monitor_Empty" xml:space="preserve"><value>No requests for this access yet.</value></data>
+  <data name="Mcp_Monitor_Last24h" xml:space="preserve"><value>Last 24 h</value></data>
+  <data name="Mcp_Monitor_OldestPending" xml:space="preserve"><value>Oldest pending request</value></data>
+  <data name="Mcp_Monitor_Pending" xml:space="preserve"><value>Pending requests</value></data>
+  <data name="Mcp_PreApproved_Banner" xml:space="preserve"><value>Pre-approved actions active: this access runs matching write-preparing and approval-required actions without per-action approval. Every execution is still fully audited.</value></data>
+  <data name="Mcp_Section_Monitoring" xml:space="preserve"><value>Runtime monitoring</value></data>
+  <data name="LinkedAccounts_Section_Title" xml:space="preserve"><value>Linked accounts</value></data>
+  <data name="LinkedAccounts_Empty" xml:space="preserve"><value>No linked accounts. The accumulated amount is computed from the plan's postings.</value></data>
+  <data name="LinkedAccounts_Add_Button" xml:space="preserve"><value>Link</value></data>
+  <data name="LinkedAccounts_Remove_Button" xml:space="preserve"><value>Unlink</value></data>
+  <data name="LinkedAccounts_Select_Placeholder" xml:space="preserve"><value>Select account...</value></data>
+  <data name="LinkedAccounts_None_Available" xml:space="preserve"><value>No account available</value></data>
+  <data name="Ribbon_SavingsPlan_ActualReport" xml:space="preserve"><value>Actual-balance report</value></data>
+  <data name="ActualReport_Title" xml:space="preserve"><value>Actual-balance report</value></data>
+  <data name="ActualReport_Description" xml:space="preserve"><value>Enter the real balance of this savings plan. The difference to the current amount is booked as a correction posting - no account movement is created.</value></data>
+  <data name="ActualReport_Balance_Placeholder" xml:space="preserve"><value>Reported balance</value></data>
+  <data name="ActualReport_Error_InvalidAmount" xml:space="preserve"><value>Please enter a valid amount.</value></data>
+  <data name="ActualReport_Error_Failed" xml:space="preserve"><value>The actual-balance report could not be captured.</value></data>
+  <data name="ActualReport_Error_Linked" xml:space="preserve"><value>Actual-balance reports are only available for plans without linked accounts.</value></data>
+  <data name="ActualReport_Disabled_Linked" xml:space="preserve"><value>Not available for plans with linked accounts - the account balance is the source of truth.</value></data>
+  <data name="List_Th_Postings_Marks" xml:space="preserve"><value>Marks</value></data>
+  <data name="Posting_Flag_Informal" xml:space="preserve"><value>informal</value></data>
+  <data name="Posting_Flag_ActualReport" xml:space="preserve"><value>actual report</value></data>
+  <data name="Card_Caption_Posting_Informal" xml:space="preserve"><value>Informal</value></data>
+  <data name="Card_Caption_Posting_SavingsPlanSubType" xml:space="preserve"><value>Plan posting type</value></data>
+  <data name="EnumType_SavingsPlanPostingSubType_ActualReport" xml:space="preserve"><value>Actual report</value></data>
+  <data name="Card_Caption_SavingsPlan_OwnAmount" xml:space="preserve"><value>Own share</value></data>
+  <data name="LinkedAccounts_Info_Button" xml:space="preserve"><value>What is this link for?</value></data>
+  <data name="LinkedAccounts_Info_Balance" xml:space="preserve"><value>The savings plan balance is coupled to the balances of the linked bank accounts.</value></data>
+  <data name="LinkedAccounts_Info_OwnShare" xml:space="preserve"><value>Postings assigned to the savings plan in bank statements count as the own share.</value></data>
+  <data name="LinkedAccounts_Info_Inflow" xml:space="preserve"><value>The account inflow is the basis for rhythm and deficit analysis.</value></data>
+  <data name="LinkedAccounts_Info_Informal" xml:space="preserve"><value>Funding postings on other accounts can be marked as informal documentation.</value></data>
+  <data name="LinkedAccounts_Info_Fallback" xml:space="preserve"><value>Without linked accounts the posting-based evaluation stays active.</value></data>
+  <data name="LinkedAccounts_OpenAccount_Button" xml:space="preserve"><value>Open account</value></data>
 </root>

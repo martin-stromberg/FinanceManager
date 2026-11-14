@@ -105,6 +105,27 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
             var contactService = scope.ServiceProvider.GetRequiredService<FinanceManager.Application.Contacts.IContactService>();
             await contactService.CreateAsync(userId, "FixContact", FinanceManager.Shared.Dtos.Contacts.ContactType.Person, null, "fix", false, TestContext.Current.CancellationToken);
+
+            // Seed rows for the sections completing the backup cycle so the restore path is
+            // exercised end-to-end (statement imports/entries, notifications, account shares,
+            // linked IBANs and the portfolio KPI configuration).
+            var seededAccount = db.Accounts.First(a => a.OwnerUserId == userId);
+            seededAccount.SetIsCollectionAccount(true);
+            var seededImport = new FinanceManager.Domain.Statements.StatementImport(seededAccount.Id, FinanceManager.Shared.Dtos.Statements.ImportFormat.Csv, "seeded-statement.csv");
+            db.StatementImports.Add(seededImport);
+            db.StatementEntries.Add(new FinanceManager.Domain.Statements.StatementEntry(seededImport.Id, new DateTime(2025, 5, 5, 0, 0, 0, DateTimeKind.Utc), -42.17m, "SeededSubject", "seeded-raw-hash", "Seeded Recipient", null, "EUR", "seeded description", false, false));
+            db.Notifications.Add(new FinanceManager.Domain.Notifications.Notification
+            {
+                OwnerUserId = userId,
+                Title = "Seeded",
+                Message = "Seeded notification",
+                Type = FinanceManager.Domain.Notifications.NotificationType.SystemAlert,
+                ScheduledDateUtc = new DateTime(2025, 5, 6, 0, 0, 0, DateTimeKind.Utc)
+            });
+            db.AccountShares.Add(new FinanceManager.Domain.Accounts.AccountShare(seededAccount.Id, Guid.NewGuid(), FinanceManager.Domain.AccountShareRole.Read));
+            db.AccountLinkedIbans.Add(new FinanceManager.Domain.Accounts.AccountLinkedIban(seededAccount.Id, "DE02120300000000202051"));
+            db.PortfolioKpiConfigurations.Add(new FinanceManager.Domain.Portfolio.PortfolioKpiConfiguration(userId, "[\"kpi.a\",\"kpi.b\"]", "[\"kpi.b\",\"kpi.a\"]"));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // capture full snapshot before backup (ID-agnostic projections)
@@ -250,6 +271,8 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         List<FinanceManager.Domain.Budget.BudgetPurpose.BudgetPurposeBackupDto> BudgetPurposes,
         List<FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto> BudgetRules,
         List<FinanceManager.Domain.Budget.BudgetOverride.BudgetOverrideBackupDto> BudgetOverrides,
+        List<FinanceManager.Domain.Accounts.AccountLinkedIban.AccountLinkedIbanBackupDto> AccountLinkedIbans,
+        List<FinanceManager.Domain.Portfolio.PortfolioKpiConfiguration.PortfolioKpiConfigurationBackupDto> PortfolioKpiConfigurations,
         List<AggregateDto> Aggregates
     );
 
@@ -297,6 +320,9 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
 
         var accountShares = db.AccountShares.AsNoTracking().Where(s => accountIds.Contains(s.AccountId) || s.UserId == userId).Select(s => s.ToBackupDto()).ToList();
 
+        var accountLinkedIbans = db.AccountLinkedIbans.AsNoTracking().Where(l => accountIds.Contains(l.AccountId)).Select(l => l.ToBackupDto()).ToList();
+        var portfolioKpiConfigurations = db.PortfolioKpiConfigurations.AsNoTracking().Where(c => c.OwnerUserId == userId).Select(c => c.ToBackupDto()).ToList();
+
         var budgetCategories = db.BudgetCategories.AsNoTracking()
             .Where(c => c.OwnerUserId == userId)
             .Select(c => c.ToBackupDto())
@@ -305,7 +331,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var budgetPurposes = db.BudgetPurposes.AsNoTracking().Where(b => b.OwnerUserId == userId).Select(b => b.ToBackupDto()).ToList();
         var budgetPurposeIds = budgetPurposes.Select(b => b.Id).ToList();
         var budgetRules = db.BudgetRules.AsNoTracking()
-            .Where(r => r.BudgetPurposeId != null && budgetPurposeIds.Contains(r.BudgetPurposeId.Value))
+            .Where(r => r.OwnerUserId == userId)
             .Select(r => r.ToBackupDto())
             .ToList();
         var budgetOverrides = db.BudgetOverrides.AsNoTracking().Where(o => budgetPurposeIds.Contains(o.BudgetPurposeId)).Select(o => o.ToBackupDto()).ToList();
@@ -337,6 +363,8 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             budgetPurposes,
             budgetRules,
             budgetOverrides,
+            accountLinkedIbans,
+            portfolioKpiConfigurations,
             aggregates);
     }
 
@@ -694,11 +722,52 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             return adjusted;
         }).ToList();
 
-        // Remap statement imports
-        var statementImports = before.StatementImports.Select(si => si with { AccountId = accountIdMap.TryGetValue(si.AccountId, out var na) ? na : si.AccountId }).ToList();
+        // before posting id -> after posting id (Select preserves order)
+        var postingIdMap = new Dictionary<Guid, Guid>();
+        for (var i = 0; i < before.Postings.Count; i++)
+        {
+            if (before.Postings[i].Id != postings[i].Id) postingIdMap[before.Postings[i].Id] = postings[i].Id;
+        }
 
-        // Other lists: keep as-is, but update IDs where possible via maps
-        var statementEntries = before.StatementEntries.ToList();
+        // Remap statement imports: account via account map, id via business key
+        string ImportKey(FinanceManager.Domain.Statements.StatementImport.StatementImportBackupDto i)
+            => $"{i.AccountId}|{i.OriginalFileName}|{i.ImportedAtUtc.Ticks}";
+        var afterImportKeyToDto = after.StatementImports
+            .GroupBy(ImportKey)
+            .ToDictionary(g => g.Key, g => g.First());
+        var importIdMap = new Dictionary<Guid, Guid>();
+        var statementImports = before.StatementImports.Select(si =>
+        {
+            var adjusted = si with { AccountId = accountIdMap.TryGetValue(si.AccountId, out var na) ? na : si.AccountId };
+            if (afterImportKeyToDto.TryGetValue(ImportKey(adjusted), out var afterImport))
+            {
+                importIdMap[si.Id] = afterImport.Id;
+                // StatementImport.AssignBackupDto intentionally does not restore the entity
+                // timestamps (CreatedUtc/ModifiedUtc) - align them for the comparison.
+                adjusted = adjusted with { Id = afterImport.Id, CreatedUtc = afterImport.CreatedUtc, ModifiedUtc = afterImport.ModifiedUtc };
+            }
+            return adjusted;
+        }).ToList();
+
+        // Remap statement entries: references via maps, id via globally unique RawHash
+        var entryHashToId = after.StatementEntries
+            .GroupBy(e => e.RawHash)
+            .ToDictionary(g => g.Key, g => g.First().Id);
+        var statementEntries = before.StatementEntries.Select(e =>
+        {
+            var adjusted = e with
+            {
+                StatementImportId = importIdMap.TryGetValue(e.StatementImportId, out var ni) ? ni : e.StatementImportId,
+                ContactId = e.ContactId.HasValue && contactIdMap.TryGetValue(e.ContactId.Value, out var nce) ? nce : e.ContactId,
+                SavingsPlanId = e.SavingsPlanId.HasValue && savingsPlanNameToId.TryGetValue(before.SavingsPlans.FirstOrDefault(sp => sp.Id == e.SavingsPlanId)?.Name ?? string.Empty, out var nsp) ? nsp : e.SavingsPlanId,
+                SecurityTransactionId = e.SecurityTransactionId.HasValue && postingIdMap.TryGetValue(e.SecurityTransactionId.Value, out var np) ? np : e.SecurityTransactionId
+            };
+            if (entryHashToId.TryGetValue(e.RawHash, out var mappedEntryId))
+            {
+                adjusted = adjusted with { Id = mappedEntryId };
+            }
+            return adjusted;
+        }).ToList();
 
 
         // Remap StatementDrafts: update DetectedAccountId and align draft Ids to 'after' snapshot by OriginalFileName when possible
@@ -757,16 +826,103 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             return adjusted with { Id = newId };
         }).ToList();
 
+        // Report favorites keep entity references in CSV lists which are remapped to the new
+        // entity ids on import - align the before snapshot the same way.
+        var savingsPlanIdMap = new Dictionary<Guid, Guid>();
+        foreach (var sp in before.SavingsPlans)
+        {
+            if (savingsPlanNameToId.TryGetValue(sp.Name, out var nsp)) savingsPlanIdMap[sp.Id] = nsp;
+        }
+        var contactCategoryIdMap = new Dictionary<Guid, Guid>();
+        foreach (var c in before.ContactCategories)
+        {
+            if (contactCategoryNameToId.TryGetValue(c.Name, out var ncc)) contactCategoryIdMap[c.Id] = ncc;
+        }
+        var savingsPlanCategoryIdMap = new Dictionary<Guid, Guid>();
+        foreach (var c in before.SavingsPlanCategories)
+        {
+            if (savingsPlanCategoryNameToId.TryGetValue(c.Name, out var nspc)) savingsPlanCategoryIdMap[c.Id] = nspc;
+        }
+        var securityCategoryIdMap = new Dictionary<Guid, Guid>();
+        foreach (var c in before.SecurityCategories)
+        {
+            if (securityCategoryNameToId.TryGetValue(c.Name, out var nscc)) securityCategoryIdMap[c.Id] = nscc;
+        }
+
+        static string? RemapCsvIds(string? csv, IReadOnlyDictionary<Guid, Guid> map)
+        {
+            if (string.IsNullOrWhiteSpace(csv)) { return csv; }
+            var mapped = csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Guid.TryParse(s, out var g) && map.TryGetValue(g, out var n) ? n : (Guid?)null)
+                .Where(g => g.HasValue)
+                .Select(g => g!.Value)
+                .Distinct()
+                .ToArray();
+            return mapped.Length == 0 ? null : string.Join(',', mapped);
+        }
+
         var reportFavoriteNameToId = after.ReportFavorites.ToDictionary(r => r.Name, r => r.Id);
         var reportFavorites = before.ReportFavorites.Select(rf =>
         {
-            if (reportFavoriteNameToId.TryGetValue(rf.Name, out var nid)) return rf with { Id = nid };
-            return rf;
+            var adjusted = rf with
+            {
+                AccountIdsCsv = RemapCsvIds(rf.AccountIdsCsv, accountIdMap),
+                ContactIdsCsv = RemapCsvIds(rf.ContactIdsCsv, contactIdMap),
+                SavingsPlanIdsCsv = RemapCsvIds(rf.SavingsPlanIdsCsv, savingsPlanIdMap),
+                SecurityIdsCsv = RemapCsvIds(rf.SecurityIdsCsv, securityIdMap),
+                ContactCategoryIdsCsv = RemapCsvIds(rf.ContactCategoryIdsCsv, contactCategoryIdMap),
+                SavingsPlanCategoryIdsCsv = RemapCsvIds(rf.SavingsPlanCategoryIdsCsv, savingsPlanCategoryIdMap),
+                SecurityCategoryIdsCsv = RemapCsvIds(rf.SecurityCategoryIdsCsv, securityCategoryIdMap)
+            };
+            if (reportFavoriteNameToId.TryGetValue(rf.Name, out var nid)) return adjusted with { Id = nid };
+            return adjusted;
         }).ToList();
         var homeKpis = before.HomeKpis.ToList();
         var attachmentCategories = remappedAttachmentCategories;
+        // Notifications keep their backup id on restore - no remapping needed.
         var notifications = before.Notifications.ToList();
-        var accountShares = before.AccountShares.ToList();
+
+        // Remap account shares: account via account map, id via business key
+        string ShareKey(FinanceManager.Domain.Accounts.AccountShare.AccountShareBackupDto s)
+            => $"{s.AccountId}|{s.UserId}|{s.Role}";
+        var afterShareKeyToId = after.AccountShares
+            .GroupBy(ShareKey)
+            .ToDictionary(g => g.Key, g => g.First().Id);
+        var accountShares = before.AccountShares.Select(s =>
+        {
+            var adjusted = s with { AccountId = accountIdMap.TryGetValue(s.AccountId, out var na) ? na : s.AccountId };
+            if (afterShareKeyToId.TryGetValue(ShareKey(adjusted), out var mappedShareId))
+            {
+                adjusted = adjusted with { Id = mappedShareId };
+            }
+            return adjusted;
+        }).ToList();
+
+        // Remap linked ibans: account via account map, id via business key
+        string LinkedIbanKey(FinanceManager.Domain.Accounts.AccountLinkedIban.AccountLinkedIbanBackupDto l)
+            => $"{l.AccountId}|{l.Iban}";
+        var afterLinkedIbanKeyToId = after.AccountLinkedIbans
+            .GroupBy(LinkedIbanKey)
+            .ToDictionary(g => g.Key, g => g.First().Id);
+        var accountLinkedIbans = before.AccountLinkedIbans.Select(l =>
+        {
+            var adjusted = l with { AccountId = accountIdMap.TryGetValue(l.AccountId, out var na) ? na : l.AccountId };
+            if (afterLinkedIbanKeyToId.TryGetValue(LinkedIbanKey(adjusted), out var mappedLinkedId))
+            {
+                adjusted = adjusted with { Id = mappedLinkedId };
+            }
+            return adjusted;
+        }).ToList();
+
+        // One portfolio KPI configuration row exists per user and is upserted in place on restore.
+        var portfolioKpiConfigurations = before.PortfolioKpiConfigurations.Select(c =>
+        {
+            if (after.PortfolioKpiConfigurations.Count == 1)
+            {
+                return c with { Id = after.PortfolioKpiConfigurations[0].Id };
+            }
+            return c;
+        }).ToList();
 
         // --- Budgets: align Purpose Ids and SourceIds ---
         var budgetCategoryNameToId = after.BudgetCategories.ToDictionary(c => c.Name, c => c.Id);
@@ -841,9 +997,15 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             return adjusted;
         }).ToList();
 
-        // Rules: remap BudgetPurposeId and align rule id by composite key
+        // Rules: remap BudgetPurposeId and BudgetCategoryId, align rule id by composite key
+        var budgetCategoryIdMap = new Dictionary<Guid, Guid>();
+        foreach (var bc in before.BudgetCategories)
+        {
+            if (budgetCategoryNameToId.TryGetValue(bc.Name, out var bca)) budgetCategoryIdMap[bc.Id] = bca;
+        }
+
         static string RuleKey(FinanceManager.Domain.Budget.BudgetRule.BudgetRuleBackupDto r)
-            => $"{r.BudgetPurposeId}|{r.Amount}|{r.Interval}|{r.CustomIntervalMonths}|{r.StartDate:O}|{(r.EndDate.HasValue ? r.EndDate.Value.ToString("O") : string.Empty)}";
+            => $"{r.BudgetPurposeId}|{r.BudgetCategoryId}|{r.Amount}|{r.Interval}|{r.CustomIntervalMonths}|{r.StartDate:O}|{(r.EndDate.HasValue ? r.EndDate.Value.ToString("O") : string.Empty)}|{r.PurposePattern}|{r.PurposePatternIsRegex}";
 
         var afterRuleKeyToId = after.BudgetRules
             .Select(r => new { r.Id, Key = RuleKey(r) })
@@ -853,7 +1015,8 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
         var budgetRules = before.BudgetRules.Select(r =>
         {
             var newPurposeId = (r.BudgetPurposeId != null && budgetPurposeIdMap.TryGetValue(r.BudgetPurposeId.Value, out var mp)) ? mp : r.BudgetPurposeId;
-            var adjusted = r with { BudgetPurposeId = newPurposeId };
+            var newCategoryId = (r.BudgetCategoryId != null && budgetCategoryIdMap.TryGetValue(r.BudgetCategoryId.Value, out var mc)) ? mc : r.BudgetCategoryId;
+            var adjusted = r with { BudgetPurposeId = newPurposeId, BudgetCategoryId = newCategoryId };
             var key = RuleKey(adjusted);
             if (afterRuleKeyToId.TryGetValue(key, out var rid))
             {
@@ -908,6 +1071,8 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             budgetPurposes,
             budgetRules,
             budgetOverrides,
+            accountLinkedIbans,
+            portfolioKpiConfigurations,
             before.Aggregates);
     }
 
@@ -1025,6 +1190,8 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             s.BudgetPurposes.OrderBy(b => b.Name).ThenBy(b => b.SourceType).ToList(),
             s.BudgetRules.OrderBy(r => r.BudgetPurposeId).ThenBy(r => r.StartDate).ThenBy(r => r.Interval).ThenBy(r => r.Amount).ToList(),
             s.BudgetOverrides.OrderBy(o => o.BudgetPurposeId).ThenBy(o => o.PeriodYear).ThenBy(o => o.PeriodMonth).ToList(),
+            s.AccountLinkedIbans.OrderBy(l => l.AccountId).ThenBy(l => l.Iban).ToList(),
+            s.PortfolioKpiConfigurations.OrderBy(c => c.Id).ToList(),
             s.Aggregates.OrderBy(a => a.EntityType).ThenBy(a => a.EntityName).ToList()
         );
     }

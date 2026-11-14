@@ -18,7 +18,7 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="securityId">Optional security id.</param>
     /// <param name="bookingDate">Booking date of the posting.</param>
     /// <param name="amount">Monetary amount for the posting.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID or when all of <paramref name="accountId"/>, <paramref name="contactId"/>, <paramref name="savingsPlanId"/> and <paramref name="securityId"/> are <c>null</c>.</exception>
     public Posting(Guid sourceId, PostingKind kind, Guid? accountId, Guid? contactId, Guid? savingsPlanId, Guid? securityId, DateTime bookingDate, decimal amount)
         : this(sourceId, kind, accountId, contactId, savingsPlanId, securityId, bookingDate, bookingDate, amount, null, null, null, null, null) { }
 
@@ -37,7 +37,7 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="recipientName">Optional recipient name.</param>
     /// <param name="description">Optional description.</param>
     /// <param name="securitySubType">Optional security subtype.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID or when all of <paramref name="accountId"/>, <paramref name="contactId"/>, <paramref name="savingsPlanId"/> and <paramref name="securityId"/> are <c>null</c>.</exception>
     public Posting(
         Guid sourceId,
         PostingKind kind,
@@ -70,7 +70,7 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="description">Optional description.</param>
     /// <param name="securitySubType">Optional security subtype.</param>
     /// <param name="quantity">Optional quantity for securities postings.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID or when all of <paramref name="accountId"/>, <paramref name="contactId"/>, <paramref name="savingsPlanId"/> and <paramref name="securityId"/> are <c>null</c>.</exception>
     public Posting(
         Guid sourceId,
         PostingKind kind,
@@ -104,7 +104,7 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="description">Optional description.</param>
     /// <param name="securitySubType">Optional security subtype.</param>
     /// <param name="quantity">Optional quantity.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID or when all of <paramref name="accountId"/>, <paramref name="contactId"/>, <paramref name="savingsPlanId"/> and <paramref name="securityId"/> are <c>null</c>.</exception>
     public Posting(
         Guid sourceId,
         PostingKind kind,
@@ -122,6 +122,10 @@ public sealed class Posting : Entity, IAggregateRoot
         decimal? quantity)
     {
         SourceId = Guards.NotEmpty(sourceId, nameof(sourceId));
+        if (accountId is null && contactId is null && savingsPlanId is null && securityId is null)
+        {
+            throw new ArgumentException("At least one target reference (account, contact, savings plan or security) must be set.");
+        }
         Kind = kind;
         AccountId = accountId;
         ContactId = contactId;
@@ -156,7 +160,7 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="text2">Optional text field 2.</param>
     /// <param name="text3">Optional text field 3.</param>
     /// <param name="subType">Optional security posting sub-type.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="sourceId"/> is an empty GUID or when all of <paramref name="accountId"/>, <paramref name="contactId"/>, <paramref name="savingsPlanId"/> and <paramref name="securityId"/> are <c>null</c>.</exception>
     public Posting(Guid sourceId, PostingKind kind, Guid? accountId, Guid? contactId, Guid? savingsPlanId, Guid? securityId, DateTime bookingDate, DateTime valutaDate, decimal amount, string? text1, string? text2, string? text3, SecurityPostingSubType? subType)
         : this(sourceId, kind, accountId, contactId, savingsPlanId, securityId, bookingDate, valutaDate, amount, text1, text2, text3, subType, null) { }
 
@@ -182,24 +186,28 @@ public sealed class Posting : Entity, IAggregateRoot
     /// Optional account id referenced by the posting.
     /// </summary>
     /// <value>The account id or null.</value>
+    /// <remarks>At least one of <see cref="AccountId"/>, <see cref="ContactId"/>, <see cref="SavingsPlanId"/> or <see cref="SecurityId"/> must be set.</remarks>
     public Guid? AccountId { get; private set; }
 
     /// <summary>
     /// Optional contact id referenced by the posting.
     /// </summary>
     /// <value>The contact id or null.</value>
+    /// <remarks>At least one of <see cref="AccountId"/>, <see cref="ContactId"/>, <see cref="SavingsPlanId"/> or <see cref="SecurityId"/> must be set.</remarks>
     public Guid? ContactId { get; private set; }
 
     /// <summary>
     /// Optional savings plan id referenced by the posting.
     /// </summary>
     /// <value>The savings plan id or null.</value>
+    /// <remarks>At least one of <see cref="AccountId"/>, <see cref="ContactId"/>, <see cref="SavingsPlanId"/> or <see cref="SecurityId"/> must be set.</remarks>
     public Guid? SavingsPlanId { get; private set; }
 
     /// <summary>
     /// Optional security id referenced by the posting.
     /// </summary>
     /// <value>The security id or null.</value>
+    /// <remarks>At least one of <see cref="AccountId"/>, <see cref="ContactId"/>, <see cref="SavingsPlanId"/> or <see cref="SecurityId"/> must be set.</remarks>
     public Guid? SecurityId { get; private set; }
     /// <summary>
     /// Booking date of the posting.
@@ -240,6 +248,26 @@ public sealed class Posting : Entity, IAggregateRoot
     /// </summary>
     /// <value>The security posting subtype or null.</value>
     public SecurityPostingSubType? SecuritySubType { get; private set; }
+
+    /// <summary>
+    /// Optional savings plan posting subtype. Set only on postings with
+    /// <see cref="PostingKind.SavingsPlan"/> - currently used to mark actual-balance report
+    /// ("Istmeldung") correction postings created without an account movement.
+    /// </summary>
+    /// <value>The savings plan posting subtype or null.</value>
+    public SavingsPlanPostingSubType? SavingsPlanSubType { get; private set; }
+
+    /// <summary>
+    /// Sets the savings plan posting subtype marker (e.g. actual-balance report).
+    /// </summary>
+    /// <param name="subType">The savings plan posting subtype to set.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
+    public Posting SetSavingsPlanSubType(SavingsPlanPostingSubType subType)
+    {
+        SavingsPlanSubType = subType;
+        Touch();
+        return this;
+    }
 
     // Neu: Menge (nur f�r Wertpapier-Postings belegt)
     /// <summary>
@@ -484,15 +512,16 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="ReversedByUserId">Optional user ID who reversed this posting.</param>
     /// <param name="ReversedAtUtc">Optional timestamp when this posting was reversed.</param>
     /// <param name="IsPreliminary">Indicates whether this posting is a preliminary (provisional) booking.</param>
+    /// <param name="SavingsPlanSubType">Optional savings plan posting subtype (e.g. actual-balance report).</param>
     /// <returns>The result.</returns>
-    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc, bool IsPreliminary = false);
+    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc, bool IsPreliminary = false, SavingsPlanPostingSubType? SavingsPlanSubType = null);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this posting.
     /// </summary>
     /// <returns>A <see cref="PostingBackupDto"/> containing values required to restore this posting.</returns>
     public PostingBackupDto ToBackupDto()
-        => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc, IsPreliminary);
+        => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc, IsPreliminary, SavingsPlanSubType);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this posting instance.
@@ -525,5 +554,6 @@ public sealed class Posting : Entity, IAggregateRoot
         ReversedByUserId = dto.ReversedByUserId;
         ReversedAtUtc = dto.ReversedAtUtc;
         IsPreliminary = dto.IsPreliminary;
+        SavingsPlanSubType = dto.SavingsPlanSubType;
     }
 }

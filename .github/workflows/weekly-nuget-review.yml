@@ -1,0 +1,62 @@
+name: Weekly NuGet Package Review
+
+# Scheduled issue automation: every week an issue is created that mentions
+# @softwarewerkstatt to trigger the automated analysis. The issue is only created
+# when no open issue of the same type (same title prefix) exists, so a review that
+# is still being processed is never duplicated by the next cycle.
+on:
+  schedule:
+    # Every Monday, 05:00 UTC.
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: weekly-nuget-review
+  cancel-in-progress: false
+
+jobs:
+  create-review-issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TITLE_PREFIX: 'NuGet-Paketprüfung'
+
+    steps:
+      - name: Check for existing open review issue
+        id: check
+        run: |
+          count=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --search "in:title \"${TITLE_PREFIX}\"" \
+            --json number --jq 'length')
+          echo "Found $count open issue(s) with title prefix '${TITLE_PREFIX}'."
+          echo "open=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Create review issue
+        if: steps.check.outputs.open == '0'
+        run: |
+          title="${TITLE_PREFIX} – KW $(date -u +%V/%G)"
+          body=$(cat <<'BODY'
+          @softwarewerkstatt
+
+          Bitte analysiere alle verwendeten NuGet-Pakete.
+
+          Prüfe:
+
+          - Verfügbare Updates
+          - Security-Updates
+          - Pakete mit bekannt gewordenen Schwachstellen
+          - Veraltete oder nicht mehr gepflegte Pakete
+          - Empfohlene Nachfolgepakete
+          - Mögliche Breaking Changes bei Updates
+
+          Erstelle konkrete Update-Empfehlungen inklusive Risikobewertung.
+          BODY
+          )
+          gh issue create --repo "${{ github.repository }}" --title "$title" --body "$body"

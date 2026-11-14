@@ -1,6 +1,8 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Moq;
 
 namespace FinanceManager.Tests.ViewModels;
@@ -344,5 +346,355 @@ public sealed class ReportDashboardViewModelTests
     {
         var p = new ReportAggregatePointDto(DateTime.UtcNow, "x", "n", null, 0m, null, null, -10m, -5m);
         Assert.True(ReportDashboardViewModel.IsNegative(p));
+    }
+
+    /// <summary>
+    /// Verifies that the chosen <c>SavingsPlanPostingSource</c> is forwarded into the API payloads for
+    /// both favorite creation and update, so the server receives the selection instead of silently
+    /// falling back to <c>PlanPostings</c>.
+    /// </summary>
+    [Fact]
+    public async Task SaveAndUpdateFavorite_ForwardSavingsPlanPostingSource()
+    {
+        var (vm, apiMock) = CreateVm();
+        var fav = new ReportFavoriteDto(Guid.NewGuid(), "Fav", PostingKind.SavingsPlan, false, ReportInterval.Month, 24, false, false, false, true, true, DateTime.UtcNow, null, new[] { PostingKind.SavingsPlan }, null, false, SavingsPlanPostingSource.LinkedAccountPostings);
+
+        apiMock.Setup(a => a.Reports_CreateFavoriteAsync(It.IsAny<ReportFavoriteCreateApiRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(fav);
+        apiMock.Setup(a => a.Reports_UpdateFavoriteAsync(It.IsAny<Guid>(), It.IsAny<ReportFavoriteUpdateApiRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(fav);
+
+        await vm.SaveFavoriteAsync("n", PostingKind.SavingsPlan, false, 0, 24, false, false, false, true, true, new[] { PostingKind.SavingsPlan }, null, ct: TestContext.Current.CancellationToken, savingsPlanPostingSource: SavingsPlanPostingSource.LinkedAccountPostings);
+        apiMock.Verify(a => a.Reports_CreateFavoriteAsync(
+            It.Is<ReportFavoriteCreateApiRequest>(r => r.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.SavingsPlan, false, 0, 24, false, false, false, true, true, new[] { PostingKind.SavingsPlan }, null, ct: TestContext.Current.CancellationToken, savingsPlanPostingSource: SavingsPlanPostingSource.LinkedAccountPostings);
+        apiMock.Verify(a => a.Reports_UpdateFavoriteAsync(
+            It.IsAny<Guid>(),
+            It.Is<ReportFavoriteUpdateApiRequest>(r => r.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that the ribbon's "open filters" action stays enabled outside edit mode so a filter can be
+    /// edited (not only cleared via "clear filters"), matching the requirement that filters are editable
+    /// for the currently displayed report.
+    /// </summary>
+    [Fact]
+    public void FiltersOpen_StaysEnabled_OutsideEditMode()
+    {
+        var (vm, _) = CreateVm();
+        vm.EditMode = false;
+
+        var localizerMock = new Mock<IStringLocalizer>();
+        localizerMock.Setup(l => l[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key));
+
+        var actions = vm.GetRibbonRegisters(localizerMock.Object)!
+            .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+            .SelectMany(t => t.Items)
+            .ToList();
+
+        var filtersOpen = actions.First(a => a.Id == "FiltersOpen");
+        Assert.False(filtersOpen.Disabled);
+    }
+
+    /// <summary>
+    /// Verifies the filter-editing flow: opening the filter dialog copies the active selection into the
+    /// temporary buffers, toggling an option changes only the temporary state, and applying writes the
+    /// temporary selection back to the active filters and triggers a reload.
+    /// </summary>
+    [Fact]
+    public async Task FilterDialog_TempChanges_ApplyToActiveFilters()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.SavingsPlan };
+
+        apiMock.Setup(a => a.SavingsPlans_ListAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SavingsPlanDto> { new() { Id = planId, Name = "Bausparen" } });
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportAggregationResult(ReportInterval.Month, Array.Empty<ReportAggregatePointDto>(), false, false, false));
+
+        vm.OpenFilterDialog();
+        Assert.True(vm.ShowFilterDialog);
+        Assert.Empty(vm.TempSavings);
+        Assert.Empty(vm.SelectedSavingsPlans);
+
+        vm.ToggleTempForKind(PostingKind.SavingsPlan, planId, true);
+        Assert.Contains(planId, vm.TempSavings);
+        Assert.Empty(vm.SelectedSavingsPlans); // not applied yet
+
+        await vm.ApplyTempAndReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
+
+        Assert.False(vm.ShowFilterDialog);
+        Assert.Contains(planId, vm.SelectedSavingsPlans);
+        apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
+            It.Is<ReportAggregatesQueryRequest>(r => r.Filters != null && r.Filters.SavingsPlanIds != null && r.Filters.SavingsPlanIds.Contains(planId)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that applying the filter dialog marks the filter state as dirty only when the
+    /// temporary selection actually differs from the applied one, so the save actions can
+    /// distinguish real changes from a no-op apply.
+    /// </summary>
+    [Fact]
+    public async Task ApplyTempAndReload_SetsFiltersDirty_OnlyOnChange()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportAggregationResult(ReportInterval.Month, Array.Empty<ReportAggregatePointDto>(), false, false, false));
+
+        await vm.ApplyTempAndReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
+        Assert.False(vm.FiltersDirty);
+
+        vm.TempContacts.Add(Guid.NewGuid());
+        await vm.ApplyTempAndReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
+        Assert.True(vm.FiltersDirty);
+    }
+
+    /// <summary>
+    /// Verifies that clearing previously active filters marks the filter state as dirty while
+    /// clearing an already empty filter state leaves the clean flag untouched.
+    /// </summary>
+    [Fact]
+    public void ClearFilters_SetsFiltersDirty_OnlyWhenFiltersWereActive()
+    {
+        var (vm, _) = CreateVm();
+        vm.ClearFilters();
+        Assert.False(vm.FiltersDirty);
+
+        vm.SelectedContacts.Add(Guid.NewGuid());
+        vm.ClearFilters();
+        Assert.True(vm.FiltersDirty);
+    }
+
+    /// <summary>
+    /// Verifies the save action enablement matrix: outside edit mode the save actions stay
+    /// disabled while the filter state is clean but become available once filters were changed
+    /// (ad-hoc changes can then be persisted explicitly); in edit mode they are always enabled.
+    /// </summary>
+    [Fact]
+    public void SaveActions_EnabledInViewMode_OnlyWhenFiltersDirty()
+    {
+        var (vm, _) = CreateVm();
+        var localizerMock = new Mock<IStringLocalizer>();
+        localizerMock.Setup(l => l[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key));
+
+        List<UiRibbonAction> GetSaveActions() => vm.GetRibbonRegisters(localizerMock.Object)!
+            .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+            .SelectMany(t => t.Items)
+            .Where(a => a.Id is "Save" or "SaveAs")
+            .ToList();
+
+        vm.EditMode = false;
+        Assert.All(GetSaveActions(), a => Assert.True(a.Disabled));
+
+        vm.FiltersDirty = true;
+        Assert.All(GetSaveActions(), a => Assert.False(a.Disabled));
+
+        vm.FiltersDirty = false;
+        vm.EditMode = true;
+        Assert.All(GetSaveActions(), a => Assert.False(a.Disabled));
+    }
+
+    /// <summary>
+    /// Verifies that successfully saving a favorite resets the dirty flag so the save actions
+    /// return to their disabled state in view mode after the change has been persisted.
+    /// </summary>
+    [Fact]
+    public async Task SubmitFavoriteDialog_ResetsFiltersDirty_AfterSave()
+    {
+        var (vm, apiMock) = CreateVm();
+        var fav = new ReportFavoriteDto(Guid.NewGuid(), "Fav", PostingKind.Bank, false, 0, 24, false, false, true, true, DateTime.UtcNow, null, new[] { PostingKind.Bank }, null, false);
+        apiMock.Setup(a => a.Reports_CreateFavoriteAsync(It.IsAny<ReportFavoriteCreateApiRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(fav);
+
+        vm.FiltersDirty = true;
+        vm.OpenFavoriteDialog(false, "Fav");
+        var res = await vm.SubmitFavoriteDialogAsync("def", PostingKind.Bank, false, 0, 24, false, false, false, true, true, null, null, ct: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(res);
+        Assert.False(vm.FiltersDirty);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="ReportDashboardViewModel.ShowPostingsAsync"/> opens the overlay, exposes the
+    /// returned postings and truncation flag, forwards the title, and clears the loading state afterwards.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_PopulatesOverlayState()
+    {
+        var (vm, apiMock) = CreateVm();
+        var postings = new List<ReportPostingDto>
+        {
+            new(Guid.NewGuid(), new DateTime(2025, 9, 10), new DateTime(2025, 9, 10), 100m, PostingKind.Bank, "s", null, null, Guid.NewGuid(), null, null, null, null, "Konto"),
+            new(Guid.NewGuid(), new DateTime(2025, 9, 5), new DateTime(2025, 9, 5), -40m, PostingKind.Bank, null, null, "d", Guid.NewGuid(), null, null, null, null, "Konto")
+        };
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPostingsResult(postings, 6000, 1234.5m, true));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync("Account:x", month, ReportPostingsPeriod.Current, "Posten – Konto (Betrag)", month, TestContext.Current.CancellationToken);
+
+        Assert.True(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.Equal("Posten – Konto (Betrag)", vm.PostingsOverlayTitle);
+        Assert.Equal(2, vm.PostingsOverlayRows.Count);
+        Assert.True(vm.PostingsOverlayTruncated);
+        // the footer total comes from the exact server-side sum, not the truncated rows
+        Assert.Equal(1234.5m, vm.PostingsOverlayTotalAmount);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="ReportDashboardViewModel.ShowPostingsAsync"/> builds the request from the
+    /// current report context: cell coordinates, kinds, interval, valuta/category flags, savings plan
+    /// posting source, analysis date and the active filters from <c>BuildFiltersPayload</c>.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_ForwardsCurrentReportContext()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPostingsResult(Array.Empty<ReportPostingDto>(), 0, 0m, false));
+
+        var accountId = Guid.NewGuid();
+        vm.SelectedKinds = new List<PostingKind> { PostingKind.Bank, PostingKind.Contact };
+        vm.Interval = (int)ReportInterval.Quarter;
+        vm.Take = 12;
+        vm.CompareYear = true;
+        vm.IncludeCategory = true;
+        vm.UseValutaDate = true;
+        vm.SavingsPlanPostingSource = SavingsPlanPostingSource.LinkedAccountPostings;
+        vm.SelectedAccounts.Add(accountId);
+        var month = new DateTime(2025, 7, 1);
+        var analysis = new DateTime(2025, 9, 1);
+
+        await vm.ShowPostingsAsync("Account:x", month, ReportPostingsPeriod.Previous, "t", analysis, TestContext.Current.CancellationToken);
+
+        apiMock.Verify(a => a.Reports_QueryPostingsAsync(
+            It.Is<ReportPostingsQueryRequest>(r =>
+                r.GroupKey == "Account:x"
+                && r.PeriodStart == month
+                && r.Period == ReportPostingsPeriod.Previous
+                && r.PostingKind == PostingKind.Bank
+                && r.Interval == ReportInterval.Quarter
+                && r.IncludeCategory
+                && r.UseValutaDate
+                && r.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings
+                && r.AnalysisDate == analysis
+                && r.Take == 12
+                && r.CompareYear
+                && r.PostingKinds != null && r.PostingKinds.Count == 2
+                && r.Filters != null && r.Filters.AccountIds != null && r.Filters.AccountIds.Contains(accountId)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that a failing postings query keeps the overlay open, resets the rows and clears the
+    /// loading flag instead of surfacing stale data. Without an API error the error text stays
+    /// <c>null</c> so the page falls back to a generic localized message (no raw exception text).
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_ApiError_ClearsRows()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("boom"));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+
+        Assert.True(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.Empty(vm.PostingsOverlayRows);
+        Assert.False(vm.PostingsOverlayTruncated);
+        Assert.True(vm.PostingsOverlayFailed);
+        Assert.Null(vm.PostingsOverlayError);
+    }
+
+    /// <summary>
+    /// Verifies that a server-issued error message (<see cref="IApiClient.LastError"/>) is surfaced
+    /// in the overlay instead of the generic fallback.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_ApiErrorText_IsSurfaced()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.SetupGet(a => a.LastError).Returns("server-side validation failed");
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("bad request"));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+
+        Assert.True(vm.PostingsOverlayFailed);
+        Assert.Equal("server-side validation failed", vm.PostingsOverlayError);
+    }
+
+    /// <summary>
+    /// Verifies that a cancellation of the postings load is not swallowed as an overlay error:
+    /// the <see cref="OperationCanceledException"/> propagates to the caller while the loading
+    /// flag is still cleared.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_Cancellation_Rethrows()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        var month = new DateTime(2025, 9, 1);
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken));
+
+        Assert.True(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.False(vm.PostingsOverlayFailed);
+        Assert.Null(vm.PostingsOverlayError);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="ReportDashboardViewModel.HidePostings"/> resets the complete overlay state.
+    /// </summary>
+    [Fact]
+    public async Task HidePostings_ResetsOverlayState()
+    {
+        var (vm, apiMock) = CreateVm();
+        var postings = new List<ReportPostingDto>
+        {
+            new(Guid.NewGuid(), DateTime.UtcNow, DateTime.UtcNow, 1m, PostingKind.Bank, null, null, null, Guid.NewGuid(), null, null, null, null, "K")
+        };
+        apiMock.Setup(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPostingsResult(postings, 1, 1m, false));
+
+        var month = new DateTime(2025, 9, 1);
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+        Assert.True(vm.PostingsOverlayVisible);
+
+        vm.HidePostings();
+
+        Assert.False(vm.PostingsOverlayVisible);
+        Assert.False(vm.PostingsOverlayLoading);
+        Assert.Equal(string.Empty, vm.PostingsOverlayTitle);
+        Assert.Empty(vm.PostingsOverlayRows);
+    }
+
+    /// <summary>
+    /// Verifies that an unauthenticated session never reaches the API for the postings drill-down.
+    /// </summary>
+    [Fact]
+    public async Task ShowPostingsAsync_NotAuthenticated_DoesNotQuery()
+    {
+        var (vm, apiMock) = CreateVm(authenticated: false);
+        var month = new DateTime(2025, 9, 1);
+
+        await vm.ShowPostingsAsync(null, month, ReportPostingsPeriod.Current, "t", month, TestContext.Current.CancellationToken);
+
+        Assert.False(vm.PostingsOverlayVisible);
+        apiMock.Verify(a => a.Reports_QueryPostingsAsync(It.IsAny<ReportPostingsQueryRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

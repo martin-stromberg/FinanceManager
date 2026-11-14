@@ -335,6 +335,30 @@ window.financeManager = window.financeManager || {};
     stop: stopLoadingBar
   };
 
+  // Copies text to the clipboard. Used by the MCP token one-time display; falls
+  // back to a temporary textarea for contexts without the async clipboard API.
+  fm.copyText = function (text) {
+    text = text || "";
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      return navigator.clipboard.writeText(text).then(function () { return true; }).catch(function () { return false; });
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "absolute";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch { }
+      document.body.removeChild(ta);
+      return Promise.resolve(ok);
+    } catch {
+      return Promise.resolve(false);
+    }
+  };
+
   attachGlobalListeners();
   registerKeepalive();
 })(window.financeManager);

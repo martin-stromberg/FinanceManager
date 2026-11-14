@@ -58,12 +58,14 @@ namespace FinanceManager.Tests.Infrastructure
             var svc = new BackupService(db, env, logger, services);
             var userId = Guid.NewGuid();
 
-            var dto = await svc.CreateAsync(userId, CancellationToken.None);
+            var dto = await svc.CreateAsync(userId, ct: CancellationToken.None);
 
             Assert.NotNull(dto);
-            // record persisted
+            // record persisted; the source default for callers that pass none stays "System"
             var rec = db.Backups.FirstOrDefault(b => b.Id == dto.Id);
             Assert.NotNull(rec);
+            Assert.Equal("System", rec.Source);
+            Assert.Equal("System", dto.Source);
             var full = Path.Combine(backupsDir, userId.ToString("N"), rec.StoragePath);
             Assert.True(File.Exists(full));
 
@@ -420,7 +422,7 @@ namespace FinanceManager.Tests.Infrastructure
             var userId = Guid.NewGuid();
             var category = new BudgetCategory(userId, "Arbeit");
             var purpose = new BudgetPurpose(userId, "Gehalt", BudgetSourceType.Contact, Guid.NewGuid());
-            var categoryRule = new BudgetRule(userId, null, category.Id, 100m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
+            var categoryRule = new BudgetRule(userId, null, category.Id, 100m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1), null, null, "^Gehalt.*", true);
             var purposeRule = new BudgetRule(userId, purpose.Id, null, 200m, BudgetIntervalType.Monthly, new DateOnly(2026, 1, 1));
 
             db.BudgetCategories.Add(category);
@@ -429,7 +431,7 @@ namespace FinanceManager.Tests.Infrastructure
             db.BudgetRules.Add(purposeRule);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var dto = await svc.CreateAsync(userId, CancellationToken.None);
+            var dto = await svc.CreateAsync(userId, ct: CancellationToken.None);
             Assert.NotNull(dto);
 
             var rec = db.Backups.FirstOrDefault(b => b.Id == dto.Id);
@@ -460,6 +462,13 @@ namespace FinanceManager.Tests.Infrastructure
 
             Assert.True(hasCategoryRule, "Expected a budget rule for a category.");
             Assert.True(hasPurposeRule, "Expected a budget rule for a purpose.");
+
+            var hasPattern = rules.EnumerateArray().Any(r =>
+                r.TryGetProperty("PurposePattern", out var pp) &&
+                pp.GetString() == "^Gehalt.*" &&
+                r.TryGetProperty("PurposePatternIsRegex", out var re) &&
+                re.GetBoolean());
+            Assert.True(hasPattern, "Expected the purpose pattern fields to be exported.");
 
             try { Directory.Delete(temp, true); } catch { }
         }

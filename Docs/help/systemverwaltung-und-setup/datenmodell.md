@@ -27,6 +27,8 @@
 | `AddressOrRange` | `string` | Einzel-IP oder Bereich |
 | `IsBlocked` | `bool` | Aktiver Blockstatus |
 
+`IpBlock` ist ein globaler, benutzerübergreifender Datenpool — die Einträge gelten installationsweit und tragen bewusst kein `OwnerUserId` (dokumentierte Ausnahme vom Besitzerprinzip).
+
 ### `Notification`
 
 | Eigenschaft | Typ | Beschreibung |
@@ -48,6 +50,36 @@
 | `FileName` | `string` | Dateiname |
 | `SizeBytes` | `long` | Dateigröße |
 
+### Backup-Payload (NDJSON, Version 3)
+
+Die Backup-Datei besteht aus einer NDJSON-Metazeile (`Type = "Backup"`, `Version = 3`) und einem JSON-Payload mit den folgenden Sektionen. Beim Restore werden die Datensätze mit neuen IDs angelegt und Verweise über ID-Maps umgebogen.
+
+**Pflichtsektionen** (`BackupService.RequiredDataProperties` — müssen in jedem gültigen Version-3-Backup vorhanden sein):
+
+| Sektion | Inhalt |
+|---------|--------|
+| `Accounts` | Konten |
+| `Contacts`, `ContactCategories`, `AliasNames` | Kontakte und Kontaktkategorien |
+| `SavingsPlanCategories`, `SavingsPlans` | Sparpläne und -kategorien |
+| `SecurityCategories`, `Securities`, `SecurityPrices` | Wertpapiere, Kategorien und Kurse |
+| `StatementImports`, `StatementEntries` | Kontoauszugs-Importe und deren Einträge |
+| `Postings` | Buchungen |
+| `StatementDrafts`, `StatementDraftEntries` | Import-Entwürfe |
+| `ReportFavorites`, `HomeKpis` | Berichtsfavoriten und Home-KPIs |
+| `AttachmentCategories`, `Attachments` | Anhänge und Anhangkategorien |
+| `Notifications` | Benachrichtigungen |
+| `AccountShares` | Kontofreigaben |
+| `BudgetCategories`, `BudgetPurposes`, `BudgetRules`, `BudgetOverrides` | Budgetplanung |
+
+**Optionale Sektionen** (fehlen in älteren Backups; der Import behandelt eine fehlende Sektion als leere Liste):
+
+| Sektion | Inhalt |
+|---------|--------|
+| `SavingsPlanAccountLinks` | Sparplan-Konto-Verknüpfungen |
+| `AccountLinkedIbans` | Unter-IBANs von Sammelkonten |
+| `PortfolioKpiConfigurations` | Portfolio-KPI-Konfiguration (eine Zeile pro Benutzer; Restore per Upsert) |
+| `McpAccesses`, `McpAccessScopes`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests` | MCP-Zugänge, -Audit und KI-Aktionsanfragen — nur exportiert, nicht importiert; `ClearUserDataAsync` löscht sie nicht |
+
 ### `SecurityTxtSettings`
 
 | Eigenschaft | Typ | Beschreibung |
@@ -62,7 +94,7 @@
 | `Hiring` | `string?` | `Hiring`-Direktive; URI zur Stellenausschreibungsseite |
 | `Canonical` | `string?` | Optionale vollständige HTTPS-URL für die `Canonical`-Direktive |
 
-Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). Beim ersten Aufruf eines öffentlichen Endpunkts oder des Admin-GET-Endpunkts wird die Zeile automatisch mit `Contact = ""` und `Expires = DateTimeOffset.MaxValue` angelegt, sofern noch keine Zeile vorhanden ist.
+Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). `SecurityTxtSettings` ist ein globaler, benutzerübergreifender Datenpool — die Direktiven gelten installationsweit und tragen bewusst kein `OwnerUserId` (dokumentierte Ausnahme vom Besitzerprinzip). Beim ersten Aufruf eines öffentlichen Endpunkts oder des Admin-GET-Endpunkts wird die Zeile automatisch mit `Contact = ""` und `Expires = DateTimeOffset.MaxValue` angelegt, sofern noch keine Zeile vorhanden ist.
 
 Ist `Canonical` leer, wird die Direktive zur Laufzeit weiterhin aus `IConfiguration["Api:BaseAddress"]` als `<BaseAddress>/.well-known/security.txt` abgeleitet.
 
@@ -75,7 +107,7 @@ Ist `Canonical` leer, wird die Direktive zur Laufzeit weiterhin aus `IConfigurat
 | `CreatedUtc` | `DateTime` | Erzeugungszeit (Basisspalte `Entity`) |
 | `ModifiedUtc` | `DateTime?` | Letzte Änderung (Basisspalte `Entity`, via `Touch()`) |
 
-Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). Beim ersten Zugriff (`GetEntityAsync` in `WellKnownSettingsService`) wird die Zeile automatisch über `WellKnownSettings.CreateDefault()` mit `ChangePasswordUrl = "/change-password"` (`DefaultChangePasswordUrl`) angelegt.
+Die Tabelle enthält immer genau eine Zeile (Singleton-Pattern). `WellKnownSettings` ist ein globaler, benutzerübergreifender Datenpool — die Einstellungen gelten installationsweit und tragen bewusst kein `OwnerUserId` (dokumentierte Ausnahme vom Besitzerprinzip). Beim ersten Zugriff (`GetEntityAsync` in `WellKnownSettingsService`) wird die Zeile automatisch über `WellKnownSettings.CreateDefault()` mit `ChangePasswordUrl = "/change-password"` (`DefaultChangePasswordUrl`) angelegt.
 
 Ungültige gespeicherte Werte werden beim Lesen für den öffentlichen Endpunkt durch den Standard `/change-password` ersetzt (`WellKnownSettings.IsValidUrl` über `WellKnownUrlValidator`). Schreibzugriffe validieren zusätzlich in `WellKnownSettings.Update` als Domain-Guard.
 

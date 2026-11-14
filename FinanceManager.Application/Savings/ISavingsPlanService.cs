@@ -107,4 +107,18 @@ public interface ISavingsPlanService
     /// <returns>A task that completes when the operation has finished.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> or <paramref name="ownerUserId"/> is <see cref="Guid.Empty"/>.</exception>
     Task SetSymbolAttachmentAsync(Guid id, Guid ownerUserId, Guid? attachmentId, CancellationToken ct);
+
+    /// <summary>
+    /// Captures an actual-balance report ("Istmeldung") for a savings plan without linked accounts:
+    /// creates a correction posting for the difference between the reported balance and the current
+    /// accumulated amount - without producing an account movement.
+    /// </summary>
+    /// <param name="id">Identifier of the savings plan.</param>
+    /// <param name="ownerUserId">Identifier of the owner performing the report.</param>
+    /// <param name="reportedBalance">The real balance reported by the user.</param>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="SavingsPlanActualReportResponse"/> describing the created correction posting.</returns>
+    /// <exception cref="ArgumentException">Thrown when the savings plan does not exist or does not belong to the owner.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the plan has linked accounts - then the account balance is the single source of truth.</exception>
+    Task<SavingsPlanActualReportResponse> ReportActualBalanceAsync(Guid id, Guid ownerUserId, decimal reportedBalance, CancellationToken ct);
 }

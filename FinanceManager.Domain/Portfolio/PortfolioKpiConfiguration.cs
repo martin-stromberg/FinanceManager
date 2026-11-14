@@ -57,4 +57,40 @@ public sealed class PortfolioKpiConfiguration : Entity, IAggregateRoot
         UpdatedUtc = DateTime.UtcNow;
         Touch();
     }
+
+    // Backup DTO
+    /// <summary>
+    /// DTO carrying the serializable state of a <see cref="PortfolioKpiConfiguration"/> for backup purposes.
+    /// </summary>
+    /// <param name="Id">Entity identifier.</param>
+    /// <param name="OwnerUserId">Identifier of the user who owns this configuration.</param>
+    /// <param name="ActiveTileIds">JSON-serialized array of active tile ids.</param>
+    /// <param name="TileOrder">JSON-serialized array describing tile order.</param>
+    /// <param name="UpdatedUtc">UTC timestamp of the last update to this configuration.</param>
+    /// <param name="CreatedUtc">Entity creation timestamp UTC.</param>
+    /// <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+    /// <returns>The result.</returns>
+    public sealed record PortfolioKpiConfigurationBackupDto(Guid Id, Guid OwnerUserId, string ActiveTileIds, string TileOrder, DateTime UpdatedUtc, DateTime CreatedUtc, DateTime? ModifiedUtc);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this configuration.
+    /// </summary>
+    /// <returns>A <see cref="PortfolioKpiConfigurationBackupDto"/> containing values required for backup/restore.</returns>
+    public PortfolioKpiConfigurationBackupDto ToBackupDto()
+        => new PortfolioKpiConfigurationBackupDto(Id, OwnerUserId, ActiveTileIds, TileOrder, UpdatedUtc, CreatedUtc, ModifiedUtc);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity instance.
+    /// </summary>
+    /// <param name="dto">The <see cref="PortfolioKpiConfigurationBackupDto"/> containing values to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the tile payloads are null or whitespace.</exception>
+    public void AssignBackupDto(PortfolioKpiConfigurationBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        Update(dto.ActiveTileIds, dto.TileOrder);
+        // Restore the original update timestamp carried by the backup (Update stamps UtcNow).
+        UpdatedUtc = dto.UpdatedUtc;
+        SetDates(dto.CreatedUtc, dto.ModifiedUtc);
+    }
 }

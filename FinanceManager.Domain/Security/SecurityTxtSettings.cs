@@ -3,6 +3,11 @@ namespace FinanceManager.Domain.Security;
 /// <summary>
 /// Stores the configurable security.txt directives.
 /// </summary>
+/// <remarks>
+/// Global, cross-user data pool — deliberately without an <c>OwnerUserId</c>: the security.txt
+/// directives apply to the whole installation and are a documented exception from the per-user
+/// ownership rule.
+/// </remarks>
 public sealed class SecurityTxtSettings : Entity, IAggregateRoot
 {
     private SecurityTxtSettings()

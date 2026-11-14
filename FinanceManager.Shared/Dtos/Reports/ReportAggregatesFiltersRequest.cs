@@ -12,6 +12,10 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="SecurityCategoryIds">The security category ids.</param>
 /// <param name="SecuritySubTypes">The security sub types.</param>
 /// <param name="IncludeDividendRelated">The include dividend related.</param>
+/// <param name="BankTextFilters">Optional free text filters for bank postings.</param>
+/// <param name="ContactTextFilters">Optional free text filters for contact postings.</param>
+/// <param name="SavingsPlanTextFilters">Optional free text filters for savings plan postings.</param>
+/// <param name="SecurityTextFilters">Optional free text filters for security postings.</param>
 /// <returns>The result.</returns>
 public sealed record ReportAggregatesFiltersRequest(
     IReadOnlyCollection<Guid>? AccountIds,
@@ -22,5 +26,9 @@ public sealed record ReportAggregatesFiltersRequest(
     IReadOnlyCollection<Guid>? SavingsPlanCategoryIds,
     IReadOnlyCollection<Guid>? SecurityCategoryIds,
     IReadOnlyCollection<int>? SecuritySubTypes,
-    bool? IncludeDividendRelated
+    bool? IncludeDividendRelated,
+    IReadOnlyCollection<string>? BankTextFilters = null,
+    IReadOnlyCollection<string>? ContactTextFilters = null,
+    IReadOnlyCollection<string>? SavingsPlanTextFilters = null,
+    IReadOnlyCollection<string>? SecurityTextFilters = null
 );

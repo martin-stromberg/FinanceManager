@@ -15,7 +15,7 @@ namespace FinanceManager.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.Account", b =>
                 {
@@ -518,6 +518,411 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("ContactCategories");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.AiActionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActionKey")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("CatalogVersion")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ClaimToken")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ClaimedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DecidedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExecutedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExecutionResult")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("McpAccessId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("McpAccessName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParameterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReasonText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RequestedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("McpAccessId");
+
+                    b.HasIndex("OwnerUserId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "ExpiresUtc");
+
+                    b.HasIndex("OwnerUserId", "Status", "RequestedUtc");
+
+                    b.ToTable("AiActionRequests");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AccessKeyHint")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AllowedIpRanges")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("ApprovalMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExpiresUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastUsedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RevocationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue((short)0);
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("TokenIssuedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccessKeyHint")
+                        .IsUnique();
+
+                    b.HasIndex("ExpiresUtc");
+
+                    b.HasIndex("OwnerUserId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerUserId", "Status");
+
+                    b.ToTable("McpAccesses");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccessScope", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AccountTypesCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AttachmentCategoryIdsCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContactCategoryIdsCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("DataType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("McpAccessId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Right")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SavingsPlanCategoryIdsCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityCategoryIdsCsv")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("McpAccessId", "DataType", "Right");
+
+                    b.ToTable("McpAccessScopes");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("AffectedCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CatalogVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Category")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Context")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CorrelationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("DurationMs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EntryHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("McpAccessId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("McpAccessName")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrevHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RelatedRequestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResultStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("SequenceNo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceIp")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ToolName")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Utc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("McpAccessId");
+
+                    b.HasIndex("SequenceNo")
+                        .IsUnique()
+                        .HasFilter("[OwnerUserId] IS NULL");
+
+                    b.HasIndex("Category", "EventType");
+
+                    b.HasIndex("OwnerUserId", "SequenceNo")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerUserId", "Utc");
+
+                    b.ToTable("McpAuditEntries");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAuditEntryChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntryId");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("McpAuditEntryChanges");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("WriteAccessEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("McpSettings");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Notifications.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -670,6 +1075,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid?>("SavingsPlanId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("SavingsPlanSubType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid?>("SecurityId")
                         .HasColumnType("TEXT");
 
@@ -691,7 +1099,10 @@ namespace FinanceManager.Infrastructure.Migrations
 
                     b.HasIndex("SecurityId", "BookingDate");
 
-                    b.ToTable("Postings");
+                    b.ToTable("Postings", t =>
+                        {
+                            t.HasCheckConstraint("CK_Postings_HasReference", "[AccountId] IS NOT NULL OR [ContactId] IS NOT NULL OR [SavingsPlanId] IS NOT NULL OR [SecurityId] IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Postings.PostingAggregate", b =>
@@ -856,6 +1267,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("AccountIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BankTextFiltersJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("ComparePrevious")
                         .HasColumnType("INTEGER");
 
@@ -869,6 +1283,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ContactIdsCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContactTextFiltersJson")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedUtc")
@@ -909,6 +1326,12 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("SavingsPlanIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("SavingsPlanPostingSource")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SavingsPlanTextFiltersJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SecurityCategoryIdsCsv")
                         .HasColumnType("TEXT");
 
@@ -916,6 +1339,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SecuritySubTypesCsv")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityTextFiltersJson")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("ShowChart")
@@ -992,6 +1418,39 @@ namespace FinanceManager.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("SavingsPlans");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlanAccountLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SavingsPlanId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("SavingsPlanId", "AccountId")
+                        .IsUnique();
+
+                    b.ToTable("SavingsPlanAccountLinks", (string)null);
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlanCategory", b =>
@@ -1917,6 +2376,28 @@ namespace FinanceManager.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccessScope", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Mcp.McpAccess", "Access")
+                        .WithMany("Scopes")
+                        .HasForeignKey("McpAccessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Access");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAuditEntryChange", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Mcp.McpAuditEntry", "Entry")
+                        .WithMany("Changes")
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entry");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Reports.HomeKpi", b =>
                 {
                     b.HasOne("FinanceManager.Domain.Reports.ReportFavorite", null)
@@ -1931,6 +2412,25 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlanAccountLink", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Accounts.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FinanceManager.Domain.Savings.SavingsPlan", "SavingsPlan")
+                        .WithMany()
+                        .HasForeignKey("SavingsPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("SavingsPlan");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Securities.Security", b =>
@@ -2029,6 +2529,16 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccess", b =>
+                {
+                    b.Navigation("Scopes");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAuditEntry", b =>
+                {
+                    b.Navigation("Changes");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Statements.StatementDraft", b =>

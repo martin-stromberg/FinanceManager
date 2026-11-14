@@ -97,6 +97,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccountStatisticsPeriodProvider, AccountStatisticsPeriodProvider>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IStatementDraftService, StatementDraftService>();
+        services.AddScoped<IStatementImportQueryService, StatementImportQueryService>();
         services.AddScoped<IMassImportOrchestrator, MassImportOrchestrator>();
         services.AddScoped<IBudgetImpactEvaluationService, BudgetImpactEvaluationService>();
         services.AddScoped<IStatementFileParser, ING_CSV_StatementFileParser>();
@@ -106,6 +107,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStatementFileParser, Wuestenrot_StatementFileParser>();
         services.AddScoped<IStatementFileParser, Backup_JSON_StatementFileParser>();
         services.AddScoped<ISavingsPlanService, SavingsPlanService>();
+        services.AddScoped<ISavingsPlanAccountLinkService, SavingsPlanAccountLinkService>();
         services.AddScoped<ISavingsPlanCategoryService, SavingsPlanCategoryService>();
         services.AddScoped<ISetupImportService, SetupImportService>();
         services.AddScoped<ISecurityService, SecurityService>();
@@ -117,6 +119,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPostingReversalService, PostingReversalService>();
         services.AddScoped<IReportFavoriteService, ReportFavoriteService>();
         services.AddScoped<IReportAggregationService, ReportAggregationService>();
+        services.AddScoped<IReportPostingsQueryService, ReportPostingsQueryService>();
         services.AddScoped<IHomeKpiService, HomeKpiService>();
         services.AddScoped<IIpBlockService, IpBlockService>();
         services.AddScoped<INotificationService, NotificationService>();
@@ -165,6 +168,31 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPortfolioAnalysisReportService, PortfolioAnalysisReportService>();
         services.AddScoped<IPortfolioAnalysisReportCacheService, PortfolioAnalysisReportCacheService>();
         services.AddScoped<IPortfolioKpiConfigurationRepository, PortfolioKpiConfigurationRepository>();
+
+        // MCP foundation: token primitives, access administration, scope evaluation and the
+        // persistent, hash-chained audit writer (F-0301/F-0302; NullMcpAuditWriter remains
+        // for tests/reference only).
+        // Database-stored MCP switches (kill switch + write-stop lid): admin-editable
+        // singleton row; the read path falls back to the safe defaults without writing.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpSettingsService, FinanceManager.Infrastructure.Mcp.McpSettingsService>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpTokenHasher, FinanceManager.Infrastructure.Mcp.McpTokenHasher>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpTokenIssuer, FinanceManager.Infrastructure.Mcp.McpTokenIssuer>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAccessService, FinanceManager.Infrastructure.Mcp.McpAccessService>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpScopeEvaluator, FinanceManager.Infrastructure.Mcp.McpScopeEvaluator>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditWriter, FinanceManager.Infrastructure.Mcp.McpAuditWriter>();
+        // Owner-isolated audit read path: timeline queries, detail drilling, chain
+        // verification, export projection and the per-access usage aggregation (F-0601/F-0603).
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditQueryService, FinanceManager.Infrastructure.Mcp.McpAuditQueryService>();
+        // Approval queue (EP-09): the pipeline-position-8 gate, the persistent request
+        // service and the queue execution engine claimed by the hosted runners.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpApprovalGate, FinanceManager.Infrastructure.Mcp.McpApprovalGate>();
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpApprovalService, FinanceManager.Infrastructure.Mcp.McpApprovalService>();
+        services.AddScoped<FinanceManager.Application.Mcp.IAiActionExecutionEngine, FinanceManager.Infrastructure.Mcp.AiActionExecutionEngine>();
+        // Admin security overview (F-1005): metadata-only instance view, Admin-role only.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpSecurityOverviewService, FinanceManager.Infrastructure.Mcp.McpSecurityOverviewService>();
+        // Retention executor (F-1104): the only deletion path on the audit table; writes
+        // RetentionPurged anchor entries so truncated chains stay verifiable.
+        services.AddScoped<FinanceManager.Application.Mcp.IMcpAuditRetention, FinanceManager.Infrastructure.Mcp.McpAuditRetentionExecutor>();
 
         return services;
     }

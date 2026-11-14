@@ -110,9 +110,10 @@ public sealed class BackupService : IBackupService
     /// A database record describing the backup is created and returned.
     /// </summary>
     /// <param name="userId">Owner user identifier for whom the backup is created.</param>
+    /// <param name="source">Optional source tag recorded on the backup record; defaults to <c>"System"</c>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A <see cref="BackupDto"/> describing the created backup.</returns>
-    public async Task<BackupDto> CreateAsync(Guid userId, CancellationToken ct)
+    public async Task<BackupDto> CreateAsync(Guid userId, string? source = null, CancellationToken ct = default)
     {
         // Build backup content (NDJSON with meta + data)
         var meta = new { Type = "Backup", Version = 3 };
@@ -141,7 +142,7 @@ public sealed class BackupService : IBackupService
             CreatedUtc = DateTime.UtcNow,
             FileName = fileName,
             SizeBytes = size,
-            Source = "System",
+            Source = source ?? "System",
             StoragePath = fileName
         };
         _db.Backups.Add(rec);
@@ -615,6 +616,12 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var savingsPlans = savingsPlanEntities.Select(sp => sp.ToBackupDto()).ToList();
 
+        // Savings plan <-> account links (explicit n:m join)
+        var savingsPlanAccountLinkEntities = await _db.SavingsPlanAccountLinks.AsNoTracking()
+            .Where(l => l.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var savingsPlanAccountLinks = savingsPlanAccountLinkEntities.Select(l => l.ToBackupDto()).ToList();
+
         // Accounts
         var accountEntities = await _db.Accounts.AsNoTracking()
             .Where(a => a.OwnerUserId == userId)
@@ -717,6 +724,50 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var budgetOverrides = budgetOverrideEntities.Select(o => o.ToBackupDto()).ToList();
 
+        // MCP accesses (configuration only — McpAccessBackupDto never exports token material,
+        // status is forced to Revoked), scope rows and the audit trail incl. field deltas.
+        var mcpAccessEntities = await _db.McpAccesses.AsNoTracking()
+            .Where(a => a.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var mcpAccesses = mcpAccessEntities.Select(a => a.ToBackupDto()).ToList();
+        var mcpAccessIds = mcpAccessEntities.Select(a => a.Id).ToList();
+
+        var mcpScopeEntities = await _db.McpAccessScopes.AsNoTracking()
+            .Where(s => s.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var mcpAccessScopes = mcpScopeEntities.Select(s => s.ToBackupDto()).ToList();
+
+        var mcpAuditEntryEntities = await _db.McpAuditEntries.AsNoTracking()
+            .Where(e => e.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var mcpAuditEntries = mcpAuditEntryEntities.Select(e => e.ToBackupDto()).ToList();
+        var mcpEntryIds = mcpAuditEntryEntities.Select(e => e.Id).ToList();
+
+        var mcpAuditChangeEntities = await _db.McpAuditEntryChanges.AsNoTracking()
+            .Where(c => mcpEntryIds.Contains(c.EntryId))
+            .ToListAsync(ct);
+        var mcpAuditEntryChanges = mcpAuditChangeEntities.Select(c => c.ToBackupDto()).ToList();
+
+        // MCP approval requests: open (non-terminal) requests survive a restore — the
+        // backup carries the full request history of the user (F-0901).
+        var aiActionRequestEntities = await _db.AiActionRequests.AsNoTracking()
+            .Where(r => r.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var aiActionRequests = aiActionRequestEntities.Select(r => r.ToBackupDto()).ToList();
+
+        // Linked IBANs (sub-IBANs) of the user's collection accounts; ownership is
+        // derived via the account (the entity has no OwnerUserId itself).
+        var accountLinkedIbanEntities = await _db.AccountLinkedIbans.AsNoTracking()
+            .Where(l => importAccountIds.Contains(l.AccountId))
+            .ToListAsync(ct);
+        var accountLinkedIbans = accountLinkedIbanEntities.Select(l => l.ToBackupDto()).ToList();
+
+        // Portfolio KPI configuration: exactly one row exists per user.
+        var portfolioKpiConfigurationEntities = await _db.PortfolioKpiConfigurations.AsNoTracking()
+            .Where(c => c.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var portfolioKpiConfigurations = portfolioKpiConfigurationEntities.Select(c => c.ToBackupDto()).ToList();
+
         return new
         {
             Accounts = accounts,
@@ -742,7 +793,21 @@ public sealed class BackupService : IBackupService
             BudgetCategories = budgetCategories,
             BudgetPurposes = budgetPurposes,
             BudgetRules = budgetRules,
-            BudgetOverrides = budgetOverrides
+            BudgetOverrides = budgetOverrides,
+            // Optional payload sections (not part of RequiredDataProperties): backups created
+            // before the MCP feature simply omit them — the restore treats them as empty.
+            McpAccesses = mcpAccesses,
+            McpAccessScopes = mcpAccessScopes,
+            McpAuditEntries = mcpAuditEntries,
+            McpAuditEntryChanges = mcpAuditEntryChanges,
+            AiActionRequests = aiActionRequests,
+            // Optional payload section: backups created before the plan-account-link feature
+            // simply omit it - the restore treats it as empty.
+            SavingsPlanAccountLinks = savingsPlanAccountLinks,
+            // Optional payload sections: backups created before these features existed
+            // simply omit them - the restore treats them as empty.
+            AccountLinkedIbans = accountLinkedIbans,
+            PortfolioKpiConfigurations = portfolioKpiConfigurations
         };
     }
 

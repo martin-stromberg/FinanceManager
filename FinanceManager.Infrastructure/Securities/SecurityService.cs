@@ -1,5 +1,6 @@
 using FinanceManager.Application.Securities;
 using FinanceManager.Domain.Attachments;
+using FinanceManager.Shared.Dtos.Securities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceManager.Infrastructure.Securities;
@@ -30,7 +31,23 @@ public sealed class SecurityService : ISecurityService
         if (onlyActive) { q = q.Where(s => s.IsActive); }
 
         var entities = await q.OrderBy(s => s.Name).ToListAsync(ct);
-        var tasks = entities.Select(e => MapToDtoAsync(e, ct));
+        var ids = entities.Select(e => e.Id).ToList();
+        var openBySecurity = await _db.Postings.AsNoTracking()
+            .Where(p => p.SecurityId != null && ids.Contains(p.SecurityId.Value)
+                && (p.SecuritySubType == SecurityPostingSubType.Buy || p.SecuritySubType == SecurityPostingSubType.Sell))
+            .GroupBy(p => p.SecurityId!.Value)
+            .Select(g => new
+            {
+                SecurityId = g.Key,
+                // sign-robust: stored Sell quantities may already be negative —
+                // |quantity| * (Buy:+1 / Sell:-1) without Math.Abs (not EF-translatable)
+                OpenQuantity = g.Sum(p => (p.Quantity ?? 0m)
+                    * (p.SecuritySubType == SecurityPostingSubType.Buy ? 1m : -1m)
+                    * ((p.Quantity ?? 0m) < 0m ? -1m : 1m))
+            })
+            .ToDictionaryAsync(x => x.SecurityId, x => x.OpenQuantity, ct);
+        var tasks = entities.Select(e => MapToDtoAsync(
+            e, ct, openBySecurity.TryGetValue(e.Id, out var oq) ? oq : 0m));
         var list = await Task.WhenAll(tasks);
         return list;
     }
@@ -125,11 +142,34 @@ public sealed class SecurityService : ISecurityService
     /// <param name="ownerUserId">Owner user identifier used to validate ownership.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><c>true</c> when the security was found and archived; otherwise <c>false</c> when not found or already inactive.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the security still holds a quantity (open position) — only empty positions may be archived.</exception>
     public async Task<bool> ArchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct)
     {
         var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == id && s.OwnerUserId == ownerUserId, ct);
         if (entity == null || !entity.IsActive) { return false; }
+        var openQuantity = await ComputeOpenQuantityAsync(id, ct);
+        if (openQuantity > 0m)
+        {
+            throw new InvalidOperationException(
+                $"Cannot archive a security with an open position ({openQuantity} units still held). Archive is reserved for positions without holdings.");
+        }
         entity.Archive();
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>
+    /// Reactivates (unarchives) the specified security.
+    /// </summary>
+    /// <param name="id">Identifier of the security to reactivate.</param>
+    /// <param name="ownerUserId">Owner user identifier used to validate ownership.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the security was found and reactivated; otherwise <c>false</c> when not found or already active.</returns>
+    public async Task<bool> UnarchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct)
+    {
+        var entity = await _db.Securities.FirstOrDefaultAsync(s => s.Id == id && s.OwnerUserId == ownerUserId, ct);
+        if (entity == null || entity.IsActive) { return false; }
+        entity.Unarchive();
         await _db.SaveChangesAsync(ct);
         return true;
     }
@@ -189,7 +229,21 @@ public sealed class SecurityService : ISecurityService
     }
 
     // Map a domain Security entity to its DTO representation.
-    private async Task<SecurityDto> MapToDtoAsync(FinanceManager.Domain.Securities.Security s, CancellationToken ct)
+    /// <summary>
+    /// Computes the open holding quantity for a security (Σ buy − Σ sell quantities from postings).
+    /// </summary>
+    /// <param name="securityId">Security identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The net held quantity; zero when no quantity-bearing postings exist.</returns>
+    private Task<decimal> ComputeOpenQuantityAsync(Guid securityId, CancellationToken ct)
+        => _db.Postings.AsNoTracking()
+            .Where(p => p.SecurityId == securityId
+                && (p.SecuritySubType == SecurityPostingSubType.Buy || p.SecuritySubType == SecurityPostingSubType.Sell))
+            .SumAsync(p => (p.Quantity ?? 0m)
+                * (p.SecuritySubType == SecurityPostingSubType.Buy ? 1m : -1m)
+                * ((p.Quantity ?? 0m) < 0m ? -1m : 1m), ct);
+
+    private async Task<SecurityDto> MapToDtoAsync(FinanceManager.Domain.Securities.Security s, CancellationToken ct, decimal? openQuantity = null)
     {
         string? categoryName = null;
         if (s.CategoryId != null)
@@ -212,6 +266,7 @@ public sealed class SecurityService : ISecurityService
             ArchivedUtc = s.ArchivedUtc,
             SymbolAttachmentId = s.SymbolAttachmentId,
             HasPriceError = s.HasPriceError,
+            OpenQuantity = openQuantity ?? await ComputeOpenQuantityAsync(s.Id, ct),
             Region = s.Region,
             Sector = s.Sector
         };

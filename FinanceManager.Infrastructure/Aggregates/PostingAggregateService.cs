@@ -27,7 +27,7 @@ public sealed class PostingAggregateService : IPostingAggregateService
     /// <param name="date">The date for which the period start should be computed.</param>
     /// <param name="p">The aggregate period (Month/Quarter/HalfYear/Year).</param>
     /// <returns>The date representing the start of the period (time component set to midnight).</returns>
-    private static DateTime GetPeriodStart(DateTime date, AggregatePeriod p)
+    internal static DateTime GetPeriodStart(DateTime date, AggregatePeriod p)
     {
         var d = date.Date;
         return p switch

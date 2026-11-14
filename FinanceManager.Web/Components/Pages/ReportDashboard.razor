@@ -82,6 +82,16 @@
                         <option value="valuta">@Localizer["DateKind_Valuta"]</option>
                     </select>
                 </div>
+                @if (_selectedKinds.Contains(PostingKind.SavingsPlan))
+                {
+                    <div class="row inline" style="margin-top:.5rem;align-items:center;">
+                        <label style="margin-right:.5rem;">@Localizer["Label_SavingsPlanPostingSource"]</label>
+                        <select value="@_savingsPlanPostingSourceString" @onchange="OnSavingsPlanPostingSourceChange">
+                            <option value="plan">@Localizer["SavingsPlanPostingSource_PlanPostings"]</option>
+                            <option value="linked">@Localizer["SavingsPlanPostingSource_LinkedAccountPostings"]</option>
+                        </select>
+                    </div>
+                }
             </div>
             <div class="filter-group">
                 <div class="group-title">@Localizer["FilterGroup_Comparisons"]</div>
@@ -148,6 +158,65 @@
                                 }
                             </tbody>
                         </table>
+                    }
+                </div>
+            </div>
+        }
+        @if(_vm?.PostingsOverlayVisible == true)
+        {
+            <div class="modal-overlay" @onclick="(()=> _vm!.HidePostings())">
+                <div class="modal postings-modal" role="dialog" aria-modal="true" @onclick:stopPropagation>
+                    <div class="projection-detail-header">
+                        <h3>@_vm!.PostingsOverlayTitle</h3>
+                        <button type="button" class="icon-btn small" title="@Localizer["Button_Close"]" @onclick="(()=> _vm!.HidePostings())">
+                            <svg><use href="/icons/sprite.svg#close" /></svg>
+                        </button>
+                    </div>
+                    @if(_vm!.PostingsOverlayLoading)
+                    {
+                        <div class="small-empty">@Localizer["Loading"]</div>
+                    }
+                    else if(_vm!.PostingsOverlayFailed)
+                    {
+                        <div class="small-empty">@(_vm!.PostingsOverlayError ?? Localizer["Postings_LoadFailed"].Value)</div>
+                    }
+                    else if(_vm!.PostingsOverlayRows.Count == 0)
+                    {
+                        <div class="small-empty">@Localizer["Postings_None"]</div>
+                    }
+                    else
+                    {
+                        <table class="fm-table postings-table">
+                            <thead>
+                                <tr>
+                                    <th>@Localizer["Postings_Th_Date"]</th>
+                                    <th>@Localizer["Postings_Th_Origin"]</th>
+                                    <th>@Localizer["Postings_Th_Description"]</th>
+                                    <th style="text-align:right;">@Localizer["Postings_Th_Amount"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(var p in _vm!.PostingsOverlayRows)
+                                {
+                                    <tr>
+                                        <td>@GetPostingEffectiveDate(p).ToString("d")</td>
+                                        <td>@p.EntityName</td>
+                                        <td>@(p.Subject ?? p.Description ?? p.RecipientName ?? "-")</td>
+                                        <td style="text-align:right;">@p.Amount.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" style="font-weight:600;">@Localizer["Postings_Total"]</td>
+                                    <td style="text-align:right;font-weight:600;">@_vm!.PostingsOverlayTotalAmount.ToString("N2")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        @if(_vm!.PostingsOverlayTruncated)
+                        {
+                            <div class="small-empty">@Localizer["Postings_Truncated"]</div>
+                        }
                     }
                 </div>
             </div>
@@ -226,9 +295,9 @@
                                 </div>
                             </td>
                             @if(ShowCategoryColumn){<td>@(string.IsNullOrWhiteSpace(top.CategoryName)?"-":top.CategoryName)</td>}
-                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(top.PreviousAmount.HasValue? top.PreviousAmount.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(top.Amount, top.PreviousAmount)</td>}
-                            @if(_compareYear){<td class="amt-year" style="text-align:right;">@(top.YearAgoAmount.HasValue? top.YearAgoAmount.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(top.Amount, top.YearAgoAmount)</td>}
-                            <td class="amt-current" style="text-align:right;">@top.Amount.ToString("N2")</td>
+                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(top.PreviousAmount.HasValue? top.PreviousAmount.Value.ToString("N2") : "-")</span>@if(top.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(top.Amount, top.PreviousAmount)</td>}
+                            @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(top.YearAgoAmount.HasValue? top.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(top.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(top.Amount, top.YearAgoAmount)</td>}
+                            <td class="amt-current" style="text-align:right;"><span>@top.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
                             @if(ShowProjectionColumn)
                             {
                                 <td class="amt-projection projection-cell" style="text-align:right;">
@@ -277,9 +346,9 @@
                                         </div>
                                     </td>
                                     @if(ShowCategoryColumn){<td>@(string.IsNullOrWhiteSpace(child.CategoryName)?"-":child.CategoryName)</td>}
-                                    @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(child.PreviousAmount.HasValue? child.PreviousAmount.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(child.Amount, child.PreviousAmount)</td>}
-                                    @if(_compareYear){<td class="amt-year" style="text-align:right;">@(child.YearAgoAmount.HasValue? child.YearAgoAmount.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(child.Amount, child.YearAgoAmount)</td>}
-                                    <td class="amt-current" style="text-align:right;">@child.Amount.ToString("N2")</td>
+                                    @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(child.PreviousAmount.HasValue? child.PreviousAmount.Value.ToString("N2") : "-")</span>@if(child.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(child.Amount, child.PreviousAmount)</td>}
+                                    @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(child.YearAgoAmount.HasValue? child.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(child.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(child.Amount, child.YearAgoAmount)</td>}
+                                    <td class="amt-current" style="text-align:right;"><span>@child.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
                                     @if(ShowProjectionColumn)
                                     {
                                         <td class="amt-projection projection-cell" style="text-align:right;">
@@ -319,9 +388,9 @@
                                                 </div>
                                             </td>
                                             @if(ShowCategoryColumn){<td></td>}
-                                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(grand.PreviousAmount.HasValue? grand.PreviousAmount.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(grand.Amount, grand.PreviousAmount)</td>}
-                                            @if(_compareYear){<td class="amt-year" style="text-align:right;">@(grand.YearAgoAmount.HasValue? grand.YearAgoAmount.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(grand.Amount, grand.YearAgoAmount)</td>}
-                                            <td class="amt-current" style="text-align:right;">@grand.Amount.ToString("N2")</td>
+                                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(grand.PreviousAmount.HasValue? grand.PreviousAmount.Value.ToString("N2") : "-")</span>@if(grand.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(grand.Amount, grand.PreviousAmount)</td>}
+                                            @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(grand.YearAgoAmount.HasValue? grand.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(grand.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(grand.Amount, grand.YearAgoAmount)</td>}
+                                            <td class="amt-current" style="text-align:right;"><span>@grand.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
                                             @if(ShowProjectionColumn)
                                             {
                                                 <td class="amt-projection projection-cell" style="text-align:right;">
@@ -349,9 +418,9 @@
                                 <td></td>
                                 <td>@totalLabel</td>
                                 @if(_vm!.ShowCategoryColumn){<td></td>}
-                                @if(_vm!.ShowPreviousColumns){<td class="amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? totals.Prev.Value.ToString("N2") : "-")</td><td class="delta amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? FormatDelta(totals.Amount, totals.Prev) : "-")</td>}
-                                @if(_compareYear){<td class="amt-year" style="text-align:right;">@(totals.Year.HasValue ? totals.Year.Value.ToString("N2") : "-")</td><td class="delta amt-year" style="text-align:right;">@(totals.Year.HasValue ? FormatDelta(totals.Amount, totals.Year) : "-")</td>}
-                                <td class="amt-current" style="text-align:right;">@totals.Amount.ToString("N2")</td>
+                                @if(_vm!.ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(totals.Prev.HasValue ? totals.Prev.Value.ToString("N2") : "-")</span>@if(totals.Prev.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? FormatDelta(totals.Amount, totals.Prev) : "-")</td>}
+                                @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(totals.Year.HasValue ? totals.Year.Value.ToString("N2") : "-")</span>@if(totals.Year.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@(totals.Year.HasValue ? FormatDelta(totals.Amount, totals.Year) : "-")</td>}
+                                <td class="amt-current" style="text-align:right;"><span>@totals.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
                                 @if(ShowProjectionColumn)
                                 {
                                     <td class="amt-projection projection-cell" style="text-align:right;">
@@ -447,6 +516,22 @@
                         </div>
                     </div>
                 }
+                <div class="subtype-list" style="margin-top:.5rem;">
+                    <div class="group-title" style="margin-bottom:.25rem;">@Localizer["FilterGroup_TextFilters"]</div>
+                    @foreach (var tf in _vm!.GetTempTextFilters(_vm!.GetActiveFilterTabKind()))
+                    {
+                        var entry = tf;
+                        <div class="mk-item line" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;">
+                            <span>@entry</span>
+                            <button type="button" class="btn secondary" style="padding:.1rem .4rem;" title="@Localizer["TextFilter_Remove"]" aria-label="@Localizer["TextFilter_Remove"]" @onclick="(()=> _vm!.RemoveTempTextFilter(_vm!.GetActiveFilterTabKind(), entry))"><svg style="width:1rem;height:1rem;vertical-align:middle;"><use href="/icons/sprite.svg#close"/></svg></button>
+                        </div>
+                    }
+                    <div style="display:flex;gap:.5rem;align-items:center;margin-top:.25rem;">
+                        <input type="text" maxlength="@TextFilterList.MaxEntryLength" style="flex:1;" placeholder="@Localizer["TextFilter_Placeholder"]" @bind="_vm!.NewTextFilterInput" @bind:event="oninput" />
+                        <button type="button" class="btn" disabled="@string.IsNullOrWhiteSpace(_vm!.NewTextFilterInput)" @onclick="(()=> _vm!.AddTempTextFilter(_vm!.GetActiveFilterTabKind(), _vm!.NewTextFilterInput))">@Localizer["TextFilter_Add"]</button>
+                    </div>
+                    <div class="small-empty" style="margin-top:.25rem;">@Localizer["TextFilter_Hint"]</div>
+                </div>
             }
             <div class="dialog-actions">
                 <button class="btn" @onclick="(()=> _vm!.ApplyTempAndReloadAsync(_analysisMonth))" disabled="@(_vm!.FilterOptionsLoading)">@Localizer["FilterDialog_Apply"]</button>
@@ -491,6 +576,7 @@
     private bool _includeDividendRelated; // new
 
     private bool _useValutaDate; // new: whether to use valuta date for analysis
+    private bool _savingsPlanLinkedPostings; // new: use linked account postings as source for savings plans
     private string? _projectionDetailsTitle;
     private decimal _projectionDetailsActualAmount;
     private decimal _projectionDetailsExpectedAmount;
@@ -546,6 +632,32 @@
         _projectionDetailsAmount = 0m;
         _projectionDetails = Array.Empty<ReportProjectionExpectedDividendDto>();
     }
+
+    private string PostingsColumnLabel(ReportPostingsPeriod period) => period switch
+    {
+        ReportPostingsPeriod.Previous => Localizer["Th_Prev"],
+        ReportPostingsPeriod.YearAgo => Localizer["Th_YearAgo"],
+        _ => Localizer["Th_Amount"]
+    };
+
+    private string PostingsTitle(string rowName, ReportPostingsPeriod period)
+        => string.Format(System.Globalization.CultureInfo.CurrentCulture, Localizer["Postings_Title"].Value, rowName, PostingsColumnLabel(period));
+
+    private async Task ShowCellPostingsAsync(ReportAggregatePointDto point, ReportPostingsPeriod period)
+    {
+        if (_vm is null) { return; }
+        await _vm.ShowPostingsAsync(point.GroupKey, point.PeriodStart, period, PostingsTitle(GetDisplayName(point), period), _analysisMonth);
+    }
+
+    private async Task ShowTotalPostingsAsync(ReportPostingsPeriod period)
+    {
+        if (_vm is null) { return; }
+        var periodStart = _vm.GetTopLevelRows().Select(r => r.PeriodStart).DefaultIfEmpty(_analysisMonth).Max();
+        await _vm.ShowPostingsAsync(null, periodStart, period, PostingsTitle(Localizer["Total_Label"].Value, period), _analysisMonth);
+    }
+
+    private DateTime GetPostingEffectiveDate(ReportPostingDto p)
+        => _useValutaDate && p.ValutaDate != DateTime.MinValue ? p.ValutaDate : p.BookingDate;
 
     // Analysis month handling
     private DateTime _analysisMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
@@ -672,6 +784,7 @@
         }
 
         _vm!.EditMode = Edit.GetValueOrDefault(false);
+        _editMode = _vm!.EditMode;
 
         if (FavoriteId.HasValue)
         {
@@ -706,6 +819,7 @@
             _vm.Take = _take;
             _vm.IncludeDividendRelated = _includeDividendRelated; // new
             _vm.UseValutaDate = _useValutaDate; // new: propagate date kind to VM
+            _vm.SavingsPlanPostingSource = _savingsPlanLinkedPostings ? SavingsPlanPostingSource.LinkedAccountPostings : SavingsPlanPostingSource.PlanPostings;
 
             await _vm.ReloadAsync(_analysisMonth, default);
             
@@ -918,6 +1032,16 @@
         SetUseValuta(string.Equals(v, "valuta", StringComparison.OrdinalIgnoreCase));
     }
 
+    private string _savingsPlanPostingSourceString => _savingsPlanLinkedPostings ? "linked" : "plan";
+    private void OnSavingsPlanPostingSourceChange(ChangeEventArgs e)
+    {
+        var v = e?.Value?.ToString();
+        var linked = string.Equals(v, "linked", StringComparison.OrdinalIgnoreCase);
+        if (_savingsPlanLinkedPostings == linked) { return; }
+        _savingsPlanLinkedPostings = linked;
+        _ = LoadAsync();
+    }
+
     private void OnToggleKind(PostingKind value, bool isChecked)
     {
         var beforePrimary = PrimaryKind;
@@ -948,7 +1072,7 @@
 
     private async Task SubmitFavoriteDialogAsync()
     {
-        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _compareProjection && CanCompareProjection, _showChart, true, IsMulti ? _selectedKinds : null, BuildFilters(), _useValutaDate);
+        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _compareProjection && CanCompareProjection, _showChart, true, IsMulti ? _selectedKinds : null, BuildFilters(), _useValutaDate, default, _savingsPlanLinkedPostings ? SavingsPlanPostingSource.LinkedAccountPostings : SavingsPlanPostingSource.PlanPostings);
         if (res is not null)
         {
             _vm!.ActiveFavoriteId = res.Id;
@@ -998,6 +1122,7 @@
     {
         _vm!.ActiveFavoriteId = fav.Id;
         _vm!.FavoriteName = fav.Name;
+        _vm!.FiltersDirty = false;
         _selectedKinds = fav.PostingKinds?.Count > 0 ? fav.PostingKinds.Select(x => x).ToList() : new List<PostingKind> { fav.PostingKind };
         _includeCategory = fav.IncludeCategory;
         _includeDividendRelated = fav.Filters?.IncludeDividendRelated ?? false;
@@ -1015,10 +1140,16 @@
         _vm!.SelectedSavingsCategories.Clear(); foreach (var id in fav.Filters?.SavingsPlanCategoryIds ?? Array.Empty<Guid>()) { _vm.SelectedSavingsCategories.Add(id); }
         _vm!.SelectedSecurityCategories.Clear(); foreach (var id in fav.Filters?.SecurityCategoryIds ?? Array.Empty<Guid>()) { _vm.SelectedSecurityCategories.Add(id); }
         _vm!.SelectedSecuritySubTypes.Clear(); foreach (var st in fav.Filters?.SecuritySubTypes ?? Array.Empty<int>()) { _vm.SelectedSecuritySubTypes.Add(st); }
+        _vm!.SelectedBankTextFilters.Clear(); _vm.SelectedBankTextFilters.AddRange(fav.Filters?.BankTextFilters ?? Array.Empty<string>());
+        _vm!.SelectedContactTextFilters.Clear(); _vm.SelectedContactTextFilters.AddRange(fav.Filters?.ContactTextFilters ?? Array.Empty<string>());
+        _vm!.SelectedSavingsPlanTextFilters.Clear(); _vm.SelectedSavingsPlanTextFilters.AddRange(fav.Filters?.SavingsPlanTextFilters ?? Array.Empty<string>());
+        _vm!.SelectedSecurityTextFilters.Clear(); _vm.SelectedSecurityTextFilters.AddRange(fav.Filters?.SecurityTextFilters ?? Array.Empty<string>());
         _vm!.IncludeDividendRelated = _includeDividendRelated;
         // restore date kind selection from favorite
         _useValutaDate = fav.UseValutaDate;
         _vm!.UseValutaDate = _useValutaDate;
+        _savingsPlanLinkedPostings = fav.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings;
+        _vm!.SavingsPlanPostingSource = fav.SavingsPlanPostingSource;
         _vm!.CompareProjection = _compareProjection;
           _ = _vm!.LoadFilterOptionsAsync();
        _ = LoadAsync();
@@ -1033,10 +1164,34 @@
     private FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest? BuildFilters()
     {
         var payload = _includeCategory
-            ? new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(_vm!.SelectedAccounts.ToList(), null, null, null,
-                _vm.SelectedContactCategories.ToList(), _vm.SelectedSavingsCategories.ToList(), _vm.SelectedSecurityCategories.ToList(), _vm.SelectedSecuritySubTypes.ToList(), _includeDividendRelated)
-            : new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(_vm!.SelectedAccounts.ToList(), _vm.SelectedContacts.ToList(), _vm.SelectedSavingsPlans.ToList(), _vm.SelectedSecurities.ToList(),
-                null, null, null, _vm.SelectedSecuritySubTypes.ToList(), _includeDividendRelated);
+            ? new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(
+                AccountIds: _vm!.SelectedAccounts.ToList(),
+                ContactIds: null,
+                SavingsPlanIds: null,
+                SecurityIds: null,
+                ContactCategoryIds: _vm.SelectedContactCategories.ToList(),
+                SavingsPlanCategoryIds: _vm.SelectedSavingsCategories.ToList(),
+                SecurityCategoryIds: _vm.SelectedSecurityCategories.ToList(),
+                SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: _includeDividendRelated,
+                BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
+                ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: _vm.SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: _vm.SelectedSecurityTextFilters.ToList())
+            : new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(
+                AccountIds: _vm!.SelectedAccounts.ToList(),
+                ContactIds: _vm.SelectedContacts.ToList(),
+                SavingsPlanIds: _vm.SelectedSavingsPlans.ToList(),
+                SecurityIds: _vm.SelectedSecurities.ToList(),
+                ContactCategoryIds: null,
+                SavingsPlanCategoryIds: null,
+                SecurityCategoryIds: null,
+                SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
+                IncludeDividendRelated: _includeDividendRelated,
+                BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
+                ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),
+                SavingsPlanTextFilters: _vm.SelectedSavingsPlanTextFilters.ToList(),
+                SecurityTextFilters: _vm.SelectedSecurityTextFilters.ToList());
         return payload;
     }
 }
