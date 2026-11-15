@@ -6,7 +6,7 @@
 
 Die Textfilter je Buchungsart wandern als neue Filterdimension durch die bestehende Pipeline: Filterdialog (`ReportDashboardViewModel`) → `ReportAggregatesFiltersRequest` → `ReportsController` → `ReportAggregationFilters` → `ReportAggregationService`. Buchungsarten mit gesetzten Textfiltern werden aus den Rohbuchungen (`Postings`) verdichtet, weil die vorberechneten `PostingAggregates` keine Textfelder führen; alle übrigen Buchungsarten bleiben auf dem Aggregatpfad. Gespeicherte Textfilter liegen als JSON-Spalten am `ReportFavorite` und wirken damit automatisch auf KPI-Kacheln der Startseite sowie auf den MCP-Pfad.
 
-Unabhängig davon liefert die Posteneinsicht zu jeder Betragszelle die zugehörigen Einzelposten über einen eigenen Abfragepfad (Abschnitt 7).
+Unabhängig davon liefert die Posteneinsicht zu jeder Betragszelle die zugehörigen Einzelposten über einen eigenen Abfragepfad (Abschnitt 7); die Vergleichsoption `CompareProjection` projiziert wiederkehrende Vorjahresereignisse aller Buchungsarten in den Betrachtungszeitraum (Abschnitt 8).
 
 ## Ablauf
 
@@ -105,6 +105,27 @@ Beteiligte Komponenten:
 - `IReportPostingsQueryService` / `ReportPostingsQueryService` — `MaxPostings = 5000`, `PostingSelection`
 - `ReportQuerySemantics` — `ComputeCellWindow`, `TryParseGroupKey`, `ApplyDateWindow` u. a.
 - `IApiClient.Reports_QueryPostingsAsync` (`ApiClient.Reports.cs`)
+
+### 8. Artübergreifende Hochrechnung (`CompareProjection`)
+
+Die Vergleichsoption `Hochrechnung` projiziert wiederkehrende Vorjahresereignisse aller ausgewählten Buchungsarten in den Betrachtungszeitraum. Die früher als lokale Funktion in `QuerySecurityDividendsNetAsync` gekapselte Logik liegt in zwei internen Komponenten, die beide Aggregationspfade gemeinsam nutzen:
+
+- `ReportProjectionEventLoader` (`internal`, `AppDbContext` im Konstruktor) lädt die Ereignisse je Buchungsart als `ProjectionEvent(Kind, EntityId, Date, Month, Amount)`: `LoadEntityEventsAsync` für Bank/Kontakt, `LoadSavingsPlanEventsAsync` für Sparpläne (bei `LinkedAccountPostings` über `LoadSavingsPlanAccountLinksAsync` aus den Bank-Buchungen der verknüpften Konten, EntityId = PlanId), `LoadSecurityDividendEventsAsync` für das `GroupId`-Dividenden-Netting (Anker `SecuritySubType == Dividend`, Netto = Dividend + Fee + Tax) und `LoadSecurityHoldingTransactionsAsync` für die Bestandsprüfung. Alle Arten verwenden das Effektivdatum (`UseValutaDate` mit `MinValue`-Fallback) und die jeweiligen `*TextFilters` des Berichts.
+- `ReportProjectionCalculator` (`internal static`) enthält die verallgemeinerte Berechnung `ApplyProjectionAmounts` mit `ReportProjectionContext(Interval, Analysis, StartMonth, EndExclusive)`: `DetectPattern` erkennt je Entität das `ProjectionPattern` des Referenzjahres (`Monthly` ab 6 regelmäßige Monatsereignisse, `Quarterly` 2–5 Ereignisse mit 60–125 Tagen Abstand, `Annual` genau ein Ereignis, sonst `Irregular`), `FindExpectedItems`/`FindIrregularExpected` projizieren die Vorjahresereignisse +1 Jahr in das Fenster und `HasCurrentMatch` streicht bereits bestätigte Erwartungen. Die Zuordnung auf die Berichtspunkte erfolgt über `ReportQuerySemantics.TryParseGroupKey` (Entity-Ziel → `Kind`/`EntityId`/`SecuritySubType`), gefolgt von Kategorie- und `Type:`-Rollups ohne Doppelzählung. Ein optionales `hasActiveEntity`-Delegat (`HasPositiveHolding` aus den Holding-Transaktionen) gilt ausschließlich für `Kind == Security`; für die übrigen Arten entfällt die Prüfung, da keine der Entitäten einen Bestands- oder Aktivitätsbegriff besitzt.
+
+Im Standardpfad `QueryAsync` steuern drei Gates die Option: `projectionEnabled` (`CompareProjection && Interval != AllHistory`), `securityProjectionEnabled` (zusätzlich `!hasContradictingSecuritySubTypes` — eine Untertypauswahl ohne `Dividend` unterdrückt nur die Security-Erwartungen) und `comparedProjection` als Rückgabewert `ComparedProjection`. Das Ereignisfenster reicht mit `projectionEventLoadStart = projectionWindowStart.AddYears(-2)` zwei Jahre zurück; der Calculator läuft nach der Latest-Period-Injektion mit `securityDividendLeafOnly: true` (Security-Erwartungen nur auf `…:Dividend`-Zeilen), und die Leer-Latest-Bereinigung behält rein projizierte Zeilen über `hasProjectionData`. Im Netto-Dividendenpfad `QuerySecurityDividendsNetAsync` werden `dividendEvents` und Holding-Transaktionen über denselben Loader bezogen und beide `ApplyProjectionAmounts`-Aufrufe an den Calculator delegiert.
+
+Im Dashboard steht die Checkbox `Label_CompareProjection` bei `CanCompareProjection` (mindestens eine Buchungsart, Intervall nicht `AllHistory`) zur Verfügung. Jede Hochrechnungszelle mit `ProjectionExpectedItems` zeigt eine Info-Schaltfläche (`ProjectionDetails_Open`), die das Overlay mit `Istwerte`/`Erwartete Buchungen`/`Hochrechnung` und den Spalten `Art`/`Herkunft`/`Erwartet am`/`Vorjahresdatum`/`Betrag` öffnet; der MCP-Pfad `fm_reporting_aggregate` liefert dieselben Details als `expectedItems` (`kind`, `entityId`, `untrusted_data.entityName`, `expectedDate`, `priorYearDate`, `amount`).
+
+Beteiligte Komponenten:
+
+- `ReportProjectionEventLoader` — `LoadEntityEventsAsync`, `LoadSavingsPlanAccountLinksAsync`, `LoadSavingsPlanEventsAsync`, `LoadSecurityDividendEventsAsync`, `LoadSecurityHoldingTransactionsAsync`
+- `ReportProjectionCalculator` — `ApplyProjectionAmounts`, `DetectPattern`, `FindExpectedItems`, `FindIrregularExpected`, `HasCurrentMatch`, `GetProjectionPeriodEnd`
+- `ProjectionEvent`, `ProjectionCandidate`, `ProjectionPattern`, `ReportProjectionContext` — interne Typen der Hochrechnung
+- `ReportQuerySemantics` — `TryParseGroupKey`, `ParseKindFromKey` (Leaf-/Typ-Zuordnung)
+- `ReportAggregationService.QueryAsync` / `QuerySecurityDividendsNetAsync` — Gates, Ereignisfenster, `hasProjectionData`
+- `ReportAggregatePointDto.ProjectionAmount`/`ProjectionExpectedItems`, `ReportProjectionExpectedItemDto`
+- `ReportDashboard.razor` (`CanCompareProjection`, `OpenProjectionDetails`), `ReportDashboardViewModel.CanCompareProjection`
 
 ## Diagramm
 

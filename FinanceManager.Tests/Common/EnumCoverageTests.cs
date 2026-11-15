@@ -492,6 +492,20 @@ public sealed class EnumCoverageTests
     /// Verifies the declared values of the enum covered by this test.
     /// </summary>
     [Fact]
+    public void ProjectionPattern_Values()
+    {
+        var enumType = typeof(FinanceManager.Infrastructure.Reports.ReportPostingsQueryService).Assembly
+            .GetType("FinanceManager.Infrastructure.Reports.ProjectionPattern");
+        Assert.NotNull(enumType);
+        Assert.Equal(
+            new[] { "Annual", "Irregular", "Monthly", "Quarterly" },
+            Enum.GetNames(enumType!).OrderBy(x => x, StringComparer.Ordinal).ToArray());
+    }
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
     public void ReportPostingsPeriod_Values()
         => AssertValues<FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod>(
             nameof(FinanceManager.Shared.Dtos.Reports.ReportPostingsPeriod.Current),

@@ -814,6 +814,49 @@ public sealed class McpReadOnlyToolsTests
         Assert.Equal(JsonValueKind.Null, pts[3].GetProperty("postingType").ValueKind);
         Assert.Equal(JsonValueKind.Null, pts[4].GetProperty("postingType").ValueKind);
     }
+
+    /// <summary>
+    /// Test case: fm_reporting_aggregate serializes <see cref="ReportAggregatePointDto.ProjectionExpectedItems"/>
+    /// as the kind-neutral <c>expectedItems</c> array — posting kind, entity id, expected/prior-year dates and
+    /// amount — with the display name isolated under <c>untrusted_data</c>.
+    /// </summary>
+    [Fact]
+    public async Task ReportingAggregate_EmitsExpectedItems()
+    {
+        var owner = Guid.NewGuid();
+        var month = new DateTime(2026, 5, 1);
+        var accountId = Guid.NewGuid();
+        var agg = new Mock<IReportAggregationService>();
+        agg.Setup(a => a.QueryAsync(It.IsAny<ReportAggregationQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportAggregationResult(
+                ReportInterval.Month,
+                new ReportAggregatePointDto[]
+                {
+                    new(month, $"Account:{accountId}", "Giro", null, 0m, 120m, null, null, null,
+                        ProjectionExpectedItems: new ReportProjectionExpectedItemDto[]
+                        {
+                            new(PostingKind.Bank, accountId, "Giro <inject>", new DateTime(2026, 5, 10), new DateTime(2025, 5, 10), 120m)
+                        }),
+                    new(month, "Contact:x", "Vendor", null, -5m, null, null, null, null)
+                },
+                false, false, true));
+        var handler = new FmReportingAggregateHandler(agg.Object, Mock.Of<IReportFavoriteService>());
+        using var doc = Serialize(await handler.InvokeAsync(
+            Args("{\"postingKind\":\"Bank\",\"interval\":\"Month\",\"compareProjection\":true}"),
+            NewCallContext(NewAccessContext(owner).Object), CancellationToken.None));
+
+        var pts = doc.RootElement.GetProperty("result").GetProperty("points");
+        Assert.Equal(2, pts.GetArrayLength());
+        var items = pts[0].GetProperty("expectedItems");
+        Assert.Equal(1, items.GetArrayLength());
+        Assert.Equal("Bank", items[0].GetProperty("kind").GetString());
+        Assert.Equal(accountId, items[0].GetProperty("entityId").GetGuid());
+        Assert.Equal(new DateTime(2026, 5, 10), items[0].GetProperty("expectedDate").GetDateTime());
+        Assert.Equal(new DateTime(2025, 5, 10), items[0].GetProperty("priorYearDate").GetDateTime());
+        Assert.Equal(120m, items[0].GetProperty("amount").GetDecimal());
+        Assert.Equal("Giro <inject>", items[0].GetProperty("untrusted_data").GetProperty("entityName").GetString());
+        Assert.Equal(JsonValueKind.Null, pts[1].GetProperty("expectedItems").ValueKind);
+    }
 }
 
 /// <summary>

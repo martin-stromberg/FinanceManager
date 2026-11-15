@@ -11,7 +11,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="IncludeCategory">The include category.</param>
 /// <param name="ComparePrevious">The compare previous.</param>
 /// <param name="CompareYear">The compare year.</param>
-/// <param name="CompareProjection">The compare projection.</param>
+/// <param name="CompareProjection">True to request projection amounts where supported.</param>
 /// <param name="UseValutaDate">The use valuta date.</param>
 /// <param name="PostingKinds">The posting kinds.</param>
 /// <param name="AnalysisDate">The analysis date.</param>

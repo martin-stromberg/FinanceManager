@@ -376,16 +376,19 @@
     <value>Schließen</value>
   </data>
   <data name="ProjectionDetails_Open" xml:space="preserve">
-    <value>Erwartete Dividenden anzeigen</value>
+    <value>Erwartete Posten anzeigen</value>
   </data>
   <data name="ProjectionDetails_Title" xml:space="preserve">
     <value>Hochrechnung: {0}</value>
   </data>
   <data name="ProjectionDetails_None" xml:space="preserve">
-    <value>Keine erwarteten Dividenden.</value>
+    <value>Keine erwarteten Posten.</value>
   </data>
-  <data name="ProjectionDetails_Security" xml:space="preserve">
-    <value>Wertpapier</value>
+  <data name="ProjectionDetails_Entity" xml:space="preserve">
+    <value>Herkunft</value>
+  </data>
+  <data name="ProjectionDetails_Kind" xml:space="preserve">
+    <value>Art</value>
   </data>
   <data name="ProjectionDetails_ExpectedDate" xml:space="preserve">
     <value>Erwartet am</value>

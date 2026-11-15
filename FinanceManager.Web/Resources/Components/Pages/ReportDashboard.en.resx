@@ -376,16 +376,19 @@
     <value>Close</value>
   </data>
   <data name="ProjectionDetails_Open" xml:space="preserve">
-    <value>Show expected dividends</value>
+    <value>Show expected items</value>
   </data>
   <data name="ProjectionDetails_Title" xml:space="preserve">
     <value>Projection: {0}</value>
   </data>
   <data name="ProjectionDetails_None" xml:space="preserve">
-    <value>No expected dividends.</value>
+    <value>No expected items.</value>
   </data>
-  <data name="ProjectionDetails_Security" xml:space="preserve">
-    <value>Security</value>
+  <data name="ProjectionDetails_Entity" xml:space="preserve">
+    <value>Origin</value>
+  </data>
+  <data name="ProjectionDetails_Kind" xml:space="preserve">
+    <value>Kind</value>
   </data>
   <data name="ProjectionDetails_ExpectedDate" xml:space="preserve">
     <value>Expected on</value>

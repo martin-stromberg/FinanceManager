@@ -63,7 +63,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     public bool CompareYear { get; set; }
 
     /// <summary>
-    /// When true request dividend projection amounts.
+    /// When true request projection amounts for recurring postings of the selected kinds.
     /// </summary>
     public bool CompareProjection { get; set; }
 
@@ -212,11 +212,6 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     public bool IsMulti => SelectedKinds.Count > 1;
 
     /// <summary>
-    /// True when the current selection contains only securities.
-    /// </summary>
-    public bool IsSecurityOnlySelection => SelectedKinds.Count == 1 && SelectedKinds[0] == PostingKind.Security;
-
-    /// <summary>
     /// True when projection can be requested for the current UI state.
     /// </summary>
     /// <returns>Whether the operation succeeded.</returns>
@@ -224,7 +219,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     {
         get
         {
-            return IsSecurityOnlySelection && (ReportInterval)Interval != ReportInterval.AllHistory;
+            return SelectedKinds.Count > 0 && (ReportInterval)Interval != ReportInterval.AllHistory;
         }
     }
 

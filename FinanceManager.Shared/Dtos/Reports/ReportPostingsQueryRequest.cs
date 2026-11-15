@@ -13,7 +13,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="PostingKind">Primary posting kind.</param>
 /// <param name="Interval">Report interval.</param>
 /// <param name="IncludeCategory">Whether category grouping is active.</param>
-/// <param name="CompareProjection">Whether dividend projection comparison is active.</param>
+/// <param name="CompareProjection">Whether the projection comparison is active.</param>
 /// <param name="UseValutaDate">Whether the valuta date determines the effective posting date.</param>
 /// <param name="PostingKinds">Optional multi-kind selection (falls back to <paramref name="PostingKind"/>).</param>
 /// <param name="AnalysisDate">Optional analysis month anchor.</param>
