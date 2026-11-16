@@ -697,7 +697,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <returns>A <see cref="ReportAggregationResult"/> containing aggregated points and metadata.</returns>
     public async Task<ReportAggregationResult> LoadAsync(PostingKind primaryKind, int interval, int take, bool includeCategory, bool comparePrevious, bool compareYear, bool compareProjection, IReadOnlyCollection<PostingKind>? postingKinds, DateTime? analysisDate, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
     {
-        var req = new ReportAggregatesQueryRequest(primaryKind, (ReportInterval)interval, take, includeCategory, comparePrevious, compareYear, compareProjection, useValutaDate, postingKinds, analysisDate, filters, savingsPlanPostingSource);
+        var req = new ReportAggregatesQueryRequest(primaryKind, (ReportInterval)interval, take, includeCategory, comparePrevious, compareYear, compareProjection, useValutaDate, postingKinds, analysisDate, filters, savingsPlanPostingSource, ActiveFavoriteId);
         var result = await _api.Reports_QueryAggregatesAsync(req, ct);
         return result ?? new ReportAggregationResult((ReportInterval)interval, Array.Empty<ReportAggregatePointDto>(), false, false, false);
     }

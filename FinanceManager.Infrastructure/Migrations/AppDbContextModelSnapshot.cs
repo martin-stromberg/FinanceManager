@@ -15,7 +15,7 @@ namespace FinanceManager.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.Account", b =>
                 {
@@ -1361,6 +1361,46 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("ReportFavorites");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Reports.ReportSuppressedExpectation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PriorYearDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ReportFavoriteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SuppressedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportFavoriteId");
+
+                    b.HasIndex("OwnerUserId", "ReportFavoriteId", "Kind", "EntityId", "PriorYearDate")
+                        .IsUnique();
+
+                    b.ToTable("ReportSuppressedExpectations");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2404,6 +2444,17 @@ namespace FinanceManager.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ReportFavoriteId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Reports.ReportSuppressedExpectation", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Reports.ReportFavorite", "ReportFavorite")
+                        .WithMany()
+                        .HasForeignKey("ReportFavoriteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReportFavorite");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Savings.SavingsPlan", b =>

@@ -927,6 +927,38 @@ public sealed class SetupImportService : ISetupImportService
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
+        // ReportSuppressedExpectations (optional section - backups predating the feature omit it)
+        if (root.TryGetProperty("ReportSuppressedExpectations", out var suppressedEl) && suppressedEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<FinanceManager.Domain.Reports.ReportSuppressedExpectation.ReportSuppressedExpectationBackupDto>>(suppressedEl.GetRawText(), jsonOptions) ?? new List<FinanceManager.Domain.Reports.ReportSuppressedExpectation.ReportSuppressedExpectationBackupDto>();
+            foreach (var dto in list)
+            {
+                // Scoped to a favorite: skip entries whose favorite was not part of the backup.
+                if (!reportMap.TryGetValue(dto.ReportFavoriteId, out var newFavoriteId))
+                {
+                    continue;
+                }
+                // The entity id points at the remapped account/contact/savings plan/security.
+                var entityMap = dto.Kind switch
+                {
+                    PostingKind.Bank => accountMap,
+                    PostingKind.Contact => contactMap,
+                    PostingKind.SavingsPlan => savingsMap,
+                    PostingKind.Security => securityMap,
+                    _ => null
+                };
+                if (entityMap is null || !entityMap.TryGetValue(dto.EntityId, out var newEntityId))
+                {
+                    continue;
+                }
+                var entity = new ReportSuppressedExpectation(userId, newFavoriteId, dto.Kind, newEntityId, dto.PriorYearDate);
+                entity.AssignBackupDto(dto with { OwnerUserId = userId, ReportFavoriteId = newFavoriteId, EntityId = newEntityId });
+                _db.ReportSuppressedExpectations.Add(entity);
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
         // Notifications
         ProgressChanged?.Invoke(this, progress.SetDescription("Notifications"));
         if (root.TryGetProperty("Notifications", out var notificationsEl) && notificationsEl.ValueKind == JsonValueKind.Array)

@@ -408,6 +408,18 @@
   <data name="ProjectionDetails_Amount" xml:space="preserve">
     <value>Betrag</value>
   </data>
+  <data name="ProjectionDetails_Suppress" xml:space="preserve">
+    <value>Nicht mehr erwarten</value>
+  </data>
+  <data name="ProjectionDetails_Unsuppress" xml:space="preserve">
+    <value>Wieder einbeziehen</value>
+  </data>
+  <data name="ProjectionDetails_Suppressed_Title" xml:space="preserve">
+    <value>Ausgeblendete Erwartungen</value>
+  </data>
+  <data name="ProjectionDetails_Suppressed_None" xml:space="preserve">
+    <value>Keine ausgeblendeten Erwartungen</value>
+  </data>
   <data name="Ribbon_Tab" xml:space="preserve">
     <value>Dashboard</value>
   </data>

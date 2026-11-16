@@ -92,13 +92,23 @@ Der Button öffnet ein Overlay mit dem Titel „Hochrechnung: <Zeilenname>". Obe
 
 > **Hinweis:** Bei Summenzeilen und gemischten Buchungsartenauswahlen kann die Liste erwartete Posten verschiedener Buchungsarten gemeinsam anzeigen — die Spalte **Art** macht die Zugehörigkeit erkennbar.
 
-#### 3. Overlay schließen
+#### 3. Einzelnen erwarteten Posten ausblenden (nur mit Favorit)
 
-Das Overlay lässt sich über die Schließen-Schaltfläche (X) oben rechts schließen. Es dient ausschließlich der Einsicht — ein Bearbeiten der erwarteten Posten ist nicht möglich.
+Wurde das Dashboard über einen gespeicherten Favoriten geöffnet, trägt jede Zeile der Erwartungsliste eine Schaltfläche **Nicht mehr erwarten**. Sie blendet genau diesen erwarteten Posten für diesen Favoriten aus — etwa eine einmalige Zinszahlung, die nicht wiederkehren wird. Der Posten verlässt die aktive Liste, der hochgerechnete Betrag sinkt um den erwarteten Betrag, und der Eintrag erscheint in der Liste **Ausgeblendete Erwartungen** unterhalb der Tabelle.
+
+> **Hinweis:** Die Ausblendung gilt ausschließlich für den aktiven Favoriten. Andere Favoriten und Berichte ohne Favoritenbezug zeigen den Posten weiterhin. Ohne aktiven Favoriten besitzt das Overlay keine Ausblend-Schaltflächen. Die Ausblendung ist an das Vorjahresdatum gebunden: Wechselt das Referenzjahr, wird ein gleichartiger neuer Posten wieder erwartet.
+
+#### 4. Ausgeblendeten Posten wieder einbeziehen
+
+In der Liste **Ausgeblendete Erwartungen** stellt die Schaltfläche **Wieder einbeziehen** die Erwartung vollständig wieder her: Der Posten kehrt in die aktive Liste zurück und fließt wieder in die Hochrechnung ein — so, als wäre er nie ausgeblendet worden.
+
+#### 5. Overlay schließen
+
+Das Overlay lässt sich über die Schließen-Schaltfläche (X) oben rechts schließen. Neben dem Ausblenden und Wieder-Einbeziehen erwarteter Posten dient es der Einsicht — ein Bearbeiten der zugrunde liegenden Buchungen ist nicht möglich.
 
 ### Ergebnis
 
-Die aufgelisteten erwarteten Posten ergeben zusammen mit den Istwerten den hochgerechneten Betrag der Zeile; jede Zeile zeigt, aus welcher Vorjahresbuchung die Erwartung entstanden ist.
+Die aufgelisteten erwarteten Posten ergeben zusammen mit den Istwerten den hochgerechneten Betrag der Zeile; jede Zeile zeigt, aus welcher Vorjahresbuchung die Erwartung entstanden ist. Ausgeblendete Erwartungen fließen nicht mehr in die Hochrechnung ein, bleiben aber je Favorit nachvollziehbar und wiederherstellbar.
 
 ## Barrierefreiheit
 
@@ -109,3 +119,4 @@ Die aufgelisteten erwarteten Posten ergeben zusammen mit den Istwerten den hochg
 - Das Posten-Overlay ist als `role="dialog"` mit `aria-modal="true"` ausgezeichnet.
 - Die Info-Schaltfläche an den Hochrechnungszellen trägt den Tooltip „Erwartete Posten anzeigen" als `title`-Attribut.
 - Das Hochrechnungs-Overlay ist als `role="dialog"` mit `aria-modal="true"` und `aria-labelledby` ausgezeichnet.
+- Die Schaltflächen „Nicht mehr erwarten" und „Wieder einbeziehen" sind echte `button`-Elemente und während eines laufenden Speichervorgangs deaktiviert.

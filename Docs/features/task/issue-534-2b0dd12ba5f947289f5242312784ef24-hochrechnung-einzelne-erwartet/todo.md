@@ -12,13 +12,13 @@ Branch: `task/issue-534-2b0dd12ba5f947289f5242312784ef24-hochrechnung-einzelne-e
 | [x] | 5 | Umsetzungsplanung (Unteragent) | `plan.md` |
 | [x] | 5a | Offene Punkte prüfen und ggf. Planung wiederholen | `plan.md` (aktualisiert) |
 | [x] | 5b | Planungscommit | – |
-| [ ] | 6 | Implementierung (Unteragent) | Codeänderungen |
-| [ ] | 7 | Plan-Review (Unteragent, bedingt) | `review.md` |
-| [ ] | 8 | Code-Review (Unteragent) | `review-code.md` |
-| [ ] | 8b | Tests ausführen (Unteragent) | `test-results.md` |
-| [ ] | – | Iteration oder Abschluss entscheiden | – |
-| [ ] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
-| [ ] | 9 | Dokumentation erstellen (Unteragent) | `docs/help/` |
-| [ ] | 9b | README aktualisieren (Unteragent) | `README.md` |
+| [x] | 6 | Implementierung | Codeänderungen |
+| [x] | 7 | Plan-Review | `plan.md` (bewertet), `review-code.md` |
+| [x] | 8 | Code-Review | `review-code.md` |
+| [x] | 8b | Tests ausführen | `test-results.md` |
+| [x] | – | Iteration oder Abschluss entscheiden | Abschluss (alle Suiten grün) |
+| [ ] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | entfällt |
+| [x] | 9 | Dokumentation erstellen | `Docs/help/berichtswesen/*` |
+| [x] | 9b | README aktualisieren | `README.md` |
 | [ ] | – | Feature-Verzeichnis löschen | – |
 | [ ] | – | Commit durchführen | – |

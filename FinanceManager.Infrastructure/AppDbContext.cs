@@ -224,6 +224,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             return Set<HomeKpi>();
         }
     } // new
+    /// <summary>Suppressed projection expectations scoped to report favorites.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<ReportSuppressedExpectation> ReportSuppressedExpectations
+    {
+        get
+        {
+            return Set<ReportSuppressedExpectation>();
+        }
+    }
     /// <summary>Cached report data entries.</summary>
     /// <returns>The result.</returns>
     public DbSet<ReportCacheEntry> ReportCacheEntries
@@ -707,6 +716,24 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.Take).IsRequired();
         });
 
+        // ReportSuppressedExpectation configuration
+        modelBuilder.Entity<ReportSuppressedExpectation>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.ReportFavoriteId).IsRequired();
+            b.Property(x => x.Kind).HasConversion<int>().IsRequired();
+            b.Property(x => x.EntityId).IsRequired();
+            b.Property(x => x.PriorYearDate).IsRequired();
+            b.Property(x => x.SuppressedAtUtc).IsRequired();
+            b.HasIndex(x => new { x.OwnerUserId, x.ReportFavoriteId, x.Kind, x.EntityId, x.PriorYearDate }).IsUnique();
+            // Suppressions are meaningless without the favorite; remove them when it is deleted.
+            b.HasOne(x => x.ReportFavorite)
+                .WithMany()
+                .HasForeignKey(x => x.ReportFavoriteId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<ReportCacheEntry>(b =>
         {
             b.HasKey(x => x.Id);
@@ -970,7 +997,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     /// <returns>A task that completes when the clear operation has finished.</returns>
     internal async Task ClearUserDataAsync(Guid userId, Action<int, int> progressCallback, CancellationToken ct)
     {
-        var total = 27;
+        var total = 28;
         var count = 0;
 
         // Notifications
@@ -994,6 +1021,12 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         // AccountShares (User direkt oder Accounts des Users)
         await AccountShares
             .Where(s => s.UserId == userId || Accounts.Any(a => a.OwnerUserId == userId && a.Id == s.AccountId))
+            .ExecuteDeleteAsync(ct);
+        progressCallback(++count, total);
+
+        // Suppressed report expectations (before favorites; FK cascade would also catch them)
+        await ReportSuppressedExpectations
+            .Where(r => r.OwnerUserId == userId)
             .ExecuteDeleteAsync(ct);
         progressCallback(++count, total);
 

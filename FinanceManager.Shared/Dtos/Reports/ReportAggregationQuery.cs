@@ -16,6 +16,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="UseValutaDate">When true, aggregate by ValutaDate, falling back to BookingDate where needed.</param>
 /// <param name="SavingsPlanPostingSource">Posting source used for emitted savings plans.</param>
 /// <param name="Filters">Optional top-level filters.</param>
+/// <param name="ReportFavoriteId">Optional report favorite context; when set, per-favorite suppressed expectations are honored by the projection. Ad-hoc queries leave it null and remain unaffected.</param>
 /// <returns>The result.</returns>
 public sealed record ReportAggregationQuery(
     Guid OwnerUserId,
@@ -30,5 +31,6 @@ public sealed record ReportAggregationQuery(
     DateTime? AnalysisDate = null,
     bool UseValutaDate = false,
     ReportAggregationFilters? Filters = null,
-    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings,
+    Guid? ReportFavoriteId = null
 );

@@ -17,6 +17,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="AnalysisDate">The analysis date.</param>
 /// <param name="SavingsPlanPostingSource">Posting source used for emitted savings plans.</param>
 /// <param name="Filters">The filters.</param>
+/// <param name="ReportFavoriteId">Optional report favorite context; when set, per-favorite suppressed expectations are honored by the projection.</param>
 /// <returns>The result.</returns>
 [method: JsonConstructor]
 public sealed record ReportAggregatesQueryRequest(
@@ -31,7 +32,8 @@ public sealed record ReportAggregatesQueryRequest(
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     DateTime? AnalysisDate = null,
     ReportAggregatesFiltersRequest? Filters = null,
-    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings,
+    Guid? ReportFavoriteId = null
 )
 {
     /// <summary>

@@ -830,6 +830,24 @@ public interface IApiClient
     /// <returns>The result.</returns>
     Task<bool> Reports_DeleteFavoriteAsync(Guid id, CancellationToken ct = default);
 
+    /// <summary>Lists the expected postings suppressed for the given report favorite.</summary>
+    /// <param name="favoriteId">Identifier of the report favorite.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    Task<IReadOnlyList<ReportSuppressedExpectationDto>> Reports_ListSuppressedExpectationsAsync(Guid favoriteId, CancellationToken ct = default);
+    /// <summary>Suppresses one expected posting for the given report favorite.</summary>
+    /// <param name="favoriteId">Identifier of the report favorite.</param>
+    /// <param name="req">Request payload identifying the expected item.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    Task<ReportSuppressedExpectationDto?> Reports_SuppressExpectationAsync(Guid favoriteId, ReportSuppressedExpectationRequest req, CancellationToken ct = default);
+    /// <summary>Removes a suppression so the expected posting is projected again. Returns false when not found.</summary>
+    /// <param name="favoriteId">Identifier of the report favorite.</param>
+    /// <param name="suppressionId">Identifier of the suppression.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    Task<bool> Reports_UnsuppressExpectationAsync(Guid favoriteId, Guid suppressionId, CancellationToken ct = default);
+
     // Savings Plan Categories
 
     /// <summary>Lists saving plan categories for the current user.</summary>

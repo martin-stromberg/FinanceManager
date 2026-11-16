@@ -73,13 +73,21 @@ internal static class ReportProjectionCalculator
     /// the standard path). When <c>false</c>, every <c>Security:{id}</c> entity row qualifies
     /// (netted dividend path, where plain keys denote net dividends).
     /// </param>
+    /// <param name="suppressions">
+    /// Optional set of suppressed expectation identities
+    /// (<c>Kind</c>, <c>EntityId</c>, <c>PriorYearDate</c> — normalized to the date) loaded for
+    /// the active report favorite. Matching candidates are discarded before the confirmation
+    /// check, so they never surface as expected items and the projection amount drops
+    /// accordingly. <c>null</c> when the query has no favorite context.
+    /// </param>
     internal static void ApplyProjectionAmounts(
         List<ReportAggregatePointDto> targetPoints,
         IReadOnlyList<ProjectionEvent> events,
         ReportProjectionContext context,
         Func<PostingKind, Guid, string> nameResolver,
         Func<Guid, DateTime, bool>? hasActiveSecurity = null,
-        bool securityDividendLeafOnly = false)
+        bool securityDividendLeafOnly = false,
+        IReadOnlySet<(PostingKind Kind, Guid EntityId, DateTime PriorYearDate)>? suppressions = null)
     {
         if (targetPoints.Count == 0 || events.Count == 0)
         {
@@ -122,6 +130,7 @@ internal static class ReportProjectionCalculator
                     .Select(e => new ProjectionCandidate(e.Kind, e.EntityId, e.Date.AddYears(1), e.Date, e.Amount))
                     .Where(e => MapProjectionPeriod(e.ExpectedDate) != DateTime.MinValue)
                     .Where(e => e.Kind != PostingKind.Security || hasActiveSecurity is null || hasActiveSecurity(e.EntityId, e.ExpectedDate))
+                    .Where(e => suppressions is null || !suppressions.Contains((e.Kind, e.EntityId, e.PriorYearDate.Date)))
                     .ToList();
 
                 return FindExpectedItems(pattern, candidates, currentEvents, context.Analysis, g.Key.Kind)

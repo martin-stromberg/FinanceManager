@@ -658,7 +658,8 @@
                     ContactTextFilters: fav.Filters.ContactTextFilters,
                     SavingsPlanTextFilters: fav.Filters.SavingsPlanTextFilters,
                     SecurityTextFilters: fav.Filters.SecurityTextFilters),
-                fav.SavingsPlanPostingSource
+                fav.SavingsPlanPostingSource,
+                fav.Id
             );
             var agg = await Api.Reports_QueryAggregatesAsync(req);
             if (agg == null) { return; }
