@@ -15,7 +15,7 @@
 | `Interval` | `ReportInterval` | Aggregationsintervall |
 | `Take` | `int` | Anzahl Perioden |
 | `UseValutaDate` | `bool` | Aggregation nach Valuta |
-| `CompareProjection` | `bool` | Speichert die Hochrechnungsoption für Dividendenanalysen |
+| `CompareProjection` | `bool` | Speichert die Hochrechnungsoption |
 | `...IdsCsv` | `string?` | Persistierte Filterlisten |
 | `BankTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Bank-Buchungen |
 | `ContactTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Kontakt-Buchungen |
@@ -26,11 +26,13 @@
 
 | Modell | Eigenschaft | Typ | Beschreibung |
 |--------|-------------|-----|--------------|
-| `ReportAggregationQuery` | `CompareProjection` | `bool` | Fordert die Dividendenhochrechnung für gültige Wertpapierberichte an |
+| `ReportAggregationQuery` | `CompareProjection` | `bool` | Fordert die Hochrechnung für die ausgewählten Buchungsarten an (nicht für `AllHistory`) |
 | `ReportAggregatesQueryRequest` | `CompareProjection` | `bool` | API-Eingabefeld für das Dashboard |
 | `ReportAggregatesFiltersRequest` / `ReportAggregationFilters` | `BankTextFilters`, `ContactTextFilters`, `SavingsPlanTextFilters`, `SecurityTextFilters` | `IReadOnlyCollection<string>?` | Optionale Freitext-Filterlisten je Buchungsart (`Subject`/`Description`) |
 | `ReportAggregationResult` | `ComparedProjection` | `bool` | Meldet, ob die Hochrechnung im Ergebnis tatsächlich aktiv ist |
 | `ReportAggregatePointDto` | `ProjectionAmount` | `decimal?` | Hochgerechneter Betrag direkt nach `Amount` |
+| `ReportAggregatePointDto` | `ProjectionExpectedItems` | `IReadOnlyList<ReportProjectionExpectedItemDto>?` | Erwartete Ereignisse hinter dem Hochrechnungswert |
+| `ReportProjectionExpectedItemDto` | `Kind`, `EntityId`, `EntityName`, `ExpectedDate`, `PriorYearDate`, `Amount` | `record` | Ein erwartetes Ereignis einer Entität (Buchungsart, Entität, erwarteter Termin, Vorjahrstermin, Betrag) |
 
 ### Posteneinsicht (Drill-down)
 

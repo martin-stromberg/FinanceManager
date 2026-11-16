@@ -1,5 +1,6 @@
 using FinanceManager.Domain.Postings;
 using FinanceManager.Infrastructure;
+using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Infrastructure.Reports;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -99,7 +100,7 @@ public sealed class ReportAggregationProjectionTests
     /// <summary>
     /// For a security with no dividend booked yet in the analysis period but one in the prior year, the
     /// projection must add the prior year's net dividend (after fee/tax) as the expected amount for the current
-    /// period, exposing it via <c>ProjectionExpectedDividends</c> with the security id/name and both the
+    /// period, exposing it via <c>ProjectionExpectedItems</c> with the security id/name and both the
     /// expected and prior-year dates - while a security whose current-period dividend is already booked reports
     /// <c>ProjectionAmount</c> equal to its actual (confirmed) amount with no expected-dividend entries.
     /// </summary>
@@ -138,15 +139,15 @@ public sealed class ReportAggregationProjectionTests
         var confirmed = result.Points.Single(p => p.GroupKey == $"Security:{confirmedCurrent.Id}" && p.PeriodStart == analysis);
         Assert.Equal(0m, missing.Amount);
         Assert.Equal(70m, missing.ProjectionAmount);
-        var expectedDividend = Assert.Single(missing.ProjectionExpectedDividends!);
-        Assert.Equal(missingCurrent.Id, expectedDividend.SecurityId);
-        Assert.Equal("Missing Current", expectedDividend.SecurityName);
+        var expectedDividend = Assert.Single(missing.ProjectionExpectedItems!);
+        Assert.Equal(missingCurrent.Id, expectedDividend.EntityId);
+        Assert.Equal("Missing Current", expectedDividend.EntityName);
         Assert.Equal(new DateTime(2026, 5, 10), expectedDividend.ExpectedDate);
         Assert.Equal(new DateTime(2025, 5, 10), expectedDividend.PriorYearDate);
         Assert.Equal(70m, expectedDividend.Amount);
         Assert.Equal(50m, confirmed.Amount);
         Assert.Equal(50m, confirmed.ProjectionAmount);
-        Assert.Null(confirmed.ProjectionExpectedDividends);
+        Assert.Null(confirmed.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -184,7 +185,7 @@ public sealed class ReportAggregationProjectionTests
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(45m, point.Amount);
         Assert.Equal(45m, point.ProjectionAmount);
-        Assert.Null(point.ProjectionExpectedDividends);
+        Assert.Null(point.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -221,7 +222,7 @@ public sealed class ReportAggregationProjectionTests
         var mayPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(0m, mayPoint.Amount);
         Assert.Equal(0m, mayPoint.ProjectionAmount);
-        Assert.Null(mayPoint.ProjectionExpectedDividends);
+        Assert.Null(mayPoint.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -269,11 +270,11 @@ public sealed class ReportAggregationProjectionTests
         {
             Assert.Equal(0m, aprilPoint.Amount);
             Assert.Equal(0m, aprilPoint.ProjectionAmount);
-            Assert.Null(aprilPoint.ProjectionExpectedDividends);
+            Assert.Null(aprilPoint.ProjectionExpectedItems);
         }
         Assert.Equal(0m, julyPoint.Amount);
         Assert.Equal(10m, julyPoint.ProjectionAmount);
-        Assert.Equal(new DateTime(2026, 7, 10), Assert.Single(julyPoint.ProjectionExpectedDividends!).ExpectedDate);
+        Assert.Equal(new DateTime(2026, 7, 10), Assert.Single(julyPoint.ProjectionExpectedItems!).ExpectedDate);
     }
 
     /// <summary>
@@ -321,7 +322,7 @@ public sealed class ReportAggregationProjectionTests
         var yearPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
         Assert.Equal(60m, yearPoint.Amount);
         Assert.Equal(120m, yearPoint.ProjectionAmount);
-        var expectedDates = yearPoint.ProjectionExpectedDividends!.Select(p => p.ExpectedDate).ToArray();
+        var expectedDates = yearPoint.ProjectionExpectedItems!.Select(p => p.ExpectedDate).ToArray();
         Assert.Equal(
             new[]
             {
@@ -409,7 +410,7 @@ public sealed class ReportAggregationProjectionTests
         var yearPoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
         Assert.Equal(45.82m, yearPoint.Amount);
         Assert.Equal(95.56m, yearPoint.ProjectionAmount);
-        var expected = yearPoint.ProjectionExpectedDividends!.Select(p => (p.ExpectedDate, p.Amount)).ToArray();
+        var expected = yearPoint.ProjectionExpectedItems!.Select(p => (p.ExpectedDate, p.Amount)).ToArray();
         Assert.Equal(
             new[]
             {
@@ -458,12 +459,12 @@ public sealed class ReportAggregationProjectionTests
         var junePoint = result.Points.SingleOrDefault(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
         Assert.Equal(35m, marchPoint.Amount);
         Assert.Equal(35m, marchPoint.ProjectionAmount);
-        Assert.Null(marchPoint.ProjectionExpectedDividends);
+        Assert.Null(marchPoint.ProjectionExpectedItems);
         if (junePoint is not null)
         {
             Assert.Equal(0m, junePoint.Amount);
             Assert.Equal(0m, junePoint.ProjectionAmount);
-            Assert.Null(junePoint.ProjectionExpectedDividends);
+            Assert.Null(junePoint.ProjectionExpectedItems);
         }
     }
 
@@ -499,7 +500,7 @@ public sealed class ReportAggregationProjectionTests
         var junePoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
         Assert.Equal(0m, junePoint.Amount);
         Assert.Equal(40m, junePoint.ProjectionAmount);
-        Assert.Equal(new DateTime(2026, 6, 12), Assert.Single(junePoint.ProjectionExpectedDividends!).ExpectedDate);
+        Assert.Equal(new DateTime(2026, 6, 12), Assert.Single(junePoint.ProjectionExpectedItems!).ExpectedDate);
     }
 
     /// <summary>
@@ -537,7 +538,7 @@ public sealed class ReportAggregationProjectionTests
         var junePoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
         Assert.Equal(0m, junePoint.Amount);
         Assert.Equal(0m, junePoint.ProjectionAmount);
-        Assert.Null(junePoint.ProjectionExpectedDividends);
+        Assert.Null(junePoint.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -573,7 +574,7 @@ public sealed class ReportAggregationProjectionTests
         var junePoint = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 6, 1));
         Assert.Equal(0m, junePoint.Amount);
         Assert.Equal(30m, junePoint.ProjectionAmount);
-        Assert.Equal(new DateTime(2026, 6, 15), Assert.Single(junePoint.ProjectionExpectedDividends!).ExpectedDate);
+        Assert.Equal(new DateTime(2026, 6, 15), Assert.Single(junePoint.ProjectionExpectedItems!).ExpectedDate);
     }
 
     /// <summary>
@@ -616,17 +617,24 @@ public sealed class ReportAggregationProjectionTests
     }
 
     /// <summary>
-    /// The dividend projection feature is exclusive to Security postings; a query for <see cref="PostingKind.Bank"/>
-    /// with <c>CompareProjection = true</c> must return <c>ComparedProjection = false</c> and leave every point's
-    /// <c>ProjectionAmount</c> null rather than attempting (and failing) to project bank postings.
+    /// A bank report with <c>CompareProjection = true</c> projects a recurring annual posting that is
+    /// still missing in the current period: <c>ComparedProjection = true</c>, the account row carries
+    /// the expected amount plus an expected item with <c>Kind = PostingKind.Bank</c> and the account
+    /// id/name.
     /// </summary>
     [Fact]
-    public async Task QueryAsync_ProjectionIsIgnored_ForNonSecurityKind()
+    public async Task QueryAsync_BankProjection_AddsUnconfirmedPriorYearPosting()
     {
         using var db = CreateDb();
-        var user = new FinanceManager.Domain.Users.User("projection-bank", "pw", false);
-        db.Users.Add(user);
+        var user = await AddUserAsync(db, "projection-bank");
+        var account = new FinanceManager.Domain.Accounts.Account(user.Id, AccountType.Giro, "Projection Account", null, Guid.NewGuid());
+        db.Accounts.Add(account);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var analysis = new DateTime(2026, 5, 1);
+        db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, new DateTime(2025, 5, 10), 120m, "Annual Contribution", null, null, null));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await new PostingAggregateService(db).RebuildForUserAsync(user.Id, (_, _) => { }, TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
         var result = await sut.QueryAsync(new ReportAggregationQuery(
@@ -638,30 +646,45 @@ public sealed class ReportAggregationProjectionTests
             ComparePrevious: false,
             CompareYear: false,
             CompareProjection: true,
-            AnalysisDate: new DateTime(2026, 5, 1)), CancellationToken.None);
+            AnalysisDate: analysis), CancellationToken.None);
 
-        Assert.False(result.ComparedProjection);
-        Assert.All(result.Points, p => Assert.Null(p.ProjectionAmount));
+        Assert.True(result.ComparedProjection);
+        var point = result.Points.Single(p => p.GroupKey == $"Account:{account.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(0m, point.Amount);
+        Assert.Equal(120m, point.ProjectionAmount);
+        var expected = Assert.Single(point.ProjectionExpectedItems!);
+        Assert.Equal(PostingKind.Bank, expected.Kind);
+        Assert.Equal(account.Id, expected.EntityId);
+        Assert.Equal("Projection Account", expected.EntityName);
+        Assert.Equal(new DateTime(2026, 5, 10), expected.ExpectedDate);
+        Assert.Equal(new DateTime(2025, 5, 10), expected.PriorYearDate);
+        Assert.Equal(120m, expected.Amount);
     }
 
     /// <summary>
-    /// Projection must also be silently skipped (<c>ComparedProjection = false</c>, all <c>ProjectionAmount</c>
-    /// null) when the query spans multiple posting kinds at once, or when the security-subtype filter is
-    /// restricted to a subtype (e.g. Buy) that excludes dividends entirely - projection only makes sense for a
-    /// single-kind, dividend-inclusive Security query.
+    /// A multi-kind query keeps the projection for the non-security kinds even when the security
+    /// sub-type filter excludes dividends entirely: <c>ComparedProjection = true</c>, the account row
+    /// carries its expectation while the security (buy-only) rows carry no projection.
     /// </summary>
     [Fact]
-    public async Task QueryAsync_ProjectionIsIgnored_ForMultiKindAndInvalidSecuritySubtype()
+    public async Task QueryAsync_Projection_ContradictingSecuritySubTypes_SuppressesOnlySecurity()
     {
         using var db = CreateDb();
         var user = await AddUserAsync(db, "projection-invalid");
+        var account = new FinanceManager.Domain.Accounts.Account(user.Id, AccountType.Giro, "Projection Account", null, Guid.NewGuid());
+        db.Accounts.Add(account);
         var security = AddSecurity(db, user.Id, "Invalid Selection Security");
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-        AddDividendGroup(db, security, new DateTime(2026, 5, 10), 20m);
+
+        var analysis = new DateTime(2026, 5, 1);
+        db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, new DateTime(2025, 5, 10), 120m, "Annual Contribution", null, null, null));
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 20m);
+        db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, security.Id, new DateTime(2026, 5, 15), new DateTime(2026, 5, 15), -50m, "Buy", null, null, SecurityPostingSubType.Buy, 5m));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await new PostingAggregateService(db).RebuildForUserAsync(user.Id, (_, _) => { }, TestContext.Current.CancellationToken);
 
         var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
-        var multiKind = await sut.QueryAsync(new ReportAggregationQuery(
+        var result = await sut.QueryAsync(new ReportAggregationQuery(
             user.Id,
             PostingKind.Security,
             ReportInterval.Month,
@@ -671,9 +694,39 @@ public sealed class ReportAggregationProjectionTests
             CompareYear: false,
             CompareProjection: true,
             PostingKinds: new[] { PostingKind.Security, PostingKind.Bank },
-            AnalysisDate: new DateTime(2026, 5, 1)), CancellationToken.None);
+            AnalysisDate: analysis,
+            Filters: new ReportAggregationFilters(SecuritySubTypes: new[] { (int)SecurityPostingSubType.Buy })), CancellationToken.None);
 
-        var invalidSubtype = await sut.QueryAsync(new ReportAggregationQuery(
+        Assert.True(result.ComparedProjection);
+        var bankPoint = result.Points.Single(p => p.GroupKey == $"Account:{account.Id}" && p.PeriodStart == analysis);
+        Assert.Equal(120m, bankPoint.ProjectionAmount);
+        var expected = Assert.Single(bankPoint.ProjectionExpectedItems!);
+        Assert.Equal(PostingKind.Bank, expected.Kind);
+        Assert.Equal(account.Id, expected.EntityId);
+        Assert.All(result.Points.Where(p => p.GroupKey.StartsWith("Security:", StringComparison.Ordinal)), p => Assert.Null(p.ProjectionAmount));
+    }
+
+    /// <summary>
+    /// A pure security selection with a contradicting security sub-type filter cannot project at all
+    /// because the only selected kind is suppressed: the query reports
+    /// <c>ComparedProjection = false</c>.
+    /// </summary>
+    [Fact]
+    public async Task QueryAsync_Projection_ContradictingSecuritySubTypes_NoProjection_ForSecurityOnly()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "projection-invalid-security-only");
+        var security = AddSecurity(db, user.Id, "Invalid Selection Security");
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var analysis = new DateTime(2026, 5, 1);
+        AddDividendGroup(db, security, new DateTime(2025, 5, 10), 20m);
+        db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, security.Id, new DateTime(2026, 5, 15), new DateTime(2026, 5, 15), -50m, "Buy", null, null, SecurityPostingSubType.Buy, 5m));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await new PostingAggregateService(db).RebuildForUserAsync(user.Id, (_, _) => { }, TestContext.Current.CancellationToken);
+
+        var sut = new ReportAggregationService(db, new NullLogger<ReportAggregationService>());
+        var securityOnlyResult = await sut.QueryAsync(new ReportAggregationQuery(
             user.Id,
             PostingKind.Security,
             ReportInterval.Month,
@@ -682,13 +735,10 @@ public sealed class ReportAggregationProjectionTests
             ComparePrevious: false,
             CompareYear: false,
             CompareProjection: true,
-            AnalysisDate: new DateTime(2026, 5, 1),
+            AnalysisDate: analysis,
             Filters: new ReportAggregationFilters(SecuritySubTypes: new[] { (int)SecurityPostingSubType.Buy })), CancellationToken.None);
 
-        Assert.False(multiKind.ComparedProjection);
-        Assert.All(multiKind.Points, p => Assert.Null(p.ProjectionAmount));
-        Assert.False(invalidSubtype.ComparedProjection);
-        Assert.All(invalidSubtype.Points, p => Assert.Null(p.ProjectionAmount));
+        Assert.False(securityOnlyResult.ComparedProjection);
     }
 
     /// <summary>
@@ -725,7 +775,7 @@ public sealed class ReportAggregationProjectionTests
 
         var categoryPoint = result.Points.Single(p => p.GroupKey == $"Category:Security:{category.Id}" && p.PeriodStart == analysis);
         Assert.Equal(80m, categoryPoint.ProjectionAmount);
-        Assert.Equal(80m, Assert.Single(categoryPoint.ProjectionExpectedDividends!).Amount);
+        Assert.Equal(80m, Assert.Single(categoryPoint.ProjectionExpectedItems!).Amount);
     }
 
     /// <summary>
@@ -762,7 +812,7 @@ public sealed class ReportAggregationProjectionTests
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(0m, point.Amount);
         Assert.Equal(0m, point.ProjectionAmount);
-        Assert.Null(point.ProjectionExpectedDividends);
+        Assert.Null(point.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -799,7 +849,7 @@ public sealed class ReportAggregationProjectionTests
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
         Assert.Equal(0m, point.Amount);
         Assert.Equal(0m, point.ProjectionAmount);
-        Assert.Null(point.ProjectionExpectedDividends);
+        Assert.Null(point.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -835,7 +885,7 @@ public sealed class ReportAggregationProjectionTests
 
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(0m, point.ProjectionAmount);
-        Assert.Null(point.ProjectionExpectedDividends);
+        Assert.Null(point.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -873,7 +923,7 @@ public sealed class ReportAggregationProjectionTests
 
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(100m, point.ProjectionAmount);
-        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
+        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedItems!).ExpectedDate);
     }
 
     /// <summary>
@@ -909,7 +959,7 @@ public sealed class ReportAggregationProjectionTests
 
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(100m, point.ProjectionAmount);
-        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
+        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedItems!).ExpectedDate);
     }
 
     /// <summary>
@@ -955,12 +1005,12 @@ public sealed class ReportAggregationProjectionTests
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
         Assert.Equal(60m, point.Amount);
         Assert.Equal(60m, point.ProjectionAmount);
-        Assert.Null(point.ProjectionExpectedDividends);
+        Assert.Null(point.ProjectionExpectedItems);
     }
 
     /// <summary>
     /// Within a category aggregate combining a still-held security and a fully-sold one (both with qualifying
-    /// prior-year dividend history), the category-level <c>ProjectionExpectedDividends</c> list must include only
+    /// prior-year dividend history), the category-level <c>ProjectionExpectedItems</c> list must include only
     /// the still-held security's expectation and exclude the sold one's, even though both belong to the same
     /// category and both individually paid dividends last year.
     /// </summary>
@@ -997,9 +1047,9 @@ public sealed class ReportAggregationProjectionTests
             AnalysisDate: analysis), CancellationToken.None);
 
         var categoryPoint = result.Points.Single(p => p.GroupKey == $"Category:Security:{category.Id}" && p.PeriodStart == analysis);
-        var expectedDividend = Assert.Single(categoryPoint.ProjectionExpectedDividends!);
+        var expectedDividend = Assert.Single(categoryPoint.ProjectionExpectedItems!);
         Assert.Equal(80m, categoryPoint.ProjectionAmount);
-        Assert.Equal(heldSecurity.Id, expectedDividend.SecurityId);
+        Assert.Equal(heldSecurity.Id, expectedDividend.EntityId);
         Assert.Equal(80m, expectedDividend.Amount);
     }
 
@@ -1037,7 +1087,7 @@ public sealed class ReportAggregationProjectionTests
 
         var point = result.Points.Single(p => p.GroupKey == $"Security:{ownSecurity.Id}" && p.PeriodStart == analysis);
         Assert.Equal(0m, point.ProjectionAmount);
-        Assert.Null(point.ProjectionExpectedDividends);
+        Assert.Null(point.ProjectionExpectedItems);
     }
 
     /// <summary>
@@ -1074,7 +1124,7 @@ public sealed class ReportAggregationProjectionTests
 
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(100m, point.ProjectionAmount);
-        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedDividends!).ExpectedDate);
+        Assert.Equal(new DateTime(2026, 5, 10), Assert.Single(point.ProjectionExpectedItems!).ExpectedDate);
     }
 
     /// <summary>
@@ -1109,7 +1159,7 @@ public sealed class ReportAggregationProjectionTests
 
         var point = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}" && p.PeriodStart == analysis);
         Assert.Equal(0m, point.ProjectionAmount);
-        Assert.Null(point.ProjectionExpectedDividends);
+        Assert.Null(point.ProjectionExpectedItems);
     }
 
     /// <summary>

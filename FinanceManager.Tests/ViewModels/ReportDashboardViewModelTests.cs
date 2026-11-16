@@ -207,12 +207,16 @@ public sealed class ReportDashboardViewModelTests
     }
 
     /// <summary>
-    /// Verifies that projection comparison is force-disabled when the selection includes a non-security
-    /// posting kind (e.g. bank), even if the caller previously requested it - projections only make sense
-    /// for securities, so the view model must not send a projection request the server cannot honor.
+    /// Verifies that projection comparison stays enabled for every single non-security posting kind
+    /// (bank, contact, savings plan) — projections apply to every posting kind, so the view model
+    /// sends the projection request unchanged.
     /// </summary>
-    [Fact]
-    public async Task ReloadAsync_DisablesProjection_ForNonSecuritySelection()
+    /// <param name="kind">Single selected non-security posting kind.</param>
+    [Theory]
+    [InlineData(PostingKind.Bank)]
+    [InlineData(PostingKind.Contact)]
+    [InlineData(PostingKind.SavingsPlan)]
+    public async Task ReloadAsync_KeepsProjection_ForNonSecuritySelection(PostingKind kind)
     {
         var (vm, apiMock) = CreateVm();
         var result = new ReportAggregationResult(ReportInterval.Month, CreatePoints(1), false, false, false);
@@ -220,27 +224,27 @@ public sealed class ReportDashboardViewModelTests
         apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
-        vm.SelectedKinds = new List<PostingKind> { PostingKind.Bank };
+        vm.SelectedKinds = new List<PostingKind> { kind };
         vm.CompareProjection = true;
         vm.Interval = (int)ReportInterval.Month;
 
         await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
-        Assert.False(vm.CanCompareProjection);
-        Assert.False(vm.CompareProjection);
-        Assert.False(vm.ShowProjectionColumn);
+        Assert.True(vm.CanCompareProjection);
+        Assert.True(vm.CompareProjection);
+        Assert.True(vm.ShowProjectionColumn);
         apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
-            It.Is<ReportAggregatesQueryRequest>(r => !r.CompareProjection),
+            It.Is<ReportAggregatesQueryRequest>(r => r.CompareProjection),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
-    /// Verifies that projection comparison is force-disabled when multiple posting kinds are selected
-    /// (even including security), since projections are only meaningful for a single, dedicated security
-    /// selection and would otherwise mix incomparable figures.
+    /// Verifies that projection comparison stays enabled when multiple posting kinds are selected —
+    /// projections apply per kind to every selected entity, so the view model sends the projection
+    /// request unchanged.
     /// </summary>
     [Fact]
-    public async Task ReloadAsync_DisablesProjection_ForMultiKindSelection()
+    public async Task ReloadAsync_KeepsProjection_ForMultiKindSelection()
     {
         var (vm, apiMock) = CreateVm();
         var result = new ReportAggregationResult(ReportInterval.Month, CreatePoints(1), false, false, false);
@@ -254,11 +258,11 @@ public sealed class ReportDashboardViewModelTests
 
         await vm.ReloadAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
 
-        Assert.False(vm.CanCompareProjection);
-        Assert.False(vm.CompareProjection);
-        Assert.False(vm.ShowProjectionColumn);
+        Assert.True(vm.CanCompareProjection);
+        Assert.True(vm.CompareProjection);
+        Assert.True(vm.ShowProjectionColumn);
         apiMock.Verify(a => a.Reports_QueryAggregatesAsync(
-            It.Is<ReportAggregatesQueryRequest>(r => !r.CompareProjection),
+            It.Is<ReportAggregatesQueryRequest>(r => r.CompareProjection),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

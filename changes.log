@@ -1,3 +1,11 @@
+## 2026-11-15 — Berichtswesen: Hochrechnung für alle Buchungsarten (Issue #530)
+
+- Die Vergleichsoption „Hochrechnung" (`CompareProjection`) projiziert wiederkehrende Vorjahresposten jetzt für alle Buchungsarten — Bank, Kontakt, Sparplan und Wertpapier — einschließlich gemischter Auswahlen; bisher war sie auf reine Wertpapierberichte beschränkt. Das Intervall `AllHistory` bleibt weiterhin wirkungslos.
+- Die bisher im Netto-Dividendenpfad gekapselte Hochrechnungslogik wurde in die internen Komponenten `ReportProjectionCalculator` (Mustererkennung, Erwartungsberechnung, Leaf-/Kategorie-/Typ-Rollups) und `ReportProjectionEventLoader` (artbezogenes Laden der Ereignisse inklusive `GroupId`-Dividenden-Netting, Sparplan-Kontoverknüpfungen und Bestandstransaktionen) extrahiert; der Standard-Aggregationspfad und der Netto-Dividendenpfad nutzen sie gemeinsam.
+- Für Wertpapiere gelten unverändert die Netto-Dividenden-Gruppierung und die Bestandsprüfung; im Standardpfad tragen nur `Dividend`-Untertypzeilen eine Security-Erwartung. Für Bank, Kontakt und Sparplan gilt jede Buchung mit Betrag ungleich 0 als Ereignis; die Option „Valuta verwenden" steuert das Effektivdatum aller Arten.
+- Das Detail-Overlay der Hochrechnungsspalte wurde artneutral umgebaut: Die Tabelle führt jetzt die Spalten „Art" und „Herkunft" (statt „Wertpapier") und kann in Summenzeilen erwartete Posten verschiedener Buchungsarten gemeinsam anzeigen. Das Detail-DTO heißt `ReportProjectionExpectedItemDto` (statt `ReportProjectionExpectedDividendDto`), das Punktfeld `ProjectionExpectedItems` (statt `ProjectionExpectedDividends`).
+- Das MCP-Werkzeug `fm_reporting_aggregate` liefert erwartete Posten je Berichtspunkt als `expectedItems` mit den Feldern `kind`, `entityId`, `entityName`, `expectedDate`, `priorYearDate` und `amount` (bisher `expectedDividends` mit `securityId`/`securityName`).
+
 ## 2026-11-14 — Depot-Bericht: Neue Kachel „Depotentwicklung Jahreswechsel" (Issue #512)
 
 - Der Depot-Analysebericht (`/portfolio/analysis-report`) erhält eine fünfte, standardmäßig aktive Kachel „Depotentwicklung Jahreswechsel": ein kombiniertes Linien-/Balkendiagramm (Depotwert zum Jahresende als Linie, Netto-Dividenden als Balken) und eine Jahrestabelle mit Depotwert, Veränderung zum Vorjahr (absolut und prozentual), Netto-Dividende, Verhältnis und Rendite.

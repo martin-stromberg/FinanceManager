@@ -10,7 +10,7 @@ Die Berichtsfunktionen liegen in `ReportsController` und `HomeKpisController`.
 
 ### `POST /api/reports/report-aggregates`
 
-**Beschreibung:** Liefert aggregierte Reportdaten. Das Request-Feld `CompareProjection` fordert für reine Wertpapierberichte eine Dividendenhochrechnung an. Im Ergebnis zeigt `ComparedProjection`, ob die Hochrechnung tatsächlich aktiv ist; einzelne Berichtspunkte enthalten dann `ProjectionAmount` zusätzlich zu `Amount`.
+**Beschreibung:** Liefert aggregierte Reportdaten. Das Request-Feld `CompareProjection` fordert eine Hochrechnung wiederkehrender Vorjahresposten an — für alle Buchungsarten und gemischte Auswahlen (nicht für `AllHistory`). Im Ergebnis zeigt `ComparedProjection`, ob die Hochrechnung tatsächlich aktiv ist; einzelne Berichtspunkte enthalten dann `ProjectionAmount` zusätzlich zu `Amount` sowie die erwarteten Ereignisse in `ProjectionExpectedItems` (je Eintrag `Kind`, `EntityId`, `EntityName`, `ExpectedDate`, `PriorYearDate`, `Amount`).
 
 Das `Filters`-Objekt (`ReportAggregatesFiltersRequest`) akzeptiert optional vier Freitext-Filterlisten je Buchungsart:
 
@@ -53,6 +53,8 @@ Jeder Eintrag wird getrimmt, ist maximal 500 Zeichen lang und matcht als Substri
 ### MCP-Tools
 
 Die Textfilter stehen auch über MCP zur Verfügung: `fm_reporting_aggregate` akzeptiert sie als Inline-Argumente `bankTextFilters`, `contactTextFilters`, `savingsPlanTextFilters`, `securityTextFilters` (String-Arrays, je max. 500 Zeichen) und wendet gespeicherte Favoriten-Filter automatisch an; `fm_reports_configuration_manage` pflegt sie im `filters`-Objekt beim Anlegen und Aktualisieren von Favoriten.
+
+Bei `compareProjection = true` liefert `fm_reporting_aggregate` je Berichtspunkt zusätzlich `projectionAmount` und die erwarteten Einzelereignisse als `expectedItems` (`kind`, `entityId`, `untrusted_data.entityName`, `expectedDate`, `priorYearDate`, `amount`); das Flag `comparedProjection` meldet, ob die Hochrechnung aktiv war.
 
 ### `GET /api/home-kpis`
 

@@ -27,24 +27,25 @@
 
 **Umsetzung:** `ReportFavorite.SetFilters` und `ReportFavorite.GetFilters`.
 
-## Dividendenhochrechnung nur für Wertpapierberichte
+## Hochrechnung für Posten aller Buchungsarten
 
-**Beschreibung:** Die Vergleichsoption `Hochrechnung` berechnet erwartete Dividenden nur für reine Wertpapierberichte.
+**Beschreibung:** Die Vergleichsoption `Hochrechnung` projiziert wiederkehrende Posten der Vorjahre in den aktuellen Betrachtungszeitraum — für alle Buchungsarten (Bank, Kontakt, Sparplan, Wertpapier) und auch für gemischte Auswahlen.
 
 **Bedingungen:**
-- Die effektive Buchungsartenauswahl enthält ausschließlich `PostingKind.Security`.
+- Mindestens eine Buchungsart ist ausgewählt.
 - Das Intervall ist nicht `AllHistory`.
-- Die Auswertung nutzt den Netto-Dividendenpfad mit Dividenden, Gebühren und Steuern.
 
 **Verhalten:**
-- Bei gültiger Auswahl liefert die Aggregation `ComparedProjection = true` und pro Berichtspunkt ein optionales `ProjectionAmount`.
-- `ProjectionAmount` besteht aus den gebuchten Netto-Dividenden des aktuellen Betrachtungszeitraums plus erwarteten Netto-Dividenden aus der gleichen Vorjahresperiode.
-- Eine Vorjahresdividende gilt als bestätigt, wenn im korrespondierenden aktuellen Periodenbucket mindestens eine Dividende desselben Wertpapiers vorhanden ist.
-- Erwartete Dividenden werden nur erzeugt, wenn das Wertpapier zum erwarteten Dividendentag einen positiven Bestand hat. Käufe und Verkäufe mit Menge bilden den Bestand; Stornobuchungen wirken mit ihrer gespeicherten Gegenmenge.
-- Bei anderen Buchungsarten, gemischten Auswahlen oder `AllHistory` bleibt die Hochrechnung wirkungslos; `ComparedProjection = false` und `ProjectionAmount` bleibt leer.
-- Kategorie- und Summenzeilen aggregieren die Hochrechnungswerte ihrer Kindzeilen.
+- Bei gültiger Auswahl liefert die Aggregation `ComparedProjection = true` und pro Berichtspunkt ein optionales `ProjectionAmount`; die erwarteten Einzelereignisse stehen in `ProjectionExpectedItems` (`ReportProjectionExpectedItemDto` mit `Kind`, `EntityId`, `EntityName`, `ExpectedDate`, `PriorYearDate`, `Amount`).
+- `ProjectionAmount` besteht aus dem gebuchten Betrag des aktuellen Betrachtungszeitraums plus erwarteten Beträgen aus der gleichen Vorjahresperiode.
+- Ein Vorjahresereignis gilt als bestätigt, wenn im korrespondierenden aktuellen Periodenbucket ein Ereignis derselben Entität vorhanden ist; bestätigte Erwartungen werden nicht erneut addiert.
+- Pro Entität wird das Wiederholungsmuster des Referenzjahres erkannt (monatlich, quartalsweise, jährlich oder unregelmäßig); das Muster steuert, welche Vorjahresereignisse als erwartet gelten.
+- `UseValutaDate` steuert das Effektivdatum aller Ereignisse (Valuta mit Fallback auf das Buchungsdatum).
+- **Wertpapier-Sonderlogik:** Erwartete Ereignisse eines Wertpapiers sind die genetteten Dividendenereignisse je `GroupId` (Dividende + Gebühr + Steuer) und werden nur erzeugt, wenn das Wertpapier zum erwarteten Termin einen positiven Bestand hat. Käufe und Verkäufe mit Menge bilden den Bestand; Stornobuchungen wirken mit ihrer gespeicherten Gegenmenge. Bei Security-Untertyp-Auswahl ohne `Dividend` entfällt die Security-Erwartung, andere ausgewählte Arten projizieren weiter.
+- Bei `AllHistory` bleibt die Hochrechnung wirkungslos; `ComparedProjection = false` und `ProjectionAmount` bleibt leer.
+- Kategorie- und Summenzeilen aggregieren die Hochrechnungswerte ihrer Kindzeilen ohne Doppelzählung.
 
-**Umsetzung:** `ReportAggregationQuery.CompareProjection`, `ReportAggregationResult.ComparedProjection`, `ReportAggregatePointDto.ProjectionAmount`.
+**Umsetzung:** `ReportAggregationQuery.CompareProjection`, `ReportAggregationResult.ComparedProjection`, `ReportAggregatePointDto.ProjectionAmount`/`ProjectionExpectedItems`, `ReportProjectionEventLoader`, `ReportProjectionCalculator`.
 
 ## Hochrechnung wird in Favoriten gespeichert
 

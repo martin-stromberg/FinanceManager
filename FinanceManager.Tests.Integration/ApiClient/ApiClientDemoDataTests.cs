@@ -179,13 +179,14 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
             .OrderBy(x => x.SortOrder)
             .Select(x => new { x.Kind, x.PredefinedType, x.DisplayMode, x.SortOrder })
             .ToListAsync(CancellationToken.None);
-        homeKpis.Should().HaveCount(5);
+        homeKpis.Should().HaveCount(6);
         homeKpis.Should().Equal(
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.AccountsAggregates, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 0 },
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.SavingsPlanAggregates, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 1 },
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.SecuritiesDividends, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 2 },
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.MonthlyBudget, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 3 },
-            new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.OpenStatementDraftsCount, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 4 });
+            new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.OpenStatementDraftsCount, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 4 },
+            new { Kind = HomeKpiKind.ReportFavorite, PredefinedType = (HomeKpiPredefined?)null, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 5 });
 
         var reportFavorites = await db.ReportFavorites
             .AsNoTracking()
@@ -218,6 +219,41 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
             && !x.ComparePrevious
             && !x.CompareYear
             && x.CompareProjection);
+        reportFavorites.Should().ContainSingle(x =>
+            x.Name == "Zinsen (Jährlich)"
+            && x.PostingKind == PostingKind.Bank
+            && x.Interval == ReportInterval.Year
+            && !x.IncludeCategory
+            && !x.ComparePrevious
+            && x.CompareYear
+            && x.CompareProjection);
+
+        // The interest KPI tile must point at the interest report favorite so the home
+        // dashboard shows the current year's interest total.
+        var interestFavoriteId = await db.ReportFavorites
+            .AsNoTracking()
+            .Where(x => x.OwnerUserId == userId && x.Name == "Zinsen (Jährlich)")
+            .Select(x => x.Id)
+            .SingleAsync(CancellationToken.None);
+        var interestKpi = await db.HomeKpis
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Kind == HomeKpiKind.ReportFavorite, CancellationToken.None);
+        interestKpi.ReportFavoriteId.Should().Be(interestFavoriteId);
+
+        // The yearly interest report relies on quarterly "Zinsgutschrift" postings and the
+        // December year-end interest; both must exist in the seeded history.
+        var ownAccountIds = await db.Accounts
+            .AsNoTracking()
+            .Where(x => x.OwnerUserId == userId)
+            .Select(x => x.Id)
+            .ToListAsync(CancellationToken.None);
+        var bankSubjects = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId.HasValue && ownAccountIds.Contains(x.AccountId.Value))
+            .Select(x => x.Subject)
+            .ToListAsync(CancellationToken.None);
+        bankSubjects.Should().Contain(x => x != null && x.Contains("Zinsgutschrift", StringComparison.OrdinalIgnoreCase));
+        bankSubjects.Should().Contain(x => x != null && x.Contains("Jahresendzinsen", StringComparison.OrdinalIgnoreCase));
 
         var buys = await db.Postings
             .AsNoTracking()

@@ -146,29 +146,6 @@ internal static class ReportQuerySemantics
     }
 
     /// <summary>
-    /// Parses the security id out of a <c>Security:{id}</c> or <c>Security:{id}:{subType}</c> group key.
-    /// </summary>
-    /// <param name="groupKey">Group key to parse.</param>
-    /// <param name="securityId">Parsed security id on success.</param>
-    /// <returns><c>true</c> when the key is a security key with a valid id.</returns>
-    internal static bool TryParseSecurityKey(string groupKey, out Guid securityId)
-    {
-        securityId = Guid.Empty;
-        if (!groupKey.StartsWith("Security:", StringComparison.Ordinal))
-        {
-            return false;
-        }
-        // Group keys may carry a posting-sub-type suffix ("Security:{id}:{SubType}") — parse only the id segment.
-        var idPart = groupKey["Security:".Length..];
-        var colonIndex = idPart.IndexOf(':');
-        if (colonIndex >= 0)
-        {
-            idPart = idPart[..colonIndex];
-        }
-        return Guid.TryParse(idPart, out securityId);
-    }
-
-    /// <summary>
     /// Derives the posting kind from a group key.
     /// </summary>
     /// <param name="groupKey">Group key to inspect.</param>

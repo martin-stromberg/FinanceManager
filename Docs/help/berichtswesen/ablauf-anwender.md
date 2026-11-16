@@ -71,6 +71,35 @@ Das Overlay lässt sich über die Schließen-Schaltfläche (X) oben rechts oder 
 
 Die aufgelisteten Posten ergeben exakt den angezeigten Zellwert; für die Einsicht muss der Bericht nicht verlassen werden.
 
+## Erwartete Posten der Hochrechnung einsehen
+
+### Voraussetzungen
+
+- Das Berichts-Dashboard ist geöffnet; mindestens eine Buchungsart ist ausgewählt und das Intervall ist nicht „Gesamte Historie".
+- Die Vergleichsoption **Hochrechnung** ist aktiviert, sodass die Ergebnistabelle die Spalte **Hochrechnung** zeigt.
+
+### Schritt-für-Schritt-Anleitung
+
+#### 1. Symbolbutton an der Hochrechnungszelle wählen
+
+Enthält eine Hochrechnungszelle erwartete Posten, trägt sie rechts neben dem Betrag eine kleine Schaltfläche mit Info-Symbol (Tooltip „Erwartete Posten anzeigen"). Der Button steht an Entitäts-, Kategorie- und Summenzeilen gleichermaßen zur Verfügung.
+
+> **Hinweis:** Zellen ohne erwartete Posten besitzen keinen Button — der hochgerechnete Betrag entspricht dann den bereits gebuchten Istwerten.
+
+#### 2. Erwartete Posten im Overlay lesen
+
+Der Button öffnet ein Overlay mit dem Titel „Hochrechnung: <Zeilenname>". Oben fasst eine Zusammenfassung die **Istwerte**, die **Erwartete Buchungen** und den hochgerechneten Gesamtwert **Hochrechnung** zusammen. Darunter listet die Tabelle je erwartetem Posten **Art** (Konten, Kontakte, Sparpläne oder Wertpapiere), **Herkunft** (Name der zugeordneten Entität), **Erwartet am**, **Vorjahresdatum** und **Betrag**.
+
+> **Hinweis:** Bei Summenzeilen und gemischten Buchungsartenauswahlen kann die Liste erwartete Posten verschiedener Buchungsarten gemeinsam anzeigen — die Spalte **Art** macht die Zugehörigkeit erkennbar.
+
+#### 3. Overlay schließen
+
+Das Overlay lässt sich über die Schließen-Schaltfläche (X) oben rechts schließen. Es dient ausschließlich der Einsicht — ein Bearbeiten der erwarteten Posten ist nicht möglich.
+
+### Ergebnis
+
+Die aufgelisteten erwarteten Posten ergeben zusammen mit den Istwerten den hochgerechneten Betrag der Zeile; jede Zeile zeigt, aus welcher Vorjahresbuchung die Erwartung entstanden ist.
+
 ## Barrierefreiheit
 
 - Die Buchungsarten-Tabs im Dialog sind als `role="tab"` mit `aria-selected` ausgezeichnet.
@@ -78,3 +107,5 @@ Die aufgelisteten Posten ergeben exakt den angezeigten Zellwert; für die Einsic
 - Die Hinzufügen-Schaltfläche ist deaktiviert, solange das Eingabefeld leer ist.
 - Die Posten-Schaltfläche an den Betragszellen trägt den Tooltip „Posten anzeigen" als `title`-Attribut.
 - Das Posten-Overlay ist als `role="dialog"` mit `aria-modal="true"` ausgezeichnet.
+- Die Info-Schaltfläche an den Hochrechnungszellen trägt den Tooltip „Erwartete Posten anzeigen" als `title`-Attribut.
+- Das Hochrechnungs-Overlay ist als `role="dialog"` mit `aria-modal="true"` und `aria-labelledby` ausgezeichnet.

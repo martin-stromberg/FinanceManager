@@ -21,7 +21,7 @@ public sealed class ReportFavoriteCreateApiRequest
     public bool ComparePrevious { get; set; }
     /// <summary>Compare to previous year when true.</summary>
     public bool CompareYear { get; set; }
-    /// <summary>Include dividend projection when true.</summary>
+    /// <summary>Include the projection when true.</summary>
     public bool CompareProjection { get; set; }
     /// <summary>Show chart visualization when true.</summary>
     public bool ShowChart { get; set; }
