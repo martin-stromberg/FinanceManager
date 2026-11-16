@@ -178,8 +178,8 @@ public sealed class DemoDataService : IDemoDataService
                 ct);
         }
 
-        await EnsureDefaultHomeKpisAsync(userId, ct);
-        await EnsureDefaultReportFavoritesAsync(userId, bausparenPlan.Id, ct);
+        var interestReportFavorite = await EnsureDefaultReportFavoritesAsync(userId, bausparenPlan.Id, ct);
+        await EnsureDefaultHomeKpisAsync(userId, interestReportFavorite?.Id, ct);
     }
 
     private async Task<(
@@ -940,6 +940,18 @@ public sealed class DemoDataService : IDemoDataService
                     giroBankContact.Id);
             }
 
+            // Quarterly interest credit on the giro account (skips December, where the annual
+            // year-end interest is booked) — gives the demo interest report a non-zero
+            // current-year value and recurring prior-year events for the projection.
+            if (monthStart.Month % 3 == 0 && monthStart.Month != 12 && !isCurrentMonth)
+            {
+                var quarterlyInterest = Math.Round(BalanceOf(giroAccount.Id) * 0.0025m, 2, MidpointRounding.AwayFromZero);
+                if (quarterlyInterest > 0m)
+                {
+                    await AddDraftEntryAsync(giroDraftId, lastBusinessDay, quarterlyInterest, "Zinsgutschrift", giroBankContact.Id);
+                }
+            }
+
             if (monthStart.Month == 12 && !isCurrentMonth)
             {
                 var giroInterest = Math.Round(BalanceOf(giroAccount.Id) * 0.01m, 2, MidpointRounding.AwayFromZero);
@@ -964,7 +976,7 @@ public sealed class DemoDataService : IDemoDataService
         }
     }
 
-    private async Task EnsureDefaultHomeKpisAsync(Guid userId, CancellationToken ct)
+    private async Task EnsureDefaultHomeKpisAsync(Guid userId, Guid? interestReportFavoriteId, CancellationToken ct)
     {
         var existingKpis = await _homeKpiService.ListAsync(userId, ct);
         if (existingKpis.Count > 0)
@@ -981,14 +993,31 @@ public sealed class DemoDataService : IDemoDataService
             HomeKpiPredefined.OpenStatementDraftsCount
         };
 
-        for (var sortOrder = 0; sortOrder < defaults.Length; sortOrder++)
+        var sortOrder = 0;
+        foreach (var predefined in defaults)
         {
             await _homeKpiService.CreateAsync(
                 userId,
                 new HomeKpiCreateRequest(
                     HomeKpiKind.Predefined,
                     null,
-                    defaults[sortOrder],
+                    predefined,
+                    null,
+                    HomeKpiDisplayMode.TotalOnly,
+                    sortOrder++),
+                ct);
+        }
+
+        // Interest tile bound to the yearly interest report favorite so the current
+        // year's interest total is visible on the home dashboard immediately.
+        if (interestReportFavoriteId.HasValue)
+        {
+            await _homeKpiService.CreateAsync(
+                userId,
+                new HomeKpiCreateRequest(
+                    HomeKpiKind.ReportFavorite,
+                    interestReportFavoriteId,
+                    null,
                     null,
                     HomeKpiDisplayMode.TotalOnly,
                     sortOrder),
@@ -996,12 +1025,12 @@ public sealed class DemoDataService : IDemoDataService
         }
     }
 
-    private async Task EnsureDefaultReportFavoritesAsync(Guid userId, Guid bausparenPlanId, CancellationToken ct)
+    private async Task<ReportFavoriteDto?> EnsureDefaultReportFavoritesAsync(Guid userId, Guid bausparenPlanId, CancellationToken ct)
     {
         var existingFavorites = await _reportFavoriteService.ListAsync(userId, ct);
         if (existingFavorites.Count > 0)
         {
-            return;
+            return existingFavorites.FirstOrDefault(f => f.Name == InterestReportFavoriteName);
         }
 
         await _reportFavoriteService.CreateAsync(
@@ -1050,7 +1079,28 @@ public sealed class DemoDataService : IDemoDataService
                 UseValutaDate: false,
                 SavingsPlanPostingSource: SavingsPlanPostingSource.LinkedAccountPostings),
             ct);
+
+        // Yearly bank interest report ("Zinsen"): the year interval puts the current year's
+        // interest total in the last bucket, so the home KPI tile shows it directly, and the
+        // projection marks the still-open year-end interest postings as expected items.
+        return await _reportFavoriteService.CreateAsync(
+            userId,
+            new ReportFavoriteCreateRequest(
+                InterestReportFavoriteName,
+                PostingKind.Bank,
+                IncludeCategory: false,
+                ReportInterval.Year,
+                Take: 3,
+                ComparePrevious: false,
+                CompareYear: true,
+                CompareProjection: true,
+                ShowChart: true,
+                Expandable: true,
+                Filters: new ReportFavoriteFiltersDto(null, null, null, null, null, null, null, null, null, BankTextFilters: new[] { "Zins" })),
+            ct);
     }
+
+    private const string InterestReportFavoriteName = "Zinsen (Jährlich)";
 
     /// <summary>
     /// Daily drift profile (fraction of the history elapsed, drift per trading day) that produces a
