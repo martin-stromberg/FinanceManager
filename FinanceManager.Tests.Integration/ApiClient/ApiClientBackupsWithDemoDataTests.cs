@@ -877,7 +877,13 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
             if (reportFavoriteNameToId.TryGetValue(rf.Name, out var nid)) return adjusted with { Id = nid };
             return adjusted;
         }).ToList();
-        var homeKpis = before.HomeKpis.ToList();
+        var beforeFavoriteIdToName = before.ReportFavorites.ToDictionary(r => r.Id, r => r.Name);
+        var homeKpis = before.HomeKpis.Select(h =>
+            h.ReportFavoriteId.HasValue
+            && beforeFavoriteIdToName.TryGetValue(h.ReportFavoriteId.Value, out var favoriteName)
+            && reportFavoriteNameToId.TryGetValue(favoriteName, out var mappedFavoriteId)
+                ? h with { ReportFavoriteId = mappedFavoriteId }
+                : h).ToList();
         var attachmentCategories = remappedAttachmentCategories;
         // Notifications keep their backup id on restore - no remapping needed.
         var notifications = before.Notifications.ToList();
