@@ -25,6 +25,7 @@ public sealed class ReportsController : ControllerBase
     private readonly IReportAggregationService _agg;
     private readonly IReportPostingsQueryService _postings;
     private readonly IReportFavoriteService _favorites;
+    private readonly IReportSuppressedExpectationService _suppressions;
     private readonly ICurrentUserService _current;
     private readonly ILogger<ReportsController> _logger;
     private readonly IStringLocalizer<Controller> _localizer;
@@ -35,6 +36,7 @@ public sealed class ReportsController : ControllerBase
     /// <param name="agg">Service that executes aggregation queries.</param>
     /// <param name="postings">Service that resolves the postings behind a single report cell.</param>
     /// <param name="favorites">Service that manages report favorites.</param>
+    /// <param name="suppressions">Service that manages per-favorite suppressed expectations.</param>
     /// <param name="current">Service providing the current user context.</param>
     /// <param name="logger">Logger instance for this controller.</param>
     /// <param name="localizer">Localizer for error messages.</param>
@@ -42,6 +44,7 @@ public sealed class ReportsController : ControllerBase
         IReportAggregationService agg,
         IReportPostingsQueryService postings,
         IReportFavoriteService favorites,
+        IReportSuppressedExpectationService suppressions,
         ICurrentUserService current,
         ILogger<ReportsController> logger,
         IStringLocalizer<Controller> localizer)
@@ -49,6 +52,7 @@ public sealed class ReportsController : ControllerBase
         _agg = agg;
         _postings = postings;
         _favorites = favorites;
+        _suppressions = suppressions;
         _current = current;
         _logger = logger;
         _localizer = localizer;
@@ -120,7 +124,7 @@ public sealed class ReportsController : ControllerBase
                     SavingsPlanTextFilters: req.Filters.SavingsPlanTextFilters,
                     SecurityTextFilters: req.Filters.SecurityTextFilters);
             }
-            var query = new ReportAggregationQuery(_current.UserId, req.PostingKind, req.Interval, req.Take, req.IncludeCategory, req.ComparePrevious, req.CompareYear, req.CompareProjection, multi, analysisDate, req.UseValutaDate, filters, req.SavingsPlanPostingSource);
+            var query = new ReportAggregationQuery(_current.UserId, req.PostingKind, req.Interval, req.Take, req.IncludeCategory, req.ComparePrevious, req.CompareYear, req.CompareProjection, multi, analysisDate, req.UseValutaDate, filters, req.SavingsPlanPostingSource, req.ReportFavoriteId);
             var result = await _agg.QueryAsync(query, ct);
             return Ok(result);
         }
@@ -421,6 +425,86 @@ public sealed class ReportsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Delete report favorite {FavoriteId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+    }
+
+    /// <summary>
+    /// Lists the expected postings suppressed for the given report favorite.
+    /// </summary>
+    /// <param name="id">Favorite id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> with 200 OK and the suppressed expectations.</returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="404">The HTTP 404 response when the favorite does not exist or is not owned by the user.</response>
+    [HttpGet("report-favorites/{id:guid}/suppressed-expectations")]
+    [ProducesResponseType(typeof(IReadOnlyList<ReportSuppressedExpectationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ListSuppressedExpectationsAsync(Guid id, CancellationToken ct)
+    {
+        var favorite = await _favorites.GetAsync(id, _current.UserId, ct);
+        if (favorite == null)
+        {
+            return NotFound();
+        }
+        return Ok(await _suppressions.ListAsync(_current.UserId, id, ct));
+    }
+
+    /// <summary>
+    /// Suppresses one expected posting for the given report favorite. Idempotent: posting the
+    /// same item again returns the existing suppression.
+    /// </summary>
+    /// <param name="id">Favorite id.</param>
+    /// <param name="req">Suppression request identifying the expected item.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> with 200 OK and the suppression DTO.</returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="400">The HTTP 400 response.</response>
+    /// <response code="404">The HTTP 404 response when the favorite does not exist or is not owned by the user.</response>
+    [HttpPost("report-favorites/{id:guid}/suppressed-expectations")]
+    [ProducesResponseType(typeof(ReportSuppressedExpectationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SuppressExpectationAsync(Guid id, [FromBody] ReportSuppressedExpectationRequest req, CancellationToken ct)
+    {
+        try
+        {
+            var dto = await _suppressions.SuppressAsync(_current.UserId, id, req, ct);
+            return dto == null ? NotFound() : Ok(dto);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Suppress expectation for report favorite {FavoriteId} failed", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+    }
+
+    /// <summary>
+    /// Removes a suppression so the expected posting is projected again.
+    /// </summary>
+    /// <param name="id">Favorite id.</param>
+    /// <param name="suppressionId">Suppression id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>An <see cref="IActionResult"/> with 204 No Content when removed, or 404 Not Found.</returns>
+    /// <response code="204">The HTTP 204 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpDelete("report-favorites/{id:guid}/suppressed-expectations/{suppressionId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UnsuppressExpectationAsync(Guid id, Guid suppressionId, CancellationToken ct)
+    {
+        try
+        {
+            var ok = await _suppressions.UnsuppressAsync(_current.UserId, id, suppressionId, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unsuppress expectation {SuppressionId} for report favorite {FavoriteId} failed", suppressionId, id);
             return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
         }
     }

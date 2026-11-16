@@ -382,6 +382,25 @@
     white-space: nowrap;
 }
 
+/* Sixth column (suppress/restore action) only exists on favorite-scoped overlays. */
+.projection-detail-table th:nth-child(6),
+.projection-detail-table td:nth-child(6) {
+    width: 14%;
+    white-space: nowrap;
+}
+
+.projection-detail-table th:nth-child(6) ~ td:nth-child(2),
+.projection-detail-table:has(th:nth-child(6)) th:nth-child(2),
+.projection-detail-table:has(th:nth-child(6)) td:nth-child(2) {
+    width: 24%;
+}
+
+.projection-suppressed-title {
+    margin: 1.1rem 0 .5rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
 @media (max-width: 900px) {
     .filters-panel {
         grid-template-columns: 1fr;

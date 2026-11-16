@@ -22,17 +22,35 @@
 | `SavingsPlanTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Sparplan-Buchungen |
 | `SecurityTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Wertpapier-Buchungen |
 
+### `ReportSuppressedExpectation`
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `Id` | `Guid` | Ausblendungs-ID |
+| `OwnerUserId` | `Guid` | Eigentümer |
+| `ReportFavoriteId` | `Guid` | Geltungsbereich: Referenz auf `ReportFavorite` (Cascade-Delete) |
+| `Kind` | `PostingKind` | Buchungsart der Entität |
+| `EntityId` | `Guid` | Referenzierte Entität (Konto, Kontakt, Sparplan oder Wertpapier) |
+| `PriorYearDate` | `DateTime` | Vorjahresdatum der ausgeblendeten Erwartung (Datum ohne Uhrzeit) |
+| `SuppressedAtUtc` | `DateTime` | Zeitpunkt der Ausblendung (UTC) |
+
+Einzigartig über (`OwnerUserId`, `ReportFavoriteId`, `Kind`, `EntityId`, `PriorYearDate`); der Betrag ist nicht Teil der Identität.
+
 ### Report-Aggregation
 
 | Modell | Eigenschaft | Typ | Beschreibung |
 |--------|-------------|-----|--------------|
 | `ReportAggregationQuery` | `CompareProjection` | `bool` | Fordert die Hochrechnung für die ausgewählten Buchungsarten an (nicht für `AllHistory`) |
+| `ReportAggregationQuery` | `ReportFavoriteId` | `Guid?` | Favoritenkontext: aktiviert die Berücksichtigung ausgeblendeter Erwartungen |
 | `ReportAggregatesQueryRequest` | `CompareProjection` | `bool` | API-Eingabefeld für das Dashboard |
+| `ReportAggregatesQueryRequest` | `ReportFavoriteId` | `Guid?` | Optionales API-Feld; ohne Angabe bleiben Ausblendungen wirkungslos |
 | `ReportAggregatesFiltersRequest` / `ReportAggregationFilters` | `BankTextFilters`, `ContactTextFilters`, `SavingsPlanTextFilters`, `SecurityTextFilters` | `IReadOnlyCollection<string>?` | Optionale Freitext-Filterlisten je Buchungsart (`Subject`/`Description`) |
 | `ReportAggregationResult` | `ComparedProjection` | `bool` | Meldet, ob die Hochrechnung im Ergebnis tatsächlich aktiv ist |
 | `ReportAggregatePointDto` | `ProjectionAmount` | `decimal?` | Hochgerechneter Betrag direkt nach `Amount` |
 | `ReportAggregatePointDto` | `ProjectionExpectedItems` | `IReadOnlyList<ReportProjectionExpectedItemDto>?` | Erwartete Ereignisse hinter dem Hochrechnungswert |
 | `ReportProjectionExpectedItemDto` | `Kind`, `EntityId`, `EntityName`, `ExpectedDate`, `PriorYearDate`, `Amount` | `record` | Ein erwartetes Ereignis einer Entität (Buchungsart, Entität, erwarteter Termin, Vorjahrstermin, Betrag) |
+| `ReportSuppressedExpectationRequest` | `Kind`, `EntityId`, `PriorYearDate` | `record` | Identität einer auszublendenden Erwartung (ohne Betrag) |
+| `ReportSuppressedExpectationDto` | `Id`, `Kind`, `EntityId`, `EntityName`, `ExpectedDate`, `PriorYearDate`, `SuppressedAtUtc` | `record` | Ausgeblendete Erwartung eines Favoriten |
 
 ### Posteneinsicht (Drill-down)
 

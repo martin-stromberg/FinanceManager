@@ -674,6 +674,12 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var homeKpis = homeKpiEntities.Select(h => h.ToBackupDto()).ToList();
 
+        // Suppressed projection expectations (scoped to report favorites)
+        var suppressedExpectationEntities = await _db.ReportSuppressedExpectations.AsNoTracking()
+            .Where(s => s.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var suppressedExpectations = suppressedExpectationEntities.Select(s => s.ToBackupDto()).ToList();
+
         // Attachment categories & attachments
         var attachmentCategoryEntities = await _db.AttachmentCategories.AsNoTracking()
             .Where(ac => ac.OwnerUserId == userId)
@@ -807,7 +813,10 @@ public sealed class BackupService : IBackupService
             // Optional payload sections: backups created before these features existed
             // simply omit them - the restore treats them as empty.
             AccountLinkedIbans = accountLinkedIbans,
-            PortfolioKpiConfigurations = portfolioKpiConfigurations
+            PortfolioKpiConfigurations = portfolioKpiConfigurations,
+            // Optional payload section: backups created before the suppressed-expectation
+            // feature simply omit it - the restore treats it as empty.
+            ReportSuppressedExpectations = suppressedExpectations
         };
     }
 

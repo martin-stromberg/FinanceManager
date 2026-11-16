@@ -145,6 +145,10 @@
                                     <th>@Localizer["ProjectionDetails_ExpectedDate"]</th>
                                     <th>@Localizer["ProjectionDetails_PriorYearDate"]</th>
                                     <th style="text-align:right;">@Localizer["ProjectionDetails_Amount"]</th>
+                                    @if(_vm?.ActiveFavoriteId is not null)
+                                    {
+                                        <th></th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
@@ -156,10 +160,56 @@
                                         <td>@item.ExpectedDate.ToString("d")</td>
                                         <td>@item.PriorYearDate.ToString("d")</td>
                                         <td style="text-align:right;">@item.Amount.ToString("N2")</td>
+                                        @if(_vm?.ActiveFavoriteId is not null)
+                                        {
+                                            <td>
+                                                <button type="button" class="btn secondary projection-suppress-btn" disabled="@_projectionMutationBusy" @onclick="() => SuppressExpectationAsync(item)">
+                                                    @Localizer["ProjectionDetails_Suppress"]
+                                                </button>
+                                            </td>
+                                        }
                                     </tr>
                                 }
                             </tbody>
                         </table>
+                    }
+                    @if(_vm?.ActiveFavoriteId is not null)
+                    {
+                        <h4 class="projection-suppressed-title">@Localizer["ProjectionDetails_Suppressed_Title"]</h4>
+                        @if(_suppressedExpectations.Count == 0)
+                        {
+                            <div class="small-empty">@Localizer["ProjectionDetails_Suppressed_None"]</div>
+                        }
+                        else
+                        {
+                            <table class="fm-table projection-detail-table projection-suppressed-table">
+                                <thead>
+                                    <tr>
+                                        <th>@Localizer["ProjectionDetails_Kind"]</th>
+                                        <th>@Localizer["ProjectionDetails_Entity"]</th>
+                                        <th>@Localizer["ProjectionDetails_ExpectedDate"]</th>
+                                        <th>@Localizer["ProjectionDetails_PriorYearDate"]</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach(var item in _suppressedExpectations)
+                                    {
+                                        <tr>
+                                            <td>@Localizer[$"PostingKind_{item.Kind}"]</td>
+                                            <td>@item.EntityName</td>
+                                            <td>@item.ExpectedDate.ToString("d")</td>
+                                            <td>@item.PriorYearDate.ToString("d")</td>
+                                            <td>
+                                                <button type="button" class="btn secondary projection-unsuppress-btn" disabled="@_projectionMutationBusy" @onclick="() => UnsuppressExpectationAsync(item)">
+                                                    @Localizer["ProjectionDetails_Unsuppress"]
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
                     }
                 </div>
             </div>
@@ -584,6 +634,8 @@
     private decimal _projectionDetailsExpectedAmount;
     private decimal _projectionDetailsAmount;
     private IReadOnlyList<ReportProjectionExpectedItemDto> _projectionDetails = Array.Empty<ReportProjectionExpectedItemDto>();
+    private IReadOnlyList<ReportSuppressedExpectationDto> _suppressedExpectations = Array.Empty<ReportSuppressedExpectationDto>();
+    private bool _projectionMutationBusy;
 
     private readonly PostingKind[] _postingKindValues = new[]{ PostingKind.Bank, PostingKind.Contact, PostingKind.SavingsPlan, PostingKind.Security };
 
@@ -623,6 +675,7 @@
             .ThenBy(p => p.EntityName)
             .ToList();
         _projectionDetailsExpectedAmount = _projectionDetails.Sum(p => p.Amount);
+        _ = LoadSuppressedExpectationsAsync();
     }
 
     private void CloseProjectionDetails()
@@ -632,6 +685,65 @@
         _projectionDetailsExpectedAmount = 0m;
         _projectionDetailsAmount = 0m;
         _projectionDetails = Array.Empty<ReportProjectionExpectedItemDto>();
+        _suppressedExpectations = Array.Empty<ReportSuppressedExpectationDto>();
+    }
+
+    private async Task LoadSuppressedExpectationsAsync()
+    {
+        if (_vm?.ActiveFavoriteId is not { } favoriteId)
+        {
+            _suppressedExpectations = Array.Empty<ReportSuppressedExpectationDto>();
+            return;
+        }
+        try
+        {
+            _suppressedExpectations = await Api.Reports_ListSuppressedExpectationsAsync(favoriteId);
+        }
+        catch
+        {
+            _suppressedExpectations = Array.Empty<ReportSuppressedExpectationDto>();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SuppressExpectationAsync(ReportProjectionExpectedItemDto item)
+    {
+        if (_vm?.ActiveFavoriteId is not { } favoriteId || _projectionMutationBusy) { return; }
+        _projectionMutationBusy = true;
+        try
+        {
+            var created = await Api.Reports_SuppressExpectationAsync(favoriteId,
+                new ReportSuppressedExpectationRequest(item.Kind, item.EntityId, item.PriorYearDate));
+            if (created is null) { return; }
+            _projectionDetails = _projectionDetails
+                .Where(p => !(p.Kind == item.Kind && p.EntityId == item.EntityId && p.PriorYearDate == item.PriorYearDate))
+                .ToList();
+            _projectionDetailsExpectedAmount = _projectionDetails.Sum(p => p.Amount);
+            _projectionDetailsAmount = _projectionDetailsActualAmount + _projectionDetailsExpectedAmount;
+            await LoadSuppressedExpectationsAsync();
+            _ = LoadAsync();
+        }
+        finally
+        {
+            _projectionMutationBusy = false;
+        }
+    }
+
+    private async Task UnsuppressExpectationAsync(ReportSuppressedExpectationDto item)
+    {
+        if (_vm?.ActiveFavoriteId is not { } favoriteId || _projectionMutationBusy) { return; }
+        _projectionMutationBusy = true;
+        try
+        {
+            var ok = await Api.Reports_UnsuppressExpectationAsync(favoriteId, item.Id);
+            if (!ok) { return; }
+            _suppressedExpectations = _suppressedExpectations.Where(s => s.Id != item.Id).ToList();
+            _ = LoadAsync();
+        }
+        finally
+        {
+            _projectionMutationBusy = false;
+        }
     }
 
     private string PostingsColumnLabel(ReportPostingsPeriod period) => period switch

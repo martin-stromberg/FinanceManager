@@ -820,7 +820,8 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
 
             var projectionContext = new ReportProjectionContext(query.Interval, analysis, projectionWindowStart, projectionEndExclusive);
-            ReportProjectionCalculator.ApplyProjectionAmounts(points, projectionEvents, projectionContext, ResolveProjectionEntityName, hasActiveSecurity, securityDividendLeafOnly: true);
+            var suppressions = await LoadSuppressionKeysAsync(query, ct);
+            ReportProjectionCalculator.ApplyProjectionAmounts(points, projectionEvents, projectionContext, ResolveProjectionEntityName, hasActiveSecurity, securityDividendLeafOnly: true, suppressions: suppressions);
         }
 
         // Previous comparison ----------------------------------------------------
@@ -1195,12 +1196,14 @@ public sealed class ReportAggregationService : IReportAggregationService
         }
 
         var projectionContext = new ReportProjectionContext(query.Interval, analysis, startMonth, endExclusive);
+        var suppressions = compareProjection ? await LoadSuppressionKeysAsync(query, ct) : null;
         if (compareProjection)
         {
             ReportProjectionCalculator.ApplyProjectionAmounts(
                 points, dividendEvents, projectionContext,
                 (_, entityId) => securityNames.TryGetValue(entityId, out var securityName) ? securityName : entityId.ToString("N")[..6],
-                (securityId, date) => HasPositiveHolding(holdingTransactionsBySecurity, securityId, date));
+                (securityId, date) => HasPositiveHolding(holdingTransactionsBySecurity, securityId, date),
+                suppressions: suppressions);
         }
 
         // Do not duplicate here: return net dividend amounts once. If the caller needs booking+valuta duplication,
@@ -1225,7 +1228,8 @@ public sealed class ReportAggregationService : IReportAggregationService
             ReportProjectionCalculator.ApplyProjectionAmounts(
                 points, dividendEvents, projectionContext,
                 (_, entityId) => securityNames.TryGetValue(entityId, out var securityName) ? securityName : entityId.ToString("N")[..6],
-                (securityId, date) => HasPositiveHolding(holdingTransactionsBySecurity, securityId, date));
+                (securityId, date) => HasPositiveHolding(holdingTransactionsBySecurity, securityId, date),
+                suppressions: suppressions);
         }
 
         // Compute comparisons
@@ -1303,6 +1307,29 @@ public sealed class ReportAggregationService : IReportAggregationService
             .ToList();
 
         return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear, compareProjection);
+    }
+
+    /// <summary>
+    /// Loads the suppressed expectation identities for the report favorite referenced by the
+    /// query. Returns <c>null</c> when the query carries no favorite context (ad-hoc queries
+    /// stay unaffected) or the favorite has no suppressions.
+    /// </summary>
+    /// <param name="query">Aggregation query holding the owner and optional favorite id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A key set of (Kind, EntityId, PriorYearDate) tuples, or <c>null</c>.</returns>
+    private async Task<HashSet<(PostingKind Kind, Guid EntityId, DateTime PriorYearDate)>?> LoadSuppressionKeysAsync(ReportAggregationQuery query, CancellationToken ct)
+    {
+        if (query.ReportFavoriteId is not { } favoriteId)
+        {
+            return null;
+        }
+        var rows = await _db.ReportSuppressedExpectations.AsNoTracking()
+            .Where(s => s.OwnerUserId == query.OwnerUserId && s.ReportFavoriteId == favoriteId)
+            .Select(s => new { s.Kind, s.EntityId, s.PriorYearDate })
+            .ToListAsync(ct);
+        return rows.Count == 0
+            ? null
+            : rows.Select(s => (s.Kind, s.EntityId, s.PriorYearDate.Date)).ToHashSet();
     }
 
     /// <summary>

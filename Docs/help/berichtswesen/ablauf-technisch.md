@@ -117,6 +117,14 @@ Im Standardpfad `QueryAsync` steuern drei Gates die Option: `projectionEnabled` 
 
 Im Dashboard steht die Checkbox `Label_CompareProjection` bei `CanCompareProjection` (mindestens eine Buchungsart, Intervall nicht `AllHistory`) zur Verfügung. Jede Hochrechnungszelle mit `ProjectionExpectedItems` zeigt eine Info-Schaltfläche (`ProjectionDetails_Open`), die das Overlay mit `Istwerte`/`Erwartete Buchungen`/`Hochrechnung` und den Spalten `Art`/`Herkunft`/`Erwartet am`/`Vorjahresdatum`/`Betrag` öffnet; der MCP-Pfad `fm_reporting_aggregate` liefert dieselben Details als `expectedItems` (`kind`, `entityId`, `untrusted_data.entityName`, `expectedDate`, `priorYearDate`, `amount`).
 
+#### Ausblenden einzelner Erwartungen pro Favorit (`ReportFavoriteId`)
+
+Trägt die Anfrage einen Favoritenkontext (`ReportFavoriteId` auf `ReportAggregatesQueryRequest` → `ReportAggregationQuery`; gesetzt aus dem aktiven Dashboard-Favorit bzw. der Favoritenreferenz einer Home-KPI-Kachel), lädt `ReportAggregationService.LoadSuppressionKeysAsync` die `ReportSuppressedExpectation`-Sätze des Besitzers für genau diesen Favoriten als Schlüsselmenge (`Kind`, `EntityId`, `PriorYearDate.Date`). Ohne `ReportFavoriteId` liefert die Methode `null` — Ad-hoc-Abfragen (inklusive API/MCP) durchlaufen keinen Ausblendungsfilter.
+
+`ReportProjectionCalculator.ApplyProjectionAmounts` erhält die Menge als Parameter `suppressions` und verwirft passende `ProjectionCandidate`s vor `FindExpectedItems` — also vor dem Bestätigungsabgleich. Dadurch sinken `ProjectionAmount` und `ProjectionExpectedItems`, während `Amount`/Istwerte unberührt bleiben. Die Persistenz sichert die Identität (`OwnerUserId`, `ReportFavoriteId`, `Kind`, `EntityId`, `PriorYearDate`) über einen Unique-Index ab; `ReportSuppressedExpectationService` prüft Besitz (Favorit gehört dem Benutzer), ist beim Anlegen idempotent und entfernt Sätze beim Wieder-Einbeziehen. Die Ausblendung koppelt an das Vorjahresdatum: Nach einem Wechsel des Referenzjahres hat die neue Erwartung ein anderes `PriorYearDate` und wird wieder projiziert.
+
+Im Overlay rendern aktive Erwartungen mit aktivem Favorit eine Zeilenaktion `ProjectionDetails_Suppress` („Nicht mehr erwarten"); darunter listet die Sektion `ProjectionDetails_Suppressed_Title` („Ausgeblendete Erwartungen") die unterdrückten Sätze mit `ProjectionDetails_Unsuppress` („Wieder einbeziehen"). Beide Aktionen laden anschließend Aggregation und Ausblendungsliste neu. Löschen des Favoriten entfernt die Sätze per Cascade; im Benutzer-Backup ist `ReportSuppressedExpectations` eine optionale Sektion (Export in `BackupService`, `TryGetProperty`-Import in `SetupImportService` mit Remapping auf die neuen Favoriten-/Entitäts-Ids — Einträge ohne Ziel im Backup werden übersprungen).
+
 Beteiligte Komponenten:
 
 - `ReportProjectionEventLoader` — `LoadEntityEventsAsync`, `LoadSavingsPlanAccountLinksAsync`, `LoadSavingsPlanEventsAsync`, `LoadSecurityDividendEventsAsync`, `LoadSecurityHoldingTransactionsAsync`
@@ -125,7 +133,9 @@ Beteiligte Komponenten:
 - `ReportQuerySemantics` — `TryParseGroupKey`, `ParseKindFromKey` (Leaf-/Typ-Zuordnung)
 - `ReportAggregationService.QueryAsync` / `QuerySecurityDividendsNetAsync` — Gates, Ereignisfenster, `hasProjectionData`
 - `ReportAggregatePointDto.ProjectionAmount`/`ProjectionExpectedItems`, `ReportProjectionExpectedItemDto`
-- `ReportDashboard.razor` (`CanCompareProjection`, `OpenProjectionDetails`), `ReportDashboardViewModel.CanCompareProjection`
+- `ReportDashboard.razor` (`CanCompareProjection`, `OpenProjectionDetails`, `SuppressExpectationAsync`, `UnsuppressExpectationAsync`), `ReportDashboardViewModel.CanCompareProjection`
+- `ReportSuppressedExpectation`, `IReportSuppressedExpectationService`/`ReportSuppressedExpectationService`, `ReportsController`-Endpunkte `/api/report-favorites/{id}/suppressed-expectations`
+- `ReportAggregationService.LoadSuppressionKeysAsync` — Favoriten-gescopte Schlüsselmenge für `ApplyProjectionAmounts`
 
 ## Diagramm
 

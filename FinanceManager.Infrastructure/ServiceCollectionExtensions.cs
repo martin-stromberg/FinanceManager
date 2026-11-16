@@ -118,6 +118,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPostingTimeSeriesService, PostingTimeSeriesService>();
         services.AddScoped<IPostingReversalService, PostingReversalService>();
         services.AddScoped<IReportFavoriteService, ReportFavoriteService>();
+        services.AddScoped<IReportSuppressedExpectationService, ReportSuppressedExpectationService>();
         services.AddScoped<IReportAggregationService, ReportAggregationService>();
         services.AddScoped<IReportPostingsQueryService, ReportPostingsQueryService>();
         services.AddScoped<IHomeKpiService, HomeKpiService>();

@@ -61,6 +61,24 @@
 
 **Umsetzung:** `ReportFavorite.CompareProjection` und die Favoriten-DTOs.
 
+## Erwartete Posten werden pro Favorit ausgeblendet
+
+**Beschreibung:** Einzelne erwartete Posten der Hochrechnung lassen sich je Favorit ausblenden, damit einmalige Vorjahresposten (z. B. Zinsen eines abgelaufenen Festgelds) nicht weiter als wiederkehrende Erwartung hochgerechnet werden.
+
+**Bedingungen:**
+- Die Aggregation trägt einen Favoritenkontext (`ReportFavoriteId` auf `ReportAggregationQuery`/`ReportAggregatesQueryRequest`); ohne Favoritenbezug — Dashboard ohne Favorit, Ad-hoc-API-Aufrufe, MCP — bleibt die Hochrechnung unverändert und zeigt alle Erwartungen.
+- Der Favorit gehört dem aufrufenden Benutzer; alle Sätze filtern auf `OwnerUserId`.
+- Eine Ausblendung wird über das Identitäts-Tupel (`ReportFavoriteId`, `Kind`, `EntityId`, `PriorYearDate` — Datum ohne Uhrzeit) erkannt; der Betrag ist ausdrücklich nicht Teil der Identität.
+
+**Verhalten:**
+- Ausgeblendete Kandidaten werden vor dem Bestätigungsabgleich verworfen: Sie erscheinen weder in `ProjectionExpectedItems` noch erhöhen sie `ProjectionAmount`; gebuchte Istwerte und `Amount` bleiben unberührt.
+- Das Ausblenden ist idempotent — ein erneutes Suppressieren liefert den vorhandenen Satz (Unique-Index auf `OwnerUserId`, `ReportFavoriteId`, `Kind`, `EntityId`, `PriorYearDate`).
+- Die Bindung ans Vorjahresdatum macht die Ausblendung jahresstabil: Wechselt das Referenzjahr, hat die neue Erwartung ein anderes `PriorYearDate` und wird wieder projiziert.
+- Das Wieder-Einbeziehen löscht den Sätzeintrag und stellt das ursprüngliche Hochrechnungsverhalten vollständig wieder her.
+- Löschen des Favoriten entfernt seine Ausblendungen per Cascade; im Benutzer-Backup wird die optionale Sektion `ReportSuppressedExpectations` exportiert bzw. über `TryGetProperty` importiert — fehlende Sektionen (Alt-Backups) gelten als leere Liste, und Verweise auf nicht mitgesicherte Favoriten/Entitäten werden beim Import übersprungen.
+
+**Umsetzung:** `ReportSuppressedExpectation`, `IReportSuppressedExpectationService`/`ReportSuppressedExpectationService`, `ReportAggregationService.LoadSuppressionKeysAsync`, `ReportProjectionCalculator.ApplyProjectionAmounts` (Parameter `suppressions`), Endpunkte unter `/api/report-favorites/{id}/suppressed-expectations`, `ReportDashboard.razor`.
+
 ## Textfilter matchen Verwendungszweck und Buchungsbeschreibung
 
 **Beschreibung:** Pro Buchungsart können beliebig viele freie Textfilter gesetzt werden, die Buchungen anhand ihres Textes auswählen.

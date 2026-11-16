@@ -23,6 +23,20 @@ Das `Filters`-Objekt (`ReportAggregatesFiltersRequest`) akzeptiert optional vier
 
 Jeder Eintrag wird getrimmt, ist maximal 500 Zeichen lang und matcht als Substring (Groß-/Kleinschreibung egal) auf `Subject` und `Description` der Buchungen; mehrere Einträge einer Liste sind ODER-verknüpft. Einträge über 500 Zeichen beim Favoriten-Speichern führen zu `400 BadRequest`.
 
+Das optionale Request-Feld `ReportFavoriteId` (`Guid?`) versetzt die Abfrage in den Favoritenkontext: Mit gesetztem Wert werden die für diesen Favoriten ausgeblendeten Erwartungen in der Hochrechnung berücksichtigt. Ohne das Feld bleibt die Hochrechnung unverändert — Ad-hoc-Abfragen sind von Ausblendungen nicht betroffen.
+
+### `GET /api/report-favorites/{id}/suppressed-expectations`
+
+**Beschreibung:** Listet die für den Favoriten ausgeblendeten Erwartungen (`ReportSuppressedExpectationDto[]` mit `Id`, `Kind`, `EntityId`, `EntityName`, `ExpectedDate`, `PriorYearDate`, `SuppressedAtUtc`). Antwortet mit `404 NotFound`, wenn der Favorit nicht existiert oder dem Benutzer nicht gehört.
+
+### `POST /api/report-favorites/{id}/suppressed-expectations`
+
+**Beschreibung:** Blendet einen erwarteten Posten für den Favoriten aus. Der Body (`ReportSuppressedExpectationRequest`) enthält `Kind`, `EntityId` und `PriorYearDate`; die Wirkung gilt nur für Abfragen mit diesem Favoritenkontext. Idempotent: das wiederholte Ausblenden desselben Postens liefert den vorhandenen Satz. Antwortet mit `200 OK` und `ReportSuppressedExpectationDto`, `404 NotFound` bei fremdem/fehlendem Favoriten sowie `400 BadRequest` bei ungültigen Werten.
+
+### `DELETE /api/report-favorites/{id}/suppressed-expectations/{suppressionId}`
+
+**Beschreibung:** Hebt eine Ausblendung auf — der Posten wird wieder wie zuvor hochgerechnet. Antwortet mit `204 NoContent` bzw. `404 NotFound`, wenn die Ausblendung nicht zum Favoriten des Benutzers gehört.
+
 ### `POST /api/report-postings`
 
 **Beschreibung:** Liefert die Einzelposten hinter einer Betragszelle des Report-Dashboards (Posteneinsicht). Der Request (`ReportPostingsQueryRequest`) trägt den Zellkontext — `GroupKey` (`null` für die Summenzeile), `PeriodStart` (Periodenanker der Zeile) und `Period` (`Current`/`Previous`/`YearAgo`) — sowie den vollständigen Aggregationskontext (`PostingKind`/`PostingKinds`, `Interval`, `IncludeCategory`, `CompareProjection`, `UseValutaDate`, `AnalysisDate`, `SavingsPlanPostingSource`, `Take`, `CompareYear` und `Filters` identisch zu `report-aggregates`), damit der Server Fenster und Postenmenge der Zelle exakt reproduzieren kann.

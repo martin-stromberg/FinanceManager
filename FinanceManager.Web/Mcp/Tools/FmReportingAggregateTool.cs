@@ -117,7 +117,8 @@ public sealed class FmReportingAggregateHandler : IMcpToolHandler
                     ContactTextFilters: f.ContactTextFilters,
                     SavingsPlanTextFilters: f.SavingsPlanTextFilters,
                     SecurityTextFilters: f.SecurityTextFilters),
-                favorite.SavingsPlanPostingSource);
+                favorite.SavingsPlanPostingSource,
+                favorite.Id);
         }
         else
         {
