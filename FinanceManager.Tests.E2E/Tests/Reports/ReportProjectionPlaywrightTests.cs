@@ -116,6 +116,17 @@ public sealed class ReportProjectionPlaywrightTests
         return new AppDbContext(options);
     }
 
+    private static string GetRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var i = 0; i < 4; i++)
+        {
+            dir = dir.Parent ?? throw new InvalidOperationException("Unable to resolve repository root.");
+        }
+
+        return dir.FullName;
+    }
+
     private async Task RebuildAggregatesAsync(Guid userId)
     {
         await using var db = OpenDb();
@@ -202,6 +213,63 @@ public sealed class ReportProjectionPlaywrightTests
         await overlay.WaitForAsync(new() { State = WaitForSelectorState.Visible });
         var overlayText = await overlay.InnerTextAsync();
         overlayText.Should().Contain(accountName);
+    }
+
+    /// <summary>
+    /// Regression: the expected-items overlay must use the available viewport width and keep all
+    /// table cells inside the table — no horizontal overflow and no overlapping cell content.
+    /// The overlay is additionally captured as an artifact for visual inspection.
+    /// </summary>
+    [Fact]
+    public async Task ProjectionDetailsOverlay_RendersWithoutHorizontalOverflowOrOverlappingCells()
+    {
+        var (session, page, userId) = await LoginAsync("projection-overflow-user");
+        await using var _ = session;
+        var accountName = await SeedAccountWithPriorYearPostingAsync(page, userId);
+
+        var favoriteName = $"Projection Overlay {Guid.NewGuid():N}";
+        var created = await BrowserApiHelper.PostJsonAsync<ReportFavoriteCreateApiRequest, ReportFavoriteDto>(page, "/api/report-favorites", new ReportFavoriteCreateApiRequest
+        {
+            Name = favoriteName,
+            PostingKind = 0,
+            IncludeCategory = false,
+            Interval = 0,
+            Take = 6,
+            ComparePrevious = false,
+            CompareYear = false,
+            CompareProjection = true,
+            ShowChart = false,
+            Expandable = false,
+            UseValutaDate = false
+        });
+        created.Should().NotBeNull();
+
+        await page.GotoAsync($"/reports/dashboard?favoriteId={created!.Id}&edit=false");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var infoButton = page.Locator(".projection-info-btn").First;
+        await infoButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        await infoButton.ClickAsync();
+
+        var overlay = page.Locator(".projection-detail-overlay");
+        await overlay.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        (await overlay.InnerTextAsync()).Should().Contain(accountName);
+
+        var modal = page.Locator(".projection-detail-modal");
+        var modalOverflow = await modal.EvaluateAsync<int>("el => el.scrollWidth - el.clientWidth");
+        modalOverflow.Should().BeLessThanOrEqualTo(1, "the expected-items dialog must not overflow the viewport horizontally");
+
+        var escapedCells = await overlay.Locator(".projection-detail-table").EvaluateAsync<int>(@"table => {
+            const box = table.getBoundingClientRect();
+            return Array.from(table.querySelectorAll('th, td'))
+                .filter(c => c.getBoundingClientRect().right > box.right + 1 || c.getBoundingClientRect().left < box.left - 1)
+                .length;
+        }");
+        escapedCells.Should().Be(0, "every table cell must stay inside the table bounds");
+
+        var artifactDir = Path.Combine(GetRepoRoot(), "TestResults", "E2E", "artifacts");
+        Directory.CreateDirectory(artifactDir);
+        await overlay.ScreenshotAsync(new() { Path = Path.Combine(artifactDir, "projection-detail-overlay.png") });
     }
 
     /// <summary>

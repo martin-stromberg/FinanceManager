@@ -124,7 +124,7 @@ internal static class ReportProjectionCalculator
                     .Where(e => e.Kind != PostingKind.Security || hasActiveSecurity is null || hasActiveSecurity(e.EntityId, e.ExpectedDate))
                     .ToList();
 
-                return FindExpectedItems(pattern, candidates, currentEvents, context.Analysis)
+                return FindExpectedItems(pattern, candidates, currentEvents, context.Analysis, g.Key.Kind)
                     .Select(x => new ReportProjectionExpectedItemDto(
                         x.Kind,
                         x.EntityId,
@@ -341,12 +341,20 @@ internal static class ReportProjectionCalculator
         ProjectionPattern pattern,
         IReadOnlyList<ProjectionCandidate> candidates,
         IReadOnlyList<ProjectionEvent> currentEvents,
-        DateTime analysis)
+        DateTime analysis,
+        PostingKind kind)
     {
         if (candidates.Count == 0)
         {
             return Array.Empty<ProjectionCandidate>();
         }
+
+        // Securities keep the adopted dividend semantics: a security typically pays once a year,
+        // so any current-year event confirms the year's expectation. Other kinds can carry
+        // several independent recurring series on one entity (e.g. interest plus rent on the
+        // same account), so each candidate must be confirmed individually instead — an
+        // unmatched candidate stays expected.
+        var strictWholeYearConfirmation = kind == PostingKind.Security;
 
         return pattern switch
         {
@@ -356,8 +364,13 @@ internal static class ReportProjectionCalculator
             ProjectionPattern.Quarterly => candidates.Where(candidate =>
                 !HasCurrentMatch(currentEvents, current => GetQuarter(current.Date) == GetQuarter(candidate.ExpectedDate)) &&
                 GetQuarter(candidate.ExpectedDate) >= GetQuarter(analysis)),
-            ProjectionPattern.Annual => currentEvents.Count == 0 ? candidates : Array.Empty<ProjectionCandidate>(),
-            _ => FindIrregularExpected(candidates, currentEvents)
+            ProjectionPattern.Annual => strictWholeYearConfirmation
+                ? (currentEvents.Count == 0 ? candidates : Array.Empty<ProjectionCandidate>())
+                : candidates.Where(candidate =>
+                    !HasCurrentMatch(currentEvents, current => current.Date.Month == candidate.ExpectedDate.Month)),
+            _ => strictWholeYearConfirmation && currentEvents.Count > 0
+                ? Array.Empty<ProjectionCandidate>()
+                : FindIrregularExpected(candidates, currentEvents)
         };
     }
 
@@ -394,7 +407,7 @@ internal static class ReportProjectionCalculator
             }
         }
 
-        return currentEvents.Count == 0 ? unmatched : Array.Empty<ProjectionCandidate>();
+        return unmatched;
     }
 
     private static bool HasCurrentMatch(IReadOnlyList<ProjectionEvent> currentEvents, Func<ProjectionEvent, bool> predicate)

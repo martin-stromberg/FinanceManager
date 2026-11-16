@@ -250,9 +250,15 @@
     height: 14px;
 }
 
-.projection-detail-modal {
+/* Expected-items dialog: keep the five-column table inside the dialog on all screen sizes.
+   Two-class selector so page-generic .modal rules loading later (e.g. SecurityPrices)
+   cannot shrink the dialog or re-enable horizontal scrolling. */
+.modal.projection-detail-modal {
     box-sizing: border-box;
-    max-width: min(920px, calc(100vw - 2.5rem));
+    width: min(1100px, calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
+    max-height: 92vh;
+    overflow-y: auto;
     overflow-x: hidden;
 }
 
@@ -350,21 +356,30 @@
     word-break: break-word;
 }
 
+/* Five columns: kind and origin share the flexible text space, the two dates and the
+   amount get compact fixed tracks; all widths must add up to 100% so no column collapses. */
 .projection-detail-table th:nth-child(1),
 .projection-detail-table td:nth-child(1) {
-    width: 42%;
+    width: 12%;
 }
 
 .projection-detail-table th:nth-child(2),
-.projection-detail-table td:nth-child(2),
-.projection-detail-table th:nth-child(3),
-.projection-detail-table td:nth-child(3) {
-    width: 20%;
+.projection-detail-table td:nth-child(2) {
+    width: 38%;
 }
 
+.projection-detail-table th:nth-child(3),
+.projection-detail-table td:nth-child(3),
 .projection-detail-table th:nth-child(4),
 .projection-detail-table td:nth-child(4) {
-    width: 18%;
+    width: 15%;
+    white-space: nowrap;
+}
+
+.projection-detail-table th:nth-child(5),
+.projection-detail-table td:nth-child(5) {
+    width: 20%;
+    white-space: nowrap;
 }
 
 @media (max-width: 900px) {

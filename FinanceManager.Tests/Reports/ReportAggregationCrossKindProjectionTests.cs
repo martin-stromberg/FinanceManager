@@ -636,6 +636,100 @@ public sealed class ReportAggregationCrossKindProjectionTests
     }
 
     /// <summary>
+    /// A bank entity can carry several independent recurring series: an unrelated current-year
+    /// posting matching the same text filter must not suppress the still-open annual expectation
+    /// of a prior-year year-end posting (regression — the adopted dividend rule suppressed every
+    /// expectation once any current event existed).
+    /// </summary>
+    [Fact]
+    public async Task QueryAsync_BankProjection_Annual_RemainsExpected_WhenOtherCurrentEventExists()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "bank-annual-open");
+        var account = AddAccount(db, user.Id, "Giro");
+        var analysis = new DateTime(2026, 5, 1);
+        AddBankPosting(db, account, new DateTime(2025, 12, 30), 120m, "Zinsgutschrift");
+        AddBankPosting(db, account, new DateTime(2026, 3, 15), 30m, "Zinsgutschrift");
+        await RebuildAggregatesAsync(db, user.Id);
+
+        var result = await CreateSut(db).QueryAsync(new ReportAggregationQuery(
+            user.Id, PostingKind.Bank, ReportInterval.Year, 2,
+            IncludeCategory: false, ComparePrevious: false, CompareYear: false, CompareProjection: true,
+            AnalysisDate: analysis,
+            Filters: new ReportAggregationFilters(BankTextFilters: new[] { "Zins" })), CancellationToken.None);
+
+        Assert.True(result.ComparedProjection);
+        var point = result.Points.Single(p => p.GroupKey == $"Account:{account.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
+        Assert.Equal(30m, point.Amount);
+        Assert.Equal(150m, point.ProjectionAmount);
+        var expected = Assert.Single(point.ProjectionExpectedItems!);
+        Assert.Equal(new DateTime(2026, 12, 30), expected.ExpectedDate);
+        Assert.Equal(new DateTime(2025, 12, 30), expected.PriorYearDate);
+    }
+
+    /// <summary>
+    /// For irregular patterns each candidate is confirmed individually: a current event inside the
+    /// confirmation window suppresses only its own expectation while the other unmatched prior-year
+    /// events of the entity stay expected.
+    /// </summary>
+    [Fact]
+    public async Task QueryAsync_BankProjection_Irregular_RemainsExpectedForUnmatchedCandidates()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "bank-irregular-open");
+        var account = AddAccount(db, user.Id, "Giro");
+        var analysis = new DateTime(2026, 5, 1);
+        AddBankPosting(db, account, new DateTime(2025, 1, 10), 100m);
+        AddBankPosting(db, account, new DateTime(2025, 6, 15), 100m);
+        AddBankPosting(db, account, new DateTime(2025, 12, 20), 100m);
+        AddBankPosting(db, account, new DateTime(2026, 1, 12), 100m);
+        await RebuildAggregatesAsync(db, user.Id);
+
+        var result = await CreateSut(db).QueryAsync(new ReportAggregationQuery(
+            user.Id, PostingKind.Bank, ReportInterval.Year, 2,
+            IncludeCategory: false, ComparePrevious: false, CompareYear: false, CompareProjection: true,
+            AnalysisDate: analysis), CancellationToken.None);
+
+        var point = result.Points.Single(p => p.GroupKey == $"Account:{account.Id}" && p.PeriodStart == new DateTime(2026, 1, 1));
+        Assert.Equal(100m, point.Amount);
+        Assert.Equal(300m, point.ProjectionAmount);
+        var expectedDates = point.ProjectionExpectedItems!.Select(e => e.ExpectedDate).OrderBy(d => d).ToArray();
+        Assert.Equal(new[] { new DateTime(2026, 6, 15), new DateTime(2026, 12, 20) }, expectedDates);
+    }
+
+    /// <summary>
+    /// Securities keep the adopted dividend semantics: a single current-year dividend event
+    /// confirms the year's annual expectation even when it arrived in a different month.
+    /// </summary>
+    [Fact]
+    public async Task QueryAsync_SecurityProjection_Annual_SuppressedByAnyCurrentEvent()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "sec-annual-confirmed");
+        var security = new FinanceManager.Domain.Securities.Security(user.Id, "Sec", "ISIN-3", null, null, "EUR", null);
+        db.Securities.Add(security);
+        var analysis = new DateTime(2026, 5, 1);
+        var group = Guid.NewGuid();
+        var group2 = Guid.NewGuid();
+        db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, security.Id, new DateTime(2024, 1, 1), new DateTime(2024, 1, 1), -200m, "Buy", null, null, SecurityPostingSubType.Buy, 10m));
+        db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, security.Id, new DateTime(2025, 12, 10), new DateTime(2025, 12, 10), 80m, "Dividend", null, null, SecurityPostingSubType.Dividend).SetGroup(group));
+        db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, security.Id, new DateTime(2026, 2, 5), new DateTime(2026, 2, 5), 90m, "Dividend", null, null, SecurityPostingSubType.Dividend).SetGroup(group2));
+        await RebuildAggregatesAsync(db, user.Id);
+
+        var result = await CreateSut(db).QueryAsync(new ReportAggregationQuery(
+            user.Id, PostingKind.Security, ReportInterval.Month, 5,
+            IncludeCategory: false, ComparePrevious: false, CompareYear: false, CompareProjection: true,
+            PostingKinds: new[] { PostingKind.Security, PostingKind.Bank },
+            AnalysisDate: analysis), CancellationToken.None);
+
+        Assert.True(result.ComparedProjection);
+        var dividendRow = result.Points.Single(p => p.GroupKey == $"Security:{security.Id}:Dividend" && p.PeriodStart == new DateTime(2026, 2, 1));
+        Assert.Equal(90m, dividendRow.Amount);
+        Assert.Equal(90m, dividendRow.ProjectionAmount);
+        Assert.All(result.Points.Where(p => p.GroupKey == $"Security:{security.Id}:Dividend"), p => Assert.Null(p.ProjectionExpectedItems));
+    }
+
+    /// <summary>
     /// A fully sold security produces no expectation in the standard path either (positive-holding
     /// rule), while the bank selection of the same multi-kind report keeps projecting.
     /// </summary>
