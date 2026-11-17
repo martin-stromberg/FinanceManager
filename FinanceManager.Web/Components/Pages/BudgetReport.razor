@@ -101,7 +101,7 @@ else
                             <span class="budget-report-loading-range">
                                 @(Localizer?["Budget_Report_Th_Period"].Value ?? "Period"):
                                 @(_vm.LoadingFrom.Value.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture))
-                                �
+                                –
                                 @(_vm.LoadingTo.Value.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture))
                             </span>
                         }
@@ -119,7 +119,7 @@ else
                         var fromText = from.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
                         var toText = to.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
                     }
-                    @fromText � @toText
+                    @fromText – @toText
                 </div>
             }
 

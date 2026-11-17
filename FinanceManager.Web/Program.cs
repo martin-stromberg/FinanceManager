@@ -14,7 +14,7 @@ namespace FinanceManager.Web
         /// <remarks>
         /// This method configures logging and application services using extension methods on the <see cref="WebApplicationBuilder"/>,
         /// applies EF migrations and seed data, configures localization and middleware and finally starts the HTTP server.
-        /// Exceptions during startup will terminate the process � callers may observe process exit codes for failure diagnostics.
+        /// Exceptions during startup will terminate the process — callers may observe process exit codes for failure diagnostics.
         /// </remarks>
         public static void Main(string[] args)
         {

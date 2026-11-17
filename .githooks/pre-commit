@@ -37,17 +37,21 @@ python "$repo_root/.githooks/no-notimplemented-check.py"
 echo "Running enum coverage check..."
 python "$repo_root/.githooks/enum-coverage-check.py"
 
-# --- Pr�fen ob dotnet verf�gbar ist ---
+# --- U+FFFD Replacement-Char Check (fixer Pfad, blockierend) ---
+echo "Running replacement character check..."
+python "$repo_root/.githooks/no-replacement-char-check.py"
+
+# --- Prüfen ob dotnet verfügbar ist ---
 if ! command -v dotnet >/dev/null 2>&1; then
   echo "dotnet not found. Install the .NET SDK." >&2
   exit 1
 fi
 
-# --- Dynamische L�sungssuche (.sln / .slnx) ---
+# --- Dynamische Lösungssuche (.sln / .slnx) ---
 solution_file="$(find "$repo_root" -maxdepth 3 -type f \( -name '*.sln' -o -name '*.slnx' \) | head -n 1 || true)"
 
 if [ -z "$solution_file" ]; then
-  echo "No solution file (.sln / .slnx) found � skipping .NET-based checks."
+  echo "No solution file (.sln / .slnx) found — skipping .NET-based checks."
   exit 0
 fi
 
@@ -59,7 +63,7 @@ if [ -n "$secret_scan_proj" ]; then
   echo "Running SecretScan..."
   dotnet run --no-restore --project "$secret_scan_proj" -- --root "$repo_root" --solution "$solution_file"
 else
-  echo "SecretScan.csproj not found � skipping secret scan."
+  echo "SecretScan.csproj not found — skipping secret scan."
 fi
 
 # --- MarkdownLinkCheck dynamisch finden ---
@@ -68,5 +72,5 @@ if [ -n "$markdown_check_proj" ]; then
   echo "Running MarkdownLinkCheck..."
   dotnet run --no-restore --project "$markdown_check_proj" -- --root "$repo_root" --solution "$solution_file"
 else
-  echo "MarkdownLinkCheck.csproj not found � skipping markdown link check."
+  echo "MarkdownLinkCheck.csproj not found — skipping markdown link check."
 fi

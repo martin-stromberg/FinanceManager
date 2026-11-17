@@ -60,6 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Ersatzzeichen (U+FFFD) in Quelldateien:** Ein früherer Encoding-Roundtrip hatte nicht-ASCII-Zeichen literal als U+FFFD-Ersatzzeichen in 37 Quelldateien hinterlassen (Umlaute in Kommentaren/Doku/Testdaten, `€` hinter Währungsbeträgen, `–`/`·`/`—` als Trennzeichen). Alle Vorkommen wurden kontextuell rekonstruiert; die Budget-Kachel zeigt wieder `€` und die Berichtsübersicht das Trennzeichen `·`. Neuer blockierender Pre-Commit-/Pre-Push-Check `.githooks/no-replacement-char-check.py` verhindert die Wiedereinführung (Issue #533).
 - **ING-CSV-Kontoauszugimport:** Das neue ING-Exportlayout mit zusätzlicher Spalte `Referenz` (zwischen `Verwendungszweck` und `Saldo`) wird wieder importiert; ältere Exporte mit 9 Spalten bleiben über das bisherige Template lesbar.
 - **Massenimport-Prüfdialog:** Nicht importierbare Dateien werden jetzt sichtbar mit ihrem Grund angezeigt (lokalisierte Meldung statt englischem Server-Text für unbekannte Dateitypen). Die Warnung „Die Aktion kann nicht rückgängig gemacht werden." erscheint nur noch, wenn mindestens eine Datei tatsächlich importiert wird.
 

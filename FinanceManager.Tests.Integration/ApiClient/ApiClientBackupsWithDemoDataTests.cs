@@ -682,7 +682,7 @@ public class ApiClientBackupsWithDemoDataTests : IClassFixture<TestWebApplicatio
                 return a with { Id = mappedId, EntityId = newEntityId, CategoryId = mappedCategory };
             }
 
-            // no id mapping found for the attachment itself � still remap EntityId & CategoryId where possible
+            // no id mapping found for the attachment itself — still remap EntityId & CategoryId where possible
             return a with { EntityId = newEntityId, CategoryId = mappedCategory };
         }).ToList();
 

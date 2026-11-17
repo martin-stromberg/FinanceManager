@@ -269,7 +269,7 @@ public sealed class Posting : Entity, IAggregateRoot
         return this;
     }
 
-    // Neu: Menge (nur f�r Wertpapier-Postings belegt)
+    // Neu: Menge (nur für Wertpapier-Postings belegt)
     /// <summary>
     /// Optional quantity, primarily used for securities postings.
     /// </summary>

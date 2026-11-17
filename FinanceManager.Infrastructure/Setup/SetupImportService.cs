@@ -183,7 +183,7 @@ public sealed class SetupImportService : ISetupImportService
 
         var meta = JsonSerializer.Deserialize<BackupMeta>(metaLine);
         if (meta == null || meta.Type != "Backup" || meta.Version < 2)
-            throw new InvalidOperationException("Ung�ltiges Backup-Format.");
+            throw new InvalidOperationException("Ungültiges Backup-Format.");
         var jsonData = await reader.ReadToEndAsync();
         switch (meta.Version)
         {

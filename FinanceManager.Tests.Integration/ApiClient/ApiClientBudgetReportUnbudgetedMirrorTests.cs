@@ -106,7 +106,7 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
         }, TestContext.Current.CancellationToken);
 
         var spPurpose = await api.BudgetPurposes_CreateAsync(new BudgetPurposeCreateRequest(
-            Name: "R�ckstellung Versicherung",
+            Name: "Rückstellung Versicherung",
             SourceType: BudgetSourceType.SavingsPlan,
             SourceId: savingsPlan.Id,
             Description: null,
@@ -164,11 +164,11 @@ public sealed class ApiClientBudgetReportUnbudgetedMirrorTests : IClassFixture<T
                   "Zeitraum;01.01.2026 - 31.01.2026\r\n" +
                   "Saldo;0,00;EUR\r\n\r\n" +
                   "Sortierung;Datum absteigend\r\n\r\n\r\n" +
-                  "Buchung;Wertstellungsdatum;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
-                  "27.01.2026;27.01.2026;Self;�berweisung;Extra;0,00;EUR;12,34;EUR\r\n" +
-                  "25.01.2026;25.01.2026;Insurance;�berweisung;Jahresbeitrag;0,00;EUR;-60,00;EUR\r\n" +
-                  "20.01.2026;20.01.2026;Self;�berweisung;Mirror +60;0,00;EUR;60,00;EUR\r\n" +
-                  "10.01.2026;10.01.2026;Self;�berweisung;Mirror -5;0,00;EUR;-5,00;EUR\r\n";
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
+                  "27.01.2026;27.01.2026;Self;Überweisung;Extra;0,00;EUR;12,34;EUR\r\n" +
+                  "25.01.2026;25.01.2026;Insurance;Überweisung;Jahresbeitrag;0,00;EUR;-60,00;EUR\r\n" +
+                  "20.01.2026;20.01.2026;Self;Überweisung;Mirror +60;0,00;EUR;60,00;EUR\r\n" +
+                  "10.01.2026;10.01.2026;Self;Überweisung;Mirror -5;0,00;EUR;-5,00;EUR\r\n";
 
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, "statement_budget_mirror.csv", TestContext.Current.CancellationToken);

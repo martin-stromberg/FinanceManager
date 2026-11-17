@@ -100,7 +100,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         }
         catch
         {
-            // swallow � UI shows empty state
+            // swallow — UI shows empty state
             Items.Clear();
             CanLoadMore = false;
         }

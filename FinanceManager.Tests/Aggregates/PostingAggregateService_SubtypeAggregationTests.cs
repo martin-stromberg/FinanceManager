@@ -85,7 +85,7 @@ public sealed class PostingAggregateService_SubtypeAggregationTests
         int Count(DateTime start, AggregatePeriod p)
             => db.PostingAggregates.Count(a => a.Kind == PostingKind.Security && a.SecurityId == securityId && a.Period == p && a.PeriodStart == start);
 
-        // Expect 4 aggregates now (Booking+Valuta � Dividend+Tax)
+        // Expect 4 aggregates now (Booking+Valuta — Dividend+Tax)
         Assert.Equal(4, Count(monthStart, AggregatePeriod.Month));
         Assert.Equal(4, Count(quarterStart, AggregatePeriod.Quarter));
         Assert.Equal(4, Count(halfStart, AggregatePeriod.HalfYear));
