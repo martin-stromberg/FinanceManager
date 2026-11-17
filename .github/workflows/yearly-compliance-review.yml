@@ -1,0 +1,65 @@
+name: Yearly Compliance & Copyright Review
+
+# Scheduled issue automation: every year on January 1st an issue is created that
+# mentions @softwarewerkstatt to trigger the automated analysis. The issue is only
+# created when no open issue of the same type (same title prefix) exists, so a
+# review that is still being processed is never duplicated by the next cycle.
+on:
+  schedule:
+    # January 1st, 05:00 UTC.
+    - cron: '0 5 1 1 *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: yearly-compliance-review
+  cancel-in-progress: false
+
+jobs:
+  create-review-issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TITLE_PREFIX: 'Compliance- & Copyright-Review'
+
+    steps:
+      - name: Check for existing open review issue
+        id: check
+        run: |
+          count=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --search "in:title \"${TITLE_PREFIX}\"" \
+            --json number --jq 'length')
+          echo "Found $count open issue(s) with title prefix '${TITLE_PREFIX}'."
+          echo "open=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Create review issue
+        if: steps.check.outputs.open == '0'
+        run: |
+          title="${TITLE_PREFIX} – $(date -u +%Y)"
+          body=$(cat <<'BODY'
+          @softwarewerkstatt
+
+          Bitte führe das jährliche Compliance-Review durch.
+
+          Prüfe:
+
+          - Copyright-Hinweise im Quellcode
+          - Copyright-Angaben auf Webseiten
+          - Copyright-Angaben in About-Dialogen
+          - Impressum
+          - Datenschutzerklärung
+          - Drittanbieter-Lizenzen
+          - Open-Source-Verpflichtungen
+          - Unternehmens- und Kontaktinformationen
+          - App-Store-Metadaten (falls vorhanden)
+
+          Erstelle konkrete Änderungsvorschläge und liste erkannte Risiken oder Handlungsbedarfe auf.
+          BODY
+          )
+          gh issue create --repo "${{ github.repository }}" --title "$title" --body "$body"

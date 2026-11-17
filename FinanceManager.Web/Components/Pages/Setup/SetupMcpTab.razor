@@ -1,0 +1,118 @@
+@using FinanceManager.Web.ViewModels
+@using FinanceManager.Web.ViewModels.Setup
+@using Microsoft.Extensions.DependencyInjection
+@implements IAsyncDisposable
+@inject FinanceManager.Application.ICurrentUserService CurrentUser
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> L
+@inject NavigationManager Nav
+
+<div class="setup-tab setup-mcp-tab">
+    @if (_vm!.IsAdmin)
+    {
+        @* Admin area: global feature switches (Enabled / WriteAccessEnabled). *@
+        <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;margin-bottom:.75rem;">
+            <h4 style="margin:0 0 .5rem 0;">@L["McpSecurity_Section_Settings"]</h4>
+            <div style="display:flex;flex-direction:column;gap:.5rem;">
+                <label style="display:flex;gap:.5rem;align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" checked="@_vm.SettingsEnabled"
+                           @onchange="e => _vm.SetSettingsEnabled(e.Value is true)" />
+                    <span>
+                        @L["McpSecurity_Settings_Enabled"]
+                        <small style="display:block;color:var(--muted);">@L["McpSecurity_Settings_Enabled_Hint"]</small>
+                    </span>
+                </label>
+                <label style="display:flex;gap:.5rem;align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" checked="@_vm.SettingsWriteAccess"
+                           @onchange="e => _vm.SetSettingsWriteAccess(e.Value is true)" />
+                    <span>
+                        @L["McpSecurity_Settings_WriteAccess"]
+                        <small style="display:block;color:var(--muted);">@L["McpSecurity_Settings_WriteAccess_Hint"]</small>
+                    </span>
+                </label>
+                <div>
+                    <button type="button" class="btn btn-primary" disabled="@_vm.SettingsBusy"
+                            @onclick="SaveSettingsAsync">@L["Ribbon_Save"]</button>
+                </div>
+            </div>
+            <div style="font-size:.85rem;color:var(--muted);margin-top:.4rem;">@L["McpSecurity_Switches_Hint"]</div>
+        </section>
+    }
+
+    @if (!string.IsNullOrEmpty(_vm.LastError))
+    {
+        <div class="error">@_vm.LastError</div>
+    }
+
+    @if (!_vm.McpEnabled)
+    {
+        @* Only reachable for admins — non-admins do not see this register at all. *@
+        <div class="mcp-disabled-hint" style="color:var(--muted);">@L["McpSetup_DisabledHint"]</div>
+    }
+    else
+    {
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.5rem;">
+            <h4 style="margin:0;">@L["McpSetup_Section_Accesses"]</h4>
+            <button type="button" class="btn btn-primary" @onclick="(() => _vm.RequestNewAccess())">@L["Ribbon_New"]</button>
+        </div>
+        <GenericListPage TItem="object"
+                         Provider="_vm.Accesses"
+                         Localizer="L"
+                         SearchPlaceholder="@L["List_SearchPlaceholder"]"
+                         RangeFromLabel="@L["List_SearchFrom"]"
+                         RangeToLabel="@L["List_SearchTo"]"
+                         LoadingText="@L["General_Loading"]"
+                         EmptyText="@L["List_Result_NoItems"]"
+                         EndOfListText="@L["List_Result_EndOfList"]"
+                         ShowRange="false"
+                         ItemClick="OnItemClick" />
+    }
+</div>
+
+@code {
+    /// <summary>The owning section view model provided by the setup card.</summary>
+    [Parameter] public SetupMcpViewModel? ViewModel { get; set; }
+
+    private SetupMcpViewModel? _vm;
+    private EventHandler? _stateChangedHandler;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vm = ViewModel ?? throw new InvalidOperationException("ViewModel parameter is required for SetupMcpTab.");
+        _stateChangedHandler = (_, __) => { _ = InvokeAsync(StateHasChanged); };
+        _vm.StateChanged += _stateChangedHandler;
+        await _vm.ReloadAsync();
+    }
+
+    private Task OnItemClick(object? item)
+    {
+        if (item is IListItemNavigation nav)
+        {
+            var uri = nav.GetNavigateUrl();
+            if (!string.IsNullOrWhiteSpace(uri))
+            {
+                Nav.NavigateTo(uri);
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task SaveSettingsAsync()
+        => _vm is null ? Task.CompletedTask : _vm.SaveSettingsAsync();
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_vm is not null)
+            {
+                if (_stateChangedHandler is not null)
+                {
+                    _vm.StateChanged -= _stateChangedHandler;
+                }
+            }
+            await Task.CompletedTask;
+        }
+        catch { }
+    }
+}

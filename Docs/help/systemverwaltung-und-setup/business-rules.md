@@ -327,6 +327,78 @@ oder aus der Profil-API lesen koennen.
 
 **Umsetzung:** `BackupRestoreRequestDto`, `BackupsController.ApplyAsync`, `BackupsController.StartApplyAsync`, `SetupBackupTab.razor`, `SetupBackupsViewModel.StartApplyAsync`.
 
+## Benutzer-Backup deckt alle persistierten Benutzerdaten ab
+
+**Beschreibung:** Jedes persistierte Feld muss im Benutzer-Backup enthalten sein, und jede von `ClearUserDataAsync` gelöschte Tabelle muss beim Restore wiederhergestellt werden — andernfalls würde ein Restore Daten vernichten. Die Vollständigkeit gilt als projektweite Invariante (siehe `AGENT.md`).
+
+**Bedingungen:**
+- `BackupService.BuildBackupDataAsync` exportiert alle benutzerbezogenen Sektionen.
+- `SetupImportService.ImportVersion3` importiert alle exportierten Sektionen, die beim Clear entfernt werden.
+
+**Verhalten:**
+- Neben den Stammdaten enthält das Backup die Kontoauszugs-Import-Historie (`StatementImports`/`StatementEntries`), `Notifications`, `AccountShares`, `AccountLinkedIbans` (Unter-IBANs von Sammelkonten) und `PortfolioKpiConfigurations` — alle werden beim Restore zurückgeschrieben.
+- `BudgetRuleBackupDto` und `SecurityBackupDto` decken alle persistierten Felder ab, inklusive `PurposePattern`/`PurposePatternIsRegex` sowie der Preisfehler- (`HasPriceError`, `PriceErrorMessage`, `PriceErrorSinceUtc`) und Notified-Felder (`GoldenCrossNotifiedPhase`, `TrendReversalNotifiedStatus`).
+- Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) sind bewusst nur exportiert, nicht importiert — `ClearUserDataAsync` löscht sie nicht.
+
+**Umsetzung:** `BackupService.BuildBackupDataAsync`, `SetupImportService.ImportVersion3`, `AppDbContext.ClearUserDataAsync`; abgesichert durch Round-Trip-Tests (`FinanceManager.Tests/Infrastructure/BackupRestoreCoverageTests.cs`, `BackupServiceFullExportTests.cs`).
+
+## Neue Backup-Sektionen und -Felder bleiben abwärtskompatibel
+
+**Beschreibung:** Alte Version-3-Backups müssen weiterhin einlesbar bleiben; `AllowedBackupVersions` bleibt `[3]`.
+
+**Bedingungen:**
+- Ein Backup wurde vor Einführung einer Sektion oder eines DTO-Felds erstellt.
+
+**Verhalten:**
+- Neue Sektionen (z. B. `AccountLinkedIbans`, `PortfolioKpiConfigurations`, `SavingsPlanAccountLinks`) werden nicht in `RequiredDataProperties` aufgenommen; der Import liest sie per `TryGetProperty`-Guard und behandelt eine fehlende Sektion als leere Liste.
+- Neue DTO-Felder erhalten immer Default-Werte (z. B. `PurposePattern = null`, `PurposePatternIsRegex = false`, `HasPriceError = false`, `GoldenCrossNotifiedPhase = Far`, `TrendReversalNotifiedStatus = Intact`), damit die Deserialisierung alter Backups nicht fehlschlägt.
+
+**Umsetzung:** `BackupService.RequiredDataProperties`, `SetupImportService.ImportVersion3`, optionale Positionsparameter in den `*BackupDto`-Records.
+
+## Restore remapt IDs und toleriert Dubletten beim Merge-Import
+
+**Beschreibung:** Beim Import werden neue IDs vergeben und Verweise über ID-Maps umgebogen. Ein Import mit `replaceExisting: false` auf einem System mit Bestandsdaten darf weder an Unique-Constraints noch an bereits vorhandenen Datensätzen scheitern.
+
+**Bedingungen:**
+- Import läuft mit `replaceExisting: true` (destruktiver Restore) oder `false` (Merge-Import).
+
+**Verhalten:**
+- `StatementImports`, `StatementEntries` und `AccountLinkedIbans` hängen an gemappten Verweisen; Einträge, deren Konto bzw. Import nicht im Backup enthalten ist, werden übersprungen.
+- `Postings`, deren vier Zielreferenzen (`AccountId`, `ContactId`, `SavingsPlanId`, `SecurityId`) nach dem Remapping allesamt `null` sind, werden übersprungen und per `LogWarning` protokolliert — ein solcher Datensatz wäre nach dem Restore ein verwaistes Posting ohne Besitzerpfad (siehe Referenzinvariante in `konten-und-buchungen/business-rules.md`). Geskippte Postings erhalten keinen Eintrag in `postingMap`; der zweite Durchlauf (Apply-Block mit `AssignBackupDto`) über denselben Abschnitt lässt sie damit automatisch aus.
+- `AccountShares` und `StatementEntry.SecurityTransactionId` besitzen keinen Fremdschlüssel — bei fehlendem Map-Treffer bleibt die Original-ID erhalten (auf derselben Instanz gültig).
+- Dubletten werden vor dem Einfügen geprüft und übersprungen: `StatementEntries` über den globalen `RawHash`-Unique-Index, `Notifications` über die übernommene Backup-`Id`, `StatementImports` über `(AccountId, OriginalFileName, ImportedAtUtc)`, `AccountShares` über `(AccountId, UserId)` und `AccountLinkedIbans` über `(AccountId, Iban)`. Übersprungene Dubletten werden teilweise per `LogWarning` protokolliert.
+- `Notifications` erhalten als `OwnerUserId` den wiederherstellenden Benutzer, damit sie nicht global sichtbar werden.
+- Ein ungültiges `PurposePattern`-Regex führt nicht zum Importabbruch: Die `BudgetRule` wird ohne Muster importiert und der Fall per `LogWarning` vermerkt.
+
+**Umsetzung:** `SetupImportService.ImportVersion3` (ID-Maps inkl. `statementImportMap`, Dublettprüfungen via `AnyAsync`, `SetPurposePattern`-Fallback).
+
+## PortfolioKpiConfiguration wird per Upsert wiederhergestellt
+
+**Beschreibung:** Pro Benutzer existiert genau eine Portfolio-KPI-Konfiguration (Unique-Index auf `OwnerUserId`). `ClearUserDataAsync` löscht die Tabelle bewusst nicht, damit alte Backups ohne diese Sektion die vorhandene Konfiguration nicht verlieren.
+
+**Bedingungen:**
+- Backup enthält die optionale Sektion `PortfolioKpiConfigurations` oder nicht.
+
+**Verhalten:**
+- Sektion vorhanden und Zeile existiert: Die vorhandene Zeile wird per `AssignBackupDto` ersetzt (inklusive `UpdatedUtc` aus dem Backup).
+- Sektion vorhanden, keine Zeile: Eine neue Konfiguration wird angelegt.
+- Sektion fehlt (altes Backup): Die vorhandene Konfiguration bleibt unverändert erhalten.
+
+**Umsetzung:** `SetupImportService.ImportVersion3`, `PortfolioKpiConfiguration.AssignBackupDto`, `AppDbContext.ClearUserDataAsync`.
+
+## ClearUserDataAsync entfernt alle Budgetregeln des Benutzers
+
+**Beschreibung:** Vor dem destruktiven Import müssen alle benutzerbezogenen Daten entfernt werden, damit der Re-Import keine Duplikate erzeugt. Budgetregeln können an einen Budgetzweck (`BudgetPurposeId`) oder eine Budgetkategorie (`BudgetCategoryId`) gebunden sein.
+
+**Bedingungen:**
+- Restore läuft mit `replaceExisting: true`.
+
+**Verhalten:**
+- Alle `BudgetRules` mit `OwnerUserId == userId` werden gelöscht — unabhängig davon, ob sie zweck- oder kategoriegebunden sind.
+- Der Löschfilter deckt sich damit mit dem Export-Filter in `BuildBackupDataAsync`.
+
+**Umsetzung:** `AppDbContext.ClearUserDataAsync`.
+
 ## Background-Task-Statuspolling erfordert Authentifizierung
 
 **Beschreibung:** Das Statuspanel für aktive Hintergrundtasks darf keine wiederkehrenden nicht autorisierten Statusabfragen erzeugen.

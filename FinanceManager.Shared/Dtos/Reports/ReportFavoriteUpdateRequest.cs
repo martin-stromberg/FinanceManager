@@ -13,12 +13,13 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="Take">Number of results/buckets to take for the report.</param>
 /// <param name="ComparePrevious">When true, include comparison to the previous period.</param>
 /// <param name="CompareYear">When true, include year-over-year comparison.</param>
-/// <param name="CompareProjection">When true, include dividend projection.</param>
+/// <param name="CompareProjection">When true, include the projection.</param>
 /// <param name="ShowChart">When true, the UI should show a chart for this favorite.</param>
 /// <param name="Expandable">When true, report rows can be expanded in the UI.</param>
 /// <param name="PostingKinds">Optional collection of posting kinds to include (overrides primary PostingKind when provided).</param>
 /// <param name="Filters">Optional additional filters to apply to the report.</param>
 /// <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
+/// <param name="SavingsPlanPostingSource">Source used for savings-plan report points.</param>
 /// <returns>The result.</returns>
 [method: JsonConstructor]
 public sealed record ReportFavoriteUpdateRequest(
@@ -34,7 +35,8 @@ public sealed record ReportFavoriteUpdateRequest(
     bool Expandable,
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     ReportFavoriteFiltersDto? Filters = null,
-    bool UseValutaDate = false
+    bool UseValutaDate = false,
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
 )
 {
     /// <summary>
@@ -46,7 +48,7 @@ public sealed record ReportFavoriteUpdateRequest(
     /// <param name="interval">Reporting interval.</param>
     /// <param name="comparePrevious">When true, include comparison to the previous period.</param>
     /// <param name="compareYear">When true, include year-over-year comparison.</param>
-    /// <param name="compareProjection">When true, include dividend projection.</param>
+    /// <param name="compareProjection">When true, include the projection.</param>
     /// <param name="showChart">When true, the UI should show a chart for this favorite.</param>
     /// <param name="expandable">When true, report rows can be expanded in the UI.</param>
     /// <param name="postingKinds">Optional collection of posting kinds to include.</param>

@@ -249,6 +249,28 @@ Beteiligte Komponenten: `ApiClient.Backups_ApplyAsync`, `BackupsController.Apply
 
 ---
 
+### 9a. Datenimport beim Restore (`SetupImportService.ImportVersion3`)
+
+Nach bestandener Backup-Validierung ruft `BackupService.ApplyAsync` den Import auf; `ImportVersion3` verarbeitet die NDJSON-Payload einer Version-3-Sicherung.
+
+1. Bei `replaceExisting: true` löscht `AppDbContext.ClearUserDataAsync` zunächst alle benutzerbezogenen Daten (27 Fortschrittsschritte) — einschließlich aller `BudgetRules` mit `OwnerUserId == userId`, also sowohl zweck- (`BudgetPurposeId`) als auch kategoriegebundene (`BudgetCategoryId`) Regeln.
+2. Jede Sektion wird über einen `TryGetProperty`-Guard gelesen: Fehlt sie im Backup (ältere Backups ohne jüngere Sektionen), gilt sie als leere Liste — der Import bricht nicht ab.
+3. Beim Anlegen werden Original-IDs nicht übernommen. ID-Maps (`accountMap`, `contactMap`, `savingsMap`, `postingMap`, `statementImportMap` u. a.) bilden die alten auf die neuen IDs ab; `progress.Total` ist auf die tatsächlichen Schritte abgestimmt (`42 - (replaceExisting ? 0 : 1)`).
+4. Neben den Stammdaten werden wiederhergestellt:
+   - `AccountLinkedIbans` (Unter-IBANs von Sammelkonten): `AccountId` wird über `accountMap` aufgelöst; Einträge ohne gemapptes Konto (FK) oder mit bereits vorhandener `(AccountId, Iban)`-Kombination (Unique-Index) werden übersprungen.
+   - `StatementImports` (Kontoauszugs-Importe): nur bei auflösbarem Konto — ohne Konto wäre der Import unsichtbar. Dubletten anhand `(AccountId, OriginalFileName, ImportedAtUtc)` werden übersprungen; die neuen IDs landen in `statementImportMap`.
+   - `AccountShares` (Kontofreigaben): `AccountId` wird remapt, sofern das Konto im Backup enthalten ist — sonst bleibt die Original-ID erhalten (kein FK; Freigaben auf Fremdkonten bleiben auf derselben Instanz gültig). Dubletten anhand `(AccountId, UserId)` werden übersprungen.
+   - `StatementEntries` (Kontoauszugs-Einträge): `StatementImportId` über `statementImportMap` (ohne Treffer: überspringen), `ContactId`/`SavingsPlanId` über `contactMap`/`savingsMap` (sonst `null`, FK mit `SetNull`), `SecurityTransactionId` über `postingMap` (sonst Originalwert — nur lesende Referenz ohne FK). Einträge mit bereits vorhandenem `RawHash` (globaler Unique-Index) werden übersprungen und per `LogWarning` protokolliert; `SaveChanges` erfolgt im 100er-Batch wie bei `Postings`.
+   - `Notifications`: Die Backup-`Id` wird übernommen; bereits vorhandene IDs werden übersprungen (idempotenter Merge-Import). `OwnerUserId` wird anschließend auf den wiederherstellenden Benutzer gesetzt, damit die Benachrichtigung nicht global (`null`) wird.
+   - `PortfolioKpiConfigurations` (Upsert): Existiert bereits eine Zeile des Benutzers (Unique-Index auf `OwnerUserId`), wird sie per `AssignBackupDto` ersetzt, sonst neu angelegt. `ClearUserDataAsync` löscht die Tabelle bewusst nicht — alte Backups ohne diese Sektion lassen die vorhandene Konfiguration unverändert.
+5. `BudgetRules` übernehmen zusätzlich `PurposePattern`/`PurposePatternIsRegex` über `SetPurposePattern`. Eine `ArgumentException` (ungültiges Regex in einem alten oder manipulierten Backup) wird abgefangen: Die Regel wird ohne Muster importiert und ein `LogWarning` geschrieben.
+6. `Securities` übernehmen die Felder `HasPriceError`, `PriceErrorMessage`, `PriceErrorSinceUtc`, `GoldenCrossNotifiedPhase` und `TrendReversalNotifiedStatus` über `AssignBackupDto`. Die drei Fehlerfelder werden direkt zugewiesen, weil `SetPriceError` den Zeitstempel auf `DateTime.UtcNow` stempeln und den originalen Fehlerzeitpunkt verlieren würde.
+7. Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) werden bewusst nicht importiert — `ClearUserDataAsync` löscht sie ebenfalls nicht.
+
+Beteiligte Komponenten: `SetupImportService.ImportVersion3`, `AppDbContext.ClearUserDataAsync`, `BackupService.ApplyAsync`, `AccountLinkedIban`, `StatementImport`, `StatementEntry`, `Notification`, `AccountShare`, `PortfolioKpiConfiguration`, `BudgetRule`, `Security`
+
+---
+
 ### 10. Authentifiziertes Background-Task-Statuspolling
 
 1. `BackgroundTaskStatusPanel` wird nach dem ersten Rendern initialisiert.

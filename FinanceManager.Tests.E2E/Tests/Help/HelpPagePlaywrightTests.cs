@@ -45,7 +45,7 @@ public sealed class HelpPagePlaywrightTests
         });
 
         var featureCards = await page.Locator("#featureList .help-topic-card").CountAsync();
-        featureCards.Should().Be(12);
+        featureCards.Should().Be(13);
 
         var featureListText = await page.Locator("#featureList").TextContentAsync();
         featureListText.Should().Contain("Konten und Buchungen");

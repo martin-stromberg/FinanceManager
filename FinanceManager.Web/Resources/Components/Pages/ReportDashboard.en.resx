@@ -330,6 +330,21 @@
   <data name="FilterGroup_SecurityTypes" xml:space="preserve">
     <value>Booking subtypes</value>
   </data>
+  <data name="FilterGroup_TextFilters" xml:space="preserve">
+    <value>Text filters</value>
+  </data>
+  <data name="TextFilter_Placeholder" xml:space="preserve">
+    <value>Enter search text…</value>
+  </data>
+  <data name="TextFilter_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="TextFilter_Remove" xml:space="preserve">
+    <value>Remove text filter</value>
+  </data>
+  <data name="TextFilter_Hint" xml:space="preserve">
+    <value>Matches the posting's purpose text and description (OR linked).</value>
+  </data>
   <data name="SecurityType_Buy" xml:space="preserve">
     <value>Buy</value>
   </data>
@@ -361,16 +376,19 @@
     <value>Close</value>
   </data>
   <data name="ProjectionDetails_Open" xml:space="preserve">
-    <value>Show expected dividends</value>
+    <value>Show expected items</value>
   </data>
   <data name="ProjectionDetails_Title" xml:space="preserve">
     <value>Projection: {0}</value>
   </data>
   <data name="ProjectionDetails_None" xml:space="preserve">
-    <value>No expected dividends.</value>
+    <value>No expected items.</value>
   </data>
-  <data name="ProjectionDetails_Security" xml:space="preserve">
-    <value>Security</value>
+  <data name="ProjectionDetails_Entity" xml:space="preserve">
+    <value>Origin</value>
+  </data>
+  <data name="ProjectionDetails_Kind" xml:space="preserve">
+    <value>Kind</value>
   </data>
   <data name="ProjectionDetails_ExpectedDate" xml:space="preserve">
     <value>Expected on</value>
@@ -390,7 +408,32 @@
   <data name="ProjectionDetails_Amount" xml:space="preserve">
     <value>Amount</value>
   </data>
+  <data name="ProjectionDetails_Suppress" xml:space="preserve">
+    <value>Stop expecting</value>
+  </data>
+  <data name="ProjectionDetails_Unsuppress" xml:space="preserve">
+    <value>Expect again</value>
+  </data>
+  <data name="ProjectionDetails_Suppressed_Title" xml:space="preserve">
+    <value>Hidden expectations</value>
+  </data>
+  <data name="ProjectionDetails_Suppressed_None" xml:space="preserve">
+    <value>No hidden expectations</value>
+  </data>
   <data name="Ribbon_Tab" xml:space="preserve">
     <value>Dashboard</value>
   </data>
+  <data name="Label_SavingsPlanPostingSource" xml:space="preserve"><value>Savings plan posting source</value></data>
+  <data name="SavingsPlanPostingSource_PlanPostings" xml:space="preserve"><value>Savings plan postings</value></data>
+  <data name="SavingsPlanPostingSource_LinkedAccountPostings" xml:space="preserve"><value>Linked account postings</value></data>
+  <data name="Postings_Open" xml:space="preserve"><value>Show postings</value></data>
+  <data name="Postings_Title" xml:space="preserve"><value>Postings – {0} ({1})</value></data>
+  <data name="Postings_Th_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Postings_Th_Origin" xml:space="preserve"><value>Origin</value></data>
+  <data name="Postings_Th_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Postings_Th_Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Postings_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Postings_None" xml:space="preserve"><value>No postings found.</value></data>
+  <data name="Postings_Truncated" xml:space="preserve"><value>The list was truncated to the maximum allowed number of postings.</value></data>
+  <data name="Postings_LoadFailed" xml:space="preserve"><value>The postings could not be loaded.</value></data>
 </root>

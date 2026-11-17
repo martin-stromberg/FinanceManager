@@ -579,12 +579,12 @@ public sealed class PostingReversalServiceTests
     {
         // Arrange
         await using var context = CreateContext();
-        // Posting without accountId – simulate by using null accountId in the constructor
+        // Posting without accountId – contact reference keeps the required target-reference invariant
         var posting = new Posting(
             sourceId: Guid.NewGuid(),
             kind: PostingKind.Bank,
             accountId: null,
-            contactId: null,
+            contactId: Guid.NewGuid(),
             savingsPlanId: null,
             securityId: null,
             bookingDate: new DateTime(2025, 6, 1),

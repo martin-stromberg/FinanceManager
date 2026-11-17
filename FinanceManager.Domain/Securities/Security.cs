@@ -195,6 +195,17 @@ public sealed class Security : Entity
     }
 
     /// <summary>
+    /// Reactivates the security if it is currently archived. No-op when already active.
+    /// </summary>
+    public void Unarchive()
+    {
+        if (IsActive) { return; }
+        IsActive = true;
+        ArchivedUtc = null;
+        Touch();
+    }
+
+    /// <summary>
     /// Marks the security as having a price fetch error and records the message and timestamp.
     /// </summary>
     /// <param name="message">Error message to record. Whitespace-only strings are preserved as provided; if null or whitespace, a default message will be stored by the implementation.</param>
@@ -256,15 +267,20 @@ public sealed class Security : Entity
     /// <param name="SymbolAttachmentId">Optional symbol attachment identifier.</param>
     /// <param name="Region">Optional region of the security.</param>
     /// <param name="Sector">Optional sector of the security.</param>
+    /// <param name="HasPriceError">Whether a price fetch error is currently active.</param>
+    /// <param name="PriceErrorMessage">Optional price error message.</param>
+    /// <param name="PriceErrorSinceUtc">UTC timestamp since when the price error is active, if any.</param>
+    /// <param name="GoldenCrossNotifiedPhase">Last notified golden cross phase.</param>
+    /// <param name="TrendReversalNotifiedStatus">Last notified trend status.</param>
     /// <returns>A backup record instance.</returns>
-    public sealed record SecurityBackupDto(Guid Id, Guid OwnerUserId, string Name, string Identifier, string? Description, string? AlphaVantageCode, string CurrencyCode, Guid? CategoryId, bool IsActive, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime? ArchivedUtc, Guid? SymbolAttachmentId, string? Region = null, string? Sector = null);
+    public sealed record SecurityBackupDto(Guid Id, Guid OwnerUserId, string Name, string Identifier, string? Description, string? AlphaVantageCode, string CurrencyCode, Guid? CategoryId, bool IsActive, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime? ArchivedUtc, Guid? SymbolAttachmentId, string? Region = null, string? Sector = null, bool HasPriceError = false, string? PriceErrorMessage = null, DateTime? PriceErrorSinceUtc = null, GoldenCrossPhase GoldenCrossNotifiedPhase = GoldenCrossPhase.Far, TrendStatus TrendReversalNotifiedStatus = TrendStatus.Intact);
 
     /// <summary>
     /// Creates a backup DTO representing this security.
     /// </summary>
     /// <returns>A <see cref="SecurityBackupDto"/> with serializable security data.</returns>
     public SecurityBackupDto ToBackupDto()
-        => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ModifiedUtc, ArchivedUtc, SymbolAttachmentId, Region, Sector);
+        => new SecurityBackupDto(Id, OwnerUserId, Name, Identifier, Description, AlphaVantageCode, CurrencyCode, CategoryId, IsActive, CreatedUtc, ModifiedUtc, ArchivedUtc, SymbolAttachmentId, Region, Sector, HasPriceError, PriceErrorMessage, PriceErrorSinceUtc, GoldenCrossNotifiedPhase, TrendReversalNotifiedStatus);
 
     /// <summary>
     /// Assigns values from a backup DTO to this entity.
@@ -276,7 +292,15 @@ public sealed class Security : Entity
         if (dto == null) throw new ArgumentNullException(nameof(dto));
         Update(dto.Name, dto.Identifier, dto.Description, dto.AlphaVantageCode, dto.CurrencyCode, dto.CategoryId, dto.Region, dto.Sector);
         if (!dto.IsActive && IsActive) Archive();
+        if (dto.IsActive && !IsActive) Unarchive();
         SymbolAttachmentId = dto.SymbolAttachmentId;
+        // Assign the error fields directly: SetPriceError would stamp DateTime.UtcNow and
+        // lose the original error timestamp carried by the backup.
+        HasPriceError = dto.HasPriceError;
+        PriceErrorMessage = dto.PriceErrorMessage;
+        PriceErrorSinceUtc = dto.PriceErrorSinceUtc;
+        SetGoldenCrossNotifiedPhase(dto.GoldenCrossNotifiedPhase);
+        SetTrendReversalNotifiedStatus(dto.TrendReversalNotifiedStatus);
         SetDates(dto.CreatedUtc, dto.ModifiedUtc, dto.ArchivedUtc);
     }
 }

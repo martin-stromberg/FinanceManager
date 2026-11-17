@@ -71,6 +71,16 @@ public interface ISecurityService
     Task<bool> ArchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct);
 
     /// <summary>
+    /// Reactivates (unarchives) the specified security.
+    /// </summary>
+    /// <param name="id">Identifier of the security to reactivate.</param>
+    /// <param name="ownerUserId">Identifier of the owner performing the unarchive action.</param>
+    /// <param name="ct">Cancellation token to cancel the operation.</param>
+    /// <returns><c>true</c> when the security was reactivated; otherwise <c>false</c> (for example, when not found or already active).</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> is <see cref="Guid.Empty"/>.</exception>
+    Task<bool> UnarchiveAsync(Guid id, Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
     /// Deletes the specified security permanently.
     /// </summary>
     /// <param name="id">Identifier of the security to delete.</param>

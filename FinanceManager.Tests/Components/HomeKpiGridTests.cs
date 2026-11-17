@@ -198,6 +198,150 @@ public sealed class HomeKpiGridTests : BunitContext
     }
 
     /// <summary>
+    /// Verifies that a report-favorite KPI forwards the favorite's free-text filter lists into the
+    /// <see cref="ReportAggregatesFiltersRequest"/> sent to the API, so the KPI tile reflects the
+    /// same filtered data as the report dashboard.
+    /// </summary>
+    [Fact]
+    public void ReportFavoriteKpi_ForwardsTextFiltersToAggregateRequest()
+    {
+        var kpiId = Guid.NewGuid();
+        var favoriteId = Guid.NewGuid();
+        var apiMock = new Mock<IApiClient>();
+        ReportAggregatesQueryRequest? capturedRequest = null;
+
+        apiMock.Setup(a => a.HomeKpis_ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new HomeKpiDto(
+                    kpiId,
+                    HomeKpiKind.ReportFavorite,
+                    favoriteId,
+                    "Text filtered",
+                    null,
+                    null,
+                    HomeKpiDisplayMode.TotalOnly,
+                    0,
+                    DateTime.UtcNow,
+                    null)
+            });
+
+        apiMock.Setup(a => a.Reports_GetFavoriteAsync(favoriteId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportFavoriteDto(
+                favoriteId,
+                "Text filtered",
+                PostingKind.Bank,
+                IncludeCategory: false,
+                ReportInterval.Month,
+                Take: 6,
+                ComparePrevious: false,
+                CompareYear: false,
+                CompareProjection: false,
+                ShowChart: true,
+                Expandable: true,
+                DateTime.UtcNow,
+                ModifiedUtc: DateTime.UtcNow,
+                new[] { PostingKind.Bank },
+                Filters: new ReportFavoriteFiltersDto(null, null, null, null, null, null, null, null, null,
+                    BankTextFilters: new[] { "Miete" }, SecurityTextFilters: new[] { "Dividende" }),
+                UseValutaDate: false));
+
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<ReportAggregatesQueryRequest, CancellationToken>((request, _) => capturedRequest = request)
+            .ReturnsAsync(new ReportAggregationResult(ReportInterval.Month, Array.Empty<ReportAggregatePointDto>(), false, false, false));
+
+        Services.AddSingleton(apiMock.Object);
+
+        var cut = Render<HomeKpiGrid>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.NotNull(capturedRequest);
+            Assert.NotNull(capturedRequest!.Filters);
+            Assert.Equal(new[] { "Miete" }, capturedRequest.Filters!.BankTextFilters);
+            Assert.Equal(new[] { "Dividende" }, capturedRequest.Filters!.SecurityTextFilters);
+            Assert.Null(capturedRequest.Filters!.ContactTextFilters);
+            Assert.Null(capturedRequest.Filters!.SavingsPlanTextFilters);
+        });
+    }
+
+    /// <summary>
+    /// Verifies the favorite-version cache check: when the locally cached KPI data was computed for a
+    /// different <c>ModifiedUtc</c> of the underlying favorite (i.e. the favorite changed after the
+    /// cache entry was written), the stale entry is removed and fresh data is loaded.
+    /// </summary>
+    [Fact]
+    public void ReportFavoriteKpi_RemovesStaleFavoriteCacheEntry()
+    {
+        var kpiId = Guid.NewGuid();
+        var favoriteId = Guid.NewGuid();
+        var apiMock = new Mock<IApiClient>();
+        ReportAggregatesQueryRequest? capturedRequest = null;
+
+        var kpis = new List<HomeKpiDto>
+        {
+            new(
+                kpiId,
+                HomeKpiKind.ReportFavorite,
+                favoriteId,
+                "Text filtered",
+                null,
+                null,
+                HomeKpiDisplayMode.TotalOnly,
+                0,
+                DateTime.UtcNow,
+                null)
+        };
+
+        var favorite = new ReportFavoriteDto(
+            favoriteId,
+            "Text filtered",
+            PostingKind.Bank,
+            IncludeCategory: false,
+            ReportInterval.Month,
+            Take: 6,
+            ComparePrevious: false,
+            CompareYear: false,
+            CompareProjection: false,
+            ShowChart: true,
+            Expandable: true,
+            DateTime.UtcNow,
+            ModifiedUtc: new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc),
+            new[] { PostingKind.Bank },
+            Filters: null,
+            UseValutaDate: false);
+
+        apiMock.Setup(a => a.HomeKpis_ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(kpis);
+        // RestoreFavoriteCacheAsync resolves the favorite versions via a single list call.
+        apiMock.Setup(a => a.Reports_ListFavoritesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { favorite });
+        apiMock.Setup(a => a.Reports_GetFavoriteAsync(favoriteId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(favorite);
+        apiMock.Setup(a => a.Reports_QueryAggregatesAsync(It.IsAny<ReportAggregatesQueryRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<ReportAggregatesQueryRequest, CancellationToken>((request, _) => capturedRequest = request)
+            .ReturnsAsync(new ReportAggregationResult(ReportInterval.Month, Array.Empty<ReportAggregatePointDto>(), false, false, false));
+
+        var cacheMock = new Mock<IKpiLocalStorageCache>();
+        cacheMock.SetupGet(c => c.Context).Returns(new KpiLocalStorageContext(true, null));
+        cacheMock.Setup(c => c.GetAsync<List<HomeKpiDto>>("home.kpi.list", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(kpis);
+        // stale entry: FavoriteModifiedUtc differs from the favorite's current ModifiedUtc
+        cacheMock.Setup(c => c.GetAsync<HomeKpiGrid.FavKpiData>($"home.kpi.favorite-{kpiId}", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HomeKpiGrid.FavKpiData(1m, null, null, new List<HomeKpiGrid.SeriesPoint>(), (int)PostingKind.Bank, new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+        Services.AddSingleton(apiMock.Object);
+        Services.AddSingleton(cacheMock.Object);
+
+        var cut = Render<HomeKpiGrid>();
+
+        cut.WaitForAssertion(() =>
+        {
+            cacheMock.Verify(c => c.RemoveAsync($"home.kpi.favorite-{kpiId}", It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+            Assert.NotNull(capturedRequest);
+        });
+    }
+
+    /// <summary>
     /// Builds a <see cref="HomeKpiDto"/> for one of the built-in (non report-favorite) KPI types, with the given
     /// identity and grid sort position, so tests can stub <c>HomeKpis_ListAsync</c> without repeating the DTO's
     /// unused fields at every call site.

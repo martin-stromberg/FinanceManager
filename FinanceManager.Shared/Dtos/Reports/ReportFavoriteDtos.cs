@@ -23,7 +23,8 @@ public sealed record ReportFavoriteDto(
     DateTime? ModifiedUtc,
     IReadOnlyCollection<PostingKind> PostingKinds,
     ReportFavoriteFiltersDto? Filters,
-    bool UseValutaDate
+    bool UseValutaDate,
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
 )
 {
     /// <summary>

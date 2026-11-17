@@ -72,6 +72,10 @@
                 {
                     <PortfolioRiskCard Data="_vm.PortfolioReportData.Risk" />
                 }
+                else if (tile == PortfolioTileId.DepotDevelopment)
+                {
+                    <PortfolioDepotDevelopmentCard Data="_vm.PortfolioReportData.DepotDevelopment" />
+                }
             }
         </div>
     }
@@ -104,6 +108,7 @@
         PortfolioTileId.Performance => Localizer["PortfolioReport_Tile_Performance"],
         PortfolioTileId.Cashflow => Localizer["PortfolioReport_Tile_Cashflow"],
         PortfolioTileId.Risk => Localizer["PortfolioReport_Tile_Risk"],
+        PortfolioTileId.DepotDevelopment => Localizer["PortfolioReport_Tile_DepotDevelopment"],
         _ => tile.ToString()
     };
 }

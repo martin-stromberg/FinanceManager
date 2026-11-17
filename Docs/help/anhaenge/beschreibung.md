@@ -4,7 +4,7 @@
 
 ## Zweck
 
-Der Bereich verwaltet Dateien und URLs als Anhänge zu Fachobjekten (z. B. Kontakte, Konten, Sparpläne, Wertpapiere).
+Der Bereich verwaltet Dateien und URLs als Anhänge zu Fachobjekten (z. B. Kontakte, Konten, Sparpläne, Wertpapiere, einzelne Buchungen). Die Anhangsliste eines Eintrags lässt sich jeweils aus dessen Detailansicht über die Aktion „Anhänge“ öffnen.
 
 ## Funktionsweise
 

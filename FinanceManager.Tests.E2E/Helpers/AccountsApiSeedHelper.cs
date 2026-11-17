@@ -107,11 +107,11 @@ public sealed class AccountsApiSeedHelper
         {
             db.Postings.AddRange(postings.Select(posting => new Posting(
                 Guid.NewGuid(),
-                PostingKind.Bank,
+                posting.Kind,
                 account.Id,
-                contactId: null,
-                savingsPlanId: null,
-                securityId: null,
+                contactId: posting.ContactId,
+                savingsPlanId: posting.SavingsPlanId,
+                securityId: posting.SecurityId,
                 posting.BookingDate,
                 posting.Amount)));
         }
@@ -164,12 +164,23 @@ public sealed class AccountsApiSeedHelper
     }
 
     /// <summary>
-    /// Data used to seed a bank posting for period-to-date E2E scenarios.
+    /// Data used to seed a posting for period-to-date E2E scenarios. Optional link ids allow
+    /// seeding postings that reference contacts, savings plans or securities.
     /// </summary>
     /// <param name="BookingDate">Booking date used by account statistics.</param>
     /// <param name="Amount">Posting amount.</param>
+    /// <param name="ContactId">Optional linked contact identifier.</param>
+    /// <param name="SavingsPlanId">Optional linked savings plan identifier.</param>
+    /// <param name="SecurityId">Optional linked security identifier.</param>
+    /// <param name="Kind">Posting kind; defaults to <see cref="PostingKind.Bank"/>.</param>
     /// <returns>The result.</returns>
-    public sealed record SeededPosting(DateTime BookingDate, decimal Amount);
+    public sealed record SeededPosting(
+        DateTime BookingDate,
+        decimal Amount,
+        Guid? ContactId = null,
+        Guid? SavingsPlanId = null,
+        Guid? SecurityId = null,
+        PostingKind Kind = PostingKind.Bank);
 
     /// <summary>
     /// Identifiers returned from direct account seeding.

@@ -20,6 +20,19 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Lists the individual postings that compose a single report cell (drill-down).
+    /// </summary>
+    /// <param name="req">Postings query request (cell coordinates plus aggregation context).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The postings result.</returns>
+    public async Task<ReportPostingsResult> Reports_QueryPostingsAsync(ReportPostingsQueryRequest req, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync("/api/report-postings", req, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return (await resp.Content.ReadFromJsonAsync<ReportPostingsResult>(cancellationToken: ct))!;
+    }
+
+    /// <summary>
     /// Lists saved report favorites for the current user.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
@@ -93,6 +106,50 @@ public partial class ApiClient
     public async Task<bool> Reports_DeleteFavoriteAsync(Guid id, CancellationToken ct = default)
     {
         var resp = await _http.DeleteAsync($"/api/report-favorites/{id}", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
+        resp.EnsureSuccessStatusCode();
+        return true;
+    }
+
+    /// <summary>
+    /// Lists the expected postings suppressed for the given report favorite.
+    /// </summary>
+    /// <param name="favoriteId">Identifier of the report favorite.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    public async Task<IReadOnlyList<ReportSuppressedExpectationDto>> Reports_ListSuppressedExpectationsAsync(Guid favoriteId, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/report-favorites/{favoriteId}/suppressed-expectations", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return Array.Empty<ReportSuppressedExpectationDto>();
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<ReportSuppressedExpectationDto>>(cancellationToken: ct) ?? Array.Empty<ReportSuppressedExpectationDto>();
+    }
+
+    /// <summary>
+    /// Suppresses one expected posting for the given report favorite.
+    /// </summary>
+    /// <param name="favoriteId">Identifier of the report favorite.</param>
+    /// <param name="req">Request payload identifying the expected item.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    public async Task<ReportSuppressedExpectationDto?> Reports_SuppressExpectationAsync(Guid favoriteId, ReportSuppressedExpectationRequest req, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"/api/report-favorites/{favoriteId}/suppressed-expectations", req, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<ReportSuppressedExpectationDto>(cancellationToken: ct);
+    }
+
+    /// <summary>
+    /// Removes a suppression so the expected posting is projected again. Returns false when not found.
+    /// </summary>
+    /// <param name="favoriteId">Identifier of the report favorite.</param>
+    /// <param name="suppressionId">Identifier of the suppression.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The result.</returns>
+    public async Task<bool> Reports_UnsuppressExpectationAsync(Guid favoriteId, Guid suppressionId, CancellationToken ct = default)
+    {
+        var resp = await _http.DeleteAsync($"/api/report-favorites/{favoriteId}/suppressed-expectations/{suppressionId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;

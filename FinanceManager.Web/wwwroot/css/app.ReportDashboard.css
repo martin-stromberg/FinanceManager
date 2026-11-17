@@ -250,10 +250,58 @@
     height: 14px;
 }
 
-.projection-detail-modal {
+/* Expected-items dialog: keep the five-column table inside the dialog on all screen sizes.
+   Two-class selector so page-generic .modal rules loading later (e.g. SecurityPrices)
+   cannot shrink the dialog or re-enable horizontal scrolling. */
+.modal.projection-detail-modal {
     box-sizing: border-box;
-    max-width: min(920px, calc(100vw - 2.5rem));
+    width: min(1100px, calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
+    max-height: 92vh;
+    overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* Postings drill-down dialog: keep long lists inside the viewport on all screen sizes.
+   Two-class selector so page-generic .modal rules loading later (e.g. SecurityPrices)
+   cannot shrink the dialog or re-enable horizontal scrolling. */
+.modal.postings-modal {
+    box-sizing: border-box;
+    width: min(1100px, calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
+    max-height: 92vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Fixed layout lets the description column wrap instead of overflowing the dialog */
+.postings-table {
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: .5rem;
+}
+
+.postings-table th,
+.postings-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.postings-table th:nth-child(1),
+.postings-table td:nth-child(1) {
+    width: 5.5rem;
+    white-space: nowrap;
+}
+
+.postings-table th:nth-child(2),
+.postings-table td:nth-child(2) {
+    width: 24%;
+}
+
+.postings-table th:nth-child(4),
+.postings-table td:nth-child(4) {
+    width: 7rem;
+    white-space: nowrap;
 }
 
 .projection-detail-header {
@@ -308,21 +356,49 @@
     word-break: break-word;
 }
 
+/* Five columns: kind and origin share the flexible text space, the two dates and the
+   amount get compact fixed tracks; all widths must add up to 100% so no column collapses. */
 .projection-detail-table th:nth-child(1),
 .projection-detail-table td:nth-child(1) {
-    width: 42%;
+    width: 12%;
 }
 
 .projection-detail-table th:nth-child(2),
-.projection-detail-table td:nth-child(2),
-.projection-detail-table th:nth-child(3),
-.projection-detail-table td:nth-child(3) {
-    width: 20%;
+.projection-detail-table td:nth-child(2) {
+    width: 38%;
 }
 
+.projection-detail-table th:nth-child(3),
+.projection-detail-table td:nth-child(3),
 .projection-detail-table th:nth-child(4),
 .projection-detail-table td:nth-child(4) {
-    width: 18%;
+    width: 15%;
+    white-space: nowrap;
+}
+
+.projection-detail-table th:nth-child(5),
+.projection-detail-table td:nth-child(5) {
+    width: 20%;
+    white-space: nowrap;
+}
+
+/* Sixth column (suppress/restore action) only exists on favorite-scoped overlays. */
+.projection-detail-table th:nth-child(6),
+.projection-detail-table td:nth-child(6) {
+    width: 14%;
+    white-space: nowrap;
+}
+
+.projection-detail-table th:nth-child(6) ~ td:nth-child(2),
+.projection-detail-table:has(th:nth-child(6)) th:nth-child(2),
+.projection-detail-table:has(th:nth-child(6)) td:nth-child(2) {
+    width: 24%;
+}
+
+.projection-suppressed-title {
+    margin: 1.1rem 0 .5rem;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 @media (max-width: 900px) {

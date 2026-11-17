@@ -18,6 +18,7 @@ using FinanceManager.Application.Security;
 using FinanceManager.Application.WellKnown;
 using FinanceManager.Shared; // register ApiClient
 using FinanceManager.Web.Components;
+using FinanceManager.Web.Mcp;
 using FinanceManager.Web.Infrastructure;
 using FinanceManager.Web.Infrastructure.Attachments;
 using FinanceManager.Web.Infrastructure.Auth;
@@ -114,6 +115,8 @@ namespace FinanceManager.Web
             builder.Services.Configure<MassImportOptions>(builder.Configuration.GetSection(MassImportOptions.SectionName));
             builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
             builder.Services.AddSingleton<CircuitAuthTokenStore>();
+            builder.Services.Configure<FinanceManager.Application.Mcp.McpOptions>(
+                builder.Configuration.GetSection(FinanceManager.Application.Mcp.McpOptions.SectionName));
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -126,6 +129,28 @@ namespace FinanceManager.Web
                             Window = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimiting:AuthSensitive:WindowSeconds", 10)),
                             QueueLimit = 0
                         }));
+                // MCP endpoint policy: partition per access key hint (token) when a parseable
+                // fm_mcp token is present, else per client IP for the unauthenticated path.
+                options.AddPolicy(RateLimitPolicies.McpEndpoint, httpContext =>
+                {
+                    var hint = ExtractMcpHint(httpContext);
+                    var partitionKey = hint is not null
+                        ? $"mcp:{hint}"
+                        : $"mcp-ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+                    var permit = hint is not null
+                        ? builder.Configuration.GetValue("Mcp:RateLimiting:Endpoint:PermitLimit", 600)
+                        : builder.Configuration.GetValue("Mcp:RateLimiting:Unauthenticated:PermitLimit", 60);
+                    var window = builder.Configuration.GetValue(
+                        hint is not null ? "Mcp:RateLimiting:Endpoint:WindowSeconds" : "Mcp:RateLimiting:Unauthenticated:WindowSeconds", 60);
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey,
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = permit,
+                            Window = TimeSpan.FromSeconds(window),
+                            QueueLimit = 0
+                        });
+                });
             });
             builder.Services.Configure<UpdateOptions>(builder.Configuration.GetSection(UpdateOptions.SectionName));
             var dataProtectionBuilder = builder.Services.AddDataProtection();
@@ -389,7 +414,146 @@ namespace FinanceManager.Web
                 options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             });
 
-            builder.Services.AddAuthorization();
+            // MCP: PAT authentication scheme (separate path from JWT/cookie) and the
+            // authorization policy that binds the /mcp endpoints to it exclusively.
+            builder.Services.AddAuthentication()
+                .AddScheme<FinanceManager.Web.Mcp.McpAuthOptions, FinanceManager.Web.Mcp.McpAuthHandler>(
+                    FinanceManager.Web.Mcp.McpAuthenticationDefaults.Scheme, _ => { });
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy(FinanceManager.Web.Mcp.McpAuthenticationDefaults.Policy, policy =>
+                {
+                    policy.AddAuthenticationSchemes(FinanceManager.Web.Mcp.McpAuthenticationDefaults.Scheme);
+                    policy.RequireAuthenticatedUser();
+                });
+            });
+
+            // MCP server layer: access context, session hub, registry, dispatcher and the
+            // compiled tool catalog (katalog-v1, T32/T33 live; data tools follow in step 2).
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpAccessContext, FinanceManager.Web.Mcp.McpAccessContext>();
+            builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpSessionHub>();
+            builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpToolRateLimiter>();
+            builder.Services.AddSingleton<FinanceManager.Web.Mcp.McpAnomalyTracker>();
+            builder.Services.AddScoped<FinanceManager.Web.Mcp.McpToolDispatcher>();
+            // Stateless backup-download tickets (fm_admin_backups 'download' → GET
+            // /mcp/download/{token}): DataProtection-signed payload, no ticket table.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpDownloadTicketService, FinanceManager.Web.Mcp.McpDownloadTicketService>();
+            // Approval queue runners (EP-09): the persistent AiActionRequest table is the
+            // queue — the executor polls approved requests, the expiry sweep marks overdue
+            // ones. Both are inert while Mcp:Enabled is off.
+            builder.Services.AddHostedService<FinanceManager.Web.Services.AiActionExecutorService>();
+            builder.Services.AddHostedService<FinanceManager.Web.Services.AiActionExpiryService>();
+            // Agent workflows (EP-11): the SSE status publisher fans request transitions
+            // out to the GET /mcp subscriptions of the owning access (F-1101); the
+            // retention runner sweeps expired audit entries and terminal requests (F-1104).
+            // Both are inert while Mcp:Enabled is off.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpRequestStatusPublisher, FinanceManager.Web.Mcp.McpRequestStatusPublisher>();
+            builder.Services.AddHostedService<FinanceManager.Web.Services.McpAuditRetentionService>();
+            // Read-only tool catalog (EP-02): descriptors are singletons (compiled catalog),
+            // handlers are scoped adapters on the I*Service contracts.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmTaskStatusDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAccountsOverviewDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmPostingsQueryDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmReportingAggregateDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmContactsLookupDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmBudgetOverviewDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSavingsPlanAnalysisDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSecuritiesAnalysisDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementImportsReviewDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAttachmentsReadDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmConfigurationReadDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftsReadDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftValidateDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmPostingReversalCheckDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmContactsSuggestDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmBudgetRulesSuggestDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftAnalyzeDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftPrepareBookingDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftImportDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftCompleteDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftEditDescriptor>();
+            // Master-data write tools (EP-08, T22–T29): schreibvorbereitend; the
+            // final/destructive sub-operations answer Err_Mcp_ApprovalRequired until EP-09.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmContactsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAccountsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSavingsPlansManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmSecuritiesManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmBudgetsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmCategoriesManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAttachmentsManageDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmReportsConfigurationManageDescriptor>();
+            // EP-10: approval-bound final actions — booking/discard of statement drafts and
+            // posting reversal always run via the persistent AiActionRequest queue.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftBookDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmStatementDraftDiscardDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmPostingReverseDescriptor>();
+            // Administrative tools (T34–T38): owner admin gate + (Administration, …) scopes;
+            // the final/effective sub-operations run through the AiActionRequest queue.
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminStatusDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminUpdatesDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminBackupsDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminNotificationsDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolDescriptor, FinanceManager.Web.Mcp.Tools.FmAdminSettingsDescriptor>();
+            builder.Services.AddSingleton<FinanceManager.Application.Mcp.IMcpToolRegistry, FinanceManager.Web.Mcp.McpToolRegistry>();
+            builder.Services.AddScoped<FinanceManager.Web.Mcp.McpRecordScopeFilter>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCapabilitiesDescribeHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmTaskStatusHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAccountsOverviewHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmPostingsQueryHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmReportingAggregateHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmContactsLookupHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmBudgetOverviewHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSavingsPlanAnalysisHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSecuritiesAnalysisHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementImportsReviewHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAttachmentsReadHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmConfigurationReadHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftsReadHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftValidateHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmPostingReversalCheckHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmContactsSuggestHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmBudgetRulesSuggestHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftAnalyzeHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftPrepareBookingHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftImportHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftCompleteHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftEditHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmContactsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAccountsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSavingsPlansManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmSecuritiesManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmBudgetsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmCategoriesManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAttachmentsManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmReportsConfigurationManageHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftBookHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmStatementDraftDiscardHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmPostingReverseHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminStatusHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminUpdatesHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminBackupsHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminNotificationsHandler>();
+            builder.Services.AddScoped<FinanceManager.Application.Mcp.IMcpToolHandler, FinanceManager.Web.Mcp.Tools.FmAdminSettingsHandler>();
+        }
+
+        private static string? ExtractMcpHint(HttpContext httpContext)
+        {
+            var header = httpContext.Request.Headers.Authorization.ToString();
+            if (header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                var token = header["Bearer ".Length..].Trim();
+                if (token.StartsWith("fm_mcp_", StringComparison.Ordinal) && token.Length > 7)
+                {
+                    var remainder = token["fm_mcp_".Length..];
+                    var separator = remainder.IndexOf('_');
+                    if (separator > 0)
+                    {
+                        return remainder[..separator];
+                    }
+                }
+            }
+            return null;
         }
 
         private static void SetInitialConfiguration(this AutoUpdateBuilder cfg, UpdateOptions updateOptions)
@@ -496,6 +660,16 @@ namespace FinanceManager.Web
             app.UseMiddleware<RequestLoggingMiddleware>();
             app.UseMiddleware<IpBlockMiddleware>();
             app.UseRateLimiter();
+
+            // MCP kill switch (Mcp:Enabled) — rejects /mcp with 503 before any auth work
+            // (pipeline order: RequestLogging → IpBlock → RateLimit → KillSwitch → Auth).
+            app.UseWhen(context => context.Request.Path.StartsWithSegments("/mcp"),
+                branch => branch.UseMiddleware<FinanceManager.Web.Mcp.McpDisabledMiddleware>());
+
+            // Fail-fast catalog check ("no tool without a scope", F-0106): building the
+            // registry validates every descriptor, so an invalid tool aborts startup
+            // instead of slipping through the scope stage on the first /mcp call.
+            _ = app.Services.GetRequiredService<FinanceManager.Application.Mcp.IMcpToolRegistry>();
 
             if (!(app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("E2E:DisableHttpsRedirection")))
             {
@@ -622,6 +796,9 @@ namespace FinanceManager.Web
             }).RequireAuthorization();
 
             app.MapControllers();
+
+            // MCP endpoint group (JSON-RPC, PAT-authenticated; sits beside /api).
+            app.MapMcpEndpoints();
         }
 
         /// <summary>

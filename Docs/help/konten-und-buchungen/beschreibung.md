@@ -10,6 +10,8 @@ Der Bereich verwaltet Bankkonten und die daraus entstehenden Buchungen. Anwender
 
 Konten werden als Stammdaten gepflegt und bilden die Grundlage für Buchungslisten, Exporte und Auswertungen. Die Bankübersicht zeigt zusätzlich Summen und Verteilungen für die aktuell sichtbaren Konten, darunter Gesamtwert sowie Veränderungen im laufenden Jahr und Monat. Buchungen können nach Konten, Kontakten, Sparplänen und Wertpapieren betrachtet werden. Sammelkonten können zusätzlich mehrere verknüpfte IBANs verwalten, etwa für Sparpläne oder Sparbriefe. Stornierungen erzeugen nachvollziehbare Gegenbuchungen.
 
+In der Detailansicht einer Buchung bietet die Ribbon-Gruppe „Verknüpfte Informationen“ direkte Sprünge zu den verknüpften Datensätzen: „Konto öffnen“, „Kontakt öffnen“, „Sparplan öffnen“ und „Wertpapier öffnen“ führen zur jeweiligen Detailkarte; von dort bringt die Zurück-Aktion zurück zur Buchung. Ist eine Verknüpfung am Eintrag nicht gesetzt, ist der zugehörige Eintrag deaktiviert. Über „Anhänge“ lässt sich die Anhangsliste der Buchung öffnen und dort Dateien und Links verwalten.
+
 ## Beispiele
 
 - Ein Girokonto wird angelegt und mit einem Bankkontakt verknüpft.

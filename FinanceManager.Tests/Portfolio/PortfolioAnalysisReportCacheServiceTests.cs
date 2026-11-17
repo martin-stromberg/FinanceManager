@@ -41,6 +41,7 @@ public sealed class PortfolioAnalysisReportCacheServiceTests : IDisposable
             new PortfolioPerformanceDto(null, null, [], []),
             new PortfolioCashflowDto(0m, 0m, 0m, 0m, 0m, 0m),
             new PortfolioRiskDto(null, null, null, null, null),
+            new PortfolioDepotDevelopmentDto([]),
             generatedUtc,
             validUntilUtc);
 

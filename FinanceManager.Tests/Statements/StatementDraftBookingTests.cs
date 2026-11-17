@@ -77,6 +77,9 @@ public sealed class StatementDraftBookingTests
         public Task<int> CountAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid? categoryId, bool? isUrl, string? q, CancellationToken ct)
             => Task.FromResult(0);
 
+        public Task<AttachmentDto?> GetAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
+            => Task.FromException<AttachmentDto?>(new NotSupportedException("ControlledAttachmentService: GetAsync is not configured for this test scenario."));
+
         public Task<(Stream Content, string FileName, string ContentType)?> DownloadAsync(Guid ownerUserId, Guid attachmentId, CancellationToken ct)
             => Task.FromException<(Stream Content, string FileName, string ContentType)?>(new NotSupportedException("ControlledAttachmentService: DownloadAsync is not configured for this test scenario."));
 
@@ -89,10 +92,11 @@ public sealed class StatementDraftBookingTests
         public Task<bool> UpdateCoreAsync(Guid ownerUserId, Guid attachmentId, string? fileName, Guid? categoryId, CancellationToken ct)
             => Task.FromException<bool>(new NotSupportedException("ControlledAttachmentService: UpdateCoreAsync is not configured for this test scenario."));
 
-        public Task ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
+        public async Task<int> ReassignAsync(AttachmentEntityKind fromKind, Guid fromId, AttachmentEntityKind toKind, Guid toId, Guid ownerUserId, CancellationToken ct)
         {
             ReassignCallCount++;
-            return _reassignHandler(ct);
+            await _reassignHandler(ct);
+            return 0;
         }
 
         public Task<AttachmentDto> CreateReferenceAsync(Guid ownerUserId, AttachmentEntityKind kind, Guid entityId, Guid masterAttachmentId, CancellationToken ct)

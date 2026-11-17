@@ -11,11 +11,13 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="IncludeCategory">The include category.</param>
 /// <param name="ComparePrevious">The compare previous.</param>
 /// <param name="CompareYear">The compare year.</param>
-/// <param name="CompareProjection">The compare projection.</param>
+/// <param name="CompareProjection">True to request projection amounts where supported.</param>
 /// <param name="UseValutaDate">The use valuta date.</param>
 /// <param name="PostingKinds">The posting kinds.</param>
 /// <param name="AnalysisDate">The analysis date.</param>
+/// <param name="SavingsPlanPostingSource">Posting source used for emitted savings plans.</param>
 /// <param name="Filters">The filters.</param>
+/// <param name="ReportFavoriteId">Optional report favorite context; when set, per-favorite suppressed expectations are honored by the projection.</param>
 /// <returns>The result.</returns>
 [method: JsonConstructor]
 public sealed record ReportAggregatesQueryRequest(
@@ -29,7 +31,9 @@ public sealed record ReportAggregatesQueryRequest(
     bool UseValutaDate = false,
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     DateTime? AnalysisDate = null,
-    ReportAggregatesFiltersRequest? Filters = null
+    ReportAggregatesFiltersRequest? Filters = null,
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings,
+    Guid? ReportFavoriteId = null
 )
 {
     /// <summary>

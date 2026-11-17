@@ -333,6 +333,38 @@ namespace FinanceManager.Web.ViewModels.Common
             RaiseUiActionRequested("OpenAttachments", spec);
         }
 
+        /// <summary>
+        /// Requests navigation to the card of a linked entity via the generic <c>OpenPostings</c> URL handler.
+        /// The current URI is appended as <c>back</c> target when a <see cref="NavigationManager"/> can be resolved;
+        /// otherwise the plain card URL is used (e.g. in unit test contexts).
+        /// </summary>
+        /// <param name="route">Card route of the linked entity (for example <c>accounts</c> or <c>contacts</c>).</param>
+        /// <param name="linkedId">Identifier of the linked entity. When <c>null</c> no action is raised.</param>
+        protected void RequestOpenLinkedCard(string route, Guid? linkedId)
+        {
+            if (linkedId == null)
+            {
+                return;
+            }
+
+            var url = $"/card/{route}/{linkedId}";
+            try
+            {
+                var nav = ServiceProvider.GetService<NavigationManager>();
+                var back = nav?.Uri ?? string.Empty;
+                if (!string.IsNullOrEmpty(back))
+                {
+                    url += "?back=" + Uri.EscapeDataString(back);
+                }
+            }
+            catch
+            {
+                // Keep the URL without a back target when the navigation manager cannot be resolved.
+            }
+
+            RaiseUiActionRequested("OpenPostings", url);
+        }
+
         #region Child View Models
         private Dictionary<Type, BaseViewModel> _singletonChildViewModels = new();
 

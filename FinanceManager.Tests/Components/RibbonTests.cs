@@ -120,6 +120,44 @@ public class RibbonTests : Bunit.BunitContext
     }
 
     /// <summary>
+    /// Groups whose tabs all share the same <c>Sort</c> value render in the exact order the tabs appear
+    /// in the provider's register list: the component merges groups in first-seen order and relies on the
+    /// stable LINQ sort, so view models control the visible group order purely by tab list position.
+    /// </summary>
+    [Fact]
+    public void Groups_RenderInTabListOrder()
+    {
+        // Arrange - deliberately non-alphabetical tab order, all tabs with default Sort = 0
+        var registers = new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>
+            {
+                new UiRibbonTab("Gamma Group", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("gamma", "Gamma", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+                }),
+                new UiRibbonTab("Alpha Group", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("alpha", "Alpha", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+                }),
+                new UiRibbonTab("Beta Group", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("beta", "Beta", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+                })
+            })
+        };
+
+        var cut = RenderRibbon(registers);
+
+        // Assert - group footers appear in DOM exactly in tab list order
+        var footers = cut.FindAll(".fm-ribbon-group-footer");
+        Assert.Equal(3, footers.Count);
+        Assert.Equal("Gamma Group", footers[0].TextContent.Trim());
+        Assert.Equal("Alpha Group", footers[1].TextContent.Trim());
+        Assert.Equal("Beta Group", footers[2].TextContent.Trim());
+    }
+
+    /// <summary>
     /// In the mobile layout, the collapsed group panel shows the tab's title text and a hamburger toggle
     /// button, even before the menu has ever been opened.
     /// </summary>

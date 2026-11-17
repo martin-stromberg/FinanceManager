@@ -137,6 +137,26 @@ Feature-Branch
 
 **Warum PR-basiert statt direktem Push:** Klassische Branch-Protection-Rules unterstützen keinen granularen Bypass für einzelne Actors (nur den globalen "Include administrators"-Schalter) — ein Bot-Push würde an "Require a pull request before merging" scheitern. Der PR-basierte Ansatz braucht keine Sonderrechte.
 
+### 5. Review-Automatisierung — wiederkehrende Review-Issues
+
+Drei getrennte, rein zeitgesteuerte Workflows legen automatisch Review-Issues an, die `@softwarewerkstatt` erwähnen und damit die automatisierte Analyse und Bearbeitung anstoßen:
+
+| Workflow | Intervall | Issue-Titel (Präfix) |
+|---|---|---|
+| `monthly-architecture-security-review.yml` | monatlich am 1., 05:00 UTC | `Architektur- & Sicherheitsreview – YYYY-MM` |
+| `weekly-nuget-review.yml` | wöchentlich montags, 05:00 UTC | `NuGet-Paketprüfung – KW NN/GGGG` |
+| `yearly-compliance-review.yml` | jährlich am 1. Januar, 05:00 UTC | `Compliance- & Copyright-Review – YYYY` |
+
+**Auslöser:** `schedule` (Cron) sowie `workflow_dispatch` für manuelle Testläufe.
+
+**Schritte (identisch in allen drei Workflows):**
+1. **Duplikatprüfung:** `gh issue list --state open --search 'in:title "<Präfix>"'` — existiert bereits ein offenes Issue desselben Typs, wird kein neues angelegt (ein noch laufendes Review des vorherigen Zyklus wird so nicht dupliziert).
+2. **Issue anlegen** (nur wenn keins offen): `gh issue create` mit Titel inklusive Zeitraum-Angabe und Body, der `@softwarewerkstatt` sowie die fachliche Checkliste enthält.
+
+**Berechtigungen:** `permissions: issues: write`; Authentifizierung über `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}`. Die Workflows benötigen weder Checkout noch .NET-Setup und laufen auf `ubuntu-latest`.
+
+**Fehlschlag bei:** fehlender `issues: write`-Berechtigung oder GitHub-API-Fehlern; die Duplikatprüfung selbst schlägt nicht fehl, sondern überspringt das Anlegen.
+
 ## Quality Gates
 
 ### Coverage-Schwellwert (test.yml)

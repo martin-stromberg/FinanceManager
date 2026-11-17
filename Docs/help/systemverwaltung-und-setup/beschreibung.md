@@ -32,6 +32,17 @@ muss der Benutzer den exakten Backup-Dateinamen in einem Bestätigungsdialog
 eingeben. Bei falscher oder fehlender Bestätigung wird keine Wiederherstellung
 gestartet.
 
+Ein Benutzer-Backup deckt alle persistierten Daten des Benutzers ab — neben
+Konten, Buchungen, Kontakten, Sparplänen, Wertpapieren, Budgets, Anhängen und
+Berichtseinstellungen auch die Kontoauszugs-Import-Historie, die
+Benachrichtigungen, Kontofreigaben, die Unter-IBANs von Sammelkonten und die
+Portfolio-KPI-Konfiguration. Beim Wiederherstellen werden die Datensätze mit
+neuen internen IDs angelegt und alle Verweise entsprechend umgebogen.
+Bereits vorhandene Dubletten — etwa beim Zusammenführen auf einem System mit
+Bestandsdaten — werden toleriert und übersprungen, statt den Import
+abzubrechen. Backups älterer Programmversionen bleiben einlesbar: fehlende
+Sektionen und neue Felder werden mit sinnvollen Standardwerten behandelt.
+
 AlphaVantage-Schlüssel aus dem Benutzerprofil werden geschützt gespeichert.
 Die Profilansicht zeigt nur an, ob ein Key vorhanden ist; der gespeicherte Wert
 wird nicht im Klartext angezeigt. Administratoren können ihren Key weiterhin
@@ -61,6 +72,7 @@ Während echter Inaktivität werden keine automatischen Keepalive-Anfragen oder 
 - Ein Administrator gibt seinen AlphaVantage API Key frei; andere Benutzer
   koennen Kursabrufe darueber ausfuehren, sehen den Key aber nicht im Klartext.
 - Ein Backup wird erstellt, als ZIP heruntergeladen und später nach Dateinamen-Bestätigung als Hintergrundtask wiederhergestellt.
+- Ein Benutzer stellt ein Backup wieder her; danach sind auch die Kontoauszugs-Import-Historie, die Benachrichtigungen, Kontofreigaben und die Portfolio-KPI-Konfiguration wieder vorhanden.
 - Ein Benutzer lädt ein Backup hoch, dessen Dateiname ein anderer Benutzer ebenfalls verwendet hat; beide Sicherungen bleiben unabhängig voneinander erhalten.
 - Ein Administrator prueft auf ein Self-Update, kontrolliert Paketmetadaten und
   startet die Installation nach Downtime-Bestaetigung.
@@ -176,6 +188,10 @@ Ist keine gültige Ziel-Adresse konfiguriert, leitet die öffentliche Adresse au
 - Backup-Dateien liegen benutzerbezogen unter `backups/{userId}`; beim ersten Start nach dem Update werden vorhandene Dateien automatisch in die Benutzerverzeichnisse verschoben.
 - Restore- und Aggregatjobs laufen asynchron und sind statusbasiert zu überwachen; die automatische Statusabfrage erfolgt nur für authentifizierte Benutzer.
 - Backup-Uploads sind auf 100 MB komprimiert, 250 MB entpackte NDJSON-Daten, einen ZIP-Eintrag und ein maximales Kompressionsverhältnis von 25 begrenzt.
+- Kontofreigaben (`AccountShares`), die auf Konten anderer Benutzer oder auf dem Zielsystem unbekannte Benutzer verweisen, behalten beim Restore ihre ursprüngliche Referenz — sie bleiben auf derselben Installation gültig, können auf einer anderen Installation aber ins Leere zeigen.
+- Die Portfolio-KPI-Konfiguration wird beim Restore nur ersetzt, wenn das Backup die entsprechende Sektion enthält; bei Backups ohne diese Sektion bleibt die vorhandene Konfiguration erhalten.
+- Enthält ein altes oder manipuliertes Backup ein ungültiges Regex als Verwendungszweck-Muster einer Budgetregel, wird die Regel ohne Muster importiert; der Vorgang wird im Log vermerkt.
+- MCP-Zugänge, MCP-Audit-Einträge und KI-Aktionsanfragen werden zwar ins Backup geschrieben, beim Restore aber nicht wiederhergestellt — sie werden beim Löschen der Benutzerdaten bewusst verschont und verlieren daher nichts.
 - Die Lesbarkeit verschluesselt gespeicherter AlphaVantage API Keys haengt vom
   passenden ASP.NET-Core-Data-Protection-Key-Ring ab.
 - Self-Updates beenden die laufende Anwendung kurzzeitig. Der Start wird

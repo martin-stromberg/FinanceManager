@@ -107,12 +107,12 @@ public sealed class ContactListViewModel : BaseListViewModel<ContactListItem>
     /// <returns>A list of <see cref="UiRibbonRegister"/> describing the ribbon tabs and actions for this view.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
-        var tab = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
+        var tab = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("New", localizer["Ribbon_New"], "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true },
-            new UiRibbonAction("Groups", localizer["Ribbon_Groups"], "<svg><use href='/icons/sprite.svg#layers'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
-            new UiRibbonAction("Reload", localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; }) { MobileShortcut = true },
-            new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearSearch"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("Groups", localizer["Ribbon_Groups"], "<svg><use href='/icons/sprite.svg#layers'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
+            new UiRibbonAction("Reload", localizer["Ribbon_Reload"], "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; }) { MobileShortcut = true },
+            new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearSearch"], "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Large, string.IsNullOrWhiteSpace(Search), null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; }) { MobileShortcut = true }
         });
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab }) };

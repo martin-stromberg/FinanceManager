@@ -25,6 +25,7 @@ public sealed class SavingsPlansController : ControllerBase
     private const string Origin = "API_SavingsPlan";
 
     private readonly ISavingsPlanService _service;
+    private readonly ISavingsPlanAccountLinkService _accountLinks;
     private readonly ICurrentUserService _current;
     private readonly IAttachmentService _attachments;
     private readonly ILogger<SavingsPlansController> _logger;
@@ -35,6 +36,7 @@ public sealed class SavingsPlansController : ControllerBase
     /// Initializes a new instance of the <see cref="SavingsPlansController"/> class.
     /// </summary>
     /// <param name="service">The savings plan service used for business operations.</param>
+    /// <param name="accountLinks">Service managing the account links of a savings plan.</param>
     /// <param name="current">Service that provides information about the currently authenticated user.</param>
     /// <param name="attachments">The attachment service used for file uploads and management.</param>
     /// <param name="logger">Logger for the controller.</param>
@@ -42,6 +44,7 @@ public sealed class SavingsPlansController : ControllerBase
     /// <param name="localizer">Service for localized string retrieval.</param>
     public SavingsPlansController(
         ISavingsPlanService service,
+        ISavingsPlanAccountLinkService accountLinks,
         ICurrentUserService current,
         IAttachmentService attachments,
         ILogger<SavingsPlansController> logger,
@@ -49,6 +52,7 @@ public sealed class SavingsPlansController : ControllerBase
         IStringLocalizer<Controller> localizer)
     {
         _service = service;
+        _accountLinks = accountLinks;
         _current = current;
         _attachments = attachments;
         _logger = logger;
@@ -237,6 +241,124 @@ public sealed class SavingsPlansController : ControllerBase
         {
             _logger.LogError(ex, "Delete savings plan {SavingsPlanId} failed", id);
             return StatusCode(StatusCodes.Status500InternalServerError, ApiErrorFactory.Unexpected(Origin, _localizer));
+        }
+    }
+
+    /// <summary>
+    /// Lists the identifiers of all bank accounts linked to the savings plan.
+    /// </summary>
+    /// <param name="id">Plan id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> with 200 OK and the linked account ids, or 404 Not Found
+    /// when the plan does not exist or does not belong to the current user.
+    /// </returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpGet("{id:guid}/linked-accounts")]
+    [ProducesResponseType(typeof(IReadOnlyList<Guid>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLinkedAccountsAsync(Guid id, CancellationToken ct)
+    {
+        var ids = await _accountLinks.GetLinkedAccountIdsAsync(id, _current.UserId, ct);
+        return ids == null ? NotFound() : Ok(ids);
+    }
+
+    /// <summary>
+    /// Links a bank account of the current user to the savings plan.
+    /// </summary>
+    /// <param name="id">Plan id.</param>
+    /// <param name="accountId">Identifier of the account to link.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> with 204 No Content when the link was created,
+    /// 400 Bad Request when the account cannot be linked (unknown, foreign or duplicate),
+    /// or 404 Not Found when the plan does not exist or does not belong to the current user.
+    /// </returns>
+    /// <response code="204">The HTTP 204 response.</response>
+    /// <response code="400">The HTTP 400 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpPost("{id:guid}/linked-accounts/{accountId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddLinkedAccountAsync(Guid id, Guid accountId, CancellationToken ct)
+    {
+        try
+        {
+            await _accountLinks.AddLinkAsync(id, accountId, _current.UserId, ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_Link_Duplicate", ex.Message));
+        }
+        catch (ArgumentException ex) when (ex.ParamName == "savingsPlanId")
+        {
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
+        }
+    }
+
+    /// <summary>
+    /// Removes the link between the savings plan and a bank account.
+    /// </summary>
+    /// <param name="id">Plan id.</param>
+    /// <param name="accountId">Identifier of the account to unlink.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> with 204 No Content when the link was removed, or
+    /// 404 Not Found when the plan or the link does not exist.
+    /// </returns>
+    /// <response code="204">The HTTP 204 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpDelete("{id:guid}/linked-accounts/{accountId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveLinkedAccountAsync(Guid id, Guid accountId, CancellationToken ct)
+    {
+        var ok = await _accountLinks.RemoveLinkAsync(id, accountId, _current.UserId, ct);
+        return ok ? NoContent() : NotFound();
+    }
+
+    /// <summary>
+    /// Captures an actual-balance report ("Istmeldung") for the savings plan: books the difference
+    /// between the reported balance and the current accumulated amount as a correction posting
+    /// without an account movement. Only allowed for plans without linked accounts.
+    /// </summary>
+    /// <param name="id">Plan id.</param>
+    /// <param name="req">Request payload containing the reported balance.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> with 200 OK and a <see cref="SavingsPlanActualReportResponse"/>,
+    /// 400 Bad Request when the plan has linked accounts, or 404 Not Found when the plan does not
+    /// exist or does not belong to the current user.
+    /// </returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="400">The HTTP 400 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpPost("{id:guid}/actual-reports")]
+    [ProducesResponseType(typeof(SavingsPlanActualReportResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReportActualBalanceAsync(Guid id, [FromBody] SavingsPlanActualReportRequest req, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        try
+        {
+            var dto = await _service.ReportActualBalanceAsync(id, _current.UserId, req.ReportedBalance, ct);
+            return Ok(dto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiErrorDto.Create(Origin, "Err_ActualReport_NotAllowed", ex.Message));
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ApiErrorFactory.FromArgumentException(Origin, ex, _localizer));
         }
     }
 

@@ -4,6 +4,10 @@ namespace FinanceManager.Domain.Security;
 /// Represents an IP address record that can be blocked/unblocked and tracks failed authentication attempts
 /// originating from that IP address.
 /// </summary>
+/// <remarks>
+/// Global, cross-user data pool — deliberately without an <c>OwnerUserId</c>: IP block data applies
+/// to the whole installation and is a documented exception from the per-user ownership rule.
+/// </remarks>
 public sealed class IpBlock : Entity, IAggregateRoot
 {
     /// <summary>

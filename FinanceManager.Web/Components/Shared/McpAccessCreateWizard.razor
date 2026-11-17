@@ -1,0 +1,244 @@
+@using FinanceManager.Domain.Mcp
+@using FinanceManager.Shared
+@using FinanceManager.Shared.Dtos.Mcp
+@using FinanceManager.Web.ViewModels.Mcp
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+@inject IApiClient Api
+
+<div class="mcp-wizard" style="display:flex;flex-direction:column;gap:.9rem;max-width:44rem;">
+    <div class="mcp-wizard-steps" style="display:flex;gap:.75rem;font-size:.9rem;color:var(--muted);">
+        <span style="@(StepStyle(0))">1. @L["McpWizard_Step_MasterData"]</span>
+        <span style="@(StepStyle(1))">2. @L["McpWizard_Step_Level"]</span>
+        <span style="@(StepStyle(2))">3. @L["McpWizard_Step_Token"]</span>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div style="color:#e66;padding:.5rem;border:1px solid rgba(230,102,102,.2);background:rgba(230,102,102,.04);border-radius:4px;">@_error</div>
+    }
+
+    @if (_showTlsWarning)
+    {
+        <div style="padding:.6rem .75rem;border:1px solid rgba(230,160,60,.35);background:rgba(230,160,60,.05);border-radius:6px;">
+            @L["Mcp_Token_TlsWarning"]
+        </div>
+    }
+
+    @if (_step == 0)
+    {
+        <div style="display:flex;flex-direction:column;gap:.6rem;">
+            <label style="display:flex;flex-direction:column;gap:.25rem;">
+                <span>@L["McpWizard_Name"]</span>
+                <input class="card-input" @bind="_name" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:.25rem;">
+                <span>@L["McpWizard_Description"]</span>
+                <input class="card-input" @bind="_description" />
+            </label>
+
+            <details>
+                <summary>@L["McpWizard_Advanced"]</summary>
+                <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem;">
+                    <label style="display:flex;flex-direction:column;gap:.25rem;">
+                        <span>@L["McpWizard_ExpiresUtc"]</span>
+                        <input class="card-input" type="date" @bind="_expiresUtc" />
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:.25rem;">
+                        <span>@L["McpWizard_AllowedIpRanges"]</span>
+                        <input class="card-input" @bind="_allowedIpRanges" />
+                        <small style="color:var(--muted);">@L["Mcp_Card_AllowedIpRanges_Hint"]</small>
+                    </label>
+                </div>
+            </details>
+        </div>
+    }
+    else if (_step == 1)
+    {
+        <div style="display:flex;flex-direction:column;gap:.5rem;">
+            @foreach (var lvl in _levels)
+            {
+                var selected = _level == lvl.Level;
+                <button type="button"
+                        class="mcp-level-card"
+                        style="text-align:left;padding:.6rem .75rem;border-radius:6px;border:1px solid @(selected ? "var(--accent,#6cf)" : "var(--border,#444)");background:@(selected ? "rgba(100,160,255,.10)" : "var(--panel-bg,transparent)");color:var(--text,#e2e6ea);cursor:pointer;"
+                        @onclick="() => _level = lvl.Level">
+                    <div style="font-weight:600;color:var(--text,#e2e6ea);">@LevelName(lvl)</div>
+                    <div style="font-size:.9rem;color:var(--muted);margin-top:.15rem;">@LevelDescription(lvl)</div>
+                </button>
+            }
+
+            @if (_level >= (short)McpAccessLevel.Sachbearbeiter)
+            {
+                <fieldset style="border:1px solid var(--border,#444);border-radius:6px;padding:.6rem .75rem;">
+                    <legend style="padding:0 .4rem;">@L["McpWizard_ApprovalMode"]</legend>
+                    <label style="display:flex;gap:.5rem;align-items:flex-start;margin-bottom:.35rem;">
+                        <input type="radio" name="mcp-approval" checked="@(_approvalMode == (short)McpApprovalMode.PerAction)" @onchange="() => _approvalMode = (short)McpApprovalMode.PerAction" />
+                        <span>
+                            @McpAccessText.ApprovalMode(L, (short)McpApprovalMode.PerAction)
+                            <small style="display:block;color:var(--muted);">@L["Mcp_ApprovalModeDesc_PerAction"]</small>
+                        </span>
+                    </label>
+                    <label style="display:flex;gap:.5rem;align-items:flex-start;">
+                        <input type="radio" name="mcp-approval" checked="@(_approvalMode == (short)McpApprovalMode.PreApproved)" @onchange="() => _approvalMode = (short)McpApprovalMode.PreApproved" />
+                        <span>
+                            @McpAccessText.ApprovalMode(L, (short)McpApprovalMode.PreApproved)
+                            <small style="display:block;color:var(--muted);">@L["Mcp_ApprovalModeDesc_PreApproved"]</small>
+                        </span>
+                    </label>
+                    <small style="display:block;color:var(--muted);margin-top:.4rem;">@L["Mcp_Approval_KillSwitchHint"]</small>
+                </fieldset>
+            }
+        </div>
+    }
+    else
+    {
+        <McpTokenDisplayPanel PlainTextToken="@_plainTextToken"
+                              ShowTlsWarning="@_showTlsWarning"
+                              OnFinished="FinishAsync" />
+    }
+
+    @if (_step < 2)
+    {
+        <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+            <button type="button" class="btn" @onclick="Cancel">@L["Btn_Cancel"]</button>
+            @if (_step > 0)
+            {
+                <button type="button" class="btn" @onclick="() => _step--">@L["Btn_Back"]</button>
+            }
+            @if (_step == 0)
+            {
+                <button type="button" class="btn btn-primary" disabled="@(string.IsNullOrWhiteSpace(_name))" @onclick="() => _step++">@L["Btn_Next"]</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary" disabled="@_busy" @onclick="CreateAsync">@(_busy ? L["General_Loading"] : L["McpWizard_Create"])</button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Cascading close action provided by the overlay hosts.</summary>
+    [CascadingParameter(Name = "OverlayClose")] public Action? OverlayClose { get; set; }
+
+    /// <summary>Cascading finish action provided by the overlay hosts (receives the card URL).</summary>
+    [CascadingParameter(Name = "OverlayOnFinished")] public Action<object>? OverlayOnFinished { get; set; }
+
+    /// <summary>Optional overlay title (consumed by the overlay host).</summary>
+    [Parameter] public string? OverlayTitle { get; set; }
+
+    private int _step;
+    private bool _busy;
+    private bool _showTlsWarning;
+    private string? _error;
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private DateTime? _expiresUtc;
+    private string _allowedIpRanges = string.Empty;
+    private short _level = (short)McpAccessLevel.Analyse;
+    private short _approvalMode = (short)McpApprovalMode.PerAction;
+    private string? _plainTextToken;
+    private Guid _createdId;
+    private IReadOnlyList<McpAccessLevelDto> _levels = Array.Empty<McpAccessLevelDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _levels = await Api.Mcp_GetLevelsAsync();
+            if (_levels.Count > 0)
+            {
+                _level = _levels[0].Level;
+            }
+        }
+        catch
+        {
+            _levels = Array.Empty<McpAccessLevelDto>();
+        }
+
+        try
+        {
+            var options = await Api.Mcp_GetOptionsAsync();
+            _showTlsWarning = options is not null && !options.IsTlsRequest;
+        }
+        catch
+        {
+            _showTlsWarning = false;
+        }
+    }
+
+    private string StepStyle(int step)
+        => step == _step
+            ? "font-weight:600;color:var(--fg,#eee);"
+            : "opacity:.7;";
+
+    private string LevelName(McpAccessLevelDto lvl)
+    {
+        var key = McpAccessText.LevelKeyPrefix + lvl.Name;
+        var value = L[key];
+        return value.ResourceNotFound || string.IsNullOrWhiteSpace(value.Value) ? lvl.Name : value.Value;
+    }
+
+    private string LevelDescription(McpAccessLevelDto lvl)
+    {
+        var key = McpAccessText.LevelDescriptionKeyPrefix + lvl.Name;
+        var value = L[key];
+        return value.ResourceNotFound ? string.Empty : value.Value;
+    }
+
+    private void Cancel() => OverlayClose?.Invoke();
+
+    private async Task CreateAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var request = new McpAccessCreateRequest(
+                Name: _name.Trim(),
+                Description: string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+                Level: _level,
+                ApprovalMode: _level >= (short)McpAccessLevel.Sachbearbeiter ? _approvalMode : (short)McpApprovalMode.PerAction,
+                ExpiresUtc: _expiresUtc.HasValue ? DateTime.SpecifyKind(_expiresUtc.Value, DateTimeKind.Utc) : null,
+                AllowedIpRanges: string.IsNullOrWhiteSpace(_allowedIpRanges) ? null : _allowedIpRanges.Trim(),
+                Scopes: null);
+
+            var created = await Api.Mcp_CreateAccessAsync(request);
+            _plainTextToken = created.PlainTextToken;
+            _createdId = created.Access.Id;
+            _step = 2;
+        }
+        catch (Exception ex)
+        {
+            var code = Api.LastErrorCode;
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                var localized = L[code];
+                _error = localized.ResourceNotFound ? (Api.LastError ?? ex.Message) : localized.Value;
+            }
+            else
+            {
+                _error = Api.LastError ?? ex.Message;
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task FinishAsync()
+    {
+        // The plaintext token is discarded with the dialog instance – it is never cached or re-fetched.
+        _plainTextToken = null;
+        if (_createdId != Guid.Empty && OverlayOnFinished is not null)
+        {
+            OverlayOnFinished($"/card/mcp-accesses/{_createdId}");
+        }
+        else
+        {
+            OverlayClose?.Invoke();
+        }
+        return Task.CompletedTask;
+    }
+}

@@ -1,5 +1,6 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -199,5 +200,35 @@ public sealed class AccountDetailViewModelTests
         // We don't need to load account for ribbon shape
         var groupsExisting = vm.GetRibbon(loc)!;
         Assert.Contains(groupsExisting, g => g.Tabs != null && g.Tabs.Any(t => t.Title == "Ribbon_Group_Linked"));
+    }
+
+    /// <summary>
+    /// Verifies that the bank account card's action register orders its groups per the project
+    /// grouping convention: navigation first, manage and bookings in the middle, and the
+    /// linked-entities group as the last tab across all returned registers.
+    /// </summary>
+    [Fact]
+    public void GetRibbonRegisters_GroupOrder_PlacesLinkedLast()
+    {
+        var (vm, _) = CreateVm();
+        var loc = new DummyLocalizer();
+
+        var registers = vm.GetRibbonRegisters(loc);
+
+        Assert.NotNull(registers);
+        var actionsRegister = Assert.Single(registers!, r => r.Kind == UiRibbonRegisterKind.Actions);
+        var titles = actionsRegister.Tabs!.Select(t => t.Title).ToList();
+        Assert.Equal(
+            new[]
+            {
+                "Ribbon_Group_Navigation",
+                "Ribbon_Group_Manage",
+                "Ribbon_Group_Bookings",
+                "Ribbon_Group_Linked"
+            },
+            titles);
+
+        var lastTab = registers!.SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>()).Last();
+        Assert.Equal("Ribbon_Group_Linked", lastTab.Title);
     }
 }

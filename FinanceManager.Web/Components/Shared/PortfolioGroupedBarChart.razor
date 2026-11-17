@@ -1,0 +1,163 @@
+@using Microsoft.AspNetCore.Components
+@using System.Globalization
+
+<div class="portfolio-grouped-bar-chart">
+    @if (Points.Count == 0)
+    {
+        <div class="portfolio-grouped-bar-chart-empty">@EmptyText</div>
+    }
+    else
+    {
+        <svg viewBox="0 0 1000 325" preserveAspectRatio="none" class="portfolio-grouped-bar-chart-svg"
+             role="img" aria-label="@AriaLabel" style="height:@(HeightPx)px;">
+            <g class="portfolio-grouped-bar-chart-grid">
+                @for (var i = 0; i <= 4; i++)
+                {
+                    var y = ChartTop + i * (ChartBottom - ChartTop) / 4;
+                    <line x1="@ChartLeft" y1="@y" x2="@ChartRight" y2="@y" />
+                }
+            </g>
+
+            <line class="portfolio-grouped-bar-chart-baseline" x1="@ChartLeft" y1="@Inv(_baselineY)" x2="@ChartRight" y2="@Inv(_baselineY)" />
+
+            @foreach (var p in _points)
+            {
+                <g class="portfolio-grouped-bar-chart-point">
+                    <title>@p.Tooltip</title>
+                    <rect class="portfolio-grouped-bar-chart-bar first@(p.FirstValue < 0m ? " negative" : string.Empty)"
+                          x="@Inv(p.FirstX)" y="@Inv(p.FirstY)" width="@Inv(_barWidth)" height="@Inv(p.FirstHeight)" />
+                    <rect class="portfolio-grouped-bar-chart-bar second@(p.SecondValue < 0m ? " negative" : string.Empty)"
+                          x="@Inv(p.SecondX)" y="@Inv(p.SecondY)" width="@Inv(_barWidth)" height="@Inv(p.SecondHeight)" />
+                </g>
+            }
+
+            <g class="portfolio-grouped-bar-chart-labels">
+                @foreach (var p in _points)
+                {
+                    @((MarkupString)$"<text x='{Inv(p.X)}' y='{Inv(AxisLabelY)}' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
+                }
+            </g>
+        </svg>
+    }
+
+    <div class="portfolio-grouped-bar-chart-legend">
+        <span class="portfolio-grouped-bar-chart-legend-item"><span class="portfolio-grouped-bar-chart-swatch first"></span>@FirstLabel</span>
+        <span class="portfolio-grouped-bar-chart-legend-item"><span class="portfolio-grouped-bar-chart-swatch second"></span>@SecondLabel</span>
+    </div>
+</div>
+
+@code {
+    private const double ChartLeft = 60;
+    private const double ChartRight = 980;
+    private const double ChartTop = 20;
+    private const double ChartBottom = 300;
+    private const double AxisLabelY = ChartBottom + 20;
+    private const double BarGap = 4;
+
+    /// <summary>A single labeled data point rendered as a pair of bars on a shared scale.</summary>
+    /// <param name="Label">Short label shown on the x-axis (e.g. a year).</param>
+    /// <param name="FirstValue">Value of the first bar.</param>
+    /// <param name="SecondValue">Value of the second bar.</param>
+    public sealed record PortfolioGroupedBarChartPoint(string Label, decimal FirstValue, decimal SecondValue);
+
+    /// <summary>Points to render, in display order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PortfolioGroupedBarChartPoint> Points { get; set; } = Array.Empty<PortfolioGroupedBarChartPoint>();
+
+    /// <summary>Rendered height of the chart in pixels.</summary>
+    [Parameter] public int HeightPx { get; set; } = 200;
+
+    /// <summary>Accessible label describing the chart for screen readers.</summary>
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    /// <summary>Legend label for the first bar series.</summary>
+    [Parameter] public string FirstLabel { get; set; } = string.Empty;
+
+    /// <summary>Legend label for the second bar series.</summary>
+    [Parameter] public string SecondLabel { get; set; } = string.Empty;
+
+    /// <summary>Text shown when <see cref="Points"/> is empty.</summary>
+    [Parameter] public string EmptyText { get; set; } = string.Empty;
+
+    /// <summary>Optional formatter for the tooltip of each data point; defaults to "Label: first / second" with "N2" values.</summary>
+    [Parameter] public Func<PortfolioGroupedBarChartPoint, string>? TooltipFormatter { get; set; }
+
+    private sealed record RenderPoint(double X, string Label, string Tooltip,
+        decimal FirstValue, double FirstX, double FirstY, double FirstHeight,
+        decimal SecondValue, double SecondX, double SecondY, double SecondHeight);
+
+    private readonly List<RenderPoint> _points = new();
+    private double _baselineY = ChartBottom;
+    private double _barWidth;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        Build();
+    }
+
+    private void Build()
+    {
+        _points.Clear();
+        _baselineY = ChartBottom;
+        _barWidth = 0d;
+
+        if (Points == null || Points.Count == 0)
+        {
+            return;
+        }
+
+        // Both series share one scale so the two bars of a year stay visually comparable.
+        var min = Math.Min(0m, Math.Min(Points.Min(p => p.FirstValue), Points.Min(p => p.SecondValue)));
+        var max = Math.Max(0m, Math.Max(Points.Max(p => p.FirstValue), Points.Max(p => p.SecondValue)));
+        if (min == max)
+        {
+            max += 1m;
+        }
+
+        var chartHeight = ChartBottom - ChartTop;
+        _baselineY = ChartBottom - (double)((0m - min) / (max - min)) * chartHeight;
+
+        var slotWidth = (ChartRight - ChartLeft) / Points.Count;
+        var groupWidth = Math.Min(slotWidth * 0.7, 80d);
+        _barWidth = (groupWidth - BarGap) / 2d;
+
+        for (var i = 0; i < Points.Count; i++)
+        {
+            var point = Points[i];
+            var x = ChartLeft + slotWidth * i + slotWidth / 2;
+            var firstY = ValueToY(point.FirstValue, min, max);
+            var secondY = ValueToY(point.SecondValue, min, max);
+
+            _points.Add(new RenderPoint(
+                x,
+                point.Label,
+                FormatTooltip(point),
+                point.FirstValue,
+                x - groupWidth / 2,
+                Math.Min(firstY, _baselineY),
+                Math.Abs(firstY - _baselineY),
+                point.SecondValue,
+                x - groupWidth / 2 + _barWidth + BarGap,
+                Math.Min(secondY, _baselineY),
+                Math.Abs(secondY - _baselineY)));
+        }
+    }
+
+    private double ValueToY(decimal value, decimal min, decimal max)
+    {
+        var range = max - min;
+        if (range == 0m)
+        {
+            return _baselineY;
+        }
+
+        var t = (double)((value - min) / range);
+        return ChartBottom - t * (ChartBottom - ChartTop);
+    }
+
+    private static string Inv(double v) => v.ToString("F2", CultureInfo.InvariantCulture);
+
+    private string FormatTooltip(PortfolioGroupedBarChartPoint p) => TooltipFormatter != null
+        ? TooltipFormatter(p)
+        : string.Format(CultureInfo.CurrentUICulture, "{0}: {1:N2} / {2:N2}", p.Label, p.FirstValue, p.SecondValue);
+}

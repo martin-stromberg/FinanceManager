@@ -124,6 +124,8 @@ Regeln pro Monat:
 - Monatliche Lastschrift `Mobilfunkvertrag Telkommi` über -49,90 € auf dem Girokonto
 - Rückstellung Hausratversicherung: -5,22 € Giro / +5,22 € Sparkonto Rücklagen
 - Sparplan Urlaub: -50,00 € Giro / +50,00 € Sparkonto Urlaub
+- Bausparen: -200,00 € Giro / +200,00 € Bausparkonto (Sparplan „Bausparen" ist mit dem Bausparkonto verknüpft)
+- Jahresendzinsen (Dezember): 1 % auf die Salden von Girokonto und Bausparkonto
 - Rückstellung Auto: -70,00 € Giro / +70,00 € Sparkonto Rücklagen
 - Rückstellung SDAC: -8,25 € Giro / +8,25 € Sparkonto Rücklagen
 - Wohnungsmiete: -845,00 € am ersten Werktag

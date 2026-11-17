@@ -48,13 +48,13 @@ public sealed class AuthGateway
     /// <param name="password">Password to log in with.</param>
     public async Task LoginAsync(string username, string password)
     {
-        await _page.GotoAsync("/login");
+        await GotoToleratingForcedRedirectAsync("/login");
         await _page.Locator("#login-user").FillAsync(username);
         await _page.Locator("#login-pass").FillAsync(password);
 
         await BrowserApiHelper.PostJsonAsync<LoginRequest, AuthOkResponse>(_page, "/api/auth/login", new LoginRequest(username, password, null, null));
 
-        await _page.GotoAsync("/");
+        await GotoToleratingForcedRedirectAsync("/");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await _page.Locator("body").WaitForAsync();
     }
@@ -130,13 +130,51 @@ public sealed class AuthGateway
 
     /// <summary>
     /// Clears the browser context's cookies and navigates to the login page - the standard way E2E tests
-    /// tear down an authenticated session between scenarios.
+    /// tear down an authenticated session between scenarios. Clearing the cookies can make a
+    /// still-connected Blazor circuit fire its own forced redirect to the login page, so the navigation
+    /// goes through <see cref="GotoToleratingForcedRedirectAsync"/>.
     /// </summary>
     public async Task LogoutAsync()
     {
         await _page.Context.ClearCookiesAsync();
-        await _page.GotoAsync("/login");
+        await GotoToleratingForcedRedirectAsync("/login");
         await _page.Locator("button[type=submit]").WaitForAsync();
+    }
+
+    /// <summary>
+    /// Navigates to <paramref name="path"/> while tolerating a forced client-side navigation issued by a
+    /// still-connected Blazor circuit: when the auth cookie appears or disappears, the app's auth-redirect
+    /// logic can call <c>NavigateTo(..., forceLoad: true)</c> concurrently, and whichever navigation loses
+    /// the race is aborted with <c>net::ERR_ABORTED</c>. An aborted goto is therefore settled by waiting
+    /// for network activity to quiesce, and the navigation is repeated once when the competing redirect
+    /// carried the page somewhere else.
+    /// </summary>
+    /// <param name="path">Application-relative path to navigate to.</param>
+    private async Task GotoToleratingForcedRedirectAsync(string path)
+    {
+        try
+        {
+            await _page.GotoAsync(path, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        }
+        catch (PlaywrightException ex) when (ex.Message.Contains("net::ERR_ABORTED", StringComparison.Ordinal))
+        {
+            // A forced client-side navigation from the previous Blazor circuit won the race.
+        }
+
+        try
+        {
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        }
+        catch (TimeoutException)
+        {
+            // Network idle may never be reached while a competing navigation is still settling.
+        }
+
+        var expected = new Uri(new Uri(_baseUrl), path).PathAndQuery;
+        if (!new Uri(_page.Url).PathAndQuery.Equals(expected, StringComparison.OrdinalIgnoreCase))
+        {
+            await _page.GotoAsync(path, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        }
     }
 
     private async Task<string> RegisterOrLoginAsync<TRequest>(string path, TRequest request)

@@ -121,12 +121,15 @@ berechnet wurde.
   `portfolio-analysis-report-{OwnerUserId:N}`.
 
 **Verhalten:**
-- `CacheValidUntilUtc` des Eintrags liegt in der Zukunft und
-  `NeedsRefresh == false`: der gecachte Bericht wird unverändert
-  zurückgegeben.
+- `CacheValidUntilUtc` des Eintrags liegt in der Zukunft,
+  `NeedsRefresh == false` und `Parameter` entspricht der aktuellen
+  `CacheSchemaVersion` (aktuell `"6"`): der gecachte Bericht wird
+  unverändert zurückgegeben.
 - `CacheValidUntilUtc` ist überschritten (Monatswechsel), der Eintrag fehlt,
-  oder `NeedsRefresh == true`: der Bericht wird neu berechnet und mit neuem
-  `CacheValidUntilUtc` (Ende des aktuellen Monats) gespeichert.
+  `NeedsRefresh == true` oder `Parameter` stammt aus einer älteren
+  Schema-Version (z. B. nach einer DTO-Erweiterung): der Bericht wird neu
+  berechnet und mit neuem `CacheValidUntilUtc` (Ende des aktuellen
+  Monats) gespeichert.
 
 **Umsetzung:** `PortfolioAnalysisReportCacheService.GetPortfolioReportAsync`,
 `PortfolioAnalysisReportService.EndOfMonthUtc`.
@@ -179,3 +182,106 @@ Depotwerts als abgeleitete Liquidität auf Verrechnungskonten liegt.
 
 **Umsetzung:** `PortfolioAnalysisReportService.LoadDepotCashBalanceAsync` und
 `PortfolioAnalysisReportService.BuildCashflow`.
+
+## Depot-Analysebericht: Jahresserie der Depotentwicklung
+
+**Beschreibung:** Die Kachel „Depotentwicklung Jahreswechsel" liefert pro
+Kalenderjahr der Depot-Historie eine Zeile aus Jahresend-Depotwert,
+Netto-Dividenden und kumuliert eingezahltem Kapital.
+
+**Bedingungen:**
+- Es liegen Wertpapierbuchungen des Benutzers vor; andernfalls bleibt die
+  Serie leer und die Kachel zeigt eine Leeranzeige.
+
+**Verhalten:**
+- Die Serie läuft vom Jahr der ältesten Transaktion bis zum laufenden
+  Jahr; werden heute keine Bestände mehr gehalten (Komplettverkauf),
+  endet sie im Jahr der jüngsten Transaktion.
+- Stichtag je Jahr ist der 31.12.; für das laufende Jahr mit gehaltenen
+  Beständen das Tagesdatum — diese Zeile trägt `IsYtd = true` und wird
+  in der UI mit "*" markiert.
+- `YearEndValue` ist der Marktwert aller Positionen zum Stichtag; je
+  Position zählt der letzte bekannte Kurs am oder vor dem Stichtag,
+  Positionen ganz ohne Kurs tragen 0 bei.
+- `NetDividends` = Summe der `Dividend`-Buchungen des Jahres minus der
+  Absolutbeträge aller `Tax`-Buchungen des Jahres.
+- `CumulativeInvestedCapital` = FIFO-Anschaffungskostenbasis
+  (`TotalCostBasis - StandaloneFeeTotal`), je Position auf die
+  Transaktionen bis zum Stichtag berechnet.
+- `NetFlow` = Summe der `Buy`-Buchungsbeträge (absolut) minus Summe der
+  `Sell`-Buchungsbeträge des Jahres; positiv bedeutet Netto-Einzahlung.
+- `YearStartValue` ist der `YearEndValue` des Vorjahres; im ersten Jahr
+  der Serie dient das eigene `CumulativeInvestedCapital` als Startwert.
+- Der Depotwert umfasst nur den Wertpapier-Marktwert, nicht den Saldo
+  von Verrechnungskonten.
+
+**Umsetzung:** `PortfolioAnalysisReportService.BuildDepotDevelopment`
+unter Verwendung von `GetSeriesYearRange`, `GetYearReferenceDate`,
+`GetPortfolioValueOnDate`, `SecurityValuationHelper` und
+`IFifoCostBasisCalculator.Calculate`.
+
+## Depot-Analysebericht: Rendite-Basis der Depotentwicklung
+
+**Beschreibung:** Die Spalte „Rendite" der Jahrestabelle bezieht die
+Netto-Dividende auf eine vom Anwender wählbare Basis.
+
+**Bedingungen:**
+- Auswahl „Jahresanfangswert" (Standard) oder „Eingezahltes Kapital
+  (Yield on Cost)" im Auswahlfeld „Rendite-Basis".
+
+**Verhalten:**
+- Jahresanfangswert: `Rendite = NetDividends / YearStartValue`; die
+  Jahrestabelle zeigt zusätzlich Depotwert, Veränderung zum Vorjahr
+  (absolut und prozentual) und die Netto-Dividende.
+- Eingezahltes Kapital: `Rendite = NetDividends / Σ NetFlow` (kumulierte
+  Ein-/Auszahlungen bis zum Jahresstichtag über die gesamte Historie,
+  unabhängig vom Zeitraum-Filter); die Tabelle zeigt statt Depotwert
+  und Veränderung die Spalten Jahr, Ein-/Auszahlungen (Summe),
+  Netto-Dividende und Rendite, das Diagramm wechselt auf zwei Balken
+  je Jahr (`NetFlow` und `NetDividends`).
+- Ist die Basis 0, steht in der Spalte „Rendite" `—` statt eines
+  Prozentwerts.
+- Reicht die Breite der Kachel nicht aus (unter ~560 px — etwa auf
+  schmalen Bildschirmen oder in mehrspaltigen Kachel-Rastern), reduziert
+  sich die Tabelle im Modus „Jahresanfangswert" per CSS-Container-Query
+  auf vier Spalten („Jahr", „Dividende/Depotwert", „Veränderung €/%",
+  „Rendite"): die Zellen für Depotwert und Veränderung zeigen je zwei
+  Werte, die Spalten „Veränderung %" und „Netto-Dividende" entfallen.
+  Die Tabelle verwendet `table-layout: fixed` bei `overflow-x: hidden`,
+  sodass horizontales Scrollen niemals erforderlich oder möglich ist.
+- Umschalten der Basis ebenso wie der Zeitraum-Filter („Gesamte
+  Historie", „Letzte 5 Jahre", „Letzte 10 Jahre" — verankert am letzten
+  Jahr der Serie, nicht am Kalenderjahr) erfolgen rein clientseitig;
+  beide Auswahlen werden im `localStorage` des Browsers persistiert und
+  beim nächsten Aufruf der Seite wiederhergestellt.
+
+**Umsetzung:** `PortfolioDepotDevelopmentCard.razor` (komponenteninterne
+Enums `DepotDevelopmentYieldBasis` und `DepotDevelopmentPeriodFilter`,
+Persistenz über `IJSRuntime`/`localStorage`).
+
+## Depot-Analysebericht: Nachträglich eingeführte Kacheln werden in gespeicherte Konfigurationen gemergt
+
+**Beschreibung:** Kacheln, die erst nach dem Speichern einer eigenen
+Kachel-Konfiguration hinzukamen, fehlen in deren `TileOrder`. Beim Laden
+der Konfiguration werden sie automatisch nachgezogen, damit sie sichtbar
+und im Bearbeitungsmodus verwaltbar sind.
+
+**Bedingungen:**
+- Eine gespeicherte `PortfolioKpiConfiguration` enthält nicht alle
+  `PortfolioTileId`-Werte.
+
+**Verhalten:**
+- Fehlende Kachel-IDs werden ans Ende von `TileOrder` angehängt.
+- Gehört eine fehlende Kachel zur Default-Aktiv-Menge (`Structure`,
+  `Performance`, `Cashflow`, `DepotDevelopment`), wird sie zusätzlich in
+  `ActiveTileIds` ergänzt und sofort angezeigt; andere neue Kacheln
+  (z. B. `Risk`) bleiben inaktiv, sind aber im Bearbeitungsmodus
+  aktivierbar.
+- Eine vom Benutzer bewusst deaktivierte Kachel wird nicht erneut
+  aktiviert, da nur in `TileOrder` fehlende IDs ergänzt werden.
+- Das gemergte Ergebnis wird nur zurückgegeben; persistiert wird es erst
+  beim nächsten expliziten Speichern der Konfiguration.
+
+**Umsetzung:** `PortfolioAnalysisReportController.MergeMissingTiles`,
+angewendet in `GetKpiConfigurationAsync` auf gespeicherte Konfigurationen
+und auf die Default-Konfiguration.

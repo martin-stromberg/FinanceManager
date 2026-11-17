@@ -179,6 +179,7 @@ public sealed partial class StatementDraftService
 
         Domain.Accounts.Account? bankAccount = null;
         Guid? bankContactId = null;
+        var detectedAccountLinkedToPlan = false;
         if (draft.DetectedAccountId != null)
         {
             bankAccount = await _db.Accounts
@@ -186,6 +187,10 @@ public sealed partial class StatementDraftService
             // DetectedAccountId can reference an account that no longer exists (e.g. deleted after being
             // linked to this draft), so bankAccount can legitimately be null here.
             bankContactId = bankAccount?.BankContactId;
+            // A statement of a savings-plan-linked bank account must not get plan assignments:
+            // the account balance is the plan's source of truth (postings would double-count).
+            detectedAccountLinkedToPlan = await _db.SavingsPlanAccountLinks.AsNoTracking()
+                .AnyAsync(l => l.AccountId == draft.DetectedAccountId && l.OwnerUserId == ownerUserId, ct);
         }
 
         foreach (var entry in entries)
@@ -215,7 +220,7 @@ public sealed partial class StatementDraftService
             {
                 await TryAutoCreateKnownContactAsync(contacts, aliasLookup, ownerUserId, bankContactId, selfContact, entry, ct);
             }
-            if (bankAccount is not null && bankAccount.SavingsPlanExpectation != SavingsPlanExpectation.None)
+            if (bankAccount is not null && bankAccount.SavingsPlanExpectation != SavingsPlanExpectation.None && !detectedAccountLinkedToPlan)
                 TryAutoAssignSavingsPlan(entry, savingPlans, selfContact);
             TryAutoAssignSecurity(securities, contacts, bankContactId, bankAccount?.SecurityProcessingEnabled ?? false, entry);
         }

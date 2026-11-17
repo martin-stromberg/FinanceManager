@@ -1,0 +1,84 @@
+@using FinanceManager.Web.ViewModels.Mcp
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<div class="mcp-token-panel" style="display:flex;flex-direction:column;gap:.75rem;max-width:36rem;">
+    @if (!string.IsNullOrWhiteSpace(PlainTextToken))
+    {
+        <div class="mcp-token-warning" style="padding:.6rem .75rem;border:1px solid rgba(230,160,60,.45);background:rgba(230,160,60,.08);border-radius:6px;">
+            <strong>@L["McpToken_OnceWarning_Title"]</strong>
+            <div style="margin-top:.25rem;">@L["McpToken_OnceWarning_Message"]</div>
+        </div>
+
+        @if (ShowTlsWarning)
+        {
+            <div class="mcp-token-tls" style="padding:.6rem .75rem;border:1px solid rgba(230,160,60,.35);background:rgba(230,160,60,.05);border-radius:6px;">
+                @L["Mcp_Token_TlsWarning"]
+            </div>
+        }
+
+        <div style="display:flex;gap:.5rem;align-items:center;">
+            <input class="card-input" style="flex:1;font-family:monospace;" readonly value="@PlainTextToken" />
+            <button type="button" class="btn" @onclick="CopyTokenAsync">@(_copied ? L["McpToken_Copied"] : L["McpToken_Copy"])</button>
+        </div>
+
+        <label style="display:flex;gap:.5rem;align-items:center;">
+            <input type="checkbox" @bind="_confirmed" />
+            <span>@L["McpToken_ConfirmSaved"]</span>
+        </label>
+
+        <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+            <button type="button" class="btn btn-primary" disabled="@(!_confirmed)" @onclick="FinishAsync">@L["McpToken_Close"]</button>
+        </div>
+    }
+    else
+    {
+        <div>@L["McpToken_NoToken"]</div>
+        <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+            <button type="button" class="btn" @onclick="FinishAsync">@L["Btn_Close"]</button>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Cascading close action provided by the overlay hosts.</summary>
+    [CascadingParameter(Name = "OverlayClose")] public Action? OverlayClose { get; set; }
+
+    /// <summary>Optional finish callback used when the panel is embedded in the create wizard.</summary>
+    [Parameter] public Func<Task>? OnFinished { get; set; }
+
+    /// <summary>The plaintext token shown exactly once.</summary>
+    [Parameter] public string? PlainTextToken { get; set; }
+
+    /// <summary>Optional overlay title (consumed by the overlay host).</summary>
+    [Parameter] public string? OverlayTitle { get; set; }
+
+    /// <summary>Whether to show the unencrypted-transport (no TLS) warning.</summary>
+    [Parameter] public bool ShowTlsWarning { get; set; }
+
+    private bool _confirmed;
+    private bool _copied;
+
+    private async Task CopyTokenAsync()
+    {
+        try
+        {
+            var ok = await JS.InvokeAsync<bool>("financeManager.copyText", PlainTextToken ?? string.Empty);
+            _copied = ok;
+        }
+        catch
+        {
+            _copied = false;
+        }
+    }
+
+    private async Task FinishAsync()
+    {
+        if (OnFinished is not null)
+        {
+            await OnFinished();
+            return;
+        }
+        OverlayClose?.Invoke();
+    }
+}

@@ -30,13 +30,34 @@ public sealed class AccountLinkedIban : Entity
     /// Navigation property back to the owning account.
     /// </summary>
     public Account? Account { get; private set; }
-}
 
-/// <summary>
-/// Backup DTO for <see cref="AccountLinkedIban"/>.
-/// </summary>
-/// <param name="Id">Entity identifier.</param>
-/// <param name="AccountId">Identifier of the owning collection account.</param>
-/// <param name="Iban">The linked IBAN value.</param>
-/// <returns>The result.</returns>
-public sealed record AccountLinkedIbanBackupDto(Guid Id, Guid AccountId, string Iban);
+    // Backup DTO
+    /// <summary>
+    /// Backup DTO for <see cref="AccountLinkedIban"/>.
+    /// </summary>
+    /// <param name="Id">Entity identifier.</param>
+    /// <param name="AccountId">Identifier of the owning collection account.</param>
+    /// <param name="Iban">The linked IBAN value.</param>
+    /// <returns>The result.</returns>
+    public sealed record AccountLinkedIbanBackupDto(Guid Id, Guid AccountId, string Iban);
+
+    /// <summary>
+    /// Creates a backup DTO representing the serializable state of this linked IBAN.
+    /// </summary>
+    /// <returns>An <see cref="AccountLinkedIbanBackupDto"/> containing values required for backup/restore.</returns>
+    public AccountLinkedIbanBackupDto ToBackupDto()
+        => new AccountLinkedIbanBackupDto(Id, AccountId, Iban);
+
+    /// <summary>
+    /// Assigns values from a backup DTO to this entity instance.
+    /// </summary>
+    /// <param name="dto">The <see cref="AccountLinkedIbanBackupDto"/> containing values to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the IBAN of <paramref name="dto"/> is <c>null</c>.</exception>
+    public void AssignBackupDto(AccountLinkedIbanBackupDto dto)
+    {
+        if (dto == null) throw new ArgumentNullException(nameof(dto));
+        AccountId = dto.AccountId;
+        Iban = dto.Iban?.Trim() ?? throw new ArgumentException("Backup DTO must provide an IBAN.", nameof(dto));
+    }
+}

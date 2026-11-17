@@ -29,6 +29,8 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     private readonly Dictionary<string, BaseViewModel> _sectionViewModels = new(StringComparer.OrdinalIgnoreCase);
     private bool _coreSectionViewModelsInitialized;
     private bool _saving;
+    private bool? _mcpEnabled;
+    private int _mcpPendingApprovalCount;
 
     private IReadOnlyList<KeyValuePair<string, string>>? _settingSections;
 
@@ -73,6 +75,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         new SetupSectionDefinition("securitytxt", "Setup_Section_SecurityTxt", "security.txt", typeof(SetupSecurityTxtViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SecurityTxtSettingsTab)),
         new SetupSectionDefinition("wellknown", "Setup_Section_WellKnown", "Well-Known", typeof(SetupWellKnownViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.WellKnownSettingsTab)),
         new SetupSectionDefinition("returnanalysis", "Setup_Section_ReturnAnalysis", "Renditeanalyse", typeof(SetupReturnAnalysisViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupReturnAnalysisTab)),
+        new SetupSectionDefinition("mcp", "Setup_Section_Mcp", "KI-Zugänge", typeof(SetupMcpViewModel), typeof(FinanceManager.Web.Components.Pages.Setup.SetupMcpTab)),
     };
 
     /// <summary>
@@ -187,6 +190,10 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
         {
             CardRecord = null;
 
+            // Resolve the MCP feature state first: it gates the "mcp" section visibility
+            // (admin or enabled) and feeds the register's pending-approval ribbon counter.
+            await RefreshMcpFeatureStateAsync();
+
             if (!_coreSectionViewModelsInitialized)
             {
                 var profileVm = CreateSubViewModel<SetupProfileViewModel>();
@@ -218,6 +225,20 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 {
                     var wellKnownVm = CreateSubViewModel<SetupWellKnownViewModel>();
                     _sectionViewModels["wellknown"] = wellKnownVm;
+                }
+
+                if (TryGetSectionDefinition("mcp", out var mcpSection) && mcpSection is not null && IsSectionVisible(mcpSection))
+                {
+                    if (_sectionViewModels.TryGetValue("mcp", out var existingMcp) && existingMcp is SetupMcpViewModel existingMcpVm)
+                    {
+                        existingMcpVm.InitializeFeatureState(_mcpEnabled == true, _mcpPendingApprovalCount);
+                    }
+                    else
+                    {
+                        var mcpVm = CreateSubViewModel<SetupMcpViewModel>(configure: vm =>
+                            vm.InitializeFeatureState(_mcpEnabled == true, _mcpPendingApprovalCount));
+                        _sectionViewModels["mcp"] = mcpVm;
+                    }
                 }
 
                 _coreSectionViewModelsInitialized = true;
@@ -347,13 +368,73 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
 
     private bool IsSectionVisible(SetupSectionDefinition section)
     {
+        if (string.Equals(section.Key, "mcp", StringComparison.OrdinalIgnoreCase))
+        {
+            return IsMcpSectionVisible();
+        }
+
         if (!string.Equals(section.Key, "update", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
+        return IsCurrentUserAdmin();
+    }
+
+    private bool IsCurrentUserAdmin()
+    {
         var currentUser = ServiceProvider.GetService<FinanceManager.Application.ICurrentUserService>();
         return currentUser?.IsAuthenticated == true && currentUser.IsAdmin;
+    }
+
+    /// <summary>
+    /// The KI (MCP) register is visible for admins (so they can enable the feature) and for
+    /// every user once the feature is enabled. When the status call failed the feature is
+    /// treated as disabled so normal users never see a dead register.
+    /// </summary>
+    /// <returns><c>true</c> when the MCP section may be shown; otherwise <c>false</c>.</returns>
+    private bool IsMcpSectionVisible()
+        => IsCurrentUserAdmin() || _mcpEnabled == true;
+
+    /// <summary>
+    /// Determines whether a child view model contributes its ribbon registers to the card
+    /// ribbon. The MCP section view model (which owns the dedicated KI ribbon group) is
+    /// excluded once the feature state no longer permits the register.
+    /// </summary>
+    /// <param name="vm">Child view model to evaluate.</param>
+    /// <returns><c>true</c> when the child contributes ribbon registers; otherwise <c>false</c>.</returns>
+    protected override bool IsChildViewModelActive(BaseViewModel vm)
+        => vm is not SetupMcpViewModel || IsMcpSectionVisible();
+
+    /// <summary>
+    /// Best-effort refresh of the MCP feature state (enabled flag and, when enabled, the
+    /// pending approval counter). Failures are treated as "disabled" — matching the
+    /// navigation behavior which hides MCP entries on errors.
+    /// </summary>
+    private async Task RefreshMcpFeatureStateAsync()
+    {
+        _mcpEnabled = false;
+        _mcpPendingApprovalCount = 0;
+        try
+        {
+            var status = await ApiClient.Mcp_GetStatusAsync(CancellationToken.None);
+            _mcpEnabled = status?.Enabled == true;
+            if (_mcpEnabled == true)
+            {
+                try
+                {
+                    _mcpPendingApprovalCount = await ApiClient.Mcp_GetPendingApprovalCountAsync(CancellationToken.None);
+                }
+                catch
+                {
+                    _mcpPendingApprovalCount = 0; // badge is informational only
+                }
+            }
+        }
+        catch
+        {
+            _mcpEnabled = false;
+        }
     }
 
     private sealed class SetupSectionDefinition
@@ -375,7 +456,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     }
 
     /// <summary>
-    /// Provides the ribbon register definition for the setup card. Adds an Actions register with the RebuildAggregates action.
+    /// Provides the ribbon register definition for the setup card. Adds a Manage group with the global setup actions.
     /// </summary>
     /// <param name="localizer">Localizer used to obtain localized display text for ribbon items.</param>
     /// <returns>A list of <see cref="UiRibbonRegister"/> instances describing the ribbon layout, or <c>null</c> when no ribbon is needed.</returns>
@@ -390,7 +471,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     "Save",
                     localizer["Ribbon_Save"].Value,
                     "<svg><use href='/icons/sprite.svg#save'/></svg>",
-                    UiRibbonItemSize.Small,
+                    UiRibbonItemSize.Large,
                     Saving || !HasPendingChanges,
                     null,
                     new Func<Task>(async ()
@@ -410,7 +491,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,
                     "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
-                    UiRibbonItemSize.Large,
+                    UiRibbonItemSize.Small,
                     false,
                     localizer["Hint_RebuildAggregates"].Value,
                     new Func<Task>(async () =>
@@ -439,7 +520,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                         }
                         catch (Exception ex) { _logger?.LogError(ex, "ResetReportCache ribbon action failed"); }
                     }))
-            }, int.MaxValue)
+            })
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

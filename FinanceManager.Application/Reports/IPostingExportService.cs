@@ -55,6 +55,10 @@ public sealed record PostingExportQuery(
 /// <param name="SecurityId">Optional security id referenced.</param>
 /// <param name="SecuritySubType">Optional security posting subtype.</param>
 /// <param name="Quantity">Optional quantity for security postings.</param>
+/// <param name="Informal">Derived flag marking an informal savings plan funding posting (plan has
+/// linked accounts and the posting group holds a bank posting on a non-linked account). Derived at
+/// export time - never persisted.</param>
+/// <param name="SavingsPlanSubType">Optional savings plan posting subtype (e.g. actual-balance report).</param>
 /// <returns>The result.</returns>
 public sealed record PostingExportRow(
     DateTime BookingDate,
@@ -69,7 +73,9 @@ public sealed record PostingExportRow(
     Guid? SavingsPlanId,
     Guid? SecurityId,
     SecurityPostingSubType? SecuritySubType,
-    decimal? Quantity
+    decimal? Quantity,
+    bool Informal = false,
+    SavingsPlanPostingSubType? SavingsPlanSubType = null
 );
 
 /// <summary>

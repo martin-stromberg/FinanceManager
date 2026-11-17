@@ -162,5 +162,19 @@ public partial class ApiClient
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
+    /// <summary>
+    /// Returns the identifiers of the savings plans linked to the account.
+    /// </summary>
+    /// <param name="accountId">The account id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of savings plan ids, or <c>null</c> when the account was not found.</returns>
+    public async Task<IReadOnlyList<Guid>?> GetSavingsPlanLinksAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/accounts/{accountId}/savings-plan-links", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<Guid>>(cancellationToken: ct) ?? Array.Empty<Guid>();
+    }
+
     #endregion Accounts
 }

@@ -13,6 +13,8 @@ Listen, Karten und tabellarische Bereiche sind so eingebettet, dass bei Bedarf n
 Zusätzlich gibt es seitenbezogene Anpassungen für Startseite, Berichte, Budgetreport, Einrichtung und Wertpapier-Auswertung auf schmalen Bildschirmen.
 Das Ribbon wird auf mobilen Breiten als Gruppe dargestellt. Geschlossene Gruppen können rechts im Gruppen-Header kompakte Symbol-Shortcuts anzeigen, wenn eine Aktion als mobiler Shortcut vorgesehen ist oder die Gruppe genau eine sichtbare und aktivierte Aktion enthält. Diese Shortcuts führen dieselbe Aktion wie der normale Ribbon-Eintrag aus, ohne die Gruppe zu öffnen. Sobald die Gruppe geöffnet ist, werden die Header-Shortcuts ausgeblendet.
 
+Auf den Detailseiten einzelner Einträge (z. B. Sparplan, Bankkonto oder Posten) ordnet das Ribbon seine Gruppen in einer festen Reihenfolge: Ganz vorne steht die Gruppe „Navigieren" mit der Zurück-Aktion, danach folgen die Verwaltungsaktionen des Eintrags (z. B. „Verwalten") und weiterführende Aktionsgruppen (z. B. „Buchungen" oder „Analyse"). Die Gruppe „Verknüpfte Informationen" — etwa für Anhänge oder zugehörige Datensätze — bildet stets den Abschluss des Ribbons.
+
 Bei Navigationen, bei Formularen und bei länger laufenden Aktionen, die Inhalte nachladen, zeigt die Oberfläche eine globale, schmale Ladeleiste. Sie liegt auf Desktopgeräten am oberen Rand und auf mobilen Breiten direkt unterhalb der mobilen Leiste. Die animierte Leiste verwendet bei jedem Neustart eine neue Farbe und bleibt sichtbar, bis die Zielseite erreicht oder der Vorgang abgeschlossen ist. Mehrere schnelle Interaktionen aktualisieren dieselbe Leiste, sodass höchstens eine Ladeleiste sichtbar ist.
 
 ### Bestätigungsdialoge

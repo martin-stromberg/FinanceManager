@@ -89,6 +89,8 @@
 
   <data name="Privacy_KpiCache" xml:space="preserve"><value>If the "Cache home KPIs" option is enabled in the profile settings, home page KPI data is cached in the browser's local storage to display it faster on the next visit. The data remains in the browser until the option is disabled in the profile settings or the browser's local storage is manually cleared.</value></data>
 
+  <data name="Privacy_UiPreferences" xml:space="preserve"><value>Selected display preferences (e.g. the display mode and time period of the "Depot development" tile in the portfolio report) are stored in the browser's local storage so they can be restored on the next visit. Only technical preference values without personal content are stored; the data remains in the browser until the local storage is manually cleared.</value></data>
+
   <data name="Section_Other" xml:space="preserve"><value>Other information</value></data>
   <data name="Other_Disclaimer" xml:space="preserve"><value>No guarantee for correctness. Use at your own risk. No financial or investment advice.</value></data>
   <data name="Other_Contact" xml:space="preserve"><value>Contact/Feedback: Issues and discussions welcome in the GitHub repository.</value></data>

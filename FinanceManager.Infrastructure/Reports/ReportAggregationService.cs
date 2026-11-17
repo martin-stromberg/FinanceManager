@@ -1,5 +1,7 @@
 using FinanceManager.Application.Reports;
 using FinanceManager.Domain.Postings;
+using FinanceManager.Infrastructure.Aggregates;
+using FinanceManager.Shared.Dtos.Budget;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -55,8 +57,12 @@ public sealed class ReportAggregationService : IReportAggregationService
         const int SecurityPostingSubType_Dividend = 2;
         var dividendSelected = query.Filters?.SecuritySubTypes?.Contains(SecurityPostingSubType_Dividend) == true;
         var hasContradictingSecuritySubTypes = query.Filters?.SecuritySubTypes is { Count: > 0 } && !dividendSelected;
-        var compareProjection = query.CompareProjection && onlySecurityKind && query.Interval != ReportInterval.AllHistory && !hasContradictingSecuritySubTypes;
-        if (onlySecurityKind && (includeDividendRelated || compareProjection))
+        // The projection is kind-independent; a contradicting security sub-type selection only
+        // suppresses the security expectations, the other kinds keep projecting.
+        var projectionEnabled = query.CompareProjection && query.Interval != ReportInterval.AllHistory;
+        var securityProjectionEnabled = projectionEnabled && !hasContradictingSecuritySubTypes;
+        var comparedProjection = projectionEnabled && kinds.Any(k => k != PostingKind.Security || securityProjectionEnabled);
+        if (onlySecurityKind && (includeDividendRelated || securityProjectionEnabled))
         {
             var result = await QuerySecurityDividendsNetAsync(query, ct);
             return result;
@@ -90,57 +96,195 @@ public sealed class ReportAggregationService : IReportAggregationService
         var analysis = (query.AnalysisDate?.Date) ?? DateTime.UtcNow.Date;
         analysis = new DateTime(analysis.Year, analysis.Month, 1);
 
+        // Projection load window: the displayed window plus a two-year reference window,
+        // identical to the netted dividend path.
+        var projectionMonthsBack = query.Take > 0 ? query.Take - 1 : 0;
+        var projectionWindowStart = ytdMode
+            ? new DateTime(analysis.Year - projectionMonthsBack, 1, 1)
+            : analysis.AddMonths(-projectionMonthsBack);
+        var projectionEndExclusive = analysis.AddMonths(1);
+        var projectionEventLoadStart = projectionWindowStart.AddYears(-2);
+
+        // Per-kind free text filters: kinds with configured patterns are aggregated from raw
+        // postings (PostingAggregates carry no text fields); all other kinds keep the
+        // precomputed aggregate path.
+        var textFiltersByKind = new Dictionary<PostingKind, IReadOnlyCollection<string>>();
+        if (query.Filters is { } textFilterSource)
+        {
+            void AddTextFilters(PostingKind kind, IReadOnlyCollection<string>? src)
+            {
+                if (!kinds.Contains(kind)) { return; }
+                if (TextFilterList.Normalize(src) is { Count: > 0 } patterns) { textFiltersByKind[kind] = patterns; }
+            }
+            AddTextFilters(PostingKind.Bank, textFilterSource.BankTextFilters);
+            AddTextFilters(PostingKind.Contact, textFilterSource.ContactTextFilters);
+            AddTextFilters(PostingKind.SavingsPlan, textFilterSource.SavingsPlanTextFilters);
+            AddTextFilters(PostingKind.Security, textFilterSource.SecurityTextFilters);
+        }
+        var aggregateKinds = kinds.Where(k => !textFiltersByKind.ContainsKey(k)).ToArray();
+
+        // Upper bound of the raw posting load: postings in periods after the latest
+        // analysis period can never contribute a point (they are trimmed by the
+        // "PeriodStart <= latestPeriod" rule below) and comparisons only look
+        // backwards, so they are excluded up front. No lower bound is applied: the
+        // take limit keeps the last N periods *with data*, which cannot be derived
+        // from a static calendar window (sparse data would silently drop valid
+        // postings). AllHistory and Take <= 0 legitimately need every posting.
+        DateTime? postingWindowEnd = null;
+        if (textFiltersByKind.Count > 0 && query.Take > 0 && query.Interval != ReportInterval.AllHistory)
+        {
+            if (query.Interval == ReportInterval.Ytd)
+            {
+                // YTD sums only months up to the analysis month; years after the
+                // analysis year are dropped as well.
+                postingWindowEnd = analysis.AddMonths(1);
+            }
+            else
+            {
+                var latest = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
+                postingWindowEnd = latest.AddMonths(ReportQuerySemantics.IntervalLengthMonths(query.Interval));
+            }
+        }
+
         // Pull raw aggregates for selected kinds & period OR build raw rows from postings using ValutaDate when requested
         var rawAnon = new List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>();
-        if (query.UseValutaDate)
+        if (aggregateKinds.Length > 0)
         {
-            // Use precomputed aggregates for Valuta date kind (consistent with booking-case)
-            var aggsValuta = await _db.PostingAggregates.AsNoTracking()
-                .Where(a => a.Period == sourcePeriod && kinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Valuta)
-                .Select(a => new
-                {
-                    a.Kind,
-                    a.PeriodStart,
-                    a.Amount,
-                    a.AccountId,
-                    a.ContactId,
-                    a.SavingsPlanId,
-                    a.SecurityId,
-                    a.SecuritySubType
-                })
-                .ToListAsync(ct);
-
-            if (aggsValuta.Count == 0)
+            if (query.UseValutaDate)
             {
-                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
-            }
+                // Use precomputed aggregates for Valuta date kind (consistent with booking-case)
+                var aggsValuta = await _db.PostingAggregates.AsNoTracking()
+                    .Where(a => a.Period == sourcePeriod && aggregateKinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Valuta)
+                    .Select(a => new
+                    {
+                        a.Kind,
+                        a.PeriodStart,
+                        a.Amount,
+                        a.AccountId,
+                        a.ContactId,
+                        a.SavingsPlanId,
+                        a.SecurityId,
+                        a.SecuritySubType
+                    })
+                    .ToListAsync(ct);
 
-            rawAnon = aggsValuta.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+                rawAnon = aggsValuta.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+            }
+            else
+            {
+                var aggs = await _db.PostingAggregates.AsNoTracking()
+                    .Where(a => a.Period == sourcePeriod && aggregateKinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Booking)
+                    .Select(a => new
+                    {
+                        a.Kind,
+                        a.PeriodStart,
+                        a.Amount,
+                        a.AccountId,
+                        a.ContactId,
+                        a.SavingsPlanId,
+                        a.SecurityId,
+                        a.SecuritySubType
+                    }).ToListAsync(ct);
+
+                rawAnon = aggs.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+            }
         }
-        else
+
+        // Text-filtered kinds: load owned entity ids per kind, then condense matching raw postings
+        // into the same tuple schema as the aggregate rows.
+        foreach (var (textKind, patterns) in textFiltersByKind)
         {
-            var aggs = await _db.PostingAggregates.AsNoTracking()
-                .Where(a => a.Period == sourcePeriod && kinds.Contains(a.Kind) && a.DateKind == AggregateDateKind.Booking)
-                .Select(a => new
-                {
-                    a.Kind,
-                    a.PeriodStart,
-                    a.Amount,
-                    a.AccountId,
-                    a.ContactId,
-                    a.SavingsPlanId,
-                    a.SecurityId,
-                    a.SecuritySubType
-                }).ToListAsync(ct);
-
-            if (aggs.Count == 0)
+            var ownerEntityIds = textKind switch
             {
-                return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
-            }
-
-            rawAnon = aggs.Select(a => (a.Kind, a.PeriodStart, a.Amount, a.AccountId, a.ContactId, a.SavingsPlanId, a.SecurityId, a.SecuritySubType)).ToList();
+                PostingKind.Bank => await _db.Accounts.AsNoTracking().Where(a => a.OwnerUserId == query.OwnerUserId).Select(a => a.Id).ToListAsync(ct),
+                PostingKind.Contact => await _db.Contacts.AsNoTracking().Where(c => c.OwnerUserId == query.OwnerUserId).Select(c => c.Id).ToListAsync(ct),
+                PostingKind.SavingsPlan => await _db.SavingsPlans.AsNoTracking().Where(s => s.OwnerUserId == query.OwnerUserId).Select(s => s.Id).ToListAsync(ct),
+                PostingKind.Security => await _db.Securities.AsNoTracking().Where(s => s.OwnerUserId == query.OwnerUserId).Select(s => s.Id).ToListAsync(ct),
+                _ => throw new ArgumentOutOfRangeException(nameof(textKind), textKind, "Unsupported posting kind for text filters.")
+            };
+            if (ownerEntityIds.Count == 0) { continue; }
+            var textRows = await LoadTextFilteredRowsAsync(textKind, patterns, sourcePeriod, query.UseValutaDate, ownerEntityIds, null, postingWindowEnd, ct);
+            rawAnon.AddRange(textRows);
         }
+
         // From here on use 'rawAnon' instead of previous 'raw' anonymous objects
+
+        // Posting source switch for savings plans: when the caller requests the postings of the
+        // linked bank accounts, the SavingsPlan rows of linked plans are replaced by rows derived
+        // from the Bank aggregates of their linked accounts (same period + date kind). Plans
+        // without links keep their own plan postings.
+        // Loaded once here and reused by the projection block below so the links are queried a single time.
+        Dictionary<Guid, List<Guid>>? savingsPlanLinksByPlan = null;
+        if (query.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings && kinds.Contains(PostingKind.SavingsPlan))
+        {
+            var linksByPlan = savingsPlanLinksByPlan = await new ReportProjectionEventLoader(_db).LoadSavingsPlanAccountLinksAsync(query.OwnerUserId, ct);
+
+            if (linksByPlan.Count > 0)
+            {
+                var linkedAccountIds = linksByPlan.Values.SelectMany(x => x).Distinct().ToList();
+                List<(DateTime PeriodStart, decimal Amount, Guid AccountId)> bankRows;
+                if (textFiltersByKind.TryGetValue(PostingKind.SavingsPlan, out var savingsPlanTextPatterns))
+                {
+                    // Savings plan text filters apply to the source bank postings of the linked accounts
+                    // (the emitted rows carry Kind = SavingsPlan, so the filter of the target kind applies).
+                    var linkedBankPostings = await ReportQuerySemantics.ApplyDateWindow(
+                            _db.Postings.AsNoTracking()
+                                .Where(p => p.Kind == PostingKind.Bank
+                                    && p.AccountId != null
+                                    && linkedAccountIds.Contains(p.AccountId.Value)),
+                            query.UseValutaDate, null, postingWindowEnd)
+                        .Select(p => new { p.BookingDate, p.ValutaDate, p.Amount, p.AccountId, p.Subject, p.Description })
+                        .ToListAsync(ct);
+                    bankRows = linkedBankPostings
+                        .Where(p => p.Amount != 0m)
+                        .Where(p => savingsPlanTextPatterns.Any(pat => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, pat, useRegex: false)))
+                        .Select(p =>
+                        {
+                            var effective = query.UseValutaDate
+                                ? (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate)
+                                : p.BookingDate;
+                            return (PostingAggregateService.GetPeriodStart(effective, sourcePeriod), p.Amount, p.AccountId!.Value);
+                        })
+                        .GroupBy(x => (x.Item1, x.Item3))
+                        .Select(g => (g.Key.Item1, g.Sum(x => x.Item2), g.Key.Item2))
+                        .ToList();
+                }
+                else
+                {
+                    var dateKind = query.UseValutaDate ? AggregateDateKind.Valuta : AggregateDateKind.Booking;
+                    bankRows = (await _db.PostingAggregates.AsNoTracking()
+                        .Where(a => a.Period == sourcePeriod
+                            && a.Kind == PostingKind.Bank
+                            && a.DateKind == dateKind
+                            && a.AccountId != null
+                            && linkedAccountIds.Contains(a.AccountId.Value))
+                        .Select(a => new { a.PeriodStart, a.Amount, AccountId = a.AccountId!.Value })
+                        .ToListAsync(ct))
+                        .Select(a => (a.PeriodStart, a.Amount, a.AccountId))
+                        .ToList();
+                }
+
+                var derived = new List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>();
+                foreach (var (planId, accountIdsForPlan) in linksByPlan)
+                {
+                    foreach (var row in bankRows)
+                    {
+                        if (!accountIdsForPlan.Contains(row.AccountId)) { continue; }
+                        derived.Add((PostingKind.SavingsPlan, row.PeriodStart, row.Amount, null, null, planId, null, null));
+                    }
+                }
+
+                rawAnon = rawAnon
+                    .Where(r => r.Kind != PostingKind.SavingsPlan || !r.SavingsPlanId.HasValue || !linksByPlan.ContainsKey(r.SavingsPlanId.Value))
+                    .Concat(derived)
+                    .ToList();
+            }
+        }
+
+        if (rawAnon.Count == 0)
+        {
+            return new ReportAggregationResult(query.Interval, Array.Empty<ReportAggregatePointDto>(), query.ComparePrevious, query.CompareYear, false);
+        }
 
         // Collect entity ids per kind for ownership filtering & name/category lookup
         var accountIds = rawAnon.Where(r => r.AccountId.HasValue).Select(r => r.AccountId!.Value).Distinct().ToList();
@@ -326,7 +470,11 @@ public sealed class ReportAggregationService : IReportAggregationService
         static bool SupportsCategories(PostingKind k) => k is PostingKind.Contact or PostingKind.SavingsPlan or PostingKind.Security;
 
         // 1) Aggregate entity (leaf) level per period
-        var entityGroups = rawAnon.GroupBy(r => new { r.Kind, r.PeriodStart, r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId })
+        // Security rows keep their SecuritySubType in the group key so that security points
+        // are split per posting sub type (one point per period/security/sub type) instead of
+        // being flattened into a single mixed amount. For all other kinds the sub type is
+        // always null, so their grouping is unchanged.
+        var entityGroups = rawAnon.GroupBy(r => new { r.Kind, r.PeriodStart, r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId, r.SecuritySubType })
              .Select(g => new
              {
                  g.Key.Kind,
@@ -335,7 +483,8 @@ public sealed class ReportAggregationService : IReportAggregationService
                  g.Key.AccountId,
                  g.Key.ContactId,
                  g.Key.SavingsPlanId,
-                 g.Key.SecurityId
+                 g.Key.SecurityId,
+                 g.Key.SecuritySubType
              })
              .OrderBy(g => g.PeriodStart)
              .ToList();
@@ -376,7 +525,13 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
             else if (e.SecurityId.HasValue)
             {
-                groupKey = $"Security:{e.SecurityId}";
+                // Split security points per posting sub type: the sub type is part of the
+                // group key so each (security, sub type) series stays distinct for the
+                // downstream period/comparison transforms. Rows without a sub type keep the
+                // plain "Security:{id}" key (unknown sub type).
+                groupKey = e.SecuritySubType.HasValue
+                    ? $"Security:{e.SecurityId}:{e.SecuritySubType.Value}"
+                    : $"Security:{e.SecurityId}";
                 if (securityNames.TryGetValue(e.SecurityId.Value, out var nSec)) { groupName = nSec; }
                 else { groupName = e.SecurityId.Value.ToString("N")[..6]; }
                 if (query.IncludeCategory && securityCategoryMap.TryGetValue(e.SecurityId.Value, out var cidSec))
@@ -410,7 +565,7 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
             // In single-kind non-category mode: parent remains null (flat list)
 
-            points.Add(new ReportAggregatePointDto(e.PeriodStart, groupKey, groupName, categoryName, e.Amount, null, parent, null, null));
+            points.Add(new ReportAggregatePointDto(e.PeriodStart, groupKey, groupName, categoryName, e.Amount, null, parent, null, null, SecuritySubType: e.SecuritySubType));
         }
 
         // Category aggregates (per period) (only when categories requested & kind supports)
@@ -455,7 +610,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         {
             var groups = points
                 .Where(p => !p.GroupKey.StartsWith("Type:"))
-                .GroupBy(p => new { p.PeriodStart, Kind = ParseKindFromKey(p.GroupKey) })
+                .GroupBy(p => new { p.PeriodStart, Kind = ReportQuerySemantics.ParseKindFromKey(p.GroupKey) })
                 .Where(g => g.Key.Kind.HasValue)
                 .ToList();
             foreach (var g in groups)
@@ -496,7 +651,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 foreach (var y in byYear)
                 {
                     var start = new DateTime(y.Year, 1, 1);
-                    ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, null, y.Sample.ParentGroupKey, null, null));
+                    ytd.Add(new ReportAggregatePointDto(start, y.Sample.GroupKey, y.Sample.GroupName, y.Sample.CategoryName, y.Amount, null, y.Sample.ParentGroupKey, null, null, SecuritySubType: y.Sample.SecuritySubType));
                 }
             }
             points = ytd.OrderBy(p => p.PeriodStart).ThenBy(p => p.GroupKey).ToList();
@@ -512,14 +667,14 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var sample = grp.OrderBy(x => x.PeriodStart).First();
                 // Use a constant period start (e.g., DateTime.MinValue.Date truncated to year) to anchor display
                 var anchor = new DateTime(2000, 1, 1);
-                hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, null, sample.ParentGroupKey, null, null));
+                hist.Add(new ReportAggregatePointDto(anchor, sample.GroupKey, sample.GroupName, sample.CategoryName, sum, null, sample.ParentGroupKey, null, null, SecuritySubType: sample.SecuritySubType));
             }
             points = hist.OrderBy(p => p.GroupKey).ToList();
 
             // Additionally: add Type-level aggregates even for single-kind mode to provide top-level totals for AllHistory
             var typeSums = points
                 .Where(p => !p.GroupKey.StartsWith("Type:"))
-                .GroupBy(p => new { p.PeriodStart, Kind = ParseKindFromKey(p.GroupKey) })
+                .GroupBy(p => new { p.PeriodStart, Kind = ReportQuerySemantics.ParseKindFromKey(p.GroupKey) })
                 .Where(g => g.Key.Kind.HasValue)
                 .Select(g => new { g.Key.PeriodStart, Kind = g.Key.Kind!.Value, Amount = g.Sum(x => x.Amount) })
                 .ToList();
@@ -541,34 +696,10 @@ public sealed class ReportAggregationService : IReportAggregationService
             }
         }
 
-        // Helper to compute the latest anchoring period based on interval --------
-        DateTime ComputeLatestPeriod(ReportInterval interval, DateTime analysisDate)
-        {
-            if (interval == ReportInterval.Month)
-            {
-                return analysisDate;
-            }
-            if (interval == ReportInterval.Ytd)
-            {
-                return new DateTime(analysisDate.Year, 1, 1);
-            }
-            if (interval == ReportInterval.Quarter)
-            {
-                var qIndex = (analysisDate.Month - 1) / 3; // 0..3
-                return new DateTime(analysisDate.Year, qIndex * 3 + 1, 1);
-            }
-            if (interval == ReportInterval.HalfYear)
-            {
-                var hIndex = (analysisDate.Month - 1) / 6; // 0..1
-                return new DateTime(analysisDate.Year, hIndex * 6 + 1, 1);
-            }
-            return new DateTime(analysisDate.Year, 1, 1);
-        }
-
         // Ensure latest period row based on analysis month ------------------------
         if (!allHistoryMode && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
 
             // Remove any points beyond the latest analysis period (bugfix: ensure future PeriodStarts are excluded)
             points = points.Where(p => p.PeriodStart <= latestPeriod).ToList();
@@ -578,50 +709,131 @@ public sealed class ReportAggregationService : IReportAggregationService
             {
                 if (!points.Any(p => p.GroupKey == g.Key && p.PeriodStart == latestPeriod))
                 {
-                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null));
+                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null, SecuritySubType: g.Latest.SecuritySubType));
                 }
             }
+        }
+
+        // Cross-kind projection: prior-year events of all selected kinds are projected into the
+        // display window (two-year reference window like the netted dividend path). Leaf rows
+        // exist over the full aggregate history, so entities with only prior-year events still
+        // receive their expected values on the latest-period rows.
+        if (projectionEnabled && points.Count > 0)
+        {
+            var projectionEventLoader = new ReportProjectionEventLoader(_db);
+            var projectionEvents = new List<ProjectionEvent>();
+
+            // Resolves the effective entity allow-list for one kind. A category filter
+            // replaces the entity filter when category grouping is active, mirroring the
+            // leaf-row filter below.
+            List<Guid>? ResolveProjectionEntityFilter(IReadOnlyCollection<Guid>? entityIds, IReadOnlyCollection<Guid>? categoryIds, IReadOnlyDictionary<Guid, Guid?> categoryMap)
+            {
+                if (query.IncludeCategory && categoryIds is { Count: > 0 })
+                {
+                    var allowedCats = categoryIds.ToHashSet();
+                    return categoryMap
+                        .Where(kv => kv.Value.HasValue && allowedCats.Contains(kv.Value.Value))
+                        .Select(kv => kv.Key)
+                        .ToList();
+                }
+                return entityIds is { Count: > 0 } ? entityIds.ToList() : null;
+            }
+
+            if (kinds.Contains(PostingKind.Bank))
+            {
+                var ownedAccountIds = await _db.Accounts.AsNoTracking()
+                    .Where(a => a.OwnerUserId == query.OwnerUserId)
+                    .Select(a => a.Id)
+                    .ToListAsync(ct);
+                var accountFilter = query.Filters?.AccountIds is { Count: > 0 } allowedAccountIds ? allowedAccountIds.ToList() : null;
+                var bankPatterns = textFiltersByKind.TryGetValue(PostingKind.Bank, out var bp) ? bp : null;
+                projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
+                    PostingKind.Bank, ownedAccountIds, accountFilter, bankPatterns,
+                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+            }
+
+            if (kinds.Contains(PostingKind.Contact))
+            {
+                var ownedContactIds = await _db.Contacts.AsNoTracking()
+                    .Where(c => c.OwnerUserId == query.OwnerUserId)
+                    .Select(c => c.Id)
+                    .ToListAsync(ct);
+                var contactFilter = ResolveProjectionEntityFilter(query.Filters?.ContactIds, query.Filters?.ContactCategoryIds, contactCategoryMap);
+                var contactPatterns = textFiltersByKind.TryGetValue(PostingKind.Contact, out var cp) ? cp : null;
+                projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
+                    PostingKind.Contact, ownedContactIds, contactFilter, contactPatterns,
+                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+            }
+
+            if (kinds.Contains(PostingKind.SavingsPlan))
+            {
+                var ownedPlanIds = await _db.SavingsPlans.AsNoTracking()
+                    .Where(s => s.OwnerUserId == query.OwnerUserId)
+                    .Select(s => s.Id)
+                    .ToListAsync(ct);
+                var planFilter = ResolveProjectionEntityFilter(query.Filters?.SavingsPlanIds, query.Filters?.SavingsPlanCategoryIds, savingsCategoryMap);
+                var planPatterns = textFiltersByKind.TryGetValue(PostingKind.SavingsPlan, out var spp) ? spp : null;
+                if (query.SavingsPlanPostingSource == SavingsPlanPostingSource.LinkedAccountPostings)
+                {
+                    savingsPlanLinksByPlan ??= await projectionEventLoader.LoadSavingsPlanAccountLinksAsync(query.OwnerUserId, ct);
+                    projectionEvents.AddRange(await projectionEventLoader.LoadSavingsPlanEventsAsync(
+                        ownedPlanIds, planFilter, planPatterns, savingsPlanLinksByPlan,
+                        projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+                }
+                else
+                {
+                    projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
+                        PostingKind.SavingsPlan, ownedPlanIds, planFilter, planPatterns,
+                        projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+                }
+            }
+
+            Func<Guid, DateTime, bool>? hasActiveSecurity = null;
+            if (kinds.Contains(PostingKind.Security) && securityProjectionEnabled)
+            {
+                var ownedSecurityIds = await _db.Securities.AsNoTracking()
+                    .Where(s => s.OwnerUserId == query.OwnerUserId)
+                    .Select(s => s.Id)
+                    .ToListAsync(ct);
+                var securityFilter = ResolveProjectionEntityFilter(query.Filters?.SecurityIds, query.Filters?.SecurityCategoryIds, securityCategoryMap);
+                var securityPatterns = textFiltersByKind.TryGetValue(PostingKind.Security, out var scp) ? scp : null;
+                projectionEvents.AddRange(await projectionEventLoader.LoadSecurityDividendEventsAsync(
+                    ownedSecurityIds, securityFilter, securityPatterns,
+                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+
+                var holdingTransactionsBySecurity = await LoadHoldingTransactionsBySecurityAsync(
+                    projectionEventLoader, ownedSecurityIds, query.Interval, points, analysis, projectionEndExclusive, query.UseValutaDate, ct);
+                hasActiveSecurity = (securityId, date) => HasPositiveHolding(holdingTransactionsBySecurity, securityId, date);
+            }
+
+            string ResolveProjectionEntityName(PostingKind kind, Guid entityId)
+            {
+                IReadOnlyDictionary<Guid, string>? names = kind switch
+                {
+                    PostingKind.Bank => accountNames,
+                    PostingKind.Contact => contactNames,
+                    PostingKind.SavingsPlan => savingsNames,
+                    PostingKind.Security => securityNames,
+                    _ => null
+                };
+                return names is not null && names.TryGetValue(entityId, out var name) ? name : entityId.ToString("N")[..6];
+            }
+
+            var projectionContext = new ReportProjectionContext(query.Interval, analysis, projectionWindowStart, projectionEndExclusive);
+            var suppressions = await LoadSuppressionKeysAsync(query, ct);
+            ReportProjectionCalculator.ApplyProjectionAmounts(points, projectionEvents, projectionContext, ResolveProjectionEntityName, hasActiveSecurity, securityDividendLeafOnly: true, suppressions: suppressions);
         }
 
         // Previous comparison ----------------------------------------------------
         if (query.ComparePrevious)
         {
-            DateTime AlignToQuarterStart(DateTime d)
-            {
-                var qIndex = (d.Month - 1) / 3; // 0..3
-                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{qIndex * 3 + 1}-1");
-                return new DateTime(d.Year, qIndex * 3 + 1, 1);
-            }
-            DateTime AlignToHalfYearStart(DateTime d)
-            {
-                var hIndex = (d.Month - 1) / 6; // 0..1
-                logger.LogDebug($"AlignToHalfYearStart({d}) => {d.Year}-{hIndex * 6 + 1}-1");
-                return new DateTime(d.Year, hIndex * 6 + 1, 1);
-            }
-
-            DateTime PrevPeriod(DateTime d)
-            {
-                logger.LogDebug($"PrevPeriod({d})");
-                if (d == DateTime.MinValue)
-                    return DateTime.MinValue;
-                return query.Interval switch
-                {
-                    ReportInterval.Month => d.AddMonths(-1),
-                    ReportInterval.Quarter => AlignToQuarterStart(d).AddMonths(-3),
-                    ReportInterval.HalfYear => AlignToHalfYearStart(d).AddMonths(-6),
-                    ReportInterval.Year => new DateTime(d.Year - 1, 1, 1),
-                    ReportInterval.Ytd => new DateTime(d.Year - 1, 1, 1),
-                    _ => d.AddMonths(-1)
-                };
-            }
-
             var byGroup = points
                 .GroupBy(p => p.GroupKey)
                 .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.PeriodStart, x => x.Amount));
             for (int i = 0; i < points.Count; i++)
             {
                 var p = points[i];
-                var prevDate = PrevPeriod(p.PeriodStart);
+                var prevDate = ReportQuerySemantics.PrevPeriod(query.Interval, p.PeriodStart);
                 if (byGroup.TryGetValue(p.GroupKey, out var map) && map.TryGetValue(prevDate, out var prevAmount))
                 {
                     points[i] = p with { PreviousAmount = prevAmount };
@@ -648,7 +860,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         if (query.Take > 0 && points.Count > 0)
         {
             var distinct = points.Select(p => p.PeriodStart).Distinct().OrderBy(d => d).ToList();
-            var latest = ComputeLatestPeriod(query.Interval, analysis);
+            var latest = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             distinct = distinct.Where(d => d <= latest).ToList();
             if (distinct.Count > query.Take)
             {
@@ -660,7 +872,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         // Remove empty latest groups (same rule as default)
         if (!allHistoryMode && (query.ComparePrevious || query.CompareYear) && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             var removable = points.Where(p => p.PeriodStart == latestPeriod)
                 .GroupBy(p => p.GroupKey)
                 .Where(g =>
@@ -668,7 +880,8 @@ public sealed class ReportAggregationService : IReportAggregationService
                     var r = g.First();
                     var hasPrevData = query.ComparePrevious && r.PreviousAmount.HasValue && r.PreviousAmount.Value != 0m;
                     var hasYearData = query.CompareYear && r.YearAgoAmount.HasValue && r.YearAgoAmount.Value != 0m;
-                    return r.Amount == 0m && !hasPrevData && !hasYearData;
+                    var hasProjectionData = comparedProjection && r.ProjectionAmount.HasValue && r.ProjectionAmount.Value != 0m;
+                    return r.Amount == 0m && !hasPrevData && !hasYearData && !hasProjectionData;
                 })
                 .Select(g => g.Key)
                 .ToHashSet();
@@ -685,7 +898,85 @@ public sealed class ReportAggregationService : IReportAggregationService
             .ThenBy(p => p.GroupName)
             .ToList();
 
-        return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear, false);
+        return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear, comparedProjection);
+    }
+
+    /// <summary>
+    /// Loads postings of a single <see cref="PostingKind"/>, keeps only rows matching at least one of the
+    /// supplied text patterns (OR) against subject/description and condenses them into the same tuple
+    /// schema used by the aggregate rows. The postings are restricted to the supplied owner entity ids
+    /// because <see cref="Posting"/> carries no owner column itself.
+    /// </summary>
+    /// <param name="kind">The posting kind to load.</param>
+    /// <param name="patterns">Non-empty text filter patterns (OR linked).</param>
+    /// <param name="sourcePeriod">Aggregate period used for period bucketing.</param>
+    /// <param name="useValutaDate">When true the valuta date (with booking date fallback) determines the period.</param>
+    /// <param name="ownerEntityIds">Ids of the kind's entities owned by the querying user.</param>
+    /// <param name="windowStart">Inclusive lower bound of the effective posting date; <c>null</c> = unbounded.</param>
+    /// <param name="windowEnd">Exclusive upper bound of the effective posting date; <c>null</c> = unbounded.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Condensed rows in the same schema as the aggregate rows.</returns>
+    private async Task<List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>> LoadTextFilteredRowsAsync(
+        PostingKind kind,
+        IReadOnlyCollection<string> patterns,
+        AggregatePeriod sourcePeriod,
+        bool useValutaDate,
+        IReadOnlyCollection<Guid> ownerEntityIds,
+        DateTime? windowStart,
+        DateTime? windowEnd,
+        CancellationToken ct)
+    {
+        var postingsQuery = _db.Postings.AsNoTracking().Where(p => p.Kind == kind);
+        postingsQuery = kind switch
+        {
+            PostingKind.Bank => postingsQuery.Where(p => p.AccountId != null && ownerEntityIds.Contains(p.AccountId.Value)),
+            PostingKind.Contact => postingsQuery.Where(p => p.ContactId != null && ownerEntityIds.Contains(p.ContactId.Value)),
+            PostingKind.SavingsPlan => postingsQuery.Where(p => p.SavingsPlanId != null && ownerEntityIds.Contains(p.SavingsPlanId.Value)),
+            PostingKind.Security => postingsQuery.Where(p => p.SecurityId != null && ownerEntityIds.Contains(p.SecurityId.Value)),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
+        };
+        postingsQuery = ReportQuerySemantics.ApplyDateWindow(postingsQuery, useValutaDate, windowStart, windowEnd);
+
+        var postings = await postingsQuery
+            .Select(p => new
+            {
+                p.BookingDate,
+                p.ValutaDate,
+                p.Amount,
+                p.AccountId,
+                p.ContactId,
+                p.SavingsPlanId,
+                p.SecurityId,
+                p.SecuritySubType,
+                p.Subject,
+                p.Description
+            })
+            .ToListAsync(ct);
+
+        var rows = new List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType)>();
+        foreach (var p in postings)
+        {
+            if (p.Amount == 0m) { continue; }
+            if (!patterns.Any(pat => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, pat, useRegex: false))) { continue; }
+            var effective = useValutaDate
+                ? (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate)
+                : p.BookingDate;
+            var periodStart = PostingAggregateService.GetPeriodStart(effective, sourcePeriod);
+            rows.Add((
+                kind,
+                periodStart,
+                p.Amount,
+                kind == PostingKind.Bank ? p.AccountId : null,
+                kind == PostingKind.Contact ? p.ContactId : null,
+                kind == PostingKind.SavingsPlan ? p.SavingsPlanId : null,
+                kind == PostingKind.Security ? p.SecurityId : null,
+                kind == PostingKind.Security ? p.SecuritySubType : null));
+        }
+
+        return rows
+            .GroupBy(r => (r.PeriodStart, r.AccountId, r.ContactId, r.SavingsPlanId, r.SecurityId, r.SecuritySubType))
+            .Select(g => (kind, g.Key.PeriodStart, g.Sum(x => x.Amount), g.Key.AccountId, g.Key.ContactId, g.Key.SavingsPlanId, g.Key.SecurityId, g.Key.SecuritySubType))
+            .ToList();
     }
 
     /// <summary>
@@ -700,11 +991,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         var today = DateTime.UtcNow.Date;
         var analysis = (query.AnalysisDate?.Date) ?? new DateTime(today.Year, today.Month, 1);
         analysis = new DateTime(analysis.Year, analysis.Month, 1);
-        const int SecurityPostingSubType_Buy2 = 0;
-        const int SecurityPostingSubType_Sell2 = 1;
         const int SecurityPostingSubType_Dividend2 = 2;
-        const int SecurityPostingSubType_Fee2 = 3;
-        const int SecurityPostingSubType_Tax2 = 4;
 
         int monthsBack = query.Take > 0 ? query.Take - 1 : 0;
         var startMonth = query.Interval == ReportInterval.Ytd
@@ -738,43 +1025,15 @@ public sealed class ReportAggregationService : IReportAggregationService
         HashSet<Guid>? allowedSecurities = f?.SecurityIds is { Count: > 0 } ? f.SecurityIds.ToHashSet() : null;
         HashSet<Guid>? allowedSecurityCats = (query.IncludeCategory && f?.SecurityCategoryIds is { Count: > 0 }) ? f.SecurityCategoryIds!.ToHashSet() : null;
 
-        var postings = _db.Postings.AsNoTracking()
-            .Where(p => p.Kind == PostingKind.Security)
-            .Where(p => p.SecurityId != null && ownedIds.Contains(p.SecurityId.Value))
-            .Where(p => (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) >= loadStartMonth && (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) < endExclusive)
-            .Where(p => p.SecuritySubType != null);
-
-        var dividendGroups = postings
-            .Where(p => (int)p.SecuritySubType! == SecurityPostingSubType_Dividend2)
-            .Select(p => p.GroupId)
-            .Distinct();
-
-        var allowedSubTypes = new[] { SecurityPostingSubType_Dividend2, SecurityPostingSubType_Fee2, SecurityPostingSubType_Tax2 };
-
-        // For each dividend group, compute net = sum(dividend + fee + tax) and take the dividend's booking date as anchor
-        var groupNets = await postings
-            .Where(p => dividendGroups.Contains(p.GroupId))
-            .GroupBy(p => p.GroupId)
-            .Select(g => new
-            {
-                GroupId = g.Key,
-                SecurityId = g.Select(x => x.SecurityId).FirstOrDefault(),
-                Net = g.Where(x => allowedSubTypes.Contains((int)x.SecuritySubType!)).Sum(x => x.Amount),
-                DividendDate = g.Where(x => (int)x.SecuritySubType! == SecurityPostingSubType_Dividend2)
-                    .Select(x => query.UseValutaDate ? ((DateTime?)x.ValutaDate ?? x.BookingDate) : x.BookingDate)
-                    .FirstOrDefault()
-            })
-            .ToListAsync(ct);
-
-        var dividendEvents = groupNets
-            .Where(g => g.DividendDate != default(DateTime) && g.SecurityId.HasValue)
-            .Select(g => new DividendEvent(g.SecurityId!.Value, g.DividendDate, new DateTime(g.DividendDate.Year, g.DividendDate.Month, 1), g.Net, g.GroupId))
-            .ToList();
+        var securityTextPatterns = TextFilterList.Normalize(f?.SecurityTextFilters);
+        var projectionEventLoader = new ReportProjectionEventLoader(_db);
+        var dividendEvents = await projectionEventLoader.LoadSecurityDividendEventsAsync(
+            ownedIds, null, securityTextPatterns, loadStartMonth, endExclusive, query.UseValutaDate, ct);
 
         // Aggregate per security and month using the dividend booking date as period
         var monthly = dividendEvents
-            .GroupBy(r => new { r.Month, SecurityId = (Guid?)r.SecurityId })
-            .Select(g => new { Month = g.Key.Month, SecurityId = g.Key.SecurityId, Amount = g.Sum(x => x.NetAmount) })
+            .GroupBy(r => new { r.Month, SecurityId = (Guid?)r.EntityId })
+            .Select(g => new { Month = g.Key.Month, SecurityId = g.Key.SecurityId, Amount = g.Sum(x => x.Amount) })
             .ToList();
 
         // Apply entity/category filters
@@ -887,7 +1146,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 // Add Type-level rows for AllHistory to provide totals even in single-kind mode
                 var typeSums = hist
                     .Where(p => !p.GroupKey.StartsWith("Type:"))
-                    .GroupBy(p => new { p.PeriodStart, Kind = ParseKindFromKey(p.GroupKey) })
+                    .GroupBy(p => new { p.PeriodStart, Kind = ReportQuerySemantics.ParseKindFromKey(p.GroupKey) })
                     .Where(g => g.Key.Kind.HasValue)
                     .Select(g => new { g.Key.PeriodStart, Kind = g.Key.Kind!.Value, Amount = g.Sum(x => x.Amount) })
                     .ToList();
@@ -932,151 +1191,60 @@ public sealed class ReportAggregationService : IReportAggregationService
         var holdingTransactionsBySecurity = new Dictionary<Guid, List<HoldingTransaction>>();
         if (compareProjection && points.Count > 0)
         {
-            DateTime GetHoldingProjectionPeriodEnd(DateTime periodStart)
-            {
-                return query.Interval switch
-                {
-                    ReportInterval.Month => periodStart.AddMonths(1),
-                    ReportInterval.Quarter => periodStart.AddMonths(3),
-                    ReportInterval.HalfYear => periodStart.AddMonths(6),
-                    ReportInterval.Year => periodStart.AddYears(1),
-                    ReportInterval.Ytd => endExclusive,
-                    _ => endExclusive
-                };
-            }
-
-            var holdingProjectionEnd = query.Interval == ReportInterval.Year
-                ? points
-                    .Select(p => GetHoldingProjectionPeriodEnd(p.PeriodStart))
-                    .Append(GetHoldingProjectionPeriodEnd(new DateTime(analysis.Year, 1, 1)))
-                    .Max()
-                : endExclusive;
-
-            var holdingTransactions = await _db.Postings.AsNoTracking()
-                .Where(p => p.Kind == PostingKind.Security)
-                .Where(p => p.SecurityId != null && ownedIds.Contains(p.SecurityId.Value))
-                .Where(p => (int)p.SecuritySubType! == SecurityPostingSubType_Buy2 || (int)p.SecuritySubType! == SecurityPostingSubType_Sell2)
-                .Where(p => p.Quantity != null)
-                .Where(p => (query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate) <= holdingProjectionEnd)
-                .Select(p => new HoldingTransaction(
-                    p.SecurityId!.Value,
-                    query.UseValutaDate ? ((DateTime?)p.ValutaDate ?? p.BookingDate) : p.BookingDate,
-                    p.SecuritySubType!.Value,
-                    p.Quantity!.Value,
-                    p.ReversalForPostingId.HasValue))
-                .ToListAsync(ct);
-
-            holdingTransactionsBySecurity = holdingTransactions
-                .GroupBy(tx => tx.SecurityId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderBy(tx => tx.Date).ToList());
+            holdingTransactionsBySecurity = await LoadHoldingTransactionsBySecurityAsync(
+                projectionEventLoader, ownedIds, query.Interval, points, analysis, endExclusive, query.UseValutaDate, ct);
         }
 
-        bool HasPositiveHolding(Guid securityId, DateTime date)
-        {
-            if (!holdingTransactionsBySecurity.TryGetValue(securityId, out var transactions))
-            {
-                return false;
-            }
-
-            var shares = 0m;
-            var cutoff = date.Date;
-            foreach (var tx in transactions)
-            {
-                if (tx.Date.Date > cutoff)
-                {
-                    break;
-                }
-
-                if (tx.IsReversal)
-                {
-                    shares += tx.Quantity;
-                }
-                else if (tx.SubType == SecurityPostingSubType.Buy)
-                {
-                    shares += tx.Quantity;
-                }
-                else if (tx.SubType == SecurityPostingSubType.Sell)
-                {
-                    shares -= Math.Abs(tx.Quantity);
-                }
-            }
-
-            return shares > 0m;
-        }
-
+        var projectionContext = new ReportProjectionContext(query.Interval, analysis, startMonth, endExclusive);
+        var suppressions = compareProjection ? await LoadSuppressionKeysAsync(query, ct) : null;
         if (compareProjection)
         {
-            ApplyProjectionAmounts(points, dividendEvents);
+            ReportProjectionCalculator.ApplyProjectionAmounts(
+                points, dividendEvents, projectionContext,
+                (_, entityId) => securityNames.TryGetValue(entityId, out var securityName) ? securityName : entityId.ToString("N")[..6],
+                (securityId, date) => HasPositiveHolding(holdingTransactionsBySecurity, securityId, date),
+                suppressions: suppressions);
         }
 
         // Do not duplicate here: return net dividend amounts once. If the caller needs booking+valuta duplication,
         // it should be handled at aggregate level.
 
         // Ensure latest period exists
-        DateTime ComputeLatestPeriod(ReportInterval interval, DateTime analysisDate)
-        {
-            if (interval == ReportInterval.Month)
-            {
-                return analysisDate;
-            }
-            if (interval == ReportInterval.Ytd)
-            {
-                return new DateTime(analysisDate.Year, 1, 1);
-            }
-            if (interval == ReportInterval.Quarter)
-            {
-                var qIndex = (analysisDate.Month - 1) / 3; // 0..3
-                return new DateTime(analysisDate.Year, qIndex * 3 + 1, 1);
-            }
-            if (interval == ReportInterval.HalfYear)
-            {
-                var hIndex = (analysisDate.Month - 1) / 6; // 0..1
-                return new DateTime(analysisDate.Year, hIndex * 6 + 1, 1);
-            }
-            return new DateTime(analysisDate.Year, 1, 1);
-        }
-
         if (query.Interval != ReportInterval.AllHistory && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             var groups2 = points.GroupBy(p => p.GroupKey).Select(g => new { Key = g.Key, Latest = g.OrderBy(x => x.PeriodStart).Last() }).ToList();
             foreach (var g in groups2)
             {
                 if (!points.Any(p => p.GroupKey == g.Key && p.PeriodStart == latestPeriod))
                 {
-                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null));
+                    points.Add(new ReportAggregatePointDto(latestPeriod, g.Latest.GroupKey, g.Latest.GroupName, g.Latest.CategoryName, 0m, null, g.Latest.ParentGroupKey, null, null, SecuritySubType: g.Latest.SecuritySubType));
                 }
             }
         }
 
         if (compareProjection)
         {
-            ApplyProjectionAmounts(points, dividendEvents);
+            ReportProjectionCalculator.ApplyProjectionAmounts(
+                points, dividendEvents, projectionContext,
+                (_, entityId) => securityNames.TryGetValue(entityId, out var securityName) ? securityName : entityId.ToString("N")[..6],
+                (securityId, date) => HasPositiveHolding(holdingTransactionsBySecurity, securityId, date),
+                suppressions: suppressions);
         }
 
         // Compute comparisons
         if (query.ComparePrevious)
         {
-            DateTime AlignToQuarterStart(DateTime d) => new DateTime(d.Year, ((d.Month - 1) / 3) * 3 + 1, 1);
-            DateTime AlignToHalfYearStart(DateTime d) => new DateTime(d.Year, ((d.Month - 1) / 6) * 6 + 1, 1);
-            DateTime PrevPeriod(DateTime d) => query.Interval switch
-            {
-                ReportInterval.Month => d.AddMonths(-1),
-                ReportInterval.Quarter => AlignToQuarterStart(d).AddMonths(-3),
-                ReportInterval.HalfYear => AlignToHalfYearStart(d).AddMonths(-6),
-                ReportInterval.Year => new DateTime(d.Year - 1, 1, 1),
-                ReportInterval.Ytd => new DateTime(d.Year - 1, 1, 1),
-                _ => d.AddMonths(-1)
-            };
             var byGroup = points
                 .GroupBy(p => p.GroupKey)
                 .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.PeriodStart, x => x.Amount));
             for (int i = 0; i < points.Count; i++)
             {
                 var p = points[i];
-                var prevDate = PrevPeriod(p.PeriodStart);
+                // clampMinValue: false keeps parity with the pre-extraction local PrevPeriod
+                // of this method, which had no MinValue guard (unreachable either way:
+                // all-history rows anchor at 2000-01-01 and never carry comparison columns).
+                var prevDate = ReportQuerySemantics.PrevPeriod(query.Interval, p.PeriodStart, clampMinValue: false);
                 if (byGroup.TryGetValue(p.GroupKey, out var map) && map.TryGetValue(prevDate, out var prevAmount))
                 {
                     points[i] = p with { PreviousAmount = prevAmount };
@@ -1102,7 +1270,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         if (query.Take > 0 && points.Count > 0)
         {
             var distinct = points.Select(p => p.PeriodStart).Distinct().OrderBy(d => d).ToList();
-            var latest = ComputeLatestPeriod(query.Interval, analysis);
+            var latest = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             distinct = distinct.Where(d => d <= latest).ToList();
             if (distinct.Count > query.Take)
             {
@@ -1113,7 +1281,7 @@ public sealed class ReportAggregationService : IReportAggregationService
 
         if (query.Interval != ReportInterval.AllHistory && (query.ComparePrevious || query.CompareYear) && points.Count > 0)
         {
-            var latestPeriod = ComputeLatestPeriod(query.Interval, analysis);
+            var latestPeriod = ReportQuerySemantics.ComputeLatestPeriod(query.Interval, analysis);
             var removable = points.Where(p => p.PeriodStart == latestPeriod)
                 .GroupBy(p => p.GroupKey)
                 .Where(g =>
@@ -1139,371 +1307,110 @@ public sealed class ReportAggregationService : IReportAggregationService
             .ToList();
 
         return new ReportAggregationResult(query.Interval, points, query.ComparePrevious, query.CompareYear, compareProjection);
-
-        void ApplyProjectionAmounts(List<ReportAggregatePointDto> targetPoints, IReadOnlyList<DividendEvent> events)
-        {
-            if (targetPoints.Count == 0 || events.Count == 0)
-            {
-                return;
-            }
-
-            DateTime MapProjectionPeriod(DateTime date)
-            {
-                return query.Interval switch
-                {
-                    ReportInterval.Month => new DateTime(date.Year, date.Month, 1),
-                    ReportInterval.Quarter => new DateTime(date.Year, ((date.Month - 1) / 3) * 3 + 1, 1),
-                    ReportInterval.HalfYear => new DateTime(date.Year, ((date.Month - 1) / 6) * 6 + 1, 1),
-                    ReportInterval.Year => new DateTime(date.Year, 1, 1),
-                    ReportInterval.Ytd => date.Month <= analysis.Month ? new DateTime(date.Year, 1, 1) : DateTime.MinValue,
-                    _ => DateTime.MinValue
-                };
-            }
-
-            DateTime GetProjectionPeriodEnd(DateTime periodStart)
-            {
-                return query.Interval switch
-                {
-                    ReportInterval.Month => periodStart.AddMonths(1),
-                    ReportInterval.Quarter => periodStart.AddMonths(3),
-                    ReportInterval.HalfYear => periodStart.AddMonths(6),
-                    ReportInterval.Year => periodStart.AddYears(1),
-                    ReportInterval.Ytd => endExclusive,
-                    _ => endExclusive
-                };
-            }
-
-            var projectionStart = query.Interval == ReportInterval.Year
-                ? targetPoints.Min(p => p.PeriodStart)
-                : startMonth;
-            var projectionEnd = query.Interval == ReportInterval.Year
-                ? targetPoints.Max(p => GetProjectionPeriodEnd(p.PeriodStart))
-                : endExclusive;
-            var currentYearStart = new DateTime(analysis.Year, 1, 1);
-            var expectedDetails = events
-                .GroupBy(e => e.SecurityId)
-                .SelectMany(g =>
-                {
-                    var securityEvents = g.OrderBy(e => e.Date).ToList();
-                    var currentEvents = securityEvents
-                        .Where(e => e.Date >= currentYearStart && e.Date < endExclusive)
-                        .OrderBy(e => e.Date)
-                        .ToList();
-                    var pattern = DetectDividendPattern(securityEvents, analysis.Year - 1);
-                    var candidates = securityEvents
-                        .Where(e => e.Date >= projectionStart.AddYears(-1) && e.Date < projectionEnd.AddYears(-1))
-                        .OrderBy(e => e.Date)
-                        .Select(e => new ProjectionCandidate(e.SecurityId, e.Date.AddYears(1), e.Date, e.NetAmount))
-                        .Where(e => MapProjectionPeriod(e.ExpectedDate) != DateTime.MinValue)
-                        .Where(e => HasPositiveHolding(e.SecurityId, e.ExpectedDate))
-                        .ToList();
-
-                    return FindExpectedDividends(pattern, candidates, currentEvents)
-                        .Select(x => new ReportProjectionExpectedDividendDto(
-                            x.SecurityId,
-                            securityNames.TryGetValue(x.SecurityId, out var name) ? name : x.SecurityId.ToString("N")[..6],
-                            x.ExpectedDate,
-                            x.PriorYearDate,
-                            x.NetAmount));
-                })
-                .ToList();
-
-            var expectedBySecurityPeriod = expectedDetails
-                .GroupBy(e => (e.SecurityId, Period: MapProjectionPeriod(e.ExpectedDate)))
-                .Select(g => new
-                {
-                    g.Key.SecurityId,
-                    g.Key.Period,
-                    Expected = g.Sum(x => x.Amount),
-                    Details = g
-                        .OrderBy(x => x.ExpectedDate)
-                        .ThenBy(x => x.SecurityName)
-                        .ToList()
-                })
-                .Where(e => e.Expected != 0m)
-                .GroupBy(e => (e.SecurityId, e.Period))
-                .ToDictionary(g => g.Key, g => (
-                    Expected: g.Sum(x => x.Expected),
-                    Details: g.SelectMany(x => x.Details)
-                        .OrderBy(x => x.ExpectedDate)
-                        .ThenBy(x => x.SecurityName)
-                        .ToList()));
-
-            DividendPattern DetectDividendPattern(IReadOnlyList<DividendEvent> securityEvents, int referenceYear)
-            {
-                var referenceEvents = securityEvents
-                    .Where(e => e.Date.Year == referenceYear)
-                    .OrderBy(e => e.Date)
-                    .ToList();
-                if (referenceEvents.Count == 1)
-                {
-                    return DividendPattern.Annual;
-                }
-
-                var monthlyReferenceEvents = referenceEvents
-                    .GroupBy(e => e.Month)
-                    .Select(g => new DividendEvent(g.First().SecurityId, g.Key, g.Key, g.Sum(e => e.NetAmount), null))
-                    .Where(e => e.NetAmount != 0m)
-                    .OrderBy(e => e.Date)
-                    .ToList();
-                if (monthlyReferenceEvents.Count >= 6 && HasRegularMonthlySpacing(monthlyReferenceEvents))
-                {
-                    return DividendPattern.Monthly;
-                }
-
-                var distinctQuarters = referenceEvents.Select(e => (e.Date.Month - 1) / 3).Distinct().Count();
-                if (referenceEvents.Count is >= 2 and <= 5 && distinctQuarters >= 2 && HasRegularSpacing(referenceEvents, 60, 125))
-                {
-                    return DividendPattern.Quarterly;
-                }
-
-                return DividendPattern.Irregular;
-            }
-
-            static bool HasRegularMonthlySpacing(IReadOnlyList<DividendEvent> orderedMonthlyEvents)
-            {
-                if (orderedMonthlyEvents.Count < 2)
-                {
-                    return false;
-                }
-
-                for (var i = 1; i < orderedMonthlyEvents.Count; i++)
-                {
-                    var months = (orderedMonthlyEvents[i].Date.Year - orderedMonthlyEvents[i - 1].Date.Year) * 12
-                        + orderedMonthlyEvents[i].Date.Month
-                        - orderedMonthlyEvents[i - 1].Date.Month;
-                    if (months != 1)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            static bool HasRegularSpacing(IReadOnlyList<DividendEvent> orderedEvents, int minimumDays, int maximumDays)
-            {
-                if (orderedEvents.Count < 2)
-                {
-                    return false;
-                }
-
-                for (var i = 1; i < orderedEvents.Count; i++)
-                {
-                    var days = (orderedEvents[i].Date - orderedEvents[i - 1].Date).TotalDays;
-                    if (days < minimumDays || days > maximumDays)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            IEnumerable<ProjectionCandidate> FindExpectedDividends(
-                DividendPattern pattern,
-                IReadOnlyList<ProjectionCandidate> candidates,
-                IReadOnlyList<DividendEvent> currentEvents)
-            {
-                if (candidates.Count == 0)
-                {
-                    return Array.Empty<ProjectionCandidate>();
-                }
-
-                return pattern switch
-                {
-                    DividendPattern.Monthly => candidates.Where(candidate =>
-                        !HasCurrentMatch(currentEvents, current => current.Date.Month == candidate.ExpectedDate.Month) &&
-                        candidate.ExpectedDate.Month >= analysis.Month),
-                    DividendPattern.Quarterly => candidates.Where(candidate =>
-                        !HasCurrentMatch(currentEvents, current => GetQuarter(current.Date) == GetQuarter(candidate.ExpectedDate)) &&
-                        GetQuarter(candidate.ExpectedDate) >= GetQuarter(analysis)),
-                    DividendPattern.Annual => currentEvents.Count == 0 ? candidates : Array.Empty<ProjectionCandidate>(),
-                    _ => FindIrregularExpectedDividends(candidates, currentEvents)
-                };
-            }
-
-            static IEnumerable<ProjectionCandidate> FindIrregularExpectedDividends(
-                IReadOnlyList<ProjectionCandidate> candidates,
-                IReadOnlyList<DividendEvent> currentEvents)
-            {
-                var usedCurrentIndexes = new HashSet<int>();
-                var unmatched = new List<ProjectionCandidate>();
-                foreach (var candidate in candidates)
-                {
-                    var matchIndex = -1;
-                    for (var i = 0; i < currentEvents.Count; i++)
-                    {
-                        if (usedCurrentIndexes.Contains(i))
-                        {
-                            continue;
-                        }
-
-                        if (Math.Abs((currentEvents[i].Date - candidate.ExpectedDate).TotalDays) <= 30)
-                        {
-                            matchIndex = i;
-                            break;
-                        }
-                    }
-
-                    if (matchIndex >= 0)
-                    {
-                        usedCurrentIndexes.Add(matchIndex);
-                    }
-                    else
-                    {
-                        unmatched.Add(candidate);
-                    }
-                }
-
-                return currentEvents.Count == 0 ? unmatched : Array.Empty<ProjectionCandidate>();
-            }
-
-            static bool HasCurrentMatch(IReadOnlyList<DividendEvent> currentEvents, Func<DividendEvent, bool> predicate)
-            {
-                return currentEvents.Any(predicate);
-            }
-
-            static int GetQuarter(DateTime date)
-            {
-                return (date.Month - 1) / 3;
-            }
-
-            for (var i = 0; i < targetPoints.Count; i++)
-            {
-                var point = targetPoints[i];
-                if (!TryParseSecurityKey(point.GroupKey, out var securityId))
-                {
-                    continue;
-                }
-
-                var expected = expectedBySecurityPeriod.TryGetValue((securityId, point.PeriodStart), out var value) ? value.Expected : 0m;
-                var details = expectedBySecurityPeriod.TryGetValue((securityId, point.PeriodStart), out var detailValue) && detailValue.Details.Count > 0
-                    ? detailValue.Details
-                    : null;
-                targetPoints[i] = point with { ProjectionAmount = point.Amount + expected, ProjectionExpectedDividends = details };
-            }
-
-            var childProjectionByParent = targetPoints
-                .Where(p => p.ParentGroupKey != null && p.ProjectionAmount.HasValue)
-                .GroupBy(p => (p.ParentGroupKey!, p.PeriodStart))
-                .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
-            var childDetailsByParent = targetPoints
-                .Where(p => p.ParentGroupKey != null && p.ProjectionExpectedDividends is { Count: > 0 })
-                .GroupBy(p => (p.ParentGroupKey!, p.PeriodStart))
-                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
-                    .SelectMany(x => x.ProjectionExpectedDividends!)
-                    .OrderBy(x => x.ExpectedDate)
-                    .ThenBy(x => x.SecurityName)
-                    .ToList());
-
-            for (var i = 0; i < targetPoints.Count; i++)
-            {
-                var point = targetPoints[i];
-                if (point.ParentGroupKey == null && point.GroupKey.StartsWith("Category:", StringComparison.Ordinal))
-                {
-                    if (childProjectionByParent.TryGetValue((point.GroupKey, point.PeriodStart), out var projection))
-                    {
-                        var details = childDetailsByParent.TryGetValue((point.GroupKey, point.PeriodStart), out var detailList)
-                            ? detailList
-                            : null;
-                        targetPoints[i] = point with { ProjectionAmount = projection, ProjectionExpectedDividends = details };
-                    }
-                }
-            }
-
-            var categoryProjectionByType = targetPoints
-                .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionAmount.HasValue)
-                .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
-                .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
-            var categoryDetailsByType = targetPoints
-                .Where(p => p.GroupKey.StartsWith("Category:", StringComparison.Ordinal) && p.ProjectionExpectedDividends is { Count: > 0 })
-                .GroupBy(p => ($"Type:{ParseKindFromKey(p.GroupKey)}", p.PeriodStart))
-                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
-                    .SelectMany(x => x.ProjectionExpectedDividends!)
-                    .OrderBy(x => x.ExpectedDate)
-                    .ThenBy(x => x.SecurityName)
-                    .ToList());
-
-            var leafProjectionByType = targetPoints
-                .Where(p => p.GroupKey.StartsWith("Security:", StringComparison.Ordinal) && p.ParentGroupKey == null && p.ProjectionAmount.HasValue)
-                .GroupBy(p => ("Type:Security", p.PeriodStart))
-                .ToDictionary(g => g.Key, g => (decimal?)g.Sum(x => x.ProjectionAmount!.Value));
-            var leafDetailsByType = targetPoints
-                .Where(p => p.GroupKey.StartsWith("Security:", StringComparison.Ordinal) && p.ParentGroupKey == null && p.ProjectionExpectedDividends is { Count: > 0 })
-                .GroupBy(p => ("Type:Security", p.PeriodStart))
-                .ToDictionary(g => g.Key, g => (IReadOnlyList<ReportProjectionExpectedDividendDto>)g
-                    .SelectMany(x => x.ProjectionExpectedDividends!)
-                    .OrderBy(x => x.ExpectedDate)
-                    .ThenBy(x => x.SecurityName)
-                    .ToList());
-
-            for (var i = 0; i < targetPoints.Count; i++)
-            {
-                var point = targetPoints[i];
-                if (!point.GroupKey.StartsWith("Type:", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (categoryProjectionByType.TryGetValue((point.GroupKey, point.PeriodStart), out var categoryProjection) ||
-                    leafProjectionByType.TryGetValue((point.GroupKey, point.PeriodStart), out categoryProjection))
-                {
-                    IReadOnlyList<ReportProjectionExpectedDividendDto>? details = null;
-                    if (!categoryDetailsByType.TryGetValue((point.GroupKey, point.PeriodStart), out details))
-                    {
-                        leafDetailsByType.TryGetValue((point.GroupKey, point.PeriodStart), out details);
-                    }
-
-                    targetPoints[i] = point with { ProjectionAmount = categoryProjection, ProjectionExpectedDividends = details };
-                }
-            }
-        }
     }
 
-    private sealed record DividendEvent(Guid SecurityId, DateTime Date, DateTime Month, decimal NetAmount, Guid? GroupId);
+    /// <summary>
+    /// Loads the suppressed expectation identities for the report favorite referenced by the
+    /// query. Returns <c>null</c> when the query carries no favorite context (ad-hoc queries
+    /// stay unaffected) or the favorite has no suppressions.
+    /// </summary>
+    /// <param name="query">Aggregation query holding the owner and optional favorite id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A key set of (Kind, EntityId, PriorYearDate) tuples, or <c>null</c>.</returns>
+    private async Task<HashSet<(PostingKind Kind, Guid EntityId, DateTime PriorYearDate)>?> LoadSuppressionKeysAsync(ReportAggregationQuery query, CancellationToken ct)
+    {
+        if (query.ReportFavoriteId is not { } favoriteId)
+        {
+            return null;
+        }
+        var rows = await _db.ReportSuppressedExpectations.AsNoTracking()
+            .Where(s => s.OwnerUserId == query.OwnerUserId && s.ReportFavoriteId == favoriteId)
+            .Select(s => new { s.Kind, s.EntityId, s.PriorYearDate })
+            .ToListAsync(ct);
+        return rows.Count == 0
+            ? null
+            : rows.Select(s => (s.Kind, s.EntityId, s.PriorYearDate.Date)).ToHashSet();
+    }
+
+    /// <summary>
+    /// Loads the buy/sell holding transactions of the given securities, grouped by security id
+    /// and ordered by date. For the year interval the load end covers the full projected year
+    /// (every displayed period plus the analysis year); for all other intervals it is the
+    /// projection end.
+    /// </summary>
+    /// <param name="eventLoader">Loader used for the posting read.</param>
+    /// <param name="securityIds">Owned security ids to consider.</param>
+    /// <param name="interval">Report interval that determines the load end.</param>
+    /// <param name="points">Current report points (used to derive the year-interval load end).</param>
+    /// <param name="analysis">Analysis month anchor.</param>
+    /// <param name="endExclusive">Exclusive end of the projection window.</param>
+    /// <param name="useValutaDate">Whether the valuta date determines the effective posting date.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Holding transactions per security for the positive-holding check.</returns>
+    private async Task<Dictionary<Guid, List<HoldingTransaction>>> LoadHoldingTransactionsBySecurityAsync(
+        ReportProjectionEventLoader eventLoader,
+        IReadOnlyCollection<Guid> securityIds,
+        ReportInterval interval,
+        IReadOnlyList<ReportAggregatePointDto> points,
+        DateTime analysis,
+        DateTime endExclusive,
+        bool useValutaDate,
+        CancellationToken ct)
+    {
+        var holdingProjectionEnd = interval == ReportInterval.Year
+            ? points
+                .Select(p => ReportProjectionCalculator.GetProjectionPeriodEnd(interval, p.PeriodStart, endExclusive))
+                .Append(ReportProjectionCalculator.GetProjectionPeriodEnd(interval, new DateTime(analysis.Year, 1, 1), endExclusive))
+                .Max()
+            : endExclusive;
+        var holdingTransactions = await eventLoader.LoadSecurityHoldingTransactionsAsync(securityIds, holdingProjectionEnd, useValutaDate, ct);
+        return holdingTransactions
+            .GroupBy(t => t.SecurityId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(t => new HoldingTransaction(t.SecurityId, t.Date, t.SubType, t.Quantity, t.IsReversal)).OrderBy(t => t.Date).ToList());
+    }
+
+    /// <summary>
+    /// Determines whether a security holds a positive net position at a date by replaying its
+    /// buy/sell postings (reversals restore the reversed quantity).
+    /// </summary>
+    /// <param name="holdingTransactionsBySecurity">Buy/sell postings grouped by security id, ordered by date.</param>
+    /// <param name="securityId">Security to check.</param>
+    /// <param name="date">Evaluation date (inclusive).</param>
+    /// <returns><c>true</c> when the net share count is positive.</returns>
+    private static bool HasPositiveHolding(IReadOnlyDictionary<Guid, List<HoldingTransaction>> holdingTransactionsBySecurity, Guid securityId, DateTime date)
+    {
+        if (!holdingTransactionsBySecurity.TryGetValue(securityId, out var transactions))
+        {
+            return false;
+        }
+
+        var shares = 0m;
+        var cutoff = date.Date;
+        foreach (var tx in transactions)
+        {
+            if (tx.Date.Date > cutoff)
+            {
+                break;
+            }
+
+            if (tx.IsReversal)
+            {
+                shares += tx.Quantity;
+            }
+            else if (tx.SubType == SecurityPostingSubType.Buy)
+            {
+                shares += tx.Quantity;
+            }
+            else if (tx.SubType == SecurityPostingSubType.Sell)
+            {
+                shares -= Math.Abs(tx.Quantity);
+            }
+        }
+
+        return shares > 0m;
+    }
 
     private sealed record HoldingTransaction(Guid SecurityId, DateTime Date, SecurityPostingSubType SubType, decimal Quantity, bool IsReversal);
-
-    private sealed record ProjectionCandidate(Guid SecurityId, DateTime ExpectedDate, DateTime PriorYearDate, decimal NetAmount);
-
-    private enum DividendPattern
-    {
-        Monthly,
-        Quarterly,
-        Annual,
-        Irregular
-    }
-
-    private static bool TryParseSecurityKey(string groupKey, out Guid securityId)
-    {
-        securityId = Guid.Empty;
-        return groupKey.StartsWith("Security:", StringComparison.Ordinal)
-            && Guid.TryParse(groupKey["Security:".Length..], out securityId);
-    }
-
-    private static PostingKind? ParseKindFromKey(string groupKey)
-    {
-        // Formats:
-        // Type:Kind
-        // Category:Kind:<id|_none>
-        // Account:GUID / Contact:GUID / SavingsPlan:GUID / Security:GUID (derive kind)
-        if (groupKey.StartsWith("Type:"))
-        {
-            var part = groupKey.Split(':')[1];
-            if (Enum.TryParse<PostingKind>(part, out var pk)) { return pk; }
-            return null;
-        }
-        if (groupKey.StartsWith("Category:"))
-        {
-            var part = groupKey.Split(':')[1];
-            if (Enum.TryParse<PostingKind>(part, out var pk)) { return pk; }
-            return null;
-        }
-        if (groupKey.StartsWith("Account:")) return PostingKind.Bank;
-        if (groupKey.StartsWith("Contact:")) return PostingKind.Contact;
-        if (groupKey.StartsWith("SavingsPlan:")) return PostingKind.SavingsPlan;
-        if (groupKey.StartsWith("Security:")) return PostingKind.Security;
-        return null;
-    }
 }

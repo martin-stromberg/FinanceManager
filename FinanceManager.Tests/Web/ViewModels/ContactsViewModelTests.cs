@@ -1,6 +1,7 @@
 using System.Linq;
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Web.ViewModels.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -157,6 +158,28 @@ public sealed class ContactsViewModelTests
         await vm.LoadMoreAsync();
         Assert.Equal(60, vm.Items.Count);
         Assert.False(vm.CanLoadMore);
+    }
+
+    /// <summary>
+    /// Verifies that the contacts overview exposes its list-level actions in a single "Manage" ribbon
+    /// group and renders every action as a large button, matching the list-page convention used by the
+    /// users overview.
+    /// </summary>
+    [Fact]
+    public void GetRibbon_UsesManageGroup_WithAllActionsLarge()
+    {
+        var (vm, _) = CreateVm(isAuthenticated: true);
+
+        var ribbonRegs = vm.GetRibbon(new PassthroughLocalizer())!;
+        var tabs = ribbonRegs
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
+            .ToList();
+        var actions = tabs.SelectMany(t => t.Items).ToList();
+
+        Assert.Single(tabs);
+        Assert.Equal("Ribbon_Group_Manage", tabs[0].Title);
+        Assert.Equal(new[] { "New", "Groups", "Reload", "ClearFilter" }, actions.Select(a => a.Id));
+        Assert.All(actions, a => Assert.Equal(UiRibbonItemSize.Large, a.Size));
     }
 
     /// <summary>

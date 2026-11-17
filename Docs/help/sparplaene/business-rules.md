@@ -56,3 +56,34 @@
 - Bei wiederkehrenden Sparplänen, vollständig angesparten Zielen oder Zieldatum heute beziehungsweise in der Vergangenheit wird das Feld ausgeblendet.
 
 **Umsetzung:** `SavingsPlanCardViewModel.BuildCardRecordAsync` mit Daten aus `SavingsPlanService.AnalyzeAsync`.
+
+## Kontoverknüpfung steuert Saldo und Analyse
+
+**Beschreibung:** Ein Sparplan kann mit mehreren eigenen Konten verknüpft werden; ein Konto kann mehrere Pläne bedienen.
+
+**Bedingungen:**
+- Plan und Konto gehören demselben Eigentümer; doppelte Verknüpfungen werden abgewiesen.
+- Es sind ausschließlich Konten vom Typ `Savings` (Sparkonto) verknüpfbar — die Auswahl und der Service lehnen andere Kontotypen ab.
+
+**Verhalten:**
+- Ab dem ersten Link ist `CurrentAmount`/`accumulatedAmount` die Summe der verknüpften Kontosalden (additive Summe, keine Aufteilung bei Sammelkonten).
+- Die Rhythmus-/Defizitanalyse nutzt den Konto-Inflow (alle Zuflüsse inkl. Einzüge, VL, Zinsen).
+- Plan-Buchungen mit Funding-Buchungsgruppe (Bank-Gegenposting) werden als „informell" gekennzeichnet und zählen nicht in `accumulated`/`expectedToDate`.
+- Nach Entfernen des letzten Links gilt wieder die buchungsbasierte Auswertung.
+- Bei verknüpften Plänen wird zusätzlich der „Eigenanteil" (Summe der Plan-eigenen Buchungen) in den Kopfdaten ausgewiesen (`SavingsPlanDto.OwnAmount`).
+- Kontoauszugszeilen eines verknüpften Kontos können keinem Sparplan zugeordnet werden (manuell und per Auto-Klassifizierung); die Zuordnung wird mit `SAVINGSPLAN_ACCOUNT_LINKED` abgelehnt.
+
+**Umsetzung:** `SavingsPlanAccountLinkService`, `SavingsPlanLinkAnalysis`, Endpunkte `…/linked-accounts` sowie `GET /api/accounts/{id}/savings-plan-links`, UI-Abschnitt `SavingsPlanLinkedAccountsPanel`.
+
+## Istmeldung korrigiert den Plan-Saldo ohne Kontobewegung
+
+**Beschreibung:** Für Pläne ohne verknüpfte Konten kann der Ist-Saldo per Istmeldung gesetzt werden.
+
+**Bedingungen:**
+- Der Plan hat keine verknüpften Konten (bei Links ist der Kontostand die Ist-Quelle).
+
+**Verhalten:**
+- Es entsteht eine Plan-Buchung in Höhe `gemeldeter Saldo − accumulated` mit `SavingsPlanSubType = ActualReport` und ohne `AccountId` — keine Kontobewegung.
+- Istmeldungen sind in Liste und Detail als Korrektur gekennzeichnet, gelten nicht als informell und fließen nicht in Budget-Actuals.
+
+**Umsetzung:** `SavingsPlanService.ReportActualBalanceAsync`, Endpunkt `…/actual-reports`, Ribbon-Aktion „Istmeldung" + Overlay `SavingsPlanActualReportPanel`.

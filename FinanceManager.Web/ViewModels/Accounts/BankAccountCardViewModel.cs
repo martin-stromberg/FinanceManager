@@ -303,8 +303,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
             {
                 new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navActions),
                 new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manageActions),
-                new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions),
-                new UiRibbonTab(localizer["Ribbon_Group_Bookings"].Value ?? "Buchungen", bookingActions)
+                new UiRibbonTab(localizer["Ribbon_Group_Bookings"].Value ?? "Buchungen", bookingActions),
+                new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedActions)
             };
 
             return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

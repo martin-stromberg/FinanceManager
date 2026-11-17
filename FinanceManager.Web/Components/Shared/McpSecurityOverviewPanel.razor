@@ -1,0 +1,170 @@
+@using FinanceManager.Shared.Dtos.Mcp
+@using FinanceManager.Web.ViewModels.Mcp
+@implements IDisposable
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+
+@if (Provider is not null)
+{
+    <div class="mcp-security" style="display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;">
+        @if (Provider.NotAuthorized)
+        {
+            <div class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;color:var(--muted);">
+                @L["McpSecurity_NotAuthorized"]
+            </div>
+        }
+        else if (Provider.Overview is { } ov)
+        {
+            @* MCP settings (database-stored, admin-editable; ui-konzept.md §5.2) *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <h4 style="margin:0 0 .5rem 0;">@L["McpSecurity_Section_Settings"]</h4>
+                <div style="display:flex;flex-direction:column;gap:.5rem;">
+                    <label style="display:flex;gap:.5rem;align-items:flex-start;cursor:pointer;">
+                        <input type="checkbox" checked="@Provider.SettingsEnabled"
+                               @onchange="e => Provider.SetSettingsEnabled(e.Value is true)" />
+                        <span>
+                            @L["McpSecurity_Settings_Enabled"]
+                            <small style="display:block;color:var(--muted);">@L["McpSecurity_Settings_Enabled_Hint"]</small>
+                        </span>
+                    </label>
+                    <label style="display:flex;gap:.5rem;align-items:flex-start;cursor:pointer;">
+                        <input type="checkbox" checked="@Provider.SettingsWriteAccess"
+                               @onchange="e => Provider.SetSettingsWriteAccess(e.Value is true)" />
+                        <span>
+                            @L["McpSecurity_Settings_WriteAccess"]
+                            <small style="display:block;color:var(--muted);">@L["McpSecurity_Settings_WriteAccess_Hint"]</small>
+                        </span>
+                    </label>
+                    <div>
+                        <button type="button" class="btn btn-primary" disabled="@Provider.SettingsBusy"
+                                @onclick="SaveSettingsAsync">@L["Ribbon_Save"]</button>
+                    </div>
+                </div>
+                <div style="font-size:.85rem;color:var(--muted);margin-top:.4rem;">@L["McpSecurity_Switches_Hint"]</div>
+            </section>
+
+            @* Aggregates *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <h4 style="margin:0 0 .5rem 0;">@L["McpSecurity_Section_Aggregates"]</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;">
+                    <span>@L["McpSecurity_Agg_Accesses"]: <b>@ov.Aggregates.TotalAccesses</b> (@ov.Aggregates.ActiveAccesses @L["McpSecurity_Agg_Active"])</span>
+                    <span>@L["McpSecurity_Agg_Pending"]: <b>@ov.Aggregates.PendingRequests</b></span>
+                    <span>@L["McpSecurity_Agg_Queued"]: <b>@ov.Aggregates.ApprovedQueued</b></span>
+                    <span>@L["McpSecurity_Agg_Denied24"]: <b>@ov.Aggregates.DeniedCallsLast24h</b></span>
+                    <span>@L["McpSecurity_Agg_RateLimited24"]: <b>@ov.Aggregates.RateLimitedCallsLast24h</b></span>
+                    <span>@L["McpSecurity_Agg_Failed24"]: <b>@ov.Aggregates.FailedCallsLast24h</b></span>
+                </div>
+            </section>
+
+            @* Access metadata of all owners (no business data) *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <h4 style="margin:0 0 .5rem 0;">@L["McpSecurity_Section_Accesses"]</h4>
+                @if (ov.Accesses.Count == 0)
+                {
+                    <div style="color:var(--muted);">@L["McpSecurity_Accesses_Empty"]</div>
+                }
+                else
+                {
+                    <table class="fm-table" style="width:100%;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;">@L["McpList_Th_Name"]</th>
+                                <th style="text-align:left;">@L["McpSecurity_Col_Owner"]</th>
+                                <th style="text-align:left;">@L["McpList_Th_Level"]</th>
+                                <th style="text-align:left;">@L["McpList_Th_Status"]</th>
+                                <th style="text-align:left;">@L["McpList_Th_LastUsed"]</th>
+                                <th style="text-align:left;">@L["McpSecurity_Col_Pending"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in ov.Accesses)
+                            {
+                                <tr>
+                                    <td>@a.Name</td>
+                                    <td><code>@a.OwnerUserId</code></td>
+                                    <td>@LevelText(a.Level)</td>
+                                    <td>@AccessStatusText(a.Status)</td>
+                                    <td>@(a.LastUsedUtc?.ToString("g") ?? L["Mcp_Value_NeverUsed"].Value)</td>
+                                    <td>@(a.PendingRequests > 0 ? a.PendingRequests.ToString() : "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </section>
+
+            @* Recent security events (metadata only) *@
+            <section class="mcp-section" style="border:1px solid var(--border,#444);border-radius:6px;padding:.75rem 1rem;">
+                <h4 style="margin:0 0 .5rem 0;">@L["McpSecurity_Section_Events"]</h4>
+                @if (ov.RecentSecurityEvents.Count == 0)
+                {
+                    <div style="color:var(--muted);">@L["McpSecurity_Events_Empty"]</div>
+                }
+                else
+                {
+                    @foreach (var e in ov.RecentSecurityEvents)
+                    {
+                        <div style="display:flex;gap:.6rem;font-size:.9rem;border-top:1px solid var(--border,#333);padding:.25rem 0;">
+                            <span style="color:var(--muted);min-width:9rem;">@e.Utc.ToString("g")</span>
+                            <span style="min-width:9rem;">@e.EventType</span>
+                            <span style="color:var(--muted);">@e.ResultStatus</span>
+                            <span style="color:var(--muted);">@e.McpAccessName</span>
+                            @if (e.SourceIp is not null)
+                            {
+                                <span style="color:var(--muted);"><code>@e.SourceIp</code></span>
+                            }
+                        </div>
+                    }
+                }
+            </section>
+        }
+        else
+        {
+            <div style="color:var(--muted);">@L["General_Loading"]</div>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The owning security-overview view model.</summary>
+    [Parameter] public McpSecurityOverviewViewModel? Provider { get; set; }
+
+    private McpSecurityOverviewViewModel? _subscribed;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (_subscribed != Provider)
+        {
+            if (_subscribed is not null) _subscribed.StateChanged -= OnChanged;
+            _subscribed = Provider;
+            if (_subscribed is not null) _subscribed.StateChanged += OnChanged;
+        }
+    }
+
+    private void OnChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    private Task SaveSettingsAsync()
+        => Provider is null ? Task.CompletedTask : Provider.SaveSettingsAsync();
+
+    private string LevelText(short level) => level switch
+    {
+        (short)FinanceManager.Domain.Mcp.McpAccessLevel.Analyse => L["Mcp_Level_Analyse"].Value,
+        (short)FinanceManager.Domain.Mcp.McpAccessLevel.Assistent => L["Mcp_Level_Assistent"].Value,
+        (short)FinanceManager.Domain.Mcp.McpAccessLevel.Sachbearbeiter => L["Mcp_Level_Sachbearbeiter"].Value,
+        (short)FinanceManager.Domain.Mcp.McpAccessLevel.Buchhalter => L["Mcp_Level_Buchhalter"].Value,
+        _ => L["Mcp_Level_Individuell"].Value
+    };
+
+    private string AccessStatusText(short status) => status switch
+    {
+        (short)FinanceManager.Domain.Mcp.McpAccessStatus.Active => L["Mcp_Status_Active"].Value,
+        (short)FinanceManager.Domain.Mcp.McpAccessStatus.Deactivated => L["Mcp_Status_Deactivated"].Value,
+        _ => L["Mcp_Status_Revoked"].Value
+    };
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_subscribed is not null) _subscribed.StateChanged -= OnChanged;
+    }
+}

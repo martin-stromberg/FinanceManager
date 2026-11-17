@@ -348,11 +348,13 @@ public sealed class BudgetPurposeService : IBudgetPurposeService
                 }
             }
 
-            // SavingsPlan
+            // SavingsPlan - actual-balance reports ("Istmeldung") are balance corrections, not
+            // cost flows: they must not move budget actuals.
             if (savingsPlanIds.Count > 0)
             {
                 var planQuery = _db.Postings.AsNoTracking()
-                    .Where(p => p.SavingsPlanId != null && savingsPlanIds.Contains(p.SavingsPlanId.Value));
+                    .Where(p => p.SavingsPlanId != null && savingsPlanIds.Contains(p.SavingsPlanId.Value)
+                        && p.SavingsPlanSubType != SavingsPlanPostingSubType.ActualReport);
 
                 planQuery = dateBasis == FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
                      ? planQuery.Where(p => p.ValutaDate >= fromDt && p.ValutaDate <= toDt)

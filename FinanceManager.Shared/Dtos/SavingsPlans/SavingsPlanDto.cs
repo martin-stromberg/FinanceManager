@@ -31,7 +31,8 @@ public sealed class SavingsPlanDto
     /// <param name="symbolAttachmentId">Optional symbol attachment id.</param>
     /// <param name="remainingAmount">Remaining amount to reach the target (derived).</param>
     /// <param name="currentAmount">Currently accumulated amount for the plan.</param>
-    public SavingsPlanDto(Guid id, string name, SavingsPlanType type, decimal? targetAmount, DateTime? targetDate, SavingsPlanInterval? interval, bool isActive, DateTime createdUtc, DateTime? archivedUtc, Guid? categoryId, string? contractNumber = null, Guid? symbolAttachmentId = null, decimal remainingAmount = 0m, decimal currentAmount = 0m)
+    /// <param name="ownAmount">Balance accumulated from the plan's own postings, only set when the plan has linked accounts ("Eigenanteil").</param>
+    public SavingsPlanDto(Guid id, string name, SavingsPlanType type, decimal? targetAmount, DateTime? targetDate, SavingsPlanInterval? interval, bool isActive, DateTime createdUtc, DateTime? archivedUtc, Guid? categoryId, string? contractNumber = null, Guid? symbolAttachmentId = null, decimal remainingAmount = 0m, decimal currentAmount = 0m, decimal? ownAmount = null)
         : this()
     {
         Id = id;
@@ -48,6 +49,7 @@ public sealed class SavingsPlanDto
         SymbolAttachmentId = symbolAttachmentId;
         RemainingAmount = remainingAmount;
         CurrentAmount = currentAmount;
+        OwnAmount = ownAmount;
     }
 
     /// <summary>Unique savings plan identifier.</summary>
@@ -85,4 +87,10 @@ public sealed class SavingsPlanDto
     /// Currently accumulated amount for the savings plan.
     /// </summary>
     public decimal CurrentAmount { get; set; }
+
+    /// <summary>
+    /// Balance accumulated from the plan's own postings ("Eigenanteil"). Only populated when the
+    /// plan has linked bank accounts; otherwise <c>null</c> and not displayed.
+    /// </summary>
+    public decimal? OwnAmount { get; set; }
 }

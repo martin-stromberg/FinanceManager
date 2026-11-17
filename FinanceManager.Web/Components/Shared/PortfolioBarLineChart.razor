@@ -1,0 +1,187 @@
+@using Microsoft.AspNetCore.Components
+@using System.Globalization
+
+<div class="portfolio-bar-line-chart">
+    @if (Points.Count == 0)
+    {
+        <div class="portfolio-bar-line-chart-empty">@EmptyText</div>
+    }
+    else
+    {
+        <svg viewBox="0 0 1000 325" preserveAspectRatio="none" class="portfolio-bar-line-chart-svg"
+             role="img" aria-label="@AriaLabel" style="height:@(HeightPx)px;">
+            <g class="portfolio-bar-line-chart-grid">
+                @for (var i = 0; i <= 4; i++)
+                {
+                    var y = ChartTop + i * (ChartBottom - ChartTop) / 4;
+                    <line x1="@ChartLeft" y1="@y" x2="@ChartRight" y2="@y" />
+                }
+            </g>
+
+            <path class="portfolio-bar-line-chart-line" d="@_linePath" />
+
+            @foreach (var p in _points)
+            {
+                <g class="portfolio-bar-line-chart-point">
+                    <title>@p.Tooltip</title>
+                    <rect class="portfolio-bar-line-chart-bar@(p.BarValue < 0m ? " negative" : string.Empty)"
+                          x="@Inv(p.BarX)" y="@Inv(p.BarY)" width="@Inv(_barWidth)" height="@Inv(p.BarHeight)" />
+                    <circle class="portfolio-bar-line-chart-dot" cx="@Inv(p.X)" cy="@Inv(p.LineY)" r="5" />
+                </g>
+            }
+
+            <g class="portfolio-bar-line-chart-labels">
+                @foreach (var p in _points)
+                {
+                    @((MarkupString)$"<text x='{Inv(p.X)}' y='{Inv(AxisLabelY)}' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
+                }
+            </g>
+        </svg>
+    }
+
+    <div class="portfolio-bar-line-chart-legend">
+        <span class="portfolio-bar-line-chart-legend-item"><span class="portfolio-bar-line-chart-swatch line"></span>@LineLabel</span>
+        <span class="portfolio-bar-line-chart-legend-item"><span class="portfolio-bar-line-chart-swatch bar"></span>@BarLabel</span>
+    </div>
+</div>
+
+@code {
+    private const double ChartLeft = 60;
+    private const double ChartRight = 980;
+    private const double ChartTop = 20;
+    private const double ChartBottom = 300;
+    private const double BarAreaTop = 160;
+    private const double AxisLabelY = ChartBottom + 20;
+
+    /// <summary>A single labeled data point rendered as a bar and a line value.</summary>
+    /// <param name="Label">Short label shown on the x-axis (e.g. a year).</param>
+    /// <param name="LineValue">Value rendered as a line point, normalized over the full chart height.</param>
+    /// <param name="BarValue">Value rendered as a bar, normalized within the lower half of the chart.</param>
+    public sealed record PortfolioBarLineChartPoint(string Label, decimal LineValue, decimal BarValue);
+
+    /// <summary>Points to render, in display order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PortfolioBarLineChartPoint> Points { get; set; } = Array.Empty<PortfolioBarLineChartPoint>();
+
+    /// <summary>Rendered height of the chart in pixels.</summary>
+    [Parameter] public int HeightPx { get; set; } = 200;
+
+    /// <summary>Accessible label describing the chart for screen readers.</summary>
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    /// <summary>Legend label for the line series.</summary>
+    [Parameter] public string LineLabel { get; set; } = string.Empty;
+
+    /// <summary>Legend label for the bar series.</summary>
+    [Parameter] public string BarLabel { get; set; } = string.Empty;
+
+    /// <summary>Text shown when <see cref="Points"/> is empty.</summary>
+    [Parameter] public string EmptyText { get; set; } = string.Empty;
+
+    /// <summary>Optional formatter for the tooltip of each data point; defaults to "Label: line / bar" with "N2" values.</summary>
+    [Parameter] public Func<PortfolioBarLineChartPoint, string>? TooltipFormatter { get; set; }
+
+    private sealed record RenderPoint(double X, string Label, string Tooltip, double LineY, decimal BarValue, double BarX, double BarY, double BarHeight);
+
+    private readonly List<RenderPoint> _points = new();
+    private string _linePath = string.Empty;
+    private double _barWidth;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        Build();
+    }
+
+    private void Build()
+    {
+        _points.Clear();
+        _linePath = string.Empty;
+        _barWidth = 0d;
+
+        if (Points == null || Points.Count == 0)
+        {
+            return;
+        }
+
+        // The line uses its own min/max range and spans the full drawing height; the bars are
+        // scaled independently inside the lower half of the chart so both stay readable even
+        // when the two series differ by an order of magnitude.
+        var lineMin = Points.Min(p => p.LineValue);
+        var lineMax = Points.Max(p => p.LineValue);
+        if (lineMin == lineMax)
+        {
+            lineMin -= 1m;
+            lineMax += 1m;
+        }
+
+        var barMin = Math.Min(0m, Points.Min(p => p.BarValue));
+        var barMax = Math.Max(0m, Points.Max(p => p.BarValue));
+        if (barMin == barMax)
+        {
+            barMax += 1m;
+        }
+
+        var barAreaHeight = ChartBottom - BarAreaTop;
+        var baselineY = ChartBottom - (double)((0m - barMin) / (barMax - barMin)) * barAreaHeight;
+        _barWidth = Math.Min(60d, (ChartRight - ChartLeft) / (Points.Count * 2d));
+
+        for (var i = 0; i < Points.Count; i++)
+        {
+            var point = Points[i];
+            var x = ChartLeft + (Points.Count == 1 ? (ChartRight - ChartLeft) / 2 : (ChartRight - ChartLeft) * i / (Points.Count - 1));
+            var lineY = ValueToY(point.LineValue, lineMin, lineMax, ChartTop, ChartBottom);
+            var barY = ChartBottom - (double)((point.BarValue - barMin) / (barMax - barMin)) * barAreaHeight;
+            var tooltip = FormatTooltip(point);
+
+            _points.Add(new RenderPoint(
+                x,
+                point.Label,
+                tooltip,
+                lineY,
+                point.BarValue,
+                x - _barWidth / 2,
+                Math.Min(barY, baselineY),
+                Math.Abs(barY - baselineY)));
+        }
+
+        _linePath = BuildPath(_points);
+    }
+
+    private static double ValueToY(decimal value, decimal min, decimal max, double top, double bottom)
+    {
+        var range = max - min;
+        if (range == 0m)
+        {
+            return bottom;
+        }
+
+        var t = (double)((value - min) / range);
+        return bottom - t * (bottom - top);
+    }
+
+    private static string Inv(double v) => v.ToString("F2", CultureInfo.InvariantCulture);
+
+    private static string BuildPath(IReadOnlyList<RenderPoint> pts)
+    {
+        if (pts.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var parts = new List<string>(pts.Count + 1)
+        {
+            $"M {Inv(pts[0].X)},{Inv(pts[0].LineY)}"
+        };
+
+        for (var i = 1; i < pts.Count; i++)
+        {
+            parts.Add($"L {Inv(pts[i].X)},{Inv(pts[i].LineY)}");
+        }
+
+        return string.Join(' ', parts);
+    }
+
+    private string FormatTooltip(PortfolioBarLineChartPoint p) => TooltipFormatter != null
+        ? TooltipFormatter(p)
+        : string.Format(CultureInfo.CurrentUICulture, "{0}: {1:N2} / {2:N2}", p.Label, p.LineValue, p.BarValue);
+}

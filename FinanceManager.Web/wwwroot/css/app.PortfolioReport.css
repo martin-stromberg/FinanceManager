@@ -426,6 +426,180 @@
     margin: .3rem 0 .75rem 0;
 }
 
+/* ---------- Depot development tile ---------- */
+
+.portfolio-dev-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .75rem;
+    margin-bottom: .75rem;
+    font-size: .85rem;
+}
+
+.portfolio-dev-filter-select {
+    font-size: .85rem;
+    padding: .15rem .3rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+/* The wrapper is a CSS container so the column reduction reacts to the tile's
+   available width, not the viewport width. Horizontal scrolling is never used:
+   overflow-x stays hidden and the fixed table layout keeps the table inside
+   its container at any width. */
+.portfolio-dev-table-wrap {
+    max-width: 100%;
+    overflow-x: hidden;
+    container-type: inline-size;
+}
+
+.portfolio-dev-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.portfolio-dev-table th:first-child,
+.portfolio-dev-table td:first-child {
+    width: 14%;
+}
+
+.portfolio-dev-table th,
+.portfolio-dev-table td {
+    overflow-wrap: break-word;
+}
+
+/* Compact column reduction helpers: values/columns hidden or merged by width,
+   never by horizontal scrolling. */
+.dev-mobile-only {
+    display: none;
+}
+
+/* Narrow tile (container-driven) or narrow viewport (fallback): collapse the
+   year-start table to four columns — year, dividend/depot value, change €/%,
+   yield. */
+@container (max-width: 560px) {
+    .dev-mobile-only {
+        display: inline;
+    }
+
+    .dev-desktop-only {
+        display: none;
+    }
+
+    .dev-col-changepct,
+    .dev-col-dividend {
+        display: none;
+    }
+}
+
+/* ---------- Bar/line combination chart ---------- */
+
+.portfolio-bar-line-chart {
+    margin-bottom: .75rem;
+}
+
+.portfolio-bar-line-chart-svg {
+    width: 100%;
+    display: block;
+}
+
+.portfolio-bar-line-chart-grid line {
+    stroke-width: 1;
+}
+
+.portfolio-bar-line-chart-line {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.portfolio-bar-line-chart-labels text {
+    font-size: 18px;
+}
+
+.portfolio-bar-line-chart-legend {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: .75rem;
+    margin-top: .3rem;
+}
+
+.portfolio-bar-line-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.portfolio-bar-line-chart-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.portfolio-bar-line-chart-swatch.line {
+    border-radius: 50%;
+    height: 4px;
+    width: 14px;
+}
+
+.portfolio-bar-line-chart-empty {
+    font-size: .8rem;
+    opacity: .7;
+}
+
+/* ---------- Grouped bar chart (two bars per year) ---------- */
+
+.portfolio-grouped-bar-chart {
+    margin-bottom: .75rem;
+}
+
+.portfolio-grouped-bar-chart-svg {
+    width: 100%;
+    display: block;
+}
+
+.portfolio-grouped-bar-chart-grid line {
+    stroke-width: 1;
+}
+
+.portfolio-grouped-bar-chart-baseline {
+    stroke-width: 1;
+}
+
+.portfolio-grouped-bar-chart-labels text {
+    font-size: 18px;
+}
+
+.portfolio-grouped-bar-chart-legend {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: .75rem;
+    margin-top: .3rem;
+}
+
+.portfolio-grouped-bar-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.portfolio-grouped-bar-chart-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.portfolio-grouped-bar-chart-empty {
+    font-size: .8rem;
+    opacity: .7;
+}
+
 /* ---------- Risk gauges ---------- */
 
 .portfolio-risk-gauge-row {
@@ -484,5 +658,22 @@
     .portfolio-risk-gauge-row {
         grid-template-columns: 1fr;
         gap: .3rem;
+    }
+
+    /* Viewport fallback for the depot development table: collapse to 4 columns
+       (year, dividend/depot value, change €/%, yield) instead of scrolling
+       horizontally. The container query on .portfolio-dev-table-wrap handles
+       narrow tiles inside wider viewports. */
+    .dev-mobile-only {
+        display: inline;
+    }
+
+    .dev-desktop-only {
+        display: none;
+    }
+
+    .dev-col-changepct,
+    .dev-col-dividend {
+        display: none;
     }
 }

@@ -76,3 +76,41 @@ public sealed class SavingsPlanCreateRequest
         ContractNumber = contractNumber;
     }
 }
+
+/// <summary>
+/// Request payload to capture an actual-balance report ("Istmeldung") for a savings plan without
+/// linked accounts. The system books the difference between the reported balance and the current
+/// accumulated amount as a correction posting - no account movement is created.
+/// </summary>
+public sealed class SavingsPlanActualReportRequest
+{
+    /// <summary>
+    /// The real balance reported by the user. The resulting posting amounts to
+    /// <c>ReportedBalance - accumulated</c> and may be negative.
+    /// </summary>
+    [Required]
+    public decimal ReportedBalance { get; set; }
+
+    /// <summary>
+    /// Default constructor for model binding.
+    /// </summary>
+    public SavingsPlanActualReportRequest() { }
+
+    /// <summary>
+    /// Constructs a new <see cref="SavingsPlanActualReportRequest"/> with the reported balance.
+    /// </summary>
+    /// <param name="reportedBalance">The real balance reported by the user.</param>
+    public SavingsPlanActualReportRequest(decimal reportedBalance)
+    {
+        ReportedBalance = reportedBalance;
+    }
+}
+
+/// <summary>
+/// Response returned after an actual-balance report ("Istmeldung") was captured.
+/// </summary>
+/// <param name="PostingId">Identifier of the created correction posting.</param>
+/// <param name="DifferenceAmount">Amount of the created correction posting (ReportedBalance - previous accumulated).</param>
+/// <param name="AccumulatedAmount">Accumulated plan amount after the correction (equals the reported balance).</param>
+/// <returns>The result.</returns>
+public sealed record SavingsPlanActualReportResponse(Guid PostingId, decimal DifferenceAmount, decimal AccumulatedAmount);

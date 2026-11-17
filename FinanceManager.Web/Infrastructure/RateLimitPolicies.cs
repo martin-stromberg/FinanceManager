@@ -10,4 +10,10 @@ public static class RateLimitPolicies
     /// (registration and user-existence probes).
     /// </summary>
     public const string AuthSensitive = "auth-sensitive";
+
+    /// <summary>
+    /// Fixed-window policy of the <c>/mcp</c> endpoint, partitioned by the access key hint
+    /// (authenticated path) resp. by client IP (unauthenticated path).
+    /// </summary>
+    public const string McpEndpoint = "mcp-endpoint";
 }

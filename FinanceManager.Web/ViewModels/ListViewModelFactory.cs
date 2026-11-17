@@ -127,6 +127,9 @@ namespace FinanceManager.Web.ViewModels
                 case "users":
                     var uvm = ActivatorUtilities.CreateInstance<Setup.UserListViewModel>(_sp);
                     return new ListFactoryResult(uvm);
+                case "mcp-accesses":
+                    var mvm = ActivatorUtilities.CreateInstance<Mcp.McpAccessListViewModel>(_sp);
+                    return new ListFactoryResult(mvm);
                 case "budget":
                 case "budgets":
                     if ((subKind ?? string.Empty).Trim().ToLowerInvariant() == "purposes" || string.IsNullOrWhiteSpace(subKind))

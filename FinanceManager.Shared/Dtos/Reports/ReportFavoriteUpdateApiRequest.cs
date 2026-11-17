@@ -21,7 +21,7 @@ public sealed class ReportFavoriteUpdateApiRequest
     public bool ComparePrevious { get; set; }
     /// <summary>Compare to previous year when true.</summary>
     public bool CompareYear { get; set; }
-    /// <summary>Include dividend projection when true.</summary>
+    /// <summary>Include the projection when true.</summary>
     public bool CompareProjection { get; set; }
     /// <summary>Show chart visualization when true.</summary>
     public bool ShowChart { get; set; }
@@ -33,4 +33,6 @@ public sealed class ReportFavoriteUpdateApiRequest
     public ReportFavoriteFiltersDto? Filters { get; set; }
     /// <summary>Aggregate by ValutaDate when true.</summary>
     public bool UseValutaDate { get; set; }
+    /// <summary>Posting source used for emitted savings plans (plan postings vs. linked account postings).</summary>
+    public SavingsPlanPostingSource SavingsPlanPostingSource { get; set; }
 }

@@ -26,16 +26,20 @@ Methode ruft zwei Endpunkte parallel-sequenziell ab:
 Beteiligte Komponenten:
 - `PortfolioAnalysisReportPageViewModel.LoadReportAsync` — orchestriert den Ladevorgang, setzt `PortfolioReportData` und `CurrentConfiguration`
 - `PortfolioAnalysisReportController.GetAnalysisReportAsync` — liefert den (ggf. gecachten) Bericht für `ICurrentUserService.UserId`
-- `PortfolioAnalysisReportController.GetKpiConfigurationAsync` — liefert die gespeicherte Kachel-Konfiguration, oder eine Default-Konfiguration (`Structure`, `Performance`, `Cashflow` aktiv, `Risk` inaktiv), wenn noch keine existiert
+- `PortfolioAnalysisReportController.GetKpiConfigurationAsync` — liefert die gespeicherte Kachel-Konfiguration, oder eine Default-Konfiguration (`Structure`, `Performance`, `Cashflow`, `DepotDevelopment` aktiv, `Risk` inaktiv), wenn noch keine existiert. In beiden Fällen läuft das Ergebnis durch `MergeMissingTiles`: `PortfolioTileId`-Werte, die in der geladenen `TileOrder` fehlen (z. B. nachträglich eingeführte Kacheln), werden ans Ende angehängt und — sofern Mitglied der Default-Aktiv-Menge — zusätzlich in `ActiveTileIds` ergänzt. Das gemergte DTO wird nur zurückgegeben, nicht persistiert.
 
 ### 2. Cache-Lookup und Berechnung
 
 `PortfolioAnalysisReportCacheService.GetPortfolioReportAsync` sucht einen
 `ReportCacheEntry` mit dem Schlüssel `portfolio-analysis-report-{OwnerUserId:N}`.
 
-- Ist ein Eintrag vorhanden, `NeedsRefresh == false` und
-  `CacheValidUntilUtc >= DateTime.UtcNow`, wird der gecachte, als JSON
-  gespeicherte `PortfolioAnalysisReportDto` deserialisiert und zurückgegeben.
+- Ist ein Eintrag vorhanden, `NeedsRefresh == false`,
+  `CacheValidUntilUtc >= DateTime.UtcNow` und
+  `entry.Parameter == CacheSchemaVersion` (aktuell `"6"`), wird der
+  gecachte, als JSON gespeicherte `PortfolioAnalysisReportDto`
+  deserialisiert und zurückgegeben. Ein abweichender `Parameter`-Wert
+  gilt als Cache-Miss — so werden Einträge verworfen, die unter einer
+  älteren DTO-Form serialisiert wurden.
 - Andernfalls berechnet `PortfolioAnalysisReportService.GetPortfolioAnalysisReportAsync`
   den Bericht neu:
   - `LoadPositionsAsync` lädt alle `Security`-Datensätze des Benutzers samt
@@ -57,6 +61,22 @@ Beteiligte Komponenten:
   - `BuildCashflow` summiert Käufe/Verkäufe/Dividenden des laufenden Jahres
     sowie realisierte Gewinne (Differenz der FIFO-Ergebnisse mit/ohne
     Transaktionen vor Jahresbeginn).
+  - `BuildDepotDevelopment` erzeugt je Kalenderjahr vom ersten
+    Transaktionsjahr bis zum letzten Serienjahr eine
+    `PortfolioDepotDevelopmentYear`-Zeile. Die Seriengrenzen liefert
+    `GetSeriesYearRange` (letztes Jahr = laufendes Jahr, solange heute
+    Bestände gehalten werden, sonst Jahr der jüngsten Transaktion);
+    `GetYearReferenceDate` bestimmt `IsYtd` und den Stichtag (Tagesdatum
+    im laufenden Jahr, sonst der 31.12.). `YearEndValue` kommt aus
+    `GetPortfolioValueOnDate` zum Stichtag, `NetDividends` als Summe der
+    `Dividend`-Buchungen minus Summe der `|Amount|` der `Tax`-Buchungen
+    des Jahres, `NetFlow` als Summe der `|Amount|` der `Buy`-Buchungen
+    minus Summe der `Sell`-Buchungsbeträge des Jahres und
+    `CumulativeInvestedCapital` als je Position auf die
+    Transaktionen `<= Stichtag` berechnete FIFO-Basis
+    (`TotalCostBasis - StandaloneFeeTotal`). `YearStartValue` ist der
+    `YearEndValue` des Vorjahres; im ersten Jahr der Serie dient das
+    eigene `CumulativeInvestedCapital` als Startwert.
   - `Risk` wird als `PortfolioRiskDto` mit ausschließlich `null`-Werten
     zurückgegeben (Platzhalter für Phase 2).
   - `CacheValidUntilUtc` wird auf das Monatsende (`EndOfMonthUtc`) gesetzt.
@@ -65,7 +85,7 @@ Beteiligte Komponenten:
 
 Beteiligte Komponenten:
 - `PortfolioAnalysisReportCacheService.GetPortfolioReportAsync`
-- `PortfolioAnalysisReportService.GetPortfolioAnalysisReportAsync`, `LoadPositionsAsync`, `BuildStructure`, `BuildPerformance`, `BuildCashflow`
+- `PortfolioAnalysisReportService.GetPortfolioAnalysisReportAsync`, `LoadPositionsAsync`, `BuildStructure`, `BuildPerformance`, `BuildCashflow`, `BuildDepotDevelopment`, `GetSeriesYearRange`, `GetYearReferenceDate`, `GetPortfolioValueOnDate`
 - `IFifoCostBasisCalculator.Calculate`, `IReturnCalculationService.CalculateTwr`
 - `SecurityValuationHelper.SharesHeldOnDate`, `SecurityValuationHelper.LatestPriceOnOrBefore`
 
@@ -74,16 +94,66 @@ Beteiligte Komponenten:
 `PortfolioAnalysisReportPage.razor` iteriert `CurrentConfiguration.TileOrder`,
 gefiltert auf `ActiveTileIds`, und rendert je `PortfolioTileId` die passende
 Kachel-Komponente: `PortfolioStructureCard`, `PortfolioPerformanceCard`,
-`PortfolioCashflowCard` bzw. `PortfolioRiskCard`. Jede Kachel bettet ihren
-Inhalt in die generische `PortfolioKpiCard` (Titel + Body) ein.
+`PortfolioCashflowCard`, `PortfolioDepotDevelopmentCard` bzw.
+`PortfolioRiskCard`. Jede Kachel bettet ihren Inhalt in die generische
+`PortfolioKpiCard` (Titel + Body) ein.
 
-Für die visuelle Darstellung nutzen die Kacheln zwei generische
+Für die visuelle Darstellung nutzen die Kacheln drei generische
 Diagramm-Komponenten aus `FinanceManager.Web/Components/Shared/`:
 - `DonutChart` (Ringdiagramm mit Legende und Zentrumswert) — Asset Allocation
   in `PortfolioStructureCard`.
 - `MiniBarChart` (kompaktes Balkendiagramm) — jährliche Renditen in
   `PortfolioPerformanceCard` sowie Netto-Einzahlungen/Dividenden/realisierte
   Gewinne in `PortfolioCashflowCard`.
+- `PortfolioBarLineChart` (kombiniertes SVG-Linien-/Balkendiagramm mit
+  getrennt skalierten Serien — die Linie nutzt die volle Zeichenhöhe, die
+  Balken die untere Hälfte —, Legende und `<title>`-Tooltips je
+  Datenpunkt) — Jahresserie in `PortfolioDepotDevelopmentCard` im Modus
+  „Jahresanfangswert".
+- `PortfolioGroupedBarChart` (SVG-Gruppenbalkendiagramm mit zwei Balken
+  je Datenpunkt auf gemeinsamer Skala, Basislinie bei 0, Legende und
+  `<title>`-Tooltips) — Ein-/Auszahlungen und Netto-Dividenden je Jahr in
+  `PortfolioDepotDevelopmentCard` im Modus „Eingezahltes Kapital".
+
+`PortfolioDepotDevelopmentCard` erhält die Jahresserie als Parameter
+`Data` (`PortfolioDepotDevelopmentDto`) und hält die beiden
+Auswahlwerte als komponenteninternen Zustand (private Enums
+`DepotDevelopmentPeriodFilter` und `DepotDevelopmentYieldBasis`). Der
+Zeitraum-Filter begrenzt die Anzeige clientseitig auf die letzten 5
+bzw. 10 Jahre — verankert am letzten Jahr der Serie, damit auch eine in
+der Vergangenheit endende Depot-Historie ihre Abschlussjahre zeigt.
+
+Im Modus „Jahresanfangswert" zeigt die Jahrestabelle Depotwert,
+Veränderung (absolut/prozentual), Netto-Dividende und Rendite
+(`NetDividends / YearStartValue`; `—` bei Basis 0). Der
+Tabellen-Wrapper `.portfolio-dev-table-wrap` ist ein CSS-Container
+(`container-type: inline-size`): unter ~560 px Kachelbreite blendet
+eine Container-Query die Spalten „Veränderung %" und „Netto-Dividende"
+aus und fasst ihre Werte als zweiten Wert in den Zellen
+„Dividende/Depotwert" bzw. „Veränderung €/%" zusammen — vier Spalten,
+gesteuert durch die zur Verfügung stehende Kachelbreite statt der
+Viewport-Breite (zusätzlich greift bei schmalem Viewport eine
+Media-Query als Fallback). Die Tabelle arbeitet mit
+`table-layout: fixed` und `overflow-x: hidden`, sodass horizontales
+Scrollen in keinem Fall entsteht.
+
+Im Modus „Eingezahltes Kapital (Yield on Cost)" wechselt die Kachel auf
+`PortfolioGroupedBarChart` (Balken `NetFlow` und `NetDividends` je Jahr)
+und eine Vier-Spalten-Tabelle: Jahr, Summe der Ein-/Auszahlungen
+(kumulierter `NetFlow` über die gesamte Historie bis zur jeweiligen
+Zeile, clientseitig berechnet), Netto-Dividende und Rendite
+(`NetDividends / kumulierter NetFlow`; `—` bei Basis 0). Der Wechsel der
+Rendite-Basis erfolgt ohne Server-Roundtrip; die Fußnote unter der
+Tabelle wechselt auf den modusspezifischen Text.
+
+Beide Auswahlwerte werden bei Änderung über `IJSRuntime` in den
+`localStorage` des Browsers geschrieben (Schlüssel
+`fm.portfolio.dev.yieldBasis` und `fm.portfolio.dev.period`) und in
+`OnAfterRenderAsync(firstRender)` wieder eingelesen, sodass die letzte
+Auswahl beim nächsten Seitenaufruf wiederhergestellt wird. Der Zugriff
+ist try/catch-geschützt und prerender-sicher; der Speicher-Mechanismus
+ist unabhängig vom optionalen KPI-Cache und wird im Impressum
+(Rechtliches-Seite) dokumentiert.
 
 Kennzahlen mit einer sinnvollen Herleitung (z. B. Gesamtmarktwert, investiertes
 Kapital, unrealisierter Gewinn/Verlust, TWR, YTD-Rendite, Netto-Einzahlungen,

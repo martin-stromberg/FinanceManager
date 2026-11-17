@@ -11,6 +11,7 @@ using FinanceManager.Web.ViewModels.Setup;
 using FinanceManager.Web.ViewModels.Common;
 using FinanceManager.Web.Services;
 using FinanceManager.Shared;
+using FinanceManager.Shared.Dtos.Mcp;
 using FinanceManager.Shared.Dtos.Securities;
 using FinanceManager.Shared.Dtos.Statements;
 using FinanceManager.Shared.Dtos.Update;
@@ -215,6 +216,183 @@ namespace FinanceManager.Tests.ViewModels
             allActionIds.Should().NotContain("ResetNotifications");
             allActionIds.Should().NotContain("SaveImportSplit");
             allActionIds.Should().NotContain("ResetImportSplit");
+        }
+
+        /// <summary>
+        /// Verifies that the setup-wide "Manage" group renders before the per-section groups. The
+        /// ribbon sorts groups by <see cref="UiRibbonTab.Sort" /> with a stable first-seen order, so the
+        /// global actions must share the default sort value instead of being pushed to the end.
+        /// </summary>
+        [Fact]
+        public async Task GetRibbonRegisters_AfterLoad_PlacesManageGroupFirst()
+        {
+            var sp = BuildServices();
+            var vm = new SetupCardViewModel(sp);
+            await vm.LoadAsync(Guid.Empty);
+
+            var localizerMock = new Mock<IStringLocalizer>();
+            localizerMock.Setup(l => l[It.IsAny<string>()])
+                .Returns((string key) => new LocalizedString(key, key));
+
+            var orderedTabs = vm.GetRibbonRegisters(localizerMock.Object)!
+                .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+                .OrderBy(t => t.Sort)
+                .ToList();
+
+            orderedTabs.Should().NotBeEmpty();
+            orderedTabs[0].Title.Should().Be("Ribbon_Group_Manage");
+            orderedTabs[0].Sort.Should().Be(0);
+        }
+
+        /// <summary>
+        /// Verifies the intended visual emphasis of the setup-wide actions: Save is the primary
+        /// large action, while Reset and the maintenance action RebuildAggregates stay compact.
+        /// </summary>
+        [Fact]
+        public async Task GetRibbonRegisters_AfterLoad_UsesExpectedActionSizes()
+        {
+            var sp = BuildServices();
+            var vm = new SetupCardViewModel(sp);
+            await vm.LoadAsync(Guid.Empty);
+
+            var localizerMock = new Mock<IStringLocalizer>();
+            localizerMock.Setup(l => l[It.IsAny<string>()])
+                .Returns((string key) => new LocalizedString(key, key));
+
+            var actions = vm.GetRibbonRegisters(localizerMock.Object)!
+                .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+                .Where(t => t.Title == "Ribbon_Group_Manage")
+                .SelectMany(t => t.Items)
+                .ToDictionary(a => a.Id, a => a.Size);
+
+            actions["Save"].Should().Be(UiRibbonItemSize.Large);
+            actions["Reset"].Should().Be(UiRibbonItemSize.Small);
+            actions["RebuildAggregates"].Should().Be(UiRibbonItemSize.Small);
+        }
+
+        /// <summary>
+        /// Verifies that a non-admin user does not see the "mcp" register while the feature is
+        /// disabled: it is absent from <c>SettingSections</c>, its component type cannot be
+        /// resolved, and its view model cannot be created - matching the requirement that the
+        /// register is hidden for normal users when AI features are deactivated.
+        /// </summary>
+        [Fact]
+        public async Task LoadAsync_HidesMcpSectionForNonAdmin_WhenFeatureDisabled()
+        {
+            var apiMock = new Mock<IApiClient>();
+            apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new McpStatusDto(false));
+            var sp = BuildServices(apiMock.Object, isAdmin: false);
+            var vm = new SetupCardViewModel(sp);
+
+            await vm.LoadAsync(Guid.Empty);
+
+            vm.SettingSections.Select(section => section.Key).Should().NotContain("mcp");
+            vm.TryGetSectionComponentType("mcp", out _).Should().BeFalse();
+            vm.CreateSectionViewModel("mcp", sp).Should().BeNull();
+        }
+
+        /// <summary>
+        /// Verifies that a non-admin user does see the "mcp" register once the feature is
+        /// enabled - the register then lists the user's own AI accesses.
+        /// </summary>
+        [Fact]
+        public async Task LoadAsync_ShowsMcpSectionForNonAdmin_WhenFeatureEnabled()
+        {
+            var apiMock = new Mock<IApiClient>();
+            apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new McpStatusDto(true));
+            apiMock.Setup(a => a.Mcp_GetPendingApprovalCountAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0);
+            var sp = BuildServices(apiMock.Object, isAdmin: false);
+            var vm = new SetupCardViewModel(sp);
+
+            await vm.LoadAsync(Guid.Empty);
+
+            vm.SettingSections.Select(section => section.Key).Should().Contain("mcp");
+            vm.TryGetSectionComponentType("mcp", out var componentType).Should().BeTrue();
+            componentType.Should().Be(typeof(FinanceManager.Web.Components.Pages.Setup.SetupMcpTab));
+        }
+
+        /// <summary>
+        /// Verifies that an admin sees the "mcp" register even when the feature is disabled -
+        /// the register is where the admin performs the global activation.
+        /// </summary>
+        [Fact]
+        public async Task LoadAsync_ShowsMcpSectionForAdmin_WhenFeatureDisabled()
+        {
+            var apiMock = new Mock<IApiClient>();
+            apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new McpStatusDto(false));
+            var sp = BuildServices(apiMock.Object, isAdmin: true);
+            var vm = new SetupCardViewModel(sp);
+
+            await vm.LoadAsync(Guid.Empty);
+
+            vm.SettingSections.Select(section => section.Key).Should().Contain("mcp");
+            var sectionVm = vm.CreateSectionViewModel("mcp", sp);
+            sectionVm.Should().BeOfType<SetupMcpViewModel>();
+            ((SetupMcpViewModel)sectionVm!).McpEnabled.Should().BeFalse();
+        }
+
+        /// <summary>
+        /// Verifies that the aggregated ribbon contains the dedicated KI group actions
+        /// (approvals, audit log, security) once the register is available - the ribbon is
+        /// the required entry point for protocol, approvals and security calls.
+        /// </summary>
+        [Fact]
+        public async Task GetRibbonRegisters_AfterEnabledLoad_IncludesMcpGroupActions()
+        {
+            var apiMock = new Mock<IApiClient>();
+            apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new McpStatusDto(true));
+            apiMock.Setup(a => a.Mcp_GetPendingApprovalCountAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(3);
+            var sp = BuildServices(apiMock.Object, isAdmin: true);
+            var vm = new SetupCardViewModel(sp);
+            await vm.LoadAsync(Guid.Empty);
+
+            var localizerMock = new Mock<IStringLocalizer>();
+            localizerMock.Setup(l => l[It.IsAny<string>()])
+                .Returns((string key) => new LocalizedString(key, key));
+
+            var actions = vm.GetRibbonRegisters(localizerMock.Object)!
+                .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+                .SelectMany(t => t.Items)
+                .ToList();
+
+            actions.Select(a => a.Id).Should().Contain(new[] { "McpApprovals", "McpAudit", "McpSecurity" });
+            actions.First(a => a.Id == "McpApprovals").Label.Should().Contain("(3)");
+            actions.First(a => a.Id == "McpSecurity").Hidden.Should().BeFalse();
+        }
+
+        /// <summary>
+        /// Verifies that the security ribbon action of the KI group is hidden for non-admin
+        /// users while approvals and audit log stay visible.
+        /// </summary>
+        [Fact]
+        public async Task GetRibbonRegisters_HidesMcpSecurityForNonAdmin()
+        {
+            var apiMock = new Mock<IApiClient>();
+            apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new McpStatusDto(true));
+            apiMock.Setup(a => a.Mcp_GetPendingApprovalCountAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0);
+            var sp = BuildServices(apiMock.Object, isAdmin: false);
+            var vm = new SetupCardViewModel(sp);
+            await vm.LoadAsync(Guid.Empty);
+
+            var localizerMock = new Mock<IStringLocalizer>();
+            localizerMock.Setup(l => l[It.IsAny<string>()])
+                .Returns((string key) => new LocalizedString(key, key));
+
+            var actions = vm.GetRibbonRegisters(localizerMock.Object)!
+                .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+                .SelectMany(t => t.Items)
+                .ToList();
+
+            actions.Select(a => a.Id).Should().Contain(new[] { "McpApprovals", "McpAudit" });
+            actions.First(a => a.Id == "McpSecurity").Hidden.Should().BeTrue();
         }
 
         private static async Task<List<string>> GetAllActionIdsAfterLoad()

@@ -24,6 +24,10 @@
 - [Berichtswesen](berichtswesen/index.md) — Dieser Bereich stellt KPI- und Aggregatberichte mit Favoriten bereit.
 - [Budgetplanung](budgetplanung/index.md) — Dieser Bereich plant Budgets über Regeln, Zwecke und Abweichungsanalysen.
 
+## Integrationen
+
+- [MCP-Server](mcp-server/index.md) — Dieser Bereich gibt externen KI-Systemen über einen benutzerbezogenen Zugang kontrollierten Zugriff auf die eigenen Finanzdaten.
+
 ## Systemverwaltung
 
 - [Anhänge](anhaenge/index.md) — Dieser Bereich verwaltet Dateianhänge und Kategorien für Fachobjekte.

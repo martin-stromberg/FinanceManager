@@ -420,7 +420,7 @@ public partial class ApiClient
     {
         var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/savingsplan", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        resp.EnsureSuccessStatusCode();
+        await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
     }
 

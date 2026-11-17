@@ -33,6 +33,7 @@ public sealed class PortfolioAnalysisReportControllerTests
             new PortfolioPerformanceDto(null, null, [], []),
             new PortfolioCashflowDto(0m, 0m, 0m, 0m, 0m, 0m),
             new PortfolioRiskDto(null, null, null, null, null),
+            new PortfolioDepotDevelopmentDto([]),
             DateTime.UtcNow,
             DateTime.UtcNow.AddDays(10));
 
@@ -106,5 +107,97 @@ public sealed class PortfolioAnalysisReportControllerTests
 
         result.Should().BeOfType<NoContentResult>();
         cache.Verify(c => c.InvalidateCacheAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that the default configuration (no saved configuration) contains the new
+    /// DepotDevelopment tile in both the active set and the tile order.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiConfiguration_Default_IncludesDepotDevelopment()
+    {
+        var (controller, _, repo, _) = Create();
+        repo.Setup(r => r.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PortfolioKpiConfiguration?)null);
+
+        var result = await controller.GetKpiConfigurationAsync(CancellationToken.None);
+
+        var dto = ((OkObjectResult)result).Value.Should().BeOfType<PortfolioKpiConfigurationDto>().Subject;
+        dto.ActiveTileIds.Should().Contain(PortfolioTileId.DepotDevelopment);
+        dto.TileOrder.Should().Contain(PortfolioTileId.DepotDevelopment);
+    }
+
+    /// <summary>
+    /// Verifies that the default configuration (no saved configuration) is merged the same way as a
+    /// saved one: tiles outside the default-active set (e.g. Risk) appear in the tile order so the
+    /// edit list is identical for every user, without being activated.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiConfiguration_Default_MergesMissingTilesIntoOrder()
+    {
+        var (controller, _, repo, _) = Create();
+        repo.Setup(r => r.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PortfolioKpiConfiguration?)null);
+
+        var result = await controller.GetKpiConfigurationAsync(CancellationToken.None);
+
+        var dto = ((OkObjectResult)result).Value.Should().BeOfType<PortfolioKpiConfigurationDto>().Subject;
+        dto.TileOrder.Should().Contain(PortfolioTileId.Risk);
+        dto.ActiveTileIds.Should().NotContain(PortfolioTileId.Risk);
+    }
+
+    /// <summary>
+    /// Verifies that a configuration saved before the DepotDevelopment tile existed gets the new tile
+    /// appended to the tile order and activated, so existing users see it automatically.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiConfiguration_SavedConfigMissingTile_MergesIntoOrderAndActive()
+    {
+        var (controller, _, repo, userId) = Create();
+        repo.Setup(r => r.GetAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PortfolioKpiConfiguration(userId, "[0,1,2]", "[0,1,2]"));
+
+        var result = await controller.GetKpiConfigurationAsync(CancellationToken.None);
+
+        var dto = ((OkObjectResult)result).Value.Should().BeOfType<PortfolioKpiConfigurationDto>().Subject;
+        dto.TileOrder.Should().Contain(PortfolioTileId.DepotDevelopment);
+        dto.TileOrder[^1].Should().Be(PortfolioTileId.DepotDevelopment);
+        dto.ActiveTileIds.Should().Contain(PortfolioTileId.DepotDevelopment);
+    }
+
+    /// <summary>
+    /// Verifies that a tile which is already present in the stored tile order but not in the active
+    /// set stays inactive after the merge — an explicit user deactivation is preserved.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiConfiguration_SavedConfigWithDeactivatedTile_StaysInactive()
+    {
+        var (controller, _, repo, userId) = Create();
+        repo.Setup(r => r.GetAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PortfolioKpiConfiguration(userId, "[0,1,2]", "[0,1,2,4]"));
+
+        var result = await controller.GetKpiConfigurationAsync(CancellationToken.None);
+
+        var dto = ((OkObjectResult)result).Value.Should().BeOfType<PortfolioKpiConfigurationDto>().Subject;
+        dto.TileOrder.Should().Contain(PortfolioTileId.DepotDevelopment);
+        dto.ActiveTileIds.Should().NotContain(PortfolioTileId.DepotDevelopment);
+    }
+
+    /// <summary>
+    /// Verifies that tiles missing from a saved configuration that are not part of the default-active
+    /// set (e.g. Risk) are appended to the tile order without being activated.
+    /// </summary>
+    [Fact]
+    public async Task GetKpiConfiguration_SavedConfigMissingRisk_MergesIntoOrderOnly()
+    {
+        var (controller, _, repo, userId) = Create();
+        repo.Setup(r => r.GetAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PortfolioKpiConfiguration(userId, "[0,1,2,4]", "[0,1,2,4]"));
+
+        var result = await controller.GetKpiConfigurationAsync(CancellationToken.None);
+
+        var dto = ((OkObjectResult)result).Value.Should().BeOfType<PortfolioKpiConfigurationDto>().Subject;
+        dto.TileOrder.Should().Contain(PortfolioTileId.Risk);
+        dto.ActiveTileIds.Should().NotContain(PortfolioTileId.Risk);
     }
 }

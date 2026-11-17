@@ -1,0 +1,523 @@
+@using FinanceManager.Domain.Mcp
+@using FinanceManager.Shared.Dtos.Accounts
+@using FinanceManager.Shared.Dtos.Mcp
+@using FinanceManager.Web.ViewModels.Mcp
+@implements IDisposable
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+
+@* Scope-Matrix-Editor + Filterverwaltung + Genehmigungsmodus-Klartext (F-0502/F-0503/F-0504).
+   Zeilen = 18 Datentypen, Spalten = 7 Rechtearten; Zellen nur dort aktivierbar, wo die
+   serverseitige F3-Matrix (Options.DataTypes[].AllowedRights) die Kombination erlaubt.
+   Bei Stufe != Individuell nur lesend; "Von Vorlage anpassen" wechselt zu Individuell. *@
+
+@if (Provider?.Access is { } access)
+{
+    var opts = Provider.Options;
+    var revoked = (McpAccessStatus)access.Status == McpAccessStatus.Revoked;
+    var editable = Provider.IsIndividualLevel && !revoked;
+
+    @* ---- Genehmigungsmodus (Klartext + Kill-Switch-Bezug, F-0504) ---- *@
+    <div style="margin-bottom:.6rem;">
+        <span style="color:var(--muted);">@L["Mcp_Rights_ApprovalMode"]</span>
+        <strong> @McpAccessText.ApprovalMode(L, access.ApprovalMode)</strong>
+        <div style="color:var(--muted);font-size:.85rem;margin-top:.15rem;">
+            @L[ApprovalModeDescKey(access.ApprovalMode)]
+        </div>
+        <div style="color:var(--muted);font-size:.85rem;margin-top:.15rem;">
+            @L["Mcp_Approval_KillSwitchHint"]
+        </div>
+    </div>
+
+    @* ---- Scope-Matrix (F-0502) ---- *@
+    @if (opts is not null)
+    {
+        <div style="overflow-x:auto;">
+            <table class="fm-table" style="font-size:.85rem;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;padding:.25rem .4rem;">@L["Mcp_Rights_DataType"]</th>
+                        @foreach (var r in opts.RightKinds)
+                        {
+                            <th style="text-align:center;padding:.25rem .4rem;">
+                                @McpAccessText.RightKind(L, r)<span class="icon-btn" role="img" aria-label="@McpAccessText.RightKind(L, r)" title="@McpAccessText.RightKindInfo(L, r)" style="display:inline-block;vertical-align:text-bottom;margin-left:.2rem;cursor:help;opacity:.55;"><svg style="width:.85rem;height:.85rem;"><use href="/icons/sprite.svg#info" /></svg></span>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dt in opts.DataTypes)
+                    {
+                        <tr>
+                            <td style="padding:.25rem .4rem;">@McpAccessText.DataType(L, dt.DataType)</td>
+                            @foreach (var r in opts.RightKinds)
+                            {
+                                var allowed = dt.AllowedRights.Contains(r);
+                                <td style="text-align:center;padding:.15rem .3rem;">
+                                    @if (allowed)
+                                    {
+                                        <input type="checkbox"
+                                               checked="@IsCellChecked(dt.DataType, r)"
+                                               disabled="@(!editable)"
+                                               @onchange="_ => ToggleCell(dt.DataType, r)" />
+                                    }
+                                    else
+                                    {
+                                        <span title="@L[LockedReasonKey(dt.DataType, r)]" style="opacity:.35;">—</span>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:.5rem;color:var(--muted);font-size:.85rem;">
+            @L["Mcp_Matrix_ReadImplication"]
+        </div>
+        <div style="margin-top:.25rem;color:var(--muted);font-size:.85rem;">
+            @L["Mcp_Rights_CapHint"]
+        </div>
+
+        <div style="margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+            @if (!editable && !revoked)
+            {
+                <button type="button" class="btn" disabled="@_busy" @onclick="StartIndividualEditAsync">
+                    @L["Mcp_Matrix_Customize"]
+                </button>
+                <span style="color:var(--muted);font-size:.85rem;">@L["Mcp_Matrix_ReadOnly"]</span>
+            }
+            @if (editable && _dirty)
+            {
+                <button type="button" class="btn btn-primary" disabled="@_busy" @onclick="SaveScopesAsync">
+                    @L["Btn_Save"]
+                </button>
+                <button type="button" class="btn" disabled="@_busy" @onclick="ResetDraft">
+                    @L["Mcp_Matrix_Reset"]
+                </button>
+                <span style="color:var(--muted);font-size:.85rem;">@L["Mcp_Matrix_Dirty"]</span>
+            }
+            else if (editable)
+            {
+                <span style="color:var(--muted);font-size:.85rem;">@L["Mcp_Matrix_EditHint"]</span>
+            }
+        </div>
+    }
+    else
+    {
+        @* Fallback ohne Options: flache Effektiv-Anzeige wie bisher *@
+        @if (access.EffectiveScopes.Count > 0)
+        {
+            <table class="fm-table" style="width:100%;font-size:.9rem;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;padding:.25rem .4rem;">@L["Mcp_Rights_DataType"]</th>
+                        <th style="text-align:left;padding:.25rem .4rem;">@L["Mcp_Rights_Right"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var scope in access.EffectiveScopes)
+                    {
+                        <tr>
+                            <td style="padding:.25rem .4rem;">@McpAccessText.DataType(L, scope.DataType)</td>
+                            <td style="padding:.25rem .4rem;">@McpAccessText.RightKind(L, scope.Right)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div style="color:var(--muted);font-size:.9rem;">@L["Mcp_Rights_Empty"]</div>
+        }
+        <div style="margin-top:.5rem;color:var(--muted);font-size:.85rem;">@L["Mcp_Rights_CapHint"]</div>
+    }
+
+    @* ---- Einschränkungen / Filterverwaltung (F-0503) ---- *@
+    <div style="margin-top:1rem;">
+        <h5 style="margin:0 0 .4rem 0;">@L["Mcp_Section_Filters"]</h5>
+        <div style="color:var(--muted);font-size:.85rem;margin-bottom:.4rem;">
+            @L["Mcp_Filters_Hint"]
+        </div>
+        <div style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">
+            @L["Mcp_Filters_Indirect"]
+        </div>
+
+        @{
+            var persistedRows = access.EffectiveScopes.Where(s => s.Id != Guid.Empty).ToList();
+        }
+        @if (persistedRows.Count == 0)
+        {
+            <div style="color:var(--muted);font-size:.9rem;">@L["Mcp_Filters_NeedsIndividual"]</div>
+        }
+        else if (opts is not null)
+        {
+            @if (_dirty)
+            {
+                <div style="color:var(--muted);font-size:.85rem;margin-bottom:.4rem;">@L["Mcp_Filters_PendingMatrix"]</div>
+            }
+            @foreach (var scope in persistedRows)
+            {
+                var filterCount = CountSetFilters(scope);
+                <details style="border:1px solid var(--border,#444);border-radius:6px;padding:.5rem .75rem;margin-bottom:.4rem;">
+                    <summary style="cursor:pointer;">
+                        @McpAccessText.DataType(L, scope.DataType) — @McpAccessText.RightKind(L, scope.Right)
+                        <span style="color:var(--muted);font-size:.85rem;">(@filterCount @L["Mcp_Filters_Set"])</span>
+                    </summary>
+                    <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
+                        @foreach (var dim in opts.FilterDimensions)
+                        {
+                            <fieldset style="border:none;padding:0;margin:0;">
+                                <legend style="font-size:.85rem;color:var(--muted);padding:0;">
+                                    @McpAccessText.DataType(L, DimensionDataType(dim))
+                                </legend>
+                                <div style="display:flex;flex-wrap:wrap;gap:.35rem .9rem;">
+                                    @foreach (var opt in DimensionOptions(dim, scope))
+                                    {
+                                        <label style="display:flex;gap:.3rem;align-items:center;font-size:.9rem;color:@(opt.Known ? "inherit" : "var(--muted)");">
+                                            <input type="checkbox"
+                                                   checked="@IsFilterSelected(scope.Id, dim, opt.Value)"
+                                                   disabled="@(!editable || _dirty || _busy)"
+                                                   @onchange="e => ToggleFilter(scope.Id, dim, opt.Value, e)" />
+                                            @opt.Label
+                                        </label>
+                                    }
+                                </div>
+                            </fieldset>
+                        }
+                        <div style="color:var(--muted);font-size:.8rem;">@L["Mcp_Filters_Unclassified"]</div>
+                        @if (editable && IsFilterDirty(scope.Id))
+                        {
+                            <div>
+                                <button type="button" class="btn btn-primary" disabled="@(_busy || _dirty)"
+                                        @onclick="() => SaveFiltersAsync(scope)">
+                                    @L["Btn_Save"]
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </details>
+            }
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The owning card view model.</summary>
+    [Parameter] public McpAccessCardViewModel? Provider { get; set; }
+
+    private McpAccessCardViewModel? _subscribed;
+    private bool _busy;
+
+    /// <summary>Checked matrix cells in edit mode — (DataType, Right).</summary>
+    private readonly HashSet<(short DataType, short Right)> _draft = new();
+    private bool _dirty;
+    private (Guid Id, DateTime? ModifiedUtc)? _seededKey;
+    private HashSet<(short DataType, short Right)> _effectiveCells = new();
+
+    /// <summary>Per persisted scope row: dimension → selected values.</summary>
+    private readonly Dictionary<Guid, Dictionary<string, SortedSet<string>>> _filterDrafts = new();
+    private (Guid Id, DateTime? ModifiedUtc)? _filterSeededKey;
+
+    protected override void OnParametersSet()
+    {
+        if (_subscribed != Provider)
+        {
+            if (_subscribed is not null)
+            {
+                _subscribed.StateChanged -= OnStateChanged;
+            }
+            _subscribed = Provider;
+            if (_subscribed is not null)
+            {
+                _subscribed.StateChanged += OnStateChanged;
+            }
+        }
+
+        ReseedIfChanged();
+    }
+
+    private void OnStateChanged(object? sender, EventArgs e)
+    {
+        ReseedIfChanged();
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Re-seeds the matrix draft and filter drafts whenever the loaded access changed
+    /// (load/reload). A dirty matrix draft survives until the server state actually moves.
+    /// </summary>
+    private void ReseedIfChanged()
+    {
+        var access = Provider?.Access;
+        if (access is null)
+        {
+            return;
+        }
+        var key = (access.Id, access.ModifiedUtc);
+        if (key != _seededKey)
+        {
+            SeedDraft(access);
+            _seededKey = key;
+            _dirty = false;
+        }
+        if (key != _filterSeededKey)
+        {
+            SeedFilterDrafts(access);
+            _filterSeededKey = key;
+        }
+        _effectiveCells = access.EffectiveScopes
+            .Select(s => (s.DataType, s.Right))
+            .ToHashSet();
+    }
+
+    // ---------- Matrix ----------
+
+    private void SeedDraft(McpAccessDetailDto access)
+    {
+        _draft.Clear();
+        foreach (var s in access.EffectiveScopes)
+        {
+            _draft.Add((s.DataType, s.Right));
+        }
+    }
+
+    private bool IsCellChecked(short dataType, short right)
+        => Provider is { IsIndividualLevel: true } ? _draft.Contains((dataType, right))
+            : _effectiveCells.Contains((dataType, right));
+
+    private void ToggleCell(short dataType, short right)
+    {
+        if (Provider is not { IsIndividualLevel: true }) return;
+        if (_draft.Remove((dataType, right)))
+        {
+            // Removing Read cascades: every other right on the data type requires it.
+            if (right == (short)McpRightKind.Read)
+            {
+                _draft.RemoveWhere(k => k.DataType == dataType && k.Right != right);
+            }
+        }
+        else
+        {
+            _draft.Add((dataType, right));
+            // Implikationshilfe: a non-Read right implies Read on the same data type —
+            // select it automatically (ui-konzept.md §4.3.2; the API enforces it too).
+            if (right != (short)McpRightKind.Read)
+            {
+                _draft.Add((dataType, (short)McpRightKind.Read));
+            }
+        }
+        _dirty = !_draft.SetEquals(_effectiveCells);
+    }
+
+    private void ResetDraft()
+    {
+        if (Provider?.Access is { } a)
+        {
+            SeedDraft(a);
+        }
+        _dirty = false;
+    }
+
+    private List<McpAccessScopeDto> BuildScopeRows()
+    {
+        var existing = Provider?.Access?.EffectiveScopes ?? (IReadOnlyList<McpAccessScopeDto>)Array.Empty<McpAccessScopeDto>();
+        var rows = new List<McpAccessScopeDto>();
+        foreach (var (dt, r) in _draft.OrderBy(k => k.DataType).ThenBy(k => k.Right))
+        {
+            // Preserve the filter sets of existing persisted rows of the tuple verbatim —
+            // a matrix save must never silently widen or narrow filters.
+            var rowsForTuple = existing.Where(s => s.DataType == dt && s.Right == r).ToList();
+            if (rowsForTuple.Count == 0)
+            {
+                rows.Add(new McpAccessScopeDto(Guid.Empty, dt, r, null, null, null, null, null));
+            }
+            else
+            {
+                rows.AddRange(rowsForTuple.Select(s => new McpAccessScopeDto(Guid.Empty, dt, r,
+                    s.AccountTypesCsv, s.ContactCategoryIdsCsv, s.SecurityCategoryIdsCsv,
+                    s.SavingsPlanCategoryIdsCsv, s.AttachmentCategoryIdsCsv)));
+            }
+        }
+        return rows;
+    }
+
+    private async Task StartIndividualEditAsync()
+    {
+        if (Provider is null) return;
+        _busy = true;
+        try { await Provider.StartIndividualEditAsync(); }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveScopesAsync()
+    {
+        if (Provider is null) return;
+        _busy = true;
+        try { await Provider.SaveScopesAsync(BuildScopeRows()); }
+        finally { _busy = false; }
+    }
+
+    private string LockedReasonKey(short dataType, short right)
+    {
+        var dt = (McpDataType)dataType;
+        if ((McpRightKind)right == McpRightKind.Book && dt != McpDataType.StatementDrafts)
+        {
+            return "Mcp_Matrix_Lock_Book";
+        }
+        if (dt == McpDataType.Postings)
+        {
+            return "Mcp_Matrix_Lock_Postings";
+        }
+        if (dt == McpDataType.StatementImports)
+        {
+            return "Mcp_Matrix_Lock_Imports";
+        }
+        if (dt == McpDataType.AccountTypes)
+        {
+            return "Mcp_Matrix_Lock_AccountTypes";
+        }
+        return "Mcp_Matrix_Lock_Generic";
+    }
+
+    // ---------- Genehmigungsmodus ----------
+
+    private static string ApprovalModeDescKey(short approvalMode)
+        => "Mcp_ApprovalModeDesc_"
+            + (Enum.IsDefined(typeof(McpApprovalMode), (int)approvalMode)
+                ? ((McpApprovalMode)approvalMode).ToString()
+                : approvalMode.ToString());
+
+    // ---------- Filter ----------
+
+    private static SortedSet<string> ParseCsv(string? csv)
+        => new((csv ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+            StringComparer.Ordinal);
+
+    private void SeedFilterDrafts(McpAccessDetailDto access)
+    {
+        _filterDrafts.Clear();
+        foreach (var s in access.EffectiveScopes.Where(s => s.Id != Guid.Empty))
+        {
+            _filterDrafts[s.Id] = new Dictionary<string, SortedSet<string>>(StringComparer.Ordinal)
+            {
+                ["AccountTypes"] = ParseCsv(s.AccountTypesCsv),
+                ["ContactCategories"] = ParseCsv(s.ContactCategoryIdsCsv),
+                ["SecurityCategories"] = ParseCsv(s.SecurityCategoryIdsCsv),
+                ["SavingsPlanCategories"] = ParseCsv(s.SavingsPlanCategoryIdsCsv),
+                ["AttachmentCategories"] = ParseCsv(s.AttachmentCategoryIdsCsv)
+            };
+        }
+    }
+
+    private SortedSet<string> FilterSet(Guid scopeId, string dimension)
+    {
+        if (_filterDrafts.TryGetValue(scopeId, out var dims)
+            && dims.TryGetValue(dimension, out var set))
+        {
+            return set;
+        }
+        return new SortedSet<string>(StringComparer.Ordinal);
+    }
+
+    private bool IsFilterSelected(Guid scopeId, string dimension, string value)
+        => FilterSet(scopeId, dimension).Contains(value);
+
+    private void ToggleFilter(Guid scopeId, string dimension, string value, ChangeEventArgs e)
+    {
+        if (_dirty || Provider is not { IsIndividualLevel: true }) return;
+        var set = FilterSet(scopeId, dimension);
+        if (e.Value is bool on && on)
+        {
+            set.Add(value);
+        }
+        else
+        {
+            set.Remove(value);
+        }
+    }
+
+    private bool IsFilterDirty(Guid scopeId)
+    {
+        var scope = Provider?.Access?.EffectiveScopes.FirstOrDefault(s => s.Id == scopeId);
+        if (scope is null || !_filterDrafts.TryGetValue(scopeId, out var dims)) return false;
+        return !dims["AccountTypes"].SetEquals(ParseCsv(scope.AccountTypesCsv))
+            || !dims["ContactCategories"].SetEquals(ParseCsv(scope.ContactCategoryIdsCsv))
+            || !dims["SecurityCategories"].SetEquals(ParseCsv(scope.SecurityCategoryIdsCsv))
+            || !dims["SavingsPlanCategories"].SetEquals(ParseCsv(scope.SavingsPlanCategoryIdsCsv))
+            || !dims["AttachmentCategories"].SetEquals(ParseCsv(scope.AttachmentCategoryIdsCsv));
+    }
+
+    private async Task SaveFiltersAsync(McpAccessScopeDto scope)
+    {
+        if (Provider is null || !_filterDrafts.TryGetValue(scope.Id, out var dims)) return;
+        _busy = true;
+        try
+        {
+            await Provider.SaveScopeFiltersAsync(scope.Id, new McpFilterSetRequest(
+                CsvOrNull(dims["AccountTypes"]),
+                CsvOrNull(dims["ContactCategories"]),
+                CsvOrNull(dims["SecurityCategories"]),
+                CsvOrNull(dims["SavingsPlanCategories"]),
+                CsvOrNull(dims["AttachmentCategories"])));
+        }
+        finally { _busy = false; }
+    }
+
+    private static string? CsvOrNull(SortedSet<string> values)
+        => values.Count == 0 ? null : string.Join(",", values);
+
+    private static int CountSetFilters(McpAccessScopeDto s)
+        => new[] { s.AccountTypesCsv, s.ContactCategoryIdsCsv, s.SecurityCategoryIdsCsv,
+            s.SavingsPlanCategoryIdsCsv, s.AttachmentCategoryIdsCsv }
+            .Count(c => !string.IsNullOrWhiteSpace(c));
+
+    private short DimensionDataType(string dimension)
+        => Enum.TryParse<McpDataType>(dimension, out var dt) ? (short)dt : (short)-1;
+
+    /// <summary>
+    /// Selectable values of a filter dimension: account types from the enum, category
+    /// dimensions from the owner's lists in <c>Options</c> (name→id Auflösungshilfe).
+    /// Values already set but no longer resolvable (e.g. deleted categories) are appended
+    /// so they can be removed.
+    /// </summary>
+    private IReadOnlyList<(string Value, string Label, bool Known)> DimensionOptions(
+        string dimension, McpAccessScopeDto scope)
+    {
+        var opts = Provider?.Options;
+        static IReadOnlyList<McpCategoryOptionDto> Cats(IReadOnlyList<McpCategoryOptionDto>? l)
+            => l ?? Array.Empty<McpCategoryOptionDto>();
+        IEnumerable<(string Value, string Label)> known = dimension switch
+        {
+            "AccountTypes" => Enum.GetValues<AccountType>()
+                .Select(t => (((int)t).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    Localized($"EnumType_AccountType_{t}"))),
+            "ContactCategories" => Cats(opts?.ContactCategories).Select(c => (c.Id.ToString(), c.Name)),
+            "SecurityCategories" => Cats(opts?.SecurityCategories).Select(c => (c.Id.ToString(), c.Name)),
+            "SavingsPlanCategories" => Cats(opts?.SavingsPlanCategories).Select(c => (c.Id.ToString(), c.Name)),
+            "AttachmentCategories" => Cats(opts?.AttachmentCategories).Select(c => (c.Id.ToString(), c.Name)),
+            _ => Enumerable.Empty<(string Value, string Label)>()
+        };
+        var list = known.Select(o => (o.Value, o.Label, Known: true)).ToList();
+        var knownValues = list.Select(o => o.Value).ToHashSet(StringComparer.Ordinal);
+        list.AddRange(FilterSet(scope.Id, dimension)
+            .Where(v => !knownValues.Contains(v))
+            .Select(v => (v, v, false)));
+        return list;
+    }
+
+    private string Localized(string key)
+    {
+        var value = L[key];
+        return value.ResourceNotFound || string.IsNullOrWhiteSpace(value.Value) ? key : value.Value;
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_subscribed is not null)
+        {
+            _subscribed.StateChanged -= OnStateChanged;
+        }
+    }
+}

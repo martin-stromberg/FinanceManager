@@ -48,7 +48,7 @@ public sealed class SetupSectionsDirtyDetectionTests : BunitContext
     // Sections with their own save semantics that are not part of the global Save button.
     private static readonly HashSet<string> ExcludedSections = new(StringComparer.OrdinalIgnoreCase)
     {
-        "attachments", "backup", "security"
+        "attachments", "backup", "security", "mcp"
     };
 
     /// <summary>

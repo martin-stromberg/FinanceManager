@@ -6,7 +6,9 @@ using FinanceManager.Application.Demo;
 using FinanceManager.Infrastructure;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.HomeKpi;
+using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Reports;
 using FinanceManager.Shared.Dtos.Securities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -177,13 +179,14 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
             .OrderBy(x => x.SortOrder)
             .Select(x => new { x.Kind, x.PredefinedType, x.DisplayMode, x.SortOrder })
             .ToListAsync(CancellationToken.None);
-        homeKpis.Should().HaveCount(5);
+        homeKpis.Should().HaveCount(6);
         homeKpis.Should().Equal(
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.AccountsAggregates, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 0 },
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.SavingsPlanAggregates, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 1 },
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.SecuritiesDividends, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 2 },
             new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.MonthlyBudget, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 3 },
-            new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.OpenStatementDraftsCount, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 4 });
+            new { Kind = HomeKpiKind.Predefined, PredefinedType = (HomeKpiPredefined?)HomeKpiPredefined.OpenStatementDraftsCount, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 4 },
+            new { Kind = HomeKpiKind.ReportFavorite, PredefinedType = (HomeKpiPredefined?)null, DisplayMode = HomeKpiDisplayMode.TotalOnly, SortOrder = 5 });
 
         var reportFavorites = await db.ReportFavorites
             .AsNoTracking()
@@ -216,6 +219,41 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
             && !x.ComparePrevious
             && !x.CompareYear
             && x.CompareProjection);
+        reportFavorites.Should().ContainSingle(x =>
+            x.Name == "Zinsen (Jährlich)"
+            && x.PostingKind == PostingKind.Bank
+            && x.Interval == ReportInterval.Year
+            && !x.IncludeCategory
+            && !x.ComparePrevious
+            && x.CompareYear
+            && x.CompareProjection);
+
+        // The interest KPI tile must point at the interest report favorite so the home
+        // dashboard shows the current year's interest total.
+        var interestFavoriteId = await db.ReportFavorites
+            .AsNoTracking()
+            .Where(x => x.OwnerUserId == userId && x.Name == "Zinsen (Jährlich)")
+            .Select(x => x.Id)
+            .SingleAsync(CancellationToken.None);
+        var interestKpi = await db.HomeKpis
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Kind == HomeKpiKind.ReportFavorite, CancellationToken.None);
+        interestKpi.ReportFavoriteId.Should().Be(interestFavoriteId);
+
+        // The yearly interest report relies on quarterly "Zinsgutschrift" postings and the
+        // December year-end interest; both must exist in the seeded history.
+        var ownAccountIds = await db.Accounts
+            .AsNoTracking()
+            .Where(x => x.OwnerUserId == userId)
+            .Select(x => x.Id)
+            .ToListAsync(CancellationToken.None);
+        var bankSubjects = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId.HasValue && ownAccountIds.Contains(x.AccountId.Value))
+            .Select(x => x.Subject)
+            .ToListAsync(CancellationToken.None);
+        bankSubjects.Should().Contain(x => x != null && x.Contains("Zinsgutschrift", StringComparison.OrdinalIgnoreCase));
+        bankSubjects.Should().Contain(x => x != null && x.Contains("Jahresendzinsen", StringComparison.OrdinalIgnoreCase));
 
         var buys = await db.Postings
             .AsNoTracking()
@@ -301,7 +339,7 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
             .AsNoTracking()
             .Where(x => x.OwnerUserId == userId && x.Status == StatementDraftStatus.Draft)
             .ToListAsync(CancellationToken.None);
-        currentMonthDrafts.Should().HaveCount(3);
+        currentMonthDrafts.Should().HaveCount(4);
     }
 
     /// <summary>
@@ -354,6 +392,99 @@ public class ApiClientDemoDataTests : IClassFixture<TestWebApplicationFactory>
         sampleA.Should().HaveCount(40);
         sampleB.Should().HaveCount(40);
         sampleA.Should().BeEquivalentTo(sampleB);
+    }
+
+    /// <summary>
+    /// Verifies the Bauspar demo scenario: dedicated savings account and savings plan linked
+    /// together, monthly transfers from the giro account with counter-postings, year-end
+    /// interest on both balances, a monthly budget and the report favorite using linked
+    /// account postings as its source.
+    /// </summary>
+    [Fact]
+    public async Task CreateDemoDataAsync_ShouldCreateBausparSet_WhenCreatePostingsTrue()
+    {
+        var (_, userId) = await CreateAuthenticatedUserAsync();
+        await CreateDemoDataForUserAsync(userId);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var bausparAccount = await db.Accounts
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Name == "Bausparkonto", CancellationToken.None);
+        bausparAccount.Type.Should().Be(AccountType.Savings);
+
+        var giroAccount = await db.Accounts
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Name == "Girokonto", CancellationToken.None);
+
+        var bausparenPlan = await db.SavingsPlans
+            .AsNoTracking()
+            .SingleAsync(x => x.OwnerUserId == userId && x.Name == "Bausparen", CancellationToken.None);
+        bausparenPlan.Type.Should().Be(SavingsPlanType.Recurring);
+        bausparenPlan.Interval.Should().Be(SavingsPlanInterval.Monthly);
+        bausparenPlan.TargetAmount.Should().Be(40000.00m);
+
+        var link = await db.SavingsPlanAccountLinks
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.SavingsPlanId == bausparenPlan.Id && x.AccountId == bausparAccount.Id, CancellationToken.None);
+        link.Should().NotBeNull();
+
+        // monthly transfers: giro -> bauspar with informal plan posting on the giro side
+        var bausparInflows = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == bausparAccount.Id && x.Subject == "Bauspareinlage")
+            .ToListAsync(CancellationToken.None);
+        var giroOutflows = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == giroAccount.Id && x.Subject == "Bauspareinlage")
+            .ToListAsync(CancellationToken.None);
+        bausparInflows.Should().NotBeEmpty().And.OnlyContain(x => x.Amount == 200.00m);
+        giroOutflows.Should().NotBeEmpty().And.OnlyContain(x => x.Amount == -200.00m);
+
+        var planPostings = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.SavingsPlan && x.SavingsPlanId == bausparenPlan.Id)
+            .ToListAsync(CancellationToken.None);
+        planPostings.Should().HaveCount(bausparInflows.Count);
+        planPostings.Should().OnlyContain(x => x.Amount == 200.00m);
+
+        // year-end interest on both balances
+        var giroInterest = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == giroAccount.Id && x.Subject == "Jahresendzinsen 1 %")
+            .ToListAsync(CancellationToken.None);
+        var bausparInterest = await db.Postings
+            .AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == bausparAccount.Id && x.Subject == "Jahresendzinsen 1 %")
+            .ToListAsync(CancellationToken.None);
+        giroInterest.Should().NotBeEmpty().And.OnlyContain(x => x.Amount > 0m);
+        bausparInterest.Should().NotBeEmpty().And.OnlyContain(x => x.Amount > 0m);
+
+        // both balances are consistent: sum of own postings equals the stored balance
+        var giroSum = await db.Postings.AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == giroAccount.Id && x.BookingDate <= DateTime.Today)
+            .SumAsync(x => x.Amount, CancellationToken.None);
+        var bausparSum = await db.Postings.AsNoTracking()
+            .Where(x => x.Kind == PostingKind.Bank && x.AccountId == bausparAccount.Id && x.BookingDate <= DateTime.Today)
+            .SumAsync(x => x.Amount, CancellationToken.None);
+        giroAccount.CurrentBalance.Should().Be(giroSum);
+        bausparAccount.CurrentBalance.Should().Be(bausparSum);
+
+        var bausparBudget = await db.BudgetPurposes
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.OwnerUserId == userId && x.Name == "Bausparen" && x.SourceType == BudgetSourceType.SavingsPlan, CancellationToken.None);
+        bausparBudget.Should().NotBeNull();
+
+        var favorite = await db.ReportFavorites
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.OwnerUserId == userId && x.Name == "Sparplanbwegungen (Monatlich)", CancellationToken.None);
+        favorite.Should().NotBeNull();
+        favorite!.PostingKind.Should().Be(PostingKind.SavingsPlan);
+        favorite.Interval.Should().Be(ReportInterval.Month);
+        favorite.ComparePrevious.Should().BeTrue();
+        favorite.CompareYear.Should().BeTrue();
+        favorite.SavingsPlanPostingSource.Should().Be(SavingsPlanPostingSource.LinkedAccountPostings);
     }
 
     private static int CountBusinessDays(DateTime start, DateTime end)

@@ -1,0 +1,37 @@
+# Plan-Gegenprüfung
+
+## Ergebnis
+
+**Status:** Plan vollständig
+
+## Abgleich Akzeptanzkriterien
+
+| Akzeptanzkriterium | Umsetzung im Plan | Testnachweis im Plan | Status |
+|--------------------|-------------------|----------------------|--------|
+| `SavingsPlanCardViewModel`: `Linked`-Gruppe an letzte Position (Ziel: Navigation → Manage → Analysis → Bookings → Linked) | Umsetzungsschritt 1: `SavingsPlanCardViewModel.cs:895` `{ nav, manage, linked, analysis, bookings }` → `{ nav, manage, analysis, bookings, linked }` — Zeilenangabe im Code verifiziert | Unit-Test `Ribbon_GroupOrder_PlacesLinkedLast` in `SavingsPlanCardLinkTests` (exakte Titel-Sequenz + `Linked` letzter Tab über alle Register); E2E `SavingsPlanCard_LinkedGroup_IsLastRibbonGroup`; reale Abnahme (Schritt 8) | Abgedeckt |
+| `BankAccountCardViewModel`: `Linked`-Gruppe an letzte Position (Ziel: Navigation → Manage → Bookings → Linked) | Umsetzungsschritt 1: `BankAccountCardViewModel.cs:302–308` — `Linked`-Eintrag (Zeile 306) hinter `Bookings` (Zeile 307) — Code verifiziert | Unit-Test `GetRibbon_GroupOrder_PlacesLinkedLast` in `AccountDetailViewModelTests`; E2E `BankAccountCard_LinkedGroup_IsLastRibbonGroup`; reale Abnahme | Abgedeckt |
+| `PostingsCardViewModel`: `Linked`-Gruppe an letzte Position (Ziel: Navigation → Actions → Linked) | Umsetzungsschritt 1: `PostingsCardViewModel.cs:154` `{ nav, linked, actions }` → `{ nav, actions, linked }` — Code verifiziert | Unit-Test `GetRibbonRegisters_GroupOrder_PlacesLinkedLast` in `PostingsCardViewModelReversalTests`; E2E `PostingsCard_LinkedGroup_IsLastRibbonGroup`; reale Abnahme | Abgedeckt |
+| Keine Änderung an Inhalt, Aktionen, Labels, Icons, `MobileShortcut`-Flags (Scope-Ausschluss 1) | Ausschluss dokumentiert, Status `bestätigt`, Begründung vorhanden; Umsetzung beschreibt ausdrücklich nur Listen-Umordnung | Implizit durch exakte Sequenz-Assertions (kein Gruppenverlust/-zuwachs); Gruppeninhalte unverändert | Abgedeckt |
+| Keine resx-/Ressourcen-Key-Änderungen (Scope-Ausschluss 2) | Ausschluss dokumentiert, Status `bestätigt`, Begründung vorhanden | Unit-Tests nutzen `DummyLocalizer` (Key = Titel) und assertieren die Key-Namen — ein Key-Umbenennen würde die Tests brechen | Abgedeckt |
+| `Navigation`-Gruppe bleibt an Position 0 (Scope-Ausschluss 3) | Ausschluss dokumentiert, Status `bestätigt`; `AGENT.md`-Ergänzung der Konvention als Designentscheidung (Schritt 2) | Exakte Sequenz-Assertions beginnen mit `Ribbon_Group_Navigation`; E2E assertiert `#Back` in erster `.fm-ribbon-group` | Abgedeckt |
+| Kein Refactoring zu generischer Sortierlogik, keine Änderung konformer ViewModels (Scope-Ausschluss 4) | Ausschluss dokumentiert, Status `bestätigt`; Designentscheidung „reine Listenposition, kein `Sort`" begründet (Referenzmuster, minimalinvasiv) | „Betroffene bestehende Tests: Keine" — verifiziert korrekt: alle bestehenden Ribbon-Tests sind reihenfolgeunabhängig (`Assert.Contains`, `FindReverseAction`, `FindActualReportAction`) | Abgedeckt |
+| Optionale `AGENT.md`-Ergänzung „Navigation an Position 0" (Issue-Hinweis, offene Frage 1) | Als Designentscheidung im gleichen Change umgesetzt (Schritt 2), inkl. Begründung | Dokumentationsänderung — kein Test erforderlich | Abgedeckt |
+| Festlegung der Reihenfolge: Listenposition vs. `Sort`-Werte (offene Frage 2) | Designentscheidung getroffen und begründet: reine Listenreihenfolge, `Sort` bleibt `0` | bUnit-Test `Groups_RenderInTabListOrder` beweist stabile First-Seen-Sortierung bei gleichem `Sort` auf Komponentenebene | Abgedeckt |
+
+## E2E-Abdeckung
+
+| Benutzerfluss / Akzeptanzkriterium | Geplanter E2E-Test | Status |
+|------------------------------------|--------------------|--------|
+| Sparplan-Karte `/card/savings-plans/{id}`: `Linked` sichtbar letzte Gruppe | `SavingsPlanCard_LinkedGroup_IsLastRibbonGroup` in `RibbonGroupOrderPlaywrightTests` — Seeding via `POST /api/savings-plans` (Muster in `ListNavigationPlaywrightTests.cs:308–314` verifiziert), Assertion: letzte `.fm-ribbon-group` enthält `#OpenAttachments`, erste enthält `#Back` | Abgedeckt |
+| Bankkonto-Karte `/card/accounts/{id}`: `Linked` sichtbar letzte Gruppe | `BankAccountCard_LinkedGroup_IsLastRibbonGroup` — Seeding via `AccountsApiSeedHelper.CreateAccountAsync` (verifiziert), Route und Selektoren im Code verifiziert | Abgedeckt |
+| Posten-Karte `/card/postings/{id}`: `Linked` sichtbar letzte Gruppe | `PostingsCard_LinkedGroup_IsLastRibbonGroup` — Seeding via `CreateAccountWithBalanceAsync` mit `SeededPosting` + `GET /api/postings/account/{id}` für Posting-Id (Muster in `PreliminaryStatementDraftE2ETests.cs:88` verifiziert; `Postings_GetByIdAsync` → `GET /api/postings/{id}` existiert) | Abgedeckt |
+| Neuanlage-Karte (Randzustand, Akzeptanzszenario 4) | Kein dedizierter E2E-Test — begründet über Unit-Tests: Tab-Liste in allen drei ViewModels wird zustandsunabhängig aufgebaut (im Code verifiziert: keine `IsEdit`-Verzweigung der Listenbildung) | Abgedeckt (Unit-Ebene, begründet) |
+| Reale End-to-End-Abnahme (Projektregel) | Schritt 8 der Umsetzungsreihenfolge: drei Detailseiten manuell im Browser prüfen, Ergebnis dokumentieren, Eskalationspfad bei Nichtdurchführbarkeit benannt | Abgedeckt |
+
+## Hinweise
+
+- **Verifizierte Plan-Annahmen (Stichproben im Code geprüft):** Zeilenangaben der drei Befund-Stellen korrekt (`SavingsPlanCardViewModel.cs:895`, `BankAccountCardViewModel.cs:302–308`, `PostingsCardViewModel.cs:154`); `Ribbon.razor` merged Gruppen nach Titel in First-Seen-Reihenfolge und sortiert stabil per `OrderBy(g => g.Sort)` (Zeilen 174–251); alle betroffenen Tabs haben `Sort = 0` (Default, `RibbonModels.cs:85`); Kompatibilitäts-Hilfsproperties `UiRibbonRegister.Title`/`Items` lesen den ersten Tab — `Navigation` bleibt überall erster Eintrag; `_childViewModels` wird nur von `SetupCardViewModel` befüllt, keines der drei Card-ViewModels trägt Kind-Register bei (Risikoanalyse im Plan zutreffend); DOM-Selektoren `.fm-ribbon-group` (nur Desktop-Gruppendivs) und Button-`id` = Aktions-`Id` (`#OpenAttachments`, `#Back`) verifiziert.
+- **Vollständigkeit der Befund-Liste:** Zusätzlich zu den vier im Inventory genannten Referenzen nutzt auch `BudgetPurposeCardViewModel` (`ViewModels/Budget/BudgetPurposeCardViewModel.cs:464–488`) `Ribbon_Group_Linked` — Reihenfolge `{ nav, manage, linked }` bereits konform (`Linked` letzte Gruppe); kein weiterer Verletzer vorhanden, Scope der Anforderung bleibt korrekt auf die drei ViewModels begrenzt.
+- **Rot-Vor-Umsetzung-Nachweis:** Schritt 3 benennt korrekt, dass die neuen Sequenz-Tests nach der Umordnung (Schritt 1) nicht natürlich rot werden können und verlangt eine einmalige Verifikation der Assertions gegen den Ausgangszustand — der Umsetzer sollte das konsequent tun (z. B. Assertions kurz gegen den Stand vor Schritt 1 laufen lassen).
+- **Kleinigkeiten (nicht blockierend):** Der `CreateRegisters(actions)`-Helfer in `RibbonTests` erzeugt nur ein Ein-Tab-Register; der geplante Mehrgruppen-bUnit-Test muss die Registerliste direkt aufbauen (Muster in `SingleTab_RendersGroupsAndButtons`, Zeilen 45–55, vorhanden). Testname `GetRibbon_GroupOrder_PlacesLinkedLast` (`AccountDetailViewModelTests`) nennt `GetRibbon`, beschrieben ist die Assertion über `GetRibbonRegisters` — funktional gleichwertig (keine Kind-Register), kosmetisch.
+- **Autorisierung/Sichtbarkeit:** Die Anforderung enthält keine Berechtigungs-, Sichtbarkeits- oder Filterregeln (reine Umordnung vorhandener Ribbon-Gruppen) — das Fehlen entsprechender Tests ist sachlich begründet, kein Lückenkriterium.

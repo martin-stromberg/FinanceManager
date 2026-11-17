@@ -61,7 +61,7 @@ public sealed class PortfolioAnalysisReportController : ControllerBase
     public async Task<IActionResult> GetKpiConfigurationAsync(CancellationToken ct)
     {
         var entity = await _configRepository.GetAsync(_current.UserId, ct);
-        return Ok(entity == null ? DefaultConfigurationDto() : ToDto(entity));
+        return Ok(entity == null ? MergeMissingTiles(DefaultConfigurationDto()) : MergeMissingTiles(ToDto(entity)));
     }
 
     /// <summary>
@@ -117,10 +117,32 @@ public sealed class PortfolioAnalysisReportController : ControllerBase
         return NoContent();
     }
 
+    private static readonly PortfolioTileId[] DefaultActiveTiles =
+        [PortfolioTileId.Structure, PortfolioTileId.Performance, PortfolioTileId.Cashflow, PortfolioTileId.DepotDevelopment];
+
     private static PortfolioKpiConfigurationDto DefaultConfigurationDto()
+        => new(DefaultActiveTiles, DefaultActiveTiles, DateTime.UtcNow);
+
+    // Tiles introduced after a user already saved a configuration are missing from their stored
+    // TileOrder. They are appended at the end so they become editable in the edit list; tiles that
+    // are part of the default-active set are also activated. A tile the user deliberately
+    // deactivated stays in TileOrder, so it is never re-activated here. The merged DTO is only
+    // returned, not persisted — persistence happens on the next explicit save.
+    private static PortfolioKpiConfigurationDto MergeMissingTiles(PortfolioKpiConfigurationDto dto)
     {
-        var defaultTiles = new[] { PortfolioTileId.Structure, PortfolioTileId.Performance, PortfolioTileId.Cashflow };
-        return new PortfolioKpiConfigurationDto(defaultTiles, defaultTiles, DateTime.UtcNow);
+        var order = dto.TileOrder.ToList();
+        var active = dto.ActiveTileIds.ToList();
+        foreach (var tile in Enum.GetValues<PortfolioTileId>())
+        {
+            if (order.Contains(tile)) { continue; }
+            order.Add(tile);
+            if (DefaultActiveTiles.Contains(tile))
+            {
+                active.Add(tile);
+            }
+        }
+
+        return new PortfolioKpiConfigurationDto(active, order, dto.UpdatedUtc);
     }
 
     private static PortfolioKpiConfigurationDto ToDto(PortfolioKpiConfiguration entity)

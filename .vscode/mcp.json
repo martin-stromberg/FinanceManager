@@ -1,0 +1,19 @@
+{
+    "servers": {
+        "financemanager": {
+            "type": "http",
+            "url": "https://localhost:7013/mcp",
+            "headers": {
+                "Authorization": "Bearer ${input:fm-mcp-token}"
+            }
+        }
+    },
+    "inputs": [
+        {
+            "id": "fm-mcp-token",
+            "type": "promptString",
+            "description": "FinanceManager MCP access token (fm_mcp_...)",
+            "password": true
+        }
+    ]
+}

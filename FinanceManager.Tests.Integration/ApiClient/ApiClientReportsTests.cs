@@ -1,3 +1,4 @@
+using FinanceManager.Shared.Dtos.Postings;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
@@ -108,5 +109,46 @@ public class ApiClientReportsTests : IClassFixture<TestWebApplicationFactory>
         del.Should().BeTrue();
         var gone = await api.Reports_GetFavoriteAsync(created.Id, TestContext.Current.CancellationToken);
         gone.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that <c>SavingsPlanPostingSource</c> is transmitted on create and update, persisted by the
+    /// server, and returned unchanged on subsequent reads - covering the full ApiClient/controller/service
+    /// round-trip that previously reset the selection to <c>PlanPostings</c>.
+    /// </summary>
+    [Fact]
+    public async Task Reports_Favorites_SavingsPlanPostingSource_Roundtrips()
+    {
+        var api = CreateClient();
+        await EnsureAuthenticatedAsync(api);
+
+        var created = await api.Reports_CreateFavoriteAsync(new ReportFavoriteCreateApiRequest
+        {
+            Name = $"Fav_{Guid.NewGuid():N}",
+            PostingKind = PostingKind.SavingsPlan,
+            Interval = 0,
+            Take = 12,
+            SavingsPlanPostingSource = SavingsPlanPostingSource.LinkedAccountPostings
+        }, TestContext.Current.CancellationToken);
+        created.SavingsPlanPostingSource.Should().Be(SavingsPlanPostingSource.LinkedAccountPostings);
+
+        var got = await api.Reports_GetFavoriteAsync(created.Id, TestContext.Current.CancellationToken);
+        got.Should().NotBeNull();
+        got!.SavingsPlanPostingSource.Should().Be(SavingsPlanPostingSource.LinkedAccountPostings);
+
+        var updated = await api.Reports_UpdateFavoriteAsync(created.Id, new ReportFavoriteUpdateApiRequest
+        {
+            Name = created.Name,
+            PostingKind = created.PostingKind,
+            Interval = (int)created.Interval,
+            Take = created.Take,
+            SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
+        }, TestContext.Current.CancellationToken);
+        updated.Should().NotBeNull();
+        updated!.SavingsPlanPostingSource.Should().Be(SavingsPlanPostingSource.PlanPostings);
+
+        var reloaded = await api.Reports_GetFavoriteAsync(created.Id, TestContext.Current.CancellationToken);
+        reloaded.Should().NotBeNull();
+        reloaded!.SavingsPlanPostingSource.Should().Be(SavingsPlanPostingSource.PlanPostings);
     }
 }
