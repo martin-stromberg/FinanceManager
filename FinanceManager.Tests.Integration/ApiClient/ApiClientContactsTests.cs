@@ -179,8 +179,8 @@ public class ApiClientContactsTests : IClassFixture<TestWebApplicationFactory>
                   "Sortierung;Datum absteigend\r\n" +
                   "\r\n" +
                   "\r\n" +
-                  "Buchung;Wertstellungsdatum;Auftraggeber/Empf�nger;Buchungstext;Verwendungszweck;Saldo;W�hrung;Betrag;W�hrung\r\n" +
-                  "02.12.2025;02.12.2025;Inline Contact;�berweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
+                  "Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\r\n" +
+                  "02.12.2025;02.12.2025;Inline Contact;Überweisung;Ihr Einkauf;2.776,45;EUR;-206,44;EUR\r\n";
 
         using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var upload = await api.StatementDrafts_UploadAsync(ms, fileName);

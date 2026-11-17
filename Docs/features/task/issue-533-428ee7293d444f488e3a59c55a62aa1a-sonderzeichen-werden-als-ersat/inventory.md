@@ -58,4 +58,4 @@ Jedes `�` ersetzt genau ein CP1252-Byte, das als UTF-8 nicht dekodierbar war. 
 
 - Neuer Check `.githooks/no-replacement-char-check.py` nach dem Muster der bestehenden `*-check.py`-Skripte: prüft Textdateien (Quellcode-Erweiterungen + `.md` + `.githooks`-Skripte) auf U+FFFD; Default = staged Dateien (harter Fehler — U+FFFD ist in Quelltexten nie legitim), `--all` + `--strict` für pre-push (Repo-weit, blockierend).
 - Verdrahtung in `.githooks/pre-commit` und `.githooks/pre-push` analog zu den übrigen Checks.
-- Allowlist: Marker `ufffd-ok` auf der Zeile für legitime Ausnahmen (z. B. diese Doku) + Datei-Allowlist im Skript.
+- Allowlist: Marker `ufffd-allow` irgendwo in der Datei für legitime Ausnahmen (z. B. diese Doku) — die ganze Datei wird dann übersprungen.

@@ -170,7 +170,7 @@ public sealed partial class User : IdentityUser<Guid>, IAggregateRoot
     /// <value>Attachment GUID or <c>null</c>.</value>
     public Guid? SymbolAttachmentId { get; private set; }
 
-    private void Touch() { /* marker for state change � intentionally no-op for now */ }
+    private void Touch() { /* marker for state change — intentionally no-op for now */ }
 
     /// <summary>
     /// Sets or clears the administrator flag for the user.

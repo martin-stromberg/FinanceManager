@@ -21,7 +21,7 @@ namespace FinanceManager.Tests.Statements;
 
 /// <summary>
 /// Tests the import split logic (CreateDraftAsync) for fixed, monthly and hybrid modes.
-/// NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation � tests document current behaviour (TDD baseline).
+/// NOTE: MinEntriesPerDraft (new feature) is NOT yet applied by the implementation — tests document current behaviour (TDD baseline).
 /// </summary>
 public sealed class StatementDraftImportSplitTests
 {
@@ -283,7 +283,7 @@ public sealed class StatementDraftImportSplitTests
         var payload = BuildBackupPayload(all);
         var u = await db.Users.SingleAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-        // Max gro� genug w�hlen, damit kein Split wegen Max greift
+        // Max groß genug wählen, damit kein Split wegen Max greift
         u.SetImportSplitSettings(ImportSplitMode.Monthly, maxEntriesPerDraft: 500, monthlySplitThreshold: null, minEntriesPerDraft: minEntriesPerDraft);
         await db.SaveChangesAsync(Xunit.TestContext.Current.CancellationToken);
 

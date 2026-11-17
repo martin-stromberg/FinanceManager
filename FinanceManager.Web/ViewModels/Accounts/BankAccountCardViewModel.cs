@@ -257,7 +257,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, Account == null || Account.Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
             };
 
-            // Group: Verkn�pfte Informationen (OpenPostings, OpenBankContact, OpenAttachments)
+            // Group: Verknüpfte Informationen (OpenPostings, OpenBankContact, OpenAttachments)
             var linkedActions = new List<UiRibbonAction>
             {
                 new UiRibbonAction("OpenPostings", localizer["Ribbon_OpenPostings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Account == null, null, () => {

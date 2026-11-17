@@ -221,7 +221,7 @@ public sealed class StatementDraftLinkingTests
         db.StatementDrafts.Add(draftB);
 
         var selfContactId = db.Contacts.First(c => c.OwnerUserId == owner && c.Type == ContactType.Self).Id;
-        // assign savings plan to entry A (giro side) � savings-account entries must not carry a savings-plan
+        // assign savings plan to entry A (giro side) — savings-account entries must not carry a savings-plan
         entryA.AssignSavingsPlan(plan.Id);
         entryA.MarkAccounted(selfContactId);
         eB.MarkAccounted(selfContactId);
@@ -595,7 +595,7 @@ public sealed class StatementDraftLinkingTests
             var linked = db.Postings.FirstOrDefault(p => p.Id == contactP_G.LinkedPostingId.Value && p.Kind == PostingKind.Contact);
             Assert.NotNull(linked);
 
-            // The matching should consider the usage/purpose (Subject) � currently the service ignores Subject, so this assertion
+            // The matching should consider the usage/purpose (Subject) — currently the service ignores Subject, so this assertion
             // is expected to fail until matching is improved to include Subject in the selection criteria.
             Assert.Equal(contactP_G.Subject, linked.Subject);
         }

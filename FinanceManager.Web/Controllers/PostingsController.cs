@@ -246,7 +246,7 @@ public sealed class PostingsController : ControllerBase
 
     private static decimal? TryParseAmount(string input)
     {
-        var norm = input.Replace(" ", string.Empty).Replace("�", string.Empty);
+        var norm = input.Replace(" ", string.Empty).Replace("€", string.Empty);
         if (decimal.TryParse(norm, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.CurrentCulture, out var dec)) { return Math.Abs(dec); }
         if (decimal.TryParse(norm, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.InvariantCulture, out dec)) { return Math.Abs(dec); }
         return null;

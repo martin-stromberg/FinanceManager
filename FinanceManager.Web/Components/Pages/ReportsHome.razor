@@ -35,7 +35,7 @@
                 <li>
                     <button class="fav-card" @onclick="(()=>OpenFavorite(f.Id))" title="@Localizer["OpenFavorite"]">
                         <div class="fav-name">@f.Name</div>
-                        <div class="fav-meta">@Localizer[$"PostingKind_{((PostingKind)f.PostingKind).ToString()}"] � @Localizer[$"Interval_{f.Interval}"]</div>
+                        <div class="fav-meta">@Localizer[$"PostingKind_{((PostingKind)f.PostingKind).ToString()}"] · @Localizer[$"Interval_{f.Interval}"]</div>
                     </button>
                 </li>
             }
