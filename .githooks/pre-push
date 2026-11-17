@@ -25,6 +25,10 @@ python "$repo_root/.githooks/razor-usage-check.py" --all --strict
 echo "Running enum coverage check..."
 python "$repo_root/.githooks/enum-coverage-check.py" --all --strict
 
+# --- U+FFFD Replacement-Char Check (ganzes Repo, blockierend) ---
+echo "Running replacement character check..."
+python "$repo_root/.githooks/no-replacement-char-check.py" --all --strict
+
 # --- dotnet format Whitespace-Check (spiegelt CI "static checks", blockierend) ---
 echo "Running dotnet format verification..."
 dotnet format "$repo_root/FinanceManager.sln" --verify-no-changes --no-restore --severity error

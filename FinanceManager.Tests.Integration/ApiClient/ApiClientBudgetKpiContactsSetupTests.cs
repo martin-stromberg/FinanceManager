@@ -210,7 +210,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         anyHasRows.Should().BeTrue();
 
         // Older tests expected specific sheets like "Bank"/"Contact"/"SavingsPlan" to always be present.
-        // The exporter may omit empty sheets now � only assert sums when the sheet is present.
+        // The exporter may omit empty sheets now — only assert sums when the sheet is present.
         if (sheetDataMap.TryGetValue("Bank", out var bankRows) && bankRows != null && bankRows.Count > 0)
         {
             var bankAmount = bankRows.Select(rec => rec["Amount"]).Cast<decimal>().Sum();
@@ -297,7 +297,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
                 return exactWithSuffix?.Id;
             }
 
-            // No numeric suffix present � allow a loose base-name match (e.g. "B�ckerei" -> "B�ckerei 1")
+            // No numeric suffix present — allow a loose base-name match (e.g. "Bäckerei" -> "Bäckerei 1")
             var baseOnly = Regex.Match(name, "^(.*?)(?:\\s+\\d+)?$").Groups[1].Value;
             var loose = createdContacts.FirstOrDefault(x => string.Equals(x.Name, baseOnly, StringComparison.OrdinalIgnoreCase) || x.Name.StartsWith(baseOnly + " ", StringComparison.OrdinalIgnoreCase));
             return loose?.Id;
@@ -332,7 +332,7 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             (new DateTime(2026,1,15), new DateTime(2026,1,15), 155m, "Transfer", "Ich", null),
             (new DateTime(2026,1,15), new DateTime(2026,1,15), -13.17m, "Wiederkehrende Ausgabe 1", "Ich", "Wiederkehrende Ausgabe 1"),
             (new DateTime(2026,1,14), new DateTime(2026,1,14), -11.4m, "Supermarkt 6", "Supermarkt 6", null),
-            (new DateTime(2026,1,13), new DateTime(2026,1,13), -6m, "B�ckerei 23", "B�ckerei 23", null),
+            (new DateTime(2026,1,13), new DateTime(2026,1,13), -6m, "Bäckerei 23", "Bäckerei 23", null),
             (new DateTime(2026,1,13), new DateTime(2026,1,13), -12.5m, "Lotteriegesellschaft 2", "Lotteriegesellschaft 2", null),
             (new DateTime(2026,1,12), new DateTime(2026,1,8), 13.47m, "Bank 1", "Bank 1", null),
             (new DateTime(2026,1,12), new DateTime(2026,1,12), -55.59m, "Tankstelle 1", "Tankstelle 1", null),
@@ -574,8 +574,8 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
         var buyCat = await api.Budgets_CreateCategoryAsync(new BudgetCategoryCreateRequest("Einkaufen & Verpflegung"));
         buyCat.Should().NotBeNull();
 
-        // Create budget purposes for contact categories: B�ckerei, Einzelh�ndler, Gastronom
-        var contactCategoryNames = new[] { "B�ckerei", "Einzelh�ndler", "Gastronom" };
+        // Create budget purposes for contact categories: Bäckerei, Einzelhändler, Gastronom
+        var contactCategoryNames = new[] { "Bäckerei", "Einzelhändler", "Gastronom" };
         // fetch final categories to search if needed
         var finalCategories = (await api.ContactCategories_ListAsync()).ToList();
         foreach (var cname in contactCategoryNames)
@@ -680,37 +680,37 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             ("Arbeitgeber", ContactType.Organization),
             ("Arzt", ContactType.Organization),
             ("Automobilclub", ContactType.Organization),
-            ("B�ckerei 1", ContactType.Organization),
-            ("B�ckerei 2", ContactType.Organization),
-            ("B�ckerei 3", ContactType.Organization),
-            ("B�ckerei 4", ContactType.Organization),
-            ("B�ckerei 5", ContactType.Organization),
-            ("B�ckerei 6", ContactType.Organization),
-            ("B�ckerei 7", ContactType.Organization),
-            ("B�ckerei 8", ContactType.Organization),
-            ("B�ckerei 9", ContactType.Organization),
-            ("B�ckerei 10", ContactType.Organization),
-            ("B�ckerei 11", ContactType.Organization),
-            ("B�ckerei 12", ContactType.Organization),
-            ("B�ckerei 13", ContactType.Organization),
-            ("B�ckerei 14", ContactType.Organization),
-            ("B�ckerei 15", ContactType.Organization),
-            ("B�ckerei 16", ContactType.Organization),
-            ("B�ckerei 17", ContactType.Organization),
-            ("B�ckerei 18", ContactType.Organization),
-            ("B�ckerei 19", ContactType.Organization),
-            ("B�ckerei 20", ContactType.Organization),
-            ("B�ckerei 21", ContactType.Organization),
-            ("B�ckerei 22", ContactType.Organization),
-            ("B�ckerei 23", ContactType.Organization),
-            ("B�ckerei 24", ContactType.Organization),
+            ("Bäckerei 1", ContactType.Organization),
+            ("Bäckerei 2", ContactType.Organization),
+            ("Bäckerei 3", ContactType.Organization),
+            ("Bäckerei 4", ContactType.Organization),
+            ("Bäckerei 5", ContactType.Organization),
+            ("Bäckerei 6", ContactType.Organization),
+            ("Bäckerei 7", ContactType.Organization),
+            ("Bäckerei 8", ContactType.Organization),
+            ("Bäckerei 9", ContactType.Organization),
+            ("Bäckerei 10", ContactType.Organization),
+            ("Bäckerei 11", ContactType.Organization),
+            ("Bäckerei 12", ContactType.Organization),
+            ("Bäckerei 13", ContactType.Organization),
+            ("Bäckerei 14", ContactType.Organization),
+            ("Bäckerei 15", ContactType.Organization),
+            ("Bäckerei 16", ContactType.Organization),
+            ("Bäckerei 17", ContactType.Organization),
+            ("Bäckerei 18", ContactType.Organization),
+            ("Bäckerei 19", ContactType.Organization),
+            ("Bäckerei 20", ContactType.Organization),
+            ("Bäckerei 21", ContactType.Organization),
+            ("Bäckerei 22", ContactType.Organization),
+            ("Bäckerei 23", ContactType.Organization),
+            ("Bäckerei 24", ContactType.Organization),
             ("Baumarkt 1", ContactType.Organization),
             ("Baumarkt 2", ContactType.Organization),
             ("Baumarkt 3", ContactType.Organization),
             ("Baumarkt 4", ContactType.Organization),
-            ("Beh�rde 1", ContactType.Organization),
-            ("Beh�rde 2", ContactType.Organization),
-            ("Beh�rde 3", ContactType.Organization),
+            ("Behörde 1", ContactType.Organization),
+            ("Behörde 2", ContactType.Organization),
+            ("Behörde 3", ContactType.Organization),
             ("Bekannter 1", ContactType.Person),
             ("Bekannter 2", ContactType.Person),
             ("Cafe 1", ContactType.Organization),
@@ -735,19 +735,19 @@ public sealed class ApiClientBudgetKpiContactsSetupTests : IClassFixture<TestWeb
             ("Dienstleister 9", ContactType.Organization),
             ("Dienstleister 10", ContactType.Organization),
             ("Dienstleister 11", ContactType.Organization),
-            ("Einzelh�ndler 1", ContactType.Organization),
-            ("Einzelh�ndler 2", ContactType.Organization),
-            ("Einzelh�ndler 3", ContactType.Organization),
-            ("Einzelh�ndler 4", ContactType.Organization),
-            ("Einzelh�ndler 5", ContactType.Organization),
-            ("Einzelh�ndler 6", ContactType.Organization),
-            ("Einzelh�ndler 7", ContactType.Organization),
-            ("Einzelh�ndler 8", ContactType.Organization),
-            ("Einzelh�ndler 9", ContactType.Organization),
-            ("Einzelh�ndler 10", ContactType.Organization),
-            ("Einzelh�ndler 11", ContactType.Organization),
-            ("Einzelh�ndler 12", ContactType.Organization),
-            ("Einzelh�ndler 13", ContactType.Organization),
+            ("Einzelhändler 1", ContactType.Organization),
+            ("Einzelhändler 2", ContactType.Organization),
+            ("Einzelhändler 3", ContactType.Organization),
+            ("Einzelhändler 4", ContactType.Organization),
+            ("Einzelhändler 5", ContactType.Organization),
+            ("Einzelhändler 6", ContactType.Organization),
+            ("Einzelhändler 7", ContactType.Organization),
+            ("Einzelhändler 8", ContactType.Organization),
+            ("Einzelhändler 9", ContactType.Organization),
+            ("Einzelhändler 10", ContactType.Organization),
+            ("Einzelhändler 11", ContactType.Organization),
+            ("Einzelhändler 12", ContactType.Organization),
+            ("Einzelhändler 13", ContactType.Organization),
             ("Fitnessstudio", ContactType.Organization),
             ("Freizeiteinrichtung 1", ContactType.Organization),
             ("Freizeiteinrichtung 2", ContactType.Organization),

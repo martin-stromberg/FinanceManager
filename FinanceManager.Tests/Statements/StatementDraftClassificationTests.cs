@@ -115,7 +115,7 @@ public sealed class StatementDraftClassificationTests
         var account = await AddBankAccountAsync(db);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empf�nger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -138,7 +138,7 @@ public sealed class StatementDraftClassificationTests
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             draft.AccountName = "";
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empf�nger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -164,7 +164,7 @@ public sealed class StatementDraftClassificationTests
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             draft.AccountName = "DE456";
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empf�nger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -186,7 +186,7 @@ public sealed class StatementDraftClassificationTests
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             draft.AccountName = "DE456";
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empf�nger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -206,7 +206,7 @@ public sealed class StatementDraftClassificationTests
         var account = await AddBankAccountAsync(db);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empf�nger", DateTime.Today, "EUR", "Buchung", true);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", true);
         });
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
@@ -228,9 +228,9 @@ public sealed class StatementDraftClassificationTests
         var account = await AddBankAccountAsync(db);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
-            draft.AddEntry(DateTime.Today, 100, "Test", "Empf�nger", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100, "Test", "Empfänger", DateTime.Today, "EUR", "Buchung", false);
         });
-        db.StatementEntries.Add(new StatementEntry(Guid.NewGuid(), DateTime.Today, 100, "Test", "hash", "Empf�nger", DateTime.Today, "EUR", "Buchung", false, false));
+        db.StatementEntries.Add(new StatementEntry(Guid.NewGuid(), DateTime.Today, 100, "Test", "hash", "Empfänger", DateTime.Today, "EUR", "Buchung", false, false));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
