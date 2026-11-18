@@ -160,6 +160,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <summary>Selected security subtype values (enum int representation).</summary>
     /// <returns>The result.</returns>
     public HashSet<int> SelectedSecuritySubTypes { get; private set; } = new();
+    /// <summary>Selected bank posting type values (enum int representation).</summary>
+    /// <returns>The result.</returns>
+    public HashSet<int> SelectedBankPostingTypes { get; private set; } = new();
 
     /// <summary>Selected free text filters for bank postings.</summary>
     /// <returns>The result.</returns>
@@ -276,13 +279,14 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         var hasEntity = SelectedAccounts.Count > 0 || SelectedContacts.Count > 0 || SelectedSavingsPlans.Count > 0 || SelectedSecurities.Count > 0;
         var hasCats = SelectedContactCategories.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSecurityCategories.Count > 0 || SelectedAccounts.Count > 0;
         var hasSecTypes = SelectedSecuritySubTypes.Count > 0;
+        var hasBankTypes = SelectedBankPostingTypes.Count > 0;
         var hasText = SelectedBankTextFilters.Count > 0 || SelectedContactTextFilters.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0 || SelectedSecurityTextFilters.Count > 0;
         var includeDiv = IncludeDividendRelated;
-        if (!IncludeCategory && !hasEntity && !hasSecTypes && !includeDiv && !hasText)
+        if (!IncludeCategory && !hasEntity && !hasSecTypes && !hasBankTypes && !includeDiv && !hasText)
         {
             return null;
         }
-        if (IncludeCategory && !hasCats && !hasSecTypes && !includeDiv && !hasText)
+        if (IncludeCategory && !hasCats && !hasSecTypes && !hasBankTypes && !includeDiv && !hasText)
         {
             return null;
         }
@@ -297,6 +301,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 SavingsPlanCategoryIds: SelectedSavingsCategories.ToList(),
                 SecurityCategoryIds: SelectedSecurityCategories.ToList(),
                 SecuritySubTypes: SelectedSecuritySubTypes.ToList(),
+                BankPostingTypes: SelectedBankPostingTypes.ToList(),
                 IncludeDividendRelated: includeDiv,
                 BankTextFilters: SelectedBankTextFilters.ToList(),
                 ContactTextFilters: SelectedContactTextFilters.ToList(),
@@ -315,6 +320,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 SavingsPlanCategoryIds: null,
                 SecurityCategoryIds: null,
                 SecuritySubTypes: SelectedSecuritySubTypes.ToList(),
+                BankPostingTypes: SelectedBankPostingTypes.ToList(),
                 IncludeDividendRelated: includeDiv,
                 BankTextFilters: SelectedBankTextFilters.ToList(),
                 ContactTextFilters: SelectedContactTextFilters.ToList(),
@@ -338,7 +344,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     {
         var hadFilters = SelectedAccounts.Count > 0 || SelectedContacts.Count > 0 || SelectedSavingsPlans.Count > 0 || SelectedSecurities.Count > 0
             || SelectedContactCategories.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSecurityCategories.Count > 0
-            || SelectedSecuritySubTypes.Count > 0
+            || SelectedSecuritySubTypes.Count > 0 || SelectedBankPostingTypes.Count > 0
             || SelectedBankTextFilters.Count > 0 || SelectedContactTextFilters.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0 || SelectedSecurityTextFilters.Count > 0;
         if (hadFilters) { FiltersDirty = true; }
         SelectedAccounts.Clear();
@@ -349,6 +355,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         SelectedSavingsCategories.Clear();
         SelectedSecurityCategories.Clear();
         SelectedSecuritySubTypes.Clear();
+        SelectedBankPostingTypes.Clear();
         SelectedBankTextFilters.Clear();
         SelectedContactTextFilters.Clear();
         SelectedSavingsPlanTextFilters.Clear();
@@ -990,6 +997,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// </summary>
     /// <returns>The result.</returns>
     public HashSet<int> TempSecuritySubTypes { get; private set; } = new();
+    /// <summary>Temporary selected bank posting type values used in the filter dialog.</summary>
+    /// <returns>The result.</returns>
+    public HashSet<int> TempBankPostingTypes { get; private set; } = new();
 
     /// <summary>Temporary free text filters for bank postings used in the filter dialog.</summary>
     /// <returns>The result.</returns>
@@ -1021,6 +1031,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         TempSavingsCats = new HashSet<Guid>(SelectedSavingsCategories);
         TempSecurityCats = new HashSet<Guid>(SelectedSecurityCategories);
         TempSecuritySubTypes = new HashSet<int>(SelectedSecuritySubTypes);
+        TempBankPostingTypes = new HashSet<int>(SelectedBankPostingTypes);
         TempBankTextFilters = new List<string>(SelectedBankTextFilters);
         TempContactTextFilters = new List<string>(SelectedContactTextFilters);
         TempSavingsPlanTextFilters = new List<string>(SelectedSavingsPlanTextFilters);
@@ -1131,6 +1142,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         TempSavingsCats.Clear();
         TempSecurityCats.Clear();
         TempSecuritySubTypes.Clear();
+        TempBankPostingTypes.Clear();
         TempBankTextFilters.Clear();
         TempContactTextFilters.Clear();
         TempSavingsPlanTextFilters.Clear();
@@ -1148,13 +1160,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         {
             var entityCount = TempAccounts.Count + TempContacts.Count + TempSavings.Count + TempSecurities.Count;
             var catCount = TempContactCats.Count + TempSavingsCats.Count + TempSecurityCats.Count;
-            var typeCount = TempSecuritySubTypes.Count;
+            var typeCount = TempSecuritySubTypes.Count + TempBankPostingTypes.Count;
             return IncludeCategory ? (catCount + TempAccounts.Count + typeCount + GetTempTextFilterCount()) : (entityCount + typeCount + GetTempTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
-            var typeCount = TempSecuritySubTypes.Count;
+            var typeCount = TempSecuritySubTypes.Count + TempBankPostingTypes.Count;
             var textCount = GetTempTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
@@ -1199,6 +1211,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             || !TempSavingsCats.SetEquals(SelectedSavingsCategories)
             || !TempSecurityCats.SetEquals(SelectedSecurityCategories)
             || !TempSecuritySubTypes.SetEquals(SelectedSecuritySubTypes)
+            || !TempBankPostingTypes.SetEquals(SelectedBankPostingTypes)
             || !TempBankTextFilters.SequenceEqual(SelectedBankTextFilters)
             || !TempContactTextFilters.SequenceEqual(SelectedContactTextFilters)
             || !TempSavingsPlanTextFilters.SequenceEqual(SelectedSavingsPlanTextFilters)
@@ -1212,6 +1225,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         SelectedSavingsCategories.Clear(); foreach (var id in TempSavingsCats) { SelectedSavingsCategories.Add(id); }
         SelectedSecurityCategories.Clear(); foreach (var id in TempSecurityCats) { SelectedSecurityCategories.Add(id); }
         SelectedSecuritySubTypes.Clear(); foreach (var t in TempSecuritySubTypes) { SelectedSecuritySubTypes.Add(t); }
+        SelectedBankPostingTypes.Clear(); foreach (var t in TempBankPostingTypes) { SelectedBankPostingTypes.Add(t); }
         SelectedBankTextFilters.Clear(); SelectedBankTextFilters.AddRange(TempBankTextFilters);
         SelectedContactTextFilters.Clear(); SelectedContactTextFilters.AddRange(TempContactTextFilters);
         SelectedSavingsPlanTextFilters.Clear(); SelectedSavingsPlanTextFilters.AddRange(TempSavingsPlanTextFilters);
@@ -1241,6 +1255,22 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         RaiseStateChanged();
     }
 
+    /// <summary>Whether a temp bank posting type is selected.</summary>
+    /// <param name="postingType">Bank posting type value (enum int representation).</param>
+    /// <returns><c>true</c> when selected in temp buffer.</returns>
+    public bool IsBankPostingTypeSelectedTemp(int postingType)
+        => TempBankPostingTypes.Contains(postingType);
+
+    /// <summary>Toggles a temp bank posting type selection and raises state changed.</summary>
+    /// <param name="postingType">Bank posting type value (enum int representation).</param>
+    /// <param name="isChecked">True to select; false to unselect.</param>
+    public void ToggleTempBankPostingType(int postingType, bool isChecked)
+    {
+        if (isChecked) { TempBankPostingTypes.Add(postingType); }
+        else { TempBankPostingTypes.Remove(postingType); }
+        RaiseStateChanged();
+    }
+
     /// <summary>
     /// Returns the total number of active filters currently selected.
     /// </summary>
@@ -1251,13 +1281,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         {
             var entityCount = SelectedAccounts.Count + SelectedContacts.Count + SelectedSavingsPlans.Count + SelectedSecurities.Count;
             var catCount = SelectedContactCategories.Count + SelectedSavingsCategories.Count + SelectedSecurityCategories.Count;
-            var typeCount = SelectedSecuritySubTypes.Count;
+            var typeCount = SelectedSecuritySubTypes.Count + SelectedBankPostingTypes.Count;
             return IncludeCategory ? (catCount + SelectedAccounts.Count + typeCount + GetSelectedTextFilterCount()) : (entityCount + typeCount + GetSelectedTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
-            var typeCount = SelectedSecuritySubTypes.Count;
+            var typeCount = SelectedSecuritySubTypes.Count + SelectedBankPostingTypes.Count;
             var textCount = GetSelectedTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {

@@ -153,4 +153,27 @@ public sealed class ReportFavoriteServiceFilterTests
         var fetched = await svc.GetAsync(created.Id, userId, CancellationToken.None);
         Assert.Null(fetched!.Filters);
     }
+
+    /// <summary>
+    /// Creating a favorite with bank posting types persists the CSV column and returns the
+    /// selection through create, list and get.
+    /// </summary>
+    [Fact]
+    public async Task CreateListGet_ShouldRoundtripBankPostingTypes()
+    {
+        using var db = CreateDb();
+        var (svc, userId) = await CreateServiceAsync(db);
+        var filters = new ReportFavoriteFiltersDto(null, null, null, null, null, null, null, null, null,
+            BankPostingTypes: new[] { 1, 3 });
+
+        var created = await svc.CreateAsync(userId,
+            new ReportFavoriteCreateRequest("Types", PostingKind.Bank, false, ReportInterval.Month, 24, false, false, false, true, true, Filters: filters),
+            CancellationToken.None);
+
+        Assert.Equal(new[] { 1, 3 }, created.Filters!.BankPostingTypes);
+        var entity = await db.ReportFavorites.SingleAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("1,3", entity.BankPostingTypesCsv);
+        Assert.Equal(new[] { 1, 3 }, (await svc.ListAsync(userId, CancellationToken.None)).Single().Filters!.BankPostingTypes);
+        Assert.Equal(new[] { 1, 3 }, (await svc.GetAsync(created.Id, userId, CancellationToken.None))!.Filters!.BankPostingTypes);
+    }
 }

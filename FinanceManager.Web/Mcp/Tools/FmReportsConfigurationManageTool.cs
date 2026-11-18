@@ -564,6 +564,7 @@ public sealed class FmReportsConfigurationManageHandler : IMcpToolHandler
             SavingsPlanCategoryIds: McpToolArguments.OptionalGuidList(filters, "savingsPlanCategoryIds"),
             SecurityCategoryIds: McpToolArguments.OptionalGuidList(filters, "securityCategoryIds"),
             SecuritySubTypes: McpToolArguments.OptionalIntList(filters, "securitySubTypes"),
+            BankPostingTypes: McpToolArguments.OptionalIntList(filters, "bankPostingTypes"),
             IncludeDividendRelated: McpToolArguments.OptionalBool(filters, "includeDividendRelated"),
             BankTextFilters: McpToolArguments.OptionalStringList(filters, "bankTextFilters"),
             ContactTextFilters: McpToolArguments.OptionalStringList(filters, "contactTextFilters"),

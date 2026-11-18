@@ -594,6 +594,18 @@
                         <div class="small-empty">@Localizer["NoData"]</div>
                     }
                 </div>
+                @if ((PostingKind)_vm!.GetActiveFilterTabKind() == PostingKind.Bank)
+                {
+                    <div class="subtype-list" style="margin-top:.5rem;">
+                        <div class="group-title" style="margin-bottom:.25rem;">@Localizer["FilterGroup_BankTypes"]</div>
+                        <div class="scroll-box option-list">
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(1)" @onchange="e => _vm!.ToggleTempBankPostingType(1, e.Value is bool b && b)" /> @Localizer["BankType_Inflow"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(2)" @onchange="e => _vm!.ToggleTempBankPostingType(2, e.Value is bool b && b)" /> @Localizer["BankType_Outflow"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(3)" @onchange="e => _vm!.ToggleTempBankPostingType(3, e.Value is bool b && b)" /> @Localizer["BankType_Interest"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(4)" @onchange="e => _vm!.ToggleTempBankPostingType(4, e.Value is bool b && b)" /> @Localizer["BankType_Tax"]</label>
+                        </div>
+                    </div>
+                }
                 @if ((PostingKind)_vm!.GetActiveFilterTabKind() == PostingKind.Security)
                 {
                     <div class="subtype-list" style="margin-top:.5rem;">
@@ -1455,6 +1467,7 @@
         _vm!.SelectedSavingsCategories.Clear(); foreach (var id in fav.Filters?.SavingsPlanCategoryIds ?? Array.Empty<Guid>()) { _vm.SelectedSavingsCategories.Add(id); }
         _vm!.SelectedSecurityCategories.Clear(); foreach (var id in fav.Filters?.SecurityCategoryIds ?? Array.Empty<Guid>()) { _vm.SelectedSecurityCategories.Add(id); }
         _vm!.SelectedSecuritySubTypes.Clear(); foreach (var st in fav.Filters?.SecuritySubTypes ?? Array.Empty<int>()) { _vm.SelectedSecuritySubTypes.Add(st); }
+        _vm!.SelectedBankPostingTypes.Clear(); foreach (var bt in fav.Filters?.BankPostingTypes ?? Array.Empty<int>()) { _vm.SelectedBankPostingTypes.Add(bt); }
         _vm!.SelectedBankTextFilters.Clear(); _vm.SelectedBankTextFilters.AddRange(fav.Filters?.BankTextFilters ?? Array.Empty<string>());
         _vm!.SelectedContactTextFilters.Clear(); _vm.SelectedContactTextFilters.AddRange(fav.Filters?.ContactTextFilters ?? Array.Empty<string>());
         _vm!.SelectedSavingsPlanTextFilters.Clear(); _vm.SelectedSavingsPlanTextFilters.AddRange(fav.Filters?.SavingsPlanTextFilters ?? Array.Empty<string>());
@@ -1488,6 +1501,7 @@
                 SavingsPlanCategoryIds: _vm.SelectedSavingsCategories.ToList(),
                 SecurityCategoryIds: _vm.SelectedSecurityCategories.ToList(),
                 SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
+                BankPostingTypes: _vm.SelectedBankPostingTypes.ToList(),
                 IncludeDividendRelated: _includeDividendRelated,
                 BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
                 ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),
@@ -1502,6 +1516,7 @@
                 SavingsPlanCategoryIds: null,
                 SecurityCategoryIds: null,
                 SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
+                BankPostingTypes: _vm.SelectedBankPostingTypes.ToList(),
                 IncludeDividendRelated: _includeDividendRelated,
                 BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
                 ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),

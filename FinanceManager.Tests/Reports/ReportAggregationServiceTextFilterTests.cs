@@ -328,4 +328,28 @@ public sealed class ReportAggregationServiceTextFilterTests
         result.Points.Where(p => p.GroupKey == $"Security:{sec.Id}").Sum(p => p.Amount).Should().Be(95m);
         conn.Dispose();
     }
+
+    /// <summary>
+    /// The bank posting-type filter switches the bank path to raw postings and keeps only the
+    /// selected classifications; an explicit classification wins over the amount-sign fallback.
+    /// </summary>
+    [Fact]
+    public async Task QueryAsync_BankPostingTypesFilter_KeepsOnlySelectedTypes()
+    {
+        var (sut, db, conn) = Create();
+        var owner = Guid.NewGuid();
+        var (acc, _) = await SeedAccountAsync(db, owner);
+        AddPosting(db, PostingKind.Bank, acc.Id, null, null, null, Month1.AddDays(4), 100m, "In", null).SetPostingType(BankPostingType.Inflow);
+        AddPosting(db, PostingKind.Bank, acc.Id, null, null, null, Month1.AddDays(5), -40m, "Out", null).SetPostingType(BankPostingType.Outflow);
+        AddPosting(db, PostingKind.Bank, acc.Id, null, null, null, Month1.AddDays(6), 7m, "Zins", null).SetPostingType(BankPostingType.Interest);
+        AddPosting(db, PostingKind.Bank, acc.Id, null, null, null, Month1.AddDays(7), -3m, "Steuer", null).SetPostingType(BankPostingType.Tax);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var result = await sut.QueryAsync(new ReportAggregationQuery(owner, PostingKind.Bank, ReportInterval.Month, 6, false, false, false,
+            AnalysisDate: Month1, Filters: new ReportAggregationFilters(BankPostingTypes: new[] { (int)BankPostingType.Interest, (int)BankPostingType.Tax })),
+            CancellationToken.None);
+
+        result.Points.Where(p => p.GroupKey == $"Account:{acc.Id}").Sum(p => p.Amount).Should().Be(4m);
+        conn.Dispose();
+    }
 }

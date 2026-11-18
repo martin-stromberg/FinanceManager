@@ -1308,6 +1308,9 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("AccountIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BankPostingTypesCsv")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("BankTextFiltersJson")
                         .HasColumnType("TEXT");
 
