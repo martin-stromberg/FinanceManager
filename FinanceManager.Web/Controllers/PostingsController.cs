@@ -155,7 +155,8 @@ public sealed class PostingsController : ControllerBase
             p.ReversalForPostingId,
             p.IsPreliminary,
             informal,
-            p.SavingsPlanSubType);
+            p.SavingsPlanSubType,
+            p.PostingType);
         return Ok(dto);
     }
 

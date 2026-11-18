@@ -20,7 +20,11 @@ Wenn eine Datei nicht automatisch zugeordnet werden kann, erscheint der Dialog �
 
 Kontrollieren Sie die vorgeschlagenen Zuordnungen (Kontakt, Sparplan, Wertpapier, Kostenneutralität).
 
+Prüfen Sie außerdem die automatisch ermittelte Postenart in der gleichnamigen Spalte der Eintragsliste. Sie wird aus den Kontierungsregeln des Bankkontos oder — ohne Regeltreffer — aus dem Betragsvorzeichen bestimmt. Weicht sie ab, öffnen Sie die Karte der Entwurfszeile und wählen Sie im Feld „Postenart" die passende Art (Eingang, Ausgang, Zinsen oder Steuer).
+
 > **Hinweis:** Bei Warnungen zuerst die betroffenen Zeilen bearbeiten.
+>
+> Eine manuell gewählte Postenart ist geschützt: Sie bleibt auch dann erhalten, wenn die Zeile später erneut klassifiziert wird.
 
 ### 3. Mehrere Zeilen gemeinsam bearbeiten
 

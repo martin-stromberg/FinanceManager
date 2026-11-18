@@ -10,6 +10,8 @@ Der Bereich importiert Kontoauszugsdateien, erstellt daraus Entwürfe und verbuc
 
 Dateien werden hochgeladen und als Entwürfe vorbereitet. Danach folgen Klassifizierung, Validierung und optionale Nachbearbeitung pro Zeile, zum Beispiel Kontakt, Sparplan, Wertpapier, Split oder Kostenneutralität. Abschließend werden einzelne oder mehrere geprüfte Entwurfszeilen verbucht.
 
+Bei der Klassifizierung erhält jede Entwurfszeile außerdem eine Postenart: Eingang, Ausgang, Zinsen oder Steuer. Die Postenart wird zuerst über die am zugeordneten Bankkonto hinterlegten Kontierungsregeln bestimmt (siehe [Konten und Buchungen](../konten-und-buchungen/beschreibung.md)); trifft keine Regel zu, entscheidet das Betragsvorzeichen — negative Beträge gelten als Ausgang, alle anderen als Eingang. Die ermittelte Postenart steht als eigene Spalte in der Eintragsliste und ist auf der Karte der Entwurfszeile über das Feld „Postenart" vor dem Buchen manuell korrigierbar. Eine manuell gewählte Postenart bleibt bei späteren Klassifizierungsläufen erhalten und wird nicht überschrieben. Beim Buchen wird die Postenart der Zeile auf den entstehenden Bankposten übertragen.
+
 Im Massenänderungsmodus können editierbare Entwurfszeilen gemeinsam bearbeitet, zum Löschen vorgemerkt oder über die letzte leere Tabellenzeile neu ergänzt werden. Diese Änderungen bleiben zunächst lokal und werden erst beim Speichern des Massenänderungsmodus gemeinsam übernommen.
 
 Im Schnellbearbeitungsmodus einer Kontoauszugdetailansicht können Werte aus der darüberliegenden Zeile übernommen werden, um aufeinanderfolgende, ähnliche Buchungen schneller zu erfassen: Die Taste `F8` im aktuellen Eingabefeld übernimmt den Wert dieses Feldes aus der Zeile darüber. Die Tastenkombination `Strg+F8` übernimmt alle editierbaren Werte der darüberliegenden Zeile in die aktuelle Zeile und überschreibt dabei vorhandene Werte.
@@ -32,6 +34,7 @@ Die mobile Karte zeigt die fachlich relevanten Zuordnungen direkt am Eintrag: ei
 - Ein unbekannter Händler wird anhand der bekannten Kontakte automatisch als Benutzerkontakt angelegt.
 - Ein Sammelauszug erzeugt mehrere Entwürfe, die später einzeln zugeordnet werden können.
 - Einzelne Entwurfszeilen werden vor der Verbuchung manuell korrigiert.
+- Eine Zeile mit Verwendungszweck „Zinsgutschrift" wird per Kontierungsregel als Postenart „Zinsen" vorbelegt; der Anwender stellt sie auf der Zeilenkarte auf „Steuer" um, und die manuelle Wahl bleibt bei erneuter Klassifizierung erhalten.
 - Mehrere Entwurfszeilen werden in einer Massenänderung bearbeitet, einzelne Zeilen zum Löschen vorgemerkt und neue Zeilen ergänzt.
 - Mehrere Dateien werden als Massenimport mit Sicherheitszuordnung verarbeitet.
 - Auf dem Smartphone zeigt eine Entwurfszeile Datum und Betrag nebeneinander sowie Kontakt, Sparplan und Wertpapier inklusive Buchungsart untereinander.
@@ -43,5 +46,6 @@ Die mobile Karte zeigt die fachlich relevanten Zuordnungen direkt am Eintrag: ei
 - Der Massenimport ist größenbegrenzt (Konfiguration `MassImport`): maximal 50 Dateien pro Batch, maximal 10 MB pro Datei und maximal 100 MB Gesamtinhalt; der Request-Body ist auf ca. 143 MB begrenzt.
 - Mehrdeutige Treffer in der bekannten-Kontakte-Liste erzeugen keine automatische Kontaktanlage.
 - Validierungswarnungen können das Buchen blockieren, wenn nicht explizit freigegeben.
+- Die Postenart ist in der Schnellbearbeitung und im Massenänderungsmodus nur lesend sichtbar; die manuelle Korrektur erfolgt ausschließlich über die Karte der Entwurfszeile. Bereits gebuchte Zeilen lassen sich dort nicht mehr ändern.
 - Die Anzahl exportierbarer Entwurfszeilen ist serverseitig begrenzt (Konfigurationsschlüssel `Exports:MaxRows`, Standard 50.000 Zeilen); bei Überschreitung wird der Export abgelehnt.
 - Im CSV-Export werden Zellwerte, die Tabellenprogramme als Formel interpretieren würden (z. B. führendes `=`, `+`, `-`, `@`), mit einem führenden Apostroph entschärft; der Text bleibt lesbar.

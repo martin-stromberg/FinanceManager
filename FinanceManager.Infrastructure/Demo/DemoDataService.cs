@@ -12,6 +12,7 @@ using FinanceManager.Shared.Dtos.Accounts;
 using FinanceManager.Shared.Dtos.Budget;
 using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Shared.Dtos.HomeKpi;
+using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.Reports;
 using FinanceManager.Shared.Dtos.SavingsPlans;
 using FinanceManager.Shared.Dtos.Securities;
@@ -474,6 +475,23 @@ public sealed class DemoDataService : IDemoDataService
             SavingsPlanExpectation.None,
             true,
             false,
+            ct);
+
+        // Demo posting rules: classify interest and capital-gains-tax postings via the purpose text.
+        await _accountService.UpsertPostingRuleAsync(
+            giroAccount.Id,
+            userId,
+            new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 1),
+            ct);
+        await _accountService.UpsertPostingRuleAsync(
+            giroAccount.Id,
+            userId,
+            new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Kapitalertragssteuer", BankPostingType.Tax, 2),
+            ct);
+        await _accountService.UpsertPostingRuleAsync(
+            bausparAccount.Id,
+            userId,
+            new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 1),
             ct);
 
         await _savingsPlanLinkService.AddLinkAsync(bausparenPlan.Id, bausparAccount.Id, userId, ct);

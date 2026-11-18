@@ -1266,6 +1266,9 @@
   <data name="QuickEdit_DeleteRow" xml:space="preserve">
     <value>Delete row</value>
   </data>
+  <data name="QuickEdit_OpenEntry" xml:space="preserve">
+    <value>Open entry</value>
+  </data>
   <data name="Ribbon_Add" xml:space="preserve">
     <value>Add</value>
   </data>
@@ -3437,4 +3440,28 @@
   <data name="LinkedAccounts_Info_Informal" xml:space="preserve"><value>Funding postings on other accounts can be marked as informal documentation.</value></data>
   <data name="LinkedAccounts_Info_Fallback" xml:space="preserve"><value>Without linked accounts the posting-based evaluation stays active.</value></data>
   <data name="LinkedAccounts_OpenAccount_Button" xml:space="preserve"><value>Open account</value></data>
+  <data name="EnumType_BankPostingType_Unspecified" xml:space="preserve"><value>Unspecified</value></data>
+  <data name="EnumType_BankPostingType_Inflow" xml:space="preserve"><value>Inflow</value></data>
+  <data name="EnumType_BankPostingType_Outflow" xml:space="preserve"><value>Outflow</value></data>
+  <data name="EnumType_BankPostingType_Interest" xml:space="preserve"><value>Interest</value></data>
+  <data name="EnumType_BankPostingType_Tax" xml:space="preserve"><value>Tax</value></data>
+  <data name="EnumType_PostingRuleField_Subject" xml:space="preserve"><value>Purpose</value></data>
+  <data name="EnumType_PostingRuleField_BookingDescription" xml:space="preserve"><value>Booking description</value></data>
+  <data name="Card_Caption_StatementDrafts_PostingType" xml:space="preserve"><value>Posting type</value></data>
+  <data name="List_Th_PostingType" xml:space="preserve"><value>Posting type</value></data>
+  <data name="PostingRules_Section_Title" xml:space="preserve"><value>Posting rules</value></data>
+  <data name="PostingRules_Empty" xml:space="preserve"><value>No posting rules configured.</value></data>
+  <data name="PostingRules_Th_Field" xml:space="preserve"><value>Field</value></data>
+  <data name="PostingRules_Th_Pattern" xml:space="preserve"><value>Pattern</value></data>
+  <data name="PostingRules_Th_PostingType" xml:space="preserve"><value>Posting type</value></data>
+  <data name="PostingRules_Th_OrderIndex" xml:space="preserve"><value>Order</value></data>
+  <data name="PostingRules_Add_Placeholder" xml:space="preserve"><value>Enter pattern...</value></data>
+  <data name="PostingRules_Add_Button" xml:space="preserve"><value>Add</value></data>
+  <data name="PostingRules_Edit_Button" xml:space="preserve"><value>Edit</value></data>
+  <data name="PostingRules_Save_Button" xml:space="preserve"><value>Save</value></data>
+  <data name="PostingRules_Remove_Button" xml:space="preserve"><value>Remove</value></data>
+  <data name="PostingRules_Cancel_Button" xml:space="preserve"><value>Cancel</value></data>
+  <data name="PostingRules_Error_PatternRequired" xml:space="preserve"><value>Please enter a pattern.</value></data>
+  <data name="PostingRules_OrderIndex_Hint" xml:space="preserve"><value>Empty = append at end</value></data>
+  <data name="Ribbon_ReevaluatePostingTypes" xml:space="preserve"><value>Re-evaluate posting types</value></data>
 </root>

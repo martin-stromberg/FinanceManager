@@ -18,6 +18,8 @@ namespace FinanceManager.Shared.Dtos.Admin
         /// <summary>Refresh cached budget report data.</summary>
         RefreshBudgetReportCache,
         /// <summary>Generate demo data for a newly registered first user.</summary>
-        CreateDemoData
+        CreateDemoData,
+        /// <summary>Re-evaluate the posting types of all bank postings of one account.</summary>
+        ReevaluatePostingTypes
     }
 }

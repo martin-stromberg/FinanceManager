@@ -176,5 +176,56 @@ public partial class ApiClient
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<Guid>>(cancellationToken: ct) ?? Array.Empty<Guid>();
     }
 
+    /// <summary>
+    /// Returns the posting rules of the account ordered by their evaluation index.
+    /// </summary>
+    /// <param name="accountId">The account id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of <see cref="AccountPostingRuleDto"/>.</returns>
+    public async Task<IReadOnlyList<AccountPostingRuleDto>> GetPostingRulesAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync($"/api/accounts/{accountId}/posting-rules", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AccountPostingRuleDto>>(cancellationToken: ct) ?? Array.Empty<AccountPostingRuleDto>();
+    }
+
+    /// <summary>
+    /// Creates or updates a posting rule of the account.
+    /// </summary>
+    /// <param name="accountId">The account id.</param>
+    /// <param name="request">Request payload with the rule data.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task UpsertPostingRuleAsync(Guid accountId, AccountPostingRuleUpsertRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"/api/accounts/{accountId}/posting-rules", request, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+    }
+
+    /// <summary>
+    /// Removes a posting rule of the account.
+    /// </summary>
+    /// <param name="accountId">The account id.</param>
+    /// <param name="ruleId">Identifier of the rule to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task RemovePostingRuleAsync(Guid accountId, Guid ruleId, CancellationToken ct = default)
+    {
+        var resp = await _http.DeleteAsync($"/api/accounts/{accountId}/posting-rules/{ruleId}", ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+    }
+
+    /// <summary>
+    /// Enqueues a background task that re-evaluates the posting type of all bank postings of the account.
+    /// </summary>
+    /// <param name="accountId">The account id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The enqueued <see cref="BackgroundTaskInfo"/>.</returns>
+    public async Task<BackgroundTaskInfo> EnqueuePostingTypeReevaluationAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsync($"/api/accounts/{accountId}/posting-types/reclassify", content: null, ct);
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<BackgroundTaskInfo>(cancellationToken: ct)
+            ?? throw new InvalidOperationException("Missing background task info response.");
+    }
+
     #endregion Accounts
 }

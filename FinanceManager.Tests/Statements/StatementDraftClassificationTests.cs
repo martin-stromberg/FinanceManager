@@ -460,4 +460,94 @@ public sealed class StatementDraftClassificationTests
         Assert.DoesNotContain(db.Contacts, c => c.OwnerUserId == owner && c.Name == "Amazon");
         conn.Dispose();
     }
+
+    /// <summary>
+    /// With an interest posting rule configured on the detected account, classification must assign the rule's
+    /// posting type to an entry whose subject contains the rule pattern.
+    /// </summary>
+    [Fact]
+    public async Task Entry_PostingType_IsAssigned_ByAccountRule()
+    {
+        var (sut, db, conn, owner) = Create();
+        var account = await AddBankAccountAsync(db);
+        db.AccountPostingRules.Add(new AccountPostingRule(account.Id, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 1));
+        await db.SaveChangesAsync();
+        var draft = await CreateStatementDraftAsync(db, account, (draft) =>
+        {
+            draft.AddEntry(DateTime.Today, 12.50m, "Zinsgutschrift", "Bank", DateTime.Today, "EUR", "Gutschrift", false);
+        });
+
+        await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
+
+        var entry = draft.Entries.First();
+        Assert.Equal(BankPostingType.Interest, entry.PostingType);
+        Assert.False(entry.IsPostingTypeManual);
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// A posting type that the user set manually must not be overwritten by a later classification run.
+    /// </summary>
+    [Fact]
+    public async Task Entry_PostingType_Manual_IsPreserved()
+    {
+        var (sut, db, conn, owner) = Create();
+        var account = await AddBankAccountAsync(db);
+        db.AccountPostingRules.Add(new AccountPostingRule(account.Id, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 1));
+        await db.SaveChangesAsync();
+        var draft = await CreateStatementDraftAsync(db, account, (draft) =>
+        {
+            var entry = draft.AddEntry(DateTime.Today, 12.50m, "Zinsgutschrift", "Bank", DateTime.Today, "EUR", "Gutschrift", false);
+            entry.SetPostingType(BankPostingType.Tax, manual: true);
+        });
+
+        await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
+
+        var entry2 = draft.Entries.First();
+        Assert.Equal(BankPostingType.Tax, entry2.PostingType);
+        Assert.True(entry2.IsPostingTypeManual);
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Without account rules the sign fallback assigns outflow to negative amounts and inflow otherwise.
+    /// </summary>
+    [Fact]
+    public async Task Entry_PostingType_FallsBackToAmountSign()
+    {
+        var (sut, db, conn, owner) = Create();
+        var account = await AddBankAccountAsync(db);
+        var draft = await CreateStatementDraftAsync(db, account, (draft) =>
+        {
+            draft.AddEntry(DateTime.Today, -25m, "Kartenzahlung", "Shop", DateTime.Today, "EUR", "Buchung", false);
+            draft.AddEntry(DateTime.Today, 100m, "Gehalt", "Arbeitgeber", DateTime.Today, "EUR", "Buchung", false);
+        });
+
+        await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
+
+        var entries = draft.Entries.OrderBy(e => e.Amount).ToList();
+        Assert.Equal(BankPostingType.Outflow, entries[0].PostingType);
+        Assert.Equal(BankPostingType.Inflow, entries[1].PostingType);
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// Without a detected account the rule step is skipped and the sign fallback applies as well.
+    /// </summary>
+    [Fact]
+    public async Task Entry_PostingType_WithoutAccount_FallsBackToAmountSign()
+    {
+        var (sut, db, conn, owner) = Create();
+        var ownerUser = db.Users.First();
+        var draft = new StatementDraft(ownerUser.Id, "file.csv", "DE999999", null);
+        draft.AddEntry(DateTime.Today, -25m, "Kartenzahlung", "Shop", DateTime.Today, "EUR", "Buchung", false);
+        db.StatementDrafts.Add(draft);
+        await db.SaveChangesAsync();
+
+        await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
+
+        Assert.Null(draft.DetectedAccountId);
+        Assert.Equal(BankPostingType.Outflow, draft.Entries.First().PostingType);
+        conn.Dispose();
+    }
 }

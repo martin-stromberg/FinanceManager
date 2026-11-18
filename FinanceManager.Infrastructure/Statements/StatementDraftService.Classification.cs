@@ -15,13 +15,47 @@ public sealed partial class StatementDraftService
     /// <param name="text">Input text to normalize. May be <c>null</c> or empty.</param>
     /// <returns>A new string with umlauts replaced, or an empty string when <paramref name="text"/> is null or empty.</returns>
     private static string NormalizeUmlauts(string text)
+        => Domain.Postings.PostingTypeEvaluator.NormalizeUmlauts(text);
+
+    /// <summary>
+    /// Loads the posting rules of the given account ordered by their evaluation index.
+    /// </summary>
+    /// <param name="accountId">The account id, or <c>null</c> for no account.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The posting rules of the account; an empty list when no account is given.</returns>
+    private async Task<List<Domain.Accounts.AccountPostingRule>> LoadPostingRulesAsync(Guid? accountId, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(text)) { return string.Empty; }
-        return text
-            .Replace("ä", "ae", StringComparison.OrdinalIgnoreCase)
-            .Replace("ö", "oe", StringComparison.OrdinalIgnoreCase)
-            .Replace("ü", "ue", StringComparison.OrdinalIgnoreCase)
-            .Replace("ß", "ss", StringComparison.OrdinalIgnoreCase);
+        if (accountId == null) { return new List<Domain.Accounts.AccountPostingRule>(); }
+        return await _db.AccountPostingRules.AsNoTracking()
+            .Where(r => r.AccountId == accountId)
+            .OrderBy(r => r.OrderIndex)
+            .ToListAsync(ct);
+    }
+
+    /// <summary>
+    /// Re-evaluates the automatic posting type of an entry from already loaded rules.
+    /// Does nothing when the entry's posting type was set manually.
+    /// </summary>
+    /// <param name="entry">The draft entry to update.</param>
+    /// <param name="rules">The posting rules of the detected account (may be empty).</param>
+    private static void ApplyAutomaticPostingType(StatementDraftEntry entry, IReadOnlyCollection<Domain.Accounts.AccountPostingRule> rules)
+    {
+        if (entry.IsPostingTypeManual) { return; }
+        entry.SetPostingType(Domain.Postings.PostingTypeEvaluator.Evaluate(rules, entry.Subject, entry.BookingDescription, entry.Amount), manual: false);
+    }
+
+    /// <summary>
+    /// Re-evaluates the automatic posting type of an entry, loading the rules of the given account.
+    /// Does nothing when the entry's posting type was set manually.
+    /// </summary>
+    /// <param name="entry">The draft entry to update.</param>
+    /// <param name="accountId">The detected account id whose posting rules apply, or <c>null</c>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the evaluation has been applied.</returns>
+    private async Task ReevaluatePostingTypeAsync(StatementDraftEntry entry, Guid? accountId, CancellationToken ct)
+    {
+        if (entry.IsPostingTypeManual) { return; }
+        ApplyAutomaticPostingType(entry, await LoadPostingRulesAsync(accountId, ct));
     }
 
     /// <summary>
@@ -180,6 +214,7 @@ public sealed partial class StatementDraftService
         Domain.Accounts.Account? bankAccount = null;
         Guid? bankContactId = null;
         var detectedAccountLinkedToPlan = false;
+        var postingRules = new List<Domain.Accounts.AccountPostingRule>();
         if (draft.DetectedAccountId != null)
         {
             bankAccount = await _db.Accounts
@@ -191,6 +226,7 @@ public sealed partial class StatementDraftService
             // the account balance is the plan's source of truth (postings would double-count).
             detectedAccountLinkedToPlan = await _db.SavingsPlanAccountLinks.AsNoTracking()
                 .AnyAsync(l => l.AccountId == draft.DetectedAccountId && l.OwnerUserId == ownerUserId, ct);
+            postingRules = await LoadPostingRulesAsync(draft.DetectedAccountId, ct);
         }
 
         foreach (var entry in entries)
@@ -208,6 +244,8 @@ public sealed partial class StatementDraftService
                 entry.MarkAlreadyBooked();
                 continue;
             }
+
+            ApplyAutomaticPostingType(entry, postingRules);
 
             if (entry.IsAnnounced)
             {

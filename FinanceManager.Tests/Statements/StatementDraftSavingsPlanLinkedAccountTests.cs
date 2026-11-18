@@ -92,7 +92,7 @@ public sealed class StatementDraftSavingsPlanLinkedAccountTests
         var entry = await AddDraftWithEntryAsync(db, owner, account.Id, "Einzahlung", self.Id);
 
         var ex = await Assert.ThrowsAsync<DomainValidationException>(() => sut.SaveEntryAllAsync(
-            entry.DraftId, entry.Id, owner, self.Id, null, plan.Id, null, null, null, null, null, null, TestContext.Current.CancellationToken));
+            entry.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(self.Id, null, plan.Id, null, null, null, null, null, null), TestContext.Current.CancellationToken));
 
         Assert.Equal("SAVINGSPLAN_ACCOUNT_LINKED", ex.Code);
         conn.Dispose();
@@ -111,7 +111,7 @@ public sealed class StatementDraftSavingsPlanLinkedAccountTests
         var entry = await AddDraftWithEntryAsync(db, owner, account.Id, "Einzahlung", self.Id);
 
         var dto = await sut.SaveEntryAllAsync(
-            entry.DraftId, entry.Id, owner, self.Id, null, plan.Id, null, null, null, null, null, null, TestContext.Current.CancellationToken);
+            entry.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(self.Id, null, plan.Id, null, null, null, null, null, null), TestContext.Current.CancellationToken);
 
         Assert.NotNull(dto);
         Assert.Equal(plan.Id, dto!.SavingsPlanId);

@@ -1,6 +1,7 @@
 using FinanceManager.Application;
 using FinanceManager.Shared;
 using FinanceManager.Shared.Dtos.SavingsPlans;
+using FinanceManager.Web.ViewModels.Common;
 using FinanceManager.Web.ViewModels.Postings;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -83,7 +84,7 @@ public sealed class PostingsListMarksColumnTests
         await vm.InitializeAsync();
 
         vm.Records.Should().HaveCount(1);
-        vm.Records[0].Cells[7].Text.Should().Contain("informell");
+        GetMarksCell(vm, vm.Records[0]).Text.Should().Contain("informell");
     }
 
     /// <summary>
@@ -104,7 +105,7 @@ public sealed class PostingsListMarksColumnTests
 
         vm.Records.Should().HaveCount(1);
         // Without a localizer the cell falls back to the enum name of the sub type.
-        vm.Records[0].Cells[7].Text.Should().Contain("ActualReport");
+        GetMarksCell(vm, vm.Records[0]).Text.Should().Contain("ActualReport");
     }
 
     /// <summary>
@@ -124,6 +125,17 @@ public sealed class PostingsListMarksColumnTests
         await vm.InitializeAsync();
 
         vm.Records.Should().HaveCount(1);
-        vm.Records[0].Cells[7].Text.Should().BeNullOrEmpty();
+        GetMarksCell(vm, vm.Records[0]).Text.Should().BeNullOrEmpty();
+    }
+
+    /// <summary>Returns the marks cell from a record by looking up the column index.</summary>
+    /// <param name="vm">The view model whose column layout determines the marks column's index.</param>
+    /// <param name="record">The record to pull the marks cell from.</param>
+    /// <returns>The <see cref="ListCell"/> at the "marks" column's position.</returns>
+    private static ListCell GetMarksCell(SavingsPlanPostingsListViewModel vm, ListRecord record)
+    {
+        var idx = vm.Columns.ToList().FindIndex(c => c.Key == "marks");
+        Assert.True(idx >= 0, "Column 'marks' not found");
+        return record.Cells[idx];
     }
 }

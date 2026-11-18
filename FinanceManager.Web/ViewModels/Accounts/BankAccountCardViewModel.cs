@@ -46,6 +46,38 @@ namespace FinanceManager.Web.ViewModels.Accounts
         public string NewLinkedIban { get; set; } = string.Empty;
 
         /// <summary>
+        /// Current list of posting rules (Kontierungsregeln) of the account.
+        /// </summary>
+        /// <returns>The result.</returns>
+        public IReadOnlyList<AccountPostingRuleDto> PostingRules { get; private set; } = [];
+
+        /// <summary>
+        /// Input value for the text field a new posting rule matches against.
+        /// </summary>
+        public PostingRuleField NewPostingRuleField { get; set; } = PostingRuleField.Subject;
+
+        /// <summary>
+        /// Input value for the pattern of a new posting rule.
+        /// </summary>
+        public string NewPostingRulePattern { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Input value for the posting type a new rule assigns.
+        /// </summary>
+        public BankPostingType NewPostingRuleType { get; set; } = BankPostingType.Interest;
+
+        /// <summary>
+        /// Input value for the evaluation order of a new posting rule (<c>null</c>/empty = append at the end).
+        /// When editing an existing rule this holds the rule's current position (including 0).
+        /// </summary>
+        public int? NewPostingRuleOrderIndex { get; set; }
+
+        /// <summary>
+        /// Restricts the background task status panel to the posting type re-evaluation task of this account.
+        /// </summary>
+        public override BackgroundTaskType[]? VisibleBackgroundTaskTypes => new[] { BackgroundTaskType.ReevaluatePostingTypes };
+
+        /// <summary>
         /// Effective value of the IsCollectionAccount flag, taking pending edits into account.
         /// Returns the pending value if the user has toggled the checkbox without saving, otherwise the saved value.
         /// </summary>
@@ -87,6 +119,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     return;
                 }
                 LinkedIbans = Account.LinkedIbans;
+                await LoadPostingRulesAsync();
                 CardRecord = await BuildCardRecordsAsync(Account);
             }
             catch (Exception ex)
@@ -296,7 +329,19 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     var url = $"/card/statement-drafts/{draft.DraftId}?quickEdit=true";
                     RaiseUiActionRequested("OpenStatementDraft", url);
                 })
-                { MobileShortcut = true }
+                { MobileShortcut = true },
+                new UiRibbonAction("ReevaluatePostingTypes", localizer["Ribbon_ReevaluatePostingTypes"].Value ?? "Postenarten neu bewerten", "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Account == null || Account.Id == Guid.Empty, null, async () => {
+                    try
+                    {
+                        await ApiClient.EnqueuePostingTypeReevaluationAsync(Id);
+                        // No UI action needed: the background task status panel polls the queued task itself.
+                    }
+                    catch (Exception ex)
+                    {
+                        SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message);
+                        RaiseStateChanged();
+                    }
+                })
             };
 
             var tabs = new List<UiRibbonTab>
@@ -533,6 +578,83 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 SetError(errorCode, errorMsg);
                 RaiseStateChanged();
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Loads the posting rules of the current account into <see cref="PostingRules"/>.
+        /// </summary>
+        /// <returns>A task that completes when the rules have been loaded.</returns>
+        public async Task LoadPostingRulesAsync()
+        {
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+            try
+            {
+                PostingRules = await api.GetPostingRulesAsync(Id);
+            }
+            catch (Exception ex)
+            {
+                PostingRules = Array.Empty<AccountPostingRuleDto>();
+                SetError(api.LastErrorCode ?? null, api.LastError ?? ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Creates or updates a posting rule from the current input values and refreshes the rule list.
+        /// </summary>
+        /// <param name="ruleId">Identifier of the rule to update; <c>null</c> creates a new rule from the input fields.</param>
+        /// <returns>A task that resolves to <c>true</c> on success; otherwise <c>false</c>.</returns>
+        public async Task<bool> UpsertPostingRuleAsync(Guid? ruleId = null)
+        {
+            var effectiveField = NewPostingRuleField;
+            var effectivePattern = NewPostingRulePattern?.Trim() ?? string.Empty;
+            var effectiveType = NewPostingRuleType;
+            var effectiveOrder = NewPostingRuleOrderIndex;
+
+            if (string.IsNullOrWhiteSpace(effectivePattern))
+            {
+                SetError(null, Localizer?["PostingRules_Error_PatternRequired"]?.Value ?? "Pattern required");
+                RaiseStateChanged();
+                return false;
+            }
+
+            SetError(null, null);
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+            try
+            {
+                await api.UpsertPostingRuleAsync(Id, new AccountPostingRuleUpsertRequest(ruleId, effectiveField, effectivePattern, effectiveType, effectiveOrder));
+                NewPostingRulePattern = string.Empty;
+                PostingRules = await api.GetPostingRulesAsync(Id);
+                RaiseStateChanged();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                SetError(api.LastErrorCode ?? null, api.LastError ?? ex.Message);
+                RaiseStateChanged();
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Removes the posting rule with the specified identifier and refreshes the rule list.
+        /// </summary>
+        /// <param name="ruleId">Identifier of the rule to remove.</param>
+        /// <returns>A task that completes when the operation has finished.</returns>
+        public async Task RemovePostingRuleAsync(Guid ruleId)
+        {
+            SetError(null, null);
+            var api = ServiceProvider.GetRequiredService<IApiClient>();
+            try
+            {
+                await api.RemovePostingRuleAsync(Id, ruleId);
+                PostingRules = await api.GetPostingRulesAsync(Id);
+                RaiseStateChanged();
+            }
+            catch (Exception ex)
+            {
+                SetError(api.LastErrorCode ?? null, api.LastError ?? ex.Message);
+                RaiseStateChanged();
             }
         }
 

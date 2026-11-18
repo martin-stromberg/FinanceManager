@@ -15,7 +15,7 @@
 ## Stammdaten
 
 - [Kontakte](kontakte/index.md) — Dieser Bereich verwaltet Kontakte, Kategorien, Aliase und deren Zuordnung zu Buchungen.
-- [Konten und Buchungen](konten-und-buchungen/index.md) — Dieser Bereich bildet Kontoführung, Buchungsanzeige, Export und Stornierung ab.
+- [Konten und Buchungen](konten-und-buchungen/index.md) — Dieser Bereich bildet Kontoführung, Buchungsanzeige, Export, Stornierung und die Kontierungsregeln für die Postenart von Bankpostings ab.
 - [Sparpläne](sparplaene/index.md) — Dieser Bereich verwaltet Sparpläne, Kategorien und deren Buchungsbezüge.
 - [Wertpapiermanagement](wertpapiermanagement/index.md) — Dieser Bereich verwaltet Wertpapiere, Kurse und Renditeauswertungen.
 

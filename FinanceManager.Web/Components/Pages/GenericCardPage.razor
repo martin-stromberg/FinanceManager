@@ -196,8 +196,8 @@ else
 
         if (!string.IsNullOrEmpty(f.LookupType) && f.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
         {
-            // Try to get cached options for this lookupType
-            if (!_enumOptions.TryGetValue(f.LookupType, out var opts) || opts == null)
+            // Try to get cached options for this lookupType + lookupFilter combination
+            if (!_enumOptions.TryGetValue(EnumOptionsKey(f), out var opts) || opts == null)
             {
                 // show disabled select while loading
                 builder.OpenElement(0, "select");
@@ -385,23 +385,27 @@ else
         _enumOptions.Clear();
         if (Provider?.CardRecord?.Fields != null)
         {
-            var enumLookupTypes = Provider.CardRecord.Fields
+            // Cache enum options per LookupType + LookupFilter combination so fields carrying
+            // a filter (e.g. "Exclude=Unspecified") receive their filtered option list.
+            var enumFieldGroups = Provider.CardRecord.Fields
                 .Where(f => !string.IsNullOrWhiteSpace(f.LookupType) && f.LookupType.StartsWith("Enum:", StringComparison.OrdinalIgnoreCase))
-                .Select(f => f.LookupType!)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+                .GroupBy(EnumOptionsKey, StringComparer.OrdinalIgnoreCase);
 
-            foreach (var lt in enumLookupTypes)
+            foreach (var group in enumFieldGroups)
             {
+                var sample = group.First();
+                var key = EnumOptionsKey(sample);
                 try
                 {
-                    var items = await Provider.QueryLookupAsync(new CardField("", CardFieldKind.Text, lookupType: lt), null, 0, 200);
-                    _enumOptions[lt] = items?.ToList() ?? new List<LookupItem>();
+                    var items = await Provider.QueryLookupAsync(new CardField("", CardFieldKind.Text, lookupType: sample.LookupType, lookupFilter: sample.LookupFilter), null, 0, 200);
+                    _enumOptions[key] = items?.ToList() ?? new List<LookupItem>();
                 }
-                catch { _enumOptions[lt] = new List<LookupItem>(); }
+                catch { _enumOptions[key] = new List<LookupItem>(); }
             }
         }
     }
+
+    private static string EnumOptionsKey(CardField f) => $"{f.LookupType}|{f.LookupFilter}";
 
     protected override void OnParametersSet()
     {

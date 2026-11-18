@@ -1,5 +1,6 @@
 namespace FinanceManager.Web.ViewModels.StatementDrafts;
 
+using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.Statements;
 using FinanceManager.Shared.Dtos.Securities;
 
@@ -20,6 +21,8 @@ internal sealed class StatementDraftEntryItem : IListItemNavigation
     public Guid? SavingsPlanId { get; set; }
     public Guid? SecurityId { get; set; }
     public SecurityTransactionType? SecurityTransactionType { get; set; }
+    public BankPostingType PostingType { get; set; }
+    public bool IsPostingTypeManual { get; set; }
     public BudgetImpactEvaluationDto? BudgetImpact { get; set; }
     public bool IsNew { get; set; }
     public bool IsPlaceholder { get; set; }

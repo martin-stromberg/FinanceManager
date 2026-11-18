@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="PTR_InvalidPayload" xml:space="preserve"><value>Ungültige Nutzdaten des Hintergrundtasks.</value></data>
+  <data name="PTR_AccountNotFound" xml:space="preserve"><value>Konto nicht gefunden oder Zugriff verweigert.</value></data>
+  <data name="PTR_Start" xml:space="preserve"><value>Postenarten werden neu bewertet...</value></data>
+  <data name="PTR_Progress" xml:space="preserve"><value>Posten {0}/{1} neu bewertet</value></data>
+  <data name="PTR_Completed" xml:space="preserve"><value>Neubewertung abgeschlossen ({0} Posten)</value></data>
+</root>

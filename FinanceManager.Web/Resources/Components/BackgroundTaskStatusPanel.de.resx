@@ -66,4 +66,5 @@
   <data name="Bgt_Type_ClassifyAllDrafts" xml:space="preserve"><value>Kontoauszüge klassifizieren</value></data>
   <data name="Bgt_Type_BookAllDrafts" xml:space="preserve"><value>Kontoauszüge buchen</value></data>
   <data name="Bgt_Type_BackupRestore" xml:space="preserve"><value>Backup wiederherstellen</value></data>
+  <data name="Bgt_Type_ReevaluatePostingTypes" xml:space="preserve"><value>Postenarten neu bewerten</value></data>
 </root>

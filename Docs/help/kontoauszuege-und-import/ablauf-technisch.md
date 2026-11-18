@@ -36,14 +36,31 @@ Beteiligte Komponenten:
 - `StatementDraftService.AssignSavingsPlanAsync`
 - `StatementDraftService.SetEntrySecurityAsync`
 
+#### Postenart-Ermittlung
+
+`ClassifyInternalAsync` lädt neben dem erkannten Konto (`draft.DetectedAccountId`) dessen `AccountPostingRule`-Einträge (sortiert nach `OrderIndex`). Für jede Entwurfszeile mit `IsPostingTypeManual == false` ruft `ApplyAutomaticPostingType` die zentrale Domänenlogik `PostingTypeEvaluator.Evaluate(rules, entry.Subject, entry.BookingDescription, entry.Amount)` auf: Die Regeln werden in `OrderIndex`-Reihenfolge (Tiebreak `Id`) geprüft; das konfigurierte Textfeld und das `Pattern` werden identisch normalisiert (`NormalizeForRuleMatch`: Umlaut-Ersetzung, `ToLowerInvariant`, Whitespace-Entfernung) und per Teilstring-Abgleich verglichen — der erste Treffer liefert die `PostingType` der Regel. Ohne Treffer greift `EvaluateByAmountSign` (`Amount < 0` → `Outflow`, sonst `Inflow`). Die zuvor private `NormalizeUmlauts`-Implementierung wurde in `PostingTypeEvaluator` verlagert; die bestehenden Klassifikationsaufrufe delegieren dorthin.
+
+Manuell gesetzte Postenarten sind durch `StatementDraftEntry.IsPostingTypeManual` geschützt: `SaveEntryAllAsync` setzt bei übergebenem `postingType` im `StatementDraftSaveEntryAllRequest` den Wert mit `entry.SetPostingType(value, manual: true)` und weist `Unspecified` als ungültig ab. `UpdateEntryCoreAsync` und `ApplyBatchEntryUpdatesAsync` bewerten Entries ohne manuelles Flag nach Kernfeldänderungen erneut (`ReevaluatePostingTypeAsync`), sodass automatisch ermittelte Werte aktuell bleiben.
+
+Beteiligte Komponenten:
+- `PostingTypeEvaluator` (`Evaluate`, `EvaluateByAmountSign`, `Resolve`, `NormalizeForRuleMatch`, `NormalizeUmlauts`)
+- `StatementDraftService.ClassifyInternalAsync` / `ApplyAutomaticPostingType` / `ReevaluatePostingTypeAsync` / `LoadPostingRulesAsync`
+- `StatementDraftService.SaveEntryAllAsync` / `UpdateEntryCoreAsync` / `ApplyBatchEntryUpdatesAsync`
+- `StatementDraftEntry.SetPostingType` / `IsPostingTypeManual`
+- `StatementDraftEntryCardViewModel` — `CardField` „Postenart" (`lookupType: "Enum:BankPostingType"`, `lookupFilter: "Exclude=Unspecified"`)
+- `BaseViewModel.QueryEnumLookup` — generischer `Exclude=<Member>`-Filter für Enum-Lookups
+- `GenericCardPage.razor` — Enum-Options-Prefetch pro `LookupType` + `LookupFilter`
+
 ### 3. Validierung und Buchung
 
-Der Entwurf wird geprüft und in Buchungen geschrieben.
+Der Entwurf wird geprüft und in Buchungen geschrieben. Beim Buchen überträgt `CreateBankAndContactPostingAsync` die Postenart der Entwurfszeile auf den erzeugten `PostingKind.Bank`-Posting (`posting.SetPostingType(PostingTypeEvaluator.Resolve(e.PostingType, amount))` — ein `Unspecified`-Wert fällt auf die Vorzeichenlogik zurück); `BookSplitDraftGroupAsync` handhabt Split-Buchungen analog. Der `PostingKind.Contact`-Gegenposten bleibt `Unspecified`.
 
 Beteiligte Komponenten:
 - `StatementDraftService.ValidateAsync`
 - `StatementDraftService.BookAsync`
 - `StatementDraftService.CommitAsync`
+- `StatementDraftService.CreateBankAndContactPostingAsync` / `BookSplitDraftGroupAsync` — `SetPostingType`-Übertrag auf den Bankposten
+- `PostingsQueryService` / `PostingsController` — `PostingType`-Projektion in `PostingServiceDto`
 
 ### 4. Export der Entwurfszeilen
 

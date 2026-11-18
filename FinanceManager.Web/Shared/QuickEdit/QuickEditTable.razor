@@ -346,13 +346,14 @@ else
                 <th>@(localizer != null ? localizer["List_Th_BookingDescription"].Value : "Booking description")</th>
                 <th>@(localizer != null ? localizer["List_Th_Recipient"].Value : "Recipient")</th>
                 <th>@(localizer != null ? localizer["List_Th_Purpose"].Value : "Purpose")</th>
+                <th>@(localizer != null ? localizer["List_Th_PostingType"].Value : "Posting type")</th>
                 <th>@(localizer != null ? localizer["List_Th_Status"].Value : "Status")</th>
                 <th style="width:6rem">@(localizer != null ? (localizer["List_Th_Actions"].ResourceNotFound ? "Actions" : localizer["List_Th_Actions"].Value) : "Actions")</th>
             </tr>
         </thead>
         <tbody>
             @{
-                var renderedCols = 8; // BookingDate, Valuta, Amount, BookingDescription, Recipient, Purpose, Status, Actions
+                var renderedCols = 9; // BookingDate, Valuta, Amount, BookingDescription, Recipient, Purpose, PostingType, Status, Actions
                 var visibleItems = vm.IsQuickEditActive ? vm.VisibleQuickEditItems : vm.Items;
             }
             @for (int idx = 0; idx < visibleItems.Count; idx++)
@@ -476,11 +477,23 @@ else
                         }
                     </td>
 
+                    @* Posting type (read-only; manual changes happen on the entry card) *@
+                    <td class="qe-posting-type" style="vertical-align:middle;">
+                        <span>@vm.GetPostingTypeText(item)</span>
+                    </td>
+
                     <td style="vertical-align:middle;">
                         <span>@item.Status.ToString()</span>
                     </td>
 
                     <td style="vertical-align:middle;display:flex;gap:.25rem;align-items:center;">
+                        @if (!item.IsPlaceholder && !item.IsNew)
+                        {
+                            var openEntryLabel = localizer != null ? (localizer["QuickEdit_OpenEntry"].ResourceNotFound ? "Open entry" : localizer["QuickEdit_OpenEntry"].Value) : "Open entry";
+                            <a class="quick-edit-open-button" href="@item.GetNavigateUrl()" title="@openEntryLabel" aria-label="@openEntryLabel" @onclick:stopPropagation="true">
+                                <svg aria-hidden="true"><use href="/icons/sprite.svg#external"></use></svg>
+                            </a>
+                        }
                         @if (editable && !item.IsPlaceholder)
                         {
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => ResetRow(item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)">@(localizer != null ? localizer["Ribbon_Reset"].Value : "Reset")</button>

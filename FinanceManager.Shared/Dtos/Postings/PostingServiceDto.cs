@@ -37,6 +37,8 @@ namespace FinanceManager.Shared.Dtos.Postings
     /// source but are excluded from the plan's accumulated and expected amounts.</param>
     /// <param name="SavingsPlanSubType">Optional savings plan posting subtype (e.g. actual-balance
     /// report "Istmeldung" correction posting).</param>
+    /// <param name="PostingType">Posting type of a bank posting (inflow/outflow/interest/tax);
+    /// <see cref="BankPostingType.Unspecified"/> for other kinds.</param>
     /// <returns>The result.</returns>
     public sealed record PostingServiceDto(
         Guid Id,
@@ -69,5 +71,6 @@ namespace FinanceManager.Shared.Dtos.Postings
         Guid? ReversalForPostingId,
         bool IsPreliminary = false,
         bool Informal = false,
-        FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanPostingSubType? SavingsPlanSubType = null);
+        FinanceManager.Shared.Dtos.SavingsPlans.SavingsPlanPostingSubType? SavingsPlanSubType = null,
+        BankPostingType PostingType = BankPostingType.Unspecified);
 }
