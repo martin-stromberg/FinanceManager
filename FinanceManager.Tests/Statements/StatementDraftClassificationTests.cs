@@ -73,11 +73,11 @@ public sealed class StatementDraftClassificationTests
         {
             bankContact = new Contact(owner, $"Bank {db.Contacts.Count(c => c.Type == ContactType.Bank) + 1}", ContactType.Bank, null, null);
             db.Contacts.Add(bankContact);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         var account = new Account(owner, AccountType.Giro, accountName, iban, bankContact.Id);
         db.Accounts.Add(account);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return account;
     }
     private static async Task<StatementDraft> CreateStatementDraftAsync(AppDbContext db, Account account, Action<StatementDraft> callback)
@@ -86,7 +86,7 @@ public sealed class StatementDraftClassificationTests
         var draft = new StatementDraft(owner, "file.csv", account.Iban, null);
         callback(draft);
         db.StatementDrafts.Add(draft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return draft;
     }
 
@@ -94,12 +94,12 @@ public sealed class StatementDraftClassificationTests
     {
         var contact = new Contact(owner, name, contactType, categoryId, description, isPaymentIntermediary);
         db.Contacts.Add(contact);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         foreach (var alias in aliasNames)
         {
             db.AliasNames.Add(new AliasName(contact.Id, alias));
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return contact;
     }
 
@@ -471,7 +471,7 @@ public sealed class StatementDraftClassificationTests
         var (sut, db, conn, owner) = Create();
         var account = await AddBankAccountAsync(db);
         db.AccountPostingRules.Add(new AccountPostingRule(account.Id, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 1));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             draft.AddEntry(DateTime.Today, 12.50m, "Zinsgutschrift", "Bank", DateTime.Today, "EUR", "Gutschrift", false);
@@ -494,7 +494,7 @@ public sealed class StatementDraftClassificationTests
         var (sut, db, conn, owner) = Create();
         var account = await AddBankAccountAsync(db);
         db.AccountPostingRules.Add(new AccountPostingRule(account.Id, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 1));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         var draft = await CreateStatementDraftAsync(db, account, (draft) =>
         {
             var entry = draft.AddEntry(DateTime.Today, 12.50m, "Zinsgutschrift", "Bank", DateTime.Today, "EUR", "Gutschrift", false);
@@ -542,7 +542,7 @@ public sealed class StatementDraftClassificationTests
         var draft = new StatementDraft(ownerUser.Id, "file.csv", "DE999999", null);
         draft.AddEntry(DateTime.Today, -25m, "Kartenzahlung", "Shop", DateTime.Today, "EUR", "Buchung", false);
         db.StatementDrafts.Add(draft);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await sut.ClassifyAsync(draft.Id, null, owner, CancellationToken.None);
 

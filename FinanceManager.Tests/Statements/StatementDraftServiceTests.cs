@@ -654,7 +654,7 @@ public sealed class StatementDraftServiceTests
     }
 
     /// <summary>
-    /// <see cref="StatementDraftService.GetOpenDraftsAsync"/> must also project posting type and manual flag so
+    /// <see cref="StatementDraftService.GetOpenDraftsAsync(Guid, CancellationToken)"/> must also project posting type and manual flag so
     /// the draft list shows the same values as the detail view.
     /// </summary>
     [Fact]
