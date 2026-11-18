@@ -43,9 +43,12 @@ else
         <EmbeddedPanelHost TKeyValue="(string,string)" Provider="_vm" Position="EmbeddedPanelPosition.AfterRibbon" />
         <GenericCardPage TKeyValue="(string, string)" Provider="_vm" Localizer="Localizer" LoadingText="@Localizer["General_Loading"]" />
 
-        @if (_vm is BankAccountCardViewModel bankVm && bankVm.EffectiveIsCollectionAccount && bankVm.Account?.Id != Guid.Empty)
+        @if (_vm is BankAccountCardViewModel bankVm && bankVm.Account?.Id != Guid.Empty)
         {
-            <LinkedIbansPanel Vm="bankVm" Localizer="Localizer" />
+            @if (bankVm.EffectiveIsCollectionAccount)
+            {
+                <LinkedIbansPanel Vm="bankVm" Localizer="Localizer" />
+            }
         }
 
         @if (_vm is FinanceManager.Web.ViewModels.SavingsPlans.SavingsPlanCardViewModel savingsVm && savingsVm.IsEdit)

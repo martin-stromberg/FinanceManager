@@ -231,4 +231,102 @@ public sealed class AccountDetailViewModelTests
         var lastTab = registers!.SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>()).Last();
         Assert.Equal("Ribbon_Group_Linked", lastTab.Title);
     }
+
+    /// <summary>
+    /// Verifies that the bookings ribbon group of the account card contains the
+    /// <c>OpenPostingRules</c> action as a small item, which opens the posting-rules overlay.
+    /// </summary>
+    [Fact]
+    public void GetRibbon_BookingsGroup_ContainsOpenPostingRulesAction()
+    {
+        var (vm, _) = CreateVm();
+        var loc = new DummyLocalizer();
+
+        var registers = vm.GetRibbonRegisters(loc);
+
+        Assert.NotNull(registers);
+        var actionsRegister = Assert.Single(registers!, r => r.Kind == UiRibbonRegisterKind.Actions);
+        var bookingsTab = Assert.Single(actionsRegister.Tabs!, t => t.Title == "Ribbon_Group_Bookings");
+        var action = Assert.Single(bookingsTab.Items, a => a.Id == "OpenPostingRules");
+        Assert.Equal(UiRibbonItemSize.Small, action.Size);
+    }
+
+    /// <summary>
+    /// Verifies that <c>OpenPostingRules</c> is disabled and carries the localized hint as its
+    /// tooltip while the account is new and unsaved (<c>Account.Id == Guid.Empty</c>), because
+    /// posting rules can only be managed for persisted accounts.
+    /// </summary>
+    [Fact]
+    public async Task OpenPostingRules_Disabled_ForNewAccount()
+    {
+        var (vm, _) = CreateVm();
+        var loc = new DummyLocalizer();
+
+        await vm.InitializeAsync(Guid.Empty);
+
+        var action = FindRibbonAction(vm, loc, "OpenPostingRules");
+        Assert.True(action.Disabled);
+        Assert.Equal("Ribbon_PostingRules_DisabledHint", action.Tooltip);
+    }
+
+    /// <summary>
+    /// Verifies that <c>OpenPostingRules</c> is enabled and has no hint tooltip once a persisted
+    /// account is loaded, so the posting-rules overlay can be opened.
+    /// </summary>
+    [Fact]
+    public async Task OpenPostingRules_Enabled_ForSavedAccount()
+    {
+        var accountId = Guid.NewGuid();
+        var (vm, apiMock) = CreateVm();
+        var loc = new DummyLocalizer();
+
+        apiMock.Setup(a => a.GetAccountAsync(accountId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FinanceManager.Shared.Dtos.Accounts.AccountDto(accountId, "Saved", FinanceManager.Shared.Dtos.Accounts.AccountType.Giro, null, 0m, Guid.Empty, null, FinanceManager.Shared.Dtos.Accounts.SavingsPlanExpectation.Optional, true));
+        apiMock.Setup(a => a.GetPostingRulesAsync(accountId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<FinanceManager.Shared.Dtos.Accounts.AccountPostingRuleDto>());
+
+        await vm.InitializeAsync(accountId);
+
+        var action = FindRibbonAction(vm, loc, "OpenPostingRules");
+        Assert.False(action.Disabled);
+        Assert.Null(action.Tooltip);
+    }
+
+    /// <summary>
+    /// Verifies that invoking the <c>OpenPostingRules</c> ribbon callback raises a
+    /// <see cref="BaseViewModel.UiOverlaySpec"/> payload for the <c>PostingRulesPanel</c> component
+    /// that carries the view model, the localizer and the overlay title, and is modal.
+    /// </summary>
+    [Fact]
+    public async Task OpenPostingRules_Callback_RaisesUiOverlaySpec()
+    {
+        var (vm, _) = CreateVm();
+        var loc = new DummyLocalizer();
+
+        BaseViewModel.UiActionEventArgs? captured = null;
+        vm.UiActionRequested += (_, e) => captured = e;
+
+        var action = FindRibbonAction(vm, loc, "OpenPostingRules");
+        Assert.NotNull(action.Callback);
+        await action.Callback!();
+
+        Assert.Equal("OpenPostingRules", captured?.Action);
+        var spec = Assert.IsType<BaseViewModel.UiOverlaySpec>(captured?.PayloadObject);
+        Assert.Equal(typeof(FinanceManager.Web.Components.Shared.PostingRulesPanel), spec.ComponentType);
+        Assert.True(spec.Modal);
+        Assert.NotNull(spec.Parameters);
+        Assert.Same(vm, spec.Parameters!["Vm"]);
+        Assert.Same(loc, spec.Parameters["Localizer"]);
+        Assert.Equal("PostingRules_Section_Title", spec.Parameters["OverlayTitle"]);
+        Assert.Equal("min(60rem, 95vw)", spec.Parameters["OverlayMaxWidth"]);
+    }
+
+    private static UiRibbonAction FindRibbonAction(FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel vm, IStringLocalizer loc, string actionId)
+    {
+        var registers = vm.GetRibbonRegisters(loc);
+        return registers!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
+            .SelectMany(t => t.Items)
+            .Single(a => a.Id == actionId);
+    }
 }

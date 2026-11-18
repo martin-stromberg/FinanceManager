@@ -16,6 +16,7 @@ namespace FinanceManager.Shared.Dtos.Statements;
 /// <param name="TaxAmount">The tax amount.</param>
 /// <param name="SplitDraftId">The split draft id.</param>
 /// <param name="ClearSplit">The clear split.</param>
+/// <param name="PostingType">The posting type to set manually (optional; <c>null</c> leaves the value unchanged).</param>
 /// <returns>The result.</returns>
 public sealed record StatementDraftSaveEntryAllRequest(
     Guid? ContactId,
@@ -28,5 +29,6 @@ public sealed record StatementDraftSaveEntryAllRequest(
     decimal? FeeAmount,
     decimal? TaxAmount,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? SplitDraftId = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? ClearSplit = null
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? ClearSplit = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] BankPostingType? PostingType = null
 );

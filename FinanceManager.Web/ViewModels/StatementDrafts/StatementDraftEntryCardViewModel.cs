@@ -107,6 +107,13 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             new CardField("Card_Caption_StatementDrafts_CostNeutral", CardFieldKind.Boolean, boolValue: entry.IsCostNeutral, editable: !isLocked),
         };
 
+        // Posting type - editable unless locked (independent of the core-field edit mode, like the
+        // contact field); "Unspecified" is excluded from the offered options.
+        var postingTypeText = entry.PostingType == BankPostingType.Unspecified
+            ? null
+            : EnumDisplayTexts.GetText(entry.PostingType, localizer);
+        fields.Add(new CardField("Card_Caption_StatementDrafts_PostingType", CardFieldKind.Text, text: postingTypeText, editable: !isLocked, lookupType: "Enum:BankPostingType", lookupFilter: "Exclude=Unspecified"));
+
         // Conditionally include savings plan field when contact is Self and account allows savings.
         // When the detected account is linked to a savings plan the field stays hidden — the linked
         // balance already captures the postings — unless a plan was assigned before the link existed
@@ -165,6 +172,62 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
         catch { /* ignore formatting failures */ }
 
         return fields;
+    }
+
+    private ILogger<StatementDraftEntryCardViewModel>? Logger
+        => ServiceProvider.GetService<ILogger<StatementDraftEntryCardViewModel>>();
+
+    /// <summary>
+    /// Resolves a pending field value to an enum member. Handles direct enum values, lookup items
+    /// (their <c>Name</c> property), raw enum names and localized resource texts.
+    /// </summary>
+    /// <typeparam name="TEnum">The enum type to resolve.</typeparam>
+    /// <param name="raw">The pending field value (enum, lookup item or display text).</param>
+    /// <returns>The resolved enum member, or <c>null</c> when the value is empty or cannot be resolved.</returns>
+    private TEnum? ResolveEnumValue<TEnum>(object? raw) where TEnum : struct, Enum
+    {
+        if (raw is TEnum direct) { return direct; }
+
+        string? candidate = null;
+        // If it is a lookup-item-like object, read the Name property first.
+        try
+        {
+            var nameProp = raw?.GetType().GetProperty("Name");
+            candidate = nameProp?.GetValue(raw)?.ToString();
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogDebug(ex, "Could not read the Name property of a pending value of type {ValueType}", raw?.GetType().FullName);
+        }
+
+        // Fallback to string conversion
+        if (string.IsNullOrWhiteSpace(candidate)) { candidate = raw?.ToString(); }
+        if (string.IsNullOrWhiteSpace(candidate)) { return null; }
+
+        // Try to parse the raw enum name
+        if (Enum.TryParse<TEnum>(candidate, true, out var parsed)) { return parsed; }
+
+        // Try localized mapping via resources
+        try
+        {
+            var enumType = typeof(TEnum);
+            var localizer = ServiceProvider.GetService<IStringLocalizer<Pages>>();
+            foreach (var name in Enum.GetNames(enumType))
+            {
+                var localized = localizer?[$"EnumType_{enumType.Name}_{name}"]?.Value;
+                if (!string.IsNullOrWhiteSpace(localized)
+                    && string.Equals(localized, candidate, StringComparison.OrdinalIgnoreCase)
+                    && Enum.TryParse<TEnum>(name, true, out var localizedParsed))
+                {
+                    return localizedParsed;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogDebug(ex, "Could not resolve '{Candidate}' to a {EnumType} member via localized resources", candidate, typeof(TEnum).Name);
+        }
+        return null;
     }
 
     /// <summary>
@@ -512,6 +575,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             const string kQuantity = "Card_Caption_StatementDrafts_Quantity";
             const string kFee = "Card_Caption_StatementDrafts_Fee";
             const string kTax = "Card_Caption_StatementDrafts_Tax";
+            const string kPostingType = "Card_Caption_StatementDrafts_PostingType";
 
             // Build request from pending values with sensible fallbacks to current DTO
             var bookingDate = Entry.BookingDate;
@@ -650,61 +714,7 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
             // Transaction type: support LookupItem (may contain localized display) -> map to enum
             if (PendingFieldValues.TryGetValue(kTransactionType, out var ptt))
             {
-                // Try direct enum
-                if (ptt is SecurityTransactionType st) { txType = st; }
-                else
-                {
-                    string? candidate = null;
-                    // If it's a LookupItem-like object, try to read Name property
-                    try
-                    {
-                        if (ptt != null)
-                        {
-                            var t = ptt.GetType();
-                            var nameProp = t.GetProperty("Name");
-                            if (nameProp != null)
-                            {
-                                candidate = nameProp.GetValue(ptt)?.ToString();
-                            }
-                        }
-                    }
-                    catch { /* ignore */ }
-
-                    // Fallback to string conversion
-                    if (string.IsNullOrWhiteSpace(candidate)) candidate = ptt?.ToString();
-
-                    if (string.IsNullOrWhiteSpace(candidate))
-                    {
-                        txType = null; // explicit clear
-                    }
-                    else
-                    {
-                        // Try parse raw enum name
-                        if (Enum.TryParse<SecurityTransactionType>(candidate, true, out var parsed2))
-                        {
-                            txType = parsed2;
-                        }
-                        else
-                        {
-                            // Try localized mapping via resources
-                            try
-                            {
-                                var enumType = typeof(SecurityTransactionType);
-                                var localizer = ServiceProvider.GetService<IStringLocalizer<Pages>>();
-                                foreach (var name in Enum.GetNames(enumType))
-                                {
-                                    var key = $"EnumType_{enumType.Name}_{name}";
-                                    var localized = localizer?[key]?.Value;
-                                    if (!string.IsNullOrWhiteSpace(localized) && string.Equals(localized, candidate, StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        if (Enum.TryParse<SecurityTransactionType>(name, true, out var parsed)) { txType = parsed; break; }
-                                    }
-                                }
-                            }
-                            catch { /* ignore mapping failures */ }
-                        }
-                    }
-                }
+                txType = ResolveEnumValue<SecurityTransactionType>(ptt);
             }
 
             if (PendingFieldValues.TryGetValue(kQuantity, out var pq))
@@ -736,6 +746,14 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 }
             }
 
+            // Posting type: resolve the selected option (LookupItem/localized name) to the enum value.
+            var postingTypeProvided = PendingFieldValues.ContainsKey(kPostingType);
+            BankPostingType? postingType = null;
+            if (PendingFieldValues.TryGetValue(kPostingType, out var ppt))
+            {
+                postingType = ResolveEnumValue<BankPostingType>(ppt);
+            }
+
             // Preserve existing values for fields that were not changed by the user.
             // Otherwise sending null will clear them on the server.
             if (Entry != null)
@@ -764,10 +782,10 @@ public sealed class StatementDraftEntryCardViewModel : BaseCardViewModel<(string
                 if (securityLookupProvided && securityId == Guid.Empty) securityId = null;
             }
 
-            // If any of the advanced fields are present OR the user explicitly provided savings/security (even to clear), call SaveEntryAll
-            if (contactId != null || isCostNeutral != null || savingsPlanId != null || securityId != null || txType != null || quantity != null || fee != null || tax != null || archiveOnBooking != null || savingsPlanProvided || securityProvided)
+            // If any of the advanced fields are present OR the user explicitly provided savings/security/posting type (even to clear), call SaveEntryAll
+            if (contactId != null || isCostNeutral != null || savingsPlanId != null || securityId != null || txType != null || quantity != null || fee != null || tax != null || archiveOnBooking != null || savingsPlanProvided || securityProvided || postingTypeProvided)
             {
-                var allReq = new StatementDraftSaveEntryAllRequest(contactId, isCostNeutral, savingsPlanId, archiveOnBooking, securityId, txType, quantity, fee, tax);
+                var allReq = new StatementDraftSaveEntryAllRequest(contactId, isCostNeutral, savingsPlanId, archiveOnBooking, securityId, txType, quantity, fee, tax, PostingType: postingType);
                 try
                 {
                     await ApiClient.StatementDrafts_SaveEntryAllAsync(DraftId, EntryId, allReq, CancellationToken.None);

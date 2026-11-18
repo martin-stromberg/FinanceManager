@@ -1031,15 +1031,7 @@ public sealed class StatementDraftsController : ControllerBase
                 draftId,
                 entryId,
                 _current.UserId,
-                body.ContactId,
-                body.IsCostNeutral,
-                body.SavingsPlanId,
-                body.ArchiveOnBooking,
-                body.SecurityId,
-                body.TransactionType,
-                body.Quantity,
-                body.FeeAmount,
-                body.TaxAmount,
+                body,
                 ct);
 
             if (dto == null) { return NotFound(); }

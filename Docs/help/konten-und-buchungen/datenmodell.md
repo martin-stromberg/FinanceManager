@@ -26,6 +26,19 @@
 | `AccountId` | `Guid` | Zugehöriges Sammelkonto |
 | `Iban` | `string` | Verknüpfte Unter-IBAN |
 
+### `AccountPostingRule`
+
+Kontierungsregel eines Bankkontos: ordnet einer Buchung eine Postenart zu, wenn ein gewähltes Textfeld den Suchtext enthält. Der Besitzerbezug ergibt sich über das Konto (`Account.OwnerUserId`); die Entität trägt selbst kein `OwnerUserId`.
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `Id` | `Guid` | Regel-ID |
+| `AccountId` | `Guid` | Zugehöriges Bankkonto |
+| `Field` | `PostingRuleField` | Geprüftes Textfeld: `Subject` (Verwendungszweck) oder `BookingDescription` (Buchungsbeschreibung) |
+| `Pattern` | `string` (max. 200) | Suchtext, der im gewählten Feld enthalten sein muss |
+| `PostingType` | `BankPostingType` | Ziel-Postenart bei Regeltreffer (`Inflow`, `Outflow`, `Interest`, `Tax`) |
+| `OrderIndex` | `int` | Auswertungsreihenfolge; die zutreffende Regel mit dem kleinsten Wert gewinnt |
+
 ### `Posting`
 
 | Eigenschaft | Typ | Beschreibung |
@@ -39,6 +52,7 @@
 | `BookingDate` | `DateTime` | Buchungsdatum |
 | `ValutaDate` | `DateTime` | Valutadatum |
 | `Amount` | `decimal` | Betrag |
+| `PostingType` | `BankPostingType` | Postenart des Bankpostens (`Inflow`, `Outflow`, `Interest`, `Tax`); `Unspecified` bei Nicht-Bankpostings |
 | `ReversalForPostingId` | `Guid?` | Referenz auf Original bei Storno |
 
 Invariante: Mindestens eine der vier Zielreferenzen `AccountId`, `ContactId`, `SavingsPlanId` oder `SecurityId` muss gesetzt sein. Der `Posting`-Konstruktor wirft bei vier `null`-Referenzen eine `ArgumentException`, und der Datenbank-Check-Constraint `CK_Postings_HasReference` lehnt `INSERT`/`UPDATE` mit vier `NULL`-Referenzspalten ab. Der Besitzerbezug ergibt sich indirekt über die referenzierten Aggregate (alle mit `OwnerUserId`); ein `Posting` trägt selbst kein `OwnerUserId`.
@@ -47,6 +61,7 @@ Invariante: Mindestens eine der vier Zielreferenzen `AccountId`, `ContactId`, `S
 
 - Ein `Account` hat viele `Posting`-Einträge.
 - Ein `Account` kann mehrere `AccountLinkedIban`-Einträge besitzen.
+- Ein `Account` kann mehrere `AccountPostingRule`-Einträge besitzen (kaskadierendes Löschen mit dem Konto).
 - Ein `Account` kann über `SavingsPlanAccountLink` mit mehreren Sparplänen verknüpft sein (n:m; ein Sparplan kann umgekehrt mehrere Konten bedienen lassen).
 - Eine `Posting`-Zeile kann optional auf Kontakt, Sparplan oder Wertpapier verweisen.
 
@@ -56,6 +71,7 @@ Invariante: Mindestens eine der vier Zielreferenzen `AccountId`, `ContactId`, `S
 erDiagram
     ACCOUNT ||--o{ POSTING : "enthaelt"
     ACCOUNT ||--o{ ACCOUNT_LINKED_IBAN : "verknuepft"
+    ACCOUNT ||--o{ ACCOUNT_POSTING_RULE : "kontiert mit"
     ACCOUNT ||--o{ SAVINGS_PLAN_ACCOUNT_LINK : "verknuepft"
     SAVINGS_PLAN ||--o{ SAVINGS_PLAN_ACCOUNT_LINK : "verknuepft"
     CONTACT ||--o{ POSTING : "optional"

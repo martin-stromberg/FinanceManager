@@ -576,16 +576,14 @@ public sealed class FmStatementDraftCompleteHandler : IMcpToolHandler
             or "SecurityTaxAmount");
         if (coveredBySaveAll)
         {
-            // SaveEntryAllAsync contract note: the declared interface parameter names
-            // (splitDraftId, contactId, savingsPlanId, price, fee) do not match the
-            // implementation binding — the effective positional contract is
-            // (contactId, isCostNeutral, savingsPlanId, archiveOnBooking, securityId,
-            // transactionType, quantity, feeAmount, taxAmount). Null clears, so every
-            // argument carries the EFFECTIVE value (requested fill or current state).
+            // Null clears, so every request member carries the EFFECTIVE value
+            // (requested fill or current state).
             var updated = await _drafts.SaveEntryAllAsync(
                 plan.DraftId, plan.EntryId, owner,
-                plan.EffContactId, plan.EffCostNeutral, plan.EffSavingsPlanId, plan.EffArchiveOnBooking,
-                plan.EffSecurityId, plan.EffTxType, plan.EffQuantity, plan.EffFee, plan.EffTax, ct);
+                new StatementDraftSaveEntryAllRequest(
+                    plan.EffContactId, plan.EffCostNeutral, plan.EffSavingsPlanId, plan.EffArchiveOnBooking,
+                    plan.EffSecurityId, plan.EffTxType, plan.EffQuantity, plan.EffFee, plan.EffTax),
+                ct);
             if (updated is null)
             {
                 throw new McpToolException("Err_Mcp_InvalidState",

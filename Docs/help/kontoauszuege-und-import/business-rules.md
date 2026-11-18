@@ -29,6 +29,38 @@
 
 **Umsetzung:** `SetEntryContactAsync`, `AssignSavingsPlanAsync`, `SetEntrySecurityAsync`, `UpdateEntryCoreAsync`.
 
+## Klassifizierung ermittelt die Postenart
+
+**Beschreibung:** Jede Entwurfszeile erhält bei der Klassifizierung eine Postenart (`BankPostingType`), die später auf den gebuchten Bankposten übertragen wird.
+
+**Bedingungen:**
+- Der Entwurf gehört zum Benutzer.
+- Es werden die `AccountPostingRule`-Einträge des erkannten Kontos (`draft.DetectedAccountId`) ausgewertet; ohne erkanntes Konto bleibt die Regelliste leer.
+- Entries mit `AlreadyBooked`-Status werden nicht bewertet; Entries mit `IsPostingTypeManual` werden übersprungen.
+
+**Verhalten:**
+- Regeltreffer: die Postenart der ersten zutreffenden Regel in `OrderIndex`-Reihenfolge (auch `Interest`/`Tax` unabhängig vom Betragsvorzeichen).
+- Kein Regeltreffer: `Amount < 0` → `Outflow`, sonst `Inflow` (Betrag 0 = `Inflow`).
+- Nach Kernfeldänderungen (Betrag, Verwendungszweck, Buchungsbeschreibung über `UpdateEntryCoreAsync`/`ApplyBatchEntryUpdatesAsync`) wird die Postenart automatisch ermittelter Entries neu bewertet.
+- Beim Buchen übernimmt der `PostingKind.Bank`-Posting die Postenart der Zeile; `Unspecified` fällt auf das Betragsvorzeichen zurück. Gegenpostings anderer `PostingKind`s bleiben `Unspecified`.
+
+**Umsetzung:** `StatementDraftService.ClassifyInternalAsync` (`ApplyAutomaticPostingType`), `PostingTypeEvaluator.Evaluate`/`Resolve`, `StatementDraftService.CreateBankAndContactPostingAsync`/`BookSplitDraftGroupAsync`.
+
+## Manuell gesetzte Postenart ist überschreibgeschützt
+
+**Beschreibung:** Der Anwender kann die Postenart einer Entwurfszeile auf der Entry-Karte manuell wählen; der Wert gilt dann als fixiert.
+
+**Bedingungen:**
+- Die Zeile ist nicht gesperrt (nicht `IsAnnounced`, nicht `AlreadyBooked`).
+- Der gewählte Wert ist ein definierter `BankPostingType` ungleich `Unspecified` — `Unspecified` ist in der Auswahlliste nicht enthalten und wird serverseitig abgewiesen.
+
+**Verhalten:**
+- `SaveEntryAllAsync` setzt `entry.SetPostingType(value, manual: true)` und damit `IsPostingTypeManual = true`.
+- Spätere Klassifizierungsläufe (`ClassifyAsync`, `SetAccountAsync`, Re-Import) und Batch-Updates ändern den manuell gesetzten Wert nicht.
+- Es gibt keinen Pfad zum Zurücksetzen des Flags auf „automatisch" — eine neue automatische Bewertung ist nach manuellem Setzen nicht vorgesehen.
+
+**Umsetzung:** `StatementDraftService.SaveEntryAllAsync` (Parameter `postingType` im `StatementDraftSaveEntryAllRequest`), `StatementDraftEntry.IsPostingTypeManual`, `StatementDraftEntryCardViewModel` (Enum-Lookup `Enum:BankPostingType` mit `Exclude=Unspecified`).
+
 ## Massenänderungen werden gemeinsam gespeichert
 
 **Beschreibung:** Im Massenänderungsmodus für Kontoauszugsentwürfe können Bearbeitungen, Löschvormerkungen und neue Zeilen in einem gemeinsamen Speichervorgang übernommen werden.

@@ -269,6 +269,25 @@ public sealed class Posting : Entity, IAggregateRoot
         return this;
     }
 
+    /// <summary>
+    /// Posting type (inflow/outflow/interest/tax) of a bank posting.
+    /// Remains <see cref="BankPostingType.Unspecified"/> for non-bank postings.
+    /// </summary>
+    /// <value>The bank posting type.</value>
+    public BankPostingType PostingType { get; private set; } = BankPostingType.Unspecified;
+
+    /// <summary>
+    /// Sets the posting type of this posting.
+    /// </summary>
+    /// <param name="type">The posting type to set.</param>
+    /// <returns>The updated <see cref="Posting"/> instance (fluent API).</returns>
+    public Posting SetPostingType(BankPostingType type)
+    {
+        PostingType = type;
+        Touch();
+        return this;
+    }
+
     // Neu: Menge (nur für Wertpapier-Postings belegt)
     /// <summary>
     /// Optional quantity, primarily used for securities postings.
@@ -513,15 +532,16 @@ public sealed class Posting : Entity, IAggregateRoot
     /// <param name="ReversedAtUtc">Optional timestamp when this posting was reversed.</param>
     /// <param name="IsPreliminary">Indicates whether this posting is a preliminary (provisional) booking.</param>
     /// <param name="SavingsPlanSubType">Optional savings plan posting subtype (e.g. actual-balance report).</param>
+    /// <param name="PostingType">Optional posting type; <c>null</c> in backups created before the posting type existed.</param>
     /// <returns>The result.</returns>
-    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc, bool IsPreliminary = false, SavingsPlanPostingSubType? SavingsPlanSubType = null);
+    public sealed record PostingBackupDto(Guid Id, Guid SourceId, PostingKind Kind, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, DateTime BookingDate, DateTime ValutaDate, decimal Amount, decimal? OriginalAmount, string? Subject, string? RecipientName, string? Description, SecurityPostingSubType? SecuritySubType, decimal? Quantity, Guid? GroupId, Guid? ParentId, Guid? LinkedPostingId, Guid? ReversedByPostingId, Guid? ReversalForPostingId, Guid? ReversedByUserId, DateTime? ReversedAtUtc, bool IsPreliminary = false, SavingsPlanPostingSubType? SavingsPlanSubType = null, BankPostingType? PostingType = null);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this posting.
     /// </summary>
     /// <returns>A <see cref="PostingBackupDto"/> containing values required to restore this posting.</returns>
     public PostingBackupDto ToBackupDto()
-        => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc, IsPreliminary, SavingsPlanSubType);
+        => new PostingBackupDto(Id, SourceId, Kind, AccountId, ContactId, SavingsPlanId, SecurityId, BookingDate, ValutaDate, Amount, OriginalAmount, Subject, RecipientName, Description, SecuritySubType, Quantity, GroupId, ParentId, LinkedPostingId, ReversedByPostingId, ReversalForPostingId, ReversedByUserId, ReversedAtUtc, IsPreliminary, SavingsPlanSubType, PostingType);
 
     /// <summary>
     /// Applies values from the provided backup DTO to this posting instance.
@@ -555,5 +575,10 @@ public sealed class Posting : Entity, IAggregateRoot
         ReversedAtUtc = dto.ReversedAtUtc;
         IsPreliminary = dto.IsPreliminary;
         SavingsPlanSubType = dto.SavingsPlanSubType;
+        // Backups written before the posting type existed carry no value: mirror the migration
+        // backfill, which only classifies bank postings by amount sign and leaves all other
+        // posting kinds Unspecified.
+        PostingType = dto.PostingType
+            ?? (dto.Kind == PostingKind.Bank ? PostingTypeEvaluator.EvaluateByAmountSign(dto.Amount) : BankPostingType.Unspecified);
     }
 }

@@ -159,7 +159,29 @@ public sealed class EnumCoverageTests
             nameof(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.SecurityPricesBackfill),
             nameof(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.RebuildAggregates),
             nameof(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.RefreshBudgetReportCache),
-            nameof(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.CreateDemoData));
+            nameof(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.CreateDemoData),
+            nameof(FinanceManager.Shared.Dtos.Admin.BackgroundTaskType.ReevaluatePostingTypes));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void BankPostingType_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Postings.BankPostingType>(
+            nameof(FinanceManager.Shared.Dtos.Postings.BankPostingType.Unspecified),
+            nameof(FinanceManager.Shared.Dtos.Postings.BankPostingType.Inflow),
+            nameof(FinanceManager.Shared.Dtos.Postings.BankPostingType.Outflow),
+            nameof(FinanceManager.Shared.Dtos.Postings.BankPostingType.Interest),
+            nameof(FinanceManager.Shared.Dtos.Postings.BankPostingType.Tax));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void PostingRuleField_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Accounts.PostingRuleField>(
+            nameof(FinanceManager.Shared.Dtos.Accounts.PostingRuleField.Subject),
+            nameof(FinanceManager.Shared.Dtos.Accounts.PostingRuleField.BookingDescription));
 
     /// <summary>
     /// Verifies the declared values of the enum covered by this test.

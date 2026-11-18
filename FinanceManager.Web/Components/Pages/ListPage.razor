@@ -54,7 +54,7 @@ else
     @if (_overlayVisible && _overlaySpec is not null)
     {
         <div class="split-center list-overlay" @onclick="(()=> CloseOverlay())">
-            <div class="split-dialog list-overlay-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
+            <div class="split-dialog list-overlay-dialog" style="max-width:@GetOverlayMaxWidth();" @onclick:stopPropagation="true">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
                     <h3 style="margin:0;font-size:1rem;">@GetOverlayTitle()</h3>
                     <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
@@ -64,6 +64,7 @@ else
                     if (_overlaySpec.Parameters != null)
                     {
                         parms = _overlaySpec.Parameters.Where(kvp => !string.Equals(kvp.Key, "OverlayTitle", StringComparison.OrdinalIgnoreCase)
+                                                                    && !string.Equals(kvp.Key, "OverlayMaxWidth", StringComparison.OrdinalIgnoreCase)
                                                                     && !string.Equals(kvp.Key, "Visible", StringComparison.OrdinalIgnoreCase))
                                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                     }
@@ -278,6 +279,15 @@ else
         _overlayVisible = false;
         _overlaySpec = null;
         StateHasChanged();
+    }
+
+    private string GetOverlayMaxWidth()
+    {
+        if (_overlaySpec?.Parameters != null && _overlaySpec.Parameters.TryGetValue("OverlayMaxWidth", out var v) && v is string s && !string.IsNullOrWhiteSpace(s))
+        {
+            return s;
+        }
+        return "90vH";
     }
 
     private string GetOverlayTitle()

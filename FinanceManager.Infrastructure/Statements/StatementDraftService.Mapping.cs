@@ -48,7 +48,9 @@ public sealed partial class StatementDraftService
             e.SecurityTransactionType,
             e.SecurityQuantity,
             e.SecurityFeeAmount,
-            e.SecurityTaxAmount);
+            e.SecurityTaxAmount,
+            e.PostingType,
+            e.IsPostingTypeManual);
     }
 
     private static StatementDraftDto Map(StatementDraft draft, IDictionary<Guid, dynamic> splitRefLookup, AccountDto? account = null)
@@ -95,7 +97,9 @@ public sealed partial class StatementDraftService
                 e.SecurityTransactionType,
                 e.SecurityQuantity,
                 e.SecurityFeeAmount,
-                e.SecurityTaxAmount)).ToList(),
+                e.SecurityTaxAmount,
+                e.PostingType,
+                e.IsPostingTypeManual)).ToList(),
             draft.IsPreliminary);
     }
 }

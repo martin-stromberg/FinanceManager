@@ -70,6 +70,36 @@
     fill: currentColor;
 }
 
+.quick-edit-open-button {
+    width: 1.65rem;
+    height: 1.65rem;
+    min-width: 1.65rem;
+    border: 1px solid var(--border, #6c757d);
+    border-radius: .25rem;
+    background: transparent;
+    color: var(--text-muted, #6c757d);
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.quick-edit-open-button:hover,
+.quick-edit-open-button:focus-visible {
+    background: var(--text-muted, #6c757d);
+    color: var(--card-bg, #fff);
+}
+
+.quick-edit-open-button svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 1.15rem;
+    fill: currentColor;
+}
+
 .split-icon { width: 1rem; height: 1rem; }
 
 /* Entity display (Contact/SavingsPlan) */
