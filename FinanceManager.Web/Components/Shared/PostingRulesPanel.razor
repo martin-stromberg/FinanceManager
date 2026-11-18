@@ -3,7 +3,7 @@
 @using FinanceManager.Web.ViewModels.Accounts
 @using Microsoft.Extensions.Localization
 
-<div class="posting-rules-panel">
+<div class="posting-rules-panel" style="overflow-x:auto;">
     <table class="fm-table card card-table" style="width:100%;">
         <thead>
             @if (Vm?.PostingRules != null && Vm.PostingRules.Any())
@@ -88,6 +88,7 @@
                 <td style="padding:.5rem .6rem;width:5rem;">
                     <input type="number"
                            class="card-input"
+                           style="width:5.5rem;"
                            min="0"
                            placeholder="@(Localizer?["PostingRules_OrderIndex_Hint"] ?? "Empty = append at end")"
                            title="@(Localizer?["PostingRules_OrderIndex_Hint"] ?? "Empty = append at end")"

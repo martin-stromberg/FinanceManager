@@ -318,6 +318,7 @@ public sealed class AccountDetailViewModelTests
         Assert.Same(vm, spec.Parameters!["Vm"]);
         Assert.Same(loc, spec.Parameters["Localizer"]);
         Assert.Equal("PostingRules_Section_Title", spec.Parameters["OverlayTitle"]);
+        Assert.Equal("min(60rem, 95vw)", spec.Parameters["OverlayMaxWidth"]);
     }
 
     private static UiRibbonAction FindRibbonAction(FinanceManager.Web.ViewModels.Accounts.BankAccountCardViewModel vm, IStringLocalizer loc, string actionId)

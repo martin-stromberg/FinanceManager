@@ -186,6 +186,14 @@ public sealed class AccountPostingRulesPlaywrightTests
         (await dialog.Locator(".posting-rules-panel").CountAsync()).Should().Be(1);
         (await dialog.Locator("h2").InnerTextAsync()).Should().MatchRegex("Kontierungsregeln|Posting rules");
 
+        // The rules table must fit inside the overlay dialog horizontally (no overflow)
+        var dialogBox = await dialog.BoundingBoxAsync();
+        var tableBox = await dialog.Locator(".posting-rules-panel table").BoundingBoxAsync();
+        dialogBox.Should().NotBeNull();
+        tableBox.Should().NotBeNull();
+        tableBox!.X.Should().BeGreaterThanOrEqualTo(dialogBox!.X - 1);
+        (tableBox.X + tableBox.Width).Should().BeLessThanOrEqualTo(dialogBox.X + dialogBox.Width + 1);
+
         // The close icon button removes the overlay; the card content stays intact
         await dialog.Locator("button.icon-btn:has(use[href*='#clear'])").ClickAsync();
         await dialog.WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 10_000 });

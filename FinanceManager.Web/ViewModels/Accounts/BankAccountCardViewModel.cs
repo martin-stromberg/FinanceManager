@@ -351,7 +351,8 @@ namespace FinanceManager.Web.ViewModels.Accounts
                         {
                             ["Vm"] = this,
                             ["Localizer"] = localizer,
-                            ["OverlayTitle"] = localizer["PostingRules_Section_Title"].Value
+                            ["OverlayTitle"] = localizer["PostingRules_Section_Title"].Value,
+                            ["OverlayMaxWidth"] = "min(60rem, 95vw)"
                         });
                     RaiseUiActionRequested("OpenPostingRules", spec);
                     return Task.CompletedTask;
