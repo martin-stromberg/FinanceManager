@@ -163,7 +163,7 @@
                                         @if(_vm?.ActiveFavoriteId is not null)
                                         {
                                             <td>
-                                                <button type="button" class="btn secondary projection-suppress-btn" disabled="@_projectionMutationBusy" @onclick="() => SuppressExpectationAsync(item)">
+                                                <button type="button" class="btn secondary projection-suppress-btn" disabled="@(_projectionMutationBusy || _vm?.IsBusy == true)" @onclick="() => SuppressExpectationAsync(item)">
                                                     @Localizer["ProjectionDetails_Suppress"]
                                                 </button>
                                             </td>
@@ -189,6 +189,7 @@
                                         <th>@Localizer["ProjectionDetails_Entity"]</th>
                                         <th>@Localizer["ProjectionDetails_ExpectedDate"]</th>
                                         <th>@Localizer["ProjectionDetails_PriorYearDate"]</th>
+                                        <th style="text-align:right;">@Localizer["ProjectionDetails_Amount"]</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -200,8 +201,9 @@
                                             <td>@item.EntityName</td>
                                             <td>@item.ExpectedDate.ToString("d")</td>
                                             <td>@item.PriorYearDate.ToString("d")</td>
+                                            <td style="text-align:right;">@(item.Amount?.ToString("N2") ?? "-")</td>
                                             <td>
-                                                <button type="button" class="btn secondary projection-unsuppress-btn" disabled="@_projectionMutationBusy" @onclick="() => UnsuppressExpectationAsync(item)">
+                                                <button type="button" class="btn secondary projection-unsuppress-btn" disabled="@(_projectionMutationBusy || _vm?.IsBusy == true)" @onclick="() => UnsuppressExpectationAsync(item)">
                                                     @Localizer["ProjectionDetails_Unsuppress"]
                                                 </button>
                                             </td>
@@ -253,7 +255,7 @@
                                     <tr>
                                         <td>@GetPostingEffectiveDate(p).ToString("d")</td>
                                         <td>@p.EntityName</td>
-                                        <td>@(p.Subject ?? p.Description ?? p.RecipientName ?? "-")</td>
+                                        <td>@FormatPostingDescription(p)</td>
                                         <td style="text-align:right;">@p.Amount.ToString("N2")</td>
                                     </tr>
                                 }
@@ -356,7 +358,7 @@
                                     <span>@(top.ProjectionAmount.HasValue ? top.ProjectionAmount.Value.ToString("N2") : "-")</span>
                                     @if (top.ProjectionExpectedItems is { Count: > 0 })
                                     {
-                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(top), top.Amount, top.ProjectionAmount ?? 0m, top.ProjectionExpectedItems!)">
+                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(top), top.Amount, top.ProjectionAmount ?? 0m, top.ProjectionExpectedItems!, top.GroupKey, top.PeriodStart)">
                                             <svg><use href="/icons/sprite.svg#info" /></svg>
                                         </button>
                                     }
@@ -407,7 +409,7 @@
                                             <span>@(child.ProjectionAmount.HasValue ? child.ProjectionAmount.Value.ToString("N2") : "-")</span>
                                             @if (child.ProjectionExpectedItems is { Count: > 0 })
                                             {
-                                                <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(child), child.Amount, child.ProjectionAmount ?? 0m, child.ProjectionExpectedItems!)">
+                                                <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(child), child.Amount, child.ProjectionAmount ?? 0m, child.ProjectionExpectedItems!, child.GroupKey, child.PeriodStart)">
                                                     <svg><use href="/icons/sprite.svg#info" /></svg>
                                                 </button>
                                             }
@@ -449,7 +451,7 @@
                                                     <span>@(grand.ProjectionAmount.HasValue ? grand.ProjectionAmount.Value.ToString("N2") : "-")</span>
                                                     @if (grand.ProjectionExpectedItems is { Count: > 0 })
                                                     {
-                                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(grand), grand.Amount, grand.ProjectionAmount ?? 0m, grand.ProjectionExpectedItems!)">
+                                                        <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(grand), grand.Amount, grand.ProjectionAmount ?? 0m, grand.ProjectionExpectedItems!, grand.GroupKey, grand.PeriodStart)">
                                                             <svg><use href="/icons/sprite.svg#info" /></svg>
                                                         </button>
                                                     }
@@ -633,6 +635,8 @@
     private decimal _projectionDetailsActualAmount;
     private decimal _projectionDetailsExpectedAmount;
     private decimal _projectionDetailsAmount;
+    private string? _projectionDetailsGroupKey;
+    private DateTime? _projectionDetailsPeriodStart;
     private IReadOnlyList<ReportProjectionExpectedItemDto> _projectionDetails = Array.Empty<ReportProjectionExpectedItemDto>();
     private IReadOnlyList<ReportSuppressedExpectationDto> _suppressedExpectations = Array.Empty<ReportSuppressedExpectationDto>();
     private bool _projectionMutationBusy;
@@ -665,11 +669,13 @@
             .ToList();
     }
 
-    private void OpenProjectionDetails(string title, decimal actualAmount, decimal projectionAmount, IReadOnlyList<ReportProjectionExpectedItemDto> details)
+    private void OpenProjectionDetails(string title, decimal actualAmount, decimal projectionAmount, IReadOnlyList<ReportProjectionExpectedItemDto> details, string? groupKey = null, DateTime? periodStart = null)
     {
         _projectionDetailsTitle = string.Format(System.Globalization.CultureInfo.CurrentCulture, Localizer["ProjectionDetails_Title"].Value, title);
         _projectionDetailsActualAmount = actualAmount;
         _projectionDetailsAmount = projectionAmount;
+        _projectionDetailsGroupKey = groupKey;
+        _projectionDetailsPeriodStart = periodStart;
         _projectionDetails = details
             .OrderBy(p => p.ExpectedDate)
             .ThenBy(p => p.EntityName)
@@ -684,6 +690,8 @@
         _projectionDetailsActualAmount = 0m;
         _projectionDetailsExpectedAmount = 0m;
         _projectionDetailsAmount = 0m;
+        _projectionDetailsGroupKey = null;
+        _projectionDetailsPeriodStart = null;
         _projectionDetails = Array.Empty<ReportProjectionExpectedItemDto>();
         _suppressedExpectations = Array.Empty<ReportSuppressedExpectationDto>();
     }
@@ -697,13 +705,89 @@
         }
         try
         {
-            _suppressedExpectations = await Api.Reports_ListSuppressedExpectationsAsync(favoriteId);
+            var all = await Api.Reports_ListSuppressedExpectationsAsync(favoriteId);
+            var scope = GetSuppressedExpectationScope();
+            _suppressedExpectations = scope is null
+                ? all
+                : all.Where(item => scope.Contains((item.Kind, item.EntityId))).ToList();
         }
         catch
         {
             _suppressedExpectations = Array.Empty<ReportSuppressedExpectationDto>();
         }
         await InvokeAsync(StateHasChanged);
+    }
+
+    private IReadOnlySet<(PostingKind Kind, Guid EntityId)>? GetSuppressedExpectationScope()
+    {
+        if (_projectionDetailsGroupKey is null)
+        {
+            return null;
+        }
+        if (TryGetProjectionEntityScope(_projectionDetailsGroupKey, out var entityScope))
+        {
+            return new HashSet<(PostingKind, Guid)> { entityScope };
+        }
+        var descendants = CollectProjectionEntityScope(_projectionDetailsGroupKey);
+        return descendants.Count == 0
+            ? _projectionDetails.Select(item => (item.Kind, item.EntityId)).ToHashSet()
+            : descendants;
+    }
+
+    private HashSet<(PostingKind Kind, Guid EntityId)> CollectProjectionEntityScope(string groupKey)
+    {
+        var result = new HashSet<(PostingKind, Guid)>();
+        if (_vm is null)
+        {
+            return result;
+        }
+        var periodPoints = _vm.Points
+            .Where(point => _projectionDetailsPeriodStart is null || point.PeriodStart == _projectionDetailsPeriodStart.Value)
+            .ToList();
+        var pending = new Queue<string>();
+        pending.Enqueue(groupKey);
+        var visited = new HashSet<string> { groupKey };
+        while (pending.Count > 0)
+        {
+            var parent = pending.Dequeue();
+            foreach (var child in periodPoints.Where(point => point.ParentGroupKey == parent))
+            {
+                if (!visited.Add(child.GroupKey))
+                {
+                    continue;
+                }
+                if (TryGetProjectionEntityScope(child.GroupKey, out var childScope))
+                {
+                    result.Add(childScope);
+                }
+                pending.Enqueue(child.GroupKey);
+            }
+        }
+        return result;
+    }
+
+    private static bool TryGetProjectionEntityScope(string groupKey, out (PostingKind Kind, Guid EntityId) scope)
+    {
+        scope = default;
+        var parts = groupKey.Split(':');
+        if (parts.Length < 2 || !Guid.TryParse(parts[1], out var entityId))
+        {
+            return false;
+        }
+        var kind = parts[0] switch
+        {
+            "Account" => PostingKind.Bank,
+            "Contact" => PostingKind.Contact,
+            "SavingsPlan" => PostingKind.SavingsPlan,
+            "Security" => PostingKind.Security,
+            _ => (PostingKind?)null
+        };
+        if (kind is null)
+        {
+            return false;
+        }
+        scope = (kind.Value, entityId);
+        return true;
     }
 
     private async Task SuppressExpectationAsync(ReportProjectionExpectedItemDto item)
@@ -713,15 +797,18 @@
         try
         {
             var created = await Api.Reports_SuppressExpectationAsync(favoriteId,
-                new ReportSuppressedExpectationRequest(item.Kind, item.EntityId, item.PriorYearDate));
+                new ReportSuppressedExpectationRequest(item.Kind, item.EntityId, item.PriorYearDate, item.PostingId, item.Amount));
             if (created is null) { return; }
             _projectionDetails = _projectionDetails
-                .Where(p => !(p.Kind == item.Kind && p.EntityId == item.EntityId && p.PriorYearDate == item.PriorYearDate))
+                .Where(p => !(p.Kind == item.Kind
+                    && p.EntityId == item.EntityId
+                    && p.PriorYearDate == item.PriorYearDate
+                    && (item.PostingId is null || p.PostingId == item.PostingId)))
                 .ToList();
             _projectionDetailsExpectedAmount = _projectionDetails.Sum(p => p.Amount);
             _projectionDetailsAmount = _projectionDetailsActualAmount + _projectionDetailsExpectedAmount;
             await LoadSuppressedExpectationsAsync();
-            _ = LoadAsync();
+            await LoadAsync();
         }
         finally
         {
@@ -738,12 +825,41 @@
             var ok = await Api.Reports_UnsuppressExpectationAsync(favoriteId, item.Id);
             if (!ok) { return; }
             _suppressedExpectations = _suppressedExpectations.Where(s => s.Id != item.Id).ToList();
-            _ = LoadAsync();
+            await LoadAsync();
+            RefreshProjectionDetailsFromLoadedPoints();
+            await LoadSuppressedExpectationsAsync();
         }
         finally
         {
             _projectionMutationBusy = false;
         }
+    }
+
+    private void RefreshProjectionDetailsFromLoadedPoints()
+    {
+        if (_vm is null)
+        {
+            return;
+        }
+        if (_projectionDetailsGroupKey is null)
+        {
+            var totals = _vm.GetTotals();
+            _projectionDetails = GetTotalProjectionDetails();
+            _projectionDetailsActualAmount = totals.Amount;
+            _projectionDetailsExpectedAmount = _projectionDetails.Sum(item => item.Amount);
+            _projectionDetailsAmount = totals.Projection ?? totals.Amount + _projectionDetailsExpectedAmount;
+            return;
+        }
+        var point = _vm.Points.FirstOrDefault(p =>
+            p.GroupKey == _projectionDetailsGroupKey
+            && (_projectionDetailsPeriodStart is null || p.PeriodStart == _projectionDetailsPeriodStart.Value));
+        _projectionDetails = point?.ProjectionExpectedItems?
+            .OrderBy(p => p.ExpectedDate)
+            .ThenBy(p => p.EntityName)
+            .ToList() ?? new List<ReportProjectionExpectedItemDto>();
+        _projectionDetailsActualAmount = point?.Amount ?? 0m;
+        _projectionDetailsExpectedAmount = _projectionDetails.Sum(p => p.Amount);
+        _projectionDetailsAmount = point?.ProjectionAmount ?? _projectionDetailsActualAmount + _projectionDetailsExpectedAmount;
     }
 
     private string PostingsColumnLabel(ReportPostingsPeriod period) => period switch
@@ -771,6 +887,16 @@
 
     private DateTime GetPostingEffectiveDate(ReportPostingDto p)
         => _useValutaDate && p.ValutaDate != DateTime.MinValue ? p.ValutaDate : p.BookingDate;
+
+    private static string FormatPostingDescription(ReportPostingDto p)
+    {
+        var parts = new[] { p.Subject, p.Description }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        return parts.Count == 0 ? (string.IsNullOrWhiteSpace(p.RecipientName) ? "-" : p.RecipientName.Trim()) : string.Join(" – ", parts);
+    }
 
     // Analysis month handling
     private DateTime _analysisMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
@@ -1236,6 +1362,7 @@
         _vm!.ActiveFavoriteId = fav.Id;
         _vm!.FavoriteName = fav.Name;
         _vm!.FiltersDirty = false;
+        CloseProjectionDetails();
         _selectedKinds = fav.PostingKinds?.Count > 0 ? fav.PostingKinds.Select(x => x).ToList() : new List<PostingKind> { fav.PostingKind };
         _includeCategory = fav.IncludeCategory;
         _includeDividendRelated = fav.Filters?.IncludeDividendRelated ?? false;

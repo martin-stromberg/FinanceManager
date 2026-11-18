@@ -1,3 +1,4 @@
+using FinanceManager.Domain.Reports;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Aggregates;
 using FinanceManager.Shared.Dtos.Postings;
@@ -146,17 +147,73 @@ public sealed class ReportSuppressedExpectationPlaywrightTests
         Directory.CreateDirectory(artifactDir);
         await overlay.ScreenshotAsync(new() { Path = Path.Combine(artifactDir, "projection-suppressed-overlay.png") });
 
-        // Restore the expectation.
+        // Restore the expectation; it must reappear while the overlay remains open.
         await unsuppressButton.ClickAsync();
         await hiddenRow.WaitForAsync(new() { State = WaitForSelectorState.Detached, Timeout = 30000 });
-
-        // Reopening the overlay shows the expectation again with the original values.
-        await overlay.Locator(".icon-btn").First.ClickAsync();
-        await page.Locator(".projection-info-btn").First.ClickAsync();
-        var overlay2 = page.Locator(".projection-detail-overlay");
-        await overlay2.WaitForAsync(new() { State = WaitForSelectorState.Visible });
-        var restoredRow = overlay2.Locator(".projection-detail-table:not(.projection-suppressed-table) tbody tr", new() { HasText = accountName });
+        var restoredRow = overlay.Locator(".projection-detail-table:not(.projection-suppressed-table) tbody tr", new() { HasText = accountName });
         await restoredRow.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        (await restoredRow.CountAsync()).Should().Be(1, "the restored item must return to the open overlay");
+    }
+
+    /// <summary>
+    /// Hidden expectations are scoped to the opened account: a suppression belonging to a
+    /// second savings account at the same bank does not appear in the first account's overlay.
+    /// </summary>
+    [Fact]
+    public async Task HiddenExpectations_AreScopedToOpenedAccount()
+    {
+        var (session, page, userId) = await LoginAsync("suppression-scope-user");
+        await using var _ = session;
+        var firstAccount = await SeedAccountWithPriorYearPostingAsync(page, userId);
+        var secondAccount = await SeedAccountWithPriorYearPostingAsync(page, userId);
+        var priorYearDate = new DateTime(DateTime.UtcNow.Year - 1, DateTime.UtcNow.Month, 10);
+
+        var favoriteName = $"Suppression Scope {Guid.NewGuid():N}";
+        var created = await BrowserApiHelper.PostJsonAsync<ReportFavoriteCreateApiRequest, ReportFavoriteDto>(page, "/api/report-favorites", new ReportFavoriteCreateApiRequest
+        {
+            Name = favoriteName,
+            PostingKind = 0,
+            IncludeCategory = false,
+            Interval = 0,
+            Take = 6,
+            ComparePrevious = false,
+            CompareYear = false,
+            CompareProjection = true,
+            ShowChart = false,
+            Expandable = false,
+            UseValutaDate = false
+        });
+        created.Should().NotBeNull();
+
+        await using (var db = OpenDb())
+        {
+            var second = await db.Accounts.SingleAsync(a => a.Name == secondAccount, TestContext.Current.CancellationToken);
+            var secondPosting = await db.Postings.SingleAsync(p => p.AccountId == second.Id && p.BookingDate == priorYearDate, TestContext.Current.CancellationToken);
+            db.ReportSuppressedExpectations.Add(new ReportSuppressedExpectation(
+                userId,
+                created!.Id,
+                PostingKind.Bank,
+                second.Id,
+                priorYearDate,
+                secondPosting.Id,
+                secondPosting.Amount));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await page.GotoAsync($"/reports/dashboard?favoriteId={created!.Id}&edit=false");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var firstRow = page.Locator("tr", new() { HasText = firstAccount }).First;
+        await firstRow.Locator(".projection-info-btn").ClickAsync();
+
+        var overlay = page.Locator(".projection-detail-overlay");
+        await overlay.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        for (var i = 0; i < 15; i++)
+        {
+            (await overlay.Locator(".projection-suppressed-table").CountAsync()).Should().Be(0,
+                "the other account's hidden expectation must stay out of this account context");
+            await Task.Delay(200, TestContext.Current.CancellationToken);
+        }
     }
 
     /// <summary>

@@ -469,6 +469,11 @@ public sealed class ReportsController : ControllerBase
     {
         try
         {
+            if (!Enum.IsDefined(req.Kind))
+            {
+                var ex = new ArgumentOutOfRangeException(nameof(req.Kind), req.Kind, "Unknown posting kind.");
+                return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+            }
             var dto = await _suppressions.SuppressAsync(_current.UserId, id, req, ct);
             return dto == null ? NotFound() : Ok(dto);
         }

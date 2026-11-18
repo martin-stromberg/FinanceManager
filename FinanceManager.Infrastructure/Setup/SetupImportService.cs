@@ -986,8 +986,13 @@ public sealed class SetupImportService : ISetupImportService
                 {
                     continue;
                 }
+                if (dto.PostingId.HasValue && !postingMap.ContainsKey(dto.PostingId.Value))
+                {
+                    continue;
+                }
                 var entity = new ReportSuppressedExpectation(userId, newFavoriteId, dto.Kind, newEntityId, dto.PriorYearDate);
-                entity.AssignBackupDto(dto with { OwnerUserId = userId, ReportFavoriteId = newFavoriteId, EntityId = newEntityId });
+                var newPostingId = dto.PostingId.HasValue ? postingMap[dto.PostingId.Value] : (Guid?)null;
+                entity.AssignBackupDto(dto with { OwnerUserId = userId, ReportFavoriteId = newFavoriteId, EntityId = newEntityId, PostingId = newPostingId });
                 _db.ReportSuppressedExpectations.Add(entity);
             }
             await _db.SaveChangesAsync(ct);

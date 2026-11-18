@@ -10,6 +10,8 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="ExpectedDate">The date the posting would have been expected (prior year date + 1 year).</param>
 /// <param name="PriorYearDate">The date of the prior-year posting whose projection is suppressed.</param>
 /// <param name="SuppressedAtUtc">When the expectation was suppressed (UTC).</param>
+/// <param name="Amount">The expected amount, when known.</param>
+/// <param name="PostingId">The prior-year posting that produced the expectation, when identifiable.</param>
 /// <returns>The result.</returns>
 public sealed record ReportSuppressedExpectationDto(
     Guid Id,
@@ -18,4 +20,6 @@ public sealed record ReportSuppressedExpectationDto(
     string EntityName,
     DateTime ExpectedDate,
     DateTime PriorYearDate,
-    DateTime SuppressedAtUtc);
+    DateTime SuppressedAtUtc,
+    decimal? Amount = null,
+    Guid? PostingId = null);
