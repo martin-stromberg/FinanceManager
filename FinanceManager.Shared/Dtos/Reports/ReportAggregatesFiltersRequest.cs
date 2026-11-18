@@ -12,7 +12,6 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="SecurityCategoryIds">The security category ids.</param>
 /// <param name="SecuritySubTypes">The security sub types.</param>
 /// <param name="IncludeDividendRelated">The include dividend related.</param>
-/// <param name="BankPostingTypes">Optional bank posting types filter.</param>
 /// <param name="BankPostingTypes">The bank posting types.</param>
 /// <param name="BankTextFilters">Optional free text filters for bank postings.</param>
 /// <param name="ContactTextFilters">Optional free text filters for contact postings.</param>

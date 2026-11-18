@@ -13,7 +13,6 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="SecuritySubTypes">Optional security posting sub-types filter.</param>
 /// <param name="IncludeDividendRelated">True when dividend related postings should be included.</param>
 /// <param name="BankPostingTypes">Optional bank posting types filter.</param>
-/// <param name="BankPostingTypes">The bank posting types.</param>
 /// <param name="BankTextFilters">Optional free text filters for bank postings.</param>
 /// <param name="ContactTextFilters">Optional free text filters for contact postings.</param>
 /// <param name="SavingsPlanTextFilters">Optional free text filters for savings plan postings.</param>

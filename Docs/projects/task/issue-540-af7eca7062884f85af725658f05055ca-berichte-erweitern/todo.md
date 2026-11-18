@@ -12,6 +12,6 @@ Branch: `task/issue-540-af7eca7062884f85af725658f05055ca-berichte-erweitern`
 - [x] Planprüfung
 - [x] Planungscommit
 - [x] Entwicklungsschritte-Tracking
-- [ ] Entwicklungsschleife
+- [x] Entwicklungsschleife
 - [ ] Aufräumen
 - [ ] Abschlusscommit
