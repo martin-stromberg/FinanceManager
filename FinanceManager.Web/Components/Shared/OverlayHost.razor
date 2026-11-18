@@ -116,6 +116,7 @@
             if (t == typeof(MassBookingOptionsPanel)) return Localizer?["MassBooking_Title"] ?? "Mass booking";
             if (t == typeof(McpAccessCreateWizard)) return Localizer?["McpWizard_Title"] ?? "New AI access";
             if (t == typeof(McpTokenDisplayPanel)) return Localizer?["McpToken_Title_Rotated"] ?? "New token";
+            if (t == typeof(PostingRulesPanel)) return Localizer?["PostingRules_Section_Title"] ?? "Posting rules";
         }
         catch { }
         return _spec.ComponentType.Name;

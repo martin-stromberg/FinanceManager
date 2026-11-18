@@ -282,12 +282,14 @@ namespace FinanceManager.Web.ViewModels.Accounts
                 new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
             };
 
+            var isNew = Account == null || Account.Id == Guid.Empty;
+
             // Group: Verwalten (Save, Reset, Delete)
             var manageActions = new List<UiRibbonAction>
             {
                 new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SavePendingAsync(); }) { MobileShortcut = true },
                 new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='/icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }) { MobileShortcut = true },
-                new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, Account == null || Account.Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+                new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, isNew, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
             };
 
             // Group: Verknüpfte Informationen (OpenPostings, OpenBankContact, OpenAttachments)
@@ -317,7 +319,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             // Group: Buchungen (CreatePreliminaryDraft)
             var bookingActions = new List<UiRibbonAction>
             {
-                new UiRibbonAction("CreatePreliminaryDraft", localizer["Ribbon_CreatePreliminaryDraft"].Value ?? "Vorläufige Buchungen erfassen", "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, Account == null || Account.Id == Guid.Empty, null, async () => {
+                new UiRibbonAction("CreatePreliminaryDraft", localizer["Ribbon_CreatePreliminaryDraft"].Value ?? "Vorläufige Buchungen erfassen", "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, isNew, null, async () => {
                     var request = new FinanceManager.Shared.Dtos.Statements.CreatePreliminaryStatementDraftRequest(Id);
                     var draft = await ApiClient.StatementDrafts_CreatePreliminaryAsync(request);
                     if (draft == null)
@@ -330,7 +332,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     RaiseUiActionRequested("OpenStatementDraft", url);
                 })
                 { MobileShortcut = true },
-                new UiRibbonAction("ReevaluatePostingTypes", localizer["Ribbon_ReevaluatePostingTypes"].Value ?? "Postenarten neu bewerten", "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Account == null || Account.Id == Guid.Empty, null, async () => {
+                new UiRibbonAction("ReevaluatePostingTypes", localizer["Ribbon_ReevaluatePostingTypes"].Value ?? "Postenarten neu bewerten", "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, isNew, null, async () => {
                     try
                     {
                         await ApiClient.EnqueuePostingTypeReevaluationAsync(Id);
@@ -341,6 +343,18 @@ namespace FinanceManager.Web.ViewModels.Accounts
                         SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message);
                         RaiseStateChanged();
                     }
+                }),
+                new UiRibbonAction("OpenPostingRules", localizer["Ribbon_PostingRules"].Value, "<svg><use href='/icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, isNew, isNew ? localizer["Ribbon_PostingRules_DisabledHint"].Value : null, () => {
+                    var spec = new UiOverlaySpec(
+                        typeof(FinanceManager.Web.Components.Shared.PostingRulesPanel),
+                        new Dictionary<string, object?>
+                        {
+                            ["Vm"] = this,
+                            ["Localizer"] = localizer,
+                            ["OverlayTitle"] = localizer["PostingRules_Section_Title"].Value
+                        });
+                    RaiseUiActionRequested("OpenPostingRules", spec);
+                    return Task.CompletedTask;
                 })
             };
 

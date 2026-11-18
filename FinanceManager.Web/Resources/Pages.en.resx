@@ -3464,4 +3464,6 @@
   <data name="PostingRules_Error_PatternRequired" xml:space="preserve"><value>Please enter a pattern.</value></data>
   <data name="PostingRules_OrderIndex_Hint" xml:space="preserve"><value>Empty = append at end</value></data>
   <data name="Ribbon_ReevaluatePostingTypes" xml:space="preserve"><value>Re-evaluate posting types</value></data>
+  <data name="Ribbon_PostingRules" xml:space="preserve"><value>Posting rules</value></data>
+  <data name="Ribbon_PostingRules_DisabledHint" xml:space="preserve"><value>Available for saved accounts only</value></data>
 </root>

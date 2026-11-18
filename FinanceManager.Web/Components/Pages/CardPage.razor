@@ -45,7 +45,6 @@ else
 
         @if (_vm is BankAccountCardViewModel bankVm && bankVm.Account?.Id != Guid.Empty)
         {
-            <PostingRulesPanel Vm="bankVm" Localizer="Localizer" />
             @if (bankVm.EffectiveIsCollectionAccount)
             {
                 <LinkedIbansPanel Vm="bankVm" Localizer="Localizer" />

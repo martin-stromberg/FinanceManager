@@ -3464,4 +3464,6 @@
   <data name="PostingRules_Error_PatternRequired" xml:space="preserve"><value>Bitte einen Suchtext angeben.</value></data>
   <data name="PostingRules_OrderIndex_Hint" xml:space="preserve"><value>Leer = am Ende</value></data>
   <data name="Ribbon_ReevaluatePostingTypes" xml:space="preserve"><value>Postenarten neu bewerten</value></data>
+  <data name="Ribbon_PostingRules" xml:space="preserve"><value>Kontierungsregeln</value></data>
+  <data name="Ribbon_PostingRules_DisabledHint" xml:space="preserve"><value>Nur für gespeicherte Konten verfügbar</value></data>
 </root>

@@ -28,9 +28,9 @@ public sealed class AccountPostingRulesPlaywrightTests
     }
 
     /// <summary>
-    /// Verifies that a posting rule can be added through the PostingRulesPanel on the account card
-    /// (pattern, posting type, order) and appears as a table row, and that removing it via the
-    /// row's Remove button makes it disappear again.
+    /// Verifies that a posting rule can be managed through the posting-rules overlay on the account
+    /// card: opened via the "OpenPostingRules" ribbon action, added by pressing Enter in the pattern
+    /// field, edited through the row's icon buttons and removed again via the trash icon button.
     /// </summary>
     [Fact]
     public async Task ManagePostingRules_ViaUi()
@@ -50,14 +50,21 @@ public sealed class AccountPostingRulesPlaywrightTests
         await page.GotoAsync($"/card/accounts/{account.Id}");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        var panel = page.Locator(".posting-rules-panel");
+        // The panel is no longer embedded; it opens as an overlay via the ribbon action
+        var openButton = page.Locator("button#OpenPostingRules");
+        await openButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await openButton.ClickAsync();
+
+        var panel = page.Locator(".split-dialog .posting-rules-panel");
         await panel.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
 
-        // Fill the add row: pattern "Zins", posting type Interest (value = (int)BankPostingType.Interest)
-        await panel.Locator("input[type='text'].card-input").FillAsync("Zins");
+        // Fill the add row: pattern "Zins", posting type Interest (value = (int)BankPostingType.Interest),
+        // then submit by pressing Enter in the pattern field (OnKeyDownAsync -> SaveRuleAsync)
+        var patternInput = panel.Locator("input[type='text'].card-input");
+        await patternInput.FillAsync("Zins");
         await panel.Locator("select.card-input").Nth(1).SelectOptionAsync(((int)BankPostingType.Interest).ToString());
         await panel.Locator("input[type='number'].card-input").FillAsync("0");
-        await panel.Locator("button.btn-primary").ClickAsync();
+        await patternInput.PressAsync("Enter");
 
         // The rule appears as a row showing the pattern
         await panel.GetByText("Zins", new() { Exact = true })
@@ -68,17 +75,28 @@ public sealed class AccountPostingRulesPlaywrightTests
         var rules = await BrowserApiHelper.GetJsonAsync<List<AccountPostingRuleDto>>(page, $"/api/accounts/{account.Id}/posting-rules");
         rules.Should().ContainSingle(r => r.Pattern == "Zins" && r.PostingType == BankPostingType.Interest);
 
-        // Remove the rule through the row's Remove button. Filter on a <td> with the exact
-        // pattern text so the add-row (whose select contains the option "Zinsen") is excluded.
-        // The cell locator must be page-scoped: "Has" is evaluated relative to the candidate
-        // <tr>, and a panel-scoped locator (.posting-rules-panel td) can never resolve inside it.
+        // Filter on a <td> with the exact pattern text so the add-row (whose select contains the
+        // option "Zinsen") is excluded. The cell locator must be page-scoped: "Has" is evaluated
+        // relative to the candidate <tr>, and a panel-scoped locator (.posting-rules-panel td)
+        // can never resolve inside it.
         var patternCell = page.Locator("td")
             .Filter(new() { HasTextRegex = new System.Text.RegularExpressions.Regex("^\\s*Zins\\s*$") });
-        await panel.Locator("tr")
-            .Filter(new() { Has = patternCell })
-            .Locator("button.btn-danger")
-            .ClickAsync();
+        var ruleRow = panel.Locator("tr").Filter(new() { Has = patternCell });
 
+        // Edit the rule through its #edit icon button: the input row then shows the #undo
+        // (cancel) and #check (save) icon buttons instead of #plus (add)
+        await ruleRow.Locator("button.icon-btn:has(use[href*='#edit'])").ClickAsync();
+        var saveEditButton = panel.Locator("button.icon-btn:has(use[href*='#check'])");
+        await saveEditButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+        (await panel.Locator("button.icon-btn:has(use[href*='#undo'])").CountAsync()).Should().Be(1);
+        await saveEditButton.ClickAsync();
+
+        // The unchanged rule is still present after saving the edit
+        rules = await BrowserApiHelper.GetJsonAsync<List<AccountPostingRuleDto>>(page, $"/api/accounts/{account.Id}/posting-rules");
+        rules.Should().ContainSingle(r => r.Pattern == "Zins");
+
+        // Remove the rule through the row's #trash icon button
+        await ruleRow.Locator("button.icon-btn.danger:has(use[href*='#trash'])").ClickAsync();
         await patternCell
             .WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 10_000 });
 
@@ -108,21 +126,102 @@ public sealed class AccountPostingRulesPlaywrightTests
         await page.GotoAsync($"/card/accounts/{account.Id}");
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        var panel = page.Locator(".posting-rules-panel");
+        // Open the posting-rules overlay via the ribbon action
+        var openButton = page.Locator("button#OpenPostingRules");
+        await openButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await openButton.ClickAsync();
+
+        var panel = page.Locator(".split-dialog .posting-rules-panel");
         await panel.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
 
         // The posting-type select (second select in the add row) must not offer "Unspecified" (value 0)
         var typeSelect = panel.Locator("select.card-input").Nth(1);
         (await typeSelect.Locator("option[value='0']").CountAsync()).Should().Be(0);
 
-        // Click Add without entering a pattern -> validation hint inside the panel
-        await panel.Locator("button.btn-primary").ClickAsync();
+        // Click the add icon button (#plus) without entering a pattern -> validation hint inside the panel
+        await panel.Locator("button.icon-btn:has(use[href*='#plus'])").ClickAsync();
         var errorCell = panel.Locator("td")
             .Filter(new() { HasTextRegex = new System.Text.RegularExpressions.Regex("Suchtext|pattern", System.Text.RegularExpressions.RegexOptions.IgnoreCase) });
         await errorCell.First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
 
         var rules = await BrowserApiHelper.GetJsonAsync<List<AccountPostingRuleDto>>(page, $"/api/accounts/{account.Id}/posting-rules");
         rules.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that the posting-rules panel is not embedded on the account card anymore: it only
+    /// appears inside a modal overlay after clicking the "OpenPostingRules" ribbon action, shows the
+    /// localized title and disappears again via the overlay's close icon button while the card
+    /// underneath stays intact.
+    /// </summary>
+    [Fact]
+    public async Task PostingRulesOverlay_OpensAndCloses_ViaRibbon()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"postingrules-overlay-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        var account = await new AccountsApiSeedHelper(page).CreateAccountAsync("E2E Posting Rules Overlay", "DE50700500000007882917");
+
+        await page.GotoAsync($"/card/accounts/{account.Id}");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // The card is rendered but the posting-rules panel is not embedded anymore
+        await page.Locator("button#Save").WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        (await page.Locator(".posting-rules-panel").CountAsync()).Should().Be(0);
+
+        // Ribbon action opens the modal overlay containing the panel and the localized title
+        var openButton = page.Locator("button#OpenPostingRules");
+        await openButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await openButton.ClickAsync();
+
+        var dialog = page.Locator(".split-dialog");
+        await dialog.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        (await dialog.Locator(".posting-rules-panel").CountAsync()).Should().Be(1);
+        (await dialog.Locator("h2").InnerTextAsync()).Should().MatchRegex("Kontierungsregeln|Posting rules");
+
+        // The close icon button removes the overlay; the card content stays intact
+        await dialog.Locator("button.icon-btn:has(use[href*='#clear'])").ClickAsync();
+        await dialog.WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 10_000 });
+        (await page.Locator(".posting-rules-panel").CountAsync()).Should().Be(0);
+        await page.Locator("button#Save").WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+    }
+
+    /// <summary>
+    /// Verifies that the "OpenPostingRules" ribbon action is rendered disabled on a new, unsaved
+    /// account card and carries a localized hint as its tooltip so the overlay cannot be opened.
+    /// </summary>
+    [Fact]
+    public async Task PostingRulesRibbon_Disabled_OnNewAccount()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var auth = new AuthGateway(page, _fixture.BaseUrl);
+        var seeder = new TestUserSeeder(_fixture.DatabasePath);
+
+        var username = $"postingrules-disabled-{Guid.NewGuid():N}";
+        const string password = "Secret123";
+        await seeder.EnsureUserAsync(username, password);
+        await auth.LoginAsync(username, password);
+
+        await page.GotoAsync("/card/accounts/new");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var openButton = page.Locator("button#OpenPostingRules");
+        await openButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        (await openButton.IsDisabledAsync()).Should().BeTrue();
+        var title = await openButton.GetAttributeAsync("title");
+        title.Should().NotBeNullOrEmpty();
+        title!.Should().MatchRegex("gespeicherte Konten|saved accounts");
+
+        // No overlay may be present while the button is disabled
+        (await page.Locator(".split-dialog").CountAsync()).Should().Be(0);
     }
 
     /// <summary>

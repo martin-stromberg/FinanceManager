@@ -3,14 +3,9 @@
 @using FinanceManager.Web.ViewModels.Accounts
 @using Microsoft.Extensions.Localization
 
-<div class="posting-rules-panel" style="margin-top:1.25rem;">
+<div class="posting-rules-panel">
     <table class="fm-table card card-table" style="width:100%;">
         <thead>
-            <tr>
-                <th colspan="5" style="text-align:left;padding:.5rem .6rem;font-weight:700;font-size:1rem;border-bottom:1px solid var(--border);">
-                    @(Localizer?["PostingRules_Section_Title"] ?? "Posting rules")
-                </th>
-            </tr>
             @if (Vm?.PostingRules != null && Vm.PostingRules.Any())
             {
                 <tr>
@@ -42,17 +37,17 @@
                         <td style="padding:.4rem .6rem;">@PostingTypeLabel(ruleCapture.PostingType)</td>
                         <td style="padding:.4rem .6rem;">@ruleCapture.OrderIndex</td>
                         <td style="padding:.4rem .6rem;text-align:right;white-space:nowrap;">
-                            <button class="btn btn-sm"
-                                    style="font-size:.8rem;padding:.2rem .6rem;margin-right:.3rem;"
+                            <button class="icon-btn"
+                                    title="@(Localizer?["PostingRules_Edit_Button"] ?? "Edit")"
                                     @onclick="() => BeginEdit(ruleCapture)"
                                     disabled="@_busy">
-                                @(Localizer?["PostingRules_Edit_Button"] ?? "Edit")
+                                <svg><use href="/icons/sprite.svg#edit" /></svg>
                             </button>
-                            <button class="btn btn-sm btn-danger"
-                                    style="font-size:.8rem;padding:.2rem .6rem;"
+                            <button class="icon-btn danger"
+                                    title="@(Localizer?["PostingRules_Remove_Button"] ?? "Remove")"
                                     @onclick="() => RemoveRuleAsync(ruleCapture.Id)"
                                     disabled="@_busy">
-                                @(Localizer?["PostingRules_Remove_Button"] ?? "Remove")
+                                <svg><use href="/icons/sprite.svg#trash" /></svg>
                             </button>
                         </td>
                     </tr>
@@ -103,20 +98,20 @@
                 <td style="padding:.5rem .6rem;text-align:right;white-space:nowrap;">
                     @if (_editRuleId.HasValue)
                     {
-                        <button class="btn btn-sm"
-                                style="font-size:.8rem;padding:.2rem .6rem;margin-right:.3rem;"
+                        <button class="icon-btn"
+                                title="@(Localizer?["PostingRules_Cancel_Button"] ?? "Cancel")"
                                 @onclick="CancelEdit"
                                 disabled="@_busy">
-                            @(Localizer?["PostingRules_Cancel_Button"] ?? "Cancel")
+                            <svg><use href="/icons/sprite.svg#undo" /></svg>
                         </button>
                     }
-                    <button class="btn btn-sm btn-primary"
-                            style="font-size:.8rem;padding:.2rem .6rem;"
+                    <button class="icon-btn"
+                            title="@(_editRuleId.HasValue
+                                ? (Localizer?["PostingRules_Save_Button"] ?? "Save")
+                                : (Localizer?["PostingRules_Add_Button"] ?? "Add"))"
                             @onclick="SaveRuleAsync"
                             disabled="@_busy">
-                        @(_editRuleId.HasValue
-                            ? (Localizer?["PostingRules_Save_Button"] ?? "Save")
-                            : (Localizer?["PostingRules_Add_Button"] ?? "Add"))
+                        <svg><use href="@(_editRuleId.HasValue ? "/icons/sprite.svg#check" : "/icons/sprite.svg#plus")" /></svg>
                     </button>
                 </td>
             </tr>

@@ -20,7 +20,7 @@ Wenn eine Datei nicht automatisch zugeordnet werden kann, erscheint der Dialog �
 
 Kontrollieren Sie die vorgeschlagenen Zuordnungen (Kontakt, Sparplan, Wertpapier, Kostenneutralität).
 
-Prüfen Sie außerdem die automatisch ermittelte Postenart in der gleichnamigen Spalte der Eintragsliste. Sie wird aus den Kontierungsregeln des Bankkontos oder — ohne Regeltreffer — aus dem Betragsvorzeichen bestimmt. Weicht sie ab, öffnen Sie die Karte der Entwurfszeile und wählen Sie im Feld „Postenart" die passende Art (Eingang, Ausgang, Zinsen oder Steuer).
+Prüfen Sie außerdem die automatisch ermittelte Postenart in der gleichnamigen Spalte der Eintragsliste. Sie wird aus den Kontierungsregeln des Bankkontos oder — ohne Regeltreffer — aus dem Betragsvorzeichen bestimmt. Die Kontierungsregeln pflegen Sie auf der Karte des Bankkontos über die Ribbon-Aktion „Kontierungsregeln" in der Gruppe „Buchungen", die einen Dialog über dem Karteninhalt öffnet. Weicht die Postenart ab, öffnen Sie die Karte der Entwurfszeile und wählen Sie im Feld „Postenart" die passende Art (Eingang, Ausgang, Zinsen oder Steuer).
 
 > **Hinweis:** Bei Warnungen zuerst die betroffenen Zeilen bearbeiten.
 >
