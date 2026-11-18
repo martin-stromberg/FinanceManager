@@ -10,8 +10,8 @@ Branch: `task/issue-540-af7eca7062884f85af725658f05055ca-berichte-erweitern`
 - [x] Projektplan
 - [x] Offene Punkte
 - [x] Planprüfung
-- [ ] Planungscommit
-- [ ] Entwicklungsschritte-Tracking
+- [x] Planungscommit
+- [x] Entwicklungsschritte-Tracking
 - [ ] Entwicklungsschleife
 - [ ] Aufräumen
 - [ ] Abschlusscommit
