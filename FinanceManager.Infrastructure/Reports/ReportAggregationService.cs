@@ -1316,8 +1316,8 @@ public sealed class ReportAggregationService : IReportAggregationService
     /// </summary>
     /// <param name="query">Aggregation query holding the owner and optional favorite id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A key set of (Kind, EntityId, PriorYearDate) tuples, or <c>null</c>.</returns>
-    private async Task<HashSet<(PostingKind Kind, Guid EntityId, DateTime PriorYearDate)>?> LoadSuppressionKeysAsync(ReportAggregationQuery query, CancellationToken ct)
+    /// <returns>Suppression identities with optional posting-level references, or <c>null</c>.</returns>
+    private async Task<List<ProjectionSuppression>?> LoadSuppressionKeysAsync(ReportAggregationQuery query, CancellationToken ct)
     {
         if (query.ReportFavoriteId is not { } favoriteId)
         {
@@ -1325,11 +1325,11 @@ public sealed class ReportAggregationService : IReportAggregationService
         }
         var rows = await _db.ReportSuppressedExpectations.AsNoTracking()
             .Where(s => s.OwnerUserId == query.OwnerUserId && s.ReportFavoriteId == favoriteId)
-            .Select(s => new { s.Kind, s.EntityId, s.PriorYearDate })
+            .Select(s => new { s.Kind, s.EntityId, s.PriorYearDate, s.PostingId })
             .ToListAsync(ct);
         return rows.Count == 0
             ? null
-            : rows.Select(s => (s.Kind, s.EntityId, s.PriorYearDate.Date)).ToHashSet();
+            : rows.Select(s => new ProjectionSuppression(s.Kind, s.EntityId, s.PriorYearDate.Date, s.PostingId)).ToList();
     }
 
     /// <summary>

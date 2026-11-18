@@ -46,15 +46,23 @@ public sealed class ReportSuppressedExpectationService : IReportSuppressedExpect
             return null;
         }
         var priorYearDate = request.PriorYearDate.Date;
-        var existing = await _db.ReportSuppressedExpectations
-            .FirstOrDefaultAsync(s =>
+        var sameDate = await _db.ReportSuppressedExpectations
+            .Where(s =>
                 s.OwnerUserId == ownerUserId
                 && s.ReportFavoriteId == reportFavoriteId
                 && s.Kind == request.Kind
                 && s.EntityId == request.EntityId
-                && s.PriorYearDate == priorYearDate, ct);
-        var entity = existing ?? new ReportSuppressedExpectation(ownerUserId, reportFavoriteId, request.Kind, request.EntityId, priorYearDate);
-        if (existing is null)
+                && s.PriorYearDate == priorYearDate)
+            .ToListAsync(ct);
+        var existing = sameDate.FirstOrDefault(s => s.PostingId == request.PostingId)
+            ?? (request.PostingId.HasValue ? sameDate.FirstOrDefault(s => s.PostingId is null) : null);
+        var entity = existing ?? new ReportSuppressedExpectation(ownerUserId, reportFavoriteId, request.Kind, request.EntityId, priorYearDate, request.PostingId, request.Amount);
+        if (existing is not null)
+        {
+            existing.UpdateExpectedAmount(request.Amount);
+            await _db.SaveChangesAsync(ct);
+        }
+        else
         {
             try
             {
@@ -71,7 +79,8 @@ public sealed class ReportSuppressedExpectationService : IReportSuppressedExpect
                         && s.ReportFavoriteId == reportFavoriteId
                         && s.Kind == request.Kind
                         && s.EntityId == request.EntityId
-                        && s.PriorYearDate == priorYearDate, ct);
+                        && s.PriorYearDate == priorYearDate
+                        && s.PostingId == request.PostingId, ct);
             }
         }
         var names = await ResolveEntityNamesAsync(ownerUserId, new[] { (entity.Kind, entity.EntityId) }, ct);
@@ -133,5 +142,5 @@ public sealed class ReportSuppressedExpectationService : IReportSuppressedExpect
         => names.TryGetValue((kind, entityId), out var name) ? name : entityId.ToString("N")[..6];
 
     private static ReportSuppressedExpectationDto ToDto(ReportSuppressedExpectation entity, string entityName)
-        => new(entity.Id, entity.Kind, entity.EntityId, entityName, entity.PriorYearDate.AddYears(1), entity.PriorYearDate, entity.SuppressedAtUtc);
+        => new(entity.Id, entity.Kind, entity.EntityId, entityName, entity.PriorYearDate.AddYears(1), entity.PriorYearDate, entity.SuppressedAtUtc, entity.Amount, entity.PostingId);
 }

@@ -753,7 +753,10 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.EntityId).IsRequired();
             b.Property(x => x.PriorYearDate).IsRequired();
             b.Property(x => x.SuppressedAtUtc).IsRequired();
-            b.HasIndex(x => new { x.OwnerUserId, x.ReportFavoriteId, x.Kind, x.EntityId, x.PriorYearDate }).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.ReportFavoriteId, x.Kind, x.EntityId, x.PriorYearDate })
+                .IsUnique()
+                .HasFilter("[PostingId] IS NULL");
+            b.HasIndex(x => new { x.OwnerUserId, x.ReportFavoriteId, x.Kind, x.EntityId, x.PriorYearDate, x.PostingId }).IsUnique();
             // Suppressions are meaningless without the favorite; remove them when it is deleted.
             b.HasOne(x => x.ReportFavorite)
                 .WithMany()

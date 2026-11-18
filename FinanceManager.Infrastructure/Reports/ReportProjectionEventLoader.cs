@@ -66,7 +66,7 @@ internal sealed class ReportProjectionEventLoader
         };
 
         var rows = await ReportQuerySemantics.ApplyDateWindow(source, useValutaDate, windowStart, windowEnd)
-            .Select(p => new { p.AccountId, p.ContactId, p.SavingsPlanId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
+            .Select(p => new { p.Id, p.AccountId, p.ContactId, p.SavingsPlanId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
             .ToListAsync(ct);
 
         return rows
@@ -81,7 +81,7 @@ internal sealed class ReportProjectionEventLoader
                     _ => r.SavingsPlanId!.Value
                 };
                 var effective = useValutaDate && r.ValutaDate != DateTime.MinValue ? r.ValutaDate : r.BookingDate;
-                return new ProjectionEvent(kind, entityId, effective, new DateTime(effective.Year, effective.Month, 1), r.Amount);
+                return new ProjectionEvent(kind, entityId, effective, new DateTime(effective.Year, effective.Month, 1), r.Amount, r.Id);
             })
             .ToList();
     }
@@ -146,7 +146,7 @@ internal sealed class ReportProjectionEventLoader
                 _db.Postings.AsNoTracking()
                     .Where(p => p.Kind == PostingKind.Bank && p.AccountId != null && linkedAccountIds.Contains(p.AccountId.Value)),
                 useValutaDate, windowStart, windowEnd)
-            .Select(p => new { p.AccountId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
+            .Select(p => new { p.Id, p.AccountId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
             .ToListAsync(ct);
 
         var rowsByAccount = rows
@@ -166,7 +166,7 @@ internal sealed class ReportProjectionEventLoader
                 foreach (var row in accountRows)
                 {
                     var effective = useValutaDate && row.ValutaDate != DateTime.MinValue ? row.ValutaDate : row.BookingDate;
-                    events.Add(new ProjectionEvent(PostingKind.SavingsPlan, planId, effective, new DateTime(effective.Year, effective.Month, 1), row.Amount));
+                    events.Add(new ProjectionEvent(PostingKind.SavingsPlan, planId, effective, new DateTime(effective.Year, effective.Month, 1), row.Amount, row.Id));
                 }
             }
         }
@@ -218,7 +218,7 @@ internal sealed class ReportProjectionEventLoader
         // a matching anchor keeps the whole group including fee/tax netting.
         var anchors = await postings
             .Where(p => p.SecuritySubType == SecurityPostingSubType.Dividend)
-            .Select(p => new { p.GroupId, p.SecurityId, p.Subject, p.Description })
+            .Select(p => new { p.Id, p.GroupId, p.SecurityId, p.Subject, p.Description })
             .ToListAsync(ct);
         var matchingAnchors = anchors
             .Where(a => textPatterns is not { Count: > 0 } || textPatterns.Any(pattern => BudgetRulePatternMatcher.MatchesPosting(a.Subject, a.Description, pattern, useRegex: false)))
@@ -248,6 +248,9 @@ internal sealed class ReportProjectionEventLoader
                     || x.SecuritySubType == SecurityPostingSubType.Tax).Sum(x => x.Amount),
                 DividendDate = g.Where(x => x.SecuritySubType == SecurityPostingSubType.Dividend)
                     .Select(x => useValutaDate ? (x.ValutaDate == DateTime.MinValue ? x.BookingDate : x.ValutaDate) : x.BookingDate)
+                    .FirstOrDefault(),
+                DividendPostingId = g.Where(x => x.SecuritySubType == SecurityPostingSubType.Dividend)
+                    .Select(x => (Guid?)x.Id)
                     .FirstOrDefault()
             })
             .ToListAsync(ct);
@@ -256,7 +259,7 @@ internal sealed class ReportProjectionEventLoader
             .Where(g => g.SecurityId.HasValue
                 && g.DividendDate != default(DateTime)
                 && dividendGroupKeys.Contains((g.SecurityId.Value, g.GroupId)))
-            .Select(g => new ProjectionEvent(PostingKind.Security, g.SecurityId!.Value, g.DividendDate, new DateTime(g.DividendDate.Year, g.DividendDate.Month, 1), g.Net))
+            .Select(g => new ProjectionEvent(PostingKind.Security, g.SecurityId!.Value, g.DividendDate, new DateTime(g.DividendDate.Year, g.DividendDate.Month, 1), g.Net, g.DividendPostingId))
             .ToList();
     }
 
