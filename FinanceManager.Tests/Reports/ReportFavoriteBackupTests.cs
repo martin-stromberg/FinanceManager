@@ -107,6 +107,27 @@ public sealed class ReportFavoriteBackupTests
 
         Assert.Null(restored.BankTextFiltersJson);
         Assert.Null(restored.GetFilters().BankTextFilters);
+        Assert.Equal(ReportChartType.HistoricalSum, dto.ChartType);
+        Assert.Equal(ReportChartPosition.AboveTable, dto.ChartPosition);
+        Assert.Equal(ReportChartType.HistoricalSum, restored.ChartType);
+        Assert.Equal(ReportChartPosition.AboveTable, restored.ChartPosition);
+    }
+
+    /// <summary>
+    /// Chart settings are serialized with the favorite and restored by <see cref="ReportFavorite.AssignBackupDto"/>.
+    /// </summary>
+    [Fact]
+    public void BackupDto_ShouldRoundtripChartSettings()
+    {
+        var owner = Guid.NewGuid();
+        var source = new ReportFavorite(owner, "Fav", PostingKind.Bank, false, ReportInterval.Month, false, false, false, true, true);
+        source.Update(PostingKind.Bank, false, ReportInterval.Month, false, false, false, true, true, 24, false, chartType: ReportChartType.Pie, chartPosition: ReportChartPosition.BelowTable);
+
+        var restored = new ReportFavorite(owner, "Other", PostingKind.Contact, true, ReportInterval.Year, true, true, true, false, false);
+        restored.AssignBackupDto(source.ToBackupDto());
+
+        Assert.Equal(ReportChartType.Pie, restored.ChartType);
+        Assert.Equal(ReportChartPosition.BelowTable, restored.ChartPosition);
     }
 
     /// <summary>
