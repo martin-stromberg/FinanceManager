@@ -78,6 +78,16 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     public bool ShowChart { get; set; } = true;
 
     /// <summary>
+    /// Visualization type used when the chart is shown.
+    /// </summary>
+    public ReportChartType ChartType { get; set; } = ReportChartType.HistoricalSum;
+
+    /// <summary>
+    /// Position of the chart relative to the table.
+    /// </summary>
+    public ReportChartPosition ChartPosition { get; set; } = ReportChartPosition.AboveTable;
+
+    /// <summary>
     /// Number of periods to take when querying aggregates.
     /// </summary>
     public int Take { get; set; } = 24;
@@ -720,8 +730,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
+    /// <param name="chartType">Chart visualization type.</param>
+    /// <param name="chartPosition">Chart position relative to the table.</param>
     /// <returns>The created <see cref="ReportFavoriteDto"/> or <c>null</c> when creation failed.</returns>
-    public async Task<ReportFavoriteDto?> SaveFavoriteAsync(string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
+    public async Task<ReportFavoriteDto?> SaveFavoriteAsync(string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings, ReportChartType chartType = ReportChartType.HistoricalSum, ReportChartPosition chartPosition = ReportChartPosition.AboveTable)
     {
         var payload = new ReportFavoriteCreateApiRequest
         {
@@ -752,7 +764,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 SecurityTextFilters: filters.SecurityTextFilters
             ),
             UseValutaDate = useValutaDate,
-            SavingsPlanPostingSource = savingsPlanPostingSource
+            SavingsPlanPostingSource = savingsPlanPostingSource,
+            ChartType = chartType,
+            ChartPosition = chartPosition
         };
         return await _api.Reports_CreateFavoriteAsync(payload, ct);
     }
@@ -776,8 +790,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
+    /// <param name="chartType">Chart visualization type.</param>
+    /// <param name="chartPosition">Chart position relative to the table.</param>
     /// <returns>The updated <see cref="ReportFavoriteDto"/> or <c>null</c> when update failed.</returns>
-    public async Task<ReportFavoriteDto?> UpdateFavoriteAsync(Guid id, string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
+    public async Task<ReportFavoriteDto?> UpdateFavoriteAsync(Guid id, string name, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings, ReportChartType chartType = ReportChartType.HistoricalSum, ReportChartPosition chartPosition = ReportChartPosition.AboveTable)
     {
         var payload = new ReportFavoriteUpdateApiRequest
         {
@@ -808,7 +824,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 SecurityTextFilters: filters.SecurityTextFilters
             ),
             UseValutaDate = useValutaDate,
-            SavingsPlanPostingSource = savingsPlanPostingSource
+            SavingsPlanPostingSource = savingsPlanPostingSource,
+            ChartType = chartType,
+            ChartPosition = chartPosition
         };
         return await _api.Reports_UpdateFavoriteAsync(id, payload, ct);
     }
@@ -1346,8 +1364,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     /// <param name="useValutaDate">Whether to use Valuta date for this favorite.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
+    /// <param name="chartType">Chart visualization type.</param>
+    /// <param name="chartPosition">Chart position relative to the table.</param>
     /// <returns>The created or updated <see cref="ReportFavoriteDto"/>, or <c>null</c> when the operation failed.</returns>
-    public async Task<ReportFavoriteDto?> SubmitFavoriteDialogAsync(string defaultName, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings)
+    public async Task<ReportFavoriteDto?> SubmitFavoriteDialogAsync(string defaultName, PostingKind primaryKind, bool includeCategory, int interval, int take, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, IReadOnlyCollection<PostingKind>? postingKinds, ReportAggregatesFiltersRequest? filters, bool useValutaDate = false, CancellationToken ct = default, SavingsPlanPostingSource savingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings, ReportChartType chartType = ReportChartType.HistoricalSum, ReportChartPosition chartPosition = ReportChartPosition.AboveTable)
     {
         FavoriteError = null;
         try
@@ -1356,7 +1376,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 var res = await UpdateFavoriteAsync(ActiveFavoriteId.Value,
                     FavoriteName.Trim(), primaryKind, includeCategory, interval, take,
-                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource);
+                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource, chartType, chartPosition);
                 if (res is null)
                 {
                     FavoriteError = "Error_UpdateFavorite";
@@ -1373,7 +1393,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             {
                 var name = string.IsNullOrWhiteSpace(FavoriteName) ? defaultName : FavoriteName.Trim();
                 var res = await SaveFavoriteAsync(name, primaryKind, includeCategory, interval, take,
-                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource);
+                    comparePrevious, compareYear, compareProjection, showChart, expandable, postingKinds, filters, useValutaDate, ct, savingsPlanPostingSource, chartType, chartPosition);
                 if (res is null)
                 {
                     FavoriteError = "Error_SaveFavorite";

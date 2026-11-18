@@ -545,4 +545,23 @@ public sealed class EnumCoverageTests
             nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Cashflow),
             nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.Risk),
             nameof(FinanceManager.Shared.Dtos.Portfolio.PortfolioTileId.DepotDevelopment));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void ReportChartType_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Reports.ReportChartType>(
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportChartType.HistoricalSum),
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportChartType.Allocation),
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportChartType.Pie));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void ReportChartPosition_Values()
+        => AssertValues<FinanceManager.Shared.Dtos.Reports.ReportChartPosition>(
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportChartPosition.AboveTable),
+            nameof(FinanceManager.Shared.Dtos.Reports.ReportChartPosition.BelowTable));
 }

@@ -1311,6 +1311,12 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("BankTextFiltersJson")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("ChartPosition")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChartType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("ComparePrevious")
                         .HasColumnType("INTEGER");
 

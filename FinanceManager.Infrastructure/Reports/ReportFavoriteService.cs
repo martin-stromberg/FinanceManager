@@ -135,6 +135,8 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 r.CompareYear,
                 r.CompareProjection,
                 r.ShowChart,
+                r.ChartType,
+                r.ChartPosition,
                 r.Expandable,
                 r.CreatedUtc,
                 r.ModifiedUtc,
@@ -176,7 +178,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 savingsPlanTextFilters: TextFilterList.FromJson(r.SavingsPlanTextFiltersJson),
                 securityTextFilters: TextFilterList.FromJson(r.SecurityTextFiltersJson));
             // apply persisted UseValutaDate onto entity state for DTO creation
-            if (r.UseValutaDate || r.SavingsPlanPostingSource != SavingsPlanPostingSource.PlanPostings) { entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, r.UseValutaDate, r.SavingsPlanPostingSource); }
+            entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, r.UseValutaDate, r.SavingsPlanPostingSource, r.ChartType, r.ChartPosition);
             return new ReportFavoriteDto(
                 r.Id,
                 r.Name,
@@ -194,7 +196,9 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 ParseKinds(r.PostingKindsCsv, r.PostingKind),
                 ToDtoFilters(entity)
                 , r.UseValutaDate,
-                r.SavingsPlanPostingSource
+                r.SavingsPlanPostingSource,
+                r.ChartType,
+                r.ChartPosition
             );
         }).ToList();
     }
@@ -222,6 +226,8 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 r.CompareYear,
                 r.CompareProjection,
                 r.ShowChart,
+                r.ChartType,
+                r.ChartPosition,
                 r.Expandable,
                 r.CreatedUtc,
                 r.ModifiedUtc,
@@ -260,7 +266,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
             contactTextFilters: TextFilterList.FromJson(r.ContactTextFiltersJson),
             savingsPlanTextFilters: TextFilterList.FromJson(r.SavingsPlanTextFiltersJson),
             securityTextFilters: TextFilterList.FromJson(r.SecurityTextFiltersJson));
-        if (r.UseValutaDate || r.SavingsPlanPostingSource != SavingsPlanPostingSource.PlanPostings) { entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, r.UseValutaDate, r.SavingsPlanPostingSource); }
+        entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, r.UseValutaDate, r.SavingsPlanPostingSource, r.ChartType, r.ChartPosition);
         return new ReportFavoriteDto(
             r.Id,
             r.Name,
@@ -278,7 +284,9 @@ public sealed class ReportFavoriteService : IReportFavoriteService
             ParseKinds(r.PostingKindsCsv, r.PostingKind),
             ToDtoFilters(entity)
             , r.UseValutaDate,
-            r.SavingsPlanPostingSource
+            r.SavingsPlanPostingSource,
+            r.ChartType,
+            r.ChartPosition
         );
     }
 
@@ -312,10 +320,10 @@ public sealed class ReportFavoriteService : IReportFavoriteService
         }
         ApplyFilters(entity, request.Filters);
         // persist UseValutaDate on entity state and touch
-        entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, request.UseValutaDate, request.SavingsPlanPostingSource);
+        entity.Update(entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.Take, request.UseValutaDate, request.SavingsPlanPostingSource, request.ChartType, request.ChartPosition);
         _db.ReportFavorites.Add(entity);
         await _db.SaveChangesAsync(ct);
-        return new ReportFavoriteDto(entity.Id, entity.Name, entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.Take, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.CreatedUtc, entity.ModifiedUtc, EffectiveKinds(entity), ToDtoFilters(entity), entity.UseValutaDate, entity.SavingsPlanPostingSource);
+        return new ReportFavoriteDto(entity.Id, entity.Name, entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.Take, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.CreatedUtc, entity.ModifiedUtc, EffectiveKinds(entity), ToDtoFilters(entity), entity.UseValutaDate, entity.SavingsPlanPostingSource, entity.ChartType, entity.ChartPosition);
     }
 
     /// <summary>
@@ -348,7 +356,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
         }
 
         entity.Rename(name);
-        entity.Update(request.PostingKind, request.IncludeCategory, request.Interval, request.ComparePrevious, request.CompareYear, request.CompareProjection, request.ShowChart, request.Expandable, request.Take, request.UseValutaDate, request.SavingsPlanPostingSource);
+        entity.Update(request.PostingKind, request.IncludeCategory, request.Interval, request.ComparePrevious, request.CompareYear, request.CompareProjection, request.ShowChart, request.Expandable, request.Take, request.UseValutaDate, request.SavingsPlanPostingSource, request.ChartType, request.ChartPosition);
         if (request.PostingKinds is { Count: > 0 })
         {
             entity.SetPostingKinds(request.PostingKinds);
@@ -359,7 +367,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
         }
         ApplyFilters(entity, request.Filters);
         await _db.SaveChangesAsync(ct);
-        return new ReportFavoriteDto(entity.Id, entity.Name, entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.Take, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.CreatedUtc, entity.ModifiedUtc, EffectiveKinds(entity), ToDtoFilters(entity), entity.UseValutaDate, entity.SavingsPlanPostingSource);
+        return new ReportFavoriteDto(entity.Id, entity.Name, entity.PostingKind, entity.IncludeCategory, entity.Interval, entity.Take, entity.ComparePrevious, entity.CompareYear, entity.CompareProjection, entity.ShowChart, entity.Expandable, entity.CreatedUtc, entity.ModifiedUtc, EffectiveKinds(entity), ToDtoFilters(entity), entity.UseValutaDate, entity.SavingsPlanPostingSource, entity.ChartType, entity.ChartPosition);
     }
 
     /// <summary>
