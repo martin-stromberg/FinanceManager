@@ -62,7 +62,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
         var f = e.GetFilters();
         if (f.AccountIds == null && f.ContactIds == null && f.SavingsPlanIds == null && f.SecurityIds == null
             && f.ContactCategoryIds == null && f.SavingsPlanCategoryIds == null && f.SecurityCategoryIds == null
-            && f.SecuritySubTypes == null && f.IncludeDividendRelated != true
+            && f.SecuritySubTypes == null && f.BankPostingTypes == null && f.IncludeDividendRelated != true
             && f.BankTextFilters == null && f.ContactTextFilters == null && f.SavingsPlanTextFilters == null && f.SecurityTextFilters == null)
         {
             return null;
@@ -76,6 +76,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
             SavingsPlanCategoryIds: f.SavingsPlanCategoryIds,
             SecurityCategoryIds: f.SecurityCategoryIds,
             SecuritySubTypes: f.SecuritySubTypes,
+            BankPostingTypes: f.BankPostingTypes,
             IncludeDividendRelated: f.IncludeDividendRelated,
             BankTextFilters: f.BankTextFilters,
             ContactTextFilters: f.ContactTextFilters,
@@ -93,7 +94,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
     {
         if (f == null)
         {
-            e.SetFilters(null, null, null, null, null, null, null, null, null);
+            e.SetFilters(null, null, null, null, null, null, null, null, null, null);
             return;
         }
         e.SetFilters(
@@ -105,6 +106,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
             savingsPlanCategoryIds: f.SavingsPlanCategoryIds,
             securityCategoryIds: f.SecurityCategoryIds,
             securitySubTypes: f.SecuritySubTypes,
+            bankPostingTypes: f.BankPostingTypes,
             includeDividendRelated: f.IncludeDividendRelated,
             bankTextFilters: f.BankTextFilters,
             contactTextFilters: f.ContactTextFilters,
@@ -149,6 +151,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 r.SavingsPlanCategoryIdsCsv,
                 r.SecurityCategoryIdsCsv,
                 r.SecuritySubTypesCsv,
+                r.BankPostingTypesCsv,
                 r.IncludeDividendRelated,
                 r.UseValutaDate,
                 r.SavingsPlanPostingSource,
@@ -172,6 +175,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 savingsPlanCategoryIds: ParseCsv(r.SavingsPlanCategoryIdsCsv),
                 securityCategoryIds: ParseCsv(r.SecurityCategoryIdsCsv),
                 securitySubTypes: ParseCsvInt(r.SecuritySubTypesCsv),
+                bankPostingTypes: ParseCsvInt(r.BankPostingTypesCsv),
                 includeDividendRelated: r.IncludeDividendRelated,
                 bankTextFilters: TextFilterList.FromJson(r.BankTextFiltersJson),
                 contactTextFilters: TextFilterList.FromJson(r.ContactTextFiltersJson),
@@ -240,6 +244,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
                 r.SavingsPlanCategoryIdsCsv,
                 r.SecurityCategoryIdsCsv,
                 r.SecuritySubTypesCsv,
+                r.BankPostingTypesCsv,
                 r.IncludeDividendRelated,
                 r.UseValutaDate,
                 r.SavingsPlanPostingSource,
@@ -261,6 +266,7 @@ public sealed class ReportFavoriteService : IReportFavoriteService
             savingsPlanCategoryIds: ParseCsv(r.SavingsPlanCategoryIdsCsv),
             securityCategoryIds: ParseCsv(r.SecurityCategoryIdsCsv),
             securitySubTypes: ParseCsvInt(r.SecuritySubTypesCsv),
+            bankPostingTypes: ParseCsvInt(r.BankPostingTypesCsv),
             includeDividendRelated: r.IncludeDividendRelated,
             bankTextFilters: TextFilterList.FromJson(r.BankTextFiltersJson),
             contactTextFilters: TextFilterList.FromJson(r.ContactTextFiltersJson),

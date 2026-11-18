@@ -58,11 +58,12 @@ public sealed class ReportPostingsQueryServiceTests
         IReadOnlyCollection<Guid>? savingsPlanCategoryIds = null,
         IReadOnlyCollection<Guid>? securityCategoryIds = null,
         IReadOnlyCollection<int>? securitySubTypes = null,
+        IReadOnlyCollection<int>? bankPostingTypes = null,
         IReadOnlyCollection<string>? securityTextFilters = null,
         bool includeDividendRelated = false)
         => new(AccountIds: null, ContactIds: null, SavingsPlanIds: null, SecurityIds: null,
             ContactCategoryIds: contactCategoryIds, SavingsPlanCategoryIds: savingsPlanCategoryIds, SecurityCategoryIds: securityCategoryIds,
-            SecuritySubTypes: securitySubTypes, IncludeDividendRelated: includeDividendRelated,
+            SecuritySubTypes: securitySubTypes, BankPostingTypes: bankPostingTypes, IncludeDividendRelated: includeDividendRelated,
             BankTextFilters: null, ContactTextFilters: null, SavingsPlanTextFilters: null, SecurityTextFilters: securityTextFilters);
 
     /// <summary>Only postings whose effective date falls into the cell's month are returned; the entity name is resolved on the server.</summary>
@@ -967,6 +968,28 @@ public sealed class ReportPostingsQueryServiceTests
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => sut.QueryAsync(Query(user.Id, null, month, ReportPostingsPeriod.Current, kinds: new[] { PostingKind.Bank, (PostingKind)7 }), CancellationToken.None));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => sut.QueryAsync(Query(user.Id, null, month, ReportPostingsPeriod.Current, source: (SavingsPlanPostingSource)9), CancellationToken.None));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => sut.QueryAsync(Query(user.Id, null, month, ReportPostingsPeriod.Current, take: -1), CancellationToken.None));
+        conn.Dispose();
+    }
+
+    /// <summary>The BankPostingTypes filter keeps only bank postings of the selected classifications.</summary>
+    [Fact]
+    public async Task QueryAsync_BankPostingTypesFilter_KeepsOnlySelectedTypes()
+    {
+        var (sut, db, conn) = Create();
+        var user = AddUser(db, "u");
+        var acc = new Account(user.Id, AccountType.Giro, "Giro", null, Guid.NewGuid());
+        db.Accounts.Add(acc);
+        var month = new DateTime(2025, 9, 1);
+        AddPosting(db, PostingKind.Bank, acc.Id, null, null, null, month, 10m).SetPostingType(BankPostingType.Inflow);
+        AddPosting(db, PostingKind.Bank, acc.Id, null, null, null, month, -5m).SetPostingType(BankPostingType.Outflow);
+        AddPosting(db, PostingKind.Bank, acc.Id, null, null, null, month, 2m).SetPostingType(BankPostingType.Interest);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var result = await sut.QueryAsync(Query(user.Id, $"Account:{acc.Id}", month, ReportPostingsPeriod.Current,
+            filters: Filters(bankPostingTypes: new[] { (int)BankPostingType.Interest })), CancellationToken.None);
+
+        Assert.Single(result.Postings);
+        Assert.Equal(2m, result.Postings[0].Amount);
         conn.Dispose();
     }
 }

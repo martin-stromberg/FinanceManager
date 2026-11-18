@@ -444,4 +444,9 @@
   <data name="ChartPosition_AboveTable" xml:space="preserve"><value>Über der Tabelle</value></data>
   <data name="ChartPosition_BelowTable" xml:space="preserve"><value>Unter der Tabelle</value></data>
   <data name="Chart_Other" xml:space="preserve"><value>Sonstiges</value></data>
+  <data name="FilterGroup_BankTypes" xml:space="preserve"><value>Bankpostenarten</value></data>
+  <data name="BankType_Inflow" xml:space="preserve"><value>Eingang</value></data>
+  <data name="BankType_Outflow" xml:space="preserve"><value>Ausgang</value></data>
+  <data name="BankType_Interest" xml:space="preserve"><value>Zinsen</value></data>
+  <data name="BankType_Tax" xml:space="preserve"><value>Steuern</value></data>
 </root>
