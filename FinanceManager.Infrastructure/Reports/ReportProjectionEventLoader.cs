@@ -36,6 +36,7 @@ internal sealed class ReportProjectionEventLoader
     /// <param name="windowStart">Inclusive window start.</param>
     /// <param name="windowEnd">Exclusive window end.</param>
     /// <param name="useValutaDate">Whether the valuta date determines the effective event date.</param>
+    /// <param name="bankPostingTypes">Optional bank posting-type allow-list; only evaluated when <paramref name="kind"/> is <see cref="PostingKind.Bank"/> and ignored for all other kinds (their postings carry no posting type classification).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Projection events ordered by the caller.</returns>
     internal async Task<List<ProjectionEvent>> LoadEntityEventsAsync(
@@ -46,6 +47,7 @@ internal sealed class ReportProjectionEventLoader
         DateTime windowStart,
         DateTime windowEnd,
         bool useValutaDate,
+        HashSet<BankPostingType>? bankPostingTypes,
         CancellationToken ct)
     {
         var allowedIds = entityIdFilter is null ? entityIds.ToList() : entityIds.Where(entityIdFilter.Contains).ToList();
@@ -64,6 +66,12 @@ internal sealed class ReportProjectionEventLoader
                 .Where(p => p.Kind == PostingKind.SavingsPlan && p.SavingsPlanId != null && allowedIds.Contains(p.SavingsPlanId.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for entity event loading.")
         };
+
+        if (kind == PostingKind.Bank && bankPostingTypes is { Count: > 0 })
+        {
+            // The allow-list predicate is SQL-translatable, so only matching postings are materialized.
+            source = source.Where(p => bankPostingTypes.Contains(p.PostingType));
+        }
 
         var rows = await ReportQuerySemantics.ApplyDateWindow(source, useValutaDate, windowStart, windowEnd)
             .Select(p => new { p.Id, p.AccountId, p.ContactId, p.SavingsPlanId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
@@ -134,7 +142,7 @@ internal sealed class ReportProjectionEventLoader
         var events = new List<ProjectionEvent>();
         if (unlinked.Count > 0)
         {
-            events.AddRange(await LoadEntityEventsAsync(PostingKind.SavingsPlan, unlinked, null, textPatterns, windowStart, windowEnd, useValutaDate, ct));
+            events.AddRange(await LoadEntityEventsAsync(PostingKind.SavingsPlan, unlinked, null, textPatterns, windowStart, windowEnd, useValutaDate, null, ct));
         }
         if (linked.Count == 0)
         {
@@ -142,6 +150,10 @@ internal sealed class ReportProjectionEventLoader
         }
 
         var linkedAccountIds = linked.Values.SelectMany(x => x).Distinct().ToList();
+        // The bank posting-type filter intentionally does not apply to the linked source
+        // postings: like the aggregation path and the postings drilldown (scope exclusion),
+        // they are loaded without a BankPostingTypes restriction so the projection matches
+        // the unfiltered cell value.
         var rows = await ReportQuerySemantics.ApplyDateWindow(
                 _db.Postings.AsNoTracking()
                     .Where(p => p.Kind == PostingKind.Bank && p.AccountId != null && linkedAccountIds.Contains(p.AccountId.Value)),

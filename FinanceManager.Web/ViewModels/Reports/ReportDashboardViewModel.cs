@@ -364,6 +364,44 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Clears the subtype and text filter selections bound to the specified posting kind.
+    /// Called when the kind leaves the multi selection: without a matching filter tab the
+    /// selections could neither be displayed nor deselected, yet would keep counting and
+    /// persist into favorites.
+    /// </summary>
+    /// <param name="kind">Posting kind whose subtype/text selections are cleared.</param>
+    public void ClearKindFilters(PostingKind kind)
+    {
+        var hadFilters = kind switch
+        {
+            PostingKind.Bank => SelectedBankPostingTypes.Count > 0 || SelectedBankTextFilters.Count > 0,
+            PostingKind.Contact => SelectedContactTextFilters.Count > 0,
+            PostingKind.SavingsPlan => SelectedSavingsPlanTextFilters.Count > 0,
+            PostingKind.Security => SelectedSecuritySubTypes.Count > 0 || SelectedSecurityTextFilters.Count > 0,
+            _ => false
+        };
+        switch (kind)
+        {
+            case PostingKind.Bank:
+                SelectedBankPostingTypes.Clear();
+                SelectedBankTextFilters.Clear();
+                break;
+            case PostingKind.Contact:
+                SelectedContactTextFilters.Clear();
+                break;
+            case PostingKind.SavingsPlan:
+                SelectedSavingsPlanTextFilters.Clear();
+                break;
+            case PostingKind.Security:
+                SelectedSecuritySubTypes.Clear();
+                SelectedSecurityTextFilters.Clear();
+                break;
+        }
+        if (hadFilters) { FiltersDirty = true; }
+        RaiseStateChanged();
+    }
+
+    /// <summary>
     /// Reloads aggregates from the API using the current dashboard state.
     /// </summary>
     /// <param name="analysisDate">Optional date used as the analysis reference point.</param>
@@ -755,21 +793,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             ShowChart = showChart,
             Expandable = expandable,
             PostingKinds = postingKinds,
-            Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                AccountIds: filters.AccountIds,
-                ContactIds: filters.ContactIds,
-                SavingsPlanIds: filters.SavingsPlanIds,
-                SecurityIds: filters.SecurityIds,
-                ContactCategoryIds: filters.ContactCategoryIds,
-                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
-                SecurityCategoryIds: filters.SecurityCategoryIds,
-                SecuritySubTypes: filters.SecuritySubTypes,
-                IncludeDividendRelated: filters.IncludeDividendRelated,
-                BankTextFilters: filters.BankTextFilters,
-                ContactTextFilters: filters.ContactTextFilters,
-                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
-                SecurityTextFilters: filters.SecurityTextFilters
-            ),
+            Filters = filters is null ? null : ToFavoriteFilters(filters),
             UseValutaDate = useValutaDate,
             SavingsPlanPostingSource = savingsPlanPostingSource,
             ChartType = chartType,
@@ -815,21 +839,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             ShowChart = showChart,
             Expandable = expandable,
             PostingKinds = postingKinds,
-            Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                AccountIds: filters.AccountIds,
-                ContactIds: filters.ContactIds,
-                SavingsPlanIds: filters.SavingsPlanIds,
-                SecurityIds: filters.SecurityIds,
-                ContactCategoryIds: filters.ContactCategoryIds,
-                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
-                SecurityCategoryIds: filters.SecurityCategoryIds,
-                SecuritySubTypes: filters.SecuritySubTypes,
-                IncludeDividendRelated: filters.IncludeDividendRelated,
-                BankTextFilters: filters.BankTextFilters,
-                ContactTextFilters: filters.ContactTextFilters,
-                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
-                SecurityTextFilters: filters.SecurityTextFilters
-            ),
+            Filters = filters is null ? null : ToFavoriteFilters(filters),
             UseValutaDate = useValutaDate,
             SavingsPlanPostingSource = savingsPlanPostingSource,
             ChartType = chartType,
@@ -837,6 +847,28 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         };
         return await _api.Reports_UpdateFavoriteAsync(id, payload, ct);
     }
+
+    /// <summary>
+    /// Maps the dashboard filter payload to the filter DTO stored with a report favorite.
+    /// </summary>
+    /// <param name="filters">Filter payload of the aggregates query.</param>
+    /// <returns>The corresponding <see cref="ReportFavoriteFiltersDto"/>.</returns>
+    private static ReportFavoriteFiltersDto ToFavoriteFilters(ReportAggregatesFiltersRequest filters)
+        => new(
+            AccountIds: filters.AccountIds,
+            ContactIds: filters.ContactIds,
+            SavingsPlanIds: filters.SavingsPlanIds,
+            SecurityIds: filters.SecurityIds,
+            ContactCategoryIds: filters.ContactCategoryIds,
+            SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
+            SecurityCategoryIds: filters.SecurityCategoryIds,
+            SecuritySubTypes: filters.SecuritySubTypes,
+            IncludeDividendRelated: filters.IncludeDividendRelated,
+            BankPostingTypes: filters.BankPostingTypes,
+            BankTextFilters: filters.BankTextFilters,
+            ContactTextFilters: filters.ContactTextFilters,
+            SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
+            SecurityTextFilters: filters.SecurityTextFilters);
 
     /// <summary>
     /// Deletes a report favorite by id via the API.
@@ -1235,39 +1267,35 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     }
 
     // UI helpers for security subtypes in temp buffer
-    /// <summary>
-    /// Whether a temp security subtype is selected.
-    /// </summary>
-    /// <param name="subType">Security subtype value (enum int representation).</param>
+    /// <summary>Whether a temp security subtype is selected.</summary>
+    /// <param name="subType">Security posting subtype.</param>
     /// <returns><c>true</c> when selected in temp buffer.</returns>
-    public bool IsSecuritySubTypeSelectedTemp(int subType)
-        => TempSecuritySubTypes.Contains(subType);
+    public bool IsSecuritySubTypeSelectedTemp(SecurityPostingSubType subType)
+        => TempSecuritySubTypes.Contains((int)subType);
 
-    /// <summary>
-    /// Toggles a temp security subtype selection and raises state changed.
-    /// </summary>
-    /// <param name="subType">Security subtype value (enum int representation).</param>
+    /// <summary>Toggles a temp security subtype selection and raises state changed.</summary>
+    /// <param name="subType">Security posting subtype.</param>
     /// <param name="isChecked">True to select; false to unselect.</param>
-    public void ToggleTempSecuritySubType(int subType, bool isChecked)
+    public void ToggleTempSecuritySubType(SecurityPostingSubType subType, bool isChecked)
     {
-        if (isChecked) { TempSecuritySubTypes.Add(subType); }
-        else { TempSecuritySubTypes.Remove(subType); }
+        if (isChecked) { TempSecuritySubTypes.Add((int)subType); }
+        else { TempSecuritySubTypes.Remove((int)subType); }
         RaiseStateChanged();
     }
 
     /// <summary>Whether a temp bank posting type is selected.</summary>
-    /// <param name="postingType">Bank posting type value (enum int representation).</param>
+    /// <param name="postingType">Bank posting type.</param>
     /// <returns><c>true</c> when selected in temp buffer.</returns>
-    public bool IsBankPostingTypeSelectedTemp(int postingType)
-        => TempBankPostingTypes.Contains(postingType);
+    public bool IsBankPostingTypeSelectedTemp(BankPostingType postingType)
+        => TempBankPostingTypes.Contains((int)postingType);
 
     /// <summary>Toggles a temp bank posting type selection and raises state changed.</summary>
-    /// <param name="postingType">Bank posting type value (enum int representation).</param>
+    /// <param name="postingType">Bank posting type.</param>
     /// <param name="isChecked">True to select; false to unselect.</param>
-    public void ToggleTempBankPostingType(int postingType, bool isChecked)
+    public void ToggleTempBankPostingType(BankPostingType postingType, bool isChecked)
     {
-        if (isChecked) { TempBankPostingTypes.Add(postingType); }
-        else { TempBankPostingTypes.Remove(postingType); }
+        if (isChecked) { TempBankPostingTypes.Add((int)postingType); }
+        else { TempBankPostingTypes.Remove((int)postingType); }
         RaiseStateChanged();
     }
 
@@ -1438,9 +1466,10 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 return res;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            FavoriteError = ex.Message;
+            // Localized key rendered via Localizer in the page; raw exception text is never shown.
+            FavoriteError = FavoriteDialogIsUpdate ? "Error_UpdateFavorite" : "Error_SaveFavorite";
             RaiseStateChanged();
             return null;
         }

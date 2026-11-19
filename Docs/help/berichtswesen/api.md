@@ -12,7 +12,7 @@ Die Berichtsfunktionen liegen in `ReportsController` und `HomeKpisController`.
 
 **Beschreibung:** Liefert aggregierte Reportdaten. Das Request-Feld `CompareProjection` fordert eine Hochrechnung wiederkehrender Vorjahresposten an — für alle Buchungsarten und gemischte Auswahlen (nicht für `AllHistory`). Im Ergebnis zeigt `ComparedProjection`, ob die Hochrechnung tatsächlich aktiv ist; einzelne Berichtspunkte enthalten dann `ProjectionAmount` zusätzlich zu `Amount` sowie die erwarteten Ereignisse in `ProjectionExpectedItems` (je Eintrag `Kind`, `EntityId`, `EntityName`, `ExpectedDate`, `PriorYearDate`, `Amount`).
 
-Das `Filters`-Objekt (`ReportAggregatesFiltersRequest`) akzeptiert optional vier Freitext-Filterlisten je Buchungsart:
+Das `Filters`-Objekt (`ReportAggregatesFiltersRequest`) akzeptiert optional vier Freitext-Filterlisten je Buchungsart sowie eine Postenarten-Allow-List für Bank-Buchungen:
 
 | Name | Typ | Pflicht | Beschreibung |
 |------|-----|---------|--------------|
@@ -20,8 +20,11 @@ Das `Filters`-Objekt (`ReportAggregatesFiltersRequest`) akzeptiert optional vier
 | `ContactTextFilters` | `string[]` | Nein | Textfilter für Kontakt-Buchungen |
 | `SavingsPlanTextFilters` | `string[]` | Nein | Textfilter für Sparplan-Buchungen |
 | `SecurityTextFilters` | `string[]` | Nein | Textfilter für Wertpapier-Buchungen |
+| `BankPostingTypes` | `int[]` | Nein | Postenarten-Filter für Bank-Buchungen (`BankPostingType`-Werte: `1` Inflow, `2` Outflow, `3` Interest, `4` Tax) |
 
 Jeder Eintrag wird getrimmt, ist maximal 500 Zeichen lang und matcht als Substring (Groß-/Kleinschreibung egal) auf `Subject` und `Description` der Buchungen; mehrere Einträge einer Liste sind ODER-verknüpft. Einträge über 500 Zeichen beim Favoriten-Speichern führen zu `400 BadRequest`.
+
+`BankPostingTypes` beschränkt Bank-Buchungen auf die gelisteten Postenarten; der Filter wirkt auf Berichtswerte, die Hochrechnung (`ProjectionAmount`/`ProjectionExpectedItems`) und die Posteneinsicht (`/api/report-postings`) gleichermaßen. Buchungen ohne klassifizierte Postenart (`Unspecified`) fallen bei aktivem Filter heraus; aus Bankposten verknüpfter Konten abgeleitete Sparplan-Reihen bleiben bewusst ungefiltert.
 
 Das optionale Request-Feld `ReportFavoriteId` (`Guid?`) versetzt die Abfrage in den Favoritenkontext: Mit gesetztem Wert werden die für diesen Favoriten ausgeblendeten Erwartungen in der Hochrechnung berücksichtigt. Ohne das Feld bleibt die Hochrechnung unverändert — Ad-hoc-Abfragen sind von Ausblendungen nicht betroffen.
 
@@ -54,11 +57,11 @@ Das optionale Request-Feld `ReportFavoriteId` (`Guid?`) versetzt die Abfrage in 
 
 ### `GET /api/reports/report-favorites`
 
-**Beschreibung:** Liefert gespeicherte Favoriten inklusive der Hochrechnungsoption `CompareProjection`. Das `Filters`-Objekt (`ReportFavoriteFiltersDto`) enthält die gespeicherten `*TextFilters`-Listen.
+**Beschreibung:** Liefert gespeicherte Favoriten inklusive der Hochrechnungsoption `CompareProjection`. Das `Filters`-Objekt (`ReportFavoriteFiltersDto`) enthält die gespeicherten `*TextFilters`-Listen sowie `BankPostingTypes` (persistiert als `BankPostingTypesCsv`).
 
 ### `POST /api/reports/report-favorites`
 
-**Beschreibung:** Legt Favorit an. `CompareProjection` speichert die Hochrechnungsoption zusammen mit den übrigen Dashboard-Einstellungen. Das `Filters`-Objekt nimmt die vier `*TextFilters`-Listen entgegen und persistiert sie am Favoriten.
+**Beschreibung:** Legt Favorit an. `CompareProjection` speichert die Hochrechnungsoption zusammen mit den übrigen Dashboard-Einstellungen. Das `Filters`-Objekt nimmt die vier `*TextFilters`-Listen und `BankPostingTypes` entgegen und persistiert sie am Favoriten.
 
 ### `PUT /api/reports/report-favorites/{id}`
 
@@ -66,7 +69,7 @@ Das optionale Request-Feld `ReportFavoriteId` (`Guid?`) versetzt die Abfrage in 
 
 ### MCP-Tools
 
-Die Textfilter stehen auch über MCP zur Verfügung: `fm_reporting_aggregate` akzeptiert sie als Inline-Argumente `bankTextFilters`, `contactTextFilters`, `savingsPlanTextFilters`, `securityTextFilters` (String-Arrays, je max. 500 Zeichen) und wendet gespeicherte Favoriten-Filter automatisch an; `fm_reports_configuration_manage` pflegt sie im `filters`-Objekt beim Anlegen und Aktualisieren von Favoriten.
+Die Textfilter stehen auch über MCP zur Verfügung: `fm_reporting_aggregate` akzeptiert sie als Inline-Argumente `bankTextFilters`, `contactTextFilters`, `savingsPlanTextFilters`, `securityTextFilters` (String-Arrays, je max. 500 Zeichen) und wendet gespeicherte Favoriten-Filter automatisch an; `fm_reports_configuration_manage` pflegt sie im `filters`-Objekt beim Anlegen und Aktualisieren von Favoriten. Den Postenarten-Filter reicht `fm_reporting_aggregate` als Int-Liste `bankPostingTypes` durch; `fm_reports_configuration_manage` und `fm_configuration_read` pflegen bzw. liefern ihn im `filters`-Objekt als `bankPostingTypes`.
 
 Bei `compareProjection = true` liefert `fm_reporting_aggregate` je Berichtspunkt zusätzlich `projectionAmount` und die erwarteten Einzelereignisse als `expectedItems` (`kind`, `entityId`, `untrusted_data.entityName`, `expectedDate`, `priorYearDate`, `amount`); das Flag `comparedProjection` meldet, ob die Hochrechnung aktiv war.
 

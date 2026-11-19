@@ -105,15 +105,30 @@ public sealed class AccountsApiSeedHelper
         db.Accounts.Add(account);
         if (postings is { Count: > 0 })
         {
-            db.Postings.AddRange(postings.Select(posting => new Posting(
-                Guid.NewGuid(),
-                posting.Kind,
-                account.Id,
-                contactId: posting.ContactId,
-                savingsPlanId: posting.SavingsPlanId,
-                securityId: posting.SecurityId,
-                posting.BookingDate,
-                posting.Amount)));
+            db.Postings.AddRange(postings.Select(posting =>
+            {
+                var entity = new Posting(
+                    Guid.NewGuid(),
+                    posting.Kind,
+                    account.Id,
+                    contactId: posting.ContactId,
+                    savingsPlanId: posting.SavingsPlanId,
+                    securityId: posting.SecurityId,
+                    posting.BookingDate,
+                    posting.Amount);
+                if (posting.PostingType.HasValue)
+                {
+                    entity.SetPostingType(posting.PostingType.Value);
+                }
+                else if (posting.Kind == PostingKind.Bank)
+                {
+                    // Productive code never leaves bank postings Unspecified (import evaluates
+                    // rules, backup restore backfills by amount sign); mirror that fallback so
+                    // seeded data stays realistic for posting-type filtered scenarios.
+                    entity.SetPostingType(PostingTypeEvaluator.EvaluateByAmountSign(posting.Amount));
+                }
+                return entity;
+            }));
         }
 
         await db.SaveChangesAsync();
@@ -173,6 +188,7 @@ public sealed class AccountsApiSeedHelper
     /// <param name="SavingsPlanId">Optional linked savings plan identifier.</param>
     /// <param name="SecurityId">Optional linked security identifier.</param>
     /// <param name="Kind">Posting kind; defaults to <see cref="PostingKind.Bank"/>.</param>
+    /// <param name="PostingType">Optional bank posting type classification applied via <see cref="Posting.SetPostingType"/>. When unset, bank postings are classified from the amount sign (<see cref="PostingTypeEvaluator.EvaluateByAmountSign"/>) like the backup restore backfill; non-bank postings keep <see cref="BankPostingType.Unspecified"/>.</param>
     /// <returns>The result.</returns>
     public sealed record SeededPosting(
         DateTime BookingDate,
@@ -180,7 +196,8 @@ public sealed class AccountsApiSeedHelper
         Guid? ContactId = null,
         Guid? SavingsPlanId = null,
         Guid? SecurityId = null,
-        PostingKind Kind = PostingKind.Bank);
+        PostingKind Kind = PostingKind.Bank,
+        BankPostingType? PostingType = null);
 
     /// <summary>
     /// Identifiers returned from direct account seeding.

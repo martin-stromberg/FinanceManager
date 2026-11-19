@@ -105,26 +105,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         var projectionEndExclusive = analysis.AddMonths(1);
         var projectionEventLoadStart = projectionWindowStart.AddYears(-2);
 
-        // Per-kind free text filters: kinds with configured patterns are aggregated from raw
-        // postings (PostingAggregates carry no text fields); all other kinds keep the
-        // precomputed aggregate path.
-        var textFiltersByKind = new Dictionary<PostingKind, IReadOnlyCollection<string>>();
-        if (query.Filters is { } textFilterSource)
-        {
-            void AddTextFilters(PostingKind kind, IReadOnlyCollection<string>? src)
-            {
-                if (!kinds.Contains(kind)) { return; }
-                if (TextFilterList.Normalize(src) is { Count: > 0 } patterns) { textFiltersByKind[kind] = patterns; }
-            }
-            AddTextFilters(PostingKind.Bank, textFilterSource.BankTextFilters);
-            AddTextFilters(PostingKind.Contact, textFilterSource.ContactTextFilters);
-            AddTextFilters(PostingKind.SavingsPlan, textFilterSource.SavingsPlanTextFilters);
-            AddTextFilters(PostingKind.Security, textFilterSource.SecurityTextFilters);
-        }
-        var bankPostingTypes = kinds.Contains(PostingKind.Bank) && query.Filters?.BankPostingTypes is { Count: > 0 }
-            ? query.Filters.BankPostingTypes.Select(v => (BankPostingType)v).ToHashSet()
-            : null;
-        var aggregateKinds = kinds.Where(k => !textFiltersByKind.ContainsKey(k) && !(k == PostingKind.Bank && bankPostingTypes != null)).ToArray();
+        var (textFiltersByKind, bankPostingTypes, aggregateKinds) = ResolveRawFilters(query, kinds);
 
         // Upper bound of the raw posting load: postings in periods after the latest
         // analysis period can never contribute a point (they are trimmed by the
@@ -211,7 +192,8 @@ public sealed class ReportAggregationService : IReportAggregationService
             };
             if (ownerEntityIds.Count == 0) { continue; }
             var patterns = textFiltersByKind.TryGetValue(rawKind, out var configuredPatterns) ? configuredPatterns : Array.Empty<string>();
-            var rawRows = await LoadTextFilteredRowsAsync(rawKind, patterns, sourcePeriod, query.UseValutaDate, ownerEntityIds, null, postingWindowEnd, rawKind == PostingKind.Bank ? bankPostingTypes : null, ct);
+            var rowFilters = new TextFilteredRowFilters(patterns, null, postingWindowEnd, rawKind == PostingKind.Bank ? bankPostingTypes : null);
+            var rawRows = await LoadTextFilteredRowsAsync(rawKind, sourcePeriod, query.UseValutaDate, ownerEntityIds, rowFilters, ct);
             rawAnon.AddRange(rawRows);
         }
 
@@ -402,12 +384,12 @@ public sealed class ReportAggregationService : IReportAggregationService
             // Only honor subtype filter when Security kind is actually part of the request
             var includesSecurity = kinds.Contains(PostingKind.Security);
             var allowedSecSubTypes = includesSecurity && f.SecuritySubTypes is { Count: > 0 } ? f.SecuritySubTypes.ToHashSet() : null;
-            var allowedBankTypes = kinds.Contains(PostingKind.Bank) && f.BankPostingTypes is { Count: > 0 } ? f.BankPostingTypes.ToHashSet() : null;
+            // The bank posting-type allow-list was already materialized as typed set above and is reused here.
 
             bool hasAnyEntityFilter = allowedAccounts != null || allowedContacts != null || allowedSavings != null || allowedSecurities != null;
             bool hasAnyCategoryFilter = allowedContactCats != null || allowedSavingsCats != null || allowedSecurityCats != null;
             bool hasAnySecSubTypeFilter = allowedSecSubTypes != null;
-            bool hasAnyBankTypeFilter = allowedBankTypes != null;
+            bool hasAnyBankTypeFilter = bankPostingTypes != null;
 
             if (hasAnyEntityFilter || (query.IncludeCategory && hasAnyCategoryFilter) || hasAnySecSubTypeFilter || hasAnyBankTypeFilter)
             {
@@ -417,7 +399,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                     {
                         case PostingKind.Bank:
                             if (allowedAccounts != null && (!r.AccountId.HasValue || !allowedAccounts.Contains(r.AccountId.Value))) { return false; }
-                            return allowedBankTypes == null || (r.BankPostingType.HasValue && allowedBankTypes.Contains((int)r.BankPostingType.Value));
+                            return bankPostingTypes == null || (r.BankPostingType.HasValue && bankPostingTypes.Contains(r.BankPostingType.Value));
                         case PostingKind.Contact:
                             if (query.IncludeCategory && allowedContactCats != null)
                             {
@@ -759,7 +741,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var bankPatterns = textFiltersByKind.TryGetValue(PostingKind.Bank, out var bp) ? bp : null;
                 projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
                     PostingKind.Bank, ownedAccountIds, accountFilter, bankPatterns,
-                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, bankPostingTypes, ct));
             }
 
             if (kinds.Contains(PostingKind.Contact))
@@ -772,7 +754,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var contactPatterns = textFiltersByKind.TryGetValue(PostingKind.Contact, out var cp) ? cp : null;
                 projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
                     PostingKind.Contact, ownedContactIds, contactFilter, contactPatterns,
-                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, null, ct));
             }
 
             if (kinds.Contains(PostingKind.SavingsPlan))
@@ -794,7 +776,7 @@ public sealed class ReportAggregationService : IReportAggregationService
                 {
                     projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
                         PostingKind.SavingsPlan, ownedPlanIds, planFilter, planPatterns,
-                        projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, ct));
+                        projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, null, ct));
                 }
             }
 
@@ -912,31 +894,73 @@ public sealed class ReportAggregationService : IReportAggregationService
     }
 
     /// <summary>
+    /// Resolves the raw-posting filter selections of the query: the normalized per-kind text
+    /// patterns (kinds with configured patterns are aggregated from raw postings because
+    /// <c>PostingAggregates</c> carry no text fields), the bank posting-type allow-list and the
+    /// set of kinds that keep the precomputed aggregate path.
+    /// </summary>
+    /// <param name="query">The aggregation query carrying the raw filters.</param>
+    /// <param name="kinds">The posting kinds requested by the query.</param>
+    /// <returns>
+    /// A <see cref="RawReportFilters"/> bundle with the text patterns per kind, the typed bank
+    /// posting-type allow-list (<c>null</c> when inactive) and the kinds still served from
+    /// <c>PostingAggregates</c>.
+    /// </returns>
+    private static RawReportFilters ResolveRawFilters(ReportAggregationQuery query, IReadOnlyCollection<PostingKind> kinds)
+    {
+        var textFiltersByKind = new Dictionary<PostingKind, IReadOnlyCollection<string>>();
+        if (query.Filters is { } textFilterSource)
+        {
+            void AddTextFilters(PostingKind kind, IReadOnlyCollection<string>? src)
+            {
+                if (!kinds.Contains(kind)) { return; }
+                if (TextFilterList.Normalize(src) is { Count: > 0 } patterns) { textFiltersByKind[kind] = patterns; }
+            }
+            AddTextFilters(PostingKind.Bank, textFilterSource.BankTextFilters);
+            AddTextFilters(PostingKind.Contact, textFilterSource.ContactTextFilters);
+            AddTextFilters(PostingKind.SavingsPlan, textFilterSource.SavingsPlanTextFilters);
+            AddTextFilters(PostingKind.Security, textFilterSource.SecurityTextFilters);
+        }
+        var bankPostingTypes = kinds.Contains(PostingKind.Bank) && query.Filters?.BankPostingTypes is { Count: > 0 }
+            ? query.Filters.BankPostingTypes.Select(v => (BankPostingType)v).ToHashSet()
+            : null;
+        var aggregateKinds = kinds.Where(k => !textFiltersByKind.ContainsKey(k) && !(k == PostingKind.Bank && bankPostingTypes != null)).ToArray();
+        return new RawReportFilters(textFiltersByKind, bankPostingTypes, aggregateKinds);
+    }
+
+    /// <summary>
+    /// Bundles the resolved raw-posting filters of a <see cref="ResolveRawFilters"/> call.
+    /// </summary>
+    /// <param name="TextFiltersByKind">Normalized text patterns per kind; kinds listed here are aggregated from raw postings.</param>
+    /// <param name="BankPostingTypes">Typed bank posting-type allow-list; <c>null</c> when the filter is inactive.</param>
+    /// <param name="AggregateKinds">Kinds still served from <c>PostingAggregates</c>.</param>
+    /// <returns>The resolved raw filter selections.</returns>
+    private sealed record RawReportFilters(
+        Dictionary<PostingKind, IReadOnlyCollection<string>> TextFiltersByKind,
+        HashSet<BankPostingType>? BankPostingTypes,
+        PostingKind[] AggregateKinds);
+
+    /// <summary>
     /// Loads postings of a single <see cref="PostingKind"/>, keeps only rows matching at least one of the
     /// supplied text patterns (OR) against subject/description and condenses them into the same tuple
     /// schema used by the aggregate rows. The postings are restricted to the supplied owner entity ids
-    /// because <see cref="Posting"/> carries no owner column itself.
+    /// because <see cref="Posting"/> carries no owner column itself. The bank posting-type allow-list of
+    /// <paramref name="filters"/> is applied database-side before materialization.
     /// </summary>
     /// <param name="kind">The posting kind to load.</param>
-    /// <param name="patterns">Non-empty text filter patterns (OR linked).</param>
     /// <param name="sourcePeriod">Aggregate period used for period bucketing.</param>
     /// <param name="useValutaDate">When true the valuta date (with booking date fallback) determines the period.</param>
     /// <param name="ownerEntityIds">Ids of the kind's entities owned by the querying user.</param>
-    /// <param name="windowStart">Inclusive lower bound of the effective posting date; <c>null</c> = unbounded.</param>
-    /// <param name="windowEnd">Exclusive upper bound of the effective posting date; <c>null</c> = unbounded.</param>
-    /// <param name="bankPostingTypes">Optional bank posting-type allow-list applied while loading bank postings.</param>
+    /// <param name="filters">Posting-level filters bundled in a <see cref="TextFilteredRowFilters"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Condensed rows in the same schema as the aggregate rows.</returns>
     private async Task<List<(PostingKind Kind, DateTime PeriodStart, decimal Amount, Guid? AccountId, Guid? ContactId, Guid? SavingsPlanId, Guid? SecurityId, SecurityPostingSubType? SecuritySubType, BankPostingType? BankPostingType)>> LoadTextFilteredRowsAsync(
         PostingKind kind,
-        IReadOnlyCollection<string> patterns,
         AggregatePeriod sourcePeriod,
         bool useValutaDate,
         IReadOnlyCollection<Guid> ownerEntityIds,
-        DateTime? windowStart,
-        DateTime? windowEnd,
-        HashSet<BankPostingType>? bankPostingTypes = null,
-        CancellationToken ct = default)
+        TextFilteredRowFilters filters,
+        CancellationToken ct)
     {
         var postingsQuery = _db.Postings.AsNoTracking().Where(p => p.Kind == kind);
         postingsQuery = kind switch
@@ -947,7 +971,12 @@ public sealed class ReportAggregationService : IReportAggregationService
             PostingKind.Security => postingsQuery.Where(p => p.SecurityId != null && ownerEntityIds.Contains(p.SecurityId.Value)),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for text filters.")
         };
-        postingsQuery = ReportQuerySemantics.ApplyDateWindow(postingsQuery, useValutaDate, windowStart, windowEnd);
+        postingsQuery = ReportQuerySemantics.ApplyDateWindow(postingsQuery, useValutaDate, filters.WindowStart, filters.WindowEnd);
+        if (kind == PostingKind.Bank && filters.BankPostingTypes is { Count: > 0 } bankTypes)
+        {
+            // The allow-list predicate is SQL-translatable, so only matching postings are materialized.
+            postingsQuery = postingsQuery.Where(p => bankTypes.Contains(p.PostingType));
+        }
 
         var postings = await postingsQuery
             .Select(p => new
@@ -970,8 +999,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         foreach (var p in postings)
         {
             if (p.Amount == 0m) { continue; }
-            if (patterns.Count > 0 && !patterns.Any(pat => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, pat, useRegex: false))) { continue; }
-            if (bankPostingTypes != null && !bankPostingTypes.Contains(p.PostingType)) { continue; }
+            if (filters.TextPatterns.Count > 0 && !filters.TextPatterns.Any(pat => BudgetRulePatternMatcher.MatchesPosting(p.Subject, p.Description, pat, useRegex: false))) { continue; }
             var effective = useValutaDate
                 ? (p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate)
                 : p.BookingDate;
@@ -993,6 +1021,22 @@ public sealed class ReportAggregationService : IReportAggregationService
             .Select(g => (kind, g.Key.PeriodStart, g.Sum(x => x.Amount), g.Key.AccountId, g.Key.ContactId, g.Key.SavingsPlanId, g.Key.SecurityId, g.Key.SecuritySubType, g.Key.BankPostingType))
             .ToList();
     }
+
+    /// <summary>
+    /// Bundles the posting-level filters of a <see cref="LoadTextFilteredRowsAsync"/> call:
+    /// normalized text patterns matched in memory, the effective-date load window and the
+    /// bank posting-type allow-list applied database-side for <see cref="PostingKind.Bank"/>.
+    /// </summary>
+    /// <param name="TextPatterns">Normalized text patterns (OR linked); an empty collection disables text matching.</param>
+    /// <param name="WindowStart">Inclusive lower bound of the effective posting date; <c>null</c> = unbounded.</param>
+    /// <param name="WindowEnd">Exclusive upper bound of the effective posting date; <c>null</c> = unbounded.</param>
+    /// <param name="BankPostingTypes">Optional bank posting-type allow-list; only evaluated for <see cref="PostingKind.Bank"/>.</param>
+    /// <returns>The bundled posting-level filters.</returns>
+    private sealed record TextFilteredRowFilters(
+        IReadOnlyCollection<string> TextPatterns,
+        DateTime? WindowStart,
+        DateTime? WindowEnd,
+        HashSet<BankPostingType>? BankPostingTypes);
 
     /// <summary>
     /// Specialized path that computes net dividend amounts per security by grouping postings by GroupId and applying subtype netting

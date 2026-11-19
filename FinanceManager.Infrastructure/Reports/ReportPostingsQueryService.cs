@@ -118,7 +118,14 @@ public sealed class ReportPostingsQueryService : IReportPostingsQueryService
                 else
                 {
                     var requiredSubType = target.Kind == ReportGroupKeyTargetKind.Entity && target.PostingKind == PostingKind.Security;
-                    selections.Add(await LoadPostingsAsync(query, kind, entityIds, filters.TextPatternsFor(kind), windowStart, windowEnd, requiredSubType ? target.SecuritySubType : null, requiredSubType, ct));
+                    selections.Add(await LoadPostingsAsync(query, kind, entityIds, windowStart, windowEnd,
+                        new PostingLoadFilters(
+                            TextPatterns: filters.TextPatternsFor(kind),
+                            RequiredSubType: requiredSubType ? target.SecuritySubType : null,
+                            HasSubTypeConstraint: requiredSubType,
+                            SecuritySubTypes: ToSecuritySubTypeSet(query.Filters?.SecuritySubTypes),
+                            BankPostingTypes: ToBankPostingTypeSet(query.Filters?.BankPostingTypes)),
+                        ct));
                 }
             }
         }
@@ -218,18 +225,34 @@ public sealed class ReportPostingsQueryService : IReportPostingsQueryService
         if (linkedAccountIds.Count > 0)
         {
             // Savings plan text filters apply to the source bank postings of the linked accounts.
-            selections.Add(await LoadPostingsAsync(query, PostingKind.Bank, linkedAccountIds, savingsPlanTextPatterns, windowStart, windowEnd, null, false, ct));
+            // The bank posting-type filter intentionally does not apply here: like the aggregation
+            // and projection paths (scope exclusion), the linked source postings are listed
+            // unfiltered so the drilldown matches the unfiltered savings plan cell value.
+            selections.Add(await LoadPostingsAsync(query, PostingKind.Bank, linkedAccountIds, windowStart, windowEnd, PostingLoadFilters.TextOnly(savingsPlanTextPatterns), ct));
         }
 
         var unlinkedPlanIds = planIds.Where(id => !linksByPlan.ContainsKey(id)).ToList();
         if (unlinkedPlanIds.Count > 0)
         {
-            selections.Add(await LoadPostingsAsync(query, PostingKind.SavingsPlan, unlinkedPlanIds, savingsPlanTextPatterns, windowStart, windowEnd, null, false, ct));
+            selections.Add(await LoadPostingsAsync(query, PostingKind.SavingsPlan, unlinkedPlanIds, windowStart, windowEnd, PostingLoadFilters.TextOnly(savingsPlanTextPatterns), ct));
         }
         return PostingSelection.Combine(selections);
     }
 
-    private async Task<PostingSelection> LoadPostingsAsync(ReportPostingsQuery query, PostingKind kind, IReadOnlyCollection<Guid> entityIds, IReadOnlyCollection<string>? textPatterns, DateTime? windowStart, DateTime? windowEnd, SecurityPostingSubType? requiredSubType, bool hasSubTypeConstraint, CancellationToken ct)
+    /// <summary>
+    /// Loads the postings of one posting kind inside the cell window: entity restriction, date
+    /// window and the type/sub-type filters of <paramref name="postingFilters"/> are applied
+    /// database-side; the text patterns are matched in memory after materialization.
+    /// </summary>
+    /// <param name="query">The originating postings query (provides <see cref="ReportPostingsQuery.UseValutaDate"/>).</param>
+    /// <param name="kind">Posting kind to load.</param>
+    /// <param name="entityIds">Owned entity ids restricting the load.</param>
+    /// <param name="windowStart">Inclusive window start; <c>null</c> = unbounded.</param>
+    /// <param name="windowEnd">Exclusive window end; <c>null</c> = unbounded.</param>
+    /// <param name="postingFilters">Posting-level filters bundled in a <see cref="PostingLoadFilters"/>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The selection with materialized top-N items and exact untruncated totals.</returns>
+    private async Task<PostingSelection> LoadPostingsAsync(ReportPostingsQuery query, PostingKind kind, IReadOnlyCollection<Guid> entityIds, DateTime? windowStart, DateTime? windowEnd, PostingLoadFilters postingFilters, CancellationToken ct)
     {
         if (entityIds.Count == 0)
         {
@@ -246,22 +269,23 @@ public sealed class ReportPostingsQueryService : IReportPostingsQueryService
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind.")
         };
         q = ReportQuerySemantics.ApplyDateWindow(q, query.UseValutaDate, windowStart, windowEnd);
-        if (kind == PostingKind.Bank && query.Filters?.BankPostingTypes is { Count: > 0 } bankTypes)
+        if (kind == PostingKind.Bank && postingFilters.BankPostingTypes is { Count: > 0 } bankTypes)
         {
-            q = q.Where(p => bankTypes.Contains((int)p.PostingType));
+            q = q.Where(p => bankTypes.Contains(p.PostingType));
         }
         if (kind == PostingKind.Security)
         {
-            if (hasSubTypeConstraint)
+            if (postingFilters.HasSubTypeConstraint)
             {
-                q = q.Where(p => p.SecuritySubType == requiredSubType);
+                q = q.Where(p => p.SecuritySubType == postingFilters.RequiredSubType);
             }
-            if (query.Filters?.SecuritySubTypes is { Count: > 0 } subTypes)
+            if (postingFilters.SecuritySubTypes is { Count: > 0 } subTypes)
             {
-                q = q.Where(p => p.SecuritySubType != null && subTypes.Contains((int)p.SecuritySubType.Value));
+                q = q.Where(p => p.SecuritySubType != null && subTypes.Contains(p.SecuritySubType.Value));
             }
         }
 
+        var textPatterns = postingFilters.TextPatterns;
         if (textPatterns is { Count: > 0 })
         {
             // Text matching cannot be translated to SQL; the candidate set has to be
@@ -371,6 +395,12 @@ public sealed class ReportPostingsQueryService : IReportPostingsQueryService
             ? source.OrderByDescending(p => p.ValutaDate == DateTime.MinValue ? p.BookingDate : p.ValutaDate).ThenBy(p => p.Id)
             : source.OrderByDescending(p => p.BookingDate).ThenBy(p => p.Id);
 
+    private static HashSet<SecurityPostingSubType>? ToSecuritySubTypeSet(IReadOnlyCollection<int>? values)
+        => values is { Count: > 0 } ? values.Select(v => (SecurityPostingSubType)v).ToHashSet() : null;
+
+    private static HashSet<BankPostingType>? ToBankPostingTypeSet(IReadOnlyCollection<int>? values)
+        => values is { Count: > 0 } ? values.Select(v => (BankPostingType)v).ToHashSet() : null;
+
     /// <summary>
     /// One child selection of a postings query: the materialized top-N items plus the exact
     /// count and amount sum of the whole (untruncated) selection.
@@ -412,6 +442,32 @@ public sealed class ReportPostingsQueryService : IReportPostingsQueryService
             ? entity.Name
             : entityId.HasValue ? entityId.Value.ToString("N")[..6] : string.Empty;
         return new ReportPostingDto(p.Id, p.BookingDate, p.ValutaDate, p.Amount, p.Kind, p.Subject, p.RecipientName, p.Description, p.AccountId, p.ContactId, p.SavingsPlanId, p.SecurityId, p.SecuritySubType, entityName);
+    }
+
+    /// <summary>
+    /// Bundles the optional posting-level filters of a <see cref="LoadPostingsAsync"/> call:
+    /// normalized text patterns matched in memory, a required security sub type (entity
+    /// drill-down on a sub-typed cell) and the security sub-type / bank posting-type
+    /// allow-lists carried as typed sets. <c>null</c> members disable the respective filter.
+    /// </summary>
+    /// <param name="TextPatterns">Normalized text patterns; a posting must match at least one pattern.</param>
+    /// <param name="RequiredSubType">Mandatory security sub type; only evaluated when <paramref name="HasSubTypeConstraint"/> is set.</param>
+    /// <param name="HasSubTypeConstraint">Whether <paramref name="RequiredSubType"/> restricts the selection.</param>
+    /// <param name="SecuritySubTypes">Optional security sub-type allow-list; only evaluated for <see cref="PostingKind.Security"/>.</param>
+    /// <param name="BankPostingTypes">Optional bank posting-type allow-list; only evaluated for <see cref="PostingKind.Bank"/>.</param>
+    /// <returns>The bundled posting-level filters.</returns>
+    private sealed record PostingLoadFilters(
+        IReadOnlyCollection<string>? TextPatterns,
+        SecurityPostingSubType? RequiredSubType,
+        bool HasSubTypeConstraint,
+        HashSet<SecurityPostingSubType>? SecuritySubTypes,
+        HashSet<BankPostingType>? BankPostingTypes)
+    {
+        /// <summary>Creates a filter carrying only text patterns (no type/sub-type restrictions).</summary>
+        /// <param name="textPatterns">Normalized text patterns.</param>
+        /// <returns>The filter instance.</returns>
+        internal static PostingLoadFilters TextOnly(IReadOnlyCollection<string>? textPatterns)
+            => new(textPatterns, null, false, null, null);
     }
 
     private sealed record OwnedEntity(Guid Id, string Name, Guid? CategoryId);

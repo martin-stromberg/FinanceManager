@@ -449,4 +449,6 @@
   <data name="BankType_Outflow" xml:space="preserve"><value>Outgoing</value></data>
   <data name="BankType_Interest" xml:space="preserve"><value>Interest</value></data>
   <data name="BankType_Tax" xml:space="preserve"><value>Tax</value></data>
+  <data name="Error_SaveFavorite" xml:space="preserve"><value>The favorite could not be saved.</value></data>
+  <data name="Error_UpdateFavorite" xml:space="preserve"><value>The favorite could not be updated.</value></data>
 </root>
