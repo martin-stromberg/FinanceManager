@@ -237,6 +237,9 @@
   <data name="Label_PostingKindMulti" xml:space="preserve">
     <value>Buchungsarten auswählen</value>
   </data>
+  <data name="Hint_PostingKindRequired" xml:space="preserve">
+    <value>Mindestens eine Buchungsart muss ausgewählt bleiben.</value>
+  </data>
   <data name="PostingKind_Bank" xml:space="preserve">
     <value>Konten</value>
   </data>
@@ -449,4 +452,6 @@
   <data name="BankType_Outflow" xml:space="preserve"><value>Ausgang</value></data>
   <data name="BankType_Interest" xml:space="preserve"><value>Zinsen</value></data>
   <data name="BankType_Tax" xml:space="preserve"><value>Steuern</value></data>
+  <data name="Error_SaveFavorite" xml:space="preserve"><value>Der Favorit konnte nicht gespeichert werden.</value></data>
+  <data name="Error_UpdateFavorite" xml:space="preserve"><value>Der Favorit konnte nicht aktualisiert werden.</value></data>
 </root>

@@ -50,8 +50,12 @@
                         {
                             var v = kind;
                             var checkedAttr = _selectedKinds.Contains(v);
+                            // The last selected kind cannot be deselected; disabling makes the
+                            // enforced minimum visible instead of a click that silently reverts.
+                            var disabledAttr = checkedAttr && _selectedKinds.Count == 1;
+                            var titleAttr = disabledAttr ? Localizer["Hint_PostingKindRequired"].Value : null;
                             var label = Localizer[$"PostingKind_{kind}"];
-                            <label class="mk-item"><input type="checkbox" value="@v" checked="@checkedAttr" @onchange="e => OnToggleKind(v, e.Value is bool b && b)" /> @label</label>
+                            <label class="mk-item" title="@titleAttr"><input type="checkbox" value="@v" checked="@checkedAttr" disabled="@disabledAttr" @onchange="e => OnToggleKind(v, e.Value is bool b && b)" /> @label</label>
                         }
                     </div>
                 </div>
@@ -599,10 +603,10 @@
                     <div class="subtype-list" style="margin-top:.5rem;">
                         <div class="group-title" style="margin-bottom:.25rem;">@Localizer["FilterGroup_BankTypes"]</div>
                         <div class="scroll-box option-list">
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(1)" @onchange="e => _vm!.ToggleTempBankPostingType(1, e.Value is bool b && b)" /> @Localizer["BankType_Inflow"]</label>
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(2)" @onchange="e => _vm!.ToggleTempBankPostingType(2, e.Value is bool b && b)" /> @Localizer["BankType_Outflow"]</label>
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(3)" @onchange="e => _vm!.ToggleTempBankPostingType(3, e.Value is bool b && b)" /> @Localizer["BankType_Interest"]</label>
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(4)" @onchange="e => _vm!.ToggleTempBankPostingType(4, e.Value is bool b && b)" /> @Localizer["BankType_Tax"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(BankPostingType.Inflow)" @onchange="e => _vm!.ToggleTempBankPostingType(BankPostingType.Inflow, e.Value is bool b && b)" /> @Localizer["BankType_Inflow"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(BankPostingType.Outflow)" @onchange="e => _vm!.ToggleTempBankPostingType(BankPostingType.Outflow, e.Value is bool b && b)" /> @Localizer["BankType_Outflow"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(BankPostingType.Interest)" @onchange="e => _vm!.ToggleTempBankPostingType(BankPostingType.Interest, e.Value is bool b && b)" /> @Localizer["BankType_Interest"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsBankPostingTypeSelectedTemp(BankPostingType.Tax)" @onchange="e => _vm!.ToggleTempBankPostingType(BankPostingType.Tax, e.Value is bool b && b)" /> @Localizer["BankType_Tax"]</label>
                         </div>
                     </div>
                 }
@@ -611,11 +615,11 @@
                     <div class="subtype-list" style="margin-top:.5rem;">
                         <div class="group-title" style="margin-bottom:.25rem;">@Localizer["FilterGroup_SecurityTypes"]</div>
                         <div class="scroll-box option-list">
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(0)" @onchange="e => _vm!.ToggleTempSecuritySubType(0, e.Value is bool b && b)" /> @Localizer["SecurityType_Buy"]</label>
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(1)" @onchange="e => _vm!.ToggleTempSecuritySubType(1, e.Value is bool b && b)" /> @Localizer["SecurityType_Sell"]</label>
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(2)" @onchange="e => _vm!.ToggleTempSecuritySubType(2, e.Value is bool b && b)" /> @Localizer["SecurityType_Dividend"]</label>
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(3)" @onchange="e => _vm!.ToggleTempSecuritySubType(3, e.Value is bool b && b)" /> @Localizer["SecurityType_Fee"]</label>
-                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(4)" @onchange="e => _vm!.ToggleTempSecuritySubType(4, e.Value is bool b && b)" /> @Localizer["SecurityType_Tax"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(SecurityPostingSubType.Buy)" @onchange="e => _vm!.ToggleTempSecuritySubType(SecurityPostingSubType.Buy, e.Value is bool b && b)" /> @Localizer["SecurityType_Buy"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(SecurityPostingSubType.Sell)" @onchange="e => _vm!.ToggleTempSecuritySubType(SecurityPostingSubType.Sell, e.Value is bool b && b)" /> @Localizer["SecurityType_Sell"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(SecurityPostingSubType.Dividend)" @onchange="e => _vm!.ToggleTempSecuritySubType(SecurityPostingSubType.Dividend, e.Value is bool b && b)" /> @Localizer["SecurityType_Dividend"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(SecurityPostingSubType.Fee)" @onchange="e => _vm!.ToggleTempSecuritySubType(SecurityPostingSubType.Fee, e.Value is bool b && b)" /> @Localizer["SecurityType_Fee"]</label>
+                            <label class="mk-item line"><input type="checkbox" checked="@_vm!.IsSecuritySubTypeSelectedTemp(SecurityPostingSubType.Tax)" @onchange="e => _vm!.ToggleTempSecuritySubType(SecurityPostingSubType.Tax, e.Value is bool b && b)" /> @Localizer["SecurityType_Tax"]</label>
                         </div>
                     </div>
                 }
@@ -1378,7 +1382,15 @@
             _selectedKinds.Remove(value);
             if (_selectedKinds.Count == 0)
             {
-                _selectedKinds.Add(PostingKind.Bank);
+                // At least one kind must stay selected: the deselected kind is restored, so
+                // the click is a no-op and cannot silently destroy its still-visible filters.
+                _selectedKinds.Add(value);
+            }
+            else
+            {
+                // A removed kind can no longer show its filter selections in the filter
+                // dialog; drop them so they cannot stay active invisibly (badge, favorites).
+                _vm!.ClearKindFilters(value);
             }
         }
         _selectedKinds = _selectedKinds.Distinct().ToList();
@@ -1396,7 +1408,7 @@
 
     private async Task SubmitFavoriteDialogAsync()
     {
-        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _compareProjection && CanCompareProjection, _showChart, true, IsMulti ? _selectedKinds : null, BuildFilters(), _useValutaDate, default, _savingsPlanLinkedPostings ? SavingsPlanPostingSource.LinkedAccountPostings : SavingsPlanPostingSource.PlanPostings, _chartType, _chartPosition);
+        var res = await _vm!.SubmitFavoriteDialogAsync(Localizer["Default_FavoriteName"], PrimaryKind, _includeCategory, (int)_interval, _take, _comparePrevious, _compareYear, _compareProjection && CanCompareProjection, _showChart, true, IsMulti ? _selectedKinds : null, _vm.BuildFiltersPayload(), _useValutaDate, default, _savingsPlanLinkedPostings ? SavingsPlanPostingSource.LinkedAccountPostings : SavingsPlanPostingSource.PlanPostings, _chartType, _chartPosition);
         if (res is not null)
         {
             _vm!.ActiveFavoriteId = res.Id;
@@ -1487,41 +1499,5 @@
     {
         _vm!.ClearFilters();
          _ = LoadAsync();
-    }
-
-    private FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest? BuildFilters()
-    {
-        var payload = _includeCategory
-            ? new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(
-                AccountIds: _vm!.SelectedAccounts.ToList(),
-                ContactIds: null,
-                SavingsPlanIds: null,
-                SecurityIds: null,
-                ContactCategoryIds: _vm.SelectedContactCategories.ToList(),
-                SavingsPlanCategoryIds: _vm.SelectedSavingsCategories.ToList(),
-                SecurityCategoryIds: _vm.SelectedSecurityCategories.ToList(),
-                SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
-                BankPostingTypes: _vm.SelectedBankPostingTypes.ToList(),
-                IncludeDividendRelated: _includeDividendRelated,
-                BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
-                ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),
-                SavingsPlanTextFilters: _vm.SelectedSavingsPlanTextFilters.ToList(),
-                SecurityTextFilters: _vm.SelectedSecurityTextFilters.ToList())
-            : new FinanceManager.Shared.Dtos.Reports.ReportAggregatesFiltersRequest(
-                AccountIds: _vm!.SelectedAccounts.ToList(),
-                ContactIds: _vm.SelectedContacts.ToList(),
-                SavingsPlanIds: _vm.SelectedSavingsPlans.ToList(),
-                SecurityIds: _vm.SelectedSecurities.ToList(),
-                ContactCategoryIds: null,
-                SavingsPlanCategoryIds: null,
-                SecurityCategoryIds: null,
-                SecuritySubTypes: _vm.SelectedSecuritySubTypes.ToList(),
-                BankPostingTypes: _vm.SelectedBankPostingTypes.ToList(),
-                IncludeDividendRelated: _includeDividendRelated,
-                BankTextFilters: _vm.SelectedBankTextFilters.ToList(),
-                ContactTextFilters: _vm.SelectedContactTextFilters.ToList(),
-                SavingsPlanTextFilters: _vm.SelectedSavingsPlanTextFilters.ToList(),
-                SecurityTextFilters: _vm.SelectedSecurityTextFilters.ToList());
-        return payload;
     }
 }

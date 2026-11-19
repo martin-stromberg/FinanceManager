@@ -1,3 +1,11 @@
+## 2026-11-19 — Berichtswesen: Bankpostenarten-Filter wirkt jetzt überall (Fehlerbehebung)
+
+- Die Vergleichsoption „Hochrechnung" berücksichtigt den Bankpostenarten-Filter (Eingang, Ausgang, Zinsen, Steuern): `ReportProjectionEventLoader.LoadEntityEventsAsync` erhält eine optionale Postenart-Allow-List, die `ReportAggregationService` im Bank-Projektionspfad mit `bankPostingTypes` befüllt — erwartete Posten nicht ausgewählter Arten werden nicht mehr hochgerechnet.
+- Der Filter überlebt jetzt den Favoriten-Roundtrip: `ReportDashboardViewModel` mappt `BankPostingTypes` beim Speichern und Aktualisieren über die neue Hilfsmethode `ToFavoriteFilters` in das `ReportFavoriteFiltersDto` — bisher fiel die Auswahl genau an dieser Stelle weg.
+- KPI-Kacheln der Startseite wenden den am Favoriten gespeicherten Postenarten-Filter an: `HomeKpiGrid` reicht `fav.Filters.BankPostingTypes` jetzt in die Aggregatabfrage durch.
+- Die Posteneinsicht filtert Bankposten über denselben Filter (`ReportPostingsQueryService.LoadPostingsAsync`); bewusst unverändert bleiben die Quell-Bankposten verknüpfter Sparplan-Konten (`SavingsPlanPostingSource.LinkedAccountPostings`), die in Aggregation, Hochrechnung und Posteneinsicht ungefiltert geladen werden (dokumentierter Scope-Ausschluss, per Kommentaren im Code und Pinning-Test abgesichert).
+- Feature-Review-Korrekturen: Die Postenarten- und Untertyp-Checkboxen des Filterdialogs sind jetzt enum-typisiert (`BankPostingType`-/`SecurityPostingSubType`-Member statt Literal-Ints 0–4, Signaturen von `IsBankPostingTypeSelectedTemp`/`ToggleTempBankPostingType`/`IsSecuritySubTypeSelectedTemp`/`ToggleTempSecuritySubType` angepasst); `ReportsController` übergibt das Filter-DTO jetzt direkt statt es feldweise neu zu mappen.
+
 ## 2026-11-18 — Postenart an Bankposten und Kontoauszugszeilen (Issue #541)
 
 - Bankposten (`Posting`) und Kontoauszugs-Entwurfszeilen (`StatementDraftEntry`) tragen jetzt eine Postenart (Eingang, Ausgang, Zinsen, Steuer). Sie wird bei der Klassifizierung automatisch ermittelt — zuerst über am Bankkonto hinterlegte Kontierungsregeln, sonst über das Betragsvorzeichen — und ist in der Entwurfszeile vor dem Buchen manuell korrigierbar (Überschreibschutz per `IsPostingTypeManual`).

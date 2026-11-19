@@ -11,6 +11,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
 {
     private readonly IApiClient _api;
 
+    private ILogger<ReportDashboardViewModel>? Logger
+        => ServiceProvider.GetService<ILogger<ReportDashboardViewModel>>();
+
     /// <summary>
     /// Initializes a new instance of <see cref="ReportDashboardViewModel"/>.
     /// </summary>
@@ -361,6 +364,48 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         SelectedSavingsPlanTextFilters.Clear();
         SelectedSecurityTextFilters.Clear();
         IncludeDividendRelated = false;
+    }
+
+    /// <summary>
+    /// Clears every filter selection bound to the specified posting kind: entity, category,
+    /// subtype and text selections. Called when the kind leaves the multi selection: without a
+    /// matching filter tab the selections could neither be displayed nor deselected, yet would
+    /// keep counting, apply to the request and persist into favorites.
+    /// </summary>
+    /// <param name="kind">Posting kind whose filter selections are cleared.</param>
+    public void ClearKindFilters(PostingKind kind)
+    {
+        var hadFilters = false;
+        switch (kind)
+        {
+            case PostingKind.Bank:
+                hadFilters = SelectedAccounts.Count > 0 || SelectedBankPostingTypes.Count > 0 || SelectedBankTextFilters.Count > 0;
+                SelectedAccounts.Clear();
+                SelectedBankPostingTypes.Clear();
+                SelectedBankTextFilters.Clear();
+                break;
+            case PostingKind.Contact:
+                hadFilters = SelectedContacts.Count > 0 || SelectedContactCategories.Count > 0 || SelectedContactTextFilters.Count > 0;
+                SelectedContacts.Clear();
+                SelectedContactCategories.Clear();
+                SelectedContactTextFilters.Clear();
+                break;
+            case PostingKind.SavingsPlan:
+                hadFilters = SelectedSavingsPlans.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0;
+                SelectedSavingsPlans.Clear();
+                SelectedSavingsCategories.Clear();
+                SelectedSavingsPlanTextFilters.Clear();
+                break;
+            case PostingKind.Security:
+                hadFilters = SelectedSecurities.Count > 0 || SelectedSecurityCategories.Count > 0 || SelectedSecuritySubTypes.Count > 0 || SelectedSecurityTextFilters.Count > 0;
+                SelectedSecurities.Clear();
+                SelectedSecurityCategories.Clear();
+                SelectedSecuritySubTypes.Clear();
+                SelectedSecurityTextFilters.Clear();
+                break;
+        }
+        if (hadFilters) { FiltersDirty = true; }
+        RaiseStateChanged();
     }
 
     /// <summary>
@@ -755,21 +800,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             ShowChart = showChart,
             Expandable = expandable,
             PostingKinds = postingKinds,
-            Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                AccountIds: filters.AccountIds,
-                ContactIds: filters.ContactIds,
-                SavingsPlanIds: filters.SavingsPlanIds,
-                SecurityIds: filters.SecurityIds,
-                ContactCategoryIds: filters.ContactCategoryIds,
-                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
-                SecurityCategoryIds: filters.SecurityCategoryIds,
-                SecuritySubTypes: filters.SecuritySubTypes,
-                IncludeDividendRelated: filters.IncludeDividendRelated,
-                BankTextFilters: filters.BankTextFilters,
-                ContactTextFilters: filters.ContactTextFilters,
-                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
-                SecurityTextFilters: filters.SecurityTextFilters
-            ),
+            Filters = filters is null ? null : ToFavoriteFilters(filters),
             UseValutaDate = useValutaDate,
             SavingsPlanPostingSource = savingsPlanPostingSource,
             ChartType = chartType,
@@ -815,21 +846,7 @@ public sealed class ReportDashboardViewModel : ViewModelBase
             ShowChart = showChart,
             Expandable = expandable,
             PostingKinds = postingKinds,
-            Filters = filters is null ? null : new ReportFavoriteFiltersDto(
-                AccountIds: filters.AccountIds,
-                ContactIds: filters.ContactIds,
-                SavingsPlanIds: filters.SavingsPlanIds,
-                SecurityIds: filters.SecurityIds,
-                ContactCategoryIds: filters.ContactCategoryIds,
-                SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
-                SecurityCategoryIds: filters.SecurityCategoryIds,
-                SecuritySubTypes: filters.SecuritySubTypes,
-                IncludeDividendRelated: filters.IncludeDividendRelated,
-                BankTextFilters: filters.BankTextFilters,
-                ContactTextFilters: filters.ContactTextFilters,
-                SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
-                SecurityTextFilters: filters.SecurityTextFilters
-            ),
+            Filters = filters is null ? null : ToFavoriteFilters(filters),
             UseValutaDate = useValutaDate,
             SavingsPlanPostingSource = savingsPlanPostingSource,
             ChartType = chartType,
@@ -837,6 +854,28 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         };
         return await _api.Reports_UpdateFavoriteAsync(id, payload, ct);
     }
+
+    /// <summary>
+    /// Maps the dashboard filter payload to the filter DTO stored with a report favorite.
+    /// </summary>
+    /// <param name="filters">Filter payload of the aggregates query.</param>
+    /// <returns>The corresponding <see cref="ReportFavoriteFiltersDto"/>.</returns>
+    private static ReportFavoriteFiltersDto ToFavoriteFilters(ReportAggregatesFiltersRequest filters)
+        => new(
+            AccountIds: filters.AccountIds,
+            ContactIds: filters.ContactIds,
+            SavingsPlanIds: filters.SavingsPlanIds,
+            SecurityIds: filters.SecurityIds,
+            ContactCategoryIds: filters.ContactCategoryIds,
+            SavingsPlanCategoryIds: filters.SavingsPlanCategoryIds,
+            SecurityCategoryIds: filters.SecurityCategoryIds,
+            SecuritySubTypes: filters.SecuritySubTypes,
+            IncludeDividendRelated: filters.IncludeDividendRelated,
+            BankPostingTypes: filters.BankPostingTypes,
+            BankTextFilters: filters.BankTextFilters,
+            ContactTextFilters: filters.ContactTextFilters,
+            SavingsPlanTextFilters: filters.SavingsPlanTextFilters,
+            SecurityTextFilters: filters.SecurityTextFilters);
 
     /// <summary>
     /// Deletes a report favorite by id via the API.
@@ -1160,13 +1199,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         {
             var entityCount = TempAccounts.Count + TempContacts.Count + TempSavings.Count + TempSecurities.Count;
             var catCount = TempContactCats.Count + TempSavingsCats.Count + TempSecurityCats.Count;
-            var typeCount = TempSecuritySubTypes.Count + TempBankPostingTypes.Count;
+            var typeCount = GetTempTypeFilterCount();
             return IncludeCategory ? (catCount + TempAccounts.Count + typeCount + GetTempTextFilterCount()) : (entityCount + typeCount + GetTempTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
-            var typeCount = TempSecuritySubTypes.Count + TempBankPostingTypes.Count;
+            var typeCount = GetTempTypeFilterCount();
             var textCount = GetTempTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
@@ -1235,39 +1274,35 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     }
 
     // UI helpers for security subtypes in temp buffer
-    /// <summary>
-    /// Whether a temp security subtype is selected.
-    /// </summary>
-    /// <param name="subType">Security subtype value (enum int representation).</param>
+    /// <summary>Whether a temp security subtype is selected.</summary>
+    /// <param name="subType">Security posting subtype.</param>
     /// <returns><c>true</c> when selected in temp buffer.</returns>
-    public bool IsSecuritySubTypeSelectedTemp(int subType)
-        => TempSecuritySubTypes.Contains(subType);
+    public bool IsSecuritySubTypeSelectedTemp(SecurityPostingSubType subType)
+        => TempSecuritySubTypes.Contains((int)subType);
 
-    /// <summary>
-    /// Toggles a temp security subtype selection and raises state changed.
-    /// </summary>
-    /// <param name="subType">Security subtype value (enum int representation).</param>
+    /// <summary>Toggles a temp security subtype selection and raises state changed.</summary>
+    /// <param name="subType">Security posting subtype.</param>
     /// <param name="isChecked">True to select; false to unselect.</param>
-    public void ToggleTempSecuritySubType(int subType, bool isChecked)
+    public void ToggleTempSecuritySubType(SecurityPostingSubType subType, bool isChecked)
     {
-        if (isChecked) { TempSecuritySubTypes.Add(subType); }
-        else { TempSecuritySubTypes.Remove(subType); }
+        if (isChecked) { TempSecuritySubTypes.Add((int)subType); }
+        else { TempSecuritySubTypes.Remove((int)subType); }
         RaiseStateChanged();
     }
 
     /// <summary>Whether a temp bank posting type is selected.</summary>
-    /// <param name="postingType">Bank posting type value (enum int representation).</param>
+    /// <param name="postingType">Bank posting type.</param>
     /// <returns><c>true</c> when selected in temp buffer.</returns>
-    public bool IsBankPostingTypeSelectedTemp(int postingType)
-        => TempBankPostingTypes.Contains(postingType);
+    public bool IsBankPostingTypeSelectedTemp(BankPostingType postingType)
+        => TempBankPostingTypes.Contains((int)postingType);
 
     /// <summary>Toggles a temp bank posting type selection and raises state changed.</summary>
-    /// <param name="postingType">Bank posting type value (enum int representation).</param>
+    /// <param name="postingType">Bank posting type.</param>
     /// <param name="isChecked">True to select; false to unselect.</param>
-    public void ToggleTempBankPostingType(int postingType, bool isChecked)
+    public void ToggleTempBankPostingType(BankPostingType postingType, bool isChecked)
     {
-        if (isChecked) { TempBankPostingTypes.Add(postingType); }
-        else { TempBankPostingTypes.Remove(postingType); }
+        if (isChecked) { TempBankPostingTypes.Add((int)postingType); }
+        else { TempBankPostingTypes.Remove((int)postingType); }
         RaiseStateChanged();
     }
 
@@ -1281,13 +1316,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         {
             var entityCount = SelectedAccounts.Count + SelectedContacts.Count + SelectedSavingsPlans.Count + SelectedSecurities.Count;
             var catCount = SelectedContactCategories.Count + SelectedSavingsCategories.Count + SelectedSecurityCategories.Count;
-            var typeCount = SelectedSecuritySubTypes.Count + SelectedBankPostingTypes.Count;
+            var typeCount = GetSelectedTypeFilterCount();
             return IncludeCategory ? (catCount + SelectedAccounts.Count + typeCount + GetSelectedTextFilterCount()) : (entityCount + typeCount + GetSelectedTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
-            var typeCount = SelectedSecuritySubTypes.Count + SelectedBankPostingTypes.Count;
+            var typeCount = GetSelectedTypeFilterCount();
             var textCount = GetSelectedTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
@@ -1438,9 +1473,16 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 return res;
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Aborts are no save/update errors; cancellation propagates to the caller unchanged.
+            throw;
+        }
         catch (Exception ex)
         {
-            FavoriteError = ex.Message;
+            Logger?.LogWarning(ex, "Favorite {Operation} failed.", FavoriteDialogIsUpdate ? "update" : "save");
+            // Localized key rendered via Localizer in the page; raw exception text is never shown.
+            FavoriteError = FavoriteDialogIsUpdate ? "Error_UpdateFavorite" : "Error_SaveFavorite";
             RaiseStateChanged();
             return null;
         }
@@ -1514,4 +1556,20 @@ public sealed class ReportDashboardViewModel : ViewModelBase
 
     private int GetTempTextFilterCount()
         => SelectedKinds.Sum(k => GetTempTextFilterList(k).Count);
+
+    private int GetSelectedTypeFilterCount()
+        => SelectedKinds.Sum(k => k switch
+        {
+            PostingKind.Bank => SelectedBankPostingTypes.Count,
+            PostingKind.Security => SelectedSecuritySubTypes.Count,
+            _ => 0
+        });
+
+    private int GetTempTypeFilterCount()
+        => SelectedKinds.Sum(k => k switch
+        {
+            PostingKind.Bank => TempBankPostingTypes.Count,
+            PostingKind.Security => TempSecuritySubTypes.Count,
+            _ => 0
+        });
 }
