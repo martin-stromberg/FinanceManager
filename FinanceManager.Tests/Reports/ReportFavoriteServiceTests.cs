@@ -307,4 +307,30 @@ public sealed class ReportFavoriteServiceTests
         Assert.Equal(first.Name, fetched!.Name);
         Assert.Null(await svc.GetAsync(first.Id, user2.Id, CancellationToken.None));
     }
+
+    /// <summary>
+    /// Chart type and chart position are part of the persisted favorite configuration and must round-trip
+    /// through create, list/get and update while retaining backward-compatible defaults.
+    /// </summary>
+    [Fact]
+    public async Task CreateListGetAndUpdate_ShouldRoundtripChartSettings()
+    {
+        using var db = CreateDb();
+        var user = new FinanceManager.Domain.Users.User("chart-user", "pw", false);
+        db.Users.Add(user); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var svc = new ReportFavoriteService(db);
+
+        var created = await svc.CreateAsync(user.Id, new ReportFavoriteCreateRequest("Chart", PostingKind.Contact, false, ReportInterval.Month, 24, false, false, false, true, true, null, null, false, SavingsPlanPostingSource.PlanPostings, ReportChartType.Pie, ReportChartPosition.BelowTable), TestContext.Current.CancellationToken);
+
+        Assert.Equal(ReportChartType.Pie, created.ChartType);
+        Assert.Equal(ReportChartPosition.BelowTable, created.ChartPosition);
+        Assert.Equal(ReportChartType.Pie, (await svc.ListAsync(user.Id, TestContext.Current.CancellationToken)).Single().ChartType);
+        Assert.Equal(ReportChartPosition.BelowTable, (await svc.GetAsync(created.Id, user.Id, TestContext.Current.CancellationToken))!.ChartPosition);
+
+        var updated = await svc.UpdateAsync(created.Id, user.Id, new ReportFavoriteUpdateRequest("Chart", PostingKind.Contact, false, ReportInterval.Month, 24, false, false, false, true, true, null, null, false, SavingsPlanPostingSource.PlanPostings, ReportChartType.Allocation, ReportChartPosition.AboveTable), TestContext.Current.CancellationToken);
+
+        Assert.Equal(ReportChartType.Allocation, updated!.ChartType);
+        Assert.Equal(ReportChartPosition.AboveTable, updated.ChartPosition);
+        Assert.Equal(ReportChartType.Allocation, (await db.ReportFavorites.SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).ChartType);
+    }
 }

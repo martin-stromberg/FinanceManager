@@ -19,8 +19,9 @@ internal sealed record ReportProjectionContext(ReportInterval Interval, DateTime
 /// <param name="Date">Effective event date.</param>
 /// <param name="Month">Month bucket of the event date.</param>
 /// <param name="Amount">Event amount (netted for dividend groups).</param>
+/// <param name="PostingId">Identifier of the source posting; for netted dividend groups this is the dividend anchor posting.</param>
 /// <returns>Recurring posting event of one report entity.</returns>
-internal sealed record ProjectionEvent(PostingKind Kind, Guid EntityId, DateTime Date, DateTime Month, decimal Amount);
+internal sealed record ProjectionEvent(PostingKind Kind, Guid EntityId, DateTime Date, DateTime Month, decimal Amount, Guid? PostingId = null);
 
 /// <summary>
 /// A prior-year event projected one year forward into the current report window.
@@ -30,8 +31,19 @@ internal sealed record ProjectionEvent(PostingKind Kind, Guid EntityId, DateTime
 /// <param name="ExpectedDate">Expected date (prior year date + 1 year).</param>
 /// <param name="PriorYearDate">Original prior-year event date.</param>
 /// <param name="Amount">Expected amount.</param>
+/// <param name="PostingId">Identifier of the prior-year source posting.</param>
 /// <returns>Prior-year event projected one year forward.</returns>
-internal sealed record ProjectionCandidate(PostingKind Kind, Guid EntityId, DateTime ExpectedDate, DateTime PriorYearDate, decimal Amount);
+internal sealed record ProjectionCandidate(PostingKind Kind, Guid EntityId, DateTime ExpectedDate, DateTime PriorYearDate, decimal Amount, Guid? PostingId);
+
+/// <summary>
+/// One persisted suppression identity used by projection matching.
+/// </summary>
+/// <param name="Kind">Posting kind of the suppressed expectation.</param>
+/// <param name="EntityId">Id of the entity the expectation belongs to.</param>
+/// <param name="PriorYearDate">Prior-year posting date, normalized to the date.</param>
+/// <param name="PostingId">Specific prior-year posting when available; <c>null</c> denotes the legacy date-wide suppression.</param>
+/// <returns>One persisted suppression identity.</returns>
+internal sealed record ProjectionSuppression(PostingKind Kind, Guid EntityId, DateTime PriorYearDate, Guid? PostingId);
 
 /// <summary>
 /// Recognized recurrence pattern of an entity's prior-year events.
@@ -74,11 +86,12 @@ internal static class ReportProjectionCalculator
     /// (netted dividend path, where plain keys denote net dividends).
     /// </param>
     /// <param name="suppressions">
-    /// Optional set of suppressed expectation identities
-    /// (<c>Kind</c>, <c>EntityId</c>, <c>PriorYearDate</c> — normalized to the date) loaded for
-    /// the active report favorite. Matching candidates are discarded before the confirmation
-    /// check, so they never surface as expected items and the projection amount drops
-    /// accordingly. <c>null</c> when the query has no favorite context.
+    /// Optional suppressed expectation identities loaded for the active report favorite.
+    /// A suppression with a posting id only removes that candidate; legacy suppressions without
+    /// a posting id continue to remove all candidates of the same entity and prior-year date.
+    /// Matching candidates are discarded before the confirmation check, so they never surface
+    /// as expected items and the projection amount drops accordingly. <c>null</c> when the
+    /// query has no favorite context.
     /// </param>
     internal static void ApplyProjectionAmounts(
         List<ReportAggregatePointDto> targetPoints,
@@ -87,7 +100,7 @@ internal static class ReportProjectionCalculator
         Func<PostingKind, Guid, string> nameResolver,
         Func<Guid, DateTime, bool>? hasActiveSecurity = null,
         bool securityDividendLeafOnly = false,
-        IReadOnlySet<(PostingKind Kind, Guid EntityId, DateTime PriorYearDate)>? suppressions = null)
+        IReadOnlyCollection<ProjectionSuppression>? suppressions = null)
     {
         if (targetPoints.Count == 0 || events.Count == 0)
         {
@@ -127,10 +140,14 @@ internal static class ReportProjectionCalculator
                 var candidates = entityEvents
                     .Where(e => e.Date >= projectionStart.AddYears(-1) && e.Date < projectionEnd.AddYears(-1))
                     .OrderBy(e => e.Date)
-                    .Select(e => new ProjectionCandidate(e.Kind, e.EntityId, e.Date.AddYears(1), e.Date, e.Amount))
+                    .Select(e => new ProjectionCandidate(e.Kind, e.EntityId, e.Date.AddYears(1), e.Date, e.Amount, e.PostingId))
                     .Where(e => MapProjectionPeriod(e.ExpectedDate) != DateTime.MinValue)
                     .Where(e => e.Kind != PostingKind.Security || hasActiveSecurity is null || hasActiveSecurity(e.EntityId, e.ExpectedDate))
-                    .Where(e => suppressions is null || !suppressions.Contains((e.Kind, e.EntityId, e.PriorYearDate.Date)))
+                    .Where(e => suppressions is null || !suppressions.Any(s =>
+                        s.Kind == e.Kind
+                        && s.EntityId == e.EntityId
+                        && s.PriorYearDate == e.PriorYearDate.Date
+                        && (s.PostingId is null || s.PostingId == e.PostingId)))
                     .ToList();
 
                 return FindExpectedItems(pattern, candidates, currentEvents, context.Analysis, g.Key.Kind)
@@ -140,7 +157,8 @@ internal static class ReportProjectionCalculator
                         nameResolver(x.Kind, x.EntityId),
                         x.ExpectedDate,
                         x.PriorYearDate,
-                        x.Amount));
+                        x.Amount,
+                        x.PostingId));
             })
             .ToList();
 

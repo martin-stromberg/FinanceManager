@@ -20,6 +20,8 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="Filters">Optional additional filters to apply to the report (categories, contacts, accounts, etc.).</param>
 /// <param name="UseValutaDate">When true, use valuta/booking date instead of value date when aggregating.</param>
 /// <param name="SavingsPlanPostingSource">Source used for savings-plan report points.</param>
+/// <param name="ChartType">Chart visualization type.</param>
+/// <param name="ChartPosition">Chart position relative to the result table.</param>
 /// <returns>The result.</returns>
 [method: JsonConstructor]
 public sealed record ReportFavoriteCreateRequest(
@@ -36,7 +38,9 @@ public sealed record ReportFavoriteCreateRequest(
     IReadOnlyCollection<PostingKind>? PostingKinds = null,
     ReportFavoriteFiltersDto? Filters = null,
     bool UseValutaDate = false,
-    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings,
+    ReportChartType ChartType = ReportChartType.HistoricalSum,
+    ReportChartPosition ChartPosition = ReportChartPosition.AboveTable
 )
 {
     /// <summary>

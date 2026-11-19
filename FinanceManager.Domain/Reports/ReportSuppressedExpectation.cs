@@ -4,10 +4,10 @@ namespace FinanceManager.Domain.Reports;
 /// Records that a single expected posting surfaced by the report projection was hidden by the
 /// user for one report favorite. The suppression identity is
 /// (<see cref="ReportFavoriteId"/>, <see cref="Kind"/>, <see cref="EntityId"/>,
-/// <see cref="PriorYearDate"/>) — the amount is intentionally not part of the key so amount
-/// corrections on the prior-year posting do not lift the suppression. The marker is bound to
-/// the prior-year date, so it stops applying naturally once the reference window rolls forward
-/// into the next year; no expiry sweep is needed.
+/// <see cref="PriorYearDate"/>, <see cref="PostingId"/>) — the amount is intentionally not
+/// part of the key so amount corrections on the prior-year posting do not lift the
+/// suppression. The marker is bound to the prior-year date, so it stops applying naturally
+/// once the reference window rolls forward into the next year; no expiry sweep is needed.
 /// </summary>
 public sealed class ReportSuppressedExpectation : Entity, IAggregateRoot
 {
@@ -21,14 +21,18 @@ public sealed class ReportSuppressedExpectation : Entity, IAggregateRoot
     /// <param name="kind">Posting kind of the expected item.</param>
     /// <param name="entityId">Identifier of the entity (account, contact, savings plan or security) the expectation belongs to.</param>
     /// <param name="priorYearDate">Date of the prior-year posting the expectation was projected from (normalized to the date).</param>
-    /// <exception cref="ArgumentException">Thrown when any identifier is <see cref="Guid.Empty"/>.</exception>
-    public ReportSuppressedExpectation(Guid ownerUserId, Guid reportFavoriteId, PostingKind kind, Guid entityId, DateTime priorYearDate)
+    /// <param name="postingId">Optional identifier of the prior-year posting that produced the expectation.</param>
+    /// <param name="amount">Expected amount shown for the suppressed item.</param>
+    /// <exception cref="ArgumentException">Thrown when any required identifier is <see cref="Guid.Empty"/>.</exception>
+    public ReportSuppressedExpectation(Guid ownerUserId, Guid reportFavoriteId, PostingKind kind, Guid entityId, DateTime priorYearDate, Guid? postingId = null, decimal? amount = null)
     {
         OwnerUserId = Guards.NotEmpty(ownerUserId, nameof(ownerUserId));
         ReportFavoriteId = Guards.NotEmpty(reportFavoriteId, nameof(reportFavoriteId));
         EntityId = Guards.NotEmpty(entityId, nameof(entityId));
         Kind = kind;
         PriorYearDate = priorYearDate.Date;
+        PostingId = postingId;
+        Amount = amount;
         SuppressedAtUtc = DateTime.UtcNow;
     }
 
@@ -59,6 +63,33 @@ public sealed class ReportSuppressedExpectation : Entity, IAggregateRoot
     public DateTime PriorYearDate { get; private set; }
 
     /// <summary>
+    /// Optional identifier of the prior-year posting that produced the suppressed expectation.
+    /// Suppressions created before posting-level identity existed keep this value empty and
+    /// continue to suppress all candidates of the same entity and prior-year date.
+    /// </summary>
+    public Guid? PostingId { get; private set; }
+
+    /// <summary>
+    /// Expected amount shown in the suppressed-expectations overlay. May be <c>null</c> for
+    /// suppression markers created before the amount was persisted.
+    /// </summary>
+    public decimal? Amount { get; private set; }
+
+    /// <summary>
+    /// Updates the amount shown for an already suppressed expectation when a newer request
+    /// supplies display metadata. The suppression identity is intentionally left unchanged.
+    /// </summary>
+    /// <param name="amount">Expected amount to display; <c>null</c> leaves the stored amount untouched.</param>
+    public void UpdateExpectedAmount(decimal? amount)
+    {
+        if (amount.HasValue && Amount != amount.Value)
+        {
+            Amount = amount.Value;
+            Touch();
+        }
+    }
+
+    /// <summary>
     /// UTC timestamp when the expectation was suppressed.
     /// </summary>
     public DateTime SuppressedAtUtc { get; private set; }
@@ -80,15 +111,17 @@ public sealed class ReportSuppressedExpectation : Entity, IAggregateRoot
     /// <param name="SuppressedAtUtc">UTC timestamp when the expectation was suppressed.</param>
     /// <param name="CreatedUtc">Entity creation timestamp UTC.</param>
     /// <param name="ModifiedUtc">Entity last modified timestamp UTC, if any.</param>
+    /// <param name="PostingId">Optional identifier of the prior-year posting that produced the expectation.</param>
+    /// <param name="Amount">Expected amount shown for the suppressed item.</param>
     /// <returns>The result.</returns>
-    public sealed record ReportSuppressedExpectationBackupDto(Guid Id, Guid OwnerUserId, Guid ReportFavoriteId, PostingKind Kind, Guid EntityId, DateTime PriorYearDate, DateTime SuppressedAtUtc, DateTime CreatedUtc, DateTime? ModifiedUtc);
+    public sealed record ReportSuppressedExpectationBackupDto(Guid Id, Guid OwnerUserId, Guid ReportFavoriteId, PostingKind Kind, Guid EntityId, DateTime PriorYearDate, DateTime SuppressedAtUtc, DateTime CreatedUtc, DateTime? ModifiedUtc, Guid? PostingId = null, decimal? Amount = null);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this suppression.
     /// </summary>
     /// <returns>A <see cref="ReportSuppressedExpectationBackupDto"/> containing values needed to restore the suppression.</returns>
     public ReportSuppressedExpectationBackupDto ToBackupDto()
-        => new ReportSuppressedExpectationBackupDto(Id, OwnerUserId, ReportFavoriteId, Kind, EntityId, PriorYearDate, SuppressedAtUtc, CreatedUtc, ModifiedUtc);
+        => new ReportSuppressedExpectationBackupDto(Id, OwnerUserId, ReportFavoriteId, Kind, EntityId, PriorYearDate, SuppressedAtUtc, CreatedUtc, ModifiedUtc, PostingId, Amount);
 
     /// <summary>
     /// Applies values from a backup DTO to this suppression instance.
@@ -103,6 +136,8 @@ public sealed class ReportSuppressedExpectation : Entity, IAggregateRoot
         Kind = dto.Kind;
         EntityId = dto.EntityId;
         PriorYearDate = dto.PriorYearDate.Date;
+        PostingId = dto.PostingId;
+        Amount = dto.Amount;
         SuppressedAtUtc = dto.SuppressedAtUtc;
         SetDates(dto.CreatedUtc, dto.ModifiedUtc);
     }

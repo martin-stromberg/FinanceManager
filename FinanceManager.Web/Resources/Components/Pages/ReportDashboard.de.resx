@@ -436,4 +436,17 @@
   <data name="Postings_None" xml:space="preserve"><value>Keine Posten gefunden.</value></data>
   <data name="Postings_Truncated" xml:space="preserve"><value>Die Liste wurde auf die maximal zulässige Anzahl gekürzt.</value></data>
   <data name="Postings_LoadFailed" xml:space="preserve"><value>Die Posten konnten nicht geladen werden.</value></data>
+  <data name="Label_ChartType" xml:space="preserve"><value>Diagrammtyp</value></data>
+  <data name="ChartType_HistoricalSum" xml:space="preserve"><value>Historische Summe</value></data>
+  <data name="ChartType_Allocation" xml:space="preserve"><value>Aufteilung</value></data>
+  <data name="ChartType_Pie" xml:space="preserve"><value>Kreisdiagramm</value></data>
+  <data name="Label_ChartPosition" xml:space="preserve"><value>Diagrammposition</value></data>
+  <data name="ChartPosition_AboveTable" xml:space="preserve"><value>Über der Tabelle</value></data>
+  <data name="ChartPosition_BelowTable" xml:space="preserve"><value>Unter der Tabelle</value></data>
+  <data name="Chart_Other" xml:space="preserve"><value>Sonstiges</value></data>
+  <data name="FilterGroup_BankTypes" xml:space="preserve"><value>Bankpostenarten</value></data>
+  <data name="BankType_Inflow" xml:space="preserve"><value>Eingang</value></data>
+  <data name="BankType_Outflow" xml:space="preserve"><value>Ausgang</value></data>
+  <data name="BankType_Interest" xml:space="preserve"><value>Zinsen</value></data>
+  <data name="BankType_Tax" xml:space="preserve"><value>Steuern</value></data>
 </root>

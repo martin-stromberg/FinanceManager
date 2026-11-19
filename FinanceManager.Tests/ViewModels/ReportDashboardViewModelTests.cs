@@ -83,10 +83,10 @@ public sealed class ReportDashboardViewModelTests
         apiMock.Setup(a => a.Reports_DeleteFavoriteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null, ct: TestContext.Current.CancellationToken);
+        var saved = await vm.SaveFavoriteAsync("n", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null, ct: TestContext.Current.CancellationToken, chartType: ReportChartType.Pie, chartPosition: ReportChartPosition.BelowTable);
         Assert.NotNull(saved);
         apiMock.Verify(a => a.Reports_CreateFavoriteAsync(
-            It.Is<ReportFavoriteCreateApiRequest>(r => r.CompareProjection),
+            It.Is<ReportFavoriteCreateApiRequest>(r => r.CompareProjection && r.ChartType == ReportChartType.Pie && r.ChartPosition == ReportChartPosition.BelowTable),
             It.IsAny<CancellationToken>()), Times.Once);
 
         var updated = await vm.UpdateFavoriteAsync(Guid.NewGuid(), "n2", PostingKind.Bank, false, 0, 24, false, false, true, true, true, new[] { PostingKind.Bank }, null, ct: TestContext.Current.CancellationToken);

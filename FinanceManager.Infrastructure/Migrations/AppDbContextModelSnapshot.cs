@@ -1308,8 +1308,17 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("AccountIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BankPostingTypesCsv")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("BankTextFiltersJson")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("ChartPosition")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChartType")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("ComparePrevious")
                         .HasColumnType("INTEGER");
@@ -1408,6 +1417,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
@@ -1421,6 +1433,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PostingId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("PriorYearDate")
@@ -1437,6 +1452,10 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasIndex("ReportFavoriteId");
 
                     b.HasIndex("OwnerUserId", "ReportFavoriteId", "Kind", "EntityId", "PriorYearDate")
+                        .IsUnique()
+                        .HasFilter("[PostingId] IS NULL");
+
+                    b.HasIndex("OwnerUserId", "ReportFavoriteId", "Kind", "EntityId", "PriorYearDate", "PostingId")
                         .IsUnique();
 
                     b.ToTable("ReportSuppressedExpectations");

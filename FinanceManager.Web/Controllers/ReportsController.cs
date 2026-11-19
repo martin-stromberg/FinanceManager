@@ -118,6 +118,7 @@ public sealed class ReportsController : ControllerBase
                     SavingsPlanCategoryIds: req.Filters.SavingsPlanCategoryIds,
                     SecurityCategoryIds: req.Filters.SecurityCategoryIds,
                     SecuritySubTypes: req.Filters.SecuritySubTypes,
+                    BankPostingTypes: req.Filters.BankPostingTypes,
                     IncludeDividendRelated: req.Filters.IncludeDividendRelated,
                     BankTextFilters: req.Filters.BankTextFilters,
                     ContactTextFilters: req.Filters.ContactTextFilters,
@@ -216,6 +217,7 @@ public sealed class ReportsController : ControllerBase
                     SavingsPlanCategoryIds: req.Filters.SavingsPlanCategoryIds,
                     SecurityCategoryIds: req.Filters.SecurityCategoryIds,
                     SecuritySubTypes: req.Filters.SecuritySubTypes,
+                    BankPostingTypes: req.Filters.BankPostingTypes,
                     IncludeDividendRelated: req.Filters.IncludeDividendRelated,
                     BankTextFilters: req.Filters.BankTextFilters,
                     ContactTextFilters: req.Filters.ContactTextFilters,
@@ -306,12 +308,13 @@ public sealed class ReportsController : ControllerBase
                 SavingsPlanCategoryIds: req.Filters.SavingsPlanCategoryIds,
                 SecurityCategoryIds: req.Filters.SecurityCategoryIds,
                 SecuritySubTypes: req.Filters.SecuritySubTypes,
+                BankPostingTypes: req.Filters.BankPostingTypes,
                 IncludeDividendRelated: req.Filters.IncludeDividendRelated,
                 BankTextFilters: req.Filters.BankTextFilters,
                 ContactTextFilters: req.Filters.ContactTextFilters,
                 SavingsPlanTextFilters: req.Filters.SavingsPlanTextFilters,
                 SecurityTextFilters: req.Filters.SecurityTextFilters);
-            var dto = await _favorites.CreateAsync(_current.UserId, new ReportFavoriteCreateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource), ct);
+            var dto = await _favorites.CreateAsync(_current.UserId, new ReportFavoriteCreateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource, req.ChartType, req.ChartPosition), ct);
             return CreatedAtRoute("GetReportFavorite", new { id = dto.Id }, dto);
         }
         catch (InvalidOperationException ex)
@@ -373,12 +376,13 @@ public sealed class ReportsController : ControllerBase
                 SavingsPlanCategoryIds: req.Filters.SavingsPlanCategoryIds,
                 SecurityCategoryIds: req.Filters.SecurityCategoryIds,
                 SecuritySubTypes: req.Filters.SecuritySubTypes,
+                BankPostingTypes: req.Filters.BankPostingTypes,
                 IncludeDividendRelated: req.Filters.IncludeDividendRelated,
                 BankTextFilters: req.Filters.BankTextFilters,
                 ContactTextFilters: req.Filters.ContactTextFilters,
                 SavingsPlanTextFilters: req.Filters.SavingsPlanTextFilters,
                 SecurityTextFilters: req.Filters.SecurityTextFilters);
-            var dto = await _favorites.UpdateAsync(id, _current.UserId, new ReportFavoriteUpdateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource), ct);
+            var dto = await _favorites.UpdateAsync(id, _current.UserId, new ReportFavoriteUpdateRequest(req.Name.Trim(), req.PostingKind, req.IncludeCategory, (ReportInterval)req.Interval, req.Take, req.ComparePrevious, req.CompareYear, req.CompareProjection, req.ShowChart, req.Expandable, req.PostingKinds, filters, req.UseValutaDate, req.SavingsPlanPostingSource, req.ChartType, req.ChartPosition), ct);
             return dto == null ? NotFound() : Ok(dto);
         }
         catch (InvalidOperationException ex)
@@ -469,6 +473,11 @@ public sealed class ReportsController : ControllerBase
     {
         try
         {
+            if (!Enum.IsDefined(req.Kind))
+            {
+                var ex = new ArgumentOutOfRangeException(nameof(req.Kind), req.Kind, "Unknown posting kind.");
+                return BadRequest(ApiErrorFactory.FromArgumentOutOfRangeException(Origin, ex, _localizer));
+            }
             var dto = await _suppressions.SuppressAsync(_current.UserId, id, req, ct);
             return dto == null ? NotFound() : Ok(dto);
         }

@@ -246,6 +246,10 @@ public sealed class ReportPostingsQueryService : IReportPostingsQueryService
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind.")
         };
         q = ReportQuerySemantics.ApplyDateWindow(q, query.UseValutaDate, windowStart, windowEnd);
+        if (kind == PostingKind.Bank && query.Filters?.BankPostingTypes is { Count: > 0 } bankTypes)
+        {
+            q = q.Where(p => bankTypes.Contains((int)p.PostingType));
+        }
         if (kind == PostingKind.Security)
         {
             if (hasSubTypeConstraint)
