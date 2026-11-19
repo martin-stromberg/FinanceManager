@@ -133,6 +133,38 @@ public interface IApiClient
     /// <returns>Read-only list of savings plan ids, or <c>null</c> when the account was not found.</returns>
     Task<IReadOnlyList<Guid>?> GetSavingsPlanLinksAsync(Guid accountId, CancellationToken ct = default);
 
+    /// <summary>
+    /// Returns the posting rules of the account ordered by their evaluation index.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of <see cref="AccountPostingRuleDto"/>.</returns>
+    Task<IReadOnlyList<AccountPostingRuleDto>> GetPostingRulesAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates or updates a posting rule of the account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="request">Request payload with the rule data.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task UpsertPostingRuleAsync(Guid accountId, AccountPostingRuleUpsertRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes a posting rule of the account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ruleId">Identifier of the rule to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task RemovePostingRuleAsync(Guid accountId, Guid ruleId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Enqueues a background task that re-evaluates the posting type of all bank postings of the account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The enqueued <see cref="BackgroundTaskInfo"/>.</returns>
+    Task<BackgroundTaskInfo> EnqueuePostingTypeReevaluationAsync(Guid accountId, CancellationToken ct = default);
+
     // Auth
 
     /// <summary>

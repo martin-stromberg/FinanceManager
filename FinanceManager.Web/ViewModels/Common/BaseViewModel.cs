@@ -414,7 +414,7 @@ namespace FinanceManager.Web.ViewModels.Common
                 var enumName = field.LookupType.Substring("Enum:".Length);
                 var enumType = ResolveEnumType(enumName);
                 if (enumType != null && enumType.IsEnum)
-                    return QueryEnumLookup(q, enumType);
+                    return QueryEnumLookup(q, enumType, field.LookupFilter);
                 return Array.Empty<LookupItem>();
             }
 
@@ -558,9 +558,24 @@ namespace FinanceManager.Web.ViewModels.Common
                 .ToList();
         }
 
-        private IReadOnlyList<LookupItem> QueryEnumLookup(string? q, Type enumType)
+        private IReadOnlyList<LookupItem> QueryEnumLookup(string? q, Type enumType, string? lookupFilter = null)
         {
+            // Optional member exclusion filter: "Exclude=<MemberName>[;<MemberName>]" removes the
+            // named raw enum members from the result before localization.
+            HashSet<string>? excluded = null;
+            if (!string.IsNullOrWhiteSpace(lookupFilter))
+            {
+                var parts = lookupFilter.Split('=', 2);
+                if (parts.Length == 2 && string.Equals(parts[0].Trim(), "Exclude", StringComparison.OrdinalIgnoreCase))
+                {
+                    excluded = parts[1]
+                        .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                }
+            }
+
             var items = Enum.GetValues(enumType).Cast<object>()
+                .Where(v => excluded == null || !excluded.Contains(v?.ToString() ?? string.Empty))
                 .Select(v =>
                 {
                     var raw = v?.ToString() ?? string.Empty;

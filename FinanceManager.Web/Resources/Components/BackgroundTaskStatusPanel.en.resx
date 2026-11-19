@@ -71,4 +71,5 @@
   <data name="Bgt_Type_ClassifyAllDrafts" xml:space="preserve"><value>Classify statements</value></data>
   <data name="Bgt_Type_BookAllDrafts" xml:space="preserve"><value>Book statements</value></data>
   <data name="Bgt_Type_BackupRestore" xml:space="preserve"><value>Restore backup</value></data>
+  <data name="Bgt_Type_ReevaluatePostingTypes" xml:space="preserve"><value>Re-evaluate posting types</value></data>
 </root>

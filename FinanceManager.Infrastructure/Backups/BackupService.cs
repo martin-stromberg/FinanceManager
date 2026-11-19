@@ -768,6 +768,13 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var accountLinkedIbans = accountLinkedIbanEntities.Select(l => l.ToBackupDto()).ToList();
 
+        // Posting rules of the user's accounts; ownership is derived via the account
+        // (the entity has no OwnerUserId itself).
+        var accountPostingRuleEntities = await _db.AccountPostingRules.AsNoTracking()
+            .Where(r => importAccountIds.Contains(r.AccountId))
+            .ToListAsync(ct);
+        var accountPostingRules = accountPostingRuleEntities.Select(r => r.ToBackupDto()).ToList();
+
         // Portfolio KPI configuration: exactly one row exists per user.
         var portfolioKpiConfigurationEntities = await _db.PortfolioKpiConfigurations.AsNoTracking()
             .Where(c => c.OwnerUserId == userId)
@@ -813,6 +820,9 @@ public sealed class BackupService : IBackupService
             // Optional payload sections: backups created before these features existed
             // simply omit them - the restore treats them as empty.
             AccountLinkedIbans = accountLinkedIbans,
+            // Optional payload section: backups created before the posting-rule feature
+            // simply omit it - the restore treats it as empty.
+            AccountPostingRules = accountPostingRules,
             PortfolioKpiConfigurations = portfolioKpiConfigurations,
             // Optional payload section: backups created before the suppressed-expectation
             // feature simply omit it - the restore treats it as empty.

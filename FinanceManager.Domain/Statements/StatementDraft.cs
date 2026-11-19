@@ -419,6 +419,32 @@ public sealed class StatementDraftEntry : Entity
     /// </summary>
     public decimal? SecurityTaxAmount { get; private set; }
 
+    /// <summary>
+    /// Posting type (inflow/outflow/interest/tax) determined during classification or set manually.
+    /// </summary>
+    public BankPostingType PostingType { get; private set; } = BankPostingType.Unspecified;
+
+    /// <summary>
+    /// Whether the posting type was set manually and therefore must not be overwritten by automatic evaluation.
+    /// </summary>
+    public bool IsPostingTypeManual { get; private set; }
+
+    /// <summary>
+    /// Sets the posting type of the entry. When <paramref name="manual"/> is <c>true</c> the entry is marked
+    /// as manually assigned so later automatic evaluations do not overwrite the value.
+    /// </summary>
+    /// <param name="type">The posting type to set.</param>
+    /// <param name="manual"><c>true</c> when the value was chosen by the user; otherwise <c>false</c>.</param>
+    public void SetPostingType(BankPostingType type, bool manual)
+    {
+        PostingType = type;
+        if (manual)
+        {
+            IsPostingTypeManual = true;
+        }
+        Touch();
+    }
+
 
     /// <summary>
     /// Updates core fields of the draft entry.
@@ -611,15 +637,17 @@ public sealed class StatementDraftEntry : Entity
     /// <param name="SecurityQuantity">Optional quantity for security transactions.</param>
     /// <param name="SecurityFeeAmount">Optional fee amount for security transaction.</param>
     /// <param name="SecurityTaxAmount">Optional tax amount for security transaction.</param>
+    /// <param name="PostingType">Optional posting type; <c>null</c> in backups created before the posting type existed.</param>
+    /// <param name="IsPostingTypeManual">Whether the posting type was set manually.</param>
     /// <returns>The result.</returns>
-    public sealed record StatementDraftEntryBackupDto(Guid Id, Guid DraftId, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime BookingDate, DateTime? ValutaDate, decimal Amount, string Subject, string? RecipientName, string CurrencyCode, string? BookingDescription, bool IsAnnounced, bool IsCostNeutral, StatementDraftEntryStatus Status, Guid? ContactId, Guid? SavingsPlanId, bool ArchiveSavingsPlanOnBooking, Guid? SplitDraftId, Guid? SecurityId, SecurityTransactionType? SecurityTransactionType, decimal? SecurityQuantity, decimal? SecurityFeeAmount, decimal? SecurityTaxAmount);
+    public sealed record StatementDraftEntryBackupDto(Guid Id, Guid DraftId, DateTime CreatedUtc, DateTime? ModifiedUtc, DateTime BookingDate, DateTime? ValutaDate, decimal Amount, string Subject, string? RecipientName, string CurrencyCode, string? BookingDescription, bool IsAnnounced, bool IsCostNeutral, StatementDraftEntryStatus Status, Guid? ContactId, Guid? SavingsPlanId, bool ArchiveSavingsPlanOnBooking, Guid? SplitDraftId, Guid? SecurityId, SecurityTransactionType? SecurityTransactionType, decimal? SecurityQuantity, decimal? SecurityFeeAmount, decimal? SecurityTaxAmount, BankPostingType? PostingType = null, bool IsPostingTypeManual = false);
 
     /// <summary>
     /// Creates a backup DTO representing this draft entry.
     /// </summary>
     /// <returns>A <see cref="StatementDraftEntryBackupDto"/> with the serializable state.</returns>
     public StatementDraftEntryBackupDto ToBackupDto()
-        => new StatementDraftEntryBackupDto(Id, DraftId, CreatedUtc, ModifiedUtc, BookingDate, ValutaDate, Amount, Subject, RecipientName, CurrencyCode, BookingDescription, IsAnnounced, IsCostNeutral, Status, ContactId, SavingsPlanId, ArchiveSavingsPlanOnBooking, SplitDraftId, SecurityId, SecurityTransactionType, SecurityQuantity, SecurityFeeAmount, SecurityTaxAmount);
+        => new StatementDraftEntryBackupDto(Id, DraftId, CreatedUtc, ModifiedUtc, BookingDate, ValutaDate, Amount, Subject, RecipientName, CurrencyCode, BookingDescription, IsAnnounced, IsCostNeutral, Status, ContactId, SavingsPlanId, ArchiveSavingsPlanOnBooking, SplitDraftId, SecurityId, SecurityTransactionType, SecurityQuantity, SecurityFeeAmount, SecurityTaxAmount, PostingType, IsPostingTypeManual);
 
     /// <summary>
     /// Assigns values from the provided backup DTO to this draft entry instance.
@@ -649,6 +677,8 @@ public sealed class StatementDraftEntry : Entity
         SecurityQuantity = dto.SecurityQuantity;
         SecurityFeeAmount = dto.SecurityFeeAmount;
         SecurityTaxAmount = dto.SecurityTaxAmount;
+        PostingType = dto.PostingType ?? Postings.PostingTypeEvaluator.EvaluateByAmountSign(dto.Amount);
+        IsPostingTypeManual = dto.IsPostingTypeManual;
         SetDates(dto.CreatedUtc, dto.ModifiedUtc);
     }
 }

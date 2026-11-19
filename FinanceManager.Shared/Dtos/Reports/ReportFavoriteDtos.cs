@@ -24,7 +24,9 @@ public sealed record ReportFavoriteDto(
     IReadOnlyCollection<PostingKind> PostingKinds,
     ReportFavoriteFiltersDto? Filters,
     bool UseValutaDate,
-    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings
+    SavingsPlanPostingSource SavingsPlanPostingSource = SavingsPlanPostingSource.PlanPostings,
+    ReportChartType ChartType = ReportChartType.HistoricalSum,
+    ReportChartPosition ChartPosition = ReportChartPosition.AboveTable
 )
 {
     /// <summary>

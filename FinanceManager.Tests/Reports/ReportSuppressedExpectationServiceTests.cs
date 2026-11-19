@@ -207,4 +207,44 @@ public sealed class ReportSuppressedExpectationServiceTests
         Assert.Equal(new DateTime(2025, 5, 10), dto!.PriorYearDate);
         Assert.Equal(new DateTime(2025, 5, 10), (await db.ReportSuppressedExpectations.SingleAsync(TestContext.Current.CancellationToken)).PriorYearDate);
     }
+
+    /// <summary>
+    /// Posting-specific suppressions distinguish two expected postings on the same entity and
+    /// prior-year date, while preserving the displayed amount of each suppressed item.
+    /// </summary>
+    [Fact]
+    public async Task SuppressAsync_SameEntityAndDate_DifferentPostings_AreIndependent()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "sup-postings");
+        var favorite = AddFavorite(db, user.Id, "Fav");
+        var account = AddAccount(db, user.Id, "Giro");
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var sut = CreateSut(db);
+        var priorYearDate = new DateTime(2025, 5, 10);
+        var firstPostingId = Guid.NewGuid();
+        var secondPostingId = Guid.NewGuid();
+        var first = await sut.SuppressAsync(user.Id, favorite.Id,
+            new ReportSuppressedExpectationRequest(PostingKind.Bank, account.Id, priorYearDate, firstPostingId, 120m),
+            TestContext.Current.CancellationToken);
+        var second = await sut.SuppressAsync(user.Id, favorite.Id,
+            new ReportSuppressedExpectationRequest(PostingKind.Bank, account.Id, priorYearDate, secondPostingId, 80m),
+            TestContext.Current.CancellationToken);
+        var firstAgain = await sut.SuppressAsync(user.Id, favorite.Id,
+            new ReportSuppressedExpectationRequest(PostingKind.Bank, account.Id, priorYearDate, firstPostingId, 120m),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotNull(firstAgain);
+        Assert.NotEqual(first!.Id, second!.Id);
+        Assert.Equal(first.Id, firstAgain!.Id);
+        Assert.Equal(2, await db.ReportSuppressedExpectations.CountAsync(TestContext.Current.CancellationToken));
+
+        var list = await sut.ListAsync(user.Id, favorite.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(2, list.Count);
+        Assert.Equal(120m, list.Single(item => item.PostingId == firstPostingId).Amount);
+        Assert.Equal(80m, list.Single(item => item.PostingId == secondPostingId).Amount);
+    }
 }

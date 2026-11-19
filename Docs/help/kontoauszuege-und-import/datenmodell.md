@@ -27,6 +27,8 @@
 | `ContactId` | `Guid?` | Zugeordneter Kontakt |
 | `SavingsPlanId` | `Guid?` | Zugeordneter Sparplan |
 | `SecurityId` | `Guid?` | Zugeordnetes Wertpapier |
+| `PostingType` | `BankPostingType` | Ermittelte/gesetzte Postenart (`Inflow`, `Outflow`, `Interest`, `Tax`); `Unspecified` vor der ersten Klassifizierung |
+| `IsPostingTypeManual` | `bool` | `true`, wenn die Postenart manuell gesetzt wurde — schützt vor Überschreiben durch Klassifizierung |
 | `Status` | `StatementDraftEntryStatus` | Bearbeitungsstatus |
 
 ## Beziehungen

@@ -1,0 +1,267 @@
+@using FinanceManager.Shared.Dtos.Accounts
+@using FinanceManager.Shared.Dtos.Postings
+@using FinanceManager.Web.ViewModels.Accounts
+@using Microsoft.Extensions.Localization
+
+<div class="posting-rules-panel" style="overflow-x:auto;">
+    <table class="fm-table card card-table" style="width:100%;">
+        <thead>
+            @if (Vm?.PostingRules != null && Vm.PostingRules.Any())
+            {
+                <tr>
+                    <th style="text-align:left;padding:.4rem .6rem;">@(Localizer?["PostingRules_Th_Field"] ?? "Field")</th>
+                    <th style="text-align:left;padding:.4rem .6rem;">@(Localizer?["PostingRules_Th_Pattern"] ?? "Pattern")</th>
+                    <th style="text-align:left;padding:.4rem .6rem;">@(Localizer?["PostingRules_Th_PostingType"] ?? "Posting type")</th>
+                    <th style="text-align:left;padding:.4rem .6rem;">@(Localizer?["PostingRules_Th_OrderIndex"] ?? "Order")</th>
+                    <th style="text-align:right;padding:.4rem .6rem;"></th>
+                </tr>
+            }
+        </thead>
+        <tbody>
+            @if (Vm?.PostingRules == null || !Vm.PostingRules.Any())
+            {
+                <tr>
+                    <td colspan="5" style="padding:.5rem .6rem;color:var(--muted);font-style:italic;">
+                        @(Localizer?["PostingRules_Empty"] ?? "No posting rules configured.")
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var rule in Vm.PostingRules)
+                {
+                    var ruleCapture = rule;
+                    <tr>
+                        <td style="padding:.4rem .6rem;">@FieldLabel(ruleCapture.Field)</td>
+                        <td style="padding:.4rem .6rem;font-family:monospace;">@ruleCapture.Pattern</td>
+                        <td style="padding:.4rem .6rem;">@PostingTypeLabel(ruleCapture.PostingType)</td>
+                        <td style="padding:.4rem .6rem;">@ruleCapture.OrderIndex</td>
+                        <td style="padding:.4rem .6rem;text-align:right;white-space:nowrap;">
+                            <button class="icon-btn"
+                                    title="@(Localizer?["PostingRules_Edit_Button"] ?? "Edit")"
+                                    @onclick="() => BeginEdit(ruleCapture)"
+                                    disabled="@_busy">
+                                <svg><use href="/icons/sprite.svg#edit" /></svg>
+                            </button>
+                            <button class="icon-btn danger"
+                                    title="@(Localizer?["PostingRules_Remove_Button"] ?? "Remove")"
+                                    @onclick="() => RemoveRuleAsync(ruleCapture.Id)"
+                                    disabled="@_busy">
+                                <svg><use href="/icons/sprite.svg#trash" /></svg>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+            <tr>
+                <td style="padding:.5rem .6rem;">
+                    <select class="card-input"
+                            value="@((int)Vm!.NewPostingRuleField)"
+                            @onchange="OnFieldChanged"
+                            disabled="@_busy">
+                        @foreach (var f in _ruleFields)
+                        {
+                            <option value="@((int)f)" selected="@(Vm != null && Vm.NewPostingRuleField == f)">@FieldLabel(f)</option>
+                        }
+                    </select>
+                </td>
+                <td style="padding:.5rem .6rem;">
+                    <input type="text"
+                           class="card-input"
+                           placeholder="@(Localizer?["PostingRules_Add_Placeholder"] ?? "Enter pattern...")"
+                           value="@Vm?.NewPostingRulePattern"
+                           @oninput="OnPatternInput"
+                           @onkeydown="OnKeyDownAsync"
+                           disabled="@_busy" />
+                </td>
+                <td style="padding:.5rem .6rem;">
+                    <select class="card-input"
+                            value="@((int)Vm!.NewPostingRuleType)"
+                            @onchange="OnTypeChanged"
+                            disabled="@_busy">
+                        @foreach (var t in _postingTypes)
+                        {
+                            <option value="@((int)t)" selected="@(Vm != null && Vm.NewPostingRuleType == t)">@PostingTypeLabel(t)</option>
+                        }
+                    </select>
+                </td>
+                <td style="padding:.5rem .6rem;width:5rem;">
+                    <input type="number"
+                           class="card-input"
+                           style="width:5.5rem;"
+                           min="0"
+                           placeholder="@(Localizer?["PostingRules_OrderIndex_Hint"] ?? "Empty = append at end")"
+                           title="@(Localizer?["PostingRules_OrderIndex_Hint"] ?? "Empty = append at end")"
+                           value="@Vm?.NewPostingRuleOrderIndex"
+                           @onchange="OnOrderIndexChanged"
+                           disabled="@_busy" />
+                </td>
+                <td style="padding:.5rem .6rem;text-align:right;white-space:nowrap;">
+                    @if (_editRuleId.HasValue)
+                    {
+                        <button class="icon-btn"
+                                title="@(Localizer?["PostingRules_Cancel_Button"] ?? "Cancel")"
+                                @onclick="CancelEdit"
+                                disabled="@_busy">
+                            <svg><use href="/icons/sprite.svg#undo" /></svg>
+                        </button>
+                    }
+                    <button class="icon-btn"
+                            title="@(_editRuleId.HasValue
+                                ? (Localizer?["PostingRules_Save_Button"] ?? "Save")
+                                : (Localizer?["PostingRules_Add_Button"] ?? "Add"))"
+                            @onclick="SaveRuleAsync"
+                            disabled="@_busy">
+                        <svg><use href="@(_editRuleId.HasValue ? "/icons/sprite.svg#check" : "/icons/sprite.svg#plus")" /></svg>
+                    </button>
+                </td>
+            </tr>
+            @if (!string.IsNullOrWhiteSpace(_panelError))
+            {
+                <tr>
+                    <td colspan="5" style="padding:.4rem .6rem;color:var(--danger,#c00);">
+                        @_panelError
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    /// <summary>The account view model providing the posting rule list and actions.</summary>
+    [Parameter, EditorRequired] public BankAccountCardViewModel? Vm { get; set; }
+
+    /// <summary>Localizer for translating UI labels.</summary>
+    [Parameter] public IStringLocalizer? Localizer { get; set; }
+
+    private static readonly PostingRuleField[] _ruleFields = { PostingRuleField.Subject, PostingRuleField.BookingDescription };
+
+    // Posting types offered in the dropdown; Unspecified is intentionally not selectable.
+    private static readonly BankPostingType[] _postingTypes =
+        { BankPostingType.Inflow, BankPostingType.Outflow, BankPostingType.Interest, BankPostingType.Tax };
+
+    private bool _busy;
+    private Guid? _editRuleId;
+    private string? _panelError;
+
+    private string FieldLabel(PostingRuleField field)
+        => FinanceManager.Web.ViewModels.Common.EnumDisplayTexts.GetText(field, Localizer);
+
+    private string PostingTypeLabel(BankPostingType type)
+        => FinanceManager.Web.ViewModels.Common.EnumDisplayTexts.GetText(type, Localizer, emptyWhenUnspecified: true);
+
+    private void OnFieldChanged(ChangeEventArgs e)
+    {
+        if (Vm != null && int.TryParse(e.Value?.ToString(), out var v) && Enum.IsDefined(typeof(PostingRuleField), v))
+        {
+            Vm.NewPostingRuleField = (PostingRuleField)v;
+        }
+    }
+
+    private void OnTypeChanged(ChangeEventArgs e)
+    {
+        if (Vm != null && int.TryParse(e.Value?.ToString(), out var v) && Enum.IsDefined(typeof(BankPostingType), v))
+        {
+            Vm.NewPostingRuleType = (BankPostingType)v;
+        }
+    }
+
+    private void OnOrderIndexChanged(ChangeEventArgs e)
+    {
+        if (Vm == null) { return; }
+        var raw = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            // Empty field = append at the end (new rules) / keep position (edits).
+            Vm.NewPostingRuleOrderIndex = null;
+        }
+        else if (int.TryParse(raw, out var v))
+        {
+            Vm.NewPostingRuleOrderIndex = v;
+        }
+    }
+
+    private void OnPatternInput(ChangeEventArgs e)
+    {
+        if (Vm != null)
+        {
+            Vm.NewPostingRulePattern = e.Value?.ToString() ?? string.Empty;
+            _panelError = null;
+        }
+    }
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SaveRuleAsync();
+    }
+
+    private void BeginEdit(AccountPostingRuleDto rule)
+    {
+        if (Vm == null) return;
+        _editRuleId = rule.Id;
+        _panelError = null;
+        Vm.NewPostingRuleField = rule.Field;
+        Vm.NewPostingRulePattern = rule.Pattern;
+        Vm.NewPostingRuleType = rule.PostingType;
+        Vm.NewPostingRuleOrderIndex = rule.OrderIndex;
+    }
+
+    private void CancelEdit()
+    {
+        if (Vm == null) return;
+        _editRuleId = null;
+        _panelError = null;
+        Vm.NewPostingRulePattern = string.Empty;
+        Vm.NewPostingRuleOrderIndex = null;
+        StateHasChanged();
+    }
+
+    private async Task SaveRuleAsync()
+    {
+        if (Vm == null || _busy) return;
+
+        // Client-side pre-check: an empty pattern is not a valid rule.
+        if (string.IsNullOrWhiteSpace(Vm.NewPostingRulePattern))
+        {
+            _panelError = Localizer?["PostingRules_Error_PatternRequired"]?.Value ?? "Pattern required.";
+            StateHasChanged();
+            return;
+        }
+        _panelError = null;
+
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            var ok = await Vm.UpsertPostingRuleAsync(_editRuleId);
+            if (ok)
+            {
+                _editRuleId = null;
+                Vm.NewPostingRuleOrderIndex = null;
+            }
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveRuleAsync(Guid ruleId)
+    {
+        if (Vm == null || _busy) return;
+        _busy = true;
+        StateHasChanged();
+        try
+        {
+            await Vm.RemovePostingRuleAsync(ruleId);
+            if (_editRuleId == ruleId) { CancelEdit(); }
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+}

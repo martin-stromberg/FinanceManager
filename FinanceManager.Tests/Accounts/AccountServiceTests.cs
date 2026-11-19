@@ -345,4 +345,195 @@ public sealed class AccountServiceTests
         Assert.Null(group.DisplayName);
         Assert.Equal(12m, group.NetBalance);
     }
+
+    private async Task<AccountDto> CreateGiroAccountAsync(AccountService sut, AppDbContext db, Guid owner, string iban = "DE123", string name = "Konto")
+    {
+        var bankContact = new Contact(owner, $"Bank {iban}", ContactType.Bank, null);
+        db.Contacts.Add(bankContact);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return await sut.CreateAsync(owner, name, AccountType.Giro, iban, bankContact.Id, SavingsPlanExpectation.Optional, true, false, TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Rules of a foreign account must not leak: <see cref="AccountService.GetPostingRulesAsync"/> returns
+    /// <c>null</c> when the account does not belong to the requesting owner.
+    /// </summary>
+    [Fact]
+    public async Task GetPostingRulesAsync_ShouldReturnNull_WhenAccountBelongsToOtherUser()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+
+        var rules = await sut.GetPostingRulesAsync(account.Id, Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Null(rules);
+    }
+
+    /// <summary>
+    /// Creating rules without an explicit order index (<c>null</c>) must append them with consecutive
+    /// indexes (max + 1), and <see cref="AccountService.GetPostingRulesAsync"/> must return them sorted by index.
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldCreateRules_WithSequentialOrderIndex()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, null), TestContext.Current.CancellationToken);
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Kapitalertragssteuer", BankPostingType.Tax, null), TestContext.Current.CancellationToken);
+
+        var rules = await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken);
+        Assert.NotNull(rules);
+        Assert.Equal(2, rules!.Count);
+        Assert.Equal("Zins", rules[0].Pattern);
+        Assert.Equal(0, rules[0].OrderIndex);
+        Assert.Equal("Kapitalertragssteuer", rules[1].Pattern);
+        Assert.Equal(1, rules[1].OrderIndex);
+        Assert.Equal(2, db.AccountPostingRules.Count(r => r.AccountId == account.Id));
+    }
+
+    /// <summary>
+    /// The owner check must reject rule writes against an account owned by a different user.
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldFail_WhenAccountBelongsToOtherUser()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            sut.UpsertPostingRuleAsync(account.Id, Guid.NewGuid(), new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 0), TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>
+    /// <see cref="BankPostingType.Unspecified"/> is not a valid rule target and must be rejected.
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldFail_WhenPostingTypeUnspecified()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Unspecified, 0), TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>
+    /// An empty or whitespace-only pattern is not a usable rule and must be rejected.
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldFail_WhenPatternEmpty()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "   ", BankPostingType.Interest, 0), TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>
+    /// An upsert with an existing rule id must update that rule in place (same id, new values).
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldUpdateExistingRule()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 0), TestContext.Current.CancellationToken);
+        var rule = Assert.Single(await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken) ?? []);
+
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(rule.Id, PostingRuleField.BookingDescription, "Steuer", BankPostingType.Tax, 3), TestContext.Current.CancellationToken);
+
+        var updated = Assert.Single(await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken) ?? []);
+        Assert.Equal(rule.Id, updated.Id);
+        Assert.Equal(PostingRuleField.BookingDescription, updated.Field);
+        Assert.Equal("Steuer", updated.Pattern);
+        Assert.Equal(BankPostingType.Tax, updated.PostingType);
+        Assert.Equal(3, updated.OrderIndex);
+    }
+
+    /// <summary>
+    /// Updating a rule id that belongs to a different account of the same owner must be rejected so rules
+    /// cannot be moved across accounts silently.
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldFail_WhenRuleBelongsToOtherAccount()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+        var other = await CreateGiroAccountAsync(sut, db, owner, "DE999", "Konto 2");
+        await sut.UpsertPostingRuleAsync(other.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 0), TestContext.Current.CancellationToken);
+        var otherRule = Assert.Single(await sut.GetPostingRulesAsync(other.Id, owner, TestContext.Current.CancellationToken) ?? []);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(otherRule.Id, PostingRuleField.Subject, "Steuer", BankPostingType.Tax, 0), TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>
+    /// Removing a rule deletes it and returns <c>true</c>; removing again or from a foreign owner returns
+    /// <c>false</c> without touching data.
+    /// </summary>
+    [Fact]
+    public async Task RemovePostingRuleAsync_ShouldRemoveRule_AndHonorOwnership()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 0), TestContext.Current.CancellationToken);
+        var rule = Assert.Single(await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken) ?? []);
+
+        Assert.False(await sut.RemovePostingRuleAsync(account.Id, Guid.NewGuid(), rule.Id, TestContext.Current.CancellationToken));
+        Assert.True(await sut.RemovePostingRuleAsync(account.Id, owner, rule.Id, TestContext.Current.CancellationToken));
+        Assert.False(await sut.RemovePostingRuleAsync(account.Id, owner, rule.Id, TestContext.Current.CancellationToken));
+        Assert.Empty(await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken) ?? []);
+    }
+
+    /// <summary>
+    /// An explicit order index on create (including 0) must be used verbatim instead of appending.
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldUseExplicitOrderIndex_IncludingZero()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+
+        // Explicit 0 must be used verbatim (not treated as "append").
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Steuer", BankPostingType.Tax, 0), TestContext.Current.CancellationToken);
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, null), TestContext.Current.CancellationToken);
+
+        var rules = await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken);
+        Assert.NotNull(rules);
+        Assert.Equal(2, rules!.Count);
+        Assert.Equal("Steuer", rules[0].Pattern);
+        Assert.Equal(0, rules[0].OrderIndex);
+        Assert.Equal("Zins", rules[1].Pattern);
+        Assert.Equal(1, rules[1].OrderIndex);
+    }
+
+    /// <summary>
+    /// Updating a rule with a <c>null</c> order index must keep its current position.
+    /// </summary>
+    [Fact]
+    public async Task UpsertPostingRuleAsync_ShouldKeepOrderIndex_WhenNullOnUpdate()
+    {
+        var (sut, db) = Create();
+        var owner = Guid.NewGuid();
+        var account = await CreateGiroAccountAsync(sut, db, owner);
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(null, PostingRuleField.Subject, "Zins", BankPostingType.Interest, null), TestContext.Current.CancellationToken);
+        var rule = Assert.Single(await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken) ?? []);
+
+        await sut.UpsertPostingRuleAsync(account.Id, owner, new AccountPostingRuleUpsertRequest(rule.Id, PostingRuleField.BookingDescription, "Steuer", BankPostingType.Tax, null), TestContext.Current.CancellationToken);
+
+        var updated = Assert.Single(await sut.GetPostingRulesAsync(account.Id, owner, TestContext.Current.CancellationToken) ?? []);
+        Assert.Equal(rule.OrderIndex, updated.OrderIndex);
+        Assert.Equal("Steuer", updated.Pattern);
+    }
 }

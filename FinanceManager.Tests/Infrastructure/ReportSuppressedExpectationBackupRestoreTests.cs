@@ -3,6 +3,7 @@ using System.Text.Json;
 using FinanceManager.Application.Aggregates;
 using FinanceManager.Application.Statements;
 using FinanceManager.Domain.Accounts;
+using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Reports;
 using FinanceManager.Infrastructure;
 using FinanceManager.Infrastructure.Backups;
@@ -120,6 +121,7 @@ namespace FinanceManager.Tests.Infrastructure
             var userId = Guid.NewGuid();
             var oldFavoriteId = Guid.NewGuid();
             var oldAccountId = Guid.NewGuid();
+            var oldPostingId = Guid.NewGuid();
             var suppressedAt = new DateTime(2026, 5, 3, 9, 30, 0, DateTimeKind.Utc);
             var priorYearDate = new DateTime(2025, 5, 10, 0, 0, 0, DateTimeKind.Utc);
 
@@ -133,9 +135,13 @@ namespace FinanceManager.Tests.Infrastructure
                 {
                     new ReportFavorite.ReportFavoriteBackupDto(oldFavoriteId, userId, "Fav", PostingKind.Bank, false, ReportInterval.Month, 12, false, false, true, true, true, null, null, null, null, null, null, null, null, null, null, false, FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource.PlanPostings)
                 },
+                Postings = new[]
+                {
+                    new Posting.PostingBackupDto(oldPostingId, Guid.NewGuid(), PostingKind.Bank, oldAccountId, null, null, null, priorYearDate, priorYearDate, 120m, null, "Zinsen", null, null, null, null, null, null, null, null, null, null, null, false, null, BankPostingType.Inflow)
+                },
                 ReportSuppressedExpectations = new[]
                 {
-                    new ReportSuppressedExpectation.ReportSuppressedExpectationBackupDto(Guid.NewGuid(), userId, oldFavoriteId, PostingKind.Bank, oldAccountId, priorYearDate, suppressedAt, DateTime.UtcNow, null),
+                    new ReportSuppressedExpectation.ReportSuppressedExpectationBackupDto(Guid.NewGuid(), userId, oldFavoriteId, PostingKind.Bank, oldAccountId, priorYearDate, suppressedAt, DateTime.UtcNow, null, oldPostingId, 120m),
                     // Favorite not in backup -> skipped
                     new ReportSuppressedExpectation.ReportSuppressedExpectationBackupDto(Guid.NewGuid(), userId, Guid.NewGuid(), PostingKind.Bank, oldAccountId, priorYearDate, suppressedAt, DateTime.UtcNow, null),
                     // Entity not in backup -> skipped
@@ -151,6 +157,7 @@ namespace FinanceManager.Tests.Infrastructure
             var favorite = await db.ReportFavorites.SingleAsync(CancellationToken.None);
             var account = await db.Accounts.SingleAsync(a => a.Name == "Festgeld", CancellationToken.None);
             var suppression = await db.ReportSuppressedExpectations.SingleAsync(CancellationToken.None);
+            var posting = await db.Postings.SingleAsync(CancellationToken.None);
 
             Assert.Equal(favorite.Id, suppression.ReportFavoriteId);
             Assert.NotEqual(oldFavoriteId, suppression.ReportFavoriteId);
@@ -159,6 +166,9 @@ namespace FinanceManager.Tests.Infrastructure
             Assert.Equal(PostingKind.Bank, suppression.Kind);
             Assert.Equal(priorYearDate, suppression.PriorYearDate);
             Assert.Equal(suppressedAt, suppression.SuppressedAtUtc);
+            Assert.Equal(120m, suppression.Amount);
+            Assert.Equal(posting.Id, suppression.PostingId);
+            Assert.NotEqual(oldPostingId, suppression.PostingId);
             Assert.Equal(userId, suppression.OwnerUserId);
             conn.Dispose();
         }

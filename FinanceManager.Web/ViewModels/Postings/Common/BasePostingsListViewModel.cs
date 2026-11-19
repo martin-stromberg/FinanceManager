@@ -25,12 +25,14 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
             var stornoLabel = Localizer?["List_Th_Postings_IsReversal"].Value ?? "Storno";
             var preliminaryLabel = Localizer?["List_Th_Postings_IsPreliminary"].Value ?? "Vorläufig";
             var marksLabel = Localizer?["List_Th_Postings_Marks"].Value ?? "Merkmale";
+            var postingTypeLabel = Localizer?["List_Th_PostingType"].Value ?? "PostingType";
 
             Columns = new[] {
                 new ListColumn("date", dateLabel, Align: ListColumnAlign.Left, Width: "8rem"),
                 new ListColumn("valuta", valutaLabel, Align: ListColumnAlign.Left, Width: "8rem"),
                 new ListColumn("amount", amountLabel, Align: ListColumnAlign.Right, Width: "10rem"),
                 new ListColumn("kind", kindLabel, Align: ListColumnAlign.Left, Width: "9rem"),
+                new ListColumn("postingtype", postingTypeLabel, Align: ListColumnAlign.Left, Width: "9rem"),
                 new ListColumn("recipient", recipientLabel),
                 new ListColumn("subject", subjectLabel, Width: "22%"),
                 new ListColumn("description", descriptionLabel),
@@ -115,6 +117,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                     new ListCell(ListCellKind.Text, Text: i.ValutaDate.ToString("d")),
                     new ListCell(ListCellKind.Currency, Amount: i.Amount),
                     new ListCell(ListCellKind.Text, Text: (i.Kind == PostingKind.Security && i.SecuritySubType.HasValue) ? $"Security-{i.SecuritySubType}" : i.Kind.ToString()),
+                    new ListCell(ListCellKind.Text, Text: BuildPostingTypeText(i)),
                     new ListCell(ListCellKind.Text, Text: i.RecipientName ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Subject ?? string.Empty),
                     new ListCell(ListCellKind.Text, Text: i.Description ?? string.Empty),
@@ -124,6 +127,15 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
                 }, navItem);
             }).ToList();
         }
+
+        /// <summary>
+        /// Builds the localized posting type text for the postingtype column.
+        /// <see cref="BankPostingType.Unspecified"/> renders as an empty cell.
+        /// </summary>
+        /// <param name="p">The posting to describe.</param>
+        /// <returns>The localized posting type label or an empty string.</returns>
+        private string BuildPostingTypeText(PostingServiceDto p)
+            => EnumDisplayTexts.GetText(p.PostingType, Localizer, emptyWhenUnspecified: true);
 
         /// <summary>
         /// Builds the localized flag text for the marks column: informal funding postings of

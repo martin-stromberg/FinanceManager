@@ -488,4 +488,190 @@ public sealed class StatementDraftServiceTests
         Assert.NotNull(att.Content);
         Assert.True(att.Content!.Length > 0);
     }
+
+    private static async Task<(Account account, StatementDraftDto draft, StatementDraftEntryDto entry)> CreateDraftWithAccountRuleAsync(StatementDraftService sut, AppDbContext db, Guid owner)
+    {
+        var bank = new Contact(owner, "Bank", ContactType.Bank, null, null);
+        db.Contacts.Add(bank);
+        await db.SaveChangesAsync();
+        var account = new Account(owner, AccountType.Giro, "Testkonto", "DE01", bank.Id);
+        db.Accounts.Add(account);
+        db.AccountPostingRules.Add(new AccountPostingRule(account.Id, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 1));
+        await db.SaveChangesAsync();
+
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var entity = await db.StatementDrafts.SingleAsync(d => d.Id == draft!.DraftId);
+        entity.SetDetectedAccount(account.Id);
+        await db.SaveChangesAsync();
+
+        var created = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        Assert.NotNull(created);
+        return (account, draft!, created!.Entries.First());
+    }
+
+    /// <summary>
+    /// Providing a posting type via <see cref="StatementDraftService.SaveEntryAllAsync"/> must persist it as a
+    /// manual assignment, set the manual flag and return both values on the resulting DTO.
+    /// </summary>
+    [Fact]
+    public async Task SaveEntryAllAsync_ShouldSetPostingTypeManually_AndReturnDto()
+    {
+        var (sut, db, owner) = Create();
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var created = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        var entry = created!.Entries.First();
+
+        var dto = await sut.SaveEntryAllAsync(draft!.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(null, null, null, null, null, null, null, null, null, PostingType: BankPostingType.Tax), CancellationToken.None);
+
+        Assert.NotNull(dto);
+        Assert.Equal(BankPostingType.Tax, dto!.PostingType);
+        Assert.True(dto.IsPostingTypeManual);
+
+        var entity = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(BankPostingType.Tax, entity.PostingType);
+        Assert.True(entity.IsPostingTypeManual);
+    }
+
+    /// <summary>
+    /// A manual posting type of <see cref="BankPostingType.Unspecified"/> is not a valid choice and must be
+    /// rejected with a domain validation error.
+    /// </summary>
+    [Fact]
+    public async Task SaveEntryAllAsync_ShouldRejectUnspecifiedPostingType()
+    {
+        var (sut, db, owner) = Create();
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var created = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        var entry = created!.Entries.First();
+
+        var ex = await Assert.ThrowsAsync<FinanceManager.Application.Exceptions.DomainValidationException>(() =>
+            sut.SaveEntryAllAsync(draft!.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(null, null, null, null, null, null, null, null, null, PostingType: BankPostingType.Unspecified), CancellationToken.None));
+        Assert.Equal("POSTINGTYPE_INVALID", ex.Code);
+    }
+
+    /// <summary>
+    /// Leaving the posting type parameter <c>null</c> must keep the previously set (manual) posting type.
+    /// </summary>
+    [Fact]
+    public async Task SaveEntryAllAsync_ShouldKeepPostingType_WhenParameterIsNull()
+    {
+        var (sut, db, owner) = Create();
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var created = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        var entry = created!.Entries.First();
+
+        var first = await sut.SaveEntryAllAsync(draft!.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(null, null, null, null, null, null, null, null, null, PostingType: BankPostingType.Tax), CancellationToken.None);
+        var second = await sut.SaveEntryAllAsync(draft!.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(null, null, null, null, null, null, null, null, null), CancellationToken.None);
+
+        Assert.Equal(BankPostingType.Tax, second!.PostingType);
+        Assert.True(second.IsPostingTypeManual);
+    }
+
+    /// <summary>
+    /// A core-field update on a non-manual entry must re-evaluate the posting type using the account's posting
+    /// rules, so changing the subject to a rule-matching text reclassifies the entry.
+    /// </summary>
+    [Fact]
+    public async Task UpdateEntryCoreAsync_ShouldReevaluatePostingType_WhenNotManual()
+    {
+        var (sut, db, owner) = Create();
+        var (_, draft, entry) = await CreateDraftWithAccountRuleAsync(sut, db, owner);
+
+        var dto = await sut.UpdateEntryCoreAsync(draft.DraftId, entry.Id, owner, DateTime.Today, null, 10m, "Zinsgutschrift", null, "EUR", null, CancellationToken.None);
+
+        Assert.NotNull(dto);
+        Assert.Equal(BankPostingType.Interest, dto!.PostingType);
+        Assert.False(dto.IsPostingTypeManual);
+    }
+
+    /// <summary>
+    /// A core-field update must not touch the posting type of an entry whose posting type was assigned
+    /// manually, even when the new subject would match a rule.
+    /// </summary>
+    [Fact]
+    public async Task UpdateEntryCoreAsync_ShouldPreserveManualPostingType()
+    {
+        var (sut, db, owner) = Create();
+        var (_, draft, entry) = await CreateDraftWithAccountRuleAsync(sut, db, owner);
+        var entity = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
+        entity.SetPostingType(BankPostingType.Tax, manual: true);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var dto = await sut.UpdateEntryCoreAsync(draft.DraftId, entry.Id, owner, DateTime.Today, null, 10m, "Zinsgutschrift", null, "EUR", null, CancellationToken.None);
+
+        Assert.NotNull(dto);
+        Assert.Equal(BankPostingType.Tax, dto!.PostingType);
+        Assert.True(dto.IsPostingTypeManual);
+    }
+
+    /// <summary>
+    /// A batch update changing core fields of a non-manual entry must re-evaluate the posting type the same
+    /// way <see cref="StatementDraftService.UpdateEntryCoreAsync"/> does.
+    /// </summary>
+    [Fact]
+    public async Task ApplyBatchEntryUpdatesAsync_ShouldReevaluatePostingType_OnCoreChange()
+    {
+        var (sut, db, owner) = Create();
+        var (_, draft, entry) = await CreateDraftWithAccountRuleAsync(sut, db, owner);
+
+        var req = new FinanceManager.Shared.Dtos.Statements.BatchUpdateRequestDto();
+        req.Updates.Add(new FinanceManager.Shared.Dtos.Statements.EntryUpdateDto
+        {
+            EntryId = entry.Id,
+            Fields = new Dictionary<string, object?> { ["Subject"] = "Zinsgutschrift" }
+        });
+        var result = await sut.ApplyBatchEntryUpdatesAsync(draft.DraftId, owner, req, CancellationToken.None);
+
+        Assert.True(result.Success);
+        var entity = await db.StatementDraftEntries.SingleAsync(e => e.Id == entry.Id, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(BankPostingType.Interest, entity.PostingType);
+        Assert.False(entity.IsPostingTypeManual);
+    }
+
+    /// <summary>
+    /// <see cref="StatementDraftService.GetDraftAsync"/> must project the posting type and the manual flag onto
+    /// the entry DTOs so the UI can display and preserve them.
+    /// </summary>
+    [Fact]
+    public async Task GetDraftAsync_ShouldProjectPostingType_AndManualFlag()
+    {
+        var (sut, db, owner) = Create();
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var created = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        var entry = created!.Entries.First();
+        await sut.SaveEntryAllAsync(draft!.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(null, null, null, null, null, null, null, null, null, PostingType: BankPostingType.Tax), CancellationToken.None);
+
+        var loaded = await sut.GetDraftAsync(draft!.DraftId, owner, CancellationToken.None);
+
+        var dto = Assert.Single(loaded!.Entries);
+        Assert.Equal(BankPostingType.Tax, dto.PostingType);
+        Assert.True(dto.IsPostingTypeManual);
+    }
+
+    /// <summary>
+    /// <see cref="StatementDraftService.GetOpenDraftsAsync(Guid, CancellationToken)"/> must also project posting type and manual flag so
+    /// the draft list shows the same values as the detail view.
+    /// </summary>
+    [Fact]
+    public async Task GetOpenDraftsAsync_ShouldProjectPostingType_AndManualFlag()
+    {
+        var (sut, db, owner) = Create();
+        var draft = await sut.CreateEmptyDraftAsync(owner, "file.csv", CancellationToken.None);
+        Assert.NotNull(draft);
+        var created = await sut.AddEntryAsync(draft!.DraftId, owner, DateTime.Today, 10m, "Initial", CancellationToken.None);
+        var entry = created!.Entries.First();
+        await sut.SaveEntryAllAsync(draft!.DraftId, entry.Id, owner, new StatementDraftSaveEntryAllRequest(null, null, null, null, null, null, null, null, null, PostingType: BankPostingType.Interest), CancellationToken.None);
+
+        var drafts = await sut.GetOpenDraftsAsync(owner, CancellationToken.None);
+
+        var loaded = Assert.Single(drafts, d => d.DraftId == draft!.DraftId);
+        var dto = Assert.Single(loaded.Entries);
+        Assert.Equal(BankPostingType.Interest, dto.PostingType);
+        Assert.True(dto.IsPostingTypeManual);
+    }
 }

@@ -288,18 +288,10 @@ public interface IStatementDraftService
     /// <param name="draftId">Identifier of the draft.</param>
     /// <param name="entryId">Identifier of the entry.</param>
     /// <param name="ownerUserId">Owner user identifier.</param>
-    /// <param name="contactId">Contact id to assign (<c>null</c> clears the contact).</param>
-    /// <param name="isCostNeutral">Optional cost-neutral flag (<c>null</c> keeps the current value).</param>
-    /// <param name="savingsPlanId">Savings plan id to assign (<c>null</c> clears the assignment).</param>
-    /// <param name="archiveOnBooking">Optional flag whether to archive the linked savings plan on booking.</param>
-    /// <param name="securityId">Security id to assign.</param>
-    /// <param name="transactionType">Optional security transaction type.</param>
-    /// <param name="quantity">Optional security quantity.</param>
-    /// <param name="feeAmount">Optional fee amount for the security transaction.</param>
-    /// <param name="taxAmount">Optional tax amount for the security transaction.</param>
+    /// <param name="request">The fields to save; <c>null</c> members keep the current values (except ids, which clear the assignment).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated <see cref="StatementDraftEntryDto"/> when saved; otherwise <c>null</c>.</returns>
-    Task<StatementDraftEntryDto?> SaveEntryAllAsync(Guid draftId, Guid entryId, Guid ownerUserId, Guid? contactId, bool? isCostNeutral, Guid? savingsPlanId, bool? archiveOnBooking, Guid? securityId, SecurityTransactionType? transactionType, decimal? quantity, decimal? feeAmount, decimal? taxAmount, CancellationToken ct);
+    Task<StatementDraftEntryDto?> SaveEntryAllAsync(Guid draftId, Guid entryId, Guid ownerUserId, StatementDraftSaveEntryAllRequest request, CancellationToken ct);
 
     /// <summary>
     /// Adds additional statement details such as original file attachment to the draft.

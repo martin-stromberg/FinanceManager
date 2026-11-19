@@ -31,24 +31,16 @@ internal sealed class ReportProjectionEventLoader
     /// </summary>
     /// <param name="kind">Posting kind to load (<see cref="PostingKind.Bank"/>, <see cref="PostingKind.Contact"/> or <see cref="PostingKind.SavingsPlan"/>).</param>
     /// <param name="entityIds">Owned entity ids of the kind.</param>
-    /// <param name="entityIdFilter">Optional allow-list further restricting <paramref name="entityIds"/>.</param>
-    /// <param name="textPatterns">Optional normalized text patterns; every pattern is evaluated against subject and description.</param>
-    /// <param name="windowStart">Inclusive window start.</param>
-    /// <param name="windowEnd">Exclusive window end.</param>
-    /// <param name="useValutaDate">Whether the valuta date determines the effective event date.</param>
+    /// <param name="filters">Posting-level filters bundled in an <see cref="EntityEventLoadFilters"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Projection events ordered by the caller.</returns>
     internal async Task<List<ProjectionEvent>> LoadEntityEventsAsync(
         PostingKind kind,
         IReadOnlyCollection<Guid> entityIds,
-        IReadOnlyCollection<Guid>? entityIdFilter,
-        IReadOnlyCollection<string>? textPatterns,
-        DateTime windowStart,
-        DateTime windowEnd,
-        bool useValutaDate,
+        EntityEventLoadFilters filters,
         CancellationToken ct)
     {
-        var allowedIds = entityIdFilter is null ? entityIds.ToList() : entityIds.Where(entityIdFilter.Contains).ToList();
+        var allowedIds = filters.EntityIdFilter is null ? entityIds.ToList() : entityIds.Where(filters.EntityIdFilter.Contains).ToList();
         if (allowedIds.Count == 0)
         {
             return new List<ProjectionEvent>();
@@ -65,13 +57,19 @@ internal sealed class ReportProjectionEventLoader
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unsupported posting kind for entity event loading.")
         };
 
-        var rows = await ReportQuerySemantics.ApplyDateWindow(source, useValutaDate, windowStart, windowEnd)
-            .Select(p => new { p.AccountId, p.ContactId, p.SavingsPlanId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
+        if (kind == PostingKind.Bank && filters.BankPostingTypes is { Count: > 0 } bankTypes)
+        {
+            // The allow-list predicate is SQL-translatable, so only matching postings are materialized.
+            source = source.Where(p => bankTypes.Contains(p.PostingType));
+        }
+
+        var rows = await ReportQuerySemantics.ApplyDateWindow(source, filters.UseValutaDate, filters.WindowStart, filters.WindowEnd)
+            .Select(p => new { p.Id, p.AccountId, p.ContactId, p.SavingsPlanId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
             .ToListAsync(ct);
 
         return rows
             .Where(r => r.Amount != 0m)
-            .Where(r => textPatterns is null || textPatterns.Any(pattern => BudgetRulePatternMatcher.MatchesPosting(r.Subject, r.Description, pattern, useRegex: false)))
+            .Where(r => filters.TextPatterns is null || filters.TextPatterns.Any(pattern => BudgetRulePatternMatcher.MatchesPosting(r.Subject, r.Description, pattern, useRegex: false)))
             .Select(r =>
             {
                 var entityId = kind switch
@@ -80,11 +78,32 @@ internal sealed class ReportProjectionEventLoader
                     PostingKind.Contact => r.ContactId!.Value,
                     _ => r.SavingsPlanId!.Value
                 };
-                var effective = useValutaDate && r.ValutaDate != DateTime.MinValue ? r.ValutaDate : r.BookingDate;
-                return new ProjectionEvent(kind, entityId, effective, new DateTime(effective.Year, effective.Month, 1), r.Amount);
+                var effective = filters.UseValutaDate && r.ValutaDate != DateTime.MinValue ? r.ValutaDate : r.BookingDate;
+                return new ProjectionEvent(kind, entityId, effective, new DateTime(effective.Year, effective.Month, 1), r.Amount, r.Id);
             })
             .ToList();
     }
+
+    /// <summary>
+    /// Bundles the posting-level filters of a <see cref="LoadEntityEventsAsync"/> call: the
+    /// entity allow-list, the normalized text patterns matched in memory, the effective-date
+    /// load window and the bank posting-type allow-list applied database-side for
+    /// <see cref="PostingKind.Bank"/>.
+    /// </summary>
+    /// <param name="EntityIdFilter">Optional allow-list further restricting the loaded entity ids.</param>
+    /// <param name="TextPatterns">Optional normalized text patterns; every pattern is evaluated against subject and description.</param>
+    /// <param name="WindowStart">Inclusive window start.</param>
+    /// <param name="WindowEnd">Exclusive window end.</param>
+    /// <param name="UseValutaDate">Whether the valuta date determines the effective event date.</param>
+    /// <param name="BankPostingTypes">Optional bank posting-type allow-list; only evaluated for <see cref="PostingKind.Bank"/> (other kinds carry no posting type classification).</param>
+    /// <returns>The bundled posting-level filters.</returns>
+    internal sealed record EntityEventLoadFilters(
+        IReadOnlyCollection<Guid>? EntityIdFilter,
+        IReadOnlyCollection<string>? TextPatterns,
+        DateTime WindowStart,
+        DateTime WindowEnd,
+        bool UseValutaDate,
+        HashSet<BankPostingType>? BankPostingTypes);
 
     /// <summary>
     /// Loads the savings-plan → bank-account links of an owner.
@@ -134,7 +153,7 @@ internal sealed class ReportProjectionEventLoader
         var events = new List<ProjectionEvent>();
         if (unlinked.Count > 0)
         {
-            events.AddRange(await LoadEntityEventsAsync(PostingKind.SavingsPlan, unlinked, null, textPatterns, windowStart, windowEnd, useValutaDate, ct));
+            events.AddRange(await LoadEntityEventsAsync(PostingKind.SavingsPlan, unlinked, new EntityEventLoadFilters(null, textPatterns, windowStart, windowEnd, useValutaDate, null), ct));
         }
         if (linked.Count == 0)
         {
@@ -142,11 +161,15 @@ internal sealed class ReportProjectionEventLoader
         }
 
         var linkedAccountIds = linked.Values.SelectMany(x => x).Distinct().ToList();
+        // The bank posting-type filter intentionally does not apply to the linked source
+        // postings: like the aggregation path and the postings drilldown (scope exclusion),
+        // they are loaded without a BankPostingTypes restriction so the projection matches
+        // the unfiltered cell value.
         var rows = await ReportQuerySemantics.ApplyDateWindow(
                 _db.Postings.AsNoTracking()
                     .Where(p => p.Kind == PostingKind.Bank && p.AccountId != null && linkedAccountIds.Contains(p.AccountId.Value)),
                 useValutaDate, windowStart, windowEnd)
-            .Select(p => new { p.AccountId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
+            .Select(p => new { p.Id, p.AccountId, p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.Description })
             .ToListAsync(ct);
 
         var rowsByAccount = rows
@@ -166,7 +189,7 @@ internal sealed class ReportProjectionEventLoader
                 foreach (var row in accountRows)
                 {
                     var effective = useValutaDate && row.ValutaDate != DateTime.MinValue ? row.ValutaDate : row.BookingDate;
-                    events.Add(new ProjectionEvent(PostingKind.SavingsPlan, planId, effective, new DateTime(effective.Year, effective.Month, 1), row.Amount));
+                    events.Add(new ProjectionEvent(PostingKind.SavingsPlan, planId, effective, new DateTime(effective.Year, effective.Month, 1), row.Amount, row.Id));
                 }
             }
         }
@@ -218,7 +241,7 @@ internal sealed class ReportProjectionEventLoader
         // a matching anchor keeps the whole group including fee/tax netting.
         var anchors = await postings
             .Where(p => p.SecuritySubType == SecurityPostingSubType.Dividend)
-            .Select(p => new { p.GroupId, p.SecurityId, p.Subject, p.Description })
+            .Select(p => new { p.Id, p.GroupId, p.SecurityId, p.Subject, p.Description })
             .ToListAsync(ct);
         var matchingAnchors = anchors
             .Where(a => textPatterns is not { Count: > 0 } || textPatterns.Any(pattern => BudgetRulePatternMatcher.MatchesPosting(a.Subject, a.Description, pattern, useRegex: false)))
@@ -248,6 +271,9 @@ internal sealed class ReportProjectionEventLoader
                     || x.SecuritySubType == SecurityPostingSubType.Tax).Sum(x => x.Amount),
                 DividendDate = g.Where(x => x.SecuritySubType == SecurityPostingSubType.Dividend)
                     .Select(x => useValutaDate ? (x.ValutaDate == DateTime.MinValue ? x.BookingDate : x.ValutaDate) : x.BookingDate)
+                    .FirstOrDefault(),
+                DividendPostingId = g.Where(x => x.SecuritySubType == SecurityPostingSubType.Dividend)
+                    .Select(x => (Guid?)x.Id)
                     .FirstOrDefault()
             })
             .ToListAsync(ct);
@@ -256,7 +282,7 @@ internal sealed class ReportProjectionEventLoader
             .Where(g => g.SecurityId.HasValue
                 && g.DividendDate != default(DateTime)
                 && dividendGroupKeys.Contains((g.SecurityId.Value, g.GroupId)))
-            .Select(g => new ProjectionEvent(PostingKind.Security, g.SecurityId!.Value, g.DividendDate, new DateTime(g.DividendDate.Year, g.DividendDate.Month, 1), g.Net))
+            .Select(g => new ProjectionEvent(PostingKind.Security, g.SecurityId!.Value, g.DividendDate, new DateTime(g.DividendDate.Year, g.DividendDate.Month, 1), g.Net, g.DividendPostingId))
             .ToList();
     }
 

@@ -22,6 +22,7 @@ public sealed class AccountsController : ControllerBase
     private readonly IContactService _contacts;
     private readonly ICurrentUserService _current;
     private readonly ISavingsPlanAccountLinkService _savingsPlanLinks;
+    private readonly IBackgroundTaskManager _taskManager;
     private readonly ILogger<AccountsController> _logger;
 
     /// <summary>
@@ -31,13 +32,15 @@ public sealed class AccountsController : ControllerBase
     /// <param name="contacts">Service for contact operations used to create or lookup bank contacts.</param>
     /// <param name="current">Service providing information about the current user.</param>
     /// <param name="savingsPlanLinks">Service resolving the savings plans linked to an account.</param>
+    /// <param name="taskManager">Background task manager used to enqueue the posting type re-evaluation.</param>
     /// <param name="logger">Logger instance for the controller.</param>
-    public AccountsController(IAccountService accounts, IContactService contacts, ICurrentUserService current, ISavingsPlanAccountLinkService savingsPlanLinks, ILogger<AccountsController> logger)
+    public AccountsController(IAccountService accounts, IContactService contacts, ICurrentUserService current, ISavingsPlanAccountLinkService savingsPlanLinks, IBackgroundTaskManager taskManager, ILogger<AccountsController> logger)
     {
         _accounts = accounts;
         _contacts = contacts;
         _current = current;
         _savingsPlanLinks = savingsPlanLinks;
+        _taskManager = taskManager;
         _logger = logger;
     }
 
@@ -434,6 +437,117 @@ public sealed class AccountsController : ControllerBase
             _logger.LogError(ex, "GetSavingsPlanLinks failed for account {AccountId}", id);
             return Problem("Unexpected error", statusCode: 500);
         }
+    }
+
+    /// <summary>
+    /// Returns the posting rules of the account ordered by their evaluation index.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>HTTP 200 with the list of posting rules; HTTP 404 when the account was not found.</returns>
+    /// <response code="200">The HTTP 200 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpGet("{id:guid}/posting-rules")]
+    [ProducesResponseType(typeof(IReadOnlyList<AccountPostingRuleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPostingRulesAsync(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var rules = await _accounts.GetPostingRulesAsync(id, _current.UserId, ct);
+            if (rules is null) return NotFound(new { error = "Err_NotFound" });
+            return Ok(rules);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetPostingRules failed for account {AccountId}", id);
+            return Problem("Unexpected error", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Creates or updates a posting rule of the account. A request without an id creates a new
+    /// rule; an existing rule id updates field, pattern, posting type and order index.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="req">Request payload with the rule data.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>HTTP 204 when saved; HTTP 400 when invalid; HTTP 404 when the account was not found.</returns>
+    /// <response code="204">The HTTP 204 response.</response>
+    /// <response code="400">The HTTP 400 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpPost("{id:guid}/posting-rules")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpsertPostingRuleAsync(Guid id, [FromBody] AccountPostingRuleUpsertRequest req, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        try
+        {
+            await _accounts.UpsertPostingRuleAsync(id, _current.UserId, req, ct);
+            return NoContent();
+        }
+        catch (ArgumentException ex) when (ex.ParamName == "accountId")
+        {
+            return NotFound(new { error = "Err_NotFound", message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = "Err_InvalidArgument", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpsertPostingRule failed for account {AccountId}", id);
+            return Problem("Unexpected error", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Removes a posting rule of the account.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <param name="ruleId">Identifier of the rule to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>HTTP 204 when removed; HTTP 404 when the account or rule was not found.</returns>
+    /// <response code="204">The HTTP 204 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpDelete("{id:guid}/posting-rules/{ruleId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemovePostingRuleAsync(Guid id, Guid ruleId, CancellationToken ct)
+    {
+        try
+        {
+            var ok = await _accounts.RemovePostingRuleAsync(id, _current.UserId, ruleId, ct);
+            return ok ? NoContent() : NotFound(new { error = "Err_NotFound" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "RemovePostingRule failed for account {AccountId} rule {RuleId}", id, ruleId);
+            return Problem("Unexpected error", statusCode: 500);
+        }
+    }
+
+    /// <summary>
+    /// Enqueues a background task that re-evaluates the posting type of all bank postings of the account.
+    /// </summary>
+    /// <param name="id">Account identifier.</param>
+    /// <returns>HTTP 202 with the enqueued <see cref="BackgroundTaskInfo"/>; HTTP 404 when the account was not found.</returns>
+    /// <response code="202">The HTTP 202 response.</response>
+    /// <response code="404">The HTTP 404 response.</response>
+    [HttpPost("{id:guid}/posting-types/reclassify")]
+    [ProducesResponseType(typeof(BackgroundTaskInfo), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> EnqueuePostingTypeReevaluationAsync(Guid id)
+    {
+        var account = await _accounts.GetAsync(id, _current.UserId, HttpContext.RequestAborted);
+        if (account is null) return NotFound(new { error = "Err_NotFound" });
+
+        // Enqueue serializes the payload itself; pass the raw object so the stored
+        // JSON payload is {"accountId":"…"} as expected by the executor.
+        var info = _taskManager.Enqueue(BackgroundTaskType.ReevaluatePostingTypes, _current.UserId, new { accountId = id }, allowDuplicate: false);
+        return Accepted(info);
     }
 
     private async Task<Guid?> ResolveBankContactAsync(string? newBankContactName, Guid? bankContactId, string? accountName, string? iban, bool allowAutoCreate, CancellationToken ct)

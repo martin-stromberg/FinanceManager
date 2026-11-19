@@ -7,6 +7,7 @@ using ReportFavoriteFilterTuple = (
     System.Collections.Generic.IReadOnlyCollection<System.Guid>? SavingsPlanCategoryIds,
     System.Collections.Generic.IReadOnlyCollection<System.Guid>? SecurityCategoryIds,
     System.Collections.Generic.IReadOnlyCollection<int>? SecuritySubTypes,
+    System.Collections.Generic.IReadOnlyCollection<int>? BankPostingTypes,
     bool? IncludeDividendRelated,
     System.Collections.Generic.IReadOnlyCollection<string>? BankTextFilters,
     System.Collections.Generic.IReadOnlyCollection<string>? ContactTextFilters,
@@ -148,6 +149,16 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     public bool ShowChart { get; private set; }
 
     /// <summary>
+    /// Visualization type used when <see cref="ShowChart"/> is enabled.
+    /// </summary>
+    public FinanceManager.Shared.Dtos.Reports.ReportChartType ChartType { get; private set; } = FinanceManager.Shared.Dtos.Reports.ReportChartType.HistoricalSum;
+
+    /// <summary>
+    /// Position of the chart relative to the result table.
+    /// </summary>
+    public FinanceManager.Shared.Dtos.Reports.ReportChartPosition ChartPosition { get; private set; } = FinanceManager.Shared.Dtos.Reports.ReportChartPosition.AboveTable;
+
+    /// <summary>
     /// Whether the UI can expand details for this favorite.
     /// </summary>
     /// <value>True if expandable.</value>
@@ -199,6 +210,11 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// CSV of filtered security sub-types (integers).
     /// </summary>
     public string? SecuritySubTypesCsv { get; private set; }
+
+    /// <summary>
+    /// CSV of filtered bank posting types (integers).
+    /// </summary>
+    public string? BankPostingTypesCsv { get; private set; }
 
     /// <summary>
     /// JSON-serialized list of free text filters for bank postings.
@@ -258,7 +274,9 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// <param name="take">Number of intervals to include; will be clamped.</param>
     /// <param name="useValutaDate">Whether to aggregate by ValutaDate.</param>
     /// <param name="savingsPlanPostingSource">Posting source used for emitted savings plans.</param>
-    public void Update(PostingKind postingKind, bool includeCategory, ReportInterval interval, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, int take, bool useValutaDate, FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource savingsPlanPostingSource = FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource.PlanPostings)
+    /// <param name="chartType">Visualization type used for the chart.</param>
+    /// <param name="chartPosition">Position of the chart relative to the table.</param>
+    public void Update(PostingKind postingKind, bool includeCategory, ReportInterval interval, bool comparePrevious, bool compareYear, bool compareProjection, bool showChart, bool expandable, int take, bool useValutaDate, FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource savingsPlanPostingSource = FinanceManager.Shared.Dtos.Reports.SavingsPlanPostingSource.PlanPostings, FinanceManager.Shared.Dtos.Reports.ReportChartType chartType = FinanceManager.Shared.Dtos.Reports.ReportChartType.HistoricalSum, FinanceManager.Shared.Dtos.Reports.ReportChartPosition chartPosition = FinanceManager.Shared.Dtos.Reports.ReportChartPosition.AboveTable)
     {
         PostingKind = postingKind;
         IncludeCategory = includeCategory;
@@ -271,6 +289,8 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         SetTake(take);
         UseValutaDate = useValutaDate;
         SavingsPlanPostingSource = savingsPlanPostingSource;
+        ChartType = chartType;
+        ChartPosition = chartPosition;
         Touch();
     }
 
@@ -341,6 +361,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
     /// <param name="contactTextFilters">Optional free text filters for contact postings.</param>
     /// <param name="savingsPlanTextFilters">Optional free text filters for savings plan postings.</param>
     /// <param name="securityTextFilters">Optional free text filters for security postings.</param>
+    /// <param name="bankPostingTypes">Optional list of bank posting types (integers).</param>
     /// <exception cref="ArgumentException">Thrown when a text filter entry exceeds <see cref="TextFilterList.MaxEntryLength"/> characters.</exception>
     public void SetFilters(
         IEnumerable<Guid>? accountIds,
@@ -355,7 +376,8 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         IEnumerable<string>? bankTextFilters = null,
         IEnumerable<string>? contactTextFilters = null,
         IEnumerable<string>? savingsPlanTextFilters = null,
-        IEnumerable<string>? securityTextFilters = null)
+        IEnumerable<string>? securityTextFilters = null,
+        IEnumerable<int>? bankPostingTypes = null)
     {
         AccountIdsCsv = ToCsv(accountIds);
         ContactIdsCsv = ToCsv(contactIds);
@@ -365,6 +387,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         SavingsPlanCategoryIdsCsv = ToCsv(savingsPlanCategoryIds);
         SecurityCategoryIdsCsv = ToCsv(securityCategoryIds);
         SecuritySubTypesCsv = ToCsvInt(securitySubTypes);
+        BankPostingTypesCsv = ToCsvInt(bankPostingTypes);
         IncludeDividendRelated = includeDividendRelated;
         BankTextFiltersJson = TextFilterList.ToJson(bankTextFilters);
         ContactTextFiltersJson = TextFilterList.ToJson(contactTextFilters);
@@ -392,6 +415,7 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
             FromCsv(SavingsPlanCategoryIdsCsv),
             FromCsv(SecurityCategoryIdsCsv),
             FromCsvInt(SecuritySubTypesCsv),
+            FromCsvInt(BankPostingTypesCsv),
             IncludeDividendRelated,
             TextFilterList.FromJson(BankTextFiltersJson),
             TextFilterList.FromJson(ContactTextFiltersJson),
@@ -442,14 +466,17 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         string? BankTextFiltersJson = null,
         string? ContactTextFiltersJson = null,
         string? SavingsPlanTextFiltersJson = null,
-        string? SecurityTextFiltersJson = null);
+        string? SecurityTextFiltersJson = null,
+        FinanceManager.Shared.Dtos.Reports.ReportChartType ChartType = FinanceManager.Shared.Dtos.Reports.ReportChartType.HistoricalSum,
+        FinanceManager.Shared.Dtos.Reports.ReportChartPosition ChartPosition = FinanceManager.Shared.Dtos.Reports.ReportChartPosition.AboveTable,
+        string? BankPostingTypesCsv = null);
 
     /// <summary>
     /// Creates a backup DTO representing the serializable state of this ReportFavorite.
     /// </summary>
     /// <returns>A <see cref="ReportFavoriteBackupDto"/> containing the backup data.</returns>
     public ReportFavoriteBackupDto ToBackupDto()
-        => new ReportFavoriteBackupDto(Id, OwnerUserId, Name, PostingKind, IncludeCategory, Interval, Take, ComparePrevious, CompareYear, CompareProjection, ShowChart, Expandable, PostingKindsCsv, AccountIdsCsv, ContactIdsCsv, SavingsPlanIdsCsv, SecurityIdsCsv, ContactCategoryIdsCsv, SavingsPlanCategoryIdsCsv, SecurityCategoryIdsCsv, SecuritySubTypesCsv, IncludeDividendRelated, UseValutaDate, SavingsPlanPostingSource, BankTextFiltersJson, ContactTextFiltersJson, SavingsPlanTextFiltersJson, SecurityTextFiltersJson);
+        => new ReportFavoriteBackupDto(Id, OwnerUserId, Name, PostingKind, IncludeCategory, Interval, Take, ComparePrevious, CompareYear, CompareProjection, ShowChart, Expandable, PostingKindsCsv, AccountIdsCsv, ContactIdsCsv, SavingsPlanIdsCsv, SecurityIdsCsv, ContactCategoryIdsCsv, SavingsPlanCategoryIdsCsv, SecurityCategoryIdsCsv, SecuritySubTypesCsv, IncludeDividendRelated, UseValutaDate, SavingsPlanPostingSource, BankTextFiltersJson, ContactTextFiltersJson, SavingsPlanTextFiltersJson, SecurityTextFiltersJson, ChartType, ChartPosition, BankPostingTypesCsv);
 
     /// <summary>
     /// Assigns values from a backup DTO to this entity. Uses existing setters to preserve invariants where applicable.
@@ -484,5 +511,8 @@ public sealed class ReportFavorite : Entity, IAggregateRoot
         ContactTextFiltersJson = dto.ContactTextFiltersJson;
         SavingsPlanTextFiltersJson = dto.SavingsPlanTextFiltersJson;
         SecurityTextFiltersJson = dto.SecurityTextFiltersJson;
+        ChartType = dto.ChartType;
+        ChartPosition = dto.ChartPosition;
+        BankPostingTypesCsv = dto.BankPostingTypesCsv;
     }
 }

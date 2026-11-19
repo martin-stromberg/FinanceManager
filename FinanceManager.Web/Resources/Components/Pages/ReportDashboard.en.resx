@@ -237,6 +237,9 @@
   <data name="Label_PostingKindMulti" xml:space="preserve">
     <value>Choose Posting Kinds</value>
   </data>
+  <data name="Hint_PostingKindRequired" xml:space="preserve">
+    <value>At least one posting kind must stay selected.</value>
+  </data>
   <data name="PostingKind_Bank" xml:space="preserve">
     <value>Accounts</value>
   </data>
@@ -436,4 +439,19 @@
   <data name="Postings_None" xml:space="preserve"><value>No postings found.</value></data>
   <data name="Postings_Truncated" xml:space="preserve"><value>The list was truncated to the maximum allowed number of postings.</value></data>
   <data name="Postings_LoadFailed" xml:space="preserve"><value>The postings could not be loaded.</value></data>
+  <data name="Label_ChartType" xml:space="preserve"><value>Chart type</value></data>
+  <data name="ChartType_HistoricalSum" xml:space="preserve"><value>Historical sum</value></data>
+  <data name="ChartType_Allocation" xml:space="preserve"><value>Allocation</value></data>
+  <data name="ChartType_Pie" xml:space="preserve"><value>Pie chart</value></data>
+  <data name="Label_ChartPosition" xml:space="preserve"><value>Chart position</value></data>
+  <data name="ChartPosition_AboveTable" xml:space="preserve"><value>Above the table</value></data>
+  <data name="ChartPosition_BelowTable" xml:space="preserve"><value>Below the table</value></data>
+  <data name="Chart_Other" xml:space="preserve"><value>Other</value></data>
+  <data name="FilterGroup_BankTypes" xml:space="preserve"><value>Bank posting types</value></data>
+  <data name="BankType_Inflow" xml:space="preserve"><value>Incoming</value></data>
+  <data name="BankType_Outflow" xml:space="preserve"><value>Outgoing</value></data>
+  <data name="BankType_Interest" xml:space="preserve"><value>Interest</value></data>
+  <data name="BankType_Tax" xml:space="preserve"><value>Tax</value></data>
+  <data name="Error_SaveFavorite" xml:space="preserve"><value>The favorite could not be saved.</value></data>
+  <data name="Error_UpdateFavorite" xml:space="preserve"><value>The favorite could not be updated.</value></data>
 </root>

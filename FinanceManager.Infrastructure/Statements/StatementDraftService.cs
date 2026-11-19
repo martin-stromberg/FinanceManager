@@ -180,31 +180,15 @@ public sealed partial class StatementDraftService : IStatementDraftService
     /// <param name="draftId">Identifier of the draft containing the entry.</param>
     /// <param name="entryId">Identifier of the entry to update.</param>
     /// <param name="ownerUserId">Owner user id performing the operation.</param>
-    /// <param name="contactId">Optional contact id to assign or null to clear.</param>
-    /// <param name="isCostNeutral">Optional cost-neutral flag to set.</param>
-    /// <param name="savingsPlanId">Optional savings plan id to assign or null to clear.</param>
-    /// <param name="archiveOnBooking">Optional flag whether to archive the savings plan on booking.</param>
-    /// <param name="securityId">Optional security id to assign or null to clear.</param>
-    /// <param name="transactionType">Optional security transaction type.</param>
-    /// <param name="quantity">Optional security quantity.</param>
-    /// <param name="feeAmount">Optional security fee amount.</param>
-    /// <param name="taxAmount">Optional security tax amount.</param>
+    /// <param name="request">The fields to save; <c>null</c> members keep the current values (except ids, which clear the assignment).</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated <see cref="StatementDraftEntryDto"/>, or null when the draft or entry was not found or the draft is not editable.</returns>
-    /// <exception cref="FinanceManager.Application.Exceptions.DomainValidationException">Thrown when domain validation fails for savings or security assignments.</exception>
+    /// <exception cref="FinanceManager.Application.Exceptions.DomainValidationException">Thrown when domain validation fails for savings or security assignments or the posting type is invalid.</exception>
     public async Task<StatementDraftEntryDto?> SaveEntryAllAsync(
         Guid draftId,
         Guid entryId,
         Guid ownerUserId,
-        Guid? contactId,
-        bool? isCostNeutral,
-        Guid? savingsPlanId,
-        bool? archiveOnBooking,
-        Guid? securityId,
-        SecurityTransactionType? transactionType,
-        decimal? quantity,
-        decimal? feeAmount,
-        decimal? taxAmount,
+        StatementDraftSaveEntryAllRequest request,
         CancellationToken ct)
     {
         var draft = await _db.StatementDrafts
@@ -217,29 +201,29 @@ public sealed partial class StatementDraftService : IStatementDraftService
         if (entry == null) { return null; }
 
         // Contact
-        if (contactId == null)
+        if (request.ContactId == null)
         {
             entry.ClearContact();
         }
         else
         {
-            bool exists = await _db.Contacts.AsNoTracking().AnyAsync(c => c.Id == contactId && c.OwnerUserId == ownerUserId, ct);
+            bool exists = await _db.Contacts.AsNoTracking().AnyAsync(c => c.Id == request.ContactId && c.OwnerUserId == ownerUserId, ct);
             if (!exists) { return null; }
-            entry.MarkAccounted(contactId.Value);
+            entry.MarkAccounted(request.ContactId.Value);
         }
 
         // Cost neutral
-        if (isCostNeutral.HasValue)
+        if (request.IsCostNeutral.HasValue)
         {
-            entry.MarkCostNeutral(isCostNeutral.Value);
+            entry.MarkCostNeutral(request.IsCostNeutral.Value);
         }
 
         // Savings plan
         // Savings plan - only validate when client explicitly provides a savingsPlanId (assignment)
         // If savingsPlanId is null it is considered a clear request and validation for assignment should not block it.
-        if (savingsPlanId.HasValue)
+        if (request.SavingsPlanId.HasValue)
         {
-            var effContactIdForSavings = contactId ?? entry.ContactId;
+            var effContactIdForSavings = request.ContactId ?? entry.ContactId;
             if (!effContactIdForSavings.HasValue)
             {
                 throw new FinanceManager.Application.Exceptions.DomainValidationException("SAVINGSPLAN_NO_CONTACT", "Cannot assign a savings plan when no contact is selected.");
@@ -269,30 +253,30 @@ public sealed partial class StatementDraftService : IStatementDraftService
             }
         }
         // Apply incoming assignment/clear after validation
-        if (entry.SavingsPlanId != savingsPlanId)
+        if (entry.SavingsPlanId != request.SavingsPlanId)
         {
-            entry.AssignSavingsPlan(savingsPlanId);
+            entry.AssignSavingsPlan(request.SavingsPlanId);
         }
-        if (archiveOnBooking.HasValue)
+        if (request.ArchiveOnBooking.HasValue)
         {
-            entry.SetArchiveSavingsPlanOnBooking(archiveOnBooking.Value);
+            entry.SetArchiveSavingsPlanOnBooking(request.ArchiveOnBooking.Value);
         }
 
         // Security - only validate when the client provided at least one security-related field (assignment/change)
-        var anyIncomingSecurityField = securityId.HasValue || transactionType.HasValue || quantity.HasValue || feeAmount.HasValue || taxAmount.HasValue;
+        var anyIncomingSecurityField = request.SecurityId.HasValue || request.TransactionType.HasValue || request.Quantity.HasValue || request.FeeAmount.HasValue || request.TaxAmount.HasValue;
         if (anyIncomingSecurityField)
         {
             // Determine effective resulting values for validation (use existing values for fields not provided)
-            var effectiveSecurityId = securityId ?? entry.SecurityId;
-            var effectiveTxType = transactionType ?? entry.SecurityTransactionType;
-            var effectiveQuantity = quantity ?? entry.SecurityQuantity;
-            var effectiveFee = feeAmount ?? entry.SecurityFeeAmount;
-            var effectiveTax = taxAmount ?? entry.SecurityTaxAmount;
+            var effectiveSecurityId = request.SecurityId ?? entry.SecurityId;
+            var effectiveTxType = request.TransactionType ?? entry.SecurityTransactionType;
+            var effectiveQuantity = request.Quantity ?? entry.SecurityQuantity;
+            var effectiveFee = request.FeeAmount ?? entry.SecurityFeeAmount;
+            var effectiveTax = request.TaxAmount ?? entry.SecurityTaxAmount;
 
             var willHaveSecurity = effectiveSecurityId.HasValue || effectiveTxType.HasValue || effectiveQuantity.HasValue || effectiveFee.HasValue || effectiveTax.HasValue;
             if (willHaveSecurity)
             {
-                var effContactId = contactId ?? entry.ContactId;
+                var effContactId = request.ContactId ?? entry.ContactId;
                 Guid? bankContactId = null;
                 Account? accountForSecurity = null;
                 if (draft.DetectedAccountId.HasValue)
@@ -311,13 +295,23 @@ public sealed partial class StatementDraftService : IStatementDraftService
             }
         }
         // Apply security changes after validation
-        if (securityId != entry.SecurityId
-            || transactionType != entry.SecurityTransactionType
-            || quantity != entry.SecurityQuantity
-            || feeAmount != entry.SecurityFeeAmount
-            || taxAmount != entry.SecurityTaxAmount)
+        if (request.SecurityId != entry.SecurityId
+            || request.TransactionType != entry.SecurityTransactionType
+            || request.Quantity != entry.SecurityQuantity
+            || request.FeeAmount != entry.SecurityFeeAmount
+            || request.TaxAmount != entry.SecurityTaxAmount)
         {
-            entry.SetSecurity(securityId, transactionType, quantity, feeAmount, taxAmount);
+            entry.SetSecurity(request.SecurityId, request.TransactionType, request.Quantity, request.FeeAmount, request.TaxAmount);
+        }
+
+        // Posting type - manual assignment wins over automatic evaluation
+        if (request.PostingType.HasValue)
+        {
+            if (!Enum.IsDefined(request.PostingType.Value) || request.PostingType.Value == BankPostingType.Unspecified)
+            {
+                throw new FinanceManager.Application.Exceptions.DomainValidationException("POSTINGTYPE_INVALID", "Posting type must be a defined value other than Unspecified.");
+            }
+            entry.SetPostingType(request.PostingType.Value, manual: true);
         }
 
         await _db.SaveChangesAsync(ct);
@@ -353,7 +347,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
             entry.SecurityTransactionType,
             entry.SecurityQuantity,
             entry.SecurityFeeAmount,
-            entry.SecurityTaxAmount);
+            entry.SecurityTaxAmount,
+            entry.PostingType,
+            entry.IsPostingTypeManual);
     }
 
     /// <summary>
@@ -1231,7 +1227,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
                     e.SecurityTransactionType,
                     e.SecurityQuantity,
                     e.SecurityFeeAmount,
-                    e.SecurityTaxAmount)).ToList());
+                    e.SecurityTaxAmount,
+                    e.PostingType,
+                    e.IsPostingTypeManual)).ToList());
 
             result.Add(dto);
         }
@@ -1728,6 +1726,7 @@ public sealed partial class StatementDraftService : IStatementDraftService
         if (entry == null) { return null; }
         if (draft.Status != StatementDraftStatus.Draft) { return null; }
         entry.UpdateCore(bookingDate, valutaDate, amount, subject, recipientName, currencyCode, bookingDescription);
+        await ReevaluatePostingTypeAsync(entry, draft.DetectedAccountId, ct);
         await _db.SaveChangesAsync(ct);
         if (await _db.StatementDraftEntries.AnyAsync(e => e.SplitDraftId == draft.Id, ct))
         {
@@ -1758,7 +1757,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
             entry.SecurityTransactionType,
             entry.SecurityQuantity,
             entry.SecurityFeeAmount,
-            entry.SecurityTaxAmount);
+            entry.SecurityTaxAmount,
+            entry.PostingType,
+            entry.IsPostingTypeManual);
     }
 
     /// <summary>
@@ -2435,7 +2436,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
         async Task<(Guid groupId, Guid bankPostingId, Guid contactPostingId)> CreateBankAndContactPostingAsync(StatementDraftEntry e, decimal amount, Guid? contactId, CancellationToken token)
         {
             var gid = Guid.NewGuid();
-            var bankPosting = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
+            var bankPosting = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null)
+                .SetGroup(gid)
+                .SetIsPreliminary(draft.IsPreliminary)
+                .SetPostingType(Domain.Postings.PostingTypeEvaluator.Resolve(e.PostingType, amount));
             _db.Postings.Add(bankPosting); await UpsertAggregatesAsync(bankPosting, token);
             var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, e.BookingDate, e.ValutaDate ?? e.BookingDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
             _db.Postings.Add(contactPosting); await UpsertAggregatesAsync(contactPosting, token);
@@ -2771,7 +2775,10 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 async Task<(Guid groupId, Guid bankId, Guid contactId)> CreateBankAndContactAsync(StatementDraftEntry e, decimal amount, DateTime bookingDate, DateTime valutaDate)
                 {
                     var gid = Guid.NewGuid();
-                    var bank = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
+                    var bank = new Domain.Postings.Posting(e.Id, PostingKind.Bank, account.Id, null, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null)
+                        .SetGroup(gid)
+                        .SetIsPreliminary(draft.IsPreliminary)
+                        .SetPostingType(Domain.Postings.PostingTypeEvaluator.Resolve(e.PostingType, amount));
                     _db.Postings.Add(bank); await UpsertAggregatesAsync(bank, ct);
                     var contactPosting = new Domain.Postings.Posting(e.Id, PostingKind.Contact, null, e.ContactId, null, null, bookingDate, valutaDate, amount, e.Subject, e.RecipientName, e.BookingDescription, null).SetGroup(gid).SetIsPreliminary(draft.IsPreliminary);
                     _db.Postings.Add(contactPosting); await UpsertAggregatesAsync(contactPosting, ct);
@@ -3045,7 +3052,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
                 entry.SecurityTransactionType,
                 entry.SecurityQuantity,
                 entry.SecurityFeeAmount,
-                entry.SecurityTaxAmount);
+                entry.SecurityTaxAmount,
+                entry.PostingType,
+                entry.IsPostingTypeManual);
         }
 
         entry.ResetOpen();
@@ -3074,7 +3083,9 @@ public sealed partial class StatementDraftService : IStatementDraftService
             entry.SecurityTransactionType,
             entry.SecurityQuantity,
             entry.SecurityFeeAmount,
-            entry.SecurityTaxAmount);
+            entry.SecurityTaxAmount,
+            entry.PostingType,
+            entry.IsPostingTypeManual);
     }
 
     /// <summary>

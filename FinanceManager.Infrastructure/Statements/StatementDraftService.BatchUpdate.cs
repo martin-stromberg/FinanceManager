@@ -428,6 +428,7 @@ public sealed partial class StatementDraftService
                 _db.StatementDraftEntries.Remove(entry);
             }
 
+            List<Domain.Accounts.AccountPostingRule>? postingRules = null;
             foreach (var kv in proposed)
             {
                 var entryId = kv.Key;
@@ -438,6 +439,12 @@ public sealed partial class StatementDraftService
                 }
 
                 ent.UpdateCore(p.BookingDate, p.ValutaDate, p.Amount, p.Subject, p.RecipientName, p.CurrencyCode, p.BookingDescription);
+                if (!ent.IsPostingTypeManual)
+                {
+                    // lazy load: only query the rules when at least one entry needs re-evaluation
+                    postingRules ??= await LoadPostingRulesAsync(draft.DetectedAccountId, ct);
+                    ApplyAutomaticPostingType(ent, postingRules);
+                }
 
                 // If caller requested an explicit status change (e.g., mark as AlreadyBooked), apply it here.
                 if (p.Status.HasValue)

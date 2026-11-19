@@ -1,6 +1,6 @@
 # Kontoauszüge und Import
 
-Dieser Bereich verarbeitet Kontoauszüge von der Datei bis zur verbuchten Buchung.
+Dieser Bereich verarbeitet Kontoauszüge von der Datei bis zur verbuchten Buchung. Dabei bestimmt die Klassifizierung auch die Postenart jeder Entwurfszeile — regelbasiert über die am Bankkonto hinterlegten Kontierungsregeln oder über das Betragsvorzeichen.
 
 ## Inhalt
 

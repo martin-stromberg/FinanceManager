@@ -25,7 +25,9 @@ public sealed record StatementDraftEntryDto(
     SecurityTransactionType? SecurityTransactionType,
     decimal? SecurityQuantity,
     decimal? SecurityFeeAmount,
-    decimal? SecurityTaxAmount
+    decimal? SecurityTaxAmount,
+    BankPostingType PostingType = BankPostingType.Unspecified,
+    bool IsPostingTypeManual = false
 )
 {
     /// <summary>

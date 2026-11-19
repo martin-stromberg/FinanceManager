@@ -120,6 +120,24 @@
 
 **Umsetzung:** `ReportAggregationService.QueryAsync` (Linked-Account-Block), `ReportAggregationService.QuerySecurityDividendsNetAsync` (`dividendGroupIds`).
 
+## Postenartfilter grenzt Bankposten auf ausgewählte Arten ein
+
+**Beschreibung:** Der Filter `BankPostingTypes` grenzt Bank-Buchungen auf eine Allow-List von Postenarten (`Inflow`, `Outflow`, `Interest`, `Tax`) ein — in Berichtswerten, Hochrechnung und Posteneinsicht gleichermaßen.
+
+**Bedingungen:**
+- Nur wirksam für `PostingKind.Bank`; `null` oder eine leere Liste bedeutet „keine Filterung".
+- `BankPostingType.Unspecified` ist keine auswählbare Filteroption.
+- Da `PostingAggregates` die Postenart nicht führen, wird `PostingKind.Bank` bei aktivem Filter — wie bei gesetztem Textfilter — aus den Rohpostings verdichtet.
+
+**Verhalten:**
+- Aggregation und Drilldown wenden denselben Filter an, sodass Zellwert und Postenliste konsistent bleiben.
+- Die Hochrechnung lädt Bank-Ereignisse nur für ausgewählte Postenarten; Erwartungen nicht ausgewählter Arten erscheinen weder in `ProjectionExpectedItems` noch in `ProjectionAmount`.
+- Bankposten ohne klassifizierte Postenart (`Unspecified`) fallen bei aktivem Filter heraus.
+- Der Filter wird im Favoriten persistiert (`BankPostingTypesCsv`) und auf Home-KPI-Kacheln sowie den MCP-Pfad (`bankPostingTypes`) angewendet.
+- **Scope-Ausschluss:** Aus Bankposten verknüpfter Konten abgeleitete Sparplan-Reihen (`SavingsPlanPostingSource.LinkedAccountPostings`) und die Sparplan-Hochrechnung ignorieren den Filter — die Quell-Bankposten werden in Aggregation, Projektion und Posteneinsicht ungefiltert geladen, damit Zellwert und Drilldown übereinstimmen.
+
+**Umsetzung:** `ReportAggregationService` (`bankPostingTypes`-HashSet, `allowedBankTypes`, `LoadTextFilteredRowsAsync`), `ReportProjectionEventLoader.LoadEntityEventsAsync` (`bankPostingTypes`-Parameter), `ReportPostingsQueryService.LoadPostingsAsync`, `ReportDashboardViewModel.ToFavoriteFilters`, `ReportFavorite.SetFilters`/`GetFilters`, `HomeKpiGrid.LoadFavoriteKpiDataAsync`.
+
 ## Posteneinsicht listet exakt die Selektion der Betragszelle
 
 **Beschreibung:** Der Symbolbutton an einer Betragszelle öffnet ein Overlay mit den Einzelposten, aus denen sich der Zellwert zusammensetzt.

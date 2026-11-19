@@ -9,6 +9,7 @@ namespace FinanceManager.Shared.Dtos.Reports;
 /// <param name="ExpectedDate">The expected date.</param>
 /// <param name="PriorYearDate">The prior year date.</param>
 /// <param name="Amount">The expected amount.</param>
+/// <param name="PostingId">The prior-year posting that produced the expectation, when identifiable.</param>
 /// <returns>The result.</returns>
 public sealed record ReportProjectionExpectedItemDto(
     PostingKind Kind,
@@ -16,4 +17,5 @@ public sealed record ReportProjectionExpectedItemDto(
     string EntityName,
     DateTime ExpectedDate,
     DateTime PriorYearDate,
-    decimal Amount);
+    decimal Amount,
+    Guid? PostingId = null);
