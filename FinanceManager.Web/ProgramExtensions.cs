@@ -614,6 +614,18 @@ namespace FinanceManager.Web
         /// <param name="app">The <see cref="WebApplication"/> instance to configure.</param>
         public static void ConfigureMiddleware(this WebApplication app)
         {
+            // Optional PathBase support for deployments that put this application behind a
+            // reverse proxy under a URL sub-path (e.g. https://example.com/finance/) instead of
+            // its own domain/subdomain root. Configured via the "PathBase" configuration key;
+            // defaults to unset, which is a no-op and keeps the existing domain-root deployment
+            // unchanged. Registered first so that routing/endpoint matching further down the
+            // pipeline already sees the stripped path.
+            var pathBase = app.Configuration["PathBase"];
+            if (!string.IsNullOrWhiteSpace(pathBase))
+            {
+                app.UsePathBase(pathBase);
+            }
+
             // Forwarded headers are only honored from explicitly trusted proxies and only for the
             // right-most hop (ForwardLimit = 1). Without a trust boundary, a client that can reach
             // the server directly could spoof X-Forwarded-For per request and bypass the per-IP
