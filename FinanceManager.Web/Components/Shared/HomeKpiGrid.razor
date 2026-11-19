@@ -23,14 +23,14 @@
             @if (EditMode)
             {
                 <button type="button" class="kpi-delete" title="@Localizer["Delete"]" @onclick="(()=> DeleteKpiAsync(k.Id))">
-                    <svg class="ico"><use href="/icons/sprite.svg#close" /></svg>
+                    <svg class="ico"><use href="icons/sprite.svg#close" /></svg>
                 </button>
                 <div class="kpi-order">
                     <button type="button" class="kpi-move" title="@Localizer["MoveLeft"]" disabled="@_kpiMoving.Contains(k.Id)" @onclick="(()=> MoveKpiAsync(k, -1))">
-                        <svg class="ico"><use href="/icons/sprite.svg#arrow-left" /></svg>
+                        <svg class="ico"><use href="icons/sprite.svg#arrow-left" /></svg>
                     </button>
                     <button type="button" class="kpi-move" title="@Localizer["MoveRight"]" disabled="@_kpiMoving.Contains(k.Id)" @onclick="(()=> MoveKpiAsync(k, 1))">
-                        <svg class="ico"><use href="/icons/sprite.svg#arrow-right" /></svg>
+                        <svg class="ico"><use href="icons/sprite.svg#arrow-right" /></svg>
                     </button>
                 </div>
             }
@@ -42,7 +42,7 @@
     @if (EditMode)
     {
         <button type="button" class="kpi-tile add-tile" @onclick="OpenAddKpiDialog" title="@Localizer["AddKpi"]">
-            <svg class="add-ico"><use href="/icons/sprite.svg#plus"/></svg>
+            <svg class="add-ico"><use href="icons/sprite.svg#plus"/></svg>
         </button>
     }
 </div>
@@ -445,7 +445,7 @@
                     }
                     break;
                 case HomeKpiPredefined.ActiveSavingsPlansCount:
-                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-savings"); builder.AddMarkupContent(i++, "<use href='/icons/sprite.svg#save' />"); builder.CloseElement();
+                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-savings"); builder.AddMarkupContent(i++, "<use href='icons/sprite.svg#save' />"); builder.CloseElement();
                     builder.OpenElement(i++, "div");
                     builder.AddAttribute(i++, "class", "kpi-body");
                     builder.OpenElement(i++, "a");
@@ -467,7 +467,7 @@
                     builder.CloseElement();
                     break;
                 case HomeKpiPredefined.ContactsCount:
-                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-contacts"); builder.AddMarkupContent(i++, "<use href='/icons/sprite.svg#groups' />"); builder.CloseElement();
+                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-contacts"); builder.AddMarkupContent(i++, "<use href='icons/sprite.svg#groups' />"); builder.CloseElement();
                     builder.OpenElement(i++, "div");
                     builder.AddAttribute(i++, "class", "kpi-body");
                     builder.OpenElement(i++, "a");
@@ -489,7 +489,7 @@
                     builder.CloseElement();
                     break;
                 case HomeKpiPredefined.SecuritiesCount:
-                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-securities"); builder.AddMarkupContent(i++, "<use href='/icons/sprite.svg#postings' />"); builder.CloseElement();
+                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-securities"); builder.AddMarkupContent(i++, "<use href='icons/sprite.svg#postings' />"); builder.CloseElement();
                     builder.OpenElement(i++, "div");
                     builder.AddAttribute(i++, "class", "kpi-body");
                     builder.OpenElement(i++, "a");
@@ -511,7 +511,7 @@
                     builder.CloseElement();
                     break;
                 case HomeKpiPredefined.OpenStatementDraftsCount:
-                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-drafts"); builder.AddMarkupContent(i++, "<use href='/icons/sprite.svg#upload' />"); builder.CloseElement();
+                    builder.OpenElement(i++, "svg"); builder.AddAttribute(i++, "class", "kpi-bg-ico kpi-drafts"); builder.AddMarkupContent(i++, "<use href='icons/sprite.svg#upload' />"); builder.CloseElement();
                     builder.OpenElement(i++, "div");
                     builder.AddAttribute(i++, "class", "kpi-body");
                     builder.OpenElement(i++, "a");

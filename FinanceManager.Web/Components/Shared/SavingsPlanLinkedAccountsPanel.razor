@@ -13,7 +13,7 @@
                             title="@(Localizer?["LinkedAccounts_Info_Button"] ?? "What is this link for?")"
                             aria-expanded="@_showInfo"
                             @onclick="() => _showInfo = !_showInfo">
-                        <svg><use href="/icons/sprite.svg#info"/></svg>
+                        <svg><use href="icons/sprite.svg#info"/></svg>
                     </button>
                 </th>
             </tr>
@@ -66,14 +66,14 @@
                                         title="@(Localizer?["LinkedAccounts_OpenAccount_Button"] ?? "Open account")"
                                         @onclick="() => OpenAccountAsync(accountCapture.Id)"
                                         disabled="@_busy">
-                                    <svg><use href="/icons/sprite.svg#external"/></svg>
+                                    <svg><use href="icons/sprite.svg#external"/></svg>
                                 </button>
                                 <button type="button"
                                         class="icon-btn small"
                                         title="@(Localizer?["LinkedAccounts_Remove_Button"] ?? "Unlink")"
                                         @onclick="() => RemoveLinkAsync(accountCapture.Id)"
                                         disabled="@_busy">
-                                    <svg><use href="/icons/sprite.svg#unlink"/></svg>
+                                    <svg><use href="icons/sprite.svg#unlink"/></svg>
                                 </button>
                             </td>
                         }
@@ -85,14 +85,14 @@
                                         title="@(Localizer?["LinkedAccounts_OpenAccount_Button"] ?? "Open account")"
                                         @onclick="() => OpenAccountAsync(accountCapture.Id)"
                                         disabled="@_busy">
-                                    <svg><use href="/icons/sprite.svg#external"/></svg>
+                                    <svg><use href="icons/sprite.svg#external"/></svg>
                                 </button>
                                 <button type="button"
                                         class="icon-btn small"
                                         title="@(Localizer?["LinkedAccounts_Remove_Button"] ?? "Unlink")"
                                         @onclick="() => RemoveLinkAsync(accountCapture.Id)"
                                         disabled="@_busy">
-                                    <svg><use href="/icons/sprite.svg#unlink"/></svg>
+                                    <svg><use href="icons/sprite.svg#unlink"/></svg>
                                 </button>
                             </td>
                         }

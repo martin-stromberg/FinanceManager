@@ -261,7 +261,7 @@ else
                 builder.AddAttribute(33, "title", Localizer?["Ribbon_Add"].Value ?? "Add");
                 // When clicked, navigate to card page for creating new entity. We pass back payload so after save the new card triggers navigation back.
                 builder.AddAttribute(34, "onclick", EventCallback.Factory.Create(this, (Action)(() => OpenCreateForLookup(f))));
-                builder.AddMarkupContent(35, "<svg><use href='/icons/sprite.svg#plus'/></svg>");
+                builder.AddMarkupContent(35, "<svg><use href='icons/sprite.svg#plus'/></svg>");
                 builder.CloseElement();
             }
 

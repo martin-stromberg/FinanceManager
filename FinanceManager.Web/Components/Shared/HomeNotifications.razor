@@ -14,7 +14,7 @@
             var kind = GetKindClass(n.Type);
             <div class="notif-item @kind">
                 <div class="notif-body">
-                    <div class="notif-icon"><svg><use href="/icons/sprite.svg#info" /></svg></div>
+                    <div class="notif-icon"><svg><use href="icons/sprite.svg#info" /></svg></div>
                     <div class="notif-content">
                         @if (!string.IsNullOrWhiteSpace(n.Title))
                         {
@@ -26,14 +26,14 @@
                         {
                             <div class="notif-actions">
                                 <button class="icon-btn" @onclick="(() => NavigateToEventAsync(n.TriggerEventKey!))" title="@L["Open"]">
-                                    <svg class="icon"><use href="/icons/sprite.svg#external" /></svg>
+                                    <svg class="icon"><use href="icons/sprite.svg#external" /></svg>
                                 </button>
                             </div>
                         }
                     </div>
                 </div>
                 <button class="notif-dismiss" title="@L["Dismiss"]" @onclick="(() => DismissAsync(n.Id))">
-                    <svg class="ico"><use href="/icons/sprite.svg#close" /></svg>
+                    <svg class="ico"><use href="icons/sprite.svg#close" /></svg>
                 </button>
             </div>
         }

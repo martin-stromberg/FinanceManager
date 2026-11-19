@@ -10,13 +10,13 @@
 @if (CurrentUser.IsAuthenticated)
 {
     <div class="login-status">@DisplayVersion<br />
-        <a id="change-password-link" href="/change-password">@L["Nav_ChangePassword"]</a><br />
+        <a id="change-password-link" href="change-password">@L["Nav_ChangePassword"]</a><br />
         <button @onclick="LogoutAsync">Logout</button>
     </div>
 }
 else
 {
-    <div class="login-status"><a href="/login">Login</a></div>
+    <div class="login-status"><a href="login">Login</a></div>
 }
 
 @code {

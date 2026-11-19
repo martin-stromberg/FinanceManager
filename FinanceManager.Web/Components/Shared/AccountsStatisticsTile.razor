@@ -29,7 +29,7 @@
         <div class="accounts-statistics-error" role="alert">
             <span>@(string.IsNullOrWhiteSpace(ViewModel.StatisticsErrorMessage) ? Localizer["AccountsStatistics_Error"] : ViewModel.StatisticsErrorMessage)</span>
             <button type="button" class="icon-btn" title="@Localizer["AccountsStatistics_Retry"]" @onclick="ViewModel.RetryStatisticsAsync">
-                <svg><use href="/icons/sprite.svg#refresh" /></svg>
+                <svg><use href="icons/sprite.svg#refresh" /></svg>
             </button>
         </div>
     }
