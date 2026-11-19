@@ -119,6 +119,7 @@ Die aufgelisteten erwarteten Posten ergeben zusammen mit den Istwerten den hochg
 ## Barrierefreiheit
 
 - Die Buchungsarten-Tabs im Dialog sind als `role="tab"` mit `aria-selected` ausgezeichnet.
+- Die zuletzt verbleibende Buchungsart im Bearbeitungsbereich ist deaktiviert und trägt den Hinweis „Mindestens eine Buchungsart muss ausgewählt bleiben." als `title`-Attribut.
 - Die Entfernen-Schaltfläche eines Textfilter-Eintrags trägt die Beschriftung „Textfilter entfernen“ als `title`- und `aria-label`-Attribut.
 - Die Hinzufügen-Schaltfläche ist deaktiviert, solange das Eingabefeld leer ist.
 - Die Posten-Schaltfläche an den Betragszellen trägt den Tooltip „Posten anzeigen" als `title`-Attribut.

@@ -11,6 +11,9 @@ public sealed class ReportDashboardViewModel : ViewModelBase
 {
     private readonly IApiClient _api;
 
+    private ILogger<ReportDashboardViewModel>? Logger
+        => ServiceProvider.GetService<ILogger<ReportDashboardViewModel>>();
+
     /// <summary>
     /// Initializes a new instance of <see cref="ReportDashboardViewModel"/>.
     /// </summary>
@@ -364,35 +367,39 @@ public sealed class ReportDashboardViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Clears the subtype and text filter selections bound to the specified posting kind.
-    /// Called when the kind leaves the multi selection: without a matching filter tab the
-    /// selections could neither be displayed nor deselected, yet would keep counting and
-    /// persist into favorites.
+    /// Clears every filter selection bound to the specified posting kind: entity, category,
+    /// subtype and text selections. Called when the kind leaves the multi selection: without a
+    /// matching filter tab the selections could neither be displayed nor deselected, yet would
+    /// keep counting, apply to the request and persist into favorites.
     /// </summary>
-    /// <param name="kind">Posting kind whose subtype/text selections are cleared.</param>
+    /// <param name="kind">Posting kind whose filter selections are cleared.</param>
     public void ClearKindFilters(PostingKind kind)
     {
-        var hadFilters = kind switch
-        {
-            PostingKind.Bank => SelectedBankPostingTypes.Count > 0 || SelectedBankTextFilters.Count > 0,
-            PostingKind.Contact => SelectedContactTextFilters.Count > 0,
-            PostingKind.SavingsPlan => SelectedSavingsPlanTextFilters.Count > 0,
-            PostingKind.Security => SelectedSecuritySubTypes.Count > 0 || SelectedSecurityTextFilters.Count > 0,
-            _ => false
-        };
+        var hadFilters = false;
         switch (kind)
         {
             case PostingKind.Bank:
+                hadFilters = SelectedAccounts.Count > 0 || SelectedBankPostingTypes.Count > 0 || SelectedBankTextFilters.Count > 0;
+                SelectedAccounts.Clear();
                 SelectedBankPostingTypes.Clear();
                 SelectedBankTextFilters.Clear();
                 break;
             case PostingKind.Contact:
+                hadFilters = SelectedContacts.Count > 0 || SelectedContactCategories.Count > 0 || SelectedContactTextFilters.Count > 0;
+                SelectedContacts.Clear();
+                SelectedContactCategories.Clear();
                 SelectedContactTextFilters.Clear();
                 break;
             case PostingKind.SavingsPlan:
+                hadFilters = SelectedSavingsPlans.Count > 0 || SelectedSavingsCategories.Count > 0 || SelectedSavingsPlanTextFilters.Count > 0;
+                SelectedSavingsPlans.Clear();
+                SelectedSavingsCategories.Clear();
                 SelectedSavingsPlanTextFilters.Clear();
                 break;
             case PostingKind.Security:
+                hadFilters = SelectedSecurities.Count > 0 || SelectedSecurityCategories.Count > 0 || SelectedSecuritySubTypes.Count > 0 || SelectedSecurityTextFilters.Count > 0;
+                SelectedSecurities.Clear();
+                SelectedSecurityCategories.Clear();
                 SelectedSecuritySubTypes.Clear();
                 SelectedSecurityTextFilters.Clear();
                 break;
@@ -1192,13 +1199,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         {
             var entityCount = TempAccounts.Count + TempContacts.Count + TempSavings.Count + TempSecurities.Count;
             var catCount = TempContactCats.Count + TempSavingsCats.Count + TempSecurityCats.Count;
-            var typeCount = TempSecuritySubTypes.Count + TempBankPostingTypes.Count;
+            var typeCount = GetTempTypeFilterCount();
             return IncludeCategory ? (catCount + TempAccounts.Count + typeCount + GetTempTextFilterCount()) : (entityCount + typeCount + GetTempTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
-            var typeCount = TempSecuritySubTypes.Count + TempBankPostingTypes.Count;
+            var typeCount = GetTempTypeFilterCount();
             var textCount = GetTempTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
@@ -1309,13 +1316,13 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         {
             var entityCount = SelectedAccounts.Count + SelectedContacts.Count + SelectedSavingsPlans.Count + SelectedSecurities.Count;
             var catCount = SelectedContactCategories.Count + SelectedSavingsCategories.Count + SelectedSecurityCategories.Count;
-            var typeCount = SelectedSecuritySubTypes.Count + SelectedBankPostingTypes.Count;
+            var typeCount = GetSelectedTypeFilterCount();
             return IncludeCategory ? (catCount + SelectedAccounts.Count + typeCount + GetSelectedTextFilterCount()) : (entityCount + typeCount + GetSelectedTextFilterCount());
         }
         else
         {
             var kind = PrimaryKind;
-            var typeCount = SelectedSecuritySubTypes.Count + SelectedBankPostingTypes.Count;
+            var typeCount = GetSelectedTypeFilterCount();
             var textCount = GetSelectedTextFilterCount();
             if (IncludeCategory && IsCategorySupported(PrimaryKind))
             {
@@ -1466,8 +1473,14 @@ public sealed class ReportDashboardViewModel : ViewModelBase
                 return res;
             }
         }
-        catch (Exception)
+        catch (OperationCanceledException)
         {
+            // Aborts are no save/update errors; cancellation propagates to the caller unchanged.
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogWarning(ex, "Favorite {Operation} failed.", FavoriteDialogIsUpdate ? "update" : "save");
             // Localized key rendered via Localizer in the page; raw exception text is never shown.
             FavoriteError = FavoriteDialogIsUpdate ? "Error_UpdateFavorite" : "Error_SaveFavorite";
             RaiseStateChanged();
@@ -1543,4 +1556,20 @@ public sealed class ReportDashboardViewModel : ViewModelBase
 
     private int GetTempTextFilterCount()
         => SelectedKinds.Sum(k => GetTempTextFilterList(k).Count);
+
+    private int GetSelectedTypeFilterCount()
+        => SelectedKinds.Sum(k => k switch
+        {
+            PostingKind.Bank => SelectedBankPostingTypes.Count,
+            PostingKind.Security => SelectedSecuritySubTypes.Count,
+            _ => 0
+        });
+
+    private int GetTempTypeFilterCount()
+        => SelectedKinds.Sum(k => k switch
+        {
+            PostingKind.Bank => TempBankPostingTypes.Count,
+            PostingKind.Security => TempSecuritySubTypes.Count,
+            _ => 0
+        });
 }

@@ -237,6 +237,9 @@
   <data name="Label_PostingKindMulti" xml:space="preserve">
     <value>Choose Posting Kinds</value>
   </data>
+  <data name="Hint_PostingKindRequired" xml:space="preserve">
+    <value>At least one posting kind must stay selected.</value>
+  </data>
   <data name="PostingKind_Bank" xml:space="preserve">
     <value>Accounts</value>
   </data>

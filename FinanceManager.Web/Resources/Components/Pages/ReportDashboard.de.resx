@@ -237,6 +237,9 @@
   <data name="Label_PostingKindMulti" xml:space="preserve">
     <value>Buchungsarten auswählen</value>
   </data>
+  <data name="Hint_PostingKindRequired" xml:space="preserve">
+    <value>Mindestens eine Buchungsart muss ausgewählt bleiben.</value>
+  </data>
   <data name="PostingKind_Bank" xml:space="preserve">
     <value>Konten</value>
   </data>

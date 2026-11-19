@@ -50,8 +50,12 @@
                         {
                             var v = kind;
                             var checkedAttr = _selectedKinds.Contains(v);
+                            // The last selected kind cannot be deselected; disabling makes the
+                            // enforced minimum visible instead of a click that silently reverts.
+                            var disabledAttr = checkedAttr && _selectedKinds.Count == 1;
+                            var titleAttr = disabledAttr ? Localizer["Hint_PostingKindRequired"].Value : null;
                             var label = Localizer[$"PostingKind_{kind}"];
-                            <label class="mk-item"><input type="checkbox" value="@v" checked="@checkedAttr" @onchange="e => OnToggleKind(v, e.Value is bool b && b)" /> @label</label>
+                            <label class="mk-item" title="@titleAttr"><input type="checkbox" value="@v" checked="@checkedAttr" disabled="@disabledAttr" @onchange="e => OnToggleKind(v, e.Value is bool b && b)" /> @label</label>
                         }
                     </div>
                 </div>
@@ -1378,11 +1382,16 @@
             _selectedKinds.Remove(value);
             if (_selectedKinds.Count == 0)
             {
-                _selectedKinds.Add(PostingKind.Bank);
+                // At least one kind must stay selected: the deselected kind is restored, so
+                // the click is a no-op and cannot silently destroy its still-visible filters.
+                _selectedKinds.Add(value);
             }
-            // A removed kind can no longer show its subtype/text selections in the filter
-            // dialog; drop them so they cannot stay active invisibly (badge, favorites).
-            _vm!.ClearKindFilters(value);
+            else
+            {
+                // A removed kind can no longer show its filter selections in the filter
+                // dialog; drop them so they cannot stay active invisibly (badge, favorites).
+                _vm!.ClearKindFilters(value);
+            }
         }
         _selectedKinds = _selectedKinds.Distinct().ToList();
         if (!CanCompareProjection)

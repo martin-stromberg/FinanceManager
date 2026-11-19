@@ -115,7 +115,7 @@ public sealed class ReportAggregationService : IReportAggregationService
         // from a static calendar window (sparse data would silently drop valid
         // postings). AllHistory and Take <= 0 legitimately need every posting.
         DateTime? postingWindowEnd = null;
-        if (textFiltersByKind.Count > 0 && query.Take > 0 && query.Interval != ReportInterval.AllHistory)
+        if ((textFiltersByKind.Count > 0 || bankPostingTypes != null) && query.Take > 0 && query.Interval != ReportInterval.AllHistory)
         {
             if (query.Interval == ReportInterval.Ytd)
             {
@@ -740,8 +740,8 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var accountFilter = query.Filters?.AccountIds is { Count: > 0 } allowedAccountIds ? allowedAccountIds.ToList() : null;
                 var bankPatterns = textFiltersByKind.TryGetValue(PostingKind.Bank, out var bp) ? bp : null;
                 projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
-                    PostingKind.Bank, ownedAccountIds, accountFilter, bankPatterns,
-                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, bankPostingTypes, ct));
+                    PostingKind.Bank, ownedAccountIds,
+                    new ReportProjectionEventLoader.EntityEventLoadFilters(accountFilter, bankPatterns, projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, bankPostingTypes), ct));
             }
 
             if (kinds.Contains(PostingKind.Contact))
@@ -753,8 +753,8 @@ public sealed class ReportAggregationService : IReportAggregationService
                 var contactFilter = ResolveProjectionEntityFilter(query.Filters?.ContactIds, query.Filters?.ContactCategoryIds, contactCategoryMap);
                 var contactPatterns = textFiltersByKind.TryGetValue(PostingKind.Contact, out var cp) ? cp : null;
                 projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
-                    PostingKind.Contact, ownedContactIds, contactFilter, contactPatterns,
-                    projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, null, ct));
+                    PostingKind.Contact, ownedContactIds,
+                    new ReportProjectionEventLoader.EntityEventLoadFilters(contactFilter, contactPatterns, projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, null), ct));
             }
 
             if (kinds.Contains(PostingKind.SavingsPlan))
@@ -775,8 +775,8 @@ public sealed class ReportAggregationService : IReportAggregationService
                 else
                 {
                     projectionEvents.AddRange(await projectionEventLoader.LoadEntityEventsAsync(
-                        PostingKind.SavingsPlan, ownedPlanIds, planFilter, planPatterns,
-                        projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, null, ct));
+                        PostingKind.SavingsPlan, ownedPlanIds,
+                        new ReportProjectionEventLoader.EntityEventLoadFilters(planFilter, planPatterns, projectionEventLoadStart, projectionEndExclusive, query.UseValutaDate, null), ct));
                 }
             }
 
