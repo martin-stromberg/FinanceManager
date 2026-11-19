@@ -746,5 +746,286 @@ namespace FinanceManager.Tests.Infrastructure
                 conn.Dispose();
             }
         }
+
+        /// <summary>
+        /// Importing a payload with posting rules restores them on the remapped account while
+        /// entries whose account cannot be remapped and duplicate (AccountId, Field, Pattern)
+        /// rows are skipped.
+        /// </summary>
+        [Fact]
+        public async Task ImportAsync_RestoresAccountPostingRules_SkipsUnmappedAndDuplicates()
+        {
+            await using var db = CreateDb(out var conn);
+            try
+            {
+                var userId = Guid.NewGuid();
+                var oldAccountId = Guid.NewGuid();
+
+                var data = new
+                {
+                    Accounts = new[]
+                    {
+                        new Account.AccountBackupDto(oldAccountId, userId, AccountType.Giro, "Giro", null, 0m, Guid.NewGuid(), null, SavingsPlanExpectation.None, DateTime.UtcNow, null)
+                    },
+                    AccountPostingRules = new[]
+                    {
+                        new AccountPostingRule.AccountPostingRuleBackupDto(Guid.NewGuid(), oldAccountId, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 2),
+                        // Unmappable account -> skipped.
+                        new AccountPostingRule.AccountPostingRuleBackupDto(Guid.NewGuid(), Guid.NewGuid(), PostingRuleField.Subject, "Bonus", BankPostingType.Inflow, 0),
+                        // Duplicate of the first rule -> skipped.
+                        new AccountPostingRule.AccountPostingRuleBackupDto(Guid.NewGuid(), oldAccountId, PostingRuleField.Subject, "Zins", BankPostingType.Tax, 5)
+                    }
+                };
+
+                await ImportPayloadAsync(db, userId, data);
+
+                var account = await db.Accounts.SingleAsync(a => a.Name == "Giro", CancellationToken.None);
+                var rule = await db.AccountPostingRules.SingleAsync(CancellationToken.None);
+                rule.AccountId.Should().Be(account.Id);
+                rule.Field.Should().Be(PostingRuleField.Subject);
+                rule.Pattern.Should().Be("Zins");
+                rule.PostingType.Should().Be(BankPostingType.Interest);
+                rule.OrderIndex.Should().Be(2);
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// A version-3 payload created before the posting type existed still imports cleanly:
+        /// the missing <c>AccountPostingRules</c> section yields an empty list and postings as
+        /// well as draft entries without posting-type fields derive their type from the amount
+        /// sign with the manual flag reset.
+        /// </summary>
+        [Fact]
+        public async Task ImportAsync_OldBackupWithoutPostingTypeFields_StillWorks()
+        {
+            await using var db = CreateDb(out var conn);
+            try
+            {
+                var userId = Guid.NewGuid();
+                var oldAccountId = Guid.NewGuid();
+                var oldContactId = Guid.NewGuid();
+                var oldDraftId = Guid.NewGuid();
+
+                var data = new
+                {
+                    Accounts = new[]
+                    {
+                        new Account.AccountBackupDto(oldAccountId, userId, AccountType.Giro, "Giro", null, 0m, Guid.NewGuid(), null, SavingsPlanExpectation.None, DateTime.UtcNow, null)
+                    },
+                    Contacts = new[]
+                    {
+                        new Contact.ContactBackupDto(oldContactId, userId, "Kontakt A", ContactType.Person, null, null, false, null)
+                    },
+                    Postings = new[]
+                    {
+                        // JSON shape of a backup written before PostingType existed (no PostingType member).
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            SourceId = Guid.NewGuid(),
+                            Kind = PostingKind.Bank,
+                            AccountId = (Guid?)oldAccountId,
+                            ContactId = (Guid?)null,
+                            SavingsPlanId = (Guid?)null,
+                            SecurityId = (Guid?)null,
+                            BookingDate = DateTime.UtcNow,
+                            ValutaDate = DateTime.UtcNow,
+                            Amount = -25.5m,
+                            OriginalAmount = (decimal?)null,
+                            Subject = "Altbuchung",
+                            RecipientName = (string?)null,
+                            Description = (string?)null,
+                            SecuritySubType = (SecurityPostingSubType?)null,
+                            Quantity = (decimal?)null,
+                            GroupId = (Guid?)null,
+                            ParentId = (Guid?)null,
+                            LinkedPostingId = (Guid?)null,
+                            ReversedByPostingId = (Guid?)null,
+                            ReversalForPostingId = (Guid?)null,
+                            ReversedByUserId = (Guid?)null,
+                            ReversedAtUtc = (DateTime?)null,
+                            IsPreliminary = false,
+                            SavingsPlanSubType = (SavingsPlanPostingSubType?)null
+                        },
+                        // Non-bank posting without a PostingType member: must stay Unspecified
+                        // (the migration backfill only classified bank postings by amount sign).
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            SourceId = Guid.NewGuid(),
+                            Kind = PostingKind.Contact,
+                            AccountId = (Guid?)null,
+                            ContactId = (Guid?)oldContactId,
+                            SavingsPlanId = (Guid?)null,
+                            SecurityId = (Guid?)null,
+                            BookingDate = DateTime.UtcNow,
+                            ValutaDate = DateTime.UtcNow,
+                            Amount = -25.5m,
+                            OriginalAmount = (decimal?)null,
+                            Subject = "Kontaktbuchung",
+                            RecipientName = (string?)null,
+                            Description = (string?)null,
+                            SecuritySubType = (SecurityPostingSubType?)null,
+                            Quantity = (decimal?)null,
+                            GroupId = (Guid?)null,
+                            ParentId = (Guid?)null,
+                            LinkedPostingId = (Guid?)null,
+                            ReversedByPostingId = (Guid?)null,
+                            ReversalForPostingId = (Guid?)null,
+                            ReversedByUserId = (Guid?)null,
+                            ReversedAtUtc = (DateTime?)null,
+                            IsPreliminary = false,
+                            SavingsPlanSubType = (SavingsPlanPostingSubType?)null
+                        }
+                    },
+                    StatementDrafts = new[]
+                    {
+                        new
+                        {
+                            Id = oldDraftId,
+                            OwnerUserId = userId,
+                            OriginalFileName = "alt.csv",
+                            AccountName = (string?)null,
+                            Description = (string?)null,
+                            DetectedAccountId = (Guid?)oldAccountId,
+                            Status = StatementDraftStatus.Draft,
+                            UploadGroupId = (Guid?)null,
+                            CreatedUtc = DateTime.UtcNow,
+                            ModifiedUtc = (DateTime?)null,
+                            Entries = Array.Empty<object>(),
+                            IsPreliminary = false
+                        }
+                    },
+                    StatementDraftEntries = new[]
+                    {
+                        // No PostingType/IsPostingTypeManual members -> defaults/sign fallback expected.
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            DraftId = oldDraftId,
+                            CreatedUtc = DateTime.UtcNow,
+                            ModifiedUtc = (DateTime?)null,
+                            BookingDate = DateTime.Today,
+                            ValutaDate = (DateTime?)null,
+                            Amount = 12m,
+                            Subject = "Zinsgutschrift",
+                            RecipientName = (string?)null,
+                            CurrencyCode = "EUR",
+                            BookingDescription = (string?)null,
+                            IsAnnounced = false,
+                            IsCostNeutral = false,
+                            Status = StatementDraftEntryStatus.Open,
+                            ContactId = (Guid?)null,
+                            SavingsPlanId = (Guid?)null,
+                            ArchiveSavingsPlanOnBooking = false,
+                            SplitDraftId = (Guid?)null,
+                            SecurityId = (Guid?)null,
+                            SecurityTransactionType = (SecurityTransactionType?)null,
+                            SecurityQuantity = (decimal?)null,
+                            SecurityFeeAmount = (decimal?)null,
+                            SecurityTaxAmount = (decimal?)null
+                        }
+                    }
+                };
+
+                await ImportPayloadAsync(db, userId, data);
+
+                (await db.AccountPostingRules.CountAsync(CancellationToken.None)).Should().Be(0);
+
+                var posting = await db.Postings.SingleAsync(p => p.Kind == PostingKind.Bank, CancellationToken.None);
+                posting.PostingType.Should().Be(BankPostingType.Outflow);
+
+                var contactPosting = await db.Postings.SingleAsync(p => p.Kind == PostingKind.Contact, CancellationToken.None);
+                contactPosting.PostingType.Should().Be(BankPostingType.Unspecified);
+
+                var entry = await db.StatementDraftEntries.SingleAsync(CancellationToken.None);
+                entry.PostingType.Should().Be(BankPostingType.Inflow);
+                entry.IsPostingTypeManual.Should().BeFalse();
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Full export/import round-trip: an account posting rule survives as a new entity on the
+        /// remapped account, and the posting type of bank postings and draft entries (including
+        /// the manual flag) is preserved.
+        /// </summary>
+        [Fact]
+        public async Task BackupRestore_PostingTypesAndAccountPostingRules_RoundTrip()
+        {
+            await using var db = CreateDb(out var conn);
+            try
+            {
+                var userId = Guid.NewGuid();
+                var user = new FinanceManager.Domain.Users.User("u", "h", true);
+                FinanceManager.Tests.TestHelpers.TestEntityHelper.SetEntityId(user, userId);
+                db.Users.Add(user);
+
+                var bank = new Contact(userId, "Bank", ContactType.Bank, null, null);
+                db.Contacts.Add(bank);
+                await db.SaveChangesAsync(CancellationToken.None);
+
+                var account = new Account(userId, AccountType.Giro, "Giro", "DE123", bank.Id);
+                db.Accounts.Add(account);
+                var rule = new AccountPostingRule(account.Id, PostingRuleField.Subject, "Zins", BankPostingType.Interest, 4);
+                db.AccountPostingRules.Add(rule);
+                var posting = new Posting(Guid.NewGuid(), PostingKind.Bank, account.Id, null, null, null, DateTime.Today, -42m, "Kapitalertragssteuer", null, null, null);
+                posting.SetPostingType(BankPostingType.Tax);
+                db.Postings.Add(posting);
+
+                var draft = new StatementDraft(userId, "file.csv", "DE123", null);
+                var entry = draft.AddEntry(DateTime.Today, 12m, "Zinsgutschrift", "Bank", DateTime.Today, "EUR", "Gutschrift", false);
+                entry.SetPostingType(BankPostingType.Interest, manual: true);
+                db.StatementDrafts.Add(draft);
+                await db.SaveChangesAsync(CancellationToken.None);
+                db.ChangeTracker.Clear();
+
+                var temp = Path.Combine(Path.GetTempPath(), "fmtests", Guid.NewGuid().ToString());
+                try
+                {
+                    var svc = CreateBackupService(db, temp);
+                    var ndjson = await ReadBackupNdjsonAsync(db, svc, userId, temp);
+                    db.ChangeTracker.Clear();
+
+                    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ndjson));
+                    var importer = CreateImportService(db);
+                    await importer.ImportAsync(userId, stream, replaceExisting: true, CancellationToken.None);
+                    db.ChangeTracker.Clear();
+
+                    var newAccount = await db.Accounts.SingleAsync(a => a.Name == "Giro", CancellationToken.None);
+                    var newRule = await db.AccountPostingRules.SingleAsync(CancellationToken.None);
+                    newRule.AccountId.Should().Be(newAccount.Id);
+                    newRule.Field.Should().Be(PostingRuleField.Subject);
+                    newRule.Pattern.Should().Be("Zins");
+                    newRule.PostingType.Should().Be(BankPostingType.Interest);
+                    newRule.OrderIndex.Should().Be(4);
+
+                    var newPosting = await db.Postings.SingleAsync(p => p.Subject == "Kapitalertragssteuer", CancellationToken.None);
+                    newPosting.PostingType.Should().Be(BankPostingType.Tax);
+
+                    var newEntry = await db.StatementDraftEntries.SingleAsync(CancellationToken.None);
+                    newEntry.PostingType.Should().Be(BankPostingType.Interest);
+                    newEntry.IsPostingTypeManual.Should().BeTrue();
+                }
+                finally
+                {
+                    if (Directory.Exists(temp))
+                    {
+                        Directory.Delete(temp, true);
+                    }
+                }
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+        }
     }
 }

@@ -25,21 +25,27 @@ Unterhalb der Auswahlliste steht die Gruppe **Textfilter**. Den gewünschten Suc
 
 > **Hinweis:** Ein Textfilter berücksichtigt eine Buchung, wenn der Begriff im Verwendungszweck oder in der Buchungsbeschreibung vorkommt (Groß-/Kleinschreibung egal). Mehrere Einträge sind ODER-verknüpft — es genügt ein Treffer. Pro Eintrag sind höchstens 500 Zeichen erlaubt; leere Eingaben und Duplikate werden nicht übernommen.
 
-### 4. Filter übernehmen
+### 4. Optional: Nach Bankpostenart eingrenzen
 
-Mit **Übernehmen** den Dialog schließen — der Bericht wird mit den Textfiltern neu berechnet. **Abbrechen** verwirft die Änderungen am Dialog; **Filter löschen** entfernt alle Filter des Dialogs (inklusive aller Textfilter).
+Steht der Tab **Konten** aktiv, zeigt der Dialog die Gruppe **Bankpostenarten** mit den Kontrollkästchen **Eingang**, **Ausgang**, **Zinsen** und **Steuern**. Die gewünschten Arten markieren — der Bericht berücksichtigt dann nur Buchungen der gewählten Postenarten; die Auswahl wirkt ebenso auf die Hochrechnung und die Posteneinsicht.
 
-### 5. Optional: Als Favorit speichern
+> **Hinweis:** Bankbuchungen ohne ermittelte Postenart werden bei aktivem Postenartenfilter nicht berücksichtigt. Bei Sparplänen mit verknüpften Bankkonten bleiben die aus den Kontobuchungen abgeleiteten Werte ungefiltert.
 
-Über die Ribbon-Aktion **Speichern** bzw. **Speichern unter** den Bericht als Favorit ablegen. Die Textfilter werden mit dem Favoriten gespeichert und beim erneuten Öffnen wieder angewendet.
+### 5. Filter übernehmen
 
-### 6. Optional: KPI-Kachel auf der Startseite
+Mit **Übernehmen** den Dialog schließen — der Bericht wird mit den gewählten Filtern neu berechnet. **Abbrechen** verwirft die Änderungen am Dialog; **Filter löschen** entfernt alle Filter des Dialogs (inklusive aller Textfilter und Postenarten).
+
+### 6. Optional: Als Favorit speichern
+
+Über die Ribbon-Aktion **Speichern** bzw. **Speichern unter** den Bericht als Favorit ablegen. Die gewählten Filter (einschließlich Textfilter und Bankpostenarten) werden mit dem Favoriten gespeichert und beim erneuten Öffnen wieder angewendet.
+
+### 7. Optional: KPI-Kachel auf der Startseite
 
 Beruht eine KPI-Kachel der Startseite auf diesem Favoriten, zeigt sie automatisch die gefilterten Werte. Änderungen an den Filtern des Favoriten werden auf der Startseite übernommen — veraltete Kacheldaten werden dabei automatisch verworfen.
 
 ## Ergebnis
 
-Der Bericht wertet nur noch Buchungen aus, deren Verwendungszweck oder Buchungsbeschreibung mindestens einen der eingetragenen Suchbegriffe enthält. Die Textfilter wirken zusätzlich zu allen übrigen gewählten Filtern (Entitäten, Kategorien, Buchungsuntertypen).
+Der Bericht wertet nur noch Buchungen aus, die den gewählten Filtern entsprechen — zum Beispiel deren Verwendungszweck oder Buchungsbeschreibung mindestens einen der eingetragenen Suchbegriffe enthält oder die einer markierten Bankpostenart angehören. Die Filter wirken zusätzlich zu allen übrigen gewählten Filtern (Entitäten, Kategorien, Buchungsuntertypen).
 
 ## Posten zu einem Berichtswert einsehen
 
@@ -59,7 +65,7 @@ Jede Betragszelle der Spalten **Betrag**, **Vorperiode** und **Vorjahr**, die ei
 
 Der Button öffnet ein Overlay mit dem Titel „Posten – <Zeilenname> (<Spaltenname>)". Nach einem kurzen Ladehinweis listet die Tabelle je Posten **Datum**, **Herkunft** (Name der zugeordneten Entität, z. B. Konto, Kontakt oder Wertpapier), **Beschreibung** und **Betrag**. Die Fußzeile „Summe" zeigt den Gesamtbetrag — sie entspricht dem Wert der angeklickten Zelle.
 
-Die Liste folgt exakt der Berichtsauswahl: Bei **Vorperiode** und **Vorjahr** stammen die Posten aus der jeweiligen Vergleichsperiode, und alle aktiven Filter (Entitäten, Kategorien, Buchungsuntertypen, Textfilter) wirken identisch auf die aufgelisteten Posten.
+Die Liste folgt exakt der Berichtsauswahl: Bei **Vorperiode** und **Vorjahr** stammen die Posten aus der jeweiligen Vergleichsperiode, und alle aktiven Filter (Entitäten, Kategorien, Buchungsuntertypen, Bankpostenarten, Textfilter) wirken identisch auf die aufgelisteten Posten.
 
 > **Hinweis:** Erscheint unterhalb der Tabelle der Hinweis „Die Liste wurde auf die maximal zulässige Anzahl gekürzt.", liegt der Zelle eine größere Postenmenge zugrunde — die Fußzeilensumme bleibt dennoch exakt. Enthält die Zelle keine Posten, zeigt das Overlay die Leeranzeige „Keine Posten gefunden.".
 
@@ -113,6 +119,7 @@ Die aufgelisteten erwarteten Posten ergeben zusammen mit den Istwerten den hochg
 ## Barrierefreiheit
 
 - Die Buchungsarten-Tabs im Dialog sind als `role="tab"` mit `aria-selected` ausgezeichnet.
+- Die zuletzt verbleibende Buchungsart im Bearbeitungsbereich ist deaktiviert und trägt den Hinweis „Mindestens eine Buchungsart muss ausgewählt bleiben." als `title`-Attribut.
 - Die Entfernen-Schaltfläche eines Textfilter-Eintrags trägt die Beschriftung „Textfilter entfernen“ als `title`- und `aria-label`-Attribut.
 - Die Hinzufügen-Schaltfläche ist deaktiviert, solange das Eingabefeld leer ist.
 - Die Posten-Schaltfläche an den Betragszellen trägt den Tooltip „Posten anzeigen" als `title`-Attribut.

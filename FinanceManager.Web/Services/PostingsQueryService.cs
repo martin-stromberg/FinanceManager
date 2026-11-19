@@ -156,7 +156,8 @@ namespace FinanceManager.Web.Services
                                      IsReversal = x.P.IsReversal,
                                      ReversedByPostingId = x.P.ReversedByPostingId,
                                      ReversalForPostingId = x.P.ReversalForPostingId,
-                                     IsPreliminary = x.P.IsPreliminary
+                                     IsPreliminary = x.P.IsPreliminary,
+                                     PostingType = x.P.PostingType
                                  };
 
             var rows = await queryProjected.ToListAsync(ct);
@@ -196,7 +197,8 @@ namespace FinanceManager.Web.Services
                     r.IsReversal,
                     r.ReversedByPostingId,
                     r.ReversalForPostingId,
-                    r.IsPreliminary)
+                    r.IsPreliminary,
+                    PostingType: r.PostingType)
                 {
                 };
             }).ToList();
@@ -304,7 +306,8 @@ namespace FinanceManager.Web.Services
                     r.P.IsReversal,
                     r.P.ReversedByPostingId,
                     r.P.ReversalForPostingId,
-                    r.P.IsPreliminary);
+                    r.P.IsPreliminary,
+                    PostingType: r.P.PostingType);
             }).ToList();
 
             return result;
@@ -409,7 +412,8 @@ namespace FinanceManager.Web.Services
                 r.P.ReversalForPostingId,
                 r.P.IsPreliminary,
                 informalIds.Contains(r.P.Id),
-                r.P.SavingsPlanSubType)).ToList();
+                r.P.SavingsPlanSubType,
+                r.P.PostingType)).ToList();
 
             return result;
         }
@@ -486,7 +490,7 @@ namespace FinanceManager.Web.Services
                 r.P.IsReversed,
                 r.P.IsReversal,
                 r.P.ReversedByPostingId,
-                r.P.ReversalForPostingId, r.P.IsPreliminary)).ToList();
+                r.P.ReversalForPostingId, r.P.IsPreliminary, PostingType: r.P.PostingType)).ToList();
 
             return result;
         }

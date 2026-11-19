@@ -49,11 +49,22 @@ Die Schnittstelle wird über `StatementDraftsController` und `StatementDraftEntr
 
 ### `POST /api/statement-drafts/{draftId}/entries/{entryId}/book`
 
-**Beschreibung:** Verbucht eine einzelne Entwurfszeile.
+**Beschreibung:** Verbucht eine einzelne Entwurfszeile. Die Postenart der Zeile wird dabei auf den erzeugten Bankposten übertragen; ist keine bestimmt, entscheidet das Betragsvorzeichen.
+
+### `POST /api/statement-drafts/{draftId}/entries/{entryId}/save-all`
+
+**Beschreibung:** Speichert die Felder einer Entwurfszeile atomar (`StatementDraftSaveEntryAllRequest`). Der optionale Parameter `postingType` (`BankPostingType`) setzt die Postenart manuell; `null` lässt den bisherigen Wert unverändert. Ein manuell gesetzter Wert markiert die Zeile (`isPostingTypeManual = true`) und wird bei späteren Klassifizierungen nicht überschrieben.
+
+**Fehler:**
+
+| Code | Ursache |
+|------|---------|
+| 400/409 | `postingType` mit Wert `Unspecified` oder undefiniertem Enum-Wert (`Err_InvalidArgument`/Validierungsfehler) |
+| 404 | Entwurf oder Zeile existiert nicht bzw. gehört nicht zum Benutzer |
 
 ### `POST /api/statement-draft-entries/batch-update`
 
-**Beschreibung:** Führt Batch-Änderungen auf Entwurfszeilen aus.
+**Beschreibung:** Führt Batch-Änderungen auf Entwurfszeilen aus. Ein direktes Setzen der Postenart ist über den Batch-Pfad nicht vorgesehen; automatisch ermittelte Werte werden nach Kernfeldänderungen (Betrag, Verwendungszweck, Buchungsbeschreibung) neu bewertet, sofern die Zeile nicht manuell gesetzt wurde.
 
 ### `GET /api/statement-drafts/{draftId}/export`
 

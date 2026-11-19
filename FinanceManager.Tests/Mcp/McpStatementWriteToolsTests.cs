@@ -348,10 +348,7 @@ public sealed class McpStatementWriteToolsTests
             .ReturnsAsync(new[] { entryWithContact, entryWithout });
         drafts.Setup(d => d.SaveEntryAllAsync(
                 draftId, It.IsAny<Guid>(), owner,
-                It.IsAny<Guid?>(), It.IsAny<bool?>(), It.IsAny<Guid?>(), It.IsAny<bool?>(),
-                It.IsAny<Guid?>(), It.IsAny<SecurityTransactionType?>(),
-                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<decimal?>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<StatementDraftSaveEntryAllRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(entryWithout);
 
         var contacts = new Mock<IContactService>();
@@ -374,17 +371,12 @@ public sealed class McpStatementWriteToolsTests
         // Gap entry got its fill via SaveEntryAll with the effective contact value …
         drafts.Verify(d => d.SaveEntryAllAsync(
             draftId, entryWithout.Id, owner,
-            newContact, It.IsAny<bool?>(), It.IsAny<Guid?>(), It.IsAny<bool?>(),
-            It.IsAny<Guid?>(), It.IsAny<SecurityTransactionType?>(),
-            It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<decimal?>(),
+            It.Is<StatementDraftSaveEntryAllRequest>(r => r.ContactId == newContact),
             It.IsAny<CancellationToken>()), Times.Once);
         // … while the already-assigned entry was left untouched (no write at all).
         drafts.Verify(d => d.SaveEntryAllAsync(
             draftId, entryWithContact.Id, owner,
-            It.IsAny<Guid?>(), It.IsAny<bool?>(), It.IsAny<Guid?>(), It.IsAny<bool?>(),
-            It.IsAny<Guid?>(), It.IsAny<SecurityTransactionType?>(),
-            It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<decimal?>(),
-            It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<StatementDraftSaveEntryAllRequest>(), It.IsAny<CancellationToken>()), Times.Never);
 
         var entries = doc.RootElement.GetProperty("result").GetProperty("entries");
         var skip = entries[0].GetProperty("skipped");
@@ -418,10 +410,7 @@ public sealed class McpStatementWriteToolsTests
         Assert.Equal(1, doc.RootElement.GetProperty("result").GetProperty("plannedFieldCount").GetInt32());
         drafts.Verify(d => d.SaveEntryAllAsync(
             It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(),
-            It.IsAny<Guid?>(), It.IsAny<bool?>(), It.IsAny<Guid?>(), It.IsAny<bool?>(),
-            It.IsAny<Guid?>(), It.IsAny<SecurityTransactionType?>(),
-            It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<decimal?>(),
-            It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<StatementDraftSaveEntryAllRequest>(), It.IsAny<CancellationToken>()), Times.Never);
         audit.Verify(a => a.StageAsync(It.IsAny<McpAuditWriteRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -458,10 +447,7 @@ public sealed class McpStatementWriteToolsTests
         // Atomicity: the whole call was rejected before the first write.
         drafts.Verify(d => d.SaveEntryAllAsync(
             It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(),
-            It.IsAny<Guid?>(), It.IsAny<bool?>(), It.IsAny<Guid?>(), It.IsAny<bool?>(),
-            It.IsAny<Guid?>(), It.IsAny<SecurityTransactionType?>(),
-            It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<decimal?>(),
-            It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<StatementDraftSaveEntryAllRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>Test case.</summary>
@@ -549,10 +535,7 @@ public sealed class McpStatementWriteToolsTests
             .ReturnsAsync(new[] { entry });
         drafts.Setup(d => d.SaveEntryAllAsync(
                 draftId, entry.Id, owner,
-                It.IsAny<Guid?>(), It.IsAny<bool?>(), It.IsAny<Guid?>(), It.IsAny<bool?>(),
-                It.IsAny<Guid?>(), It.IsAny<SecurityTransactionType?>(),
-                It.IsAny<decimal?>(), It.IsAny<decimal?>(), It.IsAny<decimal?>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<StatementDraftSaveEntryAllRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(entry);
         var contacts = new Mock<IContactService>();
         contacts.Setup(c => c.GetAsync(contactId, owner, It.IsAny<CancellationToken>()))

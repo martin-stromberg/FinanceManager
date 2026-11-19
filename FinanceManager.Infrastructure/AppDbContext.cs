@@ -57,6 +57,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             return Set<AccountLinkedIban>();
         }
     }
+    /// <summary>Posting rules (Kontierungsregeln) of bank accounts.</summary>
+    /// <returns>The result.</returns>
+    public DbSet<AccountPostingRule> AccountPostingRules
+    {
+        get
+        {
+            return Set<AccountPostingRule>();
+        }
+    }
     /// <summary>Account sharing links.</summary>
     /// <returns>The result.</returns>
     public DbSet<AccountShare> AccountShares
@@ -475,6 +484,21 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
              .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<AccountPostingRule>(b =>
+        {
+            b.ToTable("AccountPostingRules");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Pattern).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Field).HasConversion<int>().IsRequired();
+            b.Property(x => x.PostingType).HasConversion<int>().IsRequired();
+            b.Property(x => x.OrderIndex).IsRequired();
+            b.HasIndex(x => x.AccountId);
+            b.HasOne(x => x.Account)
+             .WithMany()
+             .HasForeignKey(x => x.AccountId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Contact>(b =>
         {
             b.HasIndex(x => new { x.OwnerUserId, x.Name });
@@ -525,6 +549,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => new { x.SecurityId, x.BookingDate });
             b.Property(p => p.ParentId);
             b.Property(p => p.OriginalAmount).HasPrecision(18, 2);
+            b.Property(p => p.PostingType).HasConversion<int>().HasDefaultValue(FinanceManager.Shared.Dtos.Postings.BankPostingType.Unspecified).IsRequired();
             b.ToTable(t => t.HasCheckConstraint("CK_Postings_HasReference", "[AccountId] IS NOT NULL OR [ContactId] IS NOT NULL OR [SavingsPlanId] IS NOT NULL OR [SecurityId] IS NOT NULL"));
         });
 
@@ -543,6 +568,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         modelBuilder.Entity<StatementDraftEntry>(b =>
         {
             b.Property(x => x.Subject).HasMaxLength(500).IsRequired();
+            b.Property(x => x.PostingType).HasConversion<int>().HasDefaultValue(FinanceManager.Shared.Dtos.Postings.BankPostingType.Unspecified).IsRequired();
+            b.Property(x => x.IsPostingTypeManual).HasDefaultValue(false).IsRequired();
             b.HasIndex(x => new { x.DraftId, x.BookingDate });
         });
 
@@ -726,7 +753,10 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.EntityId).IsRequired();
             b.Property(x => x.PriorYearDate).IsRequired();
             b.Property(x => x.SuppressedAtUtc).IsRequired();
-            b.HasIndex(x => new { x.OwnerUserId, x.ReportFavoriteId, x.Kind, x.EntityId, x.PriorYearDate }).IsUnique();
+            b.HasIndex(x => new { x.OwnerUserId, x.ReportFavoriteId, x.Kind, x.EntityId, x.PriorYearDate })
+                .IsUnique()
+                .HasFilter("[PostingId] IS NULL");
+            b.HasIndex(x => new { x.OwnerUserId, x.ReportFavoriteId, x.Kind, x.EntityId, x.PriorYearDate, x.PostingId }).IsUnique();
             // Suppressions are meaningless without the favorite; remove them when it is deleted.
             b.HasOne(x => x.ReportFavorite)
                 .WithMany()

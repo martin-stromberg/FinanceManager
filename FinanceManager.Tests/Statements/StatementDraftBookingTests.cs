@@ -1713,4 +1713,63 @@ public sealed class StatementDraftBookingTests
 
         conn.Dispose();
     }
+
+    /// <summary>
+    /// Booking must transfer the draft entry's posting type to the generated bank posting while the contact
+    /// counter-posting stays <see cref="BankPostingType.Unspecified"/>.
+    /// </summary>
+    [Fact]
+    public async Task Booking_TransfersPostingType_ToBankPostingOnly()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+
+        var shop = new Contact(owner, "Bank", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var entry = draft.AddEntry(DateTime.Today, 12.5m, "Zinsgutschrift", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(entry).State = EntityState.Added;
+        entry.MarkAccounted(shop.Id);
+        entry.SetPostingType(BankPostingType.Interest, manual: true);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var res = await sut.BookAsync(draft.Id, entry.Id, owner, false, CancellationToken.None);
+
+        Assert.True(res.Success);
+        var bankPosting = await db.Postings.SingleAsync(p => p.Kind == PostingKind.Bank, cancellationToken: TestContext.Current.CancellationToken);
+        var contactPosting = await db.Postings.SingleAsync(p => p.Kind == PostingKind.Contact, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(BankPostingType.Interest, bankPosting.PostingType);
+        Assert.Equal(BankPostingType.Unspecified, contactPosting.PostingType);
+        conn.Dispose();
+    }
+
+    /// <summary>
+    /// When the draft entry carries <see cref="BankPostingType.Unspecified"/>, booking must fall back to the
+    /// amount-sign classification on the bank posting.
+    /// </summary>
+    [Fact]
+    public async Task Booking_UnspecifiedPostingType_FallsBackToAmountSign()
+    {
+        var (sut, db, conn, owner) = Create();
+        var (acc, _) = await AddAccountAsync(db, owner);
+        var draft = await CreateDraftAsync(db, owner, acc.Id);
+
+        var shop = new Contact(owner, "Shop GmbH", ContactType.Organization, null, null, false);
+        db.Contacts.Add(shop);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var entry = draft.AddEntry(DateTime.Today, -25m, "Kartenzahlung", shop.Name, DateTime.Today, "EUR", null, false);
+        db.Entry(entry).State = EntityState.Added;
+        entry.MarkAccounted(shop.Id);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var res = await sut.BookAsync(draft.Id, entry.Id, owner, false, CancellationToken.None);
+
+        Assert.True(res.Success);
+        var bankPosting = await db.Postings.SingleAsync(p => p.Kind == PostingKind.Bank, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(BankPostingType.Outflow, bankPosting.PostingType);
+        conn.Dispose();
+    }
 }

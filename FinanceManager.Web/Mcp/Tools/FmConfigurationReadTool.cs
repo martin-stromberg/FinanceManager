@@ -139,6 +139,7 @@ public sealed class FmConfigurationReadHandler : IMcpToolHandler
                 savingsPlanCategoryIds = f.Filters.SavingsPlanCategoryIds,
                 securityCategoryIds = f.Filters.SecurityCategoryIds,
                 securitySubTypes = f.Filters.SecuritySubTypes,
+                bankPostingTypes = f.Filters.BankPostingTypes,
                 includeDividendRelated = f.Filters.IncludeDividendRelated,
                 bankTextFilters = f.Filters.BankTextFilters,
                 contactTextFilters = f.Filters.ContactTextFilters,

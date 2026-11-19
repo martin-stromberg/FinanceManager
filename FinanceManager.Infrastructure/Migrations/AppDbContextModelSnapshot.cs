@@ -108,6 +108,42 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("AccountLinkedIbans", (string)null);
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Accounts.AccountPostingRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Field")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Pattern")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PostingType")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("AccountPostingRules", (string)null);
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Accounts.AccountShare", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1054,6 +1090,11 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("PostingType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
                     b.Property<decimal?>("Quantity")
                         .HasColumnType("TEXT");
 
@@ -1267,8 +1308,17 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<string>("AccountIdsCsv")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BankPostingTypesCsv")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("BankTextFiltersJson")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("ChartPosition")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChartType")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("ComparePrevious")
                         .HasColumnType("INTEGER");
@@ -1367,6 +1417,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
@@ -1380,6 +1433,9 @@ namespace FinanceManager.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PostingId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("PriorYearDate")
@@ -1396,6 +1452,10 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasIndex("ReportFavoriteId");
 
                     b.HasIndex("OwnerUserId", "ReportFavoriteId", "Kind", "EntityId", "PriorYearDate")
+                        .IsUnique()
+                        .HasFilter("[PostingId] IS NULL");
+
+                    b.HasIndex("OwnerUserId", "ReportFavoriteId", "Kind", "EntityId", "PriorYearDate", "PostingId")
                         .IsUnique();
 
                     b.ToTable("ReportSuppressedExpectations");
@@ -1824,8 +1884,18 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.Property<bool>("IsCostNeutral")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsPostingTypeManual")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("PostingType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("RecipientName")
                         .HasColumnType("TEXT");
@@ -2377,6 +2447,17 @@ namespace FinanceManager.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Accounts.AccountLinkedIban", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Accounts.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Accounts.AccountPostingRule", b =>
                 {
                     b.HasOne("FinanceManager.Domain.Accounts.Account", "Account")
                         .WithMany()

@@ -137,6 +137,29 @@ Beteiligte Komponenten:
 - `ReportSuppressedExpectation`, `IReportSuppressedExpectationService`/`ReportSuppressedExpectationService`, `ReportsController`-Endpunkte `/api/report-favorites/{id}/suppressed-expectations`
 - `ReportAggregationService.LoadSuppressionKeysAsync` — Favoriten-gescopte Schlüsselmenge für `ApplyProjectionAmounts`
 
+### 9. Postenartfilter für Bankbuchungen (`BankPostingTypes`)
+
+Der Bankpostenarten-Filter wandelt die Auswahl `Eingang`/`Ausgang`/`Zinsen`/`Steuern` in eine Allow-List von `BankPostingType`-Enum-Werten um und begleitet sie durch dieselbe Pipeline wie die Textfilter. Die vier Checkboxen der Gruppe `FilterGroup_BankTypes` (nur im `PostingKind.Bank`-Tab sichtbar) arbeiten auf dem Temp-Puffer `TempBankPostingTypes` (`HashSet<int>`); `IsBankPostingTypeSelectedTemp`/`ToggleTempBankPostingType` sind enum-typisiert (`BankPostingType`-Parameter, interne Ablage als `int`). `BuildFiltersPayload` schreibt die Auswahl als `IReadOnlyCollection<int>` in `ReportAggregatesFiltersRequest.BankPostingTypes`; `ReportsController.QueryAsync` mappt sie 1:1 auf `ReportAggregationFilters.BankPostingTypes`. Über MCP akzeptiert `fm_reporting_aggregate` das Argument `bankPostingTypes` (Int-Liste).
+
+**Aggregatpfad:** `ReportAggregationService.QueryAsync` bildet aus `Filters.BankPostingTypes` ein `HashSet<BankPostingType>` (nur wenn `Bank` ausgewählt und die Liste nicht leer). Ist der Filter aktiv, wird `PostingKind.Bank` — wie bei gesetztem Textfilter — aus `aggregateKinds` genommen und über `LoadTextFilteredRowsAsync` aus den Rohpostings verdichtet, da `PostingAggregates` die Postenart nicht führen; der `bankPostingTypes`-Parameter filtert dort in-memory per `Postenart ∈ Allow-List`. Zusätzlich greift `allowedBankTypes` als Top-Level-Allow-List auf den `rawAnon`-Zeilen (`BankPostingType`-Feld des Tupels).
+
+**Projektionspfad:** `LoadEntityEventsAsync` trägt einen optionalen Parameter `HashSet<BankPostingType>? bankPostingTypes` (letzter Parameter, vor `ct`), selektiert `p.PostingType` mit und filtert die Ereignisse in-memory — nur für `kind == PostingKind.Bank`; die übrigen Aufrufstellen (Kontakt, Sparplan) übergeben `null`. Damit enthalten `ProjectionAmount`/`ProjectionExpectedItems` ausschließlich Erwartungen der ausgewählten Postenarten.
+
+**Posteneinsicht:** `ReportPostingsQueryService.LoadPostingsAsync` erhält den Filter als `IReadOnlyCollection<int>?`-Parameter und wendet ihn auf Bank-Postings per `bankTypes.Contains((int)p.PostingType)` an — die Postenliste bleibt damit konsistent zum Zellwert.
+
+**Favoriten und KPI:** `ReportDashboardViewModel.ToFavoriteFilters` (gemeinsame Hilfsmethode von `SaveFavoriteAsync`/`UpdateFavoriteAsync`) überträgt `BankPostingTypes` in das `ReportFavoriteFiltersDto`; `ReportsController` reicht das `Filters`-Objekt der Create-/Update-Requests direkt weiter. Persistiert wird als `ReportFavorite.BankPostingTypesCsv` (Migration `AddReportFavoriteBankPostingTypes`, `SetFilters`/`GetFilters`); `HomeKpiGrid.LoadFavoriteKpiDataAsync` übernimmt `fav.Filters.BankPostingTypes` in den Aggregations-Request der KPI-Kachel.
+
+**Scope-Ausschluss `LinkedAccountPostings`:** Die aus Bankposten verknüpfter Konten abgeleiteten Sparplan-Reihen ignorieren den Filter in allen drei Pfaden — Aggregation, `LoadSavingsPlanEventsAsync` (Projektion) und die Posteneinsicht übergeben bewusst keinen Postenart-Filter für die Quell-Bankposten, damit Zellwert und Drilldown übereinstimmen. `BankPostingType.Unspecified` ist keine Filterauswahl; nicht klassifizierte Bankposten fallen bei aktivem Filter heraus.
+
+Beteiligte Komponenten:
+
+- `ReportDashboardViewModel.TempBankPostingTypes` / `SelectedBankPostingTypes` / `IsBankPostingTypeSelectedTemp` / `ToggleTempBankPostingType` / `ToFavoriteFilters`
+- `ReportAggregatesFiltersRequest.BankPostingTypes`, `ReportAggregationFilters.BankPostingTypes`, `ReportFavoriteFiltersDto.BankPostingTypes` — `IReadOnlyCollection<int>?`
+- `ReportAggregationService` — `bankPostingTypes`-HashSet, `allowedBankTypes`, `LoadTextFilteredRowsAsync`-Parameter
+- `ReportProjectionEventLoader.LoadEntityEventsAsync` — optionaler `bankPostingTypes`-Parameter
+- `ReportPostingsQueryService.LoadPostingsAsync` — Drilldown-Filter
+- `ReportFavorite.BankPostingTypesCsv` / `SetFilters` / `GetFilters`, `HomeKpiGrid.LoadFavoriteKpiDataAsync`
+
 ## Diagramm
 
 ```mermaid

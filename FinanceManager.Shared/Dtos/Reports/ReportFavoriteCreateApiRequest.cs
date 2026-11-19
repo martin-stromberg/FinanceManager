@@ -35,4 +35,8 @@ public sealed class ReportFavoriteCreateApiRequest
     public bool UseValutaDate { get; set; }
     /// <summary>Posting source used for emitted savings plans (plan postings vs. linked account postings).</summary>
     public SavingsPlanPostingSource SavingsPlanPostingSource { get; set; }
+    /// <summary>Chart visualization type.</summary>
+    public ReportChartType ChartType { get; set; } = ReportChartType.HistoricalSum;
+    /// <summary>Chart position relative to the result table.</summary>
+    public ReportChartPosition ChartPosition { get; set; } = ReportChartPosition.AboveTable;
 }

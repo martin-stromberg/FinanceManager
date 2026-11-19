@@ -8,7 +8,7 @@
 @if (_spec != null && _visible)
 {
     <div class="split-center" @onclick="(()=> CloseOverlay())">
-        <div class="split-dialog" style="max-width:90vH;" @onclick:stopPropagation="true">
+        <div class="split-dialog" style="max-width:@GetOverlayMaxWidth();" @onclick:stopPropagation="true">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
               <div class="overlay-header">
                 @* Prefer 'Title' parameter passed in UiOverlaySpec.Parameters; fallback to Attachments_Title *@
@@ -39,6 +39,7 @@
                 if (_spec.Parameters != null)
                 {
                     parms = _spec.Parameters.Where(kvp => !string.Equals(kvp.Key, "OverlayTitle", StringComparison.OrdinalIgnoreCase)
+                                                        && !string.Equals(kvp.Key, "OverlayMaxWidth", StringComparison.OrdinalIgnoreCase)
                                                         && !string.Equals(kvp.Key, "Visible", StringComparison.OrdinalIgnoreCase))
                                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                 }
@@ -100,6 +101,15 @@
         StateHasChanged();
     }
 
+    private string GetOverlayMaxWidth()
+    {
+        if (_spec?.Parameters != null && _spec.Parameters.TryGetValue("OverlayMaxWidth", out var v) && v is string s && !string.IsNullOrWhiteSpace(s))
+        {
+            return s;
+        }
+        return "90vH";
+    }
+
     private string GetOverlayTitle()
     {
         if (_spec == null) return string.Empty;
@@ -116,6 +126,7 @@
             if (t == typeof(MassBookingOptionsPanel)) return Localizer?["MassBooking_Title"] ?? "Mass booking";
             if (t == typeof(McpAccessCreateWizard)) return Localizer?["McpWizard_Title"] ?? "New AI access";
             if (t == typeof(McpTokenDisplayPanel)) return Localizer?["McpToken_Title_Rotated"] ?? "New token";
+            if (t == typeof(PostingRulesPanel)) return Localizer?["PostingRules_Section_Title"] ?? "Posting rules";
         }
         catch { }
         return _spec.ComponentType.Name;

@@ -40,6 +40,16 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
 
     public string? RecipientPlaceholder => _bankContactName;
 
+    /// <summary>
+    /// Returns the localized display text for the posting type of the given item.
+    /// </summary>
+    /// <param name="item">The entry item.</param>
+    /// <returns>The localized posting type text, or an empty string for <see cref="BankPostingType.Unspecified"/>.</returns>
+    public string GetPostingTypeText(StatementDraftEntryItem item)
+    {
+        return BuildPostingTypeText(item.PostingType, _localizer);
+    }
+
     public StatementDraftEntriesListViewModel(IServiceProvider sp, Guid draftId)
         : base(sp)
     {
@@ -91,6 +101,8 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
         SavingsPlanId = d.SavingsPlanId,
         SecurityId = d.SecurityId,
         SecurityTransactionType = d.SecurityTransactionType,
+        PostingType = d.PostingType,
+        IsPostingTypeManual = d.IsPostingTypeManual,
         BudgetImpact = d.BudgetImpact,
         CanDelete = d.Status != StatementDraftEntryStatus.AlreadyBooked
     };
@@ -574,6 +586,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             new ListColumn("subject", L["List_Th_Subject"].Value ?? "Subject", "", ListColumnAlign.Left),
             new ListColumn("savingsplan", L["List_Th_SavingsPlan"].Value ?? "SavingsPlan", "12rem", ListColumnAlign.Left),
             new ListColumn("security", L["List_Th_Security"].Value ?? "Security", "12rem", ListColumnAlign.Left),
+            new ListColumn("postingtype", L["List_Th_PostingType"].Value ?? "PostingType", "9rem", ListColumnAlign.Left),
             new ListColumn("status", L["List_Th_Status"].Value ?? "Status", "8rem", ListColumnAlign.Left)
         };
 
@@ -598,6 +611,7 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
                 new ListCell(ListCellKind.Text, Text: string.IsNullOrWhiteSpace(i.Subject) ? string.Empty : i.Subject, Muted: isMuted),
                 new ListCell(ListCellKind.Text, Text: (string.IsNullOrWhiteSpace(planName) && planSym == null) ? string.Empty : (planName ?? string.Empty), Muted: isMuted),
                 new ListCell(ListCellKind.Text, Text: (string.IsNullOrWhiteSpace(secName) && secSym == null) ? string.Empty : (secName ?? string.Empty), Muted: isMuted),
+                new ListCell(ListCellKind.Text, Text: BuildPostingTypeText(i.PostingType, L), Muted: isMuted),
                 new ListCell(ListCellKind.Text, Text: i.Status.ToString(), Muted: isMuted)
             };
             var mobileRows = BuildMobileRows(i, contactSym, contactName, planName, securityText, isMuted, L);
@@ -711,22 +725,22 @@ internal sealed class StatementDraftEntriesListViewModel : BaseListViewModel<Sta
             return securityName;
         }
 
-        var typeKey = $"EnumType_SecurityTransactionType_{transactionType.Value}";
-        var localized = localizer[typeKey];
-        var typeText = localized.ResourceNotFound || string.Equals(localized.Value, typeKey, StringComparison.Ordinal)
-            ? transactionType.Value.ToString()
-            : localized.Value;
+        var typeText = EnumDisplayTexts.GetText(transactionType.Value, localizer);
         return $"{securityName} ({typeText})";
     }
 
+    /// <summary>
+    /// Builds the localized display text for a posting type using the <c>EnumType_BankPostingType_*</c>
+    /// resource keys. <see cref="BankPostingType.Unspecified"/> yields an empty string.
+    /// </summary>
+    /// <param name="postingType">The posting type to display.</param>
+    /// <param name="localizer">Localizer for the <c>EnumType_BankPostingType_*</c> keys.</param>
+    /// <returns>The localized text, the enum name as fallback, or an empty string.</returns>
+    internal static string BuildPostingTypeText(BankPostingType postingType, IStringLocalizer<Pages> localizer)
+        => EnumDisplayTexts.GetText(postingType, localizer, emptyWhenUnspecified: true);
+
     private static string BuildStatusText(StatementDraftEntryStatus status, IStringLocalizer<Pages> localizer)
-    {
-        var key = $"EnumType_StatementDraftEntryStatus_{status}";
-        var localized = localizer[key];
-        return localized.ResourceNotFound || string.IsNullOrWhiteSpace(localized.Value) || string.Equals(localized.Value, key, StringComparison.Ordinal)
-            ? status.ToString()
-            : localized.Value;
-    }
+        => EnumDisplayTexts.GetText(status, localizer);
 
     private static string ResolveLabel(IStringLocalizer<Pages> localizer, string key, string fallback)
     {

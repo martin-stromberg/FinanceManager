@@ -17,6 +17,7 @@
 | `UseValutaDate` | `bool` | Aggregation nach Valuta |
 | `CompareProjection` | `bool` | Speichert die Hochrechnungsoption |
 | `...IdsCsv` | `string?` | Persistierte Filterlisten |
+| `BankPostingTypesCsv` | `string?` | CSV-serialisierte Postenarten-Allow-List (`BankPostingType`-Werte) für Bank-Buchungen |
 | `BankTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Bank-Buchungen |
 | `ContactTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Kontakt-Buchungen |
 | `SavingsPlanTextFiltersJson` | `string?` | JSON-serialisierte Textfilter für Sparplan-Buchungen |
@@ -45,6 +46,7 @@ Einzigartig über (`OwnerUserId`, `ReportFavoriteId`, `Kind`, `EntityId`, `Prior
 | `ReportAggregatesQueryRequest` | `CompareProjection` | `bool` | API-Eingabefeld für das Dashboard |
 | `ReportAggregatesQueryRequest` | `ReportFavoriteId` | `Guid?` | Optionales API-Feld; ohne Angabe bleiben Ausblendungen wirkungslos |
 | `ReportAggregatesFiltersRequest` / `ReportAggregationFilters` | `BankTextFilters`, `ContactTextFilters`, `SavingsPlanTextFilters`, `SecurityTextFilters` | `IReadOnlyCollection<string>?` | Optionale Freitext-Filterlisten je Buchungsart (`Subject`/`Description`) |
+| `ReportAggregatesFiltersRequest` / `ReportAggregationFilters` | `BankPostingTypes` | `IReadOnlyCollection<int>?` | Optionale Postenarten-Allow-List für Bank-Buchungen (`BankPostingType`-Ints; wirkt auf Berichtswerte, Hochrechnung und Posteneinsicht) |
 | `ReportAggregationResult` | `ComparedProjection` | `bool` | Meldet, ob die Hochrechnung im Ergebnis tatsächlich aktiv ist |
 | `ReportAggregatePointDto` | `ProjectionAmount` | `decimal?` | Hochgerechneter Betrag direkt nach `Amount` |
 | `ReportAggregatePointDto` | `ProjectionExpectedItems` | `IReadOnlyList<ReportProjectionExpectedItemDto>?` | Erwartete Ereignisse hinter dem Hochrechnungswert |
@@ -70,7 +72,8 @@ Einzigartig über (`OwnerUserId`, `ReportFavoriteId`, `Kind`, `EntityId`, `Prior
 | `ReportFavoriteCreateRequest` / `ReportFavoriteUpdateRequest` | `CompareProjection` | `bool` | Persistiert die Option beim Anlegen oder Aktualisieren |
 | `ReportFavoriteCreateApiRequest` / `ReportFavoriteUpdateApiRequest` | `CompareProjection` | `bool` | Transportiert die Option über die API |
 | `ReportFavoriteFiltersDto` | `BankTextFilters`, `ContactTextFilters`, `SavingsPlanTextFilters`, `SecurityTextFilters` | `IReadOnlyCollection<string>?` | Persistierte Textfilterlisten des Favoriten |
-| `ReportFavoriteBackupDto` | `...TextFiltersJson` | `string?` | Backup-Felder der Textfilter (Defaults `null`, Alt-Backups bleiben ladbar) |
+| `ReportFavoriteFiltersDto` | `BankPostingTypes` | `IReadOnlyCollection<int>?` | Persistierte Postenarten-Auswahl des Favoriten |
+| `ReportFavoriteBackupDto` | `...TextFiltersJson`, `BankPostingTypesCsv` | `string?` | Backup-Felder der Textfilter und der Postenarten-Auswahl (Defaults `null`, Alt-Backups bleiben ladbar) |
 | `FavKpiData` (KPI-Cache) | `FavoriteModifiedUtc` | `DateTime` | Versionsmarke des Favoriten für die Cache-Invalidierung auf der Startseite |
 
 ### `HomeKpi`

@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using FinanceManager.Shared.Dtos.Postings;
 using Microsoft.Playwright;
 
 namespace FinanceManager.Tests.E2E;
@@ -76,6 +78,19 @@ public sealed class ReportDashboardGateway
     }
 
     /// <summary>
+    /// Locates the checkbox of one bank posting type inside the open filter dialog. The posting-type
+    /// block renders only while the Bank tab is active; the checkbox is matched by its localized
+    /// label so the selector works for both UI languages.
+    /// </summary>
+    /// <param name="dialog">Locator for the open filter modal.</param>
+    /// <param name="type">Bank posting type whose checkbox should be located.</param>
+    /// <returns>Locator for the type's checkbox input.</returns>
+    public ILocator BankPostingTypeCheckbox(ILocator dialog, BankPostingType type)
+        => dialog.Locator(".subtype-list label")
+            .Filter(new LocatorFilterOptions { HasTextRegex = BankPostingTypeLabelRegex(type) })
+            .Locator("input[type=checkbox]");
+
+    /// <summary>
     /// Confirms the open filter dialog with the enabled Apply button and waits for the dialog
     /// to close (filters are copied from the temp buffer into the active state on apply).
     /// </summary>
@@ -115,6 +130,16 @@ public sealed class ReportDashboardGateway
         await dialog.Locator(".dialog-actions .btn").First.ClickAsync();
         await _page.WaitForURLAsync("**/reports/dashboard?favoriteId=*");
     }
+
+    private static Regex BankPostingTypeLabelRegex(BankPostingType type)
+        => new(type switch
+        {
+            BankPostingType.Inflow => "Eingang|Incoming",
+            BankPostingType.Outflow => "Ausgang|Outgoing",
+            BankPostingType.Interest => "Zinsen|Interest",
+            BankPostingType.Tax => "Steuern|Tax",
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported bank posting type.")
+        });
 
     private static async Task ExpectEnabledAsync(ILocator button)
     {

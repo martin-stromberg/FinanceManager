@@ -2,9 +2,9 @@ namespace FinanceManager.Application.Reports;
 
 /// <summary>
 /// Service for managing per-favorite suppressed projection expectations for a user.
-/// A suppression hides one expected posting (identified by posting kind, entity and
-/// prior-year date — never the amount) whenever the report runs in the context of that
-/// favorite.
+/// A suppression hides one expected posting (identified by posting kind, entity,
+/// prior-year date and, when available, source posting id — never the amount) whenever the
+/// report runs in the context of that favorite.
 /// </summary>
 public interface IReportSuppressedExpectationService
 {

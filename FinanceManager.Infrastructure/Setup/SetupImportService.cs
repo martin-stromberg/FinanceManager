@@ -500,6 +500,41 @@ public sealed class SetupImportService : ISetupImportService
         }
         ProgressChanged?.Invoke(this, progress.Inc());
 
+        // AccountPostingRules (optional section - backups predating the feature omit it)
+        ProgressChanged?.Invoke(this, progress.SetDescription("Account Posting Rules"));
+        if (root.TryGetProperty("AccountPostingRules", out var postingRulesEl) && postingRulesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<AccountPostingRule.AccountPostingRuleBackupDto>>(postingRulesEl.GetRawText(), jsonOptions) ?? new List<AccountPostingRule.AccountPostingRuleBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            // (AccountId, Field, Pattern) identifies a rule - tolerate duplicates within the payload
+            // and against existing rows to keep the import resilient.
+            var importedRuleKeys = new HashSet<(Guid AccountId, FinanceManager.Shared.Dtos.Accounts.PostingRuleField Field, string Pattern)>();
+            foreach (var dto in list)
+            {
+                _logger.LogDebug("ImportVersion3: AccountPostingRule create - BackupId={BackupId}, AccountId={AccountId}", dto.Id, dto.AccountId);
+                // Skip rules whose account did not survive the id remapping (FK target required).
+                if (!accountMap.TryGetValue(dto.AccountId, out var mappedRuleAccountId))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var pattern = dto.Pattern?.Trim();
+                if (string.IsNullOrWhiteSpace(pattern)
+                    || !importedRuleKeys.Add((mappedRuleAccountId, dto.Field, pattern))
+                    || await _db.AccountPostingRules.AnyAsync(r => r.AccountId == mappedRuleAccountId && r.Field == dto.Field && r.Pattern == pattern, ct))
+                {
+                    ProgressChanged?.Invoke(this, progress.IncSub());
+                    continue;
+                }
+                var entity = new AccountPostingRule(mappedRuleAccountId, dto.Field, pattern, dto.PostingType, dto.OrderIndex);
+                entity.AssignBackupDto(dto with { AccountId = mappedRuleAccountId });
+                _db.AccountPostingRules.Add(entity);
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
+
         // StatementImports
         ProgressChanged?.Invoke(this, progress.SetDescription("Statement Imports"));
         if (root.TryGetProperty("StatementImports", out var stmtImportsEl) && stmtImportsEl.ValueKind == JsonValueKind.Array)
@@ -951,8 +986,13 @@ public sealed class SetupImportService : ISetupImportService
                 {
                     continue;
                 }
+                if (dto.PostingId.HasValue && !postingMap.ContainsKey(dto.PostingId.Value))
+                {
+                    continue;
+                }
                 var entity = new ReportSuppressedExpectation(userId, newFavoriteId, dto.Kind, newEntityId, dto.PriorYearDate);
-                entity.AssignBackupDto(dto with { OwnerUserId = userId, ReportFavoriteId = newFavoriteId, EntityId = newEntityId });
+                var newPostingId = dto.PostingId.HasValue ? postingMap[dto.PostingId.Value] : (Guid?)null;
+                entity.AssignBackupDto(dto with { OwnerUserId = userId, ReportFavoriteId = newFavoriteId, EntityId = newEntityId, PostingId = newPostingId });
                 _db.ReportSuppressedExpectations.Add(entity);
             }
             await _db.SaveChangesAsync(ct);

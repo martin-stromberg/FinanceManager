@@ -118,4 +118,33 @@ public interface IAccountService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Read-only list of IBAN strings, or <see langword="null"/> when the account was not found.</returns>
     Task<IReadOnlyList<string>?> GetLinkedIbansAsync(Guid accountId, Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
+    /// Returns the posting rules of the specified account ordered by their evaluation index.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Read-only list of <see cref="AccountPostingRuleDto"/>, or <see langword="null"/> when the account was not found.</returns>
+    Task<IReadOnlyList<AccountPostingRuleDto>?> GetPostingRulesAsync(Guid accountId, Guid ownerUserId, CancellationToken ct);
+
+    /// <summary>
+    /// Creates or updates a posting rule of the specified account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="request">The rule payload; <see cref="AccountPostingRuleUpsertRequest.Id"/> selects the rule to update, <see langword="null"/> creates a new rule.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="ArgumentException">Thrown when the account was not found for the owner or the request is invalid.</exception>
+    Task UpsertPostingRuleAsync(Guid accountId, Guid ownerUserId, AccountPostingRuleUpsertRequest request, CancellationToken ct);
+
+    /// <summary>
+    /// Removes a posting rule from the specified account.
+    /// </summary>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="ownerUserId">Owner user identifier.</param>
+    /// <param name="ruleId">Identifier of the rule to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when removed; false when the account or rule was not found.</returns>
+    Task<bool> RemovePostingRuleAsync(Guid accountId, Guid ownerUserId, Guid ruleId, CancellationToken ct);
 }

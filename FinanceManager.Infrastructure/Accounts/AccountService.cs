@@ -467,6 +467,80 @@ public sealed class AccountService : IAccountService
             .ToListAsync(ct);
     }
 
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<AccountPostingRuleDto>?> GetPostingRulesAsync(Guid accountId, Guid ownerUserId, CancellationToken ct)
+    {
+        var exists = await _db.Accounts.AsNoTracking().AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (!exists) return null;
+
+        return await _db.AccountPostingRules
+            .AsNoTracking()
+            .Where(r => r.AccountId == accountId)
+            .OrderBy(r => r.OrderIndex)
+            .ThenBy(r => r.Id)
+            .Select(r => new AccountPostingRuleDto(r.Id, r.Field, r.Pattern, r.PostingType, r.OrderIndex))
+            .ToListAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task UpsertPostingRuleAsync(Guid accountId, Guid ownerUserId, AccountPostingRuleUpsertRequest request, CancellationToken ct)
+    {
+        if (request == null) throw new ArgumentNullException(nameof(request));
+        var exists = await _db.Accounts.AsNoTracking().AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (!exists) throw new ArgumentException("Account not found", nameof(accountId));
+
+        if (!Enum.IsDefined(request.Field)) throw new ArgumentException("Invalid field", nameof(request));
+        if (!Enum.IsDefined(request.PostingType) || request.PostingType == BankPostingType.Unspecified)
+        {
+            throw new ArgumentException("Invalid posting type", nameof(request));
+        }
+        var pattern = request.Pattern?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(pattern)) throw new ArgumentException("Pattern required", nameof(request));
+        if (request.OrderIndex < 0) throw new ArgumentException("Order index must not be negative", nameof(request));
+
+        if (request.Id == null)
+        {
+            // null means "append at the end"; an explicit value (including 0) is used as-is.
+            int orderIndex;
+            if (request.OrderIndex.HasValue)
+            {
+                orderIndex = request.OrderIndex.Value;
+            }
+            else
+            {
+                var max = await _db.AccountPostingRules
+                    .Where(r => r.AccountId == accountId)
+                    .Select(r => (int?)r.OrderIndex)
+                    .MaxAsync(ct);
+                orderIndex = (max ?? -1) + 1;
+            }
+            _db.AccountPostingRules.Add(new Domain.Accounts.AccountPostingRule(accountId, request.Field, pattern, request.PostingType, orderIndex));
+        }
+        else
+        {
+            var rule = await _db.AccountPostingRules
+                .FirstOrDefaultAsync(r => r.Id == request.Id.Value && r.AccountId == accountId, ct);
+            if (rule == null) throw new ArgumentException("Posting rule not found", nameof(request));
+            rule.Update(request.Field, pattern, request.PostingType, request.OrderIndex ?? rule.OrderIndex);
+        }
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> RemovePostingRuleAsync(Guid accountId, Guid ownerUserId, Guid ruleId, CancellationToken ct)
+    {
+        var exists = await _db.Accounts.AsNoTracking().AnyAsync(a => a.Id == accountId && a.OwnerUserId == ownerUserId, ct);
+        if (!exists) return false;
+
+        var rule = await _db.AccountPostingRules
+            .FirstOrDefaultAsync(r => r.Id == ruleId && r.AccountId == accountId, ct);
+        if (rule == null) return false;
+
+        _db.AccountPostingRules.Remove(rule);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
     private async Task<List<AccountScopeRow>> LoadAccountScopeAsync(Guid ownerUserId, Guid? bankContactId, string? q, CancellationToken ct)
     {
         var accountQuery = ApplyOwnerAndBankContactFilters(_db.Accounts.AsNoTracking(), ownerUserId, bankContactId);

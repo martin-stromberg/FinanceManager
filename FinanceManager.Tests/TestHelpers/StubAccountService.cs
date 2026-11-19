@@ -54,4 +54,16 @@ internal sealed class StubAccountService : IAccountService
     /// <inheritdoc/>
     public Task<IReadOnlyList<string>?> GetLinkedIbansAsync(Guid accountId, Guid ownerUserId, CancellationToken ct)
         => Task.FromException<IReadOnlyList<string>?>(new NotSupportedException("StubAccountService is not configured for this test scenario."));
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<AccountPostingRuleDto>?> GetPostingRulesAsync(Guid accountId, Guid ownerUserId, CancellationToken ct)
+        => Task.FromException<IReadOnlyList<AccountPostingRuleDto>?>(new NotSupportedException("StubAccountService is not configured for this test scenario."));
+
+    /// <inheritdoc/>
+    public Task UpsertPostingRuleAsync(Guid accountId, Guid ownerUserId, AccountPostingRuleUpsertRequest request, CancellationToken ct)
+        => Task.FromException(new NotSupportedException("StubAccountService is not configured for this test scenario."));
+
+    /// <inheritdoc/>
+    public Task<bool> RemovePostingRuleAsync(Guid accountId, Guid ownerUserId, Guid ruleId, CancellationToken ct)
+        => Task.FromException<bool>(new NotSupportedException("StubAccountService is not configured for this test scenario."));
 }

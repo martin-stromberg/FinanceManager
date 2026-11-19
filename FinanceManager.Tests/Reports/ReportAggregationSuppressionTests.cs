@@ -60,9 +60,9 @@ public sealed class ReportAggregationSuppressionTests
         return posting;
     }
 
-    private static ReportSuppressedExpectation AddSuppression(AppDbContext db, Guid ownerUserId, Guid favoriteId, PostingKind kind, Guid entityId, DateTime priorYearDate)
+    private static ReportSuppressedExpectation AddSuppression(AppDbContext db, Guid ownerUserId, Guid favoriteId, PostingKind kind, Guid entityId, DateTime priorYearDate, Guid? postingId = null, decimal? amount = null)
     {
-        var suppression = new ReportSuppressedExpectation(ownerUserId, favoriteId, kind, entityId, priorYearDate);
+        var suppression = new ReportSuppressedExpectation(ownerUserId, favoriteId, kind, entityId, priorYearDate, postingId, amount);
         db.ReportSuppressedExpectations.Add(suppression);
         return suppression;
     }
@@ -242,5 +242,33 @@ public sealed class ReportAggregationSuppressionTests
         var remaining = Assert.Single(point.ProjectionExpectedItems!);
         Assert.Equal(new DateTime(2025, 5, 20), remaining.PriorYearDate);
         Assert.Equal(80m, remaining.Amount);
+    }
+
+    /// <summary>
+    /// Posting-level suppression distinguishes two prior-year postings on the same account and
+    /// date even when their subject is identical: hiding one keeps the other expected.
+    /// </summary>
+    [Fact]
+    public async Task QueryAsync_SameDateSameSubjectPostings_SuppressOnlySelectedPosting()
+    {
+        using var db = CreateDb();
+        var user = await AddUserAsync(db, "sup-same-date");
+        var account = AddAccount(db, user.Id, "Giro");
+        var favorite = AddFavorite(db, user.Id, "Fav");
+        var analysis = new DateTime(2026, 5, 1);
+        var priorYearDate = new DateTime(2025, 5, 10);
+        var hidden = AddBankPosting(db, account, priorYearDate, 120m, "Zinsen Sparkonto");
+        var visible = AddBankPosting(db, account, priorYearDate, 80m, "Zinsen Sparkonto");
+        AddSuppression(db, user.Id, favorite.Id, PostingKind.Bank, account.Id, priorYearDate, hidden.Id, 120m);
+        await RebuildAggregatesAsync(db, user.Id);
+
+        var result = await CreateSut(db).QueryAsync(Query(user.Id, analysis, favorite.Id), TestContext.Current.CancellationToken);
+        var point = result.Points.Single(p => p.GroupKey == $"Account:{account.Id}" && p.PeriodStart == analysis);
+
+        Assert.Equal(80m, point.ProjectionAmount);
+        var remaining = Assert.Single(point.ProjectionExpectedItems!);
+        Assert.Equal(visible.Id, remaining.PostingId);
+        Assert.Equal(80m, remaining.Amount);
+        Assert.Equal(priorYearDate, remaining.PriorYearDate);
     }
 }
