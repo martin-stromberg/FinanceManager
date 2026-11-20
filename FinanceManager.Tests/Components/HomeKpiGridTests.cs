@@ -154,7 +154,7 @@ public sealed class HomeKpiGridTests : BunitContext
                 null,
                 BudgetReportDateBasis.BookingDate,
                 It.IsAny<CancellationToken>()), Times.Once);
-            Assert.NotEmpty(cut.FindAll("a[href='/list/contacts']"));
+            Assert.NotEmpty(cut.FindAll("a[href='list/contacts']"));
         });
     }
 
