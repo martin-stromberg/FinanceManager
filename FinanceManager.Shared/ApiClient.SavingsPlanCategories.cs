@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<IReadOnlyList<SavingsPlanCategoryDto>> SavingsPlanCategories_ListAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/savings-plan-categories", ct);
+        var resp = await _http.GetAsync("api/savings-plan-categories", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SavingsPlanCategoryDto>>(cancellationToken: ct) ?? Array.Empty<SavingsPlanCategoryDto>();
     }
@@ -28,7 +28,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<SavingsPlanCategoryDto?> SavingsPlanCategories_GetAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/savings-plan-categories/{id}", ct);
+        var resp = await _http.GetAsync($"api/savings-plan-categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SavingsPlanCategoryDto>(cancellationToken: ct);
@@ -44,7 +44,7 @@ public partial class ApiClient
     public async Task<SavingsPlanCategoryDto?> SavingsPlanCategories_CreateAsync(SavingsPlanCategoryDto dto, CancellationToken ct = default)
     {
         LastError = null;
-        var resp = await _http.PostAsJsonAsync("/api/savings-plan-categories", dto, ct);
+        var resp = await _http.PostAsJsonAsync("api/savings-plan-categories", dto, ct);
         if (!resp.IsSuccessStatusCode)
         {
             LastError = await resp.Content.ReadAsStringAsync(ct);
@@ -64,7 +64,7 @@ public partial class ApiClient
     public async Task<SavingsPlanCategoryDto?> SavingsPlanCategories_UpdateAsync(Guid id, SavingsPlanCategoryDto dto, CancellationToken ct = default)
     {
         LastError = null;
-        var resp = await _http.PutAsJsonAsync($"/api/savings-plan-categories/{id}", dto, ct);
+        var resp = await _http.PutAsJsonAsync($"api/savings-plan-categories/{id}", dto, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             return null;
@@ -87,7 +87,7 @@ public partial class ApiClient
     public async Task<bool> SavingsPlanCategories_DeleteAsync(Guid id, CancellationToken ct = default)
     {
         LastError = null;
-        var resp = await _http.DeleteAsync($"/api/savings-plan-categories/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/savings-plan-categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             return false;
@@ -112,7 +112,7 @@ public partial class ApiClient
     public async Task<bool> SavingsPlanCategories_SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default)
     {
         LastError = null;
-        var resp = await _http.PostAsync($"/api/savings-plan-categories/{id}/symbol/{attachmentId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/savings-plan-categories/{id}/symbol/{attachmentId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
@@ -133,7 +133,7 @@ public partial class ApiClient
     public async Task<bool> SavingsPlanCategories_ClearSymbolAsync(Guid id, CancellationToken ct = default)
     {
         LastError = null;
-        var resp = await _http.DeleteAsync($"/api/savings-plan-categories/{id}/symbol", ct);
+        var resp = await _http.DeleteAsync($"api/savings-plan-categories/{id}/symbol", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {

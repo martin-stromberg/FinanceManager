@@ -109,9 +109,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var currentPath = Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath;
-        _isHelpSurface = currentPath.Equals("/help", StringComparison.OrdinalIgnoreCase)
-            || currentPath.StartsWith("/help/", StringComparison.OrdinalIgnoreCase);
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        _isHelpSurface = currentPath.Equals("help", StringComparison.OrdinalIgnoreCase)
+            || currentPath.StartsWith("help/", StringComparison.OrdinalIgnoreCase);
         if (_isHelpSurface || HttpContext is null)
         {
             return;

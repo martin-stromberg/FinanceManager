@@ -93,10 +93,10 @@ public sealed partial class HelpSecurityMiddlewareTests : IClassFixture<TestWebA
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.EnsureSuccessStatusCode();
-        Assert.Contains("href=\"/help/view/konten-und-buchungen\"", html, StringComparison.Ordinal);
-        Assert.Contains("href=\"/help/view/konten-und-buchungen/vorlaeufige-buchungen\"", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"help/view/konten-und-buchungen\"", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"help/view/konten-und-buchungen/vorlaeufige-buchungen\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("href=\"beschreibung.md\"", html, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("href=\"/help/view/konten-und-buchungen/api\"", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("href=\"help/view/konten-und-buchungen/api\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

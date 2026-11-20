@@ -97,11 +97,11 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             {
                 if (BudgetPurposeId != Guid.Empty)
                 {
-                    SetBackNavigation($"/card/budget/purposes/{BudgetPurposeId}");
+                    SetBackNavigation($"card/budget/purposes/{BudgetPurposeId}");
                 }
                 else if (BudgetCategoryId != Guid.Empty)
                 {
-                    SetBackNavigation($"/card/budget/categories/{BudgetCategoryId}");
+                    SetBackNavigation($"card/budget/categories/{BudgetCategoryId}");
                 }
             }
 
@@ -342,7 +342,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
         }
         else if (BudgetPurposeId != Guid.Empty)
         {
-            RaiseUiActionRequested("Back", $"/card/budget/purposes/{BudgetPurposeId}");
+            RaiseUiActionRequested("Back", $"card/budget/purposes/{BudgetPurposeId}");
             return true;
         }
         else return false;
@@ -378,7 +378,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                     }
                     else if (BudgetPurposeId != Guid.Empty)
                     {
-                        RaiseUiActionRequested("Back", $"/card/budget/purposes/{BudgetPurposeId}");
+                        RaiseUiActionRequested("Back", $"card/budget/purposes/{BudgetPurposeId}");
                     }
                     else
                     {

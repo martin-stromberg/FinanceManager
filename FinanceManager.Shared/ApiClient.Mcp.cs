@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <returns>The status DTO.</returns>
     public async Task<McpStatusDto> Mcp_GetStatusAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/mcp-accesses/status", ct);
+        var resp = await _http.GetAsync("api/mcp-accesses/status", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<McpStatusDto>(cancellationToken: ct))!;
     }
@@ -29,7 +29,7 @@ public partial class ApiClient
     /// <returns>The list of access list items.</returns>
     public async Task<IReadOnlyList<McpAccessListItemDto>> Mcp_ListAccessesAsync(string? search = null, int skip = 0, int take = 100, CancellationToken ct = default)
     {
-        var url = $"/api/mcp-accesses?skip={skip}&take={take}" + (string.IsNullOrWhiteSpace(search) ? string.Empty : $"&q={Uri.EscapeDataString(search)}");
+        var url = $"api/mcp-accesses?skip={skip}&take={take}" + (string.IsNullOrWhiteSpace(search) ? string.Empty : $"&q={Uri.EscapeDataString(search)}");
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<McpAccessListItemDto>>(cancellationToken: ct) ?? Array.Empty<McpAccessListItemDto>();
@@ -43,7 +43,7 @@ public partial class ApiClient
     /// <returns>The detail DTO or null.</returns>
     public async Task<McpAccessDetailDto?> Mcp_GetAccessAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/mcp-accesses/{id}", ct);
+        var resp = await _http.GetAsync($"api/mcp-accesses/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<McpAccessDetailDto>(cancellationToken: ct);
@@ -57,7 +57,7 @@ public partial class ApiClient
     /// <returns>The created access plus plaintext token.</returns>
     public async Task<McpAccessCreatedDto> Mcp_CreateAccessAsync(McpAccessCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/mcp-accesses", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/mcp-accesses", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<McpAccessCreatedDto>(cancellationToken: ct))!;
     }
@@ -71,7 +71,7 @@ public partial class ApiClient
     /// <returns>True when updated.</returns>
     public async Task<bool> Mcp_UpdateAccessAsync(Guid id, McpAccessUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/mcp-accesses/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/mcp-accesses/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -86,7 +86,7 @@ public partial class ApiClient
     /// <returns>True when applied.</returns>
     public async Task<bool> Mcp_SetScopesAsync(Guid id, McpScopeSetRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/mcp-accesses/{id}/scopes", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/mcp-accesses/{id}/scopes", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -102,7 +102,7 @@ public partial class ApiClient
     /// <returns>True when applied.</returns>
     public async Task<bool> Mcp_SetFiltersAsync(Guid id, Guid scopeId, McpFilterSetRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/mcp-accesses/{id}/filters/{scopeId}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/mcp-accesses/{id}/filters/{scopeId}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -116,7 +116,7 @@ public partial class ApiClient
     /// <returns>True when changed.</returns>
     public async Task<bool> Mcp_ActivateAccessAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/mcp-accesses/{id}/activate", content: null, ct);
+        var resp = await _http.PostAsync($"api/mcp-accesses/{id}/activate", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -130,7 +130,7 @@ public partial class ApiClient
     /// <returns>True when changed.</returns>
     public async Task<bool> Mcp_DeactivateAccessAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/mcp-accesses/{id}/deactivate", content: null, ct);
+        var resp = await _http.PostAsync($"api/mcp-accesses/{id}/deactivate", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -145,7 +145,7 @@ public partial class ApiClient
     /// <returns>The rotation result or null.</returns>
     public async Task<McpAccessRotatedDto?> Mcp_RotateTokenAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/mcp-accesses/{id}/rotate-token", content: null, ct);
+        var resp = await _http.PostAsync($"api/mcp-accesses/{id}/rotate-token", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<McpAccessRotatedDto>(cancellationToken: ct);
@@ -160,7 +160,7 @@ public partial class ApiClient
     /// <returns>True when revoked.</returns>
     public async Task<bool> Mcp_RevokeAccessAsync(Guid id, string? reason = null, CancellationToken ct = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/mcp-accesses/{id}")
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"api/mcp-accesses/{id}")
         {
             Content = JsonContent.Create(new McpAccessRevokeRequest(reason))
         };
@@ -177,7 +177,7 @@ public partial class ApiClient
     /// <returns>The level definitions.</returns>
     public async Task<IReadOnlyList<McpAccessLevelDto>> Mcp_GetLevelsAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/mcp-accesses/levels", ct);
+        var resp = await _http.GetAsync("api/mcp-accesses/levels", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<McpAccessLevelDto>>(cancellationToken: ct) ?? Array.Empty<McpAccessLevelDto>();
     }
@@ -189,7 +189,7 @@ public partial class ApiClient
     /// <returns>The options DTO.</returns>
     public async Task<McpAccessOptionsDto?> Mcp_GetOptionsAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/mcp-accesses/options", ct);
+        var resp = await _http.GetAsync("api/mcp-accesses/options", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<McpAccessOptionsDto>(cancellationToken: ct);
     }

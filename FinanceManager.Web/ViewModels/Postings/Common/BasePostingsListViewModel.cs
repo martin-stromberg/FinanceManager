@@ -180,7 +180,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
             {
                 // navigate to card page for posting
                 var kind = "postings";
-                return $"/card/{kind}/{Posting.Id}";
+                return $"card/{kind}/{Posting.Id}";
             }
         }
 
@@ -197,7 +197,7 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
         /// Builds an export URL including common query parameters (format, search, date range).
         /// Derived classes may call this helper and append additional parameters to the returned base path.
         /// </summary>
-        /// <param name="basePath">Base endpoint path used for the export (e.g. "/api/postings/account/{id}/export").</param>
+        /// <param name="basePath">Base endpoint path used for the export (e.g. "api/postings/account/{id}/export").</param>
         /// <param name="format">Export format identifier (e.g. "csv" or "xlsx").</param>
         /// <returns>A relative URL that can be used to download the export.</returns>
         protected string BuildExportUrl(string basePath, string format)

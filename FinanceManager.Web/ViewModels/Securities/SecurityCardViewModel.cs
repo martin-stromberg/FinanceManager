@@ -117,7 +117,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     /// <summary>
     /// Endpoint used by the aggregate chart component to request time series for the current security.
     /// </summary>
-    public string ChartEndpoint => Id != Guid.Empty ? $"/api/securities/{Id}/aggregates" : string.Empty;
+    public string ChartEndpoint => Id != Guid.Empty ? $"api/securities/{Id}/aggregates" : string.Empty;
 
     /// <summary>
     /// Chart view model instance for the security aggregates or <c>null</c> when no security is loaded.

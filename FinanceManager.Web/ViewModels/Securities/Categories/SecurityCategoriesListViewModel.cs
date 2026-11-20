@@ -19,7 +19,7 @@ public sealed record SecurityCategoryItem(Guid Id, string Name, Guid? SymbolId) 
     /// Gets the navigation URL to the security category card view.
     /// </summary>
     /// <returns>Relative URL to navigate to the security category card.</returns>
-    public string GetNavigateUrl() => $"/card/securities/categories/{Id}";
+    public string GetNavigateUrl() => $"card/securities/categories/{Id}";
 }
 
 /// <summary>

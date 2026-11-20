@@ -73,7 +73,7 @@
                 ? FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.ValutaDate
                 : FinanceManager.Shared.Dtos.Budget.BudgetReportDateBasis.BookingDate;
 
-            var url = $"/api/budget/report/export?asOf={_vm.Settings.AsOfDate:yyyy-MM-dd}&months={_vm.Settings.Months}&dateBasis={(int)basis}";
+            var url = $"api/budget/report/export?asOf={_vm.Settings.AsOfDate:yyyy-MM-dd}&months={_vm.Settings.Months}&dateBasis={(int)basis}";
             Nav.NavigateTo(url, forceLoad: true);
             return;
         }

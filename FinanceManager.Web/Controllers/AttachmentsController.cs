@@ -389,7 +389,7 @@ public sealed class AttachmentsController : ControllerBase
         {
             var dto = await _cats.CreateAsync(_current.UserId, req.Name.Trim(), ct);
             // Avoid CreatedAtAction routing issues; return Created with list endpoint as location
-            return Created($"/api/attachments/categories", dto);
+            return Created($"api/attachments/categories", dto);
         }
         catch (ArgumentException ex)
         {

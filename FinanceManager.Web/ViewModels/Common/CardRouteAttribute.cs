@@ -4,7 +4,7 @@ namespace FinanceManager.Web.ViewModels.Common
 {
     /// <summary>
     /// Declares routing metadata for a card view model type. The attribute indicates the "kind" (URL segment)
-    /// used to navigate to the card (for example "accounts" => "/card/accounts/{id}").
+    /// used to navigate to the card (for example "accounts" => "card/accounts/{id}").
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     public sealed class CardRouteAttribute : Attribute

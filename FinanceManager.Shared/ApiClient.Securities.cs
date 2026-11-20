@@ -16,7 +16,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<IReadOnlyList<SecurityDto>> Securities_ListAsync(bool onlyActive = true, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities?onlyActive={(onlyActive ? "true" : "false")}", ct);
+        var resp = await _http.GetAsync($"api/securities?onlyActive={(onlyActive ? "true" : "false")}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SecurityDto>>(cancellationToken: ct) ?? Array.Empty<SecurityDto>();
     }
@@ -30,7 +30,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<int> Securities_CountAsync(bool onlyActive = true, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/count?onlyActive={(onlyActive ? "true" : "false")}", ct);
+        var resp = await _http.GetAsync($"api/securities/count?onlyActive={(onlyActive ? "true" : "false")}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("count", out var countProp) && countProp.TryGetInt32(out var cnt))
@@ -49,7 +49,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<SecurityDto?> Securities_GetAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SecurityDto>(cancellationToken: ct);
@@ -64,7 +64,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<SecurityDto> Securities_CreateAsync(SecurityRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/securities", req, ct);
+        var resp = await _http.PostAsJsonAsync("api/securities", req, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<SecurityDto>(cancellationToken: ct))!;
     }
@@ -79,7 +79,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<SecurityDto?> Securities_UpdateAsync(Guid id, SecurityRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/securities/{id}", req, ct);
+        var resp = await _http.PutAsJsonAsync($"api/securities/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SecurityDto>(cancellationToken: ct);
@@ -94,7 +94,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> Securities_ArchiveAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/securities/{id}/archive", content: null, ct);
+        var resp = await _http.PostAsync($"api/securities/{id}/archive", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
@@ -109,7 +109,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> Securities_DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/securities/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/securities/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
@@ -125,7 +125,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> Securities_SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/securities/{id}/symbol/{attachmentId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/securities/{id}/symbol/{attachmentId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
@@ -140,7 +140,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> Securities_ClearSymbolAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/securities/{id}/symbol", ct);
+        var resp = await _http.DeleteAsync($"api/securities/{id}/symbol", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
@@ -164,7 +164,7 @@ public partial class ApiClient
         part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
         content.Add(part, "file", fileName);
         if (categoryId.HasValue) content.Add(new StringContent(categoryId.Value.ToString()), "categoryId");
-        var resp = await _http.PostAsync($"/api/securities/{id}/symbol", content, ct);
+        var resp = await _http.PostAsync($"api/securities/{id}/symbol", content, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             LastError = await resp.Content.ReadAsStringAsync(ct);
@@ -184,7 +184,7 @@ public partial class ApiClient
     /// <returns>List of aggregate points or null when the security is not found.</returns>
     public async Task<IReadOnlyList<AggregatePointDto>?> Securities_GetAggregatesAsync(Guid securityId, string period = "Month", int take = 36, int? maxYearsBack = null, CancellationToken ct = default)
     {
-        var url = $"/api/securities/{securityId}/aggregates?period={Uri.EscapeDataString(period)}&take={take}";
+        var url = $"api/securities/{securityId}/aggregates?period={Uri.EscapeDataString(period)}&take={take}";
         if (maxYearsBack.HasValue) url += $"&maxYearsBack={maxYearsBack.Value}";
         var resp = await _http.GetAsync(url, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
@@ -202,7 +202,7 @@ public partial class ApiClient
     /// <returns>List of <see cref="SecurityPriceDto"/> or null when the security is not found.</returns>
     public async Task<IReadOnlyList<SecurityPriceDto>?> Securities_GetPricesAsync(Guid id, int skip = 0, int take = 50, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/prices?skip={skip}&take={take}", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/prices?skip={skip}&take={take}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SecurityPriceDto>>(cancellationToken: ct);
@@ -232,7 +232,7 @@ public partial class ApiClient
         content.Add(filePart, "file", fileName);
         content.Add(new StringContent(string.IsNullOrWhiteSpace(provider) ? "ing" : provider), "provider");
 
-        var resp = await _http.PostAsync($"/api/securities/{id}/prices/import", content, ct);
+        var resp = await _http.PostAsync($"api/securities/{id}/prices/import", content, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<SecurityPriceImportResultDto>(cancellationToken: ct))!;
     }
@@ -248,7 +248,7 @@ public partial class ApiClient
     public async Task<BackgroundTaskInfo> Securities_EnqueueBackfillAsync(Guid? securityId, DateTime? fromDateUtc, DateTime? toDateUtc, CancellationToken ct = default)
     {
         var payload = new SecurityBackfillRequest(securityId, fromDateUtc, toDateUtc);
-        var resp = await _http.PostAsJsonAsync("/api/securities/backfill", payload, ct);
+        var resp = await _http.PostAsJsonAsync("api/securities/backfill", payload, ct);
         resp.EnsureSuccessStatusCode();
         return (await resp.Content.ReadFromJsonAsync<BackgroundTaskInfo>(cancellationToken: ct))!;
     }
@@ -262,7 +262,7 @@ public partial class ApiClient
     /// <returns>List of aggregate points describing dividends.</returns>
     public async Task<IReadOnlyList<AggregatePointDto>> Securities_GetDividendsAsync(string? period = null, int? take = null, CancellationToken ct = default)
     {
-        var url = "/api/securities/dividends";
+        var url = "api/securities/dividends";
         var query = new List<string>();
         if (!string.IsNullOrWhiteSpace(period)) query.Add($"period={Uri.EscapeDataString(period)}");
         if (take.HasValue) query.Add($"take={take.Value}");
@@ -281,7 +281,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<ReturnSummaryDto?> Securities_GetReturnSummaryAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-summary", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-summary", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ReturnSummaryDto>(cancellationToken: ct);
@@ -296,7 +296,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<GoldenCrossDto?> Securities_GetGoldenCrossAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/golden-cross", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/golden-cross", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<GoldenCrossDto>(cancellationToken: ct);
@@ -311,7 +311,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<TrendReversalDto?> Securities_GetTrendReversalAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/trend-reversal", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/trend-reversal", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<TrendReversalDto>(cancellationToken: ct);
@@ -326,7 +326,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<DetailedReturnMetricsDto?> Securities_GetReturnMetricsAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-metrics", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-metrics", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<DetailedReturnMetricsDto>(cancellationToken: ct);
@@ -341,7 +341,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<PeriodicReturnsDto?> Securities_GetPeriodicReturnsAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-periodic", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-periodic", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<PeriodicReturnsDto>(cancellationToken: ct);
@@ -356,7 +356,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<CashflowTimelineDto?> Securities_GetCashflowTimelineAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-cashflows", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-cashflows", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<CashflowTimelineDto>(cancellationToken: ct);
@@ -372,7 +372,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<PerformanceChartDataDto?> Securities_GetPerformanceChartAsync(Guid id, ChartTimeRange timeRange = ChartTimeRange.All, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-chart?timeRange={timeRange}", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-chart?timeRange={timeRange}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<PerformanceChartDataDto>(cancellationToken: ct);
@@ -387,7 +387,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<BenchmarkComparisonDto?> Securities_GetBenchmarkComparisonAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-benchmark", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-benchmark", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BenchmarkComparisonDto>(cancellationToken: ct);
@@ -402,7 +402,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<IReadOnlyList<KpiBreakdownDto>?> Securities_GetKpiBreakdownsAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-kpi-breakdowns", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-kpi-breakdowns", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<KpiBreakdownDto>>(cancellationToken: ct);
@@ -416,7 +416,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task Securities_ResetReturnCacheAsync(CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync("/api/securities/return-cache", ct);
+        var resp = await _http.DeleteAsync("api/securities/return-cache", ct);
         resp.EnsureSuccessStatusCode();
     }
 
@@ -425,7 +425,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ReturnAnalysisSettingsResponse?> Securities_GetReturnAnalysisSettingsAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/securities/return-analysis/settings", ct);
+        var resp = await _http.GetAsync("api/securities/return-analysis/settings", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ReturnAnalysisSettingsResponse>(cancellationToken: ct);
@@ -437,7 +437,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Securities_UpdateReturnAnalysisSettingsAsync(ReturnAnalysisSettingsUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync("/api/securities/return-analysis/settings", request, ct);
+        var resp = await _http.PutAsJsonAsync("api/securities/return-analysis/settings", request, ct);
         if (!resp.IsSuccessStatusCode)
         {
             await EnsureSuccessOrSetErrorAsync(resp);
@@ -457,7 +457,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<SparklineDataDto?> Securities_GetSparklineAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/securities/{id}/return-sparkline", ct);
+        var resp = await _http.GetAsync($"api/securities/{id}/return-sparkline", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SparklineDataDto>(cancellationToken: ct);

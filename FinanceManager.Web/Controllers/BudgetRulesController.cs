@@ -136,7 +136,7 @@ public sealed class BudgetRulesController : ControllerBase
                 created = await _svc.CreateForCategoryAsync(_current.UserId, req.BudgetCategoryId!.Value, req.Amount, req.Interval, req.CustomIntervalMonths, req.StartDate, req.EndDate, req.PurposePattern, req.UseRegex, ct);
             }
 
-            return Created($"/api/budget/rules/{created.Id}", created);
+            return Created($"api/budget/rules/{created.Id}", created);
         }
         catch (AggregateException ex)
         {

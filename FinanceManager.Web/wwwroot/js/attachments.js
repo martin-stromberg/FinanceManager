@@ -30,7 +30,7 @@ export function registerDropArea(elementId, uploadUrl, dotnet){
         if (categoryId) { form.append('categoryId', categoryId); }
         let xsrfToken = document.querySelector('meta[name="fm-xsrf-token"]')?.getAttribute('content');
         try {
-            const tokenResponse = await fetch('/api/antiforgery', { credentials: 'include' });
+            const tokenResponse = await fetch('api/antiforgery', { credentials: 'include' });
             if (tokenResponse.ok) {
                 const data = await tokenResponse.json();
                 xsrfToken = data.requestToken || xsrfToken;

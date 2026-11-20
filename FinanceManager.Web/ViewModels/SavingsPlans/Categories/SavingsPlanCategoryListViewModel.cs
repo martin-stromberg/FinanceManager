@@ -115,6 +115,6 @@ public sealed class SavingsPlanCategoryListViewModel : BaseListViewModel<Savings
         /// Returns the navigation URL for the item's detail card.
         /// </summary>
         /// <returns>Detail card route for the category.</returns>
-        public string GetNavigateUrl() => $"/card/savings-plans/categories/{Id}";
+        public string GetNavigateUrl() => $"card/savings-plans/categories/{Id}";
     }
 }

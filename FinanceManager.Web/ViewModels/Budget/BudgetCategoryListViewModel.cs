@@ -91,7 +91,7 @@ public sealed class BudgetCategoryListViewModel : BaseListViewModel<BudgetCatego
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back", "/list/budget/purposes"); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back", "list/budget/purposes"); return Task.CompletedTask; }) { MobileShortcut = true }
         });
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
@@ -115,6 +115,6 @@ public sealed class BudgetCategoryListViewModel : BaseListViewModel<BudgetCatego
     public sealed record BudgetCategoryListItem(Guid Id, string Name, decimal Budget, decimal Actual, decimal Delta, int PurposeCount) : IListItemNavigation
     {
         /// <inheritdoc />
-        public string GetNavigateUrl() => $"/card/budget/categories/{Id}";
+        public string GetNavigateUrl() => $"card/budget/categories/{Id}";
     }
 }

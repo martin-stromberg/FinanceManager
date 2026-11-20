@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <returns>Status of the rebuild task.</returns>
     public async Task<AggregatesRebuildStatusDto> Aggregates_RebuildAsync(bool allowDuplicate = false, CancellationToken ct = default)
     {
-        var url = $"/api/background-tasks/aggregates/rebuild?allowDuplicate={(allowDuplicate ? "true" : "false")}";
+        var url = $"api/background-tasks/aggregates/rebuild?allowDuplicate={(allowDuplicate ? "true" : "false")}";
         var resp = await _http.PostAsync(url, content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AggregatesRebuildStatusDto>(cancellationToken: ct))!;
@@ -27,7 +27,7 @@ public partial class ApiClient
     /// <returns>Current rebuild status.</returns>
     public async Task<AggregatesRebuildStatusDto> Aggregates_GetRebuildStatusAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/background-tasks/aggregates/rebuild/status", ct);
+        var resp = await _http.GetAsync("api/background-tasks/aggregates/rebuild/status", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AggregatesRebuildStatusDto>(cancellationToken: ct))!;
     }

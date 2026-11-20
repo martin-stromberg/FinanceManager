@@ -59,7 +59,7 @@ namespace FinanceManager.Web.ViewModels.Postings
         /// <returns>Absolute or relative URL that can be used to download the exported postings.</returns>
         public override string GetExportUrl(string format)
         {
-            var basePath = $"/api/postings/savings-plan/{_planId}/export";
+            var basePath = $"api/postings/savings-plan/{_planId}/export";
             return BuildExportUrl(basePath, format);
         }
     }

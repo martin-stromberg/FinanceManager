@@ -104,7 +104,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     /// <summary>
     /// Endpoint used by the embedded chart view model when editing an existing savings plan.
     /// </summary>
-    public string ChartEndpoint => IsEdit ? $"/api/savings-plans/{Id}/aggregates" : string.Empty;
+    public string ChartEndpoint => IsEdit ? $"api/savings-plans/{Id}/aggregates" : string.Empty;
 
     // remember last loaded dto to rebuild card with context
     private SavingsPlanDto? _loadedDto;

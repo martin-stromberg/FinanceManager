@@ -328,7 +328,7 @@ public sealed class McpAuditViewModel : BaseCardViewModel<(string Key, string Va
         {
             new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>",
                 UiRibbonItemSize.Large, false, null,
-                () => { RaiseUiActionRequested("Back", "/card/setup"); return Task.CompletedTask; })
+                () => { RaiseUiActionRequested("Back", "card/setup"); return Task.CompletedTask; })
             { MobileShortcut = true }
         };
         var actions = new List<UiRibbonAction>

@@ -478,7 +478,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
                         return Task.CompletedTask;
                     }
 
-                    RaiseUiActionRequested("Back", $"/card/budget/categories/{id.Value}");
+                    RaiseUiActionRequested("Back", $"card/budget/categories/{id.Value}");
                     return Task.CompletedTask;
                 })
         });

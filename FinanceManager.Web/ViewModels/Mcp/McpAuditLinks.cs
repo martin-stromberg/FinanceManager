@@ -75,7 +75,7 @@ public static class McpAuditLinks
     /// <returns>The relative card URL, or <see langword="null"/> when no route exists.</returns>
     public static string? TryGetEntityHref(string? entityType, Guid entityId)
         => entityType is not null && _entityTypeRoutes.TryGetValue(entityType, out var kind)
-            ? $"/card/{kind}/{entityId}"
+            ? $"card/{kind}/{entityId}"
             : null;
 
     /// <summary>
@@ -86,7 +86,7 @@ public static class McpAuditLinks
     /// <returns>The relative card URL, or <see langword="null"/> when no route exists.</returns>
     public static string? TryGetPayloadFieldHref(string? field, Guid id)
         => field is not null && _payloadFieldRoutes.TryGetValue(field, out var kind)
-            ? $"/card/{kind}/{id}"
+            ? $"card/{kind}/{id}"
             : null;
 
     /// <summary>

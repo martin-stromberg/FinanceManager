@@ -400,7 +400,7 @@ public sealed class McpApprovalCenterViewModel : BaseCardViewModel<(string Key, 
         {
             new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>",
                 UiRibbonItemSize.Large, false, null,
-                () => { RaiseUiActionRequested("Back", "/card/setup"); return Task.CompletedTask; })
+                () => { RaiseUiActionRequested("Back", "card/setup"); return Task.CompletedTask; })
             { MobileShortcut = true }
         };
         var actions = new List<UiRibbonAction>

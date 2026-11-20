@@ -53,8 +53,8 @@ public sealed class ValidationResultPanelTests : BunitContext
         // Assert
         var links = cut.FindAll("a");
         Assert.Single(links);
-        var expectedBack = Uri.EscapeDataString($"/card/statement-drafts/{draftId}");
-        Assert.Equal($"/card/savings-plans/{relatedId}?back={expectedBack}", links[0].GetAttribute("href"));
+        var expectedBack = Uri.EscapeDataString($"card/statement-drafts/{draftId}");
+        Assert.Equal($"card/savings-plans/{relatedId}?back={expectedBack}", links[0].GetAttribute("href"));
     }
 
     /// <summary>

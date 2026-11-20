@@ -22,7 +22,7 @@ public record UserListItem(Guid Id, string Username, bool IsAdmin, bool Active, 
     /// Returns the navigation URL for the user's detail card.
     /// </summary>
     /// <returns>Relative URL to the user card.</returns>
-    public string GetNavigateUrl() => $"/card/users/{Id}";
+    public string GetNavigateUrl() => $"card/users/{Id}";
 }
 
 /// <summary>

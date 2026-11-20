@@ -129,7 +129,7 @@ else
                 if (f.SymbolId.HasValue)
                 {
                     builder.OpenElement(1, "img");
-                    builder.AddAttribute(2, "src", $"/api/attachments/{f.SymbolId}/download");
+                    builder.AddAttribute(2, "src", $"api/attachments/{f.SymbolId}/download");
                     builder.AddAttribute(3, "style", "width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border);");
                     builder.CloseElement();
                 }
@@ -305,14 +305,14 @@ else
                 if (f.SymbolId.HasValue)
                 {
                     builder.OpenElement(4, "img");
-                    builder.AddAttribute(5, "src", $"/api/attachments/{f.SymbolId}/download");
+                    builder.AddAttribute(5, "src", $"api/attachments/{f.SymbolId}/download");
                     builder.AddAttribute(6, "alt", "symbol");
                     builder.AddAttribute(7, "style", "max-width:100%;max-height:100%;display:block;");
                     builder.CloseElement();
                 }
                 else
                 {
-                    builder.AddMarkupContent(8, "<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);\"><svg style=\"width:18px;height:18px;opacity:.6;\"><use href=\"/icons/sprite.svg#image\" /></svg></div>");
+                    builder.AddMarkupContent(8, "<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);\"><svg style=\"width:18px;height:18px;opacity:.6;\"><use href=\"icons/sprite.svg#image\" /></svg></div>");
                 }
                 builder.CloseElement();
                 builder.OpenComponent<InputFile>(9);
@@ -696,7 +696,7 @@ else
 
             var back = Nav.Uri;
             var prefill = Uri.EscapeDataString(f.RecordCreationNameSuggestion ?? f.Text ?? string.Empty);
-            var createUrl = $"/card/{routeKind}/new?back={Uri.EscapeDataString(back)}";
+            var createUrl = $"card/{routeKind}/new?back={Uri.EscapeDataString(back)}";
             if (!string.IsNullOrWhiteSpace(prefill))
             {
                 createUrl += "&prefill=" + prefill;
@@ -706,8 +706,8 @@ else
             // Currently supported: BudgetPurpose -> BudgetCategory
             if (string.Equals(f.LookupType, "BudgetCategory", StringComparison.OrdinalIgnoreCase))
             {
-                var uri = Nav.ToAbsoluteUri(Nav.Uri);
-                var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+                var relativePath = Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0];
+                var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
                 // Expected origin: /card/budget/purposes/{id}
                 if (segments.Length >= 4 &&
                     string.Equals(segments[0], "card", StringComparison.OrdinalIgnoreCase) &&
@@ -727,9 +727,9 @@ else
                 || string.Equals(f.LookupType, "SavingsPlan", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(f.LookupType, "Security", StringComparison.OrdinalIgnoreCase))
             {
-                var uri = Nav.ToAbsoluteUri(Nav.Uri);
-                var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-                // Expected origin: /card/statement-drafts/entries/{entryId}?draftId=...
+                var relativePath = Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0];
+                var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                // Expected origin: card/statement-drafts/entries/{entryId}?draftId=...
                 if (segments.Length >= 4 &&
                     string.Equals(segments[0], "card", StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(segments[1], "statement-drafts", StringComparison.OrdinalIgnoreCase) &&

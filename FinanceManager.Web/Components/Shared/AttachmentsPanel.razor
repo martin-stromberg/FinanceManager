@@ -110,7 +110,7 @@ else
                             <td style="white-space:nowrap;display:flex;gap:.25rem;">
                                 @if (!a.IsUrl)
                                 {
-                                    <a href="@($"/api/attachments/{a.Id}/download")" class="icon-btn" title="@Localizer["Download"]"><svg><use href="icons/sprite.svg#download" /></svg></a>
+                                    <a href="@($"api/attachments/{a.Id}/download")" class="icon-btn" title="@Localizer["Download"]"><svg><use href="icons/sprite.svg#download" /></svg></a>
                                 }
                                 @if (!isEditing)
                                 {
@@ -182,14 +182,14 @@ else
         {
             try
             {
-                _module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/attachments.js");
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "js/attachments.js");
                 _selfRef = DotNetObjectReference.Create(this);
             }
             catch { }
         }
         if (_module != null)
         {
-            var uploadUrl = $"/api/attachments/{(short)ParentKind}/{ParentId}";
+            var uploadUrl = $"api/attachments/{(short)ParentKind}/{ParentId}";
             try
             {
                 // unregister previous (if any) then register fresh to keep handlers single

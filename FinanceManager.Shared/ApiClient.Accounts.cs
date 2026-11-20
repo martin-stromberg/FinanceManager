@@ -24,7 +24,7 @@ public partial class ApiClient
         };
         if (bankContactId.HasValue) query.Add($"bankContactId={Uri.EscapeDataString(bankContactId.Value.ToString())}");
         if (!string.IsNullOrWhiteSpace(q)) query.Add($"q={Uri.EscapeDataString(q.Trim())}");
-        var url = $"/api/accounts?{string.Join('&', query)}";
+        var url = $"api/accounts?{string.Join('&', query)}";
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AccountDto>>(cancellationToken: ct) ?? Array.Empty<AccountDto>();
@@ -40,7 +40,7 @@ public partial class ApiClient
     {
         var query = new List<string>();
         if (!string.IsNullOrWhiteSpace(q)) query.Add($"q={Uri.EscapeDataString(q.Trim())}");
-        var url = query.Count == 0 ? "/api/accounts/statistics" : $"/api/accounts/statistics?{string.Join('&', query)}";
+        var url = query.Count == 0 ? "api/accounts/statistics" : $"api/accounts/statistics?{string.Join('&', query)}";
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AccountStatisticsDto>(cancellationToken: ct) ?? AccountStatisticsDto.Empty;
@@ -54,7 +54,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<AccountDto?> GetAccountAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/accounts/{id}", ct);
+        var resp = await _http.GetAsync($"api/accounts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AccountDto>(cancellationToken: ct);
@@ -68,7 +68,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<AccountDto> CreateAccountAsync(AccountCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/accounts", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/accounts", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AccountDto>(cancellationToken: ct))!;
     }
@@ -82,7 +82,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<AccountDto?> UpdateAccountAsync(Guid id, AccountUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/accounts/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/accounts/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AccountDto>(cancellationToken: ct);
@@ -96,7 +96,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> DeleteAccountAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/accounts/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/accounts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -110,7 +110,7 @@ public partial class ApiClient
     /// <param name="ct">Cancellation token.</param>
     public async Task SetAccountSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/accounts/{id}/symbol/{attachmentId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/accounts/{id}/symbol/{attachmentId}", content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
@@ -121,7 +121,7 @@ public partial class ApiClient
     /// <param name="ct">Cancellation token.</param>
     public async Task ClearAccountSymbolAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/accounts/{id}/symbol", ct);
+        var resp = await _http.DeleteAsync($"api/accounts/{id}/symbol", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
@@ -133,7 +133,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<string>> GetLinkedIbansAsync(Guid accountId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/accounts/{accountId}/linked-ibans", ct);
+        var resp = await _http.GetAsync($"api/accounts/{accountId}/linked-ibans", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<string>>(cancellationToken: ct) ?? Array.Empty<string>();
     }
@@ -146,7 +146,7 @@ public partial class ApiClient
     /// <param name="ct">Cancellation token.</param>
     public async Task AddLinkedIbanAsync(Guid accountId, AccountLinkedIbanUpsertRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/accounts/{accountId}/linked-ibans", request, ct);
+        var resp = await _http.PostAsJsonAsync($"api/accounts/{accountId}/linked-ibans", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
@@ -158,7 +158,7 @@ public partial class ApiClient
     /// <param name="ct">Cancellation token.</param>
     public async Task RemoveLinkedIbanAsync(Guid accountId, string iban, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/accounts/{accountId}/linked-ibans/{Uri.EscapeDataString(iban)}", ct);
+        var resp = await _http.DeleteAsync($"api/accounts/{accountId}/linked-ibans/{Uri.EscapeDataString(iban)}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
@@ -170,7 +170,7 @@ public partial class ApiClient
     /// <returns>Read-only list of savings plan ids, or <c>null</c> when the account was not found.</returns>
     public async Task<IReadOnlyList<Guid>?> GetSavingsPlanLinksAsync(Guid accountId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/accounts/{accountId}/savings-plan-links", ct);
+        var resp = await _http.GetAsync($"api/accounts/{accountId}/savings-plan-links", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<Guid>>(cancellationToken: ct) ?? Array.Empty<Guid>();
@@ -184,7 +184,7 @@ public partial class ApiClient
     /// <returns>Read-only list of <see cref="AccountPostingRuleDto"/>.</returns>
     public async Task<IReadOnlyList<AccountPostingRuleDto>> GetPostingRulesAsync(Guid accountId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/accounts/{accountId}/posting-rules", ct);
+        var resp = await _http.GetAsync($"api/accounts/{accountId}/posting-rules", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AccountPostingRuleDto>>(cancellationToken: ct) ?? Array.Empty<AccountPostingRuleDto>();
     }
@@ -197,7 +197,7 @@ public partial class ApiClient
     /// <param name="ct">Cancellation token.</param>
     public async Task UpsertPostingRuleAsync(Guid accountId, AccountPostingRuleUpsertRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/accounts/{accountId}/posting-rules", request, ct);
+        var resp = await _http.PostAsJsonAsync($"api/accounts/{accountId}/posting-rules", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
@@ -209,7 +209,7 @@ public partial class ApiClient
     /// <param name="ct">Cancellation token.</param>
     public async Task RemovePostingRuleAsync(Guid accountId, Guid ruleId, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/accounts/{accountId}/posting-rules/{ruleId}", ct);
+        var resp = await _http.DeleteAsync($"api/accounts/{accountId}/posting-rules/{ruleId}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 
@@ -221,7 +221,7 @@ public partial class ApiClient
     /// <returns>The enqueued <see cref="BackgroundTaskInfo"/>.</returns>
     public async Task<BackgroundTaskInfo> EnqueuePostingTypeReevaluationAsync(Guid accountId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/accounts/{accountId}/posting-types/reclassify", content: null, ct);
+        var resp = await _http.PostAsync($"api/accounts/{accountId}/posting-types/reclassify", content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BackgroundTaskInfo>(cancellationToken: ct)
             ?? throw new InvalidOperationException("Missing background task info response.");

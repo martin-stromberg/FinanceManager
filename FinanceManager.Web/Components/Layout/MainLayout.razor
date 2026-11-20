@@ -144,20 +144,22 @@
 
     private void UpdateLogo(string uri)
     {
+        // ToBaseRelativePath strips scheme+host+PathBase, returning a path with no leading
+        // slash (e.g. "list/accounts") regardless of any reverse-proxy PathBase prefix.
         string path;
         try
         {
-            path = new Uri(uri, UriKind.Absolute).AbsolutePath.ToLowerInvariant();
+            path = Nav.ToBaseRelativePath(uri).ToLowerInvariant();
         }
         catch
         {
-            // Fallback if uri is not absolute
-            path = uri.ToLowerInvariant();
+            // Fallback if uri is not a valid absolute URI under the current BaseUri
+            path = uri.ToLowerInvariant().TrimStart('/');
         }
 
-        // Support generic list routes, e.g., /list/accounts
+        // Support generic list routes, e.g., list/accounts
         string? kind = null;
-        if (path.StartsWith("/list/"))
+        if (path.StartsWith("list/"))
         {
             var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length >= 2)
@@ -167,31 +169,31 @@
         }
 
         // decide logo
-        if (path.StartsWith("/accounts") || string.Equals(kind, "accounts", StringComparison.OrdinalIgnoreCase))
+        if (path.StartsWith("accounts") || string.Equals(kind, "accounts", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "icons/finance_manager-accounts.png";
         }
-        else if (path.StartsWith("/contacts") || string.Equals(kind, "contacts", StringComparison.OrdinalIgnoreCase))
+        else if (path.StartsWith("contacts") || string.Equals(kind, "contacts", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "icons/finance_manager-contacts.png";
         }
-        else if (path.StartsWith("/statement-drafts"))
+        else if (path.StartsWith("statement-drafts"))
         {
             _logoPath = "icons/finance_manager-statementdrafts.png";
         }
-        else if (path.StartsWith("/reports"))
+        else if (path.StartsWith("reports"))
         {
             _logoPath = "icons/finance_manager-reports.png";
         }
-        else if (path.StartsWith("/savings-plans") || string.Equals(kind, "savings-plans", StringComparison.OrdinalIgnoreCase))
+        else if (path.StartsWith("savings-plans") || string.Equals(kind, "savings-plans", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "icons/finance_manager-savingplans.png";
         }
-        else if (path.StartsWith("/securities") || string.Equals(kind, "securities", StringComparison.OrdinalIgnoreCase))
+        else if (path.StartsWith("securities") || string.Equals(kind, "securities", StringComparison.OrdinalIgnoreCase))
         {
             _logoPath = "icons/finance_manager-securities.png";
         }
-        else if (path.StartsWith("/setup"))
+        else if (path.StartsWith("setup"))
         {
             _logoPath = "icons/finance_manager-setup.png";
         }
@@ -201,15 +203,15 @@
         }
 
         // Full-width for table-heavy pages
-        _useFullWidth = path.StartsWith("/statement-drafts")
-            || path.StartsWith("/accounts")
-            || path.StartsWith("/reports")
-            || path.StartsWith("/securities")
-            || path.StartsWith("/savings-plans")
-            || path.StartsWith("/contacts")
-            || path.StartsWith("/portfolio")
-            || path.StartsWith("/list/")
-            || path.StartsWith("/card/");
+        _useFullWidth = path.StartsWith("statement-drafts")
+            || path.StartsWith("accounts")
+            || path.StartsWith("reports")
+            || path.StartsWith("securities")
+            || path.StartsWith("savings-plans")
+            || path.StartsWith("contacts")
+            || path.StartsWith("portfolio")
+            || path.StartsWith("list/")
+            || path.StartsWith("card/");
     }
 
     public void Dispose()
