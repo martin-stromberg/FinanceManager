@@ -69,6 +69,6 @@ public sealed class StatementDraftEntriesListViewModelTests
         var draftId = Guid.NewGuid();
         var item = new StatementDraftEntryItem { Id = entryId, DraftId = draftId };
 
-        Assert.Equal($"/card/statement-drafts/entries/{entryId}?draftId={draftId}", item.GetNavigateUrl());
+        Assert.Equal($"card/statement-drafts/entries/{entryId}?draftId={draftId}", item.GetNavigateUrl());
     }
 }

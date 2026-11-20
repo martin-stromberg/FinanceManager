@@ -194,7 +194,7 @@ namespace FinanceManager.Tests.Components
 
             // Symbol image rendered
             var imgs = cut.FindAll("img");
-            Assert.Contains(imgs, img => img.GetAttribute("src")?.Contains($"/api/attachments/{symbolId}/download") == true);
+            Assert.Contains(imgs, img => img.GetAttribute("src")?.Contains($"api/attachments/{symbolId}/download") == true);
         }
 
         private sealed class TestCurrentUserService : ICurrentUserService

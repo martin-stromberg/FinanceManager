@@ -51,7 +51,7 @@ else if (markdown != null && topic != null && currentDocument != null)
                                 ? topic.Id
                                 : $"{topic.Id}/{document.RouteSegment}";
                             <a class="@(document.RouteSegment.Equals(currentDocument.RouteSegment, StringComparison.OrdinalIgnoreCase) ? "active" : null)"
-                               href="@($"/help/view/{route}")">
+                               href="@($"help/view/{route}")">
                                 @document.Title
                             </a>
                         }

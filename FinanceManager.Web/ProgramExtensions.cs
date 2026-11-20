@@ -230,7 +230,7 @@ namespace FinanceManager.Web
                 var baseUri = !string.IsNullOrWhiteSpace(configuredBaseUri)
                     ? configuredBaseUri
                     : ctx != null
-                    ? $"{ctx.Request.Scheme}://{ctx.Request.Host.ToUriComponent()}/"
+                    ? $"{ctx.Request.Scheme}://{ctx.Request.Host.ToUriComponent()}{ctx.Request.PathBase.Value}/"
                     : "https://localhost:5001/";
                 client.BaseAddress = new Uri(baseUri);
             })

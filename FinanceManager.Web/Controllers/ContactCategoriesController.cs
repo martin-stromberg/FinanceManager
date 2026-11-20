@@ -95,7 +95,7 @@ public sealed class ContactCategoriesController : ControllerBase
         try
         {
             var created = await _svc.CreateAsync(_current.UserId, req.Name, ct);
-            return Created($"/api/contact-categories/{created.Id}", created);
+            return Created($"api/contact-categories/{created.Id}", created);
         }
         catch (ArgumentOutOfRangeException ex)
         {

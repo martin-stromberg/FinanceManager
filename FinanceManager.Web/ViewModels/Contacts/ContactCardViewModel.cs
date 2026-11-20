@@ -57,7 +57,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
     /// <summary>
     /// Relative endpoint used by the optional chart view model to fetch aggregates for this contact.
     /// </summary>
-    public string ChartEndpoint => Id != Guid.Empty ? $"/api/contacts/{Id}/aggregates" : string.Empty;
+    public string ChartEndpoint => Id != Guid.Empty ? $"api/contacts/{Id}/aggregates" : string.Empty;
 
     /// <summary>
     /// Optional chart view model instance used to display aggregated data for the contact. Returns <c>null</c> for new contacts.

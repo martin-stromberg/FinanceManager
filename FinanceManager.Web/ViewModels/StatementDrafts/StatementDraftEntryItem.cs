@@ -28,5 +28,5 @@ internal sealed class StatementDraftEntryItem : IListItemNavigation
     public bool IsPlaceholder { get; set; }
     public bool CanDelete { get; set; }
 
-    public string GetNavigateUrl() => $"/card/statement-drafts/entries/{Id}?draftId={DraftId}";
+    public string GetNavigateUrl() => $"card/statement-drafts/entries/{Id}?draftId={DraftId}";
 }

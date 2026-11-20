@@ -31,7 +31,7 @@ public sealed class McpAuditLinksTests
         var r = Assert.Single(refs);
         Assert.Equal(field, r.Field);
         Assert.Equal(id, r.Id);
-        Assert.Equal($"/card/{kind}/{id}", r.Href);
+        Assert.Equal($"card/{kind}/{id}", r.Href);
     }
 
     /// <summary>Nested payloads (objects inside arrays) are scanned as well.</summary>
@@ -45,8 +45,8 @@ public sealed class McpAuditLinksTests
         var refs = McpAuditLinks.ExtractPayloadReferences(json);
 
         Assert.Equal(2, refs.Count);
-        Assert.Contains(refs, r => r.Href == $"/card/statement-drafts/{draftId}");
-        Assert.Contains(refs, r => r.Href == $"/card/accounts/{accountId}");
+        Assert.Contains(refs, r => r.Href == $"card/statement-drafts/{draftId}");
+        Assert.Contains(refs, r => r.Href == $"card/accounts/{accountId}");
     }
 
     /// <summary>Fields without an existing target route yield no reference (text only).</summary>
@@ -91,7 +91,7 @@ public sealed class McpAuditLinksTests
     {
         var id = Guid.NewGuid();
 
-        Assert.Equal($"/card/{kind}/{id}", McpAuditLinks.TryGetEntityHref(entityType, id));
+        Assert.Equal($"card/{kind}/{id}", McpAuditLinks.TryGetEntityHref(entityType, id));
     }
 
     /// <summary>Entity types without a route (or AiActionRequest, EP-09) stay text.</summary>

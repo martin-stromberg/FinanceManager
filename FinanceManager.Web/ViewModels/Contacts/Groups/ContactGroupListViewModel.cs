@@ -109,6 +109,6 @@ public sealed class ContactGroupListViewModel : BaseListViewModel<ContactGroupLi
         /// Returns the navigation URL for the category card.
         /// </summary>
         /// <returns>Relative URL to the category card page.</returns>
-        public string GetNavigateUrl() => $"/card/contacts/categories/{Id}";
+        public string GetNavigateUrl() => $"card/contacts/categories/{Id}";
     }
 }

@@ -117,7 +117,7 @@ public static class NavigationManagerExtensions
         if (string.IsNullOrWhiteSpace(k)) throw new ArgumentException("Kind must be a non-empty path segment.", nameof(kind));
 
         var sb = new System.Text.StringBuilder();
-        sb.Append("/card/");
+        sb.Append("card/");
         sb.Append(k);
 
         if (!string.IsNullOrWhiteSpace(subKind))
@@ -158,7 +158,7 @@ public static class NavigationManagerExtensions
         if (string.IsNullOrWhiteSpace(k)) throw new ArgumentException("Kind must be a non-empty path segment.", nameof(kind));
 
         var sb = new System.Text.StringBuilder();
-        sb.Append("/list/");
+        sb.Append("list/");
         sb.Append($"{k}/categories");
 
         nav.NavigateTo(sb.ToString());

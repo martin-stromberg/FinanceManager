@@ -93,14 +93,14 @@ else
     private string BuildListPath()
     {
         var kind = (Kind ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(SubKind)) return $"/list/{kind}";
-        return $"/list/{kind}/{SubKind}";
+        if (string.IsNullOrWhiteSpace(SubKind)) return $"list/{kind}";
+        return $"list/{kind}/{SubKind}";
     }
 
     private string BuildCardPath(string kind, string? subKind, string id, string? back)
     {
         var k = kind.Trim();
-        var basePath = string.IsNullOrWhiteSpace(subKind) ? $"/card/{k}/{id}" : $"/card/{k}/{subKind}/{id}";
+        var basePath = string.IsNullOrWhiteSpace(subKind) ? $"card/{k}/{id}" : $"card/{k}/{subKind}/{id}";
         if (string.IsNullOrWhiteSpace(back)) return basePath;
         return basePath + "?back=" + Uri.EscapeDataString(back);
     }
@@ -264,7 +264,7 @@ else
                         // Attempt client-side download of original statement file for statement-draft card
                         if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd && sd.DraftId != Guid.Empty)
                         {
-                            var downloadUrl = $"/api/statement-drafts/{sd.DraftId}/file";
+                            var downloadUrl = $"api/statement-drafts/{sd.DraftId}/file";
                             await TriggerDownloadAsync(downloadUrl);
                         }
                         break;
@@ -281,7 +281,7 @@ else
                             if (!string.IsNullOrWhiteSpace(embedded?.Search)) exportParts.Add($"q={Uri.EscapeDataString(embedded.Search)}");
                             if (embedded?.RangeFrom != null) exportParts.Add($"from={Uri.EscapeDataString(embedded.RangeFrom.Value.ToString("O", System.Globalization.CultureInfo.InvariantCulture))}");
                             if (embedded?.RangeTo != null) exportParts.Add($"to={Uri.EscapeDataString(embedded.RangeTo.Value.ToString("O", System.Globalization.CultureInfo.InvariantCulture))}");
-                            var exportUrl = $"/api/statement-drafts/{sd.DraftId}/export?{string.Join('&', exportParts)}";
+                            var exportUrl = $"api/statement-drafts/{sd.DraftId}/export?{string.Join('&', exportParts)}";
                             await TriggerDownloadAsync(exportUrl);
                         }
                         break;
@@ -291,7 +291,7 @@ else
                         // Open original in a new tab/window so browser can display inline when supported
                         if (_vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftCardViewModel sd2 && sd2.DraftId != Guid.Empty)
                         {
-                            var viewUrl = $"/api/statement-drafts/{sd2.DraftId}/file";
+                            var viewUrl = $"api/statement-drafts/{sd2.DraftId}/file";
                             try
                             {
                                 await JS.InvokeVoidAsync("open", viewUrl, "_blank");
@@ -361,7 +361,7 @@ else
                         }
 
                         var currentUrl = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
-                        var target = $"/card/budget/rules/new?prefill={Uri.EscapeDataString(prefill ?? string.Empty)}&back={Uri.EscapeDataString(currentUrl)}";
+                        var target = $"card/budget/rules/new?prefill={Uri.EscapeDataString(prefill ?? string.Empty)}&back={Uri.EscapeDataString(currentUrl)}";
                         NavigationManager.NavigateTo(target);
                         break;
                     }

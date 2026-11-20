@@ -58,7 +58,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         /// Returns the navigate URL for the detail card of this draft.
         /// </summary>
         /// <returns>Relative URL to the draft card.</returns>
-        public string GetNavigateUrl() => $"/card/statement-drafts/{Id}";
+        public string GetNavigateUrl() => $"card/statement-drafts/{Id}";
     }
 
     private int _skip;

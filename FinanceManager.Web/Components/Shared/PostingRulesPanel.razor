@@ -112,7 +112,7 @@
                                 : (Localizer?["PostingRules_Add_Button"] ?? "Add"))"
                             @onclick="SaveRuleAsync"
                             disabled="@_busy">
-                        <svg><use href="@(_editRuleId.HasValue ? "/icons/sprite.svg#check" : "/icons/sprite.svg#plus")" /></svg>
+                        <svg><use href="@(_editRuleId.HasValue ? "icons/sprite.svg#check" : "icons/sprite.svg#plus")" /></svg>
                     </button>
                 </td>
             </tr>

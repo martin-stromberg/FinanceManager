@@ -17,7 +17,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
     public async Task<UserProfileSettingsDto?> UserSettings_GetProfileAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/user/settings/profile", ct);
+        var resp = await _http.GetAsync("api/user/settings/profile", ct);
         if (!resp.IsSuccessStatusCode) return null;
         return await resp.Content.ReadFromJsonAsync<UserProfileSettingsDto>(cancellationToken: ct);
     }
@@ -33,7 +33,7 @@ public partial class ApiClient
     public async Task<bool> UserSettings_UpdateProfileAsync(UserProfileSettingsUpdateRequest request, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var resp = await _http.PutAsJsonAsync("/api/user/settings/profile", request, ct);
+        var resp = await _http.PutAsJsonAsync("api/user/settings/profile", request, ct);
         return resp.IsSuccessStatusCode;
     }
 
@@ -48,7 +48,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
     public async Task<ImportSplitSettingsDto?> UserSettings_GetImportSplitAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/user/settings/import-split", ct);
+        var resp = await _http.GetAsync("api/user/settings/import-split", ct);
         if (!resp.IsSuccessStatusCode) return null;
         return await resp.Content.ReadFromJsonAsync<ImportSplitSettingsDto>(cancellationToken: ct);
     }
@@ -64,7 +64,7 @@ public partial class ApiClient
     public async Task<bool> UserSettings_UpdateImportSplitAsync(ImportSplitSettingsUpdateRequest request, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var resp = await _http.PutAsJsonAsync("/api/user/settings/import-split", request, ct);
+        var resp = await _http.PutAsJsonAsync("api/user/settings/import-split", request, ct);
         return resp.IsSuccessStatusCode;
     }
 
@@ -79,7 +79,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the underlying HTTP request fails.</exception>
     public async Task<NotificationSettingsDto?> User_GetNotificationSettingsAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/user/settings/notifications", ct);
+        var resp = await _http.GetAsync("api/user/settings/notifications", ct);
         if (!resp.IsSuccessStatusCode) return null;
         return await resp.Content.ReadFromJsonAsync<NotificationSettingsDto>(cancellationToken: ct);
     }
@@ -111,7 +111,7 @@ public partial class ApiClient
             HolidayCountryCode = country,
             HolidaySubdivisionCode = subdivision
         };
-        var resp = await _http.PutAsJsonAsync("/api/user/settings/notifications", payload, ct);
+        var resp = await _http.PutAsJsonAsync("api/user/settings/notifications", payload, ct);
         return resp.IsSuccessStatusCode;
     }
 
@@ -126,7 +126,7 @@ public partial class ApiClient
     public async Task<bool> UserSettings_ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var resp = await _http.PutAsJsonAsync("/api/user/settings/password", request, ct);
+        var resp = await _http.PutAsJsonAsync("api/user/settings/password", request, ct);
         if (!resp.IsSuccessStatusCode)
         {
             // Populate LastError/LastErrorCode without throwing — the failure is reported as false.

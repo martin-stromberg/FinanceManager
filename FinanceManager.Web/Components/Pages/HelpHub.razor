@@ -63,7 +63,7 @@
                     @foreach (var document in documents)
                     {
                         <a class="help-topic-card"
-                           href="@($"/help/view/{Uri.EscapeDataString(document.Id)}")"
+                           href="@($"help/view/{Uri.EscapeDataString(document.Id)}")"
                            data-help-topic-id="@document.Id">
                             <span class="help-topic-card-label">@(lang == "en" ? "Guide" : "Anleitung")</span>
                             <h3>@document.Title</h3>

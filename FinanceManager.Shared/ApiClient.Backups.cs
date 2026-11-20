@@ -13,7 +13,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<BackupDto>> Backups_ListAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/setup/backups", ct);
+        var resp = await _http.GetAsync("api/setup/backups", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BackupDto>>(cancellationToken: ct) ?? Array.Empty<BackupDto>();
     }
@@ -25,7 +25,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BackupDto> Backups_CreateAsync(CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync("/api/setup/backups", content: null, ct);
+        var resp = await _http.PostAsync("api/setup/backups", content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupDto>(cancellationToken: ct))!;
     }
@@ -41,7 +41,7 @@ public partial class ApiClient
     {
         using var content = new MultipartFormDataContent();
         content.Add(new StreamContent(fileStream), "file", fileName);
-        var resp = await _http.PostAsync("/api/setup/backups/upload", content, ct);
+        var resp = await _http.PostAsync("api/setup/backups/upload", content, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupDto>(cancellationToken: ct))!;
     }
@@ -54,7 +54,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<Stream?> Backups_DownloadAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/setup/backups/{id}/download", ct);
+        var resp = await _http.GetAsync($"api/setup/backups/{id}/download", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         var ms = new MemoryStream();
@@ -72,7 +72,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BackupRestoreStatusDto> Backups_StartApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/setup/backups/{id}/apply/start", request, ct);
+        var resp = await _http.PostAsJsonAsync($"api/setup/backups/{id}/apply/start", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupRestoreStatusDto>(cancellationToken: ct))!;
     }
@@ -84,7 +84,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BackupRestoreStatusDto> Backups_GetStatusAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/setup/backups/restore/status", ct);
+        var resp = await _http.GetAsync("api/setup/backups/restore/status", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackupRestoreStatusDto>(cancellationToken: ct))!;
     }
@@ -98,7 +98,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Backups_ApplyAsync(Guid id, BackupRestoreRequestDto request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/setup/backups/{id}/apply", request, ct);
+        var resp = await _http.PostAsJsonAsync($"api/setup/backups/{id}/apply", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -111,7 +111,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Backups_CancelAsync(CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync("/api/setup/backups/restore/cancel", content: null, ct);
+        var resp = await _http.PostAsync("api/setup/backups/restore/cancel", content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
@@ -124,7 +124,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Backups_DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/setup/backups/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/setup/backups/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;

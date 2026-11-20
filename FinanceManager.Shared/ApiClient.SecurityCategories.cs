@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<SecurityCategoryDto>> SecurityCategories_ListAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/security-categories", ct);
+        var resp = await _http.GetAsync("api/security-categories", ct);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SecurityCategoryDto>>(cancellationToken: ct) ?? Array.Empty<SecurityCategoryDto>();
     }
@@ -27,7 +27,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<SecurityCategoryDto?> SecurityCategories_GetAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/security-categories/{id}", ct);
+        var resp = await _http.GetAsync($"api/security-categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<SecurityCategoryDto>(cancellationToken: ct);
@@ -41,7 +41,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<SecurityCategoryDto?> SecurityCategories_CreateAsync(SecurityCategoryRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/security-categories", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/security-categories", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             var msg = await resp.Content.ReadAsStringAsync(ct);
@@ -61,7 +61,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<SecurityCategoryDto?> SecurityCategories_UpdateAsync(Guid id, SecurityCategoryRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/security-categories/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/security-categories/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             LastError = "Err_NotFound";
@@ -85,7 +85,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> SecurityCategories_DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/security-categories/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/security-categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             LastError = "Err_NotFound";
@@ -109,7 +109,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> SecurityCategories_SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/security-categories/{id}/symbol/{attachmentId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/security-categories/{id}/symbol/{attachmentId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
@@ -123,7 +123,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> SecurityCategories_ClearSymbolAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/security-categories/{id}/symbol", ct);
+        var resp = await _http.DeleteAsync($"api/security-categories/{id}/symbol", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;

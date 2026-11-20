@@ -73,7 +73,7 @@
         }
     }
 
-    private string IconHref => $"/icons/sprite.svg#{ResolveIconId(PrimaryKind)}";
+    private string IconHref => $"icons/sprite.svg#{ResolveIconId(PrimaryKind)}";
     private string KindClass => ResolveKindClass(PrimaryKind);
 
     private static string ResolveIconId(int kind)

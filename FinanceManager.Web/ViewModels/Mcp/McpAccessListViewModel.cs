@@ -30,7 +30,7 @@ public sealed record McpAccessListItem(
     /// Returns the navigation URL for the access detail card.
     /// </summary>
     /// <returns>Relative URL to the MCP access card.</returns>
-    public string GetNavigateUrl() => $"/card/mcp-accesses/{Id}";
+    public string GetNavigateUrl() => $"card/mcp-accesses/{Id}";
 }
 
 /// <summary>

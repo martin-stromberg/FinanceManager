@@ -128,7 +128,7 @@ public sealed class PostingsAccountViewModelTests
 
         var url = vm.GetExportUrl("csv");
 
-        Assert.StartsWith("/api/postings/account/11111111-1111-1111-1111-111111111111/export", url);
+        Assert.StartsWith("api/postings/account/11111111-1111-1111-1111-111111111111/export", url);
         Assert.Contains("format=csv", url);
         Assert.Contains("q=test%20q", url);
         Assert.Contains("from=2024-01-02", url);

@@ -167,7 +167,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             get
             {
                 var title = Localizer?["Chart_Title_Account_Aggregates"] ?? "Account";
-                var endpoint = $"/api/accounts/{Id}/aggregates";
+                var endpoint = $"api/accounts/{Id}/aggregates";
                 return new AggregateBarChartViewModel(ServiceProvider, endpoint, title);
             }
         }

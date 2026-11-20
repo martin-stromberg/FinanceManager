@@ -32,7 +32,7 @@
         <div style="margin-top:.25rem;">@string.Format(Localizer?["Import_Result_Count"]?.Value ?? "{0} drafts created.", CreatedCount)</div>
         @if (FirstDraftId.HasValue)
         {
-            <a href="@($"/statement-drafts/{FirstDraftId}")" class="alert-link">@(Localizer?["Import_ShowDetails"]?.Value ?? "Show details")</a>
+            <a href="@($"statement-drafts/{FirstDraftId}")" class="alert-link">@(Localizer?["Import_ShowDetails"]?.Value ?? "Show details")</a>
         }
     </div>
 }

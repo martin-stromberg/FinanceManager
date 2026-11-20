@@ -17,5 +17,5 @@ public sealed record ContactListItem(Guid Id, string Name, string Type, string? 
     /// Returns the relative navigation URL for this contact list item used by the UI.
     /// </summary>
     /// <returns>A string containing the relative URL to the contact card page.</returns>
-    public string GetNavigateUrl() => $"/card/contacts/{Id}";
+    public string GetNavigateUrl() => $"card/contacts/{Id}";
 }

@@ -19,7 +19,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<ContactDto>> Contacts_ListAsync(int skip = 0, int take = 50, ContactType? type = null, bool all = false, string? nameFilter = null, CancellationToken ct = default)
     {
-        var url = $"/api/contacts?skip={skip}&take={take}";
+        var url = $"api/contacts?skip={skip}&take={take}";
         if (type.HasValue) url += $"&type={type.Value}";
         if (all) url += "&all=true";
         if (!string.IsNullOrWhiteSpace(nameFilter)) url += $"&q={Uri.EscapeDataString(nameFilter)}";
@@ -36,7 +36,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ContactDto?> Contacts_GetAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/contacts/{id}", ct);
+        var resp = await _http.GetAsync($"api/contacts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ContactDto>(cancellationToken: ct);
@@ -50,7 +50,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ContactDto> Contacts_CreateAsync(ContactCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/contacts", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/contacts", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<ContactDto>(cancellationToken: ct))!;
     }
@@ -64,7 +64,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ContactDto?> Contacts_UpdateAsync(Guid id, ContactUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/contacts/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/contacts/{id}", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ContactDto>(cancellationToken: ct);
@@ -78,7 +78,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Contacts_DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/contacts/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/contacts/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -92,7 +92,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<AliasNameDto>> Contacts_GetAliasesAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/contacts/{id}/aliases", ct);
+        var resp = await _http.GetAsync($"api/contacts/{id}/aliases", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AliasNameDto>>(cancellationToken: ct) ?? Array.Empty<AliasNameDto>();
     }
@@ -106,7 +106,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Contacts_AddAliasAsync(Guid id, AliasCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/contacts/{id}/aliases", request, ct);
+        var resp = await _http.PostAsJsonAsync($"api/contacts/{id}/aliases", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
@@ -120,7 +120,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Contacts_DeleteAliasAsync(Guid id, Guid aliasId, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/contacts/{id}/aliases/{aliasId}", ct);
+        var resp = await _http.DeleteAsync($"api/contacts/{id}/aliases/{aliasId}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
     }
@@ -134,7 +134,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ContactDto> Contacts_MergeAsync(Guid sourceId, ContactMergeRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/contacts/{sourceId}/merge", request, ct);
+        var resp = await _http.PostAsJsonAsync($"api/contacts/{sourceId}/merge", request, ct);
         resp.EnsureSuccessStatusCode();
         return (await resp.Content.ReadFromJsonAsync<ContactDto>(cancellationToken: ct))!;
     }
@@ -146,7 +146,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<int> Contacts_CountAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/contacts/count", ct);
+        var resp = await _http.GetAsync("api/contacts/count", ct);
         resp.EnsureSuccessStatusCode();
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("count", out var countProp) && countProp.TryGetInt32(out var cnt))
@@ -165,7 +165,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Contacts_SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/contacts/{id}/symbol/{attachmentId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/contacts/{id}/symbol/{attachmentId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
@@ -179,7 +179,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Contacts_ClearSymbolAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/contacts/{id}/symbol", ct);
+        var resp = await _http.DeleteAsync($"api/contacts/{id}/symbol", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;

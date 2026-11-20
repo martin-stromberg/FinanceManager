@@ -27,5 +27,5 @@ public sealed record BudgetPurposeListItem(
     decimal Variance) : IListItemNavigation
 {
     /// <inheritdoc />
-    public string GetNavigateUrl() => $"/card/budget/purposes/{Id}";
+    public string GetNavigateUrl() => $"card/budget/purposes/{Id}";
 }

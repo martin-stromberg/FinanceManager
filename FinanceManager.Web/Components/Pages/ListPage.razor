@@ -256,7 +256,7 @@ else
                         if (_provider.RangeFrom.HasValue) parts.Add($"from={_provider.RangeFrom.Value:O}");
                         if (_provider.RangeTo.HasValue) parts.Add($"to={_provider.RangeTo.Value:O}");
                         var qs = parts.Count > 0 ? ("?" + string.Join('&', parts)) : string.Empty;
-                        var url = $"/api/postings/{apiSub}/{cid}/export{qs}";
+                        var url = $"api/postings/{apiSub}/{cid}/export{qs}";
                         // The download runs inside a named script function: JS eval is blocked by the
                         // Content-Security-Policy (no 'unsafe-eval'), so dynamic scripts cannot be used here.
                         try

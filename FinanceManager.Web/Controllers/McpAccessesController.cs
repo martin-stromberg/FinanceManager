@@ -120,7 +120,7 @@ public sealed class McpAccessesController : ControllerBase
         try
         {
             var created = await _svc.CreateAsync(_current.UserId, req, ct);
-            return Created($"/api/mcp-accesses/{created.Access.Id}", created);
+            return Created($"api/mcp-accesses/{created.Access.Id}", created);
         }
         catch (Exception ex) { return Error(ex); }
     }
