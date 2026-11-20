@@ -79,7 +79,7 @@
             }
             else
             {
-                Nav.NavigateTo(AuthReturnUrl.Validate(ReturnUrl) ?? "/", forceLoad: true);
+                Nav.NavigateTo(AuthReturnUrl.Validate(ReturnUrl) ?? "", forceLoad: true);
             }
         }
         catch (Exception ex)
