@@ -69,7 +69,7 @@
                     else
                     {
                         _redirecting = true;
-                        Nav.NavigateTo(target, forceLoad: true);
+                        Nav.NavigateTo("register", forceLoad: true);
                     }
                 }
             }
@@ -80,36 +80,23 @@
         }
     }
 
-    private static string GetPath(string uri)
+    // Returns the app-relative path (always rooted at the app's own base, never the host
+    // domain root) so comparisons below stay correct when the app runs behind a reverse
+    // proxy under a PathBase prefix (e.g. "/finance"), not just at the domain root.
+    private string GetPath(string uri)
     {
         if (string.IsNullOrEmpty(uri)) return "/";
-        var idx = uri.IndexOf("//", StringComparison.Ordinal);
-        if (idx >= 0)
-        {
-            var pathIdx = uri.IndexOf('/', idx + 2);
-            if (pathIdx >= 0)
-            {
-                var endIdx = FindPathEnd(uri, pathIdx);
-                return endIdx >= 0 ? uri.Substring(pathIdx, endIdx - pathIdx) : uri[pathIdx..];
-            }
-            return "/";
-        }
-
-        var relativeEndIdx = FindPathEnd(uri, 0);
-        return relativeEndIdx >= 0 ? uri[..relativeEndIdx] : uri;
-    }
-
-    private static int FindPathEnd(string uri, int startIndex)
-    {
-        var queryIndex = uri.IndexOf('?', startIndex);
-        var fragmentIndex = uri.IndexOf('#', startIndex);
-
-        return queryIndex switch
+        var relative = Nav.ToBaseRelativePath(uri);
+        var queryIndex = relative.IndexOf('?', StringComparison.Ordinal);
+        var fragmentIndex = relative.IndexOf('#', StringComparison.Ordinal);
+        var endIdx = queryIndex switch
         {
             >= 0 when fragmentIndex >= 0 => Math.Min(queryIndex, fragmentIndex),
             >= 0 => queryIndex,
             _ => fragmentIndex
         };
+        var pathOnly = endIdx >= 0 ? relative[..endIdx] : relative;
+        return "/" + pathOnly;
     }
 
     private async Task RedirectToLoginAsync(string? explicitReturnUrl)
