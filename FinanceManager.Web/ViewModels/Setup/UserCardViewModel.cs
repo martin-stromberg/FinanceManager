@@ -363,13 +363,13 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
     {
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
         };
 
         var manage = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, User != null && User.Id != Guid.Empty, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
-            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await DeleteAsync(); })
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, User != null && User.Id != Guid.Empty, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await DeleteAsync(); })
         };
 
         // Activate/Deactivate
@@ -379,11 +379,11 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
             {
                 if (User.Active)
                 {
-                    manage.Add(new UiRibbonAction("Deactivate", localizer["Ribbon_Deactivate"].Value, "<svg><use href='/icons/sprite.svg#archive'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await DisableAsync(); }));
+                    manage.Add(new UiRibbonAction("Deactivate", localizer["Ribbon_Deactivate"].Value, "<svg><use href='icons/sprite.svg#archive'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await DisableAsync(); }));
                 }
                 else
                 {
-                    manage.Add(new UiRibbonAction("Activate", localizer["Ribbon_Activate"].Value, "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await EnableAsync(); }));
+                    manage.Add(new UiRibbonAction("Activate", localizer["Ribbon_Activate"].Value, "<svg><use href='icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await EnableAsync(); }));
                 }
             }
 
@@ -391,7 +391,7 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
             // the compiler cannot track that narrowing across the nested if/else block for a property)
             if (User!.LockoutEnd != null && User.LockoutEnd > DateTime.UtcNow)
             {
-                manage.Add(new UiRibbonAction("Unblock", localizer["Ribbon_Unblock"].Value, "<svg><use href='/icons/sprite.svg#unlock'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await UnblockAsync(); }));
+                manage.Add(new UiRibbonAction("Unblock", localizer["Ribbon_Unblock"].Value, "<svg><use href='icons/sprite.svg#unlock'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await UnblockAsync(); }));
             }
 
             // Set password action for existing users
@@ -402,7 +402,7 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
                     ["UserId"] = User.Id,
                     ["OverlayTitle"] = localizer["Users_SetPassword_Title"].Value
                 };
-                manage.Add(new UiRibbonAction("SetPassword", localizer["Ribbon_SetPassword"].Value, "<svg><use href='/icons/sprite.svg#key'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("SetPassword", new BaseViewModel.UiOverlaySpec(typeof(SetPasswordOverlay), specParams)); return Task.CompletedTask; }));
+                manage.Add(new UiRibbonAction("SetPassword", localizer["Ribbon_SetPassword"].Value, "<svg><use href='icons/sprite.svg#key'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("SetPassword", new BaseViewModel.UiOverlaySpec(typeof(SetPasswordOverlay), specParams)); return Task.CompletedTask; }));
             }
         }
 

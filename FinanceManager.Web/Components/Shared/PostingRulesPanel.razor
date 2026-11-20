@@ -41,13 +41,13 @@
                                     title="@(Localizer?["PostingRules_Edit_Button"] ?? "Edit")"
                                     @onclick="() => BeginEdit(ruleCapture)"
                                     disabled="@_busy">
-                                <svg><use href="/icons/sprite.svg#edit" /></svg>
+                                <svg><use href="icons/sprite.svg#edit" /></svg>
                             </button>
                             <button class="icon-btn danger"
                                     title="@(Localizer?["PostingRules_Remove_Button"] ?? "Remove")"
                                     @onclick="() => RemoveRuleAsync(ruleCapture.Id)"
                                     disabled="@_busy">
-                                <svg><use href="/icons/sprite.svg#trash" /></svg>
+                                <svg><use href="icons/sprite.svg#trash" /></svg>
                             </button>
                         </td>
                     </tr>
@@ -103,7 +103,7 @@
                                 title="@(Localizer?["PostingRules_Cancel_Button"] ?? "Cancel")"
                                 @onclick="CancelEdit"
                                 disabled="@_busy">
-                            <svg><use href="/icons/sprite.svg#undo" /></svg>
+                            <svg><use href="icons/sprite.svg#undo" /></svg>
                         </button>
                     }
                     <button class="icon-btn"

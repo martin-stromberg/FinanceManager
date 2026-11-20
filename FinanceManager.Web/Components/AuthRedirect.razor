@@ -128,7 +128,7 @@
         if (!await UserRead.HasAnyUsersAsync(CancellationToken.None))
         {
             _redirecting = true;
-            Nav.NavigateTo("/register", forceLoad: true);
+            Nav.NavigateTo("register", forceLoad: true);
             return;
         }
 

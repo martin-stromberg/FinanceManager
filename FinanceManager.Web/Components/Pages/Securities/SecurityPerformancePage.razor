@@ -27,7 +27,7 @@
 @if (_vm.NotFound)
 {
     <p>@Localizer["SecurityPerformancePage_NotFound"]</p>
-    <button @onclick='(() => Nav.NavigateTo("/list/securities"))'>@Localizer["SecurityPerformancePage_BackToList"]</button>
+    <button @onclick='(() => Nav.NavigateTo("list/securities"))'>@Localizer["SecurityPerformancePage_BackToList"]</button>
     return;
 }
 
@@ -127,7 +127,7 @@
         }
 
         _vm.SelectTab(tab);
-        Nav.NavigateTo($"/securities/{Id}/performance/{tab}", replace: true);
+        Nav.NavigateTo($"securities/{Id}/performance/{tab}", replace: true);
     }
 
     private string GetTabLabel(string tab) => tab switch

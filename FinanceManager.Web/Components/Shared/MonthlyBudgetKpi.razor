@@ -317,7 +317,7 @@
     private void OnClick()
     {
         if (EditMode) { return; }
-        Nav.NavigateTo("/reports/budget");
+        Nav.NavigateTo("reports/budget");
     }
 
     private void OnKeyDown(KeyboardEventArgs e)
@@ -325,7 +325,7 @@
         if (EditMode) { return; }
         if (e.Key == "Enter" || e.Key == " ")
         {
-            Nav.NavigateTo("/reports/budget");
+            Nav.NavigateTo("reports/budget");
         }
     }
 }

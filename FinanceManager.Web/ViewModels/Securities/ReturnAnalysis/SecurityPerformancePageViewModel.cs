@@ -130,11 +130,11 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
                 new UiRibbonAction(
                     "Back",
                     localizer["Ribbon_Back"].Value,
-                    "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                    "<svg><use href='icons/sprite.svg#back'/></svg>",
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    () => { Navigation.NavigateTo($"/card/securities/{SecurityId}"); return Task.CompletedTask; }
+                    () => { Navigation.NavigateTo($"card/securities/{SecurityId}"); return Task.CompletedTask; }
                 )
             },
             Sort: 0
@@ -149,7 +149,7 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
                     .Select(range => new UiRibbonAction(
                         $"Range_{range}",
                         (range == OverviewTabVm.SelectedRange ? "▸ " : string.Empty) + SecurityPerformanceOverviewTabViewModel.GetRangeLabel(range),
-                        "<svg><use href='/icons/sprite.svg#calendar'/></svg>",
+                        "<svg><use href='icons/sprite.svg#calendar'/></svg>",
                         UiRibbonItemSize.Small,
                         false,
                         null,
@@ -170,11 +170,11 @@ public sealed class SecurityPerformancePageViewModel : BaseViewModel
                     new UiRibbonAction(
                         "BenchmarkSetup",
                         localizer["Ribbon_BenchmarkSetup"].Value,
-                        "<svg><use href='/icons/sprite.svg#settings'/></svg>",
+                        "<svg><use href='icons/sprite.svg#settings'/></svg>",
                         UiRibbonItemSize.Large,
                         false,
                         null,
-                        () => { Navigation.NavigateTo("/card/setup?prefill=returnanalysis"); return Task.CompletedTask; }
+                        () => { Navigation.NavigateTo("card/setup?prefill=returnanalysis"); return Task.CompletedTask; }
                     )
                 },
                 Sort: 10

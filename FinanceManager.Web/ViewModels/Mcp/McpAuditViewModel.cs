@@ -326,14 +326,14 @@ public sealed class McpAuditViewModel : BaseCardViewModel<(string Key, string Va
     {
         var navigation = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>",
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>",
                 UiRibbonItemSize.Large, false, null,
                 () => { RaiseUiActionRequested("Back", "/card/setup"); return Task.CompletedTask; })
             { MobileShortcut = true }
         };
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Reload", localizer["Ribbon_Reload"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+            new UiRibbonAction("Reload", localizer["Ribbon_Reload"].Value, "<svg><use href='icons/sprite.svg#refresh'/></svg>",
                 UiRibbonItemSize.Small, false, null, async () => { await LoadAsync(Guid.Empty); })
         };
         var tabs = new List<UiRibbonTab>

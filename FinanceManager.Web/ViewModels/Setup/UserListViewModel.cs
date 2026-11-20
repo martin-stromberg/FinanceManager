@@ -113,7 +113,7 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
             new UiRibbonAction(
                 "New",
                 localizer["Ribbon_New"].Value,
-                "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+                "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,

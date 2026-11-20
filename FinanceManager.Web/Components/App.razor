@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
+    <base href="@((HttpContext?.Request.PathBase.Value ?? string.Empty) + "/")" />
     <link rel="shortcut icon" type="image/icon" href="icons/finance_manager-64x64.ico">
     <script src="js/financeManager.js"></script>
 
@@ -61,7 +61,7 @@
     <link rel="stylesheet" href="css/theme.Dark.PortfolioReport.css" />
 
     <link rel="stylesheet" href="FinanceManager.Web.styles.css" />
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     @if (_xsrfToken is not null)
     {
         <meta name="fm-xsrf-token" content="@_xsrfToken" />

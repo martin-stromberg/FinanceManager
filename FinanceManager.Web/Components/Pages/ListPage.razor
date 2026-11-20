@@ -57,7 +57,7 @@ else
             <div class="split-dialog list-overlay-dialog" style="max-width:@GetOverlayMaxWidth();" @onclick:stopPropagation="true">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
                     <h3 style="margin:0;font-size:1rem;">@GetOverlayTitle()</h3>
-                    <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                    <button class="icon-btn" title='@Localizer["Btn_Close"]' @onclick="(()=> CloseOverlay())"><svg><use href="icons/sprite.svg#clear" /></svg></button>
                 </div>
                 @{ 
                     IDictionary<string, object?>? parms = null;
@@ -197,10 +197,10 @@ else
                 Nav.NavigateToModelCategories(Kind);
                 break;
             case "OpenBudgetCategories":
-                Nav.NavigateTo("/list/budget/categories");
+                Nav.NavigateTo("list/budget/categories");
                 break;
             case "OpenBudgetReport":
-                Nav.NavigateTo("/reports/budget");
+                Nav.NavigateTo("reports/budget");
                 break;
             case "Back":
                 // For postings lists, navigate back to card of calling dataset
@@ -217,12 +217,12 @@ else
                     };
                     if (mapped != null && Guid.TryParse(Id, out var gid))
                     {
-                        Nav.NavigateTo($"/card/{mapped}/{gid}");
+                        Nav.NavigateTo($"card/{mapped}/{gid}");
                         break;
                     }
                 }
                 // fallback: navigate to list root
-                Nav.NavigateTo($"/list/{Kind}");
+                Nav.NavigateTo($"list/{Kind}");
                 break;
             case "Reload":
                 if (_provider != null)

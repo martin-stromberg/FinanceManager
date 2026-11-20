@@ -159,7 +159,7 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             new UiRibbonAction(
                 "New",
                 localizer["Ribbon_New"].Value,
-                "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+                "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,
@@ -169,7 +169,7 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             new UiRibbonAction(
                 "Categories",
                 localizer["Ribbon_Categories"].Value,
-                "<svg><use href='/icons/sprite.svg#groups'/></svg>",
+                "<svg><use href='icons/sprite.svg#groups'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -182,11 +182,11 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             new UiRibbonAction(
                 "PortfolioAnalysisReport",
                 localizer["Ribbon_PortfolioAnalysisReport"].Value,
-                "<svg><use href='/icons/sprite.svg#chart'/></svg>",
+                "<svg><use href='icons/sprite.svg#chart'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
-                () => { _nav.NavigateTo("/portfolio/analysis-report"); return Task.CompletedTask; }
+                () => { _nav.NavigateTo("portfolio/analysis-report"); return Task.CompletedTask; }
             )
         };
 
@@ -195,7 +195,7 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             new UiRibbonAction(
                 "ToggleActive",
                 localizer["Ribbon_ToggleActive"].Value,
-                "<svg><use href='/icons/sprite.svg#check'/></svg>",
+                "<svg><use href='icons/sprite.svg#check'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,

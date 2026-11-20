@@ -14,7 +14,7 @@
             var kind = GetKindClass(n.Type);
             <div class="notif-item @kind">
                 <div class="notif-body">
-                    <div class="notif-icon"><svg><use href="/icons/sprite.svg#info" /></svg></div>
+                    <div class="notif-icon"><svg><use href="icons/sprite.svg#info" /></svg></div>
                     <div class="notif-content">
                         @if (!string.IsNullOrWhiteSpace(n.Title))
                         {
@@ -26,14 +26,14 @@
                         {
                             <div class="notif-actions">
                                 <button class="icon-btn" @onclick="(() => NavigateToEventAsync(n.TriggerEventKey!))" title="@L["Open"]">
-                                    <svg class="icon"><use href="/icons/sprite.svg#external" /></svg>
+                                    <svg class="icon"><use href="icons/sprite.svg#external" /></svg>
                                 </button>
                             </div>
                         }
                     </div>
                 </div>
                 <button class="notif-dismiss" title="@L["Dismiss"]" @onclick="(() => DismissAsync(n.Id))">
-                    <svg class="ico"><use href="/icons/sprite.svg#close" /></svg>
+                    <svg class="ico"><use href="icons/sprite.svg#close" /></svg>
                 </button>
             </div>
         }
@@ -92,7 +92,7 @@
             var sep = rest.IndexOf('?');
             var section = sep > 0 ? rest[..sep] : rest;
             var query = sep > 0 ? rest[sep..] : string.Empty;
-            Nav.NavigateTo($"/setup{query}");
+            Nav.NavigateTo($"setup{query}");
             return Task.CompletedTask;
         }
 
@@ -103,7 +103,7 @@
             if (Guid.TryParse(idPart, out var securityId))
             {
                 var back = Uri.EscapeDataString(Nav.Uri);
-                Nav.NavigateTo($"/card/securities/{securityId}?back={back}");
+                Nav.NavigateTo($"card/securities/{securityId}?back={back}");
             }
             return Task.CompletedTask;
         }
@@ -114,7 +114,7 @@
             if (Guid.TryParse(idPart, out var securityId))
             {
                 var back = Uri.EscapeDataString(Nav.Uri);
-                Nav.NavigateTo($"/card/securities/{securityId}?back={back}");
+                Nav.NavigateTo($"card/securities/{securityId}?back={back}");
             }
             return Task.CompletedTask;
         }

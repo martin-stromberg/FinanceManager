@@ -236,20 +236,20 @@ else
                                                     if (p.Name == (Localizer?["Budget_Report_Unbudgeted_SelfCostNeutral"].Value ?? "Unbudgeted (Self, cost-neutral)"))
                                                     {
                                                         <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedSelfCostNeutralPostingsAsync">
-                                                            <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                            <svg><use href="icons/sprite.svg#search" /></svg>
                                                         </button>
                                                     }
                                                     else
                                                     {
                                                         <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedPostingsAsync">
-                                                            <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                            <svg><use href="icons/sprite.svg#search" /></svg>
                                                         </button>
                                                     }
                                                 }
                                                 else
                                                 {
                                                     <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await ShowPurposePostingsAsync(p))">
-                                                        <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                        <svg><use href="icons/sprite.svg#search" /></svg>
                                                     </button>
                                                 }
                                             </td>
@@ -269,13 +269,13 @@ else
                                         @if (cat.Kind is BudgetReportCategoryRowKind.Unbudgeted)
                                         {
                                             <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedPostingsAsync">
-                                                <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                <svg><use href="icons/sprite.svg#search" /></svg>
                                             </button>
                                         }
                                         @if (cat.Kind is BudgetReportCategoryRowKind.UnbudgetedSelfCostNeutral)
                                         {
                                             <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="ShowUnbudgetedSelfCostNeutralPostingsAsync">
-                                                <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                <svg><use href="icons/sprite.svg#search" /></svg>
                                             </button>
                                         }
                                     </td>
@@ -293,7 +293,7 @@ else
                                             <td style="text-align:right;">@p.DeltaPct.ToString("P0")</td>
                                             <td style="text-align:right;white-space:nowrap;">
                                                 <button class="icon-btn" title='@(Localizer?["Budget_Report_ShowPostings"].Value ?? "Show postings")' @onclick="(async () => await ShowPurposePostingsAsync(p))">
-                                                    <svg><use href="/icons/sprite.svg#search" /></svg>
+                                                    <svg><use href="icons/sprite.svg#search" /></svg>
                                                 </button>
                                             </td>
                                         </tr>
@@ -314,7 +314,7 @@ else
             <div class="split-dialog" style="max-width:900px;" @onclick:stopPropagation="true">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
                     <h3 style="margin:0;font-size:1rem;">@(_vm.PurposePostingsPurpose?.Name ?? (Localizer?["Budget_Report_Postings"].Value ?? "Postings"))</h3>
-                    <button class="icon-btn" title='@(Localizer?["Btn_Close"].Value ?? "Close")' @onclick="(()=> _vm.HidePurposePostings())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                    <button class="icon-btn" title='@(Localizer?["Btn_Close"].Value ?? "Close")' @onclick="(()=> _vm.HidePurposePostings())"><svg><use href="icons/sprite.svg#clear" /></svg></button>
                 </div>
 
                 @if (_vm.PurposePostingsLoading)
@@ -374,7 +374,7 @@ else
             <div class="split-dialog" style="max-width:600px;" @onclick:stopPropagation="true">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
                     <h3 style="margin:0;font-size:1rem;">@(Localizer?["Budget_Report_Settings"].Value ?? "Settings")</h3>
-                    <button class="icon-btn" title='@(Localizer?["Btn_Close"].Value ?? "Close")' @onclick="(()=> _vm.HideSettings())"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                    <button class="icon-btn" title='@(Localizer?["Btn_Close"].Value ?? "Close")' @onclick="(()=> _vm.HideSettings())"><svg><use href="icons/sprite.svg#clear" /></svg></button>
                 </div>
 
                 <BudgetReportSettingsOverlay Settings="_vm.Settings" OnApply="ApplySettingsAsync" />
