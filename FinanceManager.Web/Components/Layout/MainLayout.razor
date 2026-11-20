@@ -68,7 +68,7 @@
 </div>
 
 @code {
-    private string _logoPath = "/icons/finance_manager.png";
+    private string _logoPath = "icons/finance_manager.png";
     private bool _useFullWidth;
     private IDisposable? _locationChangingRegistration;
     private bool _keepaliveRegistered;
@@ -169,35 +169,35 @@
         // decide logo
         if (path.StartsWith("/accounts") || string.Equals(kind, "accounts", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-accounts.png";
+            _logoPath = "icons/finance_manager-accounts.png";
         }
         else if (path.StartsWith("/contacts") || string.Equals(kind, "contacts", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-contacts.png";
+            _logoPath = "icons/finance_manager-contacts.png";
         }
         else if (path.StartsWith("/statement-drafts"))
         {
-            _logoPath = "/icons/finance_manager-statementdrafts.png";
+            _logoPath = "icons/finance_manager-statementdrafts.png";
         }
         else if (path.StartsWith("/reports"))
         {
-            _logoPath = "/icons/finance_manager-reports.png";
+            _logoPath = "icons/finance_manager-reports.png";
         }
         else if (path.StartsWith("/savings-plans") || string.Equals(kind, "savings-plans", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-savingplans.png";
+            _logoPath = "icons/finance_manager-savingplans.png";
         }
         else if (path.StartsWith("/securities") || string.Equals(kind, "securities", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-securities.png";
+            _logoPath = "icons/finance_manager-securities.png";
         }
         else if (path.StartsWith("/setup"))
         {
-            _logoPath = "/icons/finance_manager-setup.png";
+            _logoPath = "icons/finance_manager-setup.png";
         }
         else
         {
-            _logoPath = "/icons/finance_manager.png"; // Home and default
+            _logoPath = "icons/finance_manager.png"; // Home and default
         }
 
         // Full-width for table-heavy pages
