@@ -2,7 +2,7 @@ window.financeManager = window.financeManager || {};
 
 (function (fm) {
   const loadingBarId = "fm-loading-bar";
-  const keepaliveUrl = "/api/auth/keepalive";
+  const keepaliveUrl = "api/auth/keepalive";
   const keepaliveIntervalMs = 60000;
   const keepaliveForcedIntervalMs = 5000;
   const keepaliveTimeoutMs = 8000;

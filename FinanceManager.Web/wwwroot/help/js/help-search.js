@@ -27,7 +27,7 @@ class HelpPageManager {
     }
 
     async loadSearchIndex() {
-        const response = await fetch(`/api/help/search-index/${this.language}.json`);
+        const response = await fetch(`api/help/search-index/${this.language}.json`);
         if (!response.ok) {
             throw new Error('Search index unavailable');
         }
@@ -106,7 +106,7 @@ class HelpPageManager {
     createFeatureCard(feature) {
         const card = document.createElement('a');
         card.className = 'help-topic-card';
-        card.href = `/help/view/${encodeURIComponent(feature.id)}`;
+        card.href = `help/view/${encodeURIComponent(feature.id)}`;
 
         const label = document.createElement('span');
         label.className = 'help-topic-card-label';
