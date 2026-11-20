@@ -222,16 +222,16 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
             new UiRibbonAction(
                 "Back",
                 localizer["Ribbon_Back"].Value,
-                "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                "<svg><use href='icons/sprite.svg#back'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,
-                () => { Navigation.NavigateTo("/card/securities"); return Task.CompletedTask; }
+                () => { Navigation.NavigateTo("card/securities"); return Task.CompletedTask; }
             ),
             new UiRibbonAction(
                 "Refresh",
                 localizer["Ribbon_Refresh"].Value,
-                "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                "<svg><use href='icons/sprite.svg#refresh'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,
@@ -244,7 +244,7 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
             actions.Add(new UiRibbonAction(
                 "SaveEdit",
                 localizer["PortfolioReport_Save"].Value,
-                "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                "<svg><use href='icons/sprite.svg#save'/></svg>",
                 UiRibbonItemSize.Large,
                 EditActive.Count == 0,
                 null,
@@ -253,7 +253,7 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
             actions.Add(new UiRibbonAction(
                 "CancelEdit",
                 localizer["Ribbon_Cancel"].Value,
-                "<svg><use href='/icons/sprite.svg#close'/></svg>",
+                "<svg><use href='icons/sprite.svg#close'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,
@@ -265,7 +265,7 @@ public sealed class PortfolioAnalysisReportPageViewModel : BaseViewModel
             actions.Add(new UiRibbonAction(
                 "Edit",
                 localizer["Ribbon_Edit"].Value,
-                "<svg><use href='/icons/sprite.svg#edit'/></svg>",
+                "<svg><use href='icons/sprite.svg#edit'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,

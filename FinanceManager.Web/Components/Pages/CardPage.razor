@@ -153,7 +153,7 @@ else
                         var subNorm = (SubKind ?? string.Empty).Trim().ToLowerInvariant();
                         if (kindNorm == "statement-drafts" || subNorm == "entries" || _vm is FinanceManager.Web.ViewModels.StatementDrafts.StatementDraftEntryCardViewModel)
                         {
-                            NavigationManager.NavigateTo($"/card/statement-drafts/{draftGuid}");
+                            NavigationManager.NavigateTo($"card/statement-drafts/{draftGuid}");
                             break;
                         }
                     }
@@ -170,7 +170,7 @@ else
                     if (parts.Length == 1)
                     {
                         // legacy behavior: payload denotes subtype for list route
-                        NavigationManager.NavigateTo($"/list/{Kind}/{parts[0]}");
+                        NavigationManager.NavigateTo($"list/{Kind}/{parts[0]}");
                         break;
                     }
 
@@ -179,13 +179,13 @@ else
                     if (mode == "card")
                     {
                         // navigate to card for current kind using provided id
-                        NavigationManager.NavigateTo($"/card/{Kind}/{arg}");
+                        NavigationManager.NavigateTo($"card/{Kind}/{arg}");
                         break;
                     }
                     else if (mode == "list")
                     {
                         // navigate to list for current kind and provided subtype
-                        NavigationManager.NavigateTo($"/list/{Kind}/{arg}");
+                        NavigationManager.NavigateTo($"list/{Kind}/{arg}");
                         break;
                     }
 
@@ -217,7 +217,7 @@ else
                 case "NavigateToPosting":
                     if (!string.IsNullOrWhiteSpace(payload))
                     {
-                        NavigationManager.NavigateTo($"/card/postings/{payload}");
+                        NavigationManager.NavigateTo($"card/postings/{payload}");
                     }
                     break;
                 case "OpenPrices":
@@ -233,7 +233,7 @@ else
                         {
                             var kind = bankParts[0];
                             var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
-                            NavigationManager.NavigateTo($"/card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
+                            NavigationManager.NavigateTo($"card/{kind}/{cid}?back={Uri.EscapeDataString(back)}");
                         }
                         break;
                     }
@@ -246,7 +246,7 @@ else
                         if (accountId.HasValue)
                         {
                             var back = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
-                            NavigationManager.NavigateTo($"/card/accounts/{accountId.Value}?back={Uri.EscapeDataString(back)}");
+                            NavigationManager.NavigateTo($"card/accounts/{accountId.Value}?back={Uri.EscapeDataString(back)}");
                         }
                         break;
                     }

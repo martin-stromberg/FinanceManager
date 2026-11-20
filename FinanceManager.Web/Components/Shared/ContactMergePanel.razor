@@ -128,7 +128,7 @@
                     return;
                 }
 
-                try { Nav.NavigateTo($"/card/contacts/{res.Id}"); }
+                try { Nav.NavigateTo($"card/contacts/{res.Id}"); }
                 catch { }
             }
             else
@@ -160,11 +160,11 @@
         {
             if (SourceId != Guid.Empty)
             {
-                Nav.NavigateTo($"/card/contacts/{SourceId}");
+                Nav.NavigateTo($"card/contacts/{SourceId}");
             }
             else
             {
-                Nav.NavigateTo("/contacts");
+                Nav.NavigateTo("contacts");
             }
         }
         catch { }

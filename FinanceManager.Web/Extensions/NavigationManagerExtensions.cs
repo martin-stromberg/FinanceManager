@@ -39,7 +39,7 @@ public static class NavigationManagerExtensions
         // Guid -> assume contact card
         if (result is Guid g)
         {
-            nav.NavigateTo($"/card/contacts/{g}");
+            nav.NavigateTo($"card/contacts/{g}");
             return true;
         }
 
@@ -51,7 +51,7 @@ public static class NavigationManagerExtensions
             var pid = t.GetProperty("Id")?.GetValue(result);
             if (pid is Guid gid)
             {
-                nav.NavigateTo($"/card/contacts/{gid}");
+                nav.NavigateTo($"card/contacts/{gid}");
                 return true;
             }
             return false;
@@ -63,7 +63,7 @@ public static class NavigationManagerExtensions
             var pid = t.GetProperty("Id")?.GetValue(result);
             if (pid is Guid gid)
             {
-                nav.NavigateTo($"/card/users/{gid}");
+                nav.NavigateTo($"card/users/{gid}");
                 return true;
             }
             return false;
@@ -74,7 +74,7 @@ public static class NavigationManagerExtensions
             var pid = t.GetProperty("Id")?.GetValue(result);
             if (pid is Guid gid)
             {
-                nav.NavigateTo($"/card/statement-drafts/entries/{gid}");
+                nav.NavigateTo($"card/statement-drafts/entries/{gid}");
                 return true;
             }
             return false;
@@ -87,7 +87,7 @@ public static class NavigationManagerExtensions
             var val = prop.GetValue(result);
             if (val is Guid gid2)
             {
-                nav.NavigateTo($"/card/contacts/{gid2}");
+                nav.NavigateTo($"card/contacts/{gid2}");
                 return true;
             }
         }

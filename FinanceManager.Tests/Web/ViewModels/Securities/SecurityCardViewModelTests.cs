@@ -57,7 +57,7 @@ public sealed class SecurityCardViewModelTests
 
         Assert.NotNull(raisedAction);
         Assert.Equal("OpenPrices", raisedAction!.Action);
-        Assert.Equal($"/list/securities/prices/{securityId}", raisedAction.Payload);
+        Assert.Equal($"list/securities/prices/{securityId}", raisedAction.Payload);
     }
 
     private static SecurityCardViewModel CreateVm(out Mock<IApiClient> apiMock)

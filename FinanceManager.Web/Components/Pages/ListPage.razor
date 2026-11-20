@@ -197,10 +197,10 @@ else
                 Nav.NavigateToModelCategories(Kind);
                 break;
             case "OpenBudgetCategories":
-                Nav.NavigateTo("/list/budget/categories");
+                Nav.NavigateTo("list/budget/categories");
                 break;
             case "OpenBudgetReport":
-                Nav.NavigateTo("/reports/budget");
+                Nav.NavigateTo("reports/budget");
                 break;
             case "Back":
                 // For postings lists, navigate back to card of calling dataset
@@ -217,12 +217,12 @@ else
                     };
                     if (mapped != null && Guid.TryParse(Id, out var gid))
                     {
-                        Nav.NavigateTo($"/card/{mapped}/{gid}");
+                        Nav.NavigateTo($"card/{mapped}/{gid}");
                         break;
                     }
                 }
                 // fallback: navigate to list root
-                Nav.NavigateTo($"/list/{Kind}");
+                Nav.NavigateTo($"list/{Kind}");
                 break;
             case "Reload":
                 if (_provider != null)

@@ -670,7 +670,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     {
         var navigation = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>",
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>",
                 // The KI register inside setup is the home of the access management.
                 UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back", "/card/setup"); return Task.CompletedTask; })
             { MobileShortcut = true }
@@ -678,7 +678,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
 
         var manage = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>",
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>",
                 UiRibbonItemSize.Large, Access is null, null, async () => { await SaveAsync(); })
             { MobileShortcut = true }
         };
@@ -689,25 +689,25 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
             if (!revoked)
             {
                 manage.Add(new UiRibbonAction("RotateToken", localizer["Mcp_Ribbon_RotateToken"].Value,
-                    "<svg><use href='/icons/sprite.svg#key'/></svg>",
+                    "<svg><use href='icons/sprite.svg#key'/></svg>",
                     UiRibbonItemSize.Small, false, null, async () => { await RotateTokenAsync(); }));
 
                 if ((McpAccessStatus)Access.Status == McpAccessStatus.Active)
                 {
                     manage.Add(new UiRibbonAction("Deactivate", localizer["Ribbon_Deactivate"].Value,
-                        "<svg><use href='/icons/sprite.svg#archive'/></svg>",
+                        "<svg><use href='icons/sprite.svg#archive'/></svg>",
                         UiRibbonItemSize.Small, false, null, async () => { await DeactivateAsync(); }));
                 }
                 else
                 {
                     manage.Add(new UiRibbonAction("Activate", localizer["Ribbon_Activate"].Value,
-                        "<svg><use href='/icons/sprite.svg#check'/></svg>",
+                        "<svg><use href='icons/sprite.svg#check'/></svg>",
                         UiRibbonItemSize.Small, false, null, async () => { await ActivateAsync(); }));
                 }
             }
 
             manage.Add(new UiRibbonAction("Revoke", localizer["Mcp_Ribbon_Revoke"].Value,
-                "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                "<svg><use href='icons/sprite.svg#delete'/></svg>",
                 UiRibbonItemSize.Small, revoked, null, async () => { await RevokeAsync(); }));
         }
 

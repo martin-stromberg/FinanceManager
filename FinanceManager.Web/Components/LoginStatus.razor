@@ -35,6 +35,6 @@ else
     {
         var ok = await JS.InvokeAsync<bool>("fmAuthLogout");
         // Fallback: falls API nicht erreichbar, erzwungener Reload löscht serverseitig nicht gesetzte Cookies evtl. nicht, aber UI wird zur Login-Seite gehen
-        Nav.NavigateTo("/login", forceLoad: true);
+        Nav.NavigateTo("login", forceLoad: true);
     }
 }

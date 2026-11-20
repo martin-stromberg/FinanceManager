@@ -244,7 +244,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
             new UiRibbonAction(
                 "CreateBackup",
                 localizer["Ribbon_CreateBackup"].Value,
-                "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                "<svg><use href='icons/sprite.svg#save'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 localizer["Hint_CreateBackup"].Value ?? string.Empty,
@@ -257,7 +257,7 @@ public sealed class SetupBackupsViewModel : BaseViewModel, IUploadTrigger
             new UiRibbonAction(
                 "UploadBackup",
                 localizer["Ribbon_UploadBackup"].Value,
-                "<svg><use href='/icons/sprite.svg#upload'/></svg>",
+                "<svg><use href='icons/sprite.svg#upload'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 localizer["Hint_UploadBackup"].Value ?? string.Empty,

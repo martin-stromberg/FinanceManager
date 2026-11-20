@@ -329,7 +329,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
             new UiRibbonAction(
                 "Settings",
                 localizer["Ribbon_Settings"],
-                "<svg><use href='/icons/sprite.svg#settings'/></svg>",
+                "<svg><use href='icons/sprite.svg#settings'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -345,7 +345,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
             new UiRibbonAction(
                 "PrevMonth",
                 localizer["Ribbon_PrevMonth"],
-                "<svg><use href='/icons/sprite.svg#prev'/></svg>",
+                "<svg><use href='icons/sprite.svg#prev'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -354,7 +354,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
             new UiRibbonAction(
                 "ThisMonth",
                 localizer["Ribbon_ThisMonth"],
-                "<svg><use href='/icons/sprite.svg#calendar'/></svg>",
+                "<svg><use href='icons/sprite.svg#calendar'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -362,7 +362,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
             new UiRibbonAction(
                 "NextMonth",
                 localizer["Ribbon_NextMonth"],
-                "<svg><use href='/icons/sprite.svg#next'/></svg>",
+                "<svg><use href='icons/sprite.svg#next'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -371,7 +371,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
             new UiRibbonAction(
                 "PrevYear",
                 localizer["Ribbon_PrevYear"],
-                "<svg><use href='/icons/sprite.svg#prev'/></svg>",
+                "<svg><use href='icons/sprite.svg#prev'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -380,7 +380,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
             new UiRibbonAction(
                 "NextYear",
                 localizer["Ribbon_NextYear"],
-                "<svg><use href='/icons/sprite.svg#next'/></svg>",
+                "<svg><use href='icons/sprite.svg#next'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -393,7 +393,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
             new UiRibbonAction(
                 "ExportExcel",
                 localizer["Ribbon_ExportExcel"],
-                "<svg><use href='/icons/sprite.svg#download'/></svg>",
+                "<svg><use href='icons/sprite.svg#download'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,

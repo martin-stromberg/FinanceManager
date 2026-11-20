@@ -229,12 +229,12 @@ namespace FinanceManager.Web.ViewModels.Postings.Common
             {
                 new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
                 {
-                    new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(()=>{ RaiseUiActionRequested("Back"); return Task.CompletedTask; })) { MobileShortcut = true },
+                    new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(()=>{ RaiseUiActionRequested("Back"); return Task.CompletedTask; })) { MobileShortcut = true },
                 }),
                 new UiRibbonTab(localizer["Ribbon_Group_Export"].Value, new List<UiRibbonAction>
                 {
-                    new UiRibbonAction("ExportCsv", localizer["Ribbon_ExportCsv"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, new Func<Task>(()=>{ RaiseUiActionRequested("ExportCsv"); return Task.CompletedTask; })),
-                    new UiRibbonAction("ExportXlsx", localizer["Ribbon_ExportExcel"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, new Func<Task>(()=>{ RaiseUiActionRequested("ExportXlsx"); return Task.CompletedTask; }))
+                    new UiRibbonAction("ExportCsv", localizer["Ribbon_ExportCsv"].Value, "<svg><use href='icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, new Func<Task>(()=>{ RaiseUiActionRequested("ExportCsv"); return Task.CompletedTask; })),
+                    new UiRibbonAction("ExportXlsx", localizer["Ribbon_ExportExcel"].Value, "<svg><use href='icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Loading, null, new Func<Task>(()=>{ RaiseUiActionRequested("ExportXlsx"); return Task.CompletedTask; }))
                 })
             };
 
