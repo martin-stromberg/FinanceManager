@@ -145,7 +145,7 @@ public sealed class PostingsCardViewModelLinkedTests
         // Assert
         var evt = events.Should().ContainSingle().Which;
         evt.Action.Should().Be("OpenPostings");
-        evt.Payload.Should().StartWith($"/card/accounts/{accountId}");
+        evt.Payload.Should().StartWith($"card/accounts/{accountId}");
     }
 
     /// <summary>
@@ -173,7 +173,7 @@ public sealed class PostingsCardViewModelLinkedTests
         // Assert
         var evt = events.Should().ContainSingle().Which;
         evt.Action.Should().Be("OpenPostings");
-        evt.Payload.Should().StartWith($"/card/contacts/{contactId}");
+        evt.Payload.Should().StartWith($"card/contacts/{contactId}");
     }
 
     /// <summary>
@@ -201,7 +201,7 @@ public sealed class PostingsCardViewModelLinkedTests
         // Assert
         var evt = events.Should().ContainSingle().Which;
         evt.Action.Should().Be("OpenPostings");
-        evt.Payload.Should().StartWith($"/card/savings-plans/{savingsPlanId}");
+        evt.Payload.Should().StartWith($"card/savings-plans/{savingsPlanId}");
     }
 
     /// <summary>
@@ -229,7 +229,7 @@ public sealed class PostingsCardViewModelLinkedTests
         // Assert
         var evt = events.Should().ContainSingle().Which;
         evt.Action.Should().Be("OpenPostings");
-        evt.Payload.Should().StartWith($"/card/securities/{securityId}");
+        evt.Payload.Should().StartWith($"card/securities/{securityId}");
     }
 
     /// <summary>

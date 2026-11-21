@@ -4,7 +4,9 @@
 
 ## Voraussetzungen
 
-- Laufende Anwendung mit Datenbankmigrationen.
+- Laufende Anwendung mit Datenbankmigrationen — das vorgelagerte Setup des
+  Servers (Artefakt-Bezug, Service-Account, systemd-Unit, Reverse-Proxy) ist in
+  der [Server-Installation](server-installation.md) beschrieben.
 - Konfigurierte Authentifizierung und lokalisierte Ressourcen.
 
 ## Installationsschritte
@@ -56,7 +58,7 @@
 | `RateLimiting:AuthSensitive:WindowSeconds` | int | `10` | Fenstergröße des Rate-Limits in Sekunden. |
 | `ReverseProxy:KnownProxies` | string | leer | Semikolongetrennte IPs vertrauenswürdiger Reverse-Proxies, deren `X-Forwarded-For`-/`X-Forwarded-Proto`-Header berücksichtigt werden. |
 | `ReverseProxy:KnownNetworks` | string | leer | Semikolongetrennte CIDR-Netze vertrauenswürdiger Proxies (z. B. `10.0.0.0/24;fd00::/8`). |
-| `AllowedHosts` | string | `*` | Host-Header-Filterung. `*` lässt direkten HTTP-Zugriff per LAN-IP/Hostname und Zugriff hinter einem Reverse-Proxy zu; kann deployment-spezifisch auf eine semikolongetrennte Liste erlaubter Hostnamen/IPs eingeschränkt werden. |
+| `AllowedHosts` | string | `*` | Host-Header-Filterung (derzeit nicht ausgewertet — die Host-Filter-Middleware ist in der Anwendung nicht registriert). `*` lässt direkten HTTP-Zugriff per LAN-IP/Hostname und Zugriff hinter einem Reverse-Proxy zu; eine deployment-spezifische semikolongetrennte Liste erlaubter Hostnamen/IPs kann vorsorglich für künftige Versionen hinterlegt werden, hat aber aktuell keine Wirkung. |
 
 ## JWT-Konfiguration
 
@@ -131,11 +133,13 @@ Ohne Einträge werden Forwarded-Headers ignoriert — die Anwendung sieht dann
 die Proxy-Adresse als Quelladresse. Direkter HTTP-Zugriff im LAN erfordert
 keine Konfiguration.
 
-`AllowedHosts` bleibt im Standard `*`, damit direkter Zugriff per LAN-IP oder
-Hostname ohne Zusatzkonfiguration funktioniert. Zur Einschränkung kann eine
-semikolongetrennte Liste der tatsächlich verwendeten Hostnamen/IPs gesetzt
-werden (z. B. `"myserver;myserver.local;192.168.1.10"`); Anfragen mit anderen
-Host-Headern werden dann mit `400` abgelehnt.
+`AllowedHosts` steht im Standard auf `*`. Der Wert wird in der aktuellen
+Version nicht ausgewertet — die zugehörige Host-Filter-Middleware ist in der
+Anwendung nicht registriert. Direkter Zugriff per LAN-IP oder Hostname
+funktioniert daher ohne Zusatzkonfiguration; eine semikolongetrennte Liste der
+tatsächlich verwendeten Hostnamen/IPs (z. B.
+`"myserver;myserver.local;192.168.1.10"`) kann vorsorglich für künftige
+Versionen hinterlegt werden, hat aber derzeit keine Wirkung.
 
 ## Data Protection und AlphaVantage API Keys
 

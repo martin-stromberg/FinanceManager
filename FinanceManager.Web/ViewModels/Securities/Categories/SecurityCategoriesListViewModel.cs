@@ -19,7 +19,7 @@ public sealed record SecurityCategoryItem(Guid Id, string Name, Guid? SymbolId) 
     /// Gets the navigation URL to the security category card view.
     /// </summary>
     /// <returns>Relative URL to navigate to the security category card.</returns>
-    public string GetNavigateUrl() => $"/card/securities/categories/{Id}";
+    public string GetNavigateUrl() => $"card/securities/categories/{Id}";
 }
 
 /// <summary>
@@ -115,11 +115,11 @@ public sealed class SecurityCategoriesListViewModel : BaseListViewModel<Security
     {
         var actions = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
         };
         var manage = new List<UiRibbonAction>
         {
-            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='/icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true }
         };
         var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, actions), new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manage) };
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

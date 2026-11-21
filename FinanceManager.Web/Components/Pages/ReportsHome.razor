@@ -82,13 +82,13 @@
     {
         if (e?.Action == "New")
         {
-            Nav.NavigateTo("/reports/dashboard?edit=true");
+            Nav.NavigateTo("reports/dashboard?edit=true");
         }
     }
 
     private void OpenFavorite(Guid id)
     {
-        Nav.NavigateTo($"/reports/dashboard?favoriteId={id}&edit=false");
+        Nav.NavigateTo($"reports/dashboard?favoriteId={id}&edit=false");
     }
 
     public async ValueTask DisposeAsync()

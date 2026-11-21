@@ -130,7 +130,7 @@ public sealed class BudgetCategoriesController : ControllerBase
                 createdId: created.Id,
                 ct);
 
-            return Created($"/api/budget/categories/{created.Id}", created);
+            return Created($"api/budget/categories/{created.Id}", created);
         }
         catch (AggregateException ex)
         {

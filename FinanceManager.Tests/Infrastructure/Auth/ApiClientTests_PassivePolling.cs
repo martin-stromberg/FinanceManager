@@ -28,8 +28,9 @@ public sealed class ApiClientTests_PassivePolling
         var raised = false;
         client.AuthenticationRequired += (_, _) => raised = true;
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.BackgroundTasks_GetActiveAsync(TestContext.Current.CancellationToken));
+        var error = await Assert.ThrowsAsync<ApiAuthenticationRequiredException>(() => client.BackgroundTasks_GetActiveAsync(TestContext.Current.CancellationToken));
 
+        Assert.Equal(HttpStatusCode.Unauthorized, error.StatusCode);
         Assert.True(raised);
     }
 

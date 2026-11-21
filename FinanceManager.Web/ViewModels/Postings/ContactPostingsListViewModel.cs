@@ -55,7 +55,7 @@ namespace FinanceManager.Web.ViewModels.Postings
         /// <returns>A relative URL that can be used to download the export for the contact postings.</returns>
         public override string GetExportUrl(string format)
         {
-            var basePath = $"/api/postings/contact/{_contactId}/export";
+            var basePath = $"api/postings/contact/{_contactId}/export";
             return BuildExportUrl(basePath, format);
         }
     }

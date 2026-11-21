@@ -260,7 +260,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
         var detectAction = new UiRibbonAction(
             "DetectTimezone",
             lblDetect,
-            "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+            "<svg><use href='icons/sprite.svg#refresh'/></svg>",
             UiRibbonItemSize.Small,
             false,
             null,

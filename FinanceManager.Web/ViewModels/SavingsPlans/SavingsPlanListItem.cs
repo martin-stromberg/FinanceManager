@@ -17,5 +17,5 @@ public sealed record SavingsPlanListItem(Guid Id, string Name, string Type, stri
     /// Gets the navigation URL to the savings plan card view.
     /// </summary>
     /// <returns>Relative URL to navigate to the savings plan card.</returns>
-    public string GetNavigateUrl() => $"/card/savings-plans/{Id}";
+    public string GetNavigateUrl() => $"card/savings-plans/{Id}";
 }

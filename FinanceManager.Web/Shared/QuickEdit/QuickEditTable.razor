@@ -471,7 +471,7 @@ else
                                     _ => ""
                                 };
                                 <span class="budget-impact-badge" style="display:inline-flex;vertical-align:middle;margin-left:.25rem;@budgetColorStyle" title="@GetBudgetTooltip(item.BudgetImpact)">
-                                    <svg style="width:1rem;height:1rem;" aria-hidden="true"><use href="/icons/sprite.svg#@budgetIconName" /></svg>
+                                    <svg style="width:1rem;height:1rem;" aria-hidden="true"><use href="icons/sprite.svg#@budgetIconName" /></svg>
                                 </span>
                             }
                         }
@@ -491,7 +491,7 @@ else
                         {
                             var openEntryLabel = localizer != null ? (localizer["QuickEdit_OpenEntry"].ResourceNotFound ? "Open entry" : localizer["QuickEdit_OpenEntry"].Value) : "Open entry";
                             <a class="quick-edit-open-button" href="@item.GetNavigateUrl()" title="@openEntryLabel" aria-label="@openEntryLabel" @onclick:stopPropagation="true">
-                                <svg aria-hidden="true"><use href="/icons/sprite.svg#external"></use></svg>
+                                <svg aria-hidden="true"><use href="icons/sprite.svg#external"></use></svg>
                             </a>
                         }
                         @if (editable && !item.IsPlaceholder)
@@ -502,7 +502,7 @@ else
                         {
                             var deleteLabel = localizer != null ? (localizer["QuickEdit_DeleteRow"].ResourceNotFound ? "Delete row" : localizer["QuickEdit_DeleteRow"].Value) : "Delete row";
                             <button type="button" class="quick-edit-delete-button" title="@deleteLabel" aria-label="@deleteLabel" @onclick:stopPropagation="true" @onclick:preventDefault="true" @onclick="() => DeleteRow(item.Id)" @onblur="async (e) => await OnRowBlur(item.Id)">
-                                <svg aria-hidden="true"><use href="/icons/sprite.svg#delete"></use></svg>
+                                <svg aria-hidden="true"><use href="icons/sprite.svg#delete"></use></svg>
                             </button>
                         }
                         @* Show Reset Dup only for items marked as AlreadyBooked (duplicate) *@

@@ -124,7 +124,7 @@ public sealed class PostingsContactViewModelTests
         vm.SetSearch("x y");
         await vm.InitializeAsync();
         var url = vm.GetExportUrl("xlsx");
-        Assert.StartsWith("/api/postings/contact/11111111-1111-1111-1111-111111111111/export", url);
+        Assert.StartsWith("api/postings/contact/11111111-1111-1111-1111-111111111111/export", url);
         Assert.Contains("format=xlsx", url);
         Assert.Contains("q=x%20y", url);
     }

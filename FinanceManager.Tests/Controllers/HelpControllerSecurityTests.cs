@@ -151,7 +151,7 @@ public sealed class HelpControllerSecurityTests : IDisposable
 
         Assert.Contains("<table", content.Content);
         Assert.Contains("<code", content.Content);
-        Assert.Contains("href=\"/help/view/budgetplanung/beschreibung\"", content.Content);
+        Assert.Contains("href=\"help/view/budgetplanung/beschreibung\"", content.Content);
         Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", content.Content);
         Assert.DoesNotContain("javascript:", content.Content, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<img", content.Content, StringComparison.OrdinalIgnoreCase);

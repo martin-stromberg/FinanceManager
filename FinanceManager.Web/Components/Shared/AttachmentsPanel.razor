@@ -27,7 +27,7 @@ else
 
     <div id="@_dropId" data-category="@_selectedCategoryId" class="drop-upload" style="margin:.5rem 0 1rem 0;padding:1rem;border:1px dashed #555;border-radius:6px;background:#1c1c1c;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:.5rem;">
-            <svg class="icon" style="width:20px;height:20px;opacity:.8;"><use href="/icons/sprite.svg#upload" /></svg>
+            <svg class="icon" style="width:20px;height:20px;opacity:.8;"><use href="icons/sprite.svg#upload" /></svg>
             <div style="opacity:.9;">
                 <div style="font-size:.9rem;">@Localizer["Upload_Hint"]</div>
                 <div style="font-size:.75rem;opacity:.8;">@Localizer["Upload_SubHint"]</div>
@@ -35,7 +35,7 @@ else
         </div>
         <label class="icon-btn" style="padding:.35rem .7rem;cursor:pointer;">
             <InputFile OnChange="OnFilesSelected" multiple accept="@AcceptAttr" style="display:none;" />
-            <svg class="icon"><use href="/icons/sprite.svg#upload" /></svg>
+            <svg class="icon"><use href="icons/sprite.svg#upload" /></svg>
             <span style="margin-left:.35rem;">@Localizer["Btn_Upload"]</span>
         </label>
     </div>
@@ -98,7 +98,7 @@ else
                                             }
                                         </select>
                                         <button class="icon-btn" title="@Localizer["Btn_AddCategory"]" @onclick="CreateCategoryFromEditAsync">
-                                            <svg class="icon"><use href="/icons/sprite.svg#plus" /></svg>
+                                            <svg class="icon"><use href="icons/sprite.svg#plus" /></svg>
                                         </button>
                                     </div>
                                 }
@@ -110,17 +110,17 @@ else
                             <td style="white-space:nowrap;display:flex;gap:.25rem;">
                                 @if (!a.IsUrl)
                                 {
-                                    <a href="@($"/api/attachments/{a.Id}/download")" class="icon-btn" title="@Localizer["Download"]"><svg><use href="/icons/sprite.svg#download" /></svg></a>
+                                    <a href="@($"api/attachments/{a.Id}/download")" class="icon-btn" title="@Localizer["Download"]"><svg><use href="icons/sprite.svg#download" /></svg></a>
                                 }
                                 @if (!isEditing)
                                 {
-                                    <button class="icon-btn" title="@Localizer["Edit"]" @onclick="(()=> BeginEdit(a))"><svg><use href="/icons/sprite.svg#edit" /></svg></button>
-                                    <button class="icon-btn danger" title="@Localizer["Delete"]" @onclick="(()=> DeleteAsync(a.Id))"><svg><use href="/icons/sprite.svg#delete" /></svg></button>
+                                    <button class="icon-btn" title="@Localizer["Edit"]" @onclick="(()=> BeginEdit(a))"><svg><use href="icons/sprite.svg#edit" /></svg></button>
+                                    <button class="icon-btn danger" title="@Localizer["Delete"]" @onclick="(()=> DeleteAsync(a.Id))"><svg><use href="icons/sprite.svg#delete" /></svg></button>
                                 }
                                 else
                                 {
-                                    <button class="icon-btn" title="@Localizer["Apply"]" @onclick="(()=> ApplyEditAsync(a.Id))"><svg><use href="/icons/sprite.svg#save" /></svg></button>
-                                    <button class="icon-btn" title="@Localizer["Cancel"]" @onclick="CancelEdit"><svg><use href="/icons/sprite.svg#undo" /></svg></button>
+                                    <button class="icon-btn" title="@Localizer["Apply"]" @onclick="(()=> ApplyEditAsync(a.Id))"><svg><use href="icons/sprite.svg#save" /></svg></button>
+                                    <button class="icon-btn" title="@Localizer["Cancel"]" @onclick="CancelEdit"><svg><use href="icons/sprite.svg#undo" /></svg></button>
                                 }
                             </td>
                         </tr>
@@ -182,14 +182,14 @@ else
         {
             try
             {
-                _module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/attachments.js");
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "js/attachments.js");
                 _selfRef = DotNetObjectReference.Create(this);
             }
             catch { }
         }
         if (_module != null)
         {
-            var uploadUrl = $"/api/attachments/{(short)ParentKind}/{ParentId}";
+            var uploadUrl = $"api/attachments/{(short)ParentKind}/{ParentId}";
             try
             {
                 // unregister previous (if any) then register fresh to keep handlers single

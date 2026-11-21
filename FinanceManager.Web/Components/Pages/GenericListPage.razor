@@ -87,7 +87,7 @@ else
                                             if (cell.SymbolId.HasValue)
                                             {
                                                 <div style="display:flex;align-items:center;gap:.5rem;">
-                                                    <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:28px;height:28px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                                    <img src="@($"api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:28px;height:28px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
                                                     @if (!string.IsNullOrWhiteSpace(cell.Text))
                                                     {
                                                         <span>@cell.Text</span>
@@ -98,7 +98,7 @@ else
                                             {
                                                 <div style="display:flex;align-items:center;gap:.5rem;">
                                                     <div style="width:28px;height:28px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                        <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                        <svg style="width:16px;height:16px;opacity:.6;"><use href="icons/sprite.svg#image" /></svg>
                                                     </div>
                                                     @if (!string.IsNullOrWhiteSpace(cell.Text))
                                                     {
@@ -167,12 +167,12 @@ else
                                                     case ListCellKind.Symbol:
                                                         if (cell.SymbolId.HasValue)
                                                         {
-                                                            <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                                            <img src="@($"api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
                                                         }
                                                         else
                                                         {
                                                             <div style="width:32px;height:32px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                                <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                                <svg style="width:16px;height:16px;opacity:.6;"><use href="icons/sprite.svg#image" /></svg>
                                                             </div>
                                                         }
                                                         break;
@@ -214,12 +214,12 @@ else
                                                 case ListCellKind.Symbol:
                                                     if (cell.SymbolId.HasValue)
                                                     {
-                                                        <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                                        <img src="@($"api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
                                                     }
                                                     else
                                                     {
                                                         <div style="width:32px;height:32px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                            <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                            <svg style="width:16px;height:16px;opacity:.6;"><use href="icons/sprite.svg#image" /></svg>
                                                         </div>
                                                     }
                                                     break;
@@ -263,12 +263,12 @@ else
                                         case ListCellKind.Symbol:
                                             if (cell.SymbolId.HasValue)
                                             {
-                                                <img src="@($"/api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
+                                                <img src="@($"api/attachments/{cell.SymbolId}/download")" alt="symbol" style="width:32px;height:32px;object-fit:contain;border-radius:6px;border:1px solid var(--border);" />
                                             }
                                             else
                                             {
                                                 <div style="width:32px;height:32px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                    <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                    <svg style="width:16px;height:16px;opacity:.6;"><use href="icons/sprite.svg#image" /></svg>
                                                 </div>
                                             }
                                             break;

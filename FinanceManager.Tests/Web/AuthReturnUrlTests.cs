@@ -105,13 +105,15 @@ public sealed class AuthReturnUrlTests
     /// <summary>
     /// Verifies that a validated return URL is percent-encoded as the <c>returnUrl</c> query parameter value
     /// when building the login link, so its own query/fragment characters don't get parsed as part of the
-    /// login URL's query string.
+    /// login URL's query string. The login URL itself is relative (no leading slash) so that
+    /// <c>NavigationManager.NavigateTo</c> resolves it against the app's base URI rather than the host
+    /// domain root, which would break when the app runs behind a reverse-proxy PathBase.
     /// </summary>
     [Fact]
     public void BuildLoginUrl_ShouldEncodeSafeReturnUrl()
     {
         AuthReturnUrl.BuildLoginUrl("/reports/dashboard?favoriteId=123#details")
-            .Should().Be("/login?returnUrl=%2Freports%2Fdashboard%3FfavoriteId%3D123%23details");
+            .Should().Be("login?returnUrl=%2Freports%2Fdashboard%3FfavoriteId%3D123%23details");
     }
 
     /// <summary>
@@ -123,6 +125,6 @@ public sealed class AuthReturnUrlTests
     public void BuildLoginUrl_ShouldKeepEncodedReturnUrlDataBeforeEncodingParameter()
     {
         AuthReturnUrl.BuildLoginUrl("/reports/dashboard?filter=a%26b#section%201")
-            .Should().Be("/login?returnUrl=%2Freports%2Fdashboard%3Ffilter%3Da%2526b%23section%25201");
+            .Should().Be("login?returnUrl=%2Freports%2Fdashboard%3Ffilter%3Da%2526b%23section%25201");
     }
 }

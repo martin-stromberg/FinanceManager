@@ -18,5 +18,5 @@ public sealed record SecurityListItem(Guid Id, string Name, string Identifier, s
     /// Returns the relative navigation URL to the security card for this item.
     /// </summary>
     /// <returns>Relative URL string to navigate to the security detail card.</returns>
-    public string GetNavigateUrl() => $"/card/securities/{Id}";
+    public string GetNavigateUrl() => $"card/securities/{Id}";
 }

@@ -6,8 +6,8 @@
 @inject IJSRuntime JS
 @implements IDisposable
 
-<link rel="stylesheet" href="/css/ribbon.css" />
-<link rel="stylesheet" href="/css/app.css" />
+<link rel="stylesheet" href="css/ribbon.css" />
+<link rel="stylesheet" href="css/app.css" />
 
 <div class="app-shell dark-mode">
     <input type="checkbox" id="nav-toggle" class="nav-toggle" />
@@ -19,25 +19,25 @@
         <ul class="nav-links">
             @if (CurrentUser.IsAuthenticated)
             {
-                <li><NavLink href="/" Match="NavLinkMatch.All">@L["Nav_Home"]</NavLink></li>
-                <li><NavLink href="/list/accounts">@L["Nav_Accounts"]</NavLink></li>
-                <li><NavLink href="/list/statement-drafts" Match="NavLinkMatch.All">@L["Nav_StatementDrafts"]</NavLink></li>
-                <li><NavLink href="/list/contacts">@L["Nav_Contacts"]</NavLink></li>
-                <li><NavLink href="/list/savings-plans">@L["Nav_Plans"]</NavLink></li>
-                <li><NavLink href="/list/securities">@L["Nav_Securities"]</NavLink></li>
-                <li><NavLink href="/list/budget/purposes">@L["Nav_BudgetPurposes"]</NavLink></li>
-                <li><NavLink href="/reports">@L["Nav_Reports"]</NavLink></li>
-                <li><NavLink href="/card/setup">@L["Nav_Setup"]</NavLink></li>
+                <li><NavLink href="" Match="NavLinkMatch.All">@L["Nav_Home"]</NavLink></li>
+                <li><NavLink href="list/accounts">@L["Nav_Accounts"]</NavLink></li>
+                <li><NavLink href="list/statement-drafts" Match="NavLinkMatch.All">@L["Nav_StatementDrafts"]</NavLink></li>
+                <li><NavLink href="list/contacts">@L["Nav_Contacts"]</NavLink></li>
+                <li><NavLink href="list/savings-plans">@L["Nav_Plans"]</NavLink></li>
+                <li><NavLink href="list/securities">@L["Nav_Securities"]</NavLink></li>
+                <li><NavLink href="list/budget/purposes">@L["Nav_BudgetPurposes"]</NavLink></li>
+                <li><NavLink href="reports">@L["Nav_Reports"]</NavLink></li>
+                <li><NavLink href="card/setup">@L["Nav_Setup"]</NavLink></li>
                 @if (CurrentUser.IsAdmin)
                 {
-                    <li><NavLink href="/list/users">@L["Nav_Users"]</NavLink></li>
+                    <li><NavLink href="list/users">@L["Nav_Users"]</NavLink></li>
                 }
-                <li><NavLink href="/help">📖 @L["Nav_Help"]</NavLink></li>
+                <li><NavLink href="help">📖 @L["Nav_Help"]</NavLink></li>
             }
         </ul>
         <div class="user-area">
             <div style="margin-bottom:.35rem; font-size:.85rem;">
-                <NavLink href="/legal">@L["Nav_Legal"]</NavLink>
+                <NavLink href="legal">@L["Nav_Legal"]</NavLink>
             </div>
             <LoginStatus />
         </div>
@@ -68,7 +68,7 @@
 </div>
 
 @code {
-    private string _logoPath = "/icons/finance_manager.png";
+    private string _logoPath = "icons/finance_manager.png";
     private bool _useFullWidth;
     private IDisposable? _locationChangingRegistration;
     private bool _keepaliveRegistered;
@@ -144,20 +144,22 @@
 
     private void UpdateLogo(string uri)
     {
+        // ToBaseRelativePath strips scheme+host+PathBase, returning a path with no leading
+        // slash (e.g. "list/accounts") regardless of any reverse-proxy PathBase prefix.
         string path;
         try
         {
-            path = new Uri(uri, UriKind.Absolute).AbsolutePath.ToLowerInvariant();
+            path = Nav.ToBaseRelativePath(uri).ToLowerInvariant();
         }
         catch
         {
-            // Fallback if uri is not absolute
-            path = uri.ToLowerInvariant();
+            // Fallback if uri is not a valid absolute URI under the current BaseUri
+            path = uri.ToLowerInvariant().TrimStart('/');
         }
 
-        // Support generic list routes, e.g., /list/accounts
+        // Support generic list routes, e.g., list/accounts
         string? kind = null;
-        if (path.StartsWith("/list/"))
+        if (path.StartsWith("list/"))
         {
             var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length >= 2)
@@ -167,49 +169,49 @@
         }
 
         // decide logo
-        if (path.StartsWith("/accounts") || string.Equals(kind, "accounts", StringComparison.OrdinalIgnoreCase))
+        if (path.StartsWith("accounts") || string.Equals(kind, "accounts", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-accounts.png";
+            _logoPath = "icons/finance_manager-accounts.png";
         }
-        else if (path.StartsWith("/contacts") || string.Equals(kind, "contacts", StringComparison.OrdinalIgnoreCase))
+        else if (path.StartsWith("contacts") || string.Equals(kind, "contacts", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-contacts.png";
+            _logoPath = "icons/finance_manager-contacts.png";
         }
-        else if (path.StartsWith("/statement-drafts"))
+        else if (path.StartsWith("statement-drafts"))
         {
-            _logoPath = "/icons/finance_manager-statementdrafts.png";
+            _logoPath = "icons/finance_manager-statementdrafts.png";
         }
-        else if (path.StartsWith("/reports"))
+        else if (path.StartsWith("reports"))
         {
-            _logoPath = "/icons/finance_manager-reports.png";
+            _logoPath = "icons/finance_manager-reports.png";
         }
-        else if (path.StartsWith("/savings-plans") || string.Equals(kind, "savings-plans", StringComparison.OrdinalIgnoreCase))
+        else if (path.StartsWith("savings-plans") || string.Equals(kind, "savings-plans", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-savingplans.png";
+            _logoPath = "icons/finance_manager-savingplans.png";
         }
-        else if (path.StartsWith("/securities") || string.Equals(kind, "securities", StringComparison.OrdinalIgnoreCase))
+        else if (path.StartsWith("securities") || string.Equals(kind, "securities", StringComparison.OrdinalIgnoreCase))
         {
-            _logoPath = "/icons/finance_manager-securities.png";
+            _logoPath = "icons/finance_manager-securities.png";
         }
-        else if (path.StartsWith("/setup"))
+        else if (path.StartsWith("setup"))
         {
-            _logoPath = "/icons/finance_manager-setup.png";
+            _logoPath = "icons/finance_manager-setup.png";
         }
         else
         {
-            _logoPath = "/icons/finance_manager.png"; // Home and default
+            _logoPath = "icons/finance_manager.png"; // Home and default
         }
 
         // Full-width for table-heavy pages
-        _useFullWidth = path.StartsWith("/statement-drafts")
-            || path.StartsWith("/accounts")
-            || path.StartsWith("/reports")
-            || path.StartsWith("/securities")
-            || path.StartsWith("/savings-plans")
-            || path.StartsWith("/contacts")
-            || path.StartsWith("/portfolio")
-            || path.StartsWith("/list/")
-            || path.StartsWith("/card/");
+        _useFullWidth = path.StartsWith("statement-drafts")
+            || path.StartsWith("accounts")
+            || path.StartsWith("reports")
+            || path.StartsWith("securities")
+            || path.StartsWith("savings-plans")
+            || path.StartsWith("contacts")
+            || path.StartsWith("portfolio")
+            || path.StartsWith("list/")
+            || path.StartsWith("card/");
     }
 
     public void Dispose()

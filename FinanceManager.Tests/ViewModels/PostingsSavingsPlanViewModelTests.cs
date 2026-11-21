@@ -124,7 +124,7 @@ public sealed class PostingsSavingsPlanViewModelTests
         await vm.InitializeAsync();
         var url = vm.GetExportUrl("csv");
 
-        Assert.StartsWith("/api/postings/savings-plan/11111111-1111-1111-1111-111111111111/export", url);
+        Assert.StartsWith("api/postings/savings-plan/11111111-1111-1111-1111-111111111111/export", url);
         Assert.Contains("format=csv", url);
         Assert.Contains("q=abc%20def", url);
     }

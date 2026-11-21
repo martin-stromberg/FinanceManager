@@ -15,7 +15,7 @@ public partial class ApiClient
     /// <returns>Information about the enqueued background task.</returns>
     public async Task<BackgroundTaskInfo> BackgroundTasks_EnqueueAsync(BackgroundTaskType type, bool allowDuplicate = false, CancellationToken ct = default)
     {
-        var url = $"/api/background-tasks/{type}?allowDuplicate={(allowDuplicate ? "true" : "false")}";
+        var url = $"api/background-tasks/{type}?allowDuplicate={(allowDuplicate ? "true" : "false")}";
         var resp = await _http.PostAsync(url, content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BackgroundTaskInfo>(cancellationToken: ct))!;
@@ -28,7 +28,7 @@ public partial class ApiClient
     /// <returns>List of active background tasks.</returns>
     public async Task<IReadOnlyList<BackgroundTaskInfo>> BackgroundTasks_GetActiveAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/background-tasks/active", ct);
+        var resp = await _http.GetAsync("api/background-tasks/active", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BackgroundTaskInfo>>(cancellationToken: ct) ?? Array.Empty<BackgroundTaskInfo>();
     }
@@ -36,7 +36,7 @@ public partial class ApiClient
     /// <inheritdoc />
     public async Task<IReadOnlyList<BackgroundTaskInfo>> BackgroundTasks_GetActiveForPollingAsync(CancellationToken ct = default)
     {
-        using var response = await _http.GetAsync("/api/background-tasks/active", ct);
+        using var response = await _http.GetAsync("api/background-tasks/active", ct);
         await TrySetErrorFromResponseAsync(response, requestAuthentication: response.StatusCode != System.Net.HttpStatusCode.Unauthorized);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<IReadOnlyList<BackgroundTaskInfo>>(cancellationToken: ct) ?? Array.Empty<BackgroundTaskInfo>();
@@ -50,7 +50,7 @@ public partial class ApiClient
     /// <returns>Background task details or null when not found.</returns>
     public async Task<BackgroundTaskInfo?> BackgroundTasks_GetDetailAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/background-tasks/{id}", ct);
+        var resp = await _http.GetAsync($"api/background-tasks/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BackgroundTaskInfo>(cancellationToken: ct);
@@ -64,7 +64,7 @@ public partial class ApiClient
     /// <returns>True when the task was cancelled or removed successfully.</returns>
     public async Task<bool> BackgroundTasks_CancelOrRemoveAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/background-tasks/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/background-tasks/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return false;
         await EnsureSuccessOrSetErrorAsync(resp);

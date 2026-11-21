@@ -97,11 +97,11 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             {
                 if (BudgetPurposeId != Guid.Empty)
                 {
-                    SetBackNavigation($"/card/budget/purposes/{BudgetPurposeId}");
+                    SetBackNavigation($"card/budget/purposes/{BudgetPurposeId}");
                 }
                 else if (BudgetCategoryId != Guid.Empty)
                 {
-                    SetBackNavigation($"/card/budget/categories/{BudgetCategoryId}");
+                    SetBackNavigation($"card/budget/categories/{BudgetCategoryId}");
                 }
             }
 
@@ -342,7 +342,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
         }
         else if (BudgetPurposeId != Guid.Empty)
         {
-            RaiseUiActionRequested("Back", $"/card/budget/purposes/{BudgetPurposeId}");
+            RaiseUiActionRequested("Back", $"card/budget/purposes/{BudgetPurposeId}");
             return true;
         }
         else return false;
@@ -366,7 +366,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             new UiRibbonAction(
                 "Back",
                 localizer["Ribbon_Back"].Value,
-                "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                "<svg><use href='icons/sprite.svg#back'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,
@@ -378,7 +378,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                     }
                     else if (BudgetPurposeId != Guid.Empty)
                     {
-                        RaiseUiActionRequested("Back", $"/card/budget/purposes/{BudgetPurposeId}");
+                        RaiseUiActionRequested("Back", $"card/budget/purposes/{BudgetPurposeId}");
                     }
                     else
                     {
@@ -391,14 +391,14 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
-            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
         var clearPurposePattern = new UiRibbonAction(
             "ClearPurposePattern",
             localizer["Ribbon_ClearPurposePattern"].Value ?? "Clear Pattern",
-            "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+            "<svg><use href='icons/sprite.svg#delete'/></svg>",
             UiRibbonItemSize.Small,
             Rule?.PurposePattern == null,
             null,

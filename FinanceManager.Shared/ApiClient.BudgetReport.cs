@@ -17,7 +17,7 @@ public partial class ApiClient
     /// <returns>The generated <see cref="BudgetReportDto"/>.</returns>
     public async Task<BudgetReportDto> Budgets_GetReportAsync(BudgetReportRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/report", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/report", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetReportDto>(cancellationToken: ct))!;
     }
@@ -30,7 +30,7 @@ public partial class ApiClient
     /// <returns>The raw budget report data.</returns>
     public async Task<BudgetReportRawDataDto> Budgets_GetReportRawAsync(BudgetReportRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/report/raw", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/report/raw", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetReportRawDataDto>(cancellationToken: ct))!;
     }
@@ -46,7 +46,7 @@ public partial class ApiClient
     /// <returns>List of unbudgeted postings.</returns>
     public async Task<IReadOnlyList<PostingServiceDto>> Budgets_GetUnbudgetedPostingsAsync(DateTime? from, DateTime? to, BudgetReportDateBasis dateBasis, string? kind = null, CancellationToken ct = default)
     {
-        var url = $"/api/budget/report/unbudgeted?dateBasis={(int)dateBasis}";
+        var url = $"api/budget/report/unbudgeted?dateBasis={(int)dateBasis}";
         if (from.HasValue) url += $"&from={from.Value:O}";
         if (to.HasValue) url += $"&to={to.Value:O}";
         if (!string.IsNullOrWhiteSpace(kind)) url += $"&kind={Uri.EscapeDataString(kind)}";
@@ -64,7 +64,7 @@ public partial class ApiClient
     /// <returns>The <see cref="MonthlyBudgetKpiDto"/> for the current user/month.</returns>
     public async Task<MonthlyBudgetKpiDto> Budgets_GetMonthlyKpiAsync(DateOnly? date = null, BudgetReportDateBasis dateBasis = BudgetReportDateBasis.BookingDate, CancellationToken ct = default)
     {
-        var url = "/api/budget/report/kpi-monthly";
+        var url = "api/budget/report/kpi-monthly";
         var query = new List<string> { $"dateBasis={(int)dateBasis}" };
         if (date.HasValue)
         {
@@ -86,7 +86,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<(string ContentType, string FileName, byte[] Content)> Budgets_ExportAsync(BudgetReportExportRequest request, CancellationToken ct = default)
     {
-        var url = $"/api/budget/report/export?asOf={request.AsOfDate:yyyy-MM-dd}&months={request.Months}&dateBasis={(int)request.DateBasis}";
+        var url = $"api/budget/report/export?asOf={request.AsOfDate:yyyy-MM-dd}&months={request.Months}&dateBasis={(int)request.DateBasis}";
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
 
@@ -127,7 +127,7 @@ public partial class ApiClient
     /// <param name="ct">Cancellation token.</param>
     public async Task Budgets_ResetReportCacheAsync(CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync("/api/budget/report/cache/reset", content: null, ct);
+        var resp = await _http.PostAsync("api/budget/report/cache/reset", content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 

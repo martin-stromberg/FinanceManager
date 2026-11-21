@@ -47,7 +47,7 @@
     {
         <div class="alert alert-success import-success">
             @Localizer["Import_Success"]
-            <a href="@($"/card/statement-drafts/{_vm.FirstDraftId}")" class="alert-link">@Localizer["Import_ShowDetails"]</a>
+            <a href="@($"card/statement-drafts/{_vm.FirstDraftId}")" class="alert-link">@Localizer["Import_ShowDetails"]</a>
         </div>
     }
     @if (_vm?.SplitInfo != null)
@@ -81,13 +81,13 @@
                                     @if (HasMissingSecurityAssignmentWarning(file))
                                     {
                                         <span class="mass-import-warning" title="@Localizer["MassImport_Warning_MissingSecurityAssignment"]" aria-label="@Localizer["MassImport_Warning_MissingSecurityAssignment"]">
-                                            <svg><use href="/icons/sprite.svg#info" /></svg>
+                                            <svg><use href="icons/sprite.svg#info" /></svg>
                                         </span>
                                     }
                                     <div class="mass-import-entry-title" title="@file.FileName">@file.FileName</div>
                                 </div>
                                 <button class="icon-btn danger" title="@Localizer["Ribbon_Delete"]" disabled="@(!selectable)" @onclick="@(() => RemovePendingEntry(file.FileId))">
-                                    <svg><use href="/icons/sprite.svg#delete" /></svg>
+                                    <svg><use href="icons/sprite.svg#delete" /></svg>
                                 </button>
                             </div>
 

@@ -58,7 +58,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
         /// Returns the navigate URL for the detail card of this draft.
         /// </summary>
         /// <returns>Relative URL to the draft card.</returns>
-        public string GetNavigateUrl() => $"/card/statement-drafts/{Id}";
+        public string GetNavigateUrl() => $"card/statement-drafts/{Id}";
     }
 
     private int _skip;
@@ -145,16 +145,16 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                 new UiRibbonAction(
                     "New",
                     localizer["Ribbon_New"].Value,
-                    "<svg><use href='/icons/sprite.svg#new'/></svg>",
+                    "<svg><use href='icons/sprite.svg#new'/></svg>",
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    new Func<Task>(() => { _nav.NavigateTo($"/card/statement-drafts/new"); return Task.CompletedTask; }))
+                    new Func<Task>(() => { _nav.NavigateTo($"card/statement-drafts/new"); return Task.CompletedTask; }))
                 { MobileShortcut = true },
                 new UiRibbonAction(
                     "DeleteAll",
                     localizer["Ribbon_DeleteAll"].Value,
-                    "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                    "<svg><use href='icons/sprite.svg#delete'/></svg>",
                     UiRibbonItemSize.Large,
                     false,
                     null,
@@ -162,7 +162,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                 new UiRibbonAction(
                     "Reclassify",
                     localizer["Ribbon_Reclassify"].Value,
-                    "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                    "<svg><use href='icons/sprite.svg#refresh'/></svg>",
                     UiRibbonItemSize.Large,
                     false,
                     null,
@@ -170,7 +170,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                 new UiRibbonAction(
                     "MassBooking",
                     localizer["Ribbon_MassBooking"].Value,
-                    "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                    "<svg><use href='icons/sprite.svg#save'/></svg>",
                     UiRibbonItemSize.Large,
                     false,
                     null,
@@ -195,7 +195,7 @@ public sealed class StatementDraftsListViewModel : BaseListViewModel<StatementDr
                 new UiRibbonAction(
                     "Import",
                     localizer["Ribbon_Import"].Value,
-                    "<svg><use href='/icons/sprite.svg#upload'/></svg>",
+                    "<svg><use href='icons/sprite.svg#upload'/></svg>",
                     UiRibbonItemSize.Large,
                     false,
                     null,

@@ -6,7 +6,7 @@ window.fmAuthLogin = async (username, password) => {
     let timeZoneId = null;
     try { timeZoneId = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch {}
 
-    const resp = await fetch('/api/auth/login', {
+    const resp = await fetch('api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
@@ -25,7 +25,7 @@ window.fmAuthLogin = async (username, password) => {
 
 window.fmAuthLogout = async () => {
   try {
-    const resp = await fetch('/api/auth/logout', {
+    const resp = await fetch('api/auth/logout', {
       method: 'POST',
       credentials: 'same-origin'
     });
@@ -37,7 +37,7 @@ window.fmAuthLogout = async () => {
 
 window.fmAuthIsAuthenticated = async () => {
   try {
-    const resp = await fetch('/api/user/settings/profile', {
+    const resp = await fetch('api/user/settings/profile', {
       method: 'GET',
       credentials: 'same-origin'
     });

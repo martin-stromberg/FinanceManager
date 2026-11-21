@@ -452,13 +452,13 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
         });
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
-            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"], new List<UiRibbonAction>
@@ -466,7 +466,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
             new UiRibbonAction(
                 "Category",
                 localizer["Ribbon_BudgetCategory"].Value,
-                "<svg><use href='/icons/sprite.svg#tag'/></svg>",
+                "<svg><use href='icons/sprite.svg#tag'/></svg>",
                 UiRibbonItemSize.Small,
                 Purpose?.BudgetCategoryId == null || Purpose?.BudgetCategoryId == Guid.Empty,
                 null,
@@ -478,7 +478,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
                         return Task.CompletedTask;
                     }
 
-                    RaiseUiActionRequested("Back", $"/card/budget/categories/{id.Value}");
+                    RaiseUiActionRequested("Back", $"card/budget/categories/{id.Value}");
                     return Task.CompletedTask;
                 })
         });

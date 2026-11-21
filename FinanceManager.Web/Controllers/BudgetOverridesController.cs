@@ -116,7 +116,7 @@ public sealed class BudgetOverridesController : ControllerBase
         try
         {
             var created = await _svc.CreateAsync(_current.UserId, req.BudgetPurposeId, req.Period, req.Amount, ct);
-            return Created($"/api/budget/overrides/{created.Id}", created);
+            return Created($"api/budget/overrides/{created.Id}", created);
         }
         catch (AggregateException ex)
         {

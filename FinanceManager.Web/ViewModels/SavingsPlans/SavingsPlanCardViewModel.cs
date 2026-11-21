@@ -104,7 +104,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     /// <summary>
     /// Endpoint used by the embedded chart view model when editing an existing savings plan.
     /// </summary>
-    public string ChartEndpoint => IsEdit ? $"/api/savings-plans/{Id}/aggregates" : string.Empty;
+    public string ChartEndpoint => IsEdit ? $"api/savings-plans/{Id}/aggregates" : string.Empty;
 
     // remember last loaded dto to rebuild card with context
     private SavingsPlanDto? _loadedDto;
@@ -814,7 +814,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             new UiRibbonAction(
                 Id: "Back",
                 Label: localizer["Ribbon_Back"].Value,
-                IconSvg: "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                IconSvg: "<svg><use href='icons/sprite.svg#back'/></svg>",
                 Size: UiRibbonItemSize.Large,
                 Disabled: false,
                 Tooltip: null,
@@ -828,7 +828,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             new UiRibbonAction(
                 Id: "Save",
                 Label: localizer["Ribbon_Save"].Value,
-                IconSvg: "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                IconSvg: "<svg><use href='icons/sprite.svg#save'/></svg>",
                 Size: UiRibbonItemSize.Large,
                 Disabled: !canSave,
                 Tooltip: null,
@@ -837,7 +837,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             new UiRibbonAction(
                 Id: "Archive",
                 Label: localizer["Ribbon_Archive"].Value,
-                IconSvg: "<svg><use href='/icons/sprite.svg#archive'/></svg>",
+                IconSvg: "<svg><use href='icons/sprite.svg#archive'/></svg>",
                 Size: UiRibbonItemSize.Small,
                 Disabled: !IsEdit,
                 Tooltip: null,
@@ -846,7 +846,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             new UiRibbonAction(
                 Id: "Delete",
                 Label: localizer["Ribbon_Delete"].Value,
-                IconSvg: "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                IconSvg: "<svg><use href='icons/sprite.svg#delete'/></svg>",
                 Size: UiRibbonItemSize.Small,
                 Disabled: !IsEdit,
                 Tooltip: null,
@@ -857,9 +857,9 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
         // Linked information group
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonAction("Category", localizer["Ribbon_Category"].Value, "<svg><use href='/icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, Model.CategoryId is null, null, new Func<Task>(() => { var url = $"/card/savings-plans/categories/{Model.CategoryId}"; RaiseUiActionRequested("OpenCategory", url); return Task.CompletedTask; })),
-            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { var url = $"/list/postings/savings-plan/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; })),
-            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { RequestOpenAttachments(AttachmentEntityKind.SavingsPlan, Id); return Task.CompletedTask; }))
+            new UiRibbonAction("Category", localizer["Ribbon_Category"].Value, "<svg><use href='icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, Model.CategoryId is null, null, new Func<Task>(() => { var url = $"card/savings-plans/categories/{Model.CategoryId}"; RaiseUiActionRequested("OpenCategory", url); return Task.CompletedTask; })),
+            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { var url = $"list/postings/savings-plan/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; })),
+            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { RequestOpenAttachments(AttachmentEntityKind.SavingsPlan, Id); return Task.CompletedTask; }))
         });
 
         // Analysis group
@@ -868,7 +868,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             new UiRibbonAction(
                 Id: "Recalculate",
                 Label: localizer["Ribbon_Recalculate"].Value,
-                IconSvg: "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                IconSvg: "<svg><use href='icons/sprite.svg#refresh'/></svg>",
                 Size: UiRibbonItemSize.Small,
                 Disabled: !IsEdit,
                 Tooltip: null,
@@ -884,7 +884,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             new UiRibbonAction(
                 Id: "ActualReport",
                 Label: localizer["Ribbon_SavingsPlan_ActualReport"].Value,
-                IconSvg: "<svg><use href='/icons/sprite.svg#edit'/></svg>",
+                IconSvg: "<svg><use href='icons/sprite.svg#edit'/></svg>",
                 Size: UiRibbonItemSize.Small,
                 Disabled: !CanReportActualBalance,
                 Tooltip: HasLinkedAccounts ? localizer["ActualReport_Disabled_Linked"].Value : null,

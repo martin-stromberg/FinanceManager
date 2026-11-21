@@ -163,7 +163,7 @@ public sealed partial class HelpContentRenderer : IHelpContentRenderer
     {
         return html.Replace(
             $"href=\"{InternalHelpLinkBaseUrl}",
-            "href=\"/help/view/",
+            "href=\"help/view/",
             StringComparison.OrdinalIgnoreCase);
     }
 
