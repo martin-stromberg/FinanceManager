@@ -792,6 +792,11 @@ namespace FinanceManager.Web
 
             app.UseMiddleware<JwtRefreshMiddleware>();
 
+            // Converts ApiAuthenticationRequiredException thrown by server-side API calls during
+            // prerendering into a 302 redirect to the login page (incl. returnUrl). Registered
+            // inside the exception-handler scope so it wins over the /Error page.
+            app.UseMiddleware<AuthenticationRedirectMiddleware>();
+
             // Map static assets for CSS/JS bundling
             app.MapStaticAssets();
 
