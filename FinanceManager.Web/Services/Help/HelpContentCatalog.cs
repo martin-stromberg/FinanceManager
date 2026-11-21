@@ -95,6 +95,7 @@ public static class HelpContentCatalog
         "api.md",
         "ablauf-technisch.md",
         "bereitstellung.md",
+        "server-installation.md",
         "business-rules.md",
         "datenmodell.md",
         "index.md"

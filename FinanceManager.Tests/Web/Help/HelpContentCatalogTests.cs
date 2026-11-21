@@ -51,6 +51,7 @@ public sealed class HelpContentCatalogTests
     [InlineData("business-rules")]
     [InlineData("ablauf-technisch")]
     [InlineData("bereitstellung")]
+    [InlineData("server-installation")]
     public void TryResolveDocument_RejectsTechnicalOnlyDocuments(string document)
     {
         var docsPath = GetDocsHelpPath();
