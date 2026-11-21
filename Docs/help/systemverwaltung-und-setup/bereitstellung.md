@@ -57,6 +57,10 @@ enthalten `release-metadata.json` mit Version, Commit, Repository und Runtime.
 Ein fehlendes oder leeres Publish-Verzeichnis sowie ein leeres Archiv brechen
 den Workflow vor der Veröffentlichung ab.
 
+Die schrittweise Installation des ZIP-Pakets auf einem Server (Service-Account,
+systemd-Unit, optionaler Reverse-Proxy) beschreibt die
+[Server-Installation](server-installation.md).
+
 ## Release und Asset
 
 Für automatische Releases erzeugt Semantic Release den Tag, die Release Notes

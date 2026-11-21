@@ -1,3 +1,11 @@
+## 2026-11-21 — Dokumentation: Server-Installationsanleitung für Linux-Betrieb (Issue #558)
+
+- Neue Anleitung `Docs/help/systemverwaltung-und-setup/server-installation.md` führt Betreiber ohne Projektvorwissen vom leeren Linux-Server bis zum laufenden Dienst: ein gemeinsamer Basisteil (Bezug des Release-Pakets bzw. `dotnet publish`, unprivilegierter Service-Account, Schreibpfade, Environment-Datei mit `Jwt__*`, vollständige systemd-Unit inkl. erklärter Hardening-Direktiven und `Updates__ServiceName` für das Self-Update) plus zwei in sich vollständige Pfade — direkter HTTP-Betrieb ohne Proxy und Betrieb hinter einem Reverse-Proxy mit TLS-Terminierung, `PathBase`-Unterpfad und `X-Forwarded-*`-Headern (Caddy als Referenzkonfiguration, nginx als kompakte Alternative).
+- Verankerung ohne Inhaltsduplikation: Inhaltseintrag in `Docs/help/systemverwaltung-und-setup/index.md`, Rückverweis aus `installation.md` als vorgelagerter Schritt vor der In-App-Ersteinrichtung und Querverweis aus `bereitstellung.md` für die Installation des Release-Pakets.
+- Das Dokument wurde in `HelpContentCatalog.TechnicalOnlyDocumentNames` aufgenommen — es ist technisch und wird nicht in der benutzerseitigen `/help`-Navigation publiziert; `HelpContentCatalogTests` pinnt es per `InlineData("server-installation")` als nicht auflösbares Dokument.
+- Fachliche Klarstellung in beiden Dokumenten: `AllowedHosts` wird in der aktuellen Version nicht ausgewertet, da keine Host-Filter-Middleware registriert ist — die zuvor in `installation.md` behauptete `400`-Ablehnung fremder Host-Header tritt nicht ein; die Einstellung kann vorsorglich für künftige Versionen gepflegt werden.
+- Keine Änderung am Laufzeitverhalten — rein dokumentarische Ergänzung plus Katalog-/Test-Einordnung.
+
 ## 2026-11-19 — Berichtswesen: Bankpostenarten-Filter wirkt jetzt überall (Fehlerbehebung)
 
 - Die Vergleichsoption „Hochrechnung" berücksichtigt den Bankpostenarten-Filter (Eingang, Ausgang, Zinsen, Steuern): `ReportProjectionEventLoader.LoadEntityEventsAsync` erhält eine optionale Postenart-Allow-List, die `ReportAggregationService` im Bank-Projektionspfad mit `bankPostingTypes` befüllt — erwartete Posten nicht ausgewählter Arten werden nicht mehr hochgerechnet.
