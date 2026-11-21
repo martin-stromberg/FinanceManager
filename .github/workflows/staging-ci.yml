@@ -1,9 +1,7 @@
 name: Pre-Release
 
-# Filename stays staging-ci.yml (only the display name changes to "Pre-Release") - see
-# ci-target-schema.md section 3. staging-to-main-promotion.yml's workflow_run trigger
-# references this display name, not the filename; both were updated together in this
-# same commit so the promotion chain never briefly points at a name that no longer exists.
+# Filename stays staging-ci.yml even though the display name is "Pre-Release" - see
+# ci-target-schema.md section 3.
 
 on:
   push:
