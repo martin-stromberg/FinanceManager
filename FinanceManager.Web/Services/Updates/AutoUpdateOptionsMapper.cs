@@ -31,6 +31,9 @@ public static class AutoUpdateOptionsMapper
     /// <see cref="AutoUpdateGithubSource"/>, it is replaced with a new instance reflecting the (possibly changed)
     /// repository owner, repository name and manifest asset name, so that changes made through the setup UI take
     /// effect on the next check instead of only after a restart. The previous source is disposed.
+    /// <see cref="AutoUpdateOptions.EnableAutomaticInstallation"/> has no dedicated setting of its own (the setup UI
+    /// only exposes a schedule time); it is derived from whether <see cref="UpdateSettingsDto.ScheduledInstallTime"/>
+    /// is set, since a schedule without this flag means a check/download runs but the scheduled install never fires.
     /// </summary>
     /// <param name="options">The auto-update library's runtime-mutable options to update.</param>
     /// <param name="settings">The settings to apply.</param>
@@ -45,6 +48,7 @@ public static class AutoUpdateOptionsMapper
         options.HealthTimeoutSeconds = settings.HealthTimeoutSeconds;
         options.ScheduledInstallTime = settings.ScheduledInstallTime;
         options.AllowPrereleaseUpdates = settings.IncludePrereleases;
+        options.EnableAutomaticInstallation = settings.ScheduledInstallTime.HasValue;
 
         if (options.Source is AutoUpdateGithubSource previousSource)
         {
