@@ -1,0 +1,39 @@
+
+> test:release-version
+> node --test scripts/resolve-release-version.test.mjs scripts/generate-update-manifest.test.mjs
+
+Wrote update.json
+✔ creates update manifest with release notes and platform assets (4.9507ms)
+✔ builds asset URLs from an explicit tag instead of reconstructing it from version (3.4064ms)
+✔ rejects blank publishedAt (1.6103ms)
+✔ main falls back to current ISO timestamp when RELEASE_PUBLISHED_AT is blank (4.6649ms)
+✔ accepts strict manual release tags (1.3433ms)
+✔ rejects non-semantic manual tags (0.3147ms)
+✔ accepts only main for automatic releases (0.1473ms)
+✔ extracts a version only when Semantic Release announces one (0.3325ms)
+✔ extracts a prerelease version announced for the staging RC channel (0.1237ms)
+✔ creates a release for a manual tag without an existing release (0.3817ms)
+✔ skips a manual tag whose release already has the expected asset (0.2076ms)
+✔ repairs a manual release whose expected asset is still in starter state (0.1418ms)
+✔ repairs a manual release whose uploaded asset has zero size (0.1482ms)
+✔ treats an uploaded asset with positive size as complete (0.234ms)
+✔ repairs a manual release whose expected asset is missing (0.1594ms)
+✔ creates an automatic release when Semantic Release resolves a new version (0.2109ms)
+✔ creates an automatic release even when older releases are missing expected assets (0.1342ms)
+✔ repairs one automatic release whose expected asset is missing when no new release is pending (0.9918ms)
+✔ never repairs a prerelease, even if it is missing its expected asset and no new release is pending (0.1216ms)
+✔ skips automatic releases without releasable commits (0.1187ms)
+✔ rejects an automatic release when its tag already exists (0.1919ms)
+✔ rejects an automatic release when its complete release already exists (0.1163ms)
+✔ lists GitHub releases across all pages (0.1921ms)
+✔ uses one repository-wide release concurrency group (0.4281ms)
+✔ checks out the release tag before repairing an existing release asset (0.1939ms)
+✔ expects windows, linux and update manifest release assets (0.1056ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 85.9336
