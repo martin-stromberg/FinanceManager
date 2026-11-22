@@ -97,7 +97,7 @@ Feature-Branch
 - `push` eines Tags im Format `vX.Y.Z`
 
 **Schritte:**
-1. Checkout, .NET 10 + Node 22 Setup
+1. Checkout, .NET 10 + Node 26 Setup
 2. npm + .NET Restore
 3. Unit- und Integrationstests (als Release-Gate)
 4. Build und Publish (self-contained `win-x64` und `linux-x64`)

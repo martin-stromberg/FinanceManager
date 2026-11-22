@@ -123,8 +123,10 @@ runs:
       # ci-target-schema.md section 4.7 - reuses the existing, already-tested
       # scripts/generate-update-manifest.mjs (see scripts/generate-update-manifest.test.mjs)
       # rather than re-implementing manifest generation inline, unlike Softwareschmiede's
-      # PowerShell-inline approach. Node is preinstalled on GitHub-hosted runners, so no
-      # separate setup-node step is needed here.
+      # PowerShell-inline approach. This action intentionally has no setup-node step:
+      # the only node call below (scripts/generate-update-manifest.mjs) runs on any
+      # current runner Node version, and the calling workflows already pin Node 26 via
+      # actions/setup-node (uniform repo base, engines.node >=26.13).
       env:
         RELEASE_VERSION: ${{ inputs.release-version }}
         RELEASE_NOTES: ${{ inputs.release-notes }}
