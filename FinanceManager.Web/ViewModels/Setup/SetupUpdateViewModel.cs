@@ -142,6 +142,10 @@ public sealed class SetupUpdateViewModel : BaseViewModel
 
             var result = await ApiClient.Updates_CheckAsync(ct);
             Status = result.Status;
+            if (!result.UpdateAvailable && !string.IsNullOrWhiteSpace(result.Message))
+            {
+                SetError(null, result.Message);
+            }
         }, ct);
     }
 

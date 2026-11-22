@@ -19,6 +19,7 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     private readonly IUpdateSettingsStore _settingsStore;
     private readonly IAutoUpdatePackageStore _packageStore;
     private readonly UpdateStatusMapper _statusMapper;
+    private readonly AutoUpdateOptions _autoUpdateOptions;
     private readonly ILogger<UpdateOrchestratorAdapter> _logger;
 
     /// <summary>
@@ -29,6 +30,7 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <param name="settingsStore">The host-specific settings store.</param>
     /// <param name="packageStore">Used to inspect, reset and evaluate the staleness of the installation lock.</param>
     /// <param name="statusMapper">Used to map a status snapshot onto <see cref="UpdateStatusDto"/>.</param>
+    /// <param name="autoUpdateOptions">The auto-update library's runtime-mutable options; used to momentarily force-enable the subsystem for a manually triggered check/install (see <see cref="RunWithManualOverrideAsync{T}"/>).</param>
     /// <param name="logger">Used to log a warning when the installation lock is not cleaned up after a successful installation.</param>
     public UpdateOrchestratorAdapter(
         IAutoUpdateOrchestrator orchestrator,
@@ -36,6 +38,7 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         IUpdateSettingsStore settingsStore,
         IAutoUpdatePackageStore packageStore,
         UpdateStatusMapper statusMapper,
+        AutoUpdateOptions autoUpdateOptions,
         ILogger<UpdateOrchestratorAdapter> logger)
     {
         _orchestrator = orchestrator;
@@ -43,7 +46,39 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
         _settingsStore = settingsStore;
         _packageStore = packageStore;
         _statusMapper = statusMapper;
+        _autoUpdateOptions = autoUpdateOptions;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Runs <paramref name="action"/> with <see cref="AutoUpdateOptions.Enabled"/> temporarily forced to
+    /// <c>true</c> if it was <c>false</c>. "Enabled" is a single library-wide switch that also gates the scheduled
+    /// background check, but a manual "Check now"/"Install now" action triggered explicitly by the admin must
+    /// always run, regardless of whether automatic background checking is turned off. The original value (which
+    /// still governs the scheduled background service) is restored afterwards, even if the action throws.
+    /// </summary>
+    /// <typeparam name="T">The result type of <paramref name="action"/>.</typeparam>
+    /// <param name="action">The manually triggered orchestrator operation to run with the override in place.</param>
+    /// <returns>The result of <paramref name="action"/>.</returns>
+    private async Task<T> RunWithManualOverrideAsync<T>(Func<Task<T>> action)
+    {
+        var wasEnabled = _autoUpdateOptions.Enabled;
+        if (!wasEnabled)
+        {
+            _autoUpdateOptions.Enabled = true;
+        }
+
+        try
+        {
+            return await action();
+        }
+        finally
+        {
+            if (!wasEnabled)
+            {
+                _autoUpdateOptions.Enabled = wasEnabled;
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -78,11 +113,13 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     {
         try
         {
-            var result = await _orchestrator.CheckForUpdateAsync(ct);
-            if (result.Outcome == AutoUpdateOutcome.Success)
+            var result = await RunWithManualOverrideAsync(async () =>
             {
-                result = await _orchestrator.DownloadAsync(ct);
-            }
+                var checkResult = await _orchestrator.CheckForUpdateAsync(ct);
+                return checkResult.Outcome == AutoUpdateOutcome.Success
+                    ? await _orchestrator.DownloadAsync(ct)
+                    : checkResult;
+            });
 
             var statusDto = await _statusMapper.MapAsync(_statusService.GetSnapshot(), ct);
             var message = UpdateErrorMessageMapper.Map(result.Message);
@@ -107,20 +144,23 @@ public sealed class UpdateOrchestratorAdapter : IUpdateOrchestrator
     /// <inheritdoc />
     public async Task<UpdateStatusDto> StartInstallAsync(bool confirmDowntime, CancellationToken ct = default)
     {
-        if (confirmDowntime)
+        var result = await RunWithManualOverrideAsync(async () =>
         {
-            var snapshot = _statusService.GetSnapshot();
-            if (snapshot.State == AutoUpdateState.UpdateAvailable && snapshot.LastDownloadResult is null)
+            if (confirmDowntime)
             {
-                var downloadResult = await _orchestrator.DownloadAsync(ct);
-                if (downloadResult.Outcome == AutoUpdateOutcome.Failed && downloadResult.Error is not null)
+                var snapshot = _statusService.GetSnapshot();
+                if (snapshot.State == AutoUpdateState.UpdateAvailable && snapshot.LastDownloadResult is null)
                 {
-                    throw CreateUpdateException(downloadResult.Error);
+                    var downloadResult = await _orchestrator.DownloadAsync(ct);
+                    if (downloadResult.Outcome == AutoUpdateOutcome.Failed && downloadResult.Error is not null)
+                    {
+                        throw CreateUpdateException(downloadResult.Error);
+                    }
                 }
             }
-        }
 
-        var result = await _orchestrator.InstallAsync(confirmDowntime, force: false, ct);
+            return await _orchestrator.InstallAsync(confirmDowntime, force: false, ct);
+        });
         if (result.Outcome == AutoUpdateOutcome.Failed && result.Error is not null)
         {
             throw CreateUpdateException(result.Error);
