@@ -111,6 +111,15 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Setup Node.js
+        # Keeps npm ci / npx playwright on the Node version declared in package.json
+        # (engines.node >= 26.13, required by semantic-release); without this step they would
+        # run on the runner's default Node and npm would emit EBADENGINE warnings.
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+
       - name: Install dependencies
         run: npm ci
 
@@ -229,7 +238,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '26'
           cache: npm
 
       - name: Install dependencies
@@ -246,13 +255,34 @@ jobs:
         # release.config.js's now-removed staging prerelease branch entry); this "version" +
         # "prerelease" job pair replaces that with a dedicated pre-release path, matching
         # Softwareschmiede's proven pattern.
+        # RESOLVE_DRY_RUN switches release.config.js to its dryRunPlugins list (commit-analyzer
+        # only), matching how resolve-release-version.mjs runs the same dry-run in release.yml.
+        # The "next release version" line is printed by semantic-release core either way, so
+        # the reduced plugin set only shrinks the failure surface (no @semantic-release/github
+        # verifyConditions token access, no verify-release-version.cjs).
+        # The explicit $LASTEXITCODE check below distinguishes a tool failure from the
+        # legitimate "no new version" case: previously a non-zero exit could fall through to
+        # changed=false and silently skip a release. $PSNativeCommandUseErrorActionPreference
+        # is disabled for the native call so pwsh >= 7.4's Stop preference does not throw
+        # before the check can report the tool output via ::error::.
         id: semver
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESOLVE_DRY_RUN: "true"
         run: |
-          $output = & npx semantic-release --dry-run --no-ci --branches staging 2>&1 | Out-String
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & npx semantic-release --dry-run --no-ci --branches staging 2>&1 | Out-String -Width 4096
+          $exitCode = $LASTEXITCODE
           Write-Host "semantic-release output:"
           Write-Host $output
+
+          if ($exitCode -ne 0) {
+            # Escape for the workflow-command syntax first, then embed the output in the
+            # ::error:: annotation (% -> %25, CR -> %0D, LF -> %0A; order matters).
+            $escaped = $output -replace '%', '%25' -replace "`r", '%0D' -replace "`n", '%0A'
+            Write-Host "::error::semantic-release --dry-run failed with exit code ${exitCode}.%0A$escaped"
+            exit 1
+          }
 
           $version = $null
           $changed = $false
@@ -294,6 +324,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        # Pins Node to the declared version base (engines.node >= 26.13) for the only
+        # node call in this release path: build-and-package runs
+        # `node scripts/generate-update-manifest.mjs` and would otherwise fall back to
+        # the runner's default Node. No npm ci runs in this job, so no npm cache is set.
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
 
       - name: Generate release notes for update manifest
         id: notes

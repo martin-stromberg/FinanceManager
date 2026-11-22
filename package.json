@@ -2,7 +2,7 @@
   "name": "finance-manager-release",
   "private": true,
   "engines": {
-    "node": "22.x"
+    "node": ">=26.13"
   },
   "scripts": {
     "release": "semantic-release",

@@ -20,7 +20,7 @@ Diese Dokumentation ergänzt die [README](../README.md) um Details für Entwickl
 
 Für release-nahe Aufgaben zusätzlich:
 
-- [Node.js 22.x](https://nodejs.org/)
+- [Node.js 26.x](https://nodejs.org/)
 
 ### Starten
 

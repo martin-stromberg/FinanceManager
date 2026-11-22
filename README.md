@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions/workflows/release.yml)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![Node.js](https://img.shields.io/badge/node-22.x-339933?logo=nodedotjs)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-26.x-339933?logo=nodedotjs)](https://nodejs.org/)
 
 `FinanceManager` ist eine Blazor-Server-Anwendung zur Verwaltung persönlicher Finanzen.  
 Die Anwendung bündelt Stammdatenverwaltung, Kontoauszugsimport, Budget- und Reporting-Funktionen, Portfolio-Auswertungen sowie Setup- und Admin-Funktionen in einer gemeinsamen Weboberfläche.
@@ -39,7 +39,7 @@ Die Screenshots zeigen die Anwendung nach einer Erstregistrierung mit aktivierte
 - **ASP.NET Core Identity** und **JWT-Bearer-Authentifizierung**
 - **xUnit v3**, **FluentAssertions**, **bUnit** für Unit-/Komponententests
 - **Microsoft.Playwright** für End-to-End-Tests
-- **Node.js 22.x** für Release-/Versionsskripte und GitHub-Workflows
+- **Node.js 26.x** für Release-/Versionsskripte und GitHub-Workflows
 
 Zusätzlich werden lokale Paketquellen aus `external/` verwendet:
 
@@ -73,7 +73,7 @@ Für die lokale Ausführung der Webanwendung:
 
 Zusätzlich für Release-/CI-nahe Aufgaben:
 
-- Node.js **22.x**
+- Node.js **26.x**
 
 ## Lokal starten
 

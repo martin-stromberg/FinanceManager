@@ -2,6 +2,7 @@
 
 ## Important Notes Before Update
 
+- Release tooling now requires Node.js 26.x (`engines.node >= 26.13`, needed by semantic-release 26): `npm ci` and the release/version scripts fail on older Node versions. This only matters for release-near tasks run locally or for operating a fork's release pipeline — updating and running the application itself is unaffected (issue #574).
 - The update adds the database check constraint `CK_Postings_HasReference`: every posting must reference an account, contact, savings plan or security. If an existing database contained postings without any reference, the migration — and thus the app start — would fail deliberately; such rows cannot be produced by the application, but should the update abort for this reason, the orphaned postings must be removed manually first (issue #497).
 - New opt-in feature: the MCP server (`/mcp`) lets external AI assistants access the owner's financial data through scoped, audited tools. It ships **disabled by default** — an administrator enables it anytime in the admin security settings (`/card/mcp-security`, database-stored `Enabled`/`WriteAccessEnabled` switches). Existing installations keep working unchanged.
 - The MCP settings are stored in the database, not in `appsettings.json`; write access has a separate opt-in kill switch so an admin can enable read-only MCP access first.
@@ -75,6 +76,7 @@
 
 ## Wichtige Hinweise vor dem Update
 
+- Das Release-Tooling setzt jetzt Node.js 26.x voraus (`engines.node >= 26.13`, benötigt von semantic-release 26): `npm ci` und die Release-/Versionsskripte schlagen auf älteren Node-Versionen fehl. Relevant nur für lokal ausgeführte release-nahe Aufgaben bzw. den Betrieb einer eigenen Release-Pipeline — Update und Betrieb der Anwendung selbst sind unverändert (Issue #574).
 - Das Update führt den Datenbank-Check-Constraint `CK_Postings_HasReference` ein: Jede Buchung muss ein Konto, einen Kontakt, einen Sparplan oder ein Wertpapier referenzieren. Enthielte eine Bestandsdatenbank Buchungen ganz ohne Referenz, würde die Migration — und damit der App-Start — bewusst fehlschlagen; die Anwendung kann solche Zeilen nicht erzeugen, sollte das Update dennoch daran scheitern, sind die verwaisten Buchungen zuvor manuell zu entfernen (Issue #497).
 - Neue Opt-in-Funktion: Der MCP-Server (`/mcp`) gibt externen KI-Assistenten über abgestufte, protokollierte Werkzeuge Zugriff auf die Finanzdaten des jeweiligen Besitzers. Er ist **standardmäßig deaktiviert** — ein Administrator aktiviert ihn jederzeit in den Admin-Sicherheitseinstellungen (`/card/mcp-security`, datenbankgestützte Schalter `Enabled`/`WriteAccessEnabled`). Bestehende Installationen bleiben unverändert funktionsfähig.
 - Die MCP-Einstellungen liegen in der Datenbank, nicht in `appsettings.json`; der Schreibzugriff hat einen eigenen Opt-in-Schalter, sodass zunächst reiner Lesezugriff freigegeben werden kann.
