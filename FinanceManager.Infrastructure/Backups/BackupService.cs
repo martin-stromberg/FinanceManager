@@ -743,6 +743,12 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var mcpAccessScopes = mcpScopeEntities.Select(s => s.ToBackupDto()).ToList();
 
+        // Approval grants of the granular mode — same convention as the scope rows.
+        var mcpApprovalGrantEntities = await _db.McpAccessApprovalGrants.AsNoTracking()
+            .Where(g => g.OwnerUserId == userId)
+            .ToListAsync(ct);
+        var mcpAccessApprovalGrants = mcpApprovalGrantEntities.Select(g => g.ToBackupDto()).ToList();
+
         var mcpAuditEntryEntities = await _db.McpAuditEntries.AsNoTracking()
             .Where(e => e.OwnerUserId == userId)
             .ToListAsync(ct);
@@ -818,6 +824,9 @@ public sealed class BackupService : IBackupService
             // before the MCP feature simply omit them — the restore treats them as empty.
             McpAccesses = mcpAccesses,
             McpAccessScopes = mcpAccessScopes,
+            // Optional payload section: backups created before the granular approval
+            // mode omit it — the restore treats it as empty.
+            McpAccessApprovalGrants = mcpAccessApprovalGrants,
             McpAuditEntries = mcpAuditEntries,
             McpAuditEntryChanges = mcpAuditEntryChanges,
             AiActionRequests = aiActionRequests,

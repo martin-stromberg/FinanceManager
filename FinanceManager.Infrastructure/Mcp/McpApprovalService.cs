@@ -23,8 +23,11 @@ namespace FinanceManager.Infrastructure.Mcp;
 /// </summary>
 public sealed class McpApprovalService : IMcpApprovalService
 {
-    /// <summary>Decision note recorded on pre-approved requests (approval-konzept.md §3.4).</summary>
+    /// <summary>Decision note recorded on pre-approved requests (approval-konzept.md §3.5).</summary>
     public const string PreApprovedDecisionNote = "Vorab-Genehmigung Zugangseinstellung";
+
+    /// <summary>Decision note recorded on grant-preapproved requests (granular mode, §3.4).</summary>
+    public const string GrantPreApprovedDecisionNote = "Vorab-Freigabe Expertenmodus-Grant";
 
     /// <summary>Maximum accepted client idempotency-key length (the composed key is capped at 200).</summary>
     private const int MaxClientKeyLength = 140;
@@ -115,14 +118,31 @@ public sealed class McpApprovalService : IMcpApprovalService
 
         var expiresUtc = DateTime.UtcNow.AddHours(approval.DefaultExpiryHours);
         var key2 = actionKey;
-        AiActionRequest request = access.ApprovalMode == McpApprovalMode.PreApproved
-            ? AiActionRequest.CreatePreApproved(
+        AiActionRequest request;
+        if (access.ApprovalMode == McpApprovalMode.PreApproved)
+        {
+            request = AiActionRequest.CreatePreApproved(
                 access.OwnerUserId, access.Id, access.Name, toolName, key2, catalogVersion,
                 parameterSnapshotJson, reasonText, expiresUtc, correlationId, key,
-                PreApprovedDecisionNote)
-            : new AiActionRequest(
+                PreApprovedDecisionNote, PreApprovalKind.AccessPreApproved);
+        }
+        else if (access.ApprovalMode == McpApprovalMode.Granular
+            && await HasMatchingGrantAsync(access, toolName, key2, ct))
+        {
+            // Granular mode: an approval-required operation covered by a matching grant
+            // enters the queue directly approved — the request stays the documented
+            // approval instance, the grant is the documented pre-approval source.
+            request = AiActionRequest.CreatePreApproved(
+                access.OwnerUserId, access.Id, access.Name, toolName, key2, catalogVersion,
+                parameterSnapshotJson, reasonText, expiresUtc, correlationId, key,
+                GrantPreApprovedDecisionNote, PreApprovalKind.GrantPreApproved);
+        }
+        else
+        {
+            request = new AiActionRequest(
                 access.OwnerUserId, access.Id, access.Name, toolName, key2, catalogVersion,
                 parameterSnapshotJson, reasonText, expiresUtc, correlationId, key);
+        }
 
         // Request row + approval event commit atomically (transactional coupling).
         _db.AiActionRequests.Add(request);
@@ -437,6 +457,79 @@ public sealed class McpApprovalService : IMcpApprovalService
     }
 
     /// <inheritdoc />
+    public async Task<int> WithdrawGrantUncoveredForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(reason)) throw new ArgumentException("A documented reason is required.", nameof(reason));
+
+        // The grant tuples *after* the profile-changing write.
+        var grants = (await _db.McpAccessApprovalGrants.AsNoTracking()
+                .Where(g => g.McpAccessId == mcpAccessId)
+                .Select(g => new { g.DataType, g.Right })
+                .ToListAsync(ct))
+            .Select(g => new McpScopeTuple(g.DataType, g.Right))
+            .ToHashSet();
+
+        var open = await _db.AiActionRequests
+            .Where(r => r.McpAccessId == mcpAccessId
+                && r.PreApprovalKind == PreApprovalKind.GrantPreApproved
+                && (r.Status == AiActionRequestStatus.Pending
+                    || (r.Status == AiActionRequestStatus.Approved && r.ClaimToken == null)))
+            .ToListAsync(ct);
+
+        var withdrawn = 0;
+        foreach (var request in open)
+        {
+            var profile = McpApprovalActionCatalog.Find(request.ToolName, request.ActionKey);
+            // Fail closed symmetric to enqueue: a request whose operation profile the
+            // catalog no longer maps, or whose tuple no grant covers, loses its
+            // pre-approval — it is system-withdrawn, not re-pended (the client sees a
+            // documented rejection, not a silently re-queued request).
+            if (profile is not null && grants.Contains(new McpScopeTuple(profile.DataType, profile.Right)))
+            {
+                continue;
+            }
+            request.WithdrawBySystem(reason);
+            await StageWithdrawalAsync(request, reason, ct);
+            withdrawn++;
+        }
+        if (withdrawn > 0)
+        {
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation(
+                "Withdrew {Count} grant-preapproved requests of access {AccessId} — grant no longer covers them: {Reason}",
+                withdrawn, mcpAccessId, reason);
+            foreach (var request in open.Where(r => r.Status == AiActionRequestStatus.Rejected))
+            {
+                await TryPublishAsync(request, ct);
+            }
+        }
+        return withdrawn;
+    }
+
+    /// <summary>
+    /// Whether a persisted grant of the access covers the (tool, action) profile — the
+    /// enqueue-side grant check of the granular mode. Unmapped operations match nothing
+    /// (fail closed).
+    /// </summary>
+    /// <param name="access">The calling access entity.</param>
+    /// <param name="toolName">The requested tool name.</param>
+    /// <param name="actionKey">The operation key of the call.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when a matching grant covers the operation.</returns>
+    private async Task<bool> HasMatchingGrantAsync(McpAccess access, string toolName, string actionKey, CancellationToken ct)
+    {
+        var profile = McpApprovalActionCatalog.Find(toolName, actionKey);
+        if (profile is null)
+        {
+            return false;
+        }
+        return await _db.McpAccessApprovalGrants.AsNoTracking().AnyAsync(
+            g => g.McpAccessId == access.Id
+                && g.DataType == profile.DataType
+                && g.Right == profile.Right, ct);
+    }
+
+    /// <inheritdoc />
     /// <remarks>
     /// The counters are cheap aggregate reads over the request table — the runbook view of
     /// agent workloads (F-1103) derived from the same queue the SSE channel notifies about.
@@ -484,6 +577,8 @@ public sealed class McpApprovalService : IMcpApprovalService
     /// roll back the transition; a failing publisher is logged and swallowed — the
     /// request row plus <c>fm_task_status</c> polling stay the source of truth.
     /// </summary>
+    /// <param name="request">The request whose status changed.</param>
+    /// <param name="ct">Cancellation token.</param>
     private async Task TryPublishAsync(AiActionRequest request, CancellationToken ct)
     {
         if (_statusPublisher is null)
@@ -501,6 +596,10 @@ public sealed class McpApprovalService : IMcpApprovalService
     }
 
     /// <summary>Stages the <c>ApprovalWithdrawn</c> audit record of a system withdrawal.</summary>
+    /// <param name="request">The withdrawn request.</param>
+    /// <param name="reason">The system withdrawal reason.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The staged audit entry task.</returns>
     private Task<McpAuditEntry?> StageWithdrawalAsync(AiActionRequest request, string reason, CancellationToken ct)
         => _auditWriter.StageAsync(new McpAuditWriteRequest(
             McpAuditCategory.ApprovalEvent, "ApprovalWithdrawn", "Success",
@@ -513,6 +612,10 @@ public sealed class McpApprovalService : IMcpApprovalService
     /// <summary>
     /// Stages the <c>ApprovalDecided</c> audit record of a user decision.
     /// </summary>
+    /// <param name="request">The decided request.</param>
+    /// <param name="decision">The decision outcome key.</param>
+    /// <param name="note">Optional decision note.</param>
+    /// <param name="ct">Cancellation token.</param>
     private async Task StageDecisionAsync(AiActionRequest request, string decision, string? note, CancellationToken ct)
     {
         await _auditWriter.StageAsync(new McpAuditWriteRequest(
@@ -528,6 +631,12 @@ public sealed class McpApprovalService : IMcpApprovalService
     /// Builds the deduplication key: a client key is namespaced by the access id; without a
     /// client key a content hash of tool + action + parameters deduplicates identical retries.
     /// </summary>
+    /// <param name="accessId">Owning access id (key namespace).</param>
+    /// <param name="clientKey">Optional client-supplied deduplication key.</param>
+    /// <param name="toolName">Tool name.</param>
+    /// <param name="actionKey">Operation key.</param>
+    /// <param name="parameterSnapshotJson">Frozen parameter JSON.</param>
+    /// <returns>The idempotency key.</returns>
     private static string BuildIdempotencyKey(Guid accessId, string? clientKey, string toolName, string actionKey, string parameterSnapshotJson)
     {
         if (!string.IsNullOrWhiteSpace(clientKey))

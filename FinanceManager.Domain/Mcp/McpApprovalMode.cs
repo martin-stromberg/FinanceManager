@@ -17,5 +17,14 @@ public enum McpApprovalMode
     /// <summary>
     /// Approval-requiring actions are durably pre-approved by the access configuration.
     /// </summary>
-    PreApproved = 1
+    PreApproved = 1,
+
+    /// <summary>
+    /// Granular mode (experts): persisted <see cref="McpAccessApprovalGrant"/> tuples
+    /// pre-approve matching operations — routine operations covered by a grant run directly,
+    /// approval-required operations covered by a grant start their
+    /// <see cref="AiActionRequest"/> directly approved; everything else follows the
+    /// <see cref="PerAction"/> behavior.
+    /// </summary>
+    Granular = 2
 }

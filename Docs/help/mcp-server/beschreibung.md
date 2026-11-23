@@ -30,7 +30,7 @@ Jeder Benutzer verwaltet seine eigenen Zugänge auf der Seite **MCP-Zugänge** (
 Der Anlage-Assistent führt in drei Schritten:
 
 1. **Stammdaten**: Name (eindeutig je Benutzer), optionale Beschreibung sowie in den erweiterten Angaben ein optionales Ablaufdatum und eine IP-Bindung (kommagetrennte Liste erlaubter Client-Adressen und -Bereiche).
-2. **Freigabestufe**: Eine der fünf Stufen sowie der Genehmigungsmodus — genehmigungspflichtige Aktionen werden je Aktion freigegeben oder als dauerhaft vorab genehmigt behandelt.
+2. **Freigabestufe**: Eine der fünf Stufen sowie der Genehmigungsmodus — genehmigungspflichtige Aktionen werden je Aktion freigegeben, als dauerhaft vorab genehmigt behandelt oder (Expertenmodus „Granular") über ein eigenes Tupel-Profil aus Datentyp und Recht vorab freigegeben.
 3. **Token**: Das erzeugte Zugriffstoken wird genau einmal im Klartext angezeigt und muss sofort in die Konfiguration des KI-Systems übernommen werden. Ohne TLS-Verschlüsselung weist die Oberfläche auf das Risiko der Klartextübertragung hin.
 
 Die fünf Freigabestufen im Überblick:

@@ -440,7 +440,18 @@ public sealed class EnumCoverageTests
     public void McpApprovalMode_Values()
         => AssertValues<FinanceManager.Domain.Mcp.McpApprovalMode>(
             nameof(FinanceManager.Domain.Mcp.McpApprovalMode.PerAction),
-            nameof(FinanceManager.Domain.Mcp.McpApprovalMode.PreApproved));
+            nameof(FinanceManager.Domain.Mcp.McpApprovalMode.PreApproved),
+            nameof(FinanceManager.Domain.Mcp.McpApprovalMode.Granular));
+
+    /// <summary>
+    /// Verifies the declared values of the enum covered by this test.
+    /// </summary>
+    [Fact]
+    public void PreApprovalKind_Values()
+        => AssertValues<FinanceManager.Domain.Mcp.PreApprovalKind>(
+            nameof(FinanceManager.Domain.Mcp.PreApprovalKind.None),
+            nameof(FinanceManager.Domain.Mcp.PreApprovalKind.AccessPreApproved),
+            nameof(FinanceManager.Domain.Mcp.PreApprovalKind.GrantPreApproved));
 
     /// <summary>
     /// Verifies the declared values of the enum covered by this test.

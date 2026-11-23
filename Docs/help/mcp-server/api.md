@@ -119,6 +119,7 @@ Alle Operationen sind strikt auf den eigenen Benutzer begrenzt (JWT); Klartext-T
 | `PUT` | `/api/mcp-accesses/{id}` | Stammdaten, Stufe, Genehmigungsmodus, Ablaufdatum, IP-Bindung |
 | `PUT` | `/api/mcp-accesses/{id}/scopes` | Scope-Profil ersetzen (nur Stufe `Individuell`) |
 | `PUT` | `/api/mcp-accesses/{id}/filters/{scopeId}` | Filterdimensionen einer Scope-Zeile setzen |
+| `PUT` | `/api/mcp-accesses/{id}/approval-grants` | Vorab-Freigabe-Tupel des Expertenmodus `Granular` ersetzen; entfernte Grants ziehen ihre offenen Anforderungen zurück |
 | `POST` | `/api/mcp-accesses/{id}/activate` | Zugang aktivieren (sofort wirksam) |
 | `POST` | `/api/mcp-accesses/{id}/deactivate` | Zugang deaktivieren (sofort wirksam) |
 | `POST` | `/api/mcp-accesses/{id}/rotate-token` | Token rotieren; neuer Klartext einmalig in der Antwort |

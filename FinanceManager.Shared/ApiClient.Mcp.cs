@@ -93,6 +93,22 @@ public partial class ApiClient
     }
 
     /// <summary>
+    /// Replaces the approval-grant profile of an access (granular mode). Returns false when
+    /// not found. Removing a grant system-withdraws the still-open requests it pre-approved.
+    /// </summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="request">Grant set request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when applied.</returns>
+    public async Task<bool> Mcp_SetApprovalGrantsAsync(Guid id, McpApprovalGrantSetRequest request, CancellationToken ct = default)
+    {
+        var resp = await _http.PutAsJsonAsync($"api/mcp-accesses/{id}/approval-grants", request, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
+        await EnsureSuccessOrSetErrorAsync(resp);
+        return true;
+    }
+
+    /// <summary>
     /// Replaces the filters of one scope row. Returns false when not found.
     /// </summary>
     /// <param name="id">Access id.</param>

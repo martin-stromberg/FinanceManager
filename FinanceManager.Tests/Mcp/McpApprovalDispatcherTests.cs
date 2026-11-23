@@ -83,6 +83,7 @@ public sealed class McpApprovalDispatcherTests
     }
 
     /// <summary>Scope evaluator stub granting every declared tuple.</summary>
+    /// <returns>The evaluator stub.</returns>
     private static IMcpScopeEvaluator AllowAllScopes()
     {
         var e = new Mock<IMcpScopeEvaluator>();
@@ -95,7 +96,8 @@ public sealed class McpApprovalDispatcherTests
     private static IMcpApprovalGate GateReturning(McpApprovalDecision decision)
     {
         var gate = new Mock<IMcpApprovalGate>();
-        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(decision);
         return gate.Object;
     }

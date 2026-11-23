@@ -65,7 +65,8 @@ public sealed class McpAuditPipelineTests
         registry.Setup(r => r.Find(descriptor.Name)).Returns(descriptor);
         var evaluator = new Mock<IMcpScopeEvaluator>();
         var gate = new Mock<IMcpApprovalGate>();
-        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(McpApprovalDecision.Direct);
         var opts = new TestOptionsMonitor(options ?? new McpOptions());
         return new McpToolDispatcher(
@@ -191,7 +192,8 @@ public sealed class McpAuditPipelineTests
         evaluator.Setup(e => e.IsAllowedAsync(access, McpDataType.Postings, McpRightKind.Read, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var gate = new Mock<IMcpApprovalGate>();
-        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(McpApprovalDecision.Direct);
         var opts = new TestOptionsMonitor(new McpOptions());
         var dispatcher = new McpToolDispatcher(
