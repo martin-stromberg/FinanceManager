@@ -781,6 +781,13 @@ public sealed class BackupService : IBackupService
             .ToListAsync(ct);
         var portfolioKpiConfigurations = portfolioKpiConfigurationEntities.Select(c => c.ToBackupDto()).ToList();
 
+        // Currency exchange rates: global cross-user reference data (no OwnerUserId by
+        // design) — exported in full so a restore can reseed the cache; the import dedupes
+        // on (CurrencyCode, Date, Source) instead of blindly duplicating rows.
+        var currencyExchangeRateEntities = await _db.CurrencyExchangeRates.AsNoTracking()
+            .ToListAsync(ct);
+        var currencyExchangeRates = currencyExchangeRateEntities.Select(r => r.ToBackupDto()).ToList();
+
         return new
         {
             Accounts = accounts,
@@ -826,7 +833,10 @@ public sealed class BackupService : IBackupService
             PortfolioKpiConfigurations = portfolioKpiConfigurations,
             // Optional payload section: backups created before the suppressed-expectation
             // feature simply omit it - the restore treats it as empty.
-            ReportSuppressedExpectations = suppressedExpectations
+            ReportSuppressedExpectations = suppressedExpectations,
+            // Optional payload section (global reference data, not user-owned): backups
+            // created before the FX feature simply omit it - the restore treats it as empty.
+            CurrencyExchangeRates = currencyExchangeRates
         };
     }
 

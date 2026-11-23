@@ -206,6 +206,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             return Set<SecurityPrice>();
         }
     }
+    /// <summary>Global currency exchange rates (cross-user reference data, no owner).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<CurrencyExchangeRate> CurrencyExchangeRates
+    {
+        get
+        {
+            return Set<CurrencyExchangeRate>();
+        }
+    }
     /// <summary>Backup records stored for the user.</summary>
     /// <returns>The result.</returns>
     public DbSet<BackupRecord> Backups
@@ -721,6 +730,17 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.HasIndex(x => new { x.SecurityId, x.Date }).IsUnique();
             b.Property(x => x.Date).IsRequired();
             b.Property(x => x.Close).HasPrecision(18, 4).IsRequired();
+        });
+
+        modelBuilder.Entity<CurrencyExchangeRate>(b =>
+        {
+            b.HasKey(x => x.Id);
+            // Global reference pool (no OwnerUserId): one row per currency/date/source.
+            b.HasIndex(x => new { x.CurrencyCode, x.Date, x.Source }).IsUnique();
+            b.Property(x => x.CurrencyCode).HasMaxLength(8).IsRequired();
+            b.Property(x => x.Date).IsRequired();
+            b.Property(x => x.RatePerEur).HasPrecision(18, 6).IsRequired();
+            b.Property(x => x.Source).HasMaxLength(40).IsRequired();
         });
 
         modelBuilder.Entity<BackupRecord>(b =>
