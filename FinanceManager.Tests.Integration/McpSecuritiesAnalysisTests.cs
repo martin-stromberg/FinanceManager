@@ -1,10 +1,14 @@
+using FinanceManager.Domain.Postings;
 using FinanceManager.Domain.Securities;
 using FinanceManager.Infrastructure;
 using FinanceManager.Shared;
+using FinanceManager.Shared.Dtos.Postings;
+using FinanceManager.Shared.Dtos.Securities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using Xunit;
 
 namespace FinanceManager.Tests.Integration;
@@ -117,5 +121,71 @@ public sealed class McpSecuritiesAnalysisTests : McpIntegrationTestBase
         entry.GetProperty("untrusted_data").GetProperty("priceErrorMessage").GetString()
             .Should().Be("Symbol not found");
         entry.TryGetProperty("priceErrorMessage", out _).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// With <c>includeStatistics: true</c> the wire response carries a <c>statistics</c>
+    /// object: currency-pure <c>byCurrency</c> market values (openQuantity x latest stored
+    /// close), a single-currency total, and <c>positionsWithoutPrice</c> for a holding that
+    /// has no stored close.
+    /// </summary>
+    [Fact]
+    public async Task ToolsCall_SecuritiesAnalysis_IncludeStatistics_ReturnsAggregate()
+    {
+        var api = CreateApiClient();
+        var username = $"mcpsecstat_{Guid.NewGuid():N}";
+        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null), TestContext.Current.CancellationToken);
+
+        Guid userId;
+        Guid unpricedId;
+        var priceDate = new DateTime(2026, 11, 20);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            userId = await db.Users
+                .Where(x => x.UserName == username)
+                .Select(x => x.Id)
+                .FirstAsync(TestContext.Current.CancellationToken);
+
+            var priced = new Security(userId, "Priced ETF", "ISIN-STAT1", null, null, "EUR", null);
+            var pricedUsd = new Security(userId, "Priced US", "ISIN-STAT3", null, null, "USD", null);
+            var unpriced = new Security(userId, "Unpriced AG", "ISIN-STAT2", null, null, "USD", null);
+            db.Securities.AddRange(priced, pricedUsd, unpriced);
+            db.SecurityPrices.Add(new SecurityPrice(priced.Id, priceDate, 100.00m));
+            db.SecurityPrices.Add(new SecurityPrice(pricedUsd.Id, priceDate, 50.00m));
+            // OpenQuantity derives from buy/sell postings.
+            db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, priced.Id,
+                priceDate, priceDate, 1000m, null, null, null, SecurityPostingSubType.Buy, 10m));
+            db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, pricedUsd.Id,
+                priceDate, priceDate, 400m, null, null, null, SecurityPostingSubType.Buy, 8m));
+            db.Postings.Add(new Posting(Guid.NewGuid(), PostingKind.Security, null, null, null, unpriced.Id,
+                priceDate, priceDate, 500m, null, null, null, SecurityPostingSubType.Buy, 5m));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            unpricedId = unpriced.Id;
+        }
+
+        using var client = _factory.CreateClient();
+        var pat = await CreateAccessTokenAsync(client, username, level: 0 /* Analyse */, approvalMode: 0);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat);
+
+        var result = await CallToolAsync(client, "fm_securities_analysis",
+            new { includeStatistics = true }, id: 3);
+        var stats = result.GetProperty("structuredContent").GetProperty("statistics");
+
+        stats.GetProperty("securityCount").GetInt32().Should().Be(3);
+        stats.GetProperty("positionCount").GetInt32().Should().Be(3);
+        stats.GetProperty("positionsWithoutPrice").GetProperty("count").GetInt32().Should().Be(1);
+        stats.GetProperty("positionsWithoutPrice").GetProperty("securityIds")[0].GetGuid().Should().Be(unpricedId);
+
+        var byCurrency = stats.GetProperty("byCurrency");
+        byCurrency.GetArrayLength().Should().Be(2);
+        byCurrency.EnumerateArray().Single(r => r.GetProperty("currencyCode").GetString() == "EUR")
+            .GetProperty("marketValue").GetDecimal().Should().Be(1000m);
+        var usdRow = byCurrency.EnumerateArray().Single(r => r.GetProperty("currencyCode").GetString() == "USD");
+        usdRow.GetProperty("marketValue").GetDecimal().Should().Be(400m);
+        usdRow.GetProperty("positionsWithoutPrice").GetInt32().Should().Be(1);
+        // Mixed valued currencies: no misleading cross-currency total.
+        stats.GetProperty("totalMarketValue").ValueKind.Should().Be(JsonValueKind.Null);
+        stats.GetProperty("totalCurrencyCode").ValueKind.Should().Be(JsonValueKind.Null);
     }
 }
