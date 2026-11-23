@@ -103,10 +103,10 @@ public sealed class McpAccessServiceTests
         => await db.McpAuditEntries.AsNoTracking()
             .Where(e => e.EventType == eventType)
             .OrderByDescending(e => e.SequenceNo)
-            .FirstAsync();
+            .FirstAsync(TestContext.Current.CancellationToken);
 
     private static async Task<List<McpAuditEntryChange>> ChangesOfAsync(AppDbContext db, Guid entryId)
-        => await db.McpAuditEntryChanges.AsNoTracking().Where(c => c.EntryId == entryId).ToListAsync();
+        => await db.McpAuditEntryChanges.AsNoTracking().Where(c => c.EntryId == entryId).ToListAsync(TestContext.Current.CancellationToken);
 
     /// <summary>Test case.</summary>
     [Fact]

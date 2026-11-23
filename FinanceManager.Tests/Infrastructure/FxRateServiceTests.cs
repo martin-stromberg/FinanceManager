@@ -58,7 +58,7 @@ public sealed class FxRateServiceTests
         db.CurrencyExchangeRates.Add(new CurrencyExchangeRate("USD", new DateTime(2026, 11, 10), 1.10m, "Frankfurter"));
         db.CurrencyExchangeRates.Add(new CurrencyExchangeRate("USD", new DateTime(2026, 11, 18), 1.09m, "Frankfurter"));
         db.CurrencyExchangeRates.Add(new CurrencyExchangeRate("USD", new DateTime(2026, 11, 25), 1.20m, "Frankfurter"));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var provider = new Mock<IFxRateProvider>(MockBehavior.Strict);
         var svc = NewService(db, provider.Object);
@@ -90,7 +90,7 @@ public sealed class FxRateServiceTests
 
         Assert.NotNull(rate);
         Assert.Equal(1.09m, rate.RatePerEur);
-        var stored = await db.CurrencyExchangeRates.SingleAsync();
+        var stored = await db.CurrencyExchangeRates.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal("USD", stored.CurrencyCode);
         Assert.Equal(new DateTime(2026, 11, 19), stored.Date);
         Assert.Equal(1.09m, stored.RatePerEur);
@@ -113,7 +113,7 @@ public sealed class FxRateServiceTests
     {
         await using var db = CreateDb(out var conn);
         db.CurrencyExchangeRates.Add(new CurrencyExchangeRate("USD", new DateTime(2026, 12, 1), 1.05m, "Frankfurter"));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var provider = new Mock<IFxRateProvider>();
         provider.Setup(p => p.GetRateAsync(It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -137,7 +137,7 @@ public sealed class FxRateServiceTests
     {
         await using var db = CreateDb(out var conn);
         db.CurrencyExchangeRates.Add(new CurrencyExchangeRate("USD", new DateTime(2026, 12, 1), 1.05m, "Frankfurter"));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var provider = new Mock<IFxRateProvider>();
         provider.Setup(p => p.GetRateAsync(It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -167,7 +167,7 @@ public sealed class FxRateServiceTests
         var rate = await svc.GetRateAsync("USD", new DateTime(2026, 11, 20), CancellationToken.None);
 
         Assert.Null(rate);
-        Assert.Equal(0, await db.CurrencyExchangeRates.CountAsync());
+        Assert.Equal(0, await db.CurrencyExchangeRates.CountAsync(TestContext.Current.CancellationToken));
         conn.Dispose();
     }
 }
