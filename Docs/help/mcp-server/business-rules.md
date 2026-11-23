@@ -210,3 +210,21 @@
 - Ein negatives `openQuantity` bedeutet Buchungsinkonsistenz (verkauft > gekauft), kein Short-Exposure.
 
 **Umsetzung:** `SecurityDto`-Felder `PriceErrorMessage`/`PriceErrorSinceUtc`, Mapping in `SecurityService.MapToDtoAsync`, Projektion in `FmSecuritiesAnalysisHandler` (Listen- und Einzelpfad teilen dieselbe Objektprojektion), Semantik im `FmSecuritiesAnalysisDescriptor.Description` dokumentiert.
+
+## Wertpapier-Statistik aggregiert serverseitig über die sichtbare Menge
+
+**Beschreibung:** Mit `includeStatistics: true` trägt die Antwort von `fm_securities_analysis` zusätzlich ein `statistics`-Objekt mit Portfolio-Aggregaten über dieselbe Menge wie die ausgegebene Liste — erspart dem KI-System clientseitige Aggregation.
+
+**Bedingungen:**
+- Die Aggregationsmenge ist die fachlich gefilterte (`securityId`, `onlyActive`) **und** Record-Scope-gefilterte Menge — `skip`/`take` wirken nicht auf die Statistik.
+- Der Record-Scope-Filter läuft vor dem Paging auf der vollen Menge (bewusste Reihenfolge-Korrektur): Liste und Statistik beschreiben dieselbe sichtbare Menge.
+- Bewertung: `openQuantity` × letzter **gespeicherter** Schlusskurs (`GetLatestPricesAsync`, ein Batch-Aufruf über die volle sichtbare ID-Menge — kein N+1, kein externer Abruf). Eine „Position" ist ein Wertpapier mit `openQuantity != 0`.
+- `onlyActive`/`securityId`-Semantik: `onlyActive: false` filtert inaktive Papiere in-memory (Service kennt nur „alle"/„aktiv") — das entfernt zugleich eine frühere Doppelzählung aktiver Papiere im ungefilterten Listenpfad.
+
+**Verhalten:**
+- `securityCount` (sichtbare Papiere), `positionCount`, `positionsWithoutPrice { count, securityIds }` (Positionen ohne Kurs — nicht in Marktwerten), `byCurrency` und `byCategory` je mit `marketValue`/`positionCount`/`positionsWithoutPrice`.
+- Währungsreinheit: `totalMarketValue`/`totalCurrencyCode` nur bei einheitlicher Währung aller bewertbaren Positionen, sonst `null`; `byCategory.marketValue`/`currencyCode` `null` bei Mischwährung in der Gruppe oder wenn die Gruppe keine bewertbare Position enthält. Es gibt keinen Mehrwährungs-Gesamtwert ohne FX-Umrechnung.
+- `oldestPriceDate`/`newestPriceDate` = Stichtagsspanne der verwendeten Kurse (`null` ohne Kurse); Kategorienamen stehen unter `untrusted_data`.
+- Opt-out: ohne `includeStatistics` ist `statistics` `null` — bestehender Vertrag unverändert.
+
+**Umsetzung:** `FmSecuritiesAnalysisHandler.InvokeAsync` + `BuildStatistics` (tool-interne Aggregation, anonymer Contract wie der übrige Output), Input-Schema-Parameter `includeStatistics`, Descriptor-Doku.
