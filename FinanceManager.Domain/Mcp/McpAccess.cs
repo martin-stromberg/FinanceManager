@@ -132,7 +132,15 @@ public sealed class McpAccess : Entity, IAggregateRoot
     /// <see cref="McpAccessLevel.Individuell"/>; other levels derive their effective profile
     /// from the server-side level matrix at runtime.
     /// </summary>
-    public ICollection<McpAccessScope> Scopes { get; } = new List<McpAccessScope>();
+    public ICollection<McpAccessScope> Scopes { get; } = [];
+
+    /// <summary>
+    /// Persisted approval grants (Vorab-Freigabe-Tupel, Datentyp × Rechteart) consulted by
+    /// the <see cref="McpApprovalMode.Granular"/> mode. The collection is inert under the
+    /// other approval modes; it is deliberately kept when the mode switches so the expert
+    /// configuration survives a temporary mode change.
+    /// </summary>
+    public ICollection<McpAccessApprovalGrant> ApprovalGrants { get; } = [];
 
     /// <summary>
     /// Renames the access.
@@ -293,6 +301,38 @@ public sealed class McpAccess : Entity, IAggregateRoot
         foreach (var scope in list)
         {
             Scopes.Add(scope);
+        }
+        Touch();
+    }
+
+    /// <summary>
+    /// Replaces the persisted approval-grant rows of the access. The domain-level grant
+    /// validation (grantable right kinds, F3-matrix combinations, administration
+    /// restriction) is performed by the access administration service before this call —
+    /// here only the referential integrity of the incoming rows is enforced, exactly like
+    /// <see cref="ReplaceIndividualScopes"/>.
+    /// </summary>
+    /// <param name="grants">The grant rows to persist. Each row must reference this access.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="grants"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when a grant does not belong to this access.</exception>
+    public void ReplaceApprovalGrants(IEnumerable<McpAccessApprovalGrant> grants)
+    {
+        if (grants == null)
+        {
+            throw new ArgumentNullException(nameof(grants));
+        }
+        var list = grants.ToList();
+        foreach (var grant in list)
+        {
+            if (grant.McpAccessId != Id || grant.OwnerUserId != OwnerUserId)
+            {
+                throw new ArgumentException("All approval grants must reference this access and its owner.", nameof(grants));
+            }
+        }
+        ApprovalGrants.Clear();
+        foreach (var grant in list)
+        {
+            ApprovalGrants.Add(grant);
         }
         Touch();
     }

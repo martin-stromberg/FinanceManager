@@ -40,6 +40,15 @@ public sealed class McpToolDispatcher
     private readonly ILogger<McpToolDispatcher> _logger;
 
     /// <summary>Creates the dispatcher.</summary>
+    /// <param name="registry">Tool registry.</param>
+    /// <param name="scopeEvaluator">Scope evaluator.</param>
+    /// <param name="auditWriter">Audit writer.</param>
+    /// <param name="approvalGate">Approval gate.</param>
+    /// <param name="approvalService">Approval queue service.</param>
+    /// <param name="rateLimiter">Per-class rate limiter.</param>
+    /// <param name="anomalyTracker">Anomaly tracker.</param>
+    /// <param name="settings">MCP feature switches.</param>
+    /// <param name="logger">Logger.</param>
     public McpToolDispatcher(
         IMcpToolRegistry registry,
         IMcpScopeEvaluator scopeEvaluator,
@@ -126,7 +135,10 @@ public sealed class McpToolDispatcher
         //    additionally caps the per-access pending limit (approval-spam protection).
         if (entity is not null)
         {
-            var decision = await _approvalGate.EvaluateAsync(entity, descriptor, ct);
+            // The granular mode consults the operation key against the action catalog;
+            // it is the same discriminator the queued request persists.
+            var gateActionKey = LenientString(arguments, "operation") ?? descriptor.Name;
+            var decision = await _approvalGate.EvaluateAsync(entity, descriptor, gateActionKey, ct);
             if (decision.Kind == McpApprovalDecisionKind.Denied)
             {
                 await AuditAsync(entity, toolName, "Denied", correlationId, sourceIp, arguments, sw, ct);
@@ -155,7 +167,7 @@ public sealed class McpToolDispatcher
             // 7) Handler-level approval fallback: final/destructive sub-operations of the
             //    write-preparing tools answer requiresApproval even when the class-level gate
             //    allowed direct execution (e.g. PreApproved access mode — those requests start
-            //    directly approved, approval-konzept.md §3.4). The dispatcher turns that answer
+            //    directly approved, approval-konzept.md §3.5). The dispatcher turns that answer
             //    into the same queue entry; no approval path yields a synchronous effect.
             if (entity is not null && IsApprovalRequiredResult(result))
             {
@@ -190,6 +202,17 @@ public sealed class McpToolDispatcher
     /// on it with all guards re-evaluated. Deduplication (client <c>idempotencyKey</c> or the
     /// content hash the service derives) makes a retry return the same request id.
     /// </summary>
+    /// <param name="access">The access context.</param>
+    /// <param name="entity">The access entity.</param>
+    /// <param name="descriptor">The tool descriptor.</param>
+    /// <param name="toolName">The tool name.</param>
+    /// <param name="arguments">The raw call arguments.</param>
+    /// <param name="correlationId">The correlation id.</param>
+    /// <param name="sourceIp">The client IP.</param>
+    /// <param name="sw">Call duration stopwatch.</param>
+    /// <param name="services">The scoped service provider.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The synchronous queued answer.</returns>
     private async Task<McpDispatchResult> EnqueueAsync(
         IMcpAccessContext access, McpAccess entity, IMcpToolDescriptor descriptor, string toolName,
         JsonElement arguments, Guid correlationId, string? sourceIp, Stopwatch sw,
@@ -257,6 +280,8 @@ public sealed class McpToolDispatcher
     /// <c>requiresApproval: true</c> flag. Serialization failures are irrelevant — an
     /// unclassifiable result is not an approval marker.
     /// </summary>
+    /// <param name="result">The handler result to inspect.</param>
+    /// <returns><see langword="true"/> when the result is an approval marker.</returns>
     private static bool IsApprovalRequiredResult(object result)
     {
         try
@@ -273,6 +298,9 @@ public sealed class McpToolDispatcher
     }
 
     /// <summary>Reads a string argument defensively — never throws (queue extraction is lenient).</summary>
+    /// <param name="args">The raw call arguments.</param>
+    /// <param name="name">The property name to read.</param>
+    /// <returns>The trimmed argument value or <see langword="null"/>.</returns>
     private static string? LenientString(JsonElement args, string name)
         => args.ValueKind == JsonValueKind.Object
             && args.TryGetProperty(name, out var el)
@@ -289,6 +317,14 @@ public sealed class McpToolDispatcher
     /// parameters are stored in graduated detail (the writer truncates/redacts); result
     /// payloads of read calls are never recorded (audit-konzept.md §4.2).
     /// </summary>
+    /// <param name="access">The calling access entity (null when unauthenticated).</param>
+    /// <param name="toolName">The tool name.</param>
+    /// <param name="result">The call result status.</param>
+    /// <param name="correlationId">The correlation id.</param>
+    /// <param name="sourceIp">The client IP.</param>
+    /// <param name="arguments">The raw call arguments.</param>
+    /// <param name="sw">Call duration stopwatch.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns><see langword="true"/> when the record was persisted; <see langword="false"/>
     /// when the audit write failed (logged — the read path must not be blocked).</returns>
     private async Task<bool> AuditAsync(McpAccess? access, string toolName, string result, Guid correlationId,
@@ -338,18 +374,29 @@ public sealed class McpDispatchResult
     public string? ErrorMessage { get; private init; }
 
     /// <summary>Successful structured result.</summary>
+    /// <param name="result">The payload.</param>
+    /// <returns>The result wrapper.</returns>
     public static McpDispatchResult Success(object result)
         => new() { Kind = McpDispatchResultKind.Success, Result = result };
 
     /// <summary>Defined domain error (scope denial, write-stop, rate limit) — JSON-RPC error.</summary>
+    /// <param name="code">Stable error code.</param>
+    /// <param name="message">Error message.</param>
+    /// <returns>The result wrapper.</returns>
     public static McpDispatchResult DefinedError(string code, string message)
         => new() { Kind = McpDispatchResultKind.DefinedError, ErrorCode = code, ErrorMessage = message };
 
     /// <summary>Protocol-level error (unknown tool, missing handler) — JSON-RPC error.</summary>
+    /// <param name="code">Stable error code.</param>
+    /// <param name="message">Error message.</param>
+    /// <returns>The result wrapper.</returns>
     public static McpDispatchResult ProtocolError(string code, string message)
         => new() { Kind = McpDispatchResultKind.ProtocolError, ErrorCode = code, ErrorMessage = message };
 
     /// <summary>Tool-level failure — reported as <c>isError</c> tool result.</summary>
+    /// <param name="code">Stable error code.</param>
+    /// <param name="message">Error message.</param>
+    /// <returns>The result wrapper.</returns>
     public static McpDispatchResult ToolError(string code, string message)
         => new() { Kind = McpDispatchResultKind.ToolError, ErrorCode = code, ErrorMessage = message };
 }

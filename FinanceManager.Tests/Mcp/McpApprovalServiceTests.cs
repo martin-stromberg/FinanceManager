@@ -352,6 +352,9 @@ public sealed class McpApprovalServiceTests
     }
 
     /// <summary>A data-tool descriptor stub declaring the given required scope tuples.</summary>
+    /// <param name="name">The tool name.</param>
+    /// <param name="requiredScopes">The required scope tuples.</param>
+    /// <returns>The descriptor stub.</returns>
     private static IMcpToolDescriptor DataToolDescriptor(string name, params McpToolScope[] requiredScopes)
     {
         var d = new Mock<IMcpToolDescriptor>();
@@ -461,6 +464,189 @@ public sealed class McpApprovalServiceTests
 
         Assert.Equal(0, await svc.WithdrawScopeUncoveredForAccessAsync(
             Guid.NewGuid(), "Recht entfallen", CancellationToken.None));
+    }
+
+    // ------------------------------------------------------------------
+    // Granular mode: grant-driven pre-approval + grant-removal withdrawal
+    // (approval-konzept.md §3.4)
+    // ------------------------------------------------------------------
+
+    /// <summary>A granular access whose (Administration, Read) grant covers the routine
+    /// admin operation: the request enters the queue already approved and is auditable as
+    /// grant-preapproved — never via a note-string match.</summary>
+    [Fact]
+    public async Task Enqueue_GranularWithMatchingGrant_ShouldCreateApprovedImmediately()
+    {
+        var (svc, db, notifications) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpApprovalMode.Granular);
+        db.McpAccessApprovalGrants.Add(new McpAccessApprovalGrant(
+            access.Id, owner, McpDataType.Administration, McpRightKind.Read));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var request = await svc.EnqueueAsync(access, "fm_admin_updates", "check", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "g1", CancellationToken.None);
+
+        Assert.Equal(AiActionRequestStatus.Approved, request.Status);
+        Assert.Equal(PreApprovalKind.GrantPreApproved, request.PreApprovalKind);
+        Assert.Equal(McpApprovalService.GrantPreApprovedDecisionNote, request.DecisionNote);
+        Assert.Equal(owner, request.DecidedByUserId);
+        notifications.Verify(n => n.CreateForUserAsync(It.IsAny<Guid>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<NotificationType>(), It.IsAny<NotificationTarget>(),
+            It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>An approval-required operation covered by a grant starts approved too —
+    /// the request is the documented approval instance.</summary>
+    [Fact]
+    public async Task Enqueue_GranularApprovalRequiredOp_WithGrant_ShouldCreateApproved()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpApprovalMode.Granular);
+        db.McpAccessApprovalGrants.Add(new McpAccessApprovalGrant(
+            access.Id, owner, McpDataType.Administration, McpRightKind.Modify));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var request = await svc.EnqueueAsync(access, "fm_admin_notifications", "dismiss", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "g2", CancellationToken.None);
+
+        Assert.Equal(AiActionRequestStatus.Approved, request.Status);
+        Assert.Equal(PreApprovalKind.GrantPreApproved, request.PreApprovalKind);
+    }
+
+    /// <summary>No grant or a mismatched grant → a normal pending request with no
+    /// pre-approval marker.</summary>
+    /// <param name="otherGrant">Whether a non-matching (Administration, Read) grant is seeded.</param>
+    [Theory]
+    [InlineData(false)] // no grant at all
+    [InlineData(true)]  // grant on a different tuple (Read does not cover install→Modify)
+    public async Task Enqueue_GranularWithoutCoveringGrant_ShouldCreatePending(bool otherGrant)
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpApprovalMode.Granular);
+        if (otherGrant)
+        {
+            db.McpAccessApprovalGrants.Add(new McpAccessApprovalGrant(
+                access.Id, owner, McpDataType.Administration, McpRightKind.Read));
+        }
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var request = await svc.EnqueueAsync(access, "fm_admin_updates", "install", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "g3", CancellationToken.None);
+
+        Assert.Equal(AiActionRequestStatus.Pending, request.Status);
+        Assert.Equal(PreApprovalKind.None, request.PreApprovalKind);
+    }
+
+    /// <summary>Unmapped (tool, action) pairs fail closed at enqueue — no grant match, a
+    /// pending request.</summary>
+    [Fact]
+    public async Task Enqueue_GranularUnmappedAction_ShouldCreatePending()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpApprovalMode.Granular);
+        db.McpAccessApprovalGrants.Add(new McpAccessApprovalGrant(
+            access.Id, owner, McpDataType.Administration, McpRightKind.Read));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var request = await svc.EnqueueAsync(access, "fm_admin_updates", "mystery", "katalog-v1",
+            "{}", null, Guid.NewGuid(), "g4", CancellationToken.None);
+
+        Assert.Equal(AiActionRequestStatus.Pending, request.Status);
+        Assert.Equal(PreApprovalKind.None, request.PreApprovalKind);
+    }
+
+    /// <summary>
+    /// The grant-removal withdrawal (approval-konzept.md §3.4): only still-open requests
+    /// pre-approved by a grant whose covered tuple vanished are withdrawn — still-covered
+    /// grant requests, access-wide pre-approved requests, normally decided requests and
+    /// requests under an active claim stay untouched.
+    /// </summary>
+    [Fact]
+    public async Task WithdrawGrantUncovered_ShouldRejectOnlyUncoveredGrantPreapproved()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpApprovalMode.Granular);
+
+        // Current profile after the grant edit: (Administration, Read) survives —
+        // (Administration, Modify) was removed.
+        db.McpAccessApprovalGrants.Add(new McpAccessApprovalGrant(
+            access.Id, owner, McpDataType.Administration, McpRightKind.Read));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        AiActionRequest mk(string tool, string key, string ik, PreApprovalKind kind)
+            => AiActionRequest.CreatePreApproved(owner, access.Id, "acc-1", tool, key,
+                "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), ik,
+                "note", kind);
+
+        var uncovered = mk("fm_admin_updates", "install", "k-unc", PreApprovalKind.GrantPreApproved); // install→Modify, removed
+        var covered = mk("fm_admin_updates", "check", "k-cov", PreApprovalKind.GrantPreApproved);     // check→Read, survives
+        var accessWide = mk("fm_admin_updates", "install", "k-acc", PreApprovalKind.AccessPreApproved); // access-level pre-approval — never withdrawn here
+        var claimed = mk("fm_admin_updates", "install", "k-clm", PreApprovalKind.GrantPreApproved);
+        claimed.MarkClaimed(Guid.NewGuid(), DateTime.UtcNow); // active execution — untouched
+        var normal = new AiActionRequest(owner, access.Id, "acc-1", "fm_admin_updates", "install",
+            "katalog-v1", "{}", null, DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-nrm");
+        db.AiActionRequests.AddRange(uncovered, covered, accessWide, claimed, normal);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var count = await svc.WithdrawGrantUncoveredForAccessAsync(access.Id, "Freigabe entzogen", CancellationToken.None);
+
+        Assert.Equal(1, count);
+        var all = await db.AiActionRequests.AsNoTracking().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var w = all.Single(r => r.Id == uncovered.Id);
+        Assert.Equal(AiActionRequestStatus.Rejected, w.Status);
+        Assert.Equal("Freigabe entzogen", w.DecisionNote);
+        Assert.Null(w.DecidedByUserId);
+        Assert.Equal(AiActionRequestStatus.Approved, all.Single(r => r.Id == covered.Id).Status);
+        Assert.Equal(AiActionRequestStatus.Approved, all.Single(r => r.Id == accessWide.Id).Status);
+        Assert.Equal(AiActionRequestStatus.Approved, all.Single(r => r.Id == claimed.Id).Status);
+        Assert.Equal(AiActionRequestStatus.Pending, all.Single(r => r.Id == normal.Id).Status);
+        Assert.Single(await db.McpAuditEntries.AsNoTracking()
+            .Where(e => e.EventType == "ApprovalWithdrawn").ToListAsync(cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>A grant-preapproved request whose operation the catalog no longer maps
+    /// fails closed — it loses its pre-approval like a removed grant.</summary>
+    [Fact]
+    public async Task WithdrawGrantUncovered_UnmappedProfile_Withdraws()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var access = NewAccess(owner, McpApprovalMode.Granular);
+        var request = AiActionRequest.CreatePreApproved(owner, access.Id, "acc-1",
+            "fm_unmapped_tool", "op", "katalog-v1", "{}", null,
+            DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-ump", "note",
+            PreApprovalKind.GrantPreApproved);
+        db.AiActionRequests.Add(request);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var count = await svc.WithdrawGrantUncoveredForAccessAsync(access.Id, "Freigabe entzogen", CancellationToken.None);
+
+        Assert.Equal(1, count);
+        Assert.Equal(AiActionRequestStatus.Rejected,
+            (await db.AiActionRequests.AsNoTracking().SingleAsync(cancellationToken: TestContext.Current.CancellationToken)).Status);
+    }
+
+    /// <summary>PreApprovalKind survives the backup DTO round trip; the default keeps old
+    /// backups deserializable as None.</summary>
+    [Fact]
+    public void BackupRoundTrip_ShouldPreservePreApprovalKind()
+    {
+        var owner = Guid.NewGuid();
+        var request = AiActionRequest.CreatePreApproved(owner, Guid.NewGuid(), "acc-1",
+            "fm_admin_updates", "install", "katalog-v1", "{}", null,
+            DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-bak", "note",
+            PreApprovalKind.GrantPreApproved);
+
+        var restored = new AiActionRequest(owner, request.McpAccessId, "acc-1", "t", "k",
+            "katalog-v1", "{}", null, request.ExpiresUtc, request.CorrelationId, "k2");
+        restored.AssignBackupDto(request.ToBackupDto());
+
+        Assert.Equal(PreApprovalKind.GrantPreApproved, restored.PreApprovalKind);
     }
 
     /// <summary>Minimal options monitor stub.</summary>

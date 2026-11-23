@@ -25,15 +25,18 @@ public enum McpApprovalDecisionKind
 /// <param name="Kind">The decision kind.</param>
 /// <param name="ErrorCode">Stable <c>Err_Mcp_*</c> code when <see cref="Kind"/> is Denied.</param>
 /// <param name="ErrorMessage">Client-visible message when <see cref="Kind"/> is Denied.</param>
+/// <returns>The gate decision.</returns>
 public sealed record McpApprovalDecision(
     McpApprovalDecisionKind Kind,
     string? ErrorCode = null,
     string? ErrorMessage = null)
 {
     /// <summary>The direct-execution decision.</summary>
+    /// <value>A decision whose <see cref="Kind"/> is <see cref="McpApprovalDecisionKind.DirectExecution"/>.</value>
     public static readonly McpApprovalDecision Direct = new(McpApprovalDecisionKind.DirectExecution);
 
     /// <summary>The requires-approval decision.</summary>
+    /// <value>A decision whose <see cref="Kind"/> is <see cref="McpApprovalDecisionKind.RequiresApproval"/>.</value>
     public static readonly McpApprovalDecision Approval = new(McpApprovalDecisionKind.RequiresApproval);
 
     /// <summary>Creates a denial decision with a stable error code.</summary>
@@ -64,7 +67,12 @@ public interface IMcpApprovalGate
     /// </summary>
     /// <param name="access">The authenticated access entity.</param>
     /// <param name="descriptor">The descriptor of the requested tool.</param>
+    /// <param name="actionKey">The operation key of the call (the <c>operation</c>
+    /// argument, or the tool name for single-action tools) — consulted by the
+    /// <see cref="McpApprovalMode.Granular"/> mode via
+    /// <see cref="McpApprovalActionCatalog"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The gate decision.</returns>
-    Task<McpApprovalDecision> EvaluateAsync(McpAccess access, IMcpToolDescriptor descriptor, CancellationToken ct);
+    Task<McpApprovalDecision> EvaluateAsync(McpAccess access, IMcpToolDescriptor descriptor,
+        string? actionKey, CancellationToken ct);
 }

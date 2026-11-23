@@ -17,6 +17,7 @@ namespace FinanceManager.Shared.Dtos.Mcp;
 /// <param name="TokenIssuedUtc">Issue time of the current token.</param>
 /// <param name="RevokedUtc">Revocation timestamp.</param>
 /// <param name="CreatedUtc">Creation timestamp.</param>
+/// <returns>The McpAccessListItemDto.</returns>
 public sealed record McpAccessListItemDto(
     Guid Id,
     string Name,
@@ -43,6 +44,7 @@ public sealed record McpAccessListItemDto(
 /// <param name="SecurityCategoryIdsCsv">Optional CSV of security category ids.</param>
 /// <param name="SavingsPlanCategoryIdsCsv">Optional CSV of savings plan category ids.</param>
 /// <param name="AttachmentCategoryIdsCsv">Optional CSV of attachment category ids.</param>
+/// <returns>The McpAccessScopeDto.</returns>
 public sealed record McpAccessScopeDto(
     Guid Id,
     short DataType,
@@ -52,6 +54,21 @@ public sealed record McpAccessScopeDto(
     string? SecurityCategoryIdsCsv,
     string? SavingsPlanCategoryIdsCsv,
     string? AttachmentCategoryIdsCsv);
+
+/// <summary>
+/// One approval grant (Vorab-Freigabe-Tupel, Datentyp × Rechteart) consulted by the
+/// granular approval mode: matching operations run directly (routine) or enter the queue
+/// already approved (approval-required). Grantable right kinds are Read/Complete/Modify/
+/// Create only.
+/// </summary>
+/// <param name="Id">Grant row id; <see cref="Guid.Empty"/> in request payloads.</param>
+/// <param name="DataType">Data type (McpDataType as short).</param>
+/// <param name="Right">Right kind (McpRightKind as short).</param>
+/// <returns>The McpAccessApprovalGrantDto.</returns>
+public sealed record McpAccessApprovalGrantDto(
+    Guid Id,
+    short DataType,
+    short Right);
 
 /// <summary>
 /// Detail view of an MCP access including the effective scope profile and restrictions.
@@ -70,8 +87,11 @@ public sealed record McpAccessScopeDto(
 /// <param name="RevokedUtc">Revocation timestamp.</param>
 /// <param name="RevocationReason">Business reason of the revocation.</param>
 /// <param name="EffectiveScopes">Effective scope profile (derived for standard levels).</param>
+/// <param name="ApprovalGrants">Persisted approval grants of the granular approval mode
+/// (inert under other modes).</param>
 /// <param name="CreatedUtc">Creation timestamp.</param>
 /// <param name="ModifiedUtc">Last modification timestamp.</param>
+/// <returns>The McpAccessDetailDto.</returns>
 public sealed record McpAccessDetailDto(
     Guid Id,
     string Name,
@@ -87,6 +107,7 @@ public sealed record McpAccessDetailDto(
     DateTime? RevokedUtc,
     string? RevocationReason,
     IReadOnlyList<McpAccessScopeDto> EffectiveScopes,
+    IReadOnlyList<McpAccessApprovalGrantDto> ApprovalGrants,
     DateTime CreatedUtc,
     DateTime? ModifiedUtc);
 
@@ -100,6 +121,7 @@ public sealed record McpAccessDetailDto(
 /// <param name="ExpiresUtc">Optional expiry timestamp.</param>
 /// <param name="AllowedIpRanges">Optional comma-separated CIDR/address list.</param>
 /// <param name="Scopes">Optional scope tuples (only for the individual level).</param>
+/// <returns>The McpAccessCreateRequest.</returns>
 public sealed record McpAccessCreateRequest(
     string Name,
     string? Description,
@@ -118,6 +140,7 @@ public sealed record McpAccessCreateRequest(
 /// <param name="ApprovalMode">Approval mode (McpApprovalMode as short).</param>
 /// <param name="ExpiresUtc">Optional expiry timestamp.</param>
 /// <param name="AllowedIpRanges">Optional comma-separated CIDR/address list.</param>
+/// <returns>The McpAccessUpdateRequest.</returns>
 public sealed record McpAccessUpdateRequest(
     string Name,
     string? Description,
@@ -131,6 +154,7 @@ public sealed record McpAccessUpdateRequest(
 /// </summary>
 /// <param name="Access">The created access detail.</param>
 /// <param name="PlainTextToken">The plaintext token — never retrievable again.</param>
+/// <returns>The McpAccessCreatedDto.</returns>
 public sealed record McpAccessCreatedDto(McpAccessDetailDto Access, string PlainTextToken);
 
 /// <summary>
@@ -139,13 +163,23 @@ public sealed record McpAccessCreatedDto(McpAccessDetailDto Access, string Plain
 /// <param name="Id">Access identifier.</param>
 /// <param name="PlainTextToken">The new plaintext token — never retrievable again.</param>
 /// <param name="TokenIssuedUtc">Issue timestamp of the new token.</param>
+/// <returns>The McpAccessRotatedDto.</returns>
 public sealed record McpAccessRotatedDto(Guid Id, string PlainTextToken, DateTime TokenIssuedUtc);
 
 /// <summary>
 /// Request to replace the persisted scope profile of an individually configured access.
 /// </summary>
 /// <param name="Scopes">The scope tuples to persist.</param>
+/// <returns>The McpScopeSetRequest.</returns>
 public sealed record McpScopeSetRequest(IReadOnlyList<McpAccessScopeDto> Scopes);
+
+/// <summary>
+/// Request to replace the approval-grant profile of an access (granular mode). Removing a
+/// grant system-withdraws the still-open requests it had pre-approved.
+/// </summary>
+/// <param name="Grants">The grant tuples to persist.</param>
+/// <returns>The McpApprovalGrantSetRequest.</returns>
+public sealed record McpApprovalGrantSetRequest(IReadOnlyList<McpAccessApprovalGrantDto> Grants);
 
 /// <summary>
 /// Request to replace the filter dimensions of one persisted scope row.
@@ -155,6 +189,7 @@ public sealed record McpScopeSetRequest(IReadOnlyList<McpAccessScopeDto> Scopes)
 /// <param name="SecurityCategoryIdsCsv">Optional CSV of security category ids.</param>
 /// <param name="SavingsPlanCategoryIdsCsv">Optional CSV of savings plan category ids.</param>
 /// <param name="AttachmentCategoryIdsCsv">Optional CSV of attachment category ids.</param>
+/// <returns>The McpFilterSetRequest.</returns>
 public sealed record McpFilterSetRequest(
     string? AccountTypesCsv,
     string? ContactCategoryIdsCsv,
@@ -166,6 +201,7 @@ public sealed record McpFilterSetRequest(
 /// Optional revocation request body.
 /// </summary>
 /// <param name="Reason">Optional business reason recorded with the revocation.</param>
+/// <returns>The McpAccessRevokeRequest.</returns>
 public sealed record McpAccessRevokeRequest(string? Reason);
 
 /// <summary>
@@ -175,6 +211,7 @@ public sealed record McpAccessRevokeRequest(string? Reason);
 /// <param name="Level">Access level (McpAccessLevel as short).</param>
 /// <param name="Name">Stable level name for localization.</param>
 /// <param name="DefaultScopes">Default scope profile (filter-less tuples).</param>
+/// <returns>The McpAccessLevelDto.</returns>
 public sealed record McpAccessLevelDto(short Level, string Name, IReadOnlyList<McpAccessScopeDto> DefaultScopes);
 
 /// <summary>
@@ -182,6 +219,7 @@ public sealed record McpAccessLevelDto(short Level, string Name, IReadOnlyList<M
 /// </summary>
 /// <param name="Id">Category id.</param>
 /// <param name="Name">Category name.</param>
+/// <returns>The McpCategoryOptionDto.</returns>
 public sealed record McpCategoryOptionDto(Guid Id, string Name);
 
 /// <summary>
@@ -190,6 +228,7 @@ public sealed record McpCategoryOptionDto(Guid Id, string Name);
 /// <param name="DataType">Data type (McpDataType as short).</param>
 /// <param name="Name">Stable data type name for localization.</param>
 /// <param name="AllowedRights">Valid right kinds (McpRightKind as short).</param>
+/// <returns>The McpDataTypeOptionDto.</returns>
 public sealed record McpDataTypeOptionDto(short DataType, string Name, IReadOnlyList<short> AllowedRights);
 
 /// <summary>
@@ -205,6 +244,7 @@ public sealed record McpDataTypeOptionDto(short DataType, string Name, IReadOnly
 /// <param name="SavingsPlanCategories">The owner's savings plan categories.</param>
 /// <param name="AttachmentCategories">The owner's attachment categories.</param>
 /// <param name="IsTlsRequest">Whether the calling request used TLS (hint flag for the token warning).</param>
+/// <returns>The McpAccessOptionsDto.</returns>
 public sealed record McpAccessOptionsDto(
     IReadOnlyList<McpDataTypeOptionDto> DataTypes,
     IReadOnlyList<short> RightKinds,

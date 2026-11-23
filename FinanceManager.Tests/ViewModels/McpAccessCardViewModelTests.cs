@@ -56,7 +56,8 @@ public sealed class McpAccessCardViewModelTests
         Guid id,
         McpAccessLevel level,
         McpApprovalMode mode,
-        IReadOnlyList<McpAccessScopeDto>? scopes = null)
+        IReadOnlyList<McpAccessScopeDto>? scopes = null,
+        IReadOnlyList<McpAccessApprovalGrantDto>? grants = null)
         => new(
             id,
             "test-access",
@@ -72,6 +73,7 @@ public sealed class McpAccessCardViewModelTests
             null,
             null,
             scopes ?? Array.Empty<McpAccessScopeDto>(),
+            grants ?? Array.Empty<McpAccessApprovalGrantDto>(),
             new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             null);
 

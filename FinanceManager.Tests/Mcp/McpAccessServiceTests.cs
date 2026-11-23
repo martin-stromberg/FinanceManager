@@ -38,10 +38,8 @@ public sealed class McpAccessServiceTests
         return (svc, db, issuer);
     }
 
-    /// <summary>
-    /// Variant with the real hash-chained <see cref="McpAuditWriter"/> so the before/after
-    /// deltas of access events can be asserted on the persisted audit rows.
-    /// </summary>
+    // Variant with the real hash-chained McpAuditWriter so the before/after deltas of
+    // access events can be asserted on the persisted audit rows.
     private static (McpAccessService svc, AppDbContext db, McpAuditWriter audit) CreateWithAudit()
     {
         var services = new ServiceCollection();
@@ -58,11 +56,9 @@ public sealed class McpAccessServiceTests
         return (svc, db, audit);
     }
 
-    /// <summary>
-    /// Variant with the real <see cref="McpApprovalService"/> queue so the withdraw coupling
-    /// of deactivate/revoke/scope-changes can be asserted end to end (F-0904,
-    /// approval-konzept.md §3.3/§6.1/§6.3).
-    /// </summary>
+    // Variant with the real McpApprovalService queue so the withdraw coupling of
+    // deactivate/revoke/scope-changes can be asserted end to end (F-0904,
+    // approval-konzept.md §3.3/§6.1/§6.3).
     private static (McpAccessService svc, AppDbContext db) CreateWithApprovals(Mock<IMcpToolRegistry>? registry = null)
     {
         var services = new ServiceCollection();
@@ -93,6 +89,8 @@ public sealed class McpAccessServiceTests
 
     /// <summary>Grants <paramref name="userId"/> membership of the <c>Admin</c> identity role —
     /// the same source the fm_admin_* tool gate resolves via <c>IUserAdminService</c>.</summary>
+    /// <param name="db">The test database context.</param>
+    /// <param name="userId">The user to grant the Admin role.</param>
     private static async Task SeedAdminRoleAsync(AppDbContext db, Guid userId)
     {
         var role = new IdentityRole<Guid> { Name = "Admin", NormalizedName = "ADMIN" };
@@ -105,10 +103,10 @@ public sealed class McpAccessServiceTests
         => await db.McpAuditEntries.AsNoTracking()
             .Where(e => e.EventType == eventType)
             .OrderByDescending(e => e.SequenceNo)
-            .FirstAsync();
+            .FirstAsync(TestContext.Current.CancellationToken);
 
     private static async Task<List<McpAuditEntryChange>> ChangesOfAsync(AppDbContext db, Guid entryId)
-        => await db.McpAuditEntryChanges.AsNoTracking().Where(c => c.EntryId == entryId).ToListAsync();
+        => await db.McpAuditEntryChanges.AsNoTracking().Where(c => c.EntryId == entryId).ToListAsync(TestContext.Current.CancellationToken);
 
     /// <summary>Test case.</summary>
     [Fact]
@@ -598,6 +596,9 @@ public sealed class McpAccessServiceTests
     }
 
     /// <summary>A data-tool descriptor stub declaring the given required scope tuples.</summary>
+    /// <param name="name">The tool name.</param>
+    /// <param name="requiredScopes">The required scope tuples.</param>
+    /// <returns>The descriptor stub.</returns>
     private static IMcpToolDescriptor DataToolDescriptor(string name, params McpToolScope[] requiredScopes)
     {
         var d = new Mock<IMcpToolDescriptor>();
@@ -814,6 +815,200 @@ public sealed class McpAccessServiceTests
         var adminLevels = await svc.GetLevelsAsync(admin, CancellationToken.None);
         Assert.Contains(adminLevels.Single(l => l.Level == (short)McpAccessLevel.Analyse).DefaultScopes,
             s => s.DataType == (short)McpDataType.Administration);
+    }
+
+    // ------------------------------------------------------------------
+    // Granular mode: approval-grant replacement + validation
+    // ------------------------------------------------------------------
+
+    private static McpAccessApprovalGrantDto GrantDto(McpDataType dataType, McpRightKind right)
+        => new(Guid.Empty, (short)dataType, (short)right);
+
+    /// <summary>Grant tuples persist per access and surface in the detail DTO.</summary>
+    [Fact]
+    public async Task SetApprovalGrants_ShouldPersistAndReturnInDetail()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+
+        var ok = await svc.SetApprovalGrantsAsync(owner, created.Id,
+            new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Accounts, McpRightKind.Read),
+                    GrantDto(McpDataType.Accounts, McpRightKind.Modify) }),
+            CancellationToken.None);
+
+        Assert.True(ok);
+        var rows = await db.McpAccessApprovalGrants.AsNoTracking()
+            .Where(g => g.McpAccessId == created.Id).ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, rows.Count);
+        Assert.All(rows, g => Assert.Equal(owner, g.OwnerUserId));
+
+        var detail = await svc.GetAsync(owner, created.Id, CancellationToken.None);
+        Assert.Equal(2, detail!.ApprovalGrants.Count);
+        Assert.Contains(detail.ApprovalGrants,
+            g => g.DataType == (short)McpDataType.Accounts && g.Right == (short)McpRightKind.Modify);
+    }
+
+    /// <summary>Suggest/Book/Delete are never grantable — final effects stay approval-bound.</summary>
+    /// <param name="right">The non-grantable right kind under test.</param>
+    [Theory]
+    [InlineData(McpRightKind.Suggest)]
+    [InlineData(McpRightKind.Book)]
+    [InlineData(McpRightKind.Delete)]
+    public async Task SetApprovalGrants_NonGrantableRight_ShouldThrow(McpRightKind right)
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(() =>
+            svc.SetApprovalGrantsAsync(owner, created.Id,
+                new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Accounts, right) }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidScope", ex.Code);
+    }
+
+    /// <summary>Grant tuples must satisfy the F3 scope matrix — (Postings, Modify) is not a
+    /// valid combination even though Modify is a grantable right (postings are booking-only).</summary>
+    [Fact]
+    public async Task SetApprovalGrants_InvalidCombination_ShouldThrow()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+
+        await Assert.ThrowsAsync<DomainValidationException>(() =>
+            svc.SetApprovalGrantsAsync(owner, created.Id,
+                new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Postings, McpRightKind.Modify) }), CancellationToken.None));
+    }
+
+    /// <summary>Duplicate tuples are rejected — the unique index would fail anyway, the
+    /// validation returns the domain error first.</summary>
+    [Fact]
+    public async Task SetApprovalGrants_DuplicateTuple_ShouldThrow()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(() =>
+            svc.SetApprovalGrantsAsync(owner, created.Id,
+                new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Accounts, McpRightKind.Read),
+                        GrantDto(McpDataType.Accounts, McpRightKind.Read) }),
+                CancellationToken.None));
+        Assert.Equal("Err_Mcp_InvalidScope", ex.Code);
+    }
+
+    /// <summary>Administration grants follow the same admin gate as Administration scopes.</summary>
+    [Fact]
+    public async Task SetApprovalGrants_AdministrationForNonAdmin_ShouldThrow()
+    {
+        var (svc, _, _) = Create();
+        var owner = Guid.NewGuid();
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(() =>
+            svc.SetApprovalGrantsAsync(owner, created.Id,
+                new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Administration, McpRightKind.Read) }), CancellationToken.None));
+        Assert.Equal("Err_Mcp_AdminRequired", ex.Code);
+    }
+
+    /// <summary>An admin owner may carry Administration grants.</summary>
+    [Fact]
+    public async Task SetApprovalGrants_AdministrationForAdmin_ShouldPersist()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        await SeedAdminRoleAsync(db, owner);
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Administration, McpRightKind.Read) }), CancellationToken.None);
+
+        Assert.True(await svc.SetApprovalGrantsAsync(owner, created.Id,
+            new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Administration, McpRightKind.Read) }), CancellationToken.None));
+        Assert.Single(await db.McpAccessApprovalGrants.AsNoTracking()
+            .Where(g => g.McpAccessId == created.Id).ToListAsync(TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>Foreign owners cannot replace grants — strict owner isolation.</summary>
+    [Fact]
+    public async Task SetApprovalGrants_ForeignOwner_ShouldReturnFalse()
+    {
+        var (svc, db, _) = Create();
+        var owner = Guid.NewGuid();
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+
+        Assert.False(await svc.SetApprovalGrantsAsync(Guid.NewGuid(), created.Id,
+            new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None));
+        Assert.Empty(await db.McpAccessApprovalGrants.AsNoTracking()
+            .Where(g => g.McpAccessId == created.Id).ToListAsync(TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>Grant changes are audited as before/after tuple deltas.</summary>
+    [Fact]
+    public async Task SetApprovalGrants_ShouldAuditDelta()
+    {
+        var (svc, db, _) = CreateWithAudit();
+        var owner = Guid.NewGuid();
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+
+        await svc.SetApprovalGrantsAsync(owner, created.Id,
+            new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Accounts, McpRightKind.Read) }), CancellationToken.None);
+        await svc.SetApprovalGrantsAsync(owner, created.Id,
+            new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Accounts, McpRightKind.Modify) }), CancellationToken.None);
+
+        var entry = await LatestAccessEventAsync(db, "ApprovalGrantsChanged");
+        var changes = await ChangesOfAsync(db, entry.Id);
+        Assert.Equal(2, changes.Count);
+        var removed = Assert.Single(changes, c => c.Field == "Grant[Accounts:Read]");
+        Assert.Equal("Accounts:Read", removed.OldValue);
+        Assert.Null(removed.NewValue);
+        var added = Assert.Single(changes, c => c.Field == "Grant[Accounts:Modify]");
+        Assert.Null(added.OldValue);
+        Assert.Equal("Accounts:Modify", added.NewValue);
+    }
+
+    /// <summary>Removing a grant withdraws the open requests that grant had pre-approved —
+    /// end to end through the real approval service (§3.4).</summary>
+    [Fact]
+    public async Task SetApprovalGrants_Removal_ShouldWithdrawGrantPreapprovedRequests()
+    {
+        var (svc, db) = CreateWithApprovals();
+        var owner = Guid.NewGuid();
+        await SeedAdminRoleAsync(db, owner);
+        var (created, _) = await svc.CreateAsync(owner, NewRequest(
+            level: (short)McpAccessLevel.Individuell,
+            scopes: new[] { ScopeDto(McpDataType.Administration, McpRightKind.Read) }), CancellationToken.None);
+        await svc.SetApprovalGrantsAsync(owner, created.Id,
+            new McpApprovalGrantSetRequest(new[] { GrantDto(McpDataType.Administration, McpRightKind.Read) }), CancellationToken.None);
+
+        var grantApproved = AiActionRequest.CreatePreApproved(owner, created.Id, "acc-1",
+            "fm_admin_updates", "check", "katalog-v1", "{}", null,
+            DateTime.UtcNow.AddHours(72), Guid.NewGuid(), "k-gw", "note",
+            PreApprovalKind.GrantPreApproved);
+        db.AiActionRequests.Add(grantApproved);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Remove all grants → the request they pre-approved is withdrawn.
+        Assert.True(await svc.SetApprovalGrantsAsync(owner, created.Id,
+            new McpApprovalGrantSetRequest(Array.Empty<McpAccessApprovalGrantDto>()), CancellationToken.None));
+
+        var reloaded = await db.AiActionRequests.AsNoTracking()
+            .SingleAsync(r => r.Id == grantApproved.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(AiActionRequestStatus.Rejected, reloaded.Status);
     }
 
     /// <summary>Minimal options monitor stub.</summary>

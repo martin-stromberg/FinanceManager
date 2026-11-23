@@ -31,8 +31,9 @@ public sealed class FmSecuritiesAnalysisToolTests : McpToolTestBase
         };
 
     private static FmSecuritiesAnalysisHandler NewHandler(
-        ISecurityService securities, ISecurityPriceService prices, McpRecordScopeFilter filter)
-        => new(securities, prices, Mock.Of<ISecurityCategoryService>(), filter);
+        ISecurityService securities, ISecurityPriceService prices, McpRecordScopeFilter filter,
+        IFxRateService? fxRates = null)
+        => new(securities, prices, Mock.Of<ISecurityCategoryService>(), filter, fxRates ?? Mock.Of<IFxRateService>());
 
     /// <summary>
     /// The list path emits <c>latestPrice</c> even when <c>includePrices</c> is not set —

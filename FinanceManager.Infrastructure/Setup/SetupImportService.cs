@@ -202,9 +202,9 @@ public sealed class SetupImportService : ISetupImportService
         {
             StepDescription = "",
             Step = 0,
-            // Total must match the number of progress.Inc() calls below (currently 42);
+            // Total must match the number of progress.Inc() calls below (currently 43);
             // the "Clearing user data" step only runs when replaceExisting is true.
-            Total = 42 - (replaceExisting ? 0 : 1),
+            Total = 43 - (replaceExisting ? 0 : 1),
             SubStep = 0,
             SubTotal = 0
         };
@@ -1544,6 +1544,32 @@ public sealed class SetupImportService : ISetupImportService
         // credentials, the approval queue and the revision-safe audit chain — not finance
         // data. ClearUserDataAsync leaves those tables untouched, so existing PATs, the
         // running approval queue and the audit chain survive a restore intact.
+
+        // CurrencyExchangeRates (optional section; global cross-user reference pool —
+        // intentionally no OwnerUserId and NOT cleared by ClearUserDataAsync): reseed the
+        // cache from the backup. Existing (CurrencyCode, Date, Source) rows are kept —
+        // dedupe instead of duplicating shared reference data. Missing section = empty.
+        ProgressChanged?.Invoke(this, progress.SetDescription("Currency Exchange Rates"));
+        if (root.TryGetProperty("CurrencyExchangeRates", out var fxRatesEl) && fxRatesEl.ValueKind == JsonValueKind.Array)
+        {
+            var list = JsonSerializer.Deserialize<List<CurrencyExchangeRate.CurrencyExchangeRateBackupDto>>(fxRatesEl.GetRawText(), jsonOptions) ?? new List<CurrencyExchangeRate.CurrencyExchangeRateBackupDto>();
+            ProgressChanged?.Invoke(this, progress.InitSub(list.Count));
+            foreach (var dto in list)
+            {
+                var normalized = (dto.CurrencyCode ?? string.Empty).Trim().ToUpperInvariant();
+                var existing = await _db.CurrencyExchangeRates
+                    .FirstOrDefaultAsync(r => r.CurrencyCode == normalized && r.Date == dto.Date.Date && r.Source == dto.Source, ct);
+                if (existing is null)
+                {
+                    var entity = new CurrencyExchangeRate(normalized, dto.Date, dto.RatePerEur, dto.Source);
+                    entity.AssignBackupDto(dto with { CurrencyCode = normalized });
+                    _db.CurrencyExchangeRates.Add(entity);
+                }
+                ProgressChanged?.Invoke(this, progress.IncSub());
+            }
+            await _db.SaveChangesAsync(ct);
+        }
+        ProgressChanged?.Invoke(this, progress.Inc());
 
 
         ProgressChanged?.Invoke(this, progress.SetDescription("Build Aggregate Postings"));

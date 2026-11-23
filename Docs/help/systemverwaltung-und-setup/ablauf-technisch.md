@@ -265,7 +265,7 @@ Nach bestandener Backup-Validierung ruft `BackupService.ApplyAsync` den Import a
    - `PortfolioKpiConfigurations` (Upsert): Existiert bereits eine Zeile des Benutzers (Unique-Index auf `OwnerUserId`), wird sie per `AssignBackupDto` ersetzt, sonst neu angelegt. `ClearUserDataAsync` löscht die Tabelle bewusst nicht — alte Backups ohne diese Sektion lassen die vorhandene Konfiguration unverändert.
 5. `BudgetRules` übernehmen zusätzlich `PurposePattern`/`PurposePatternIsRegex` über `SetPurposePattern`. Eine `ArgumentException` (ungültiges Regex in einem alten oder manipulierten Backup) wird abgefangen: Die Regel wird ohne Muster importiert und ein `LogWarning` geschrieben.
 6. `Securities` übernehmen die Felder `HasPriceError`, `PriceErrorMessage`, `PriceErrorSinceUtc`, `GoldenCrossNotifiedPhase` und `TrendReversalNotifiedStatus` über `AssignBackupDto`. Die drei Fehlerfelder werden direkt zugewiesen, weil `SetPriceError` den Zeitstempel auf `DateTime.UtcNow` stempeln und den originalen Fehlerzeitpunkt verlieren würde.
-7. Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) werden bewusst nicht importiert — `ClearUserDataAsync` löscht sie ebenfalls nicht.
+7. Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAccessApprovalGrants`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) werden bewusst nicht importiert — `ClearUserDataAsync` löscht sie ebenfalls nicht.
 
 Beteiligte Komponenten: `SetupImportService.ImportVersion3`, `AppDbContext.ClearUserDataAsync`, `BackupService.ApplyAsync`, `AccountLinkedIban`, `StatementImport`, `StatementEntry`, `Notification`, `AccountShare`, `PortfolioKpiConfiguration`, `BudgetRule`, `Security`
 

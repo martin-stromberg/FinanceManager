@@ -78,7 +78,7 @@ Die Backup-Datei besteht aus einer NDJSON-Metazeile (`Type = "Backup"`, `Version
 | `SavingsPlanAccountLinks` | Sparplan-Konto-Verknüpfungen |
 | `AccountLinkedIbans` | Unter-IBANs von Sammelkonten |
 | `PortfolioKpiConfigurations` | Portfolio-KPI-Konfiguration (eine Zeile pro Benutzer; Restore per Upsert) |
-| `McpAccesses`, `McpAccessScopes`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests` | MCP-Zugänge, -Audit und KI-Aktionsanfragen — nur exportiert, nicht importiert; `ClearUserDataAsync` löscht sie nicht |
+| `McpAccesses`, `McpAccessScopes`, `McpAccessApprovalGrants`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests` | MCP-Zugänge, -Audit und KI-Aktionsanfragen — nur exportiert, nicht importiert; `ClearUserDataAsync` löscht sie nicht |
 
 ### `SecurityTxtSettings`
 

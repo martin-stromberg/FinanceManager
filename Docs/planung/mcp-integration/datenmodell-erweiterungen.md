@@ -373,6 +373,7 @@ Neuaufbau.)
 |---|---|
 | `McpAccess` | **Backup ja, Token-Hash nein.** `McpAccessBackupDto` exportiert Konfiguration (Name, Description, Level, ApprovalMode, ExpiresUtc, AllowedIpRanges, Status→`Revoked`), **nicht** `TokenHash`/`AccessKeyHint` (sicherheitsfachlich: ein Backup darf keine wiederherstellbaren Zugangsgeheimnisse enthalten – Backup-Dateien sind weniger geschützt als die Laufzeit-DB). Bei Restore wird der Zugang als **widerrufen** rekonstruiert (`Status=Revoked`, neue `Id` erlaubt bzw. Bestands-Id); der Benutzer aktiviert ihn über Rotation → neues Token. Das entspricht dem Prinzip „kompromittiertes Token = sofort tot" und verhindert, dass ein Backup unbemerkt gültige Zugänge reaktiviert. |
 | `McpAccessScope` | `McpAccessScopeBackupDto` je Zugang mit im Backup (Rechteprofil wiederherstellbar); Filter-CSVs unverändert (Ids sind benutzerstabil). |
+| `McpAccessApprovalGrant` | `McpAccessApprovalGrantBackupDto` je Zugang im `McpAccessBackupDto` (Expertenmodus-Freigaben wiederherstellbar). **Begründete Abweichung zur AGENT.md-Importregel:** Wie alle MCP-Sektionen werden Grants exportiert, aber **nicht** über `SetupImportService` importiert — MCP-Zugänge werden bei Restore prinzipiell widerrufen rekonstruiert (kein wiederherstellbares Zugangsgeheimnis); die Grants bleiben dokumentarisch im Backup erhalten und folgen damit exakt der Bestands-Konvention für `McpAccesses`/`McpAccessScopes`. |
 | `AiActionRequest` | **ja** (`AiActionRequestBackupDto`): offene (nicht-terminale) Requests müssen einen Restore überleben (eine erteilte Freigabe ist verbindlich; Approval-Konzept); Snapshot/Status/CorrelationId vollständig. Terminal-Requests fahren mit, sind aber im Restore optional (Retention-kompatibel). |
 | `McpAuditEntry`(+`Changes`) | **ja** (Audit-Konzept 5: „Backup-Einbindung … Protokoll und Daten bleiben konsistent wiederherstellbar"); `McpAuditEntryBackupDto` inkl. `SequenceNo`/`PrevHash`/`EntryHash`, damit die Kette nach Restore verifizierbar bleibt. |
 | Konfiguration `Mcp:*` | kein Backup – `appsettings` ist Betreiber-Konfiguration, nicht Benutzerdaten (konsistent zur Behandlung anderer Flags). |
@@ -414,3 +415,36 @@ Kategorie-Ids), nicht umgekehrt:
   `pbkdf2|…`-Hash-Format und die Enum-Wertelisten dieses Dokuments
   sind verbindlich; Abweichungen nur über Änderung dieses Dokuments
   (Katalog-/Konzept-Versionierung).
+
+---
+
+## 13. `CurrencyExchangeRate` – FX-Referenzkurse (Schritt 3 / #561)
+
+Erweiterung für den EUR-Gegenwert in `fm_securities_analysis`
+(`includeEurValue`): persistente Wechselkurse „Fremdwährung je 1 EUR"
+(EZB-Referenzkurse, abgerufen über die Frankfurter-API).
+
+|| Feld | Typ | Beschreibung |
+|---|---|---|---|
+| `Id` | `Guid` | Datensatz-ID (`Entity`-Basisklasse) |
+| `CurrencyCode` | `string` (max. 8) | Fremdwährung, ISO 4217, normalisiert Großbuchstaben |
+| `Date` | `DateTime` | Stichtag des Kurses (Datumskomponente) |
+| `RatePerEur` | `decimal(18,6)` | Fremdwährungseinheiten je 1 EUR (> 0) |
+| `Source` | `string` (max. 40) | Kursquelle (`"Frankfurter"` — ehrliche API-Herkunft; Daten sind EZB-Referenzkurse) |
+| `CreatedUtc`/`ModifiedUtc` | `DateTime`/`DateTime?` | Zeitstempel aus `Entity` |
+
+**OwnerUserId-Ausnahme (explizit gefordert, dokumentiert):**
+`CurrencyExchangeRate` ist ein **globaler, benutzerübergreifender
+Referenzpool** — Wechselkurse sind objektive Marktdaten und für alle
+Benutzer identisch; der Pool vermeidet doppelte Provider-Aufrufe und
+bleibt quota-freundlich klein. `ClearUserDataAsync` räumt die Tabelle
+nicht mit ab (kein Benutzerbezug).
+
+**Index:** unique `(CurrencyCode, Date, Source)` — Grundlage für
+Lazy-Fill-Dedupe und den Backup-Import.
+
+**Backup:** optionale Sektion `CurrencyExchangeRates`
+(`CurrencyExchangeRateBackupDto`, `ToBackupDto`/`AssignBackupDto`) —
+vollständiger Export ohne Owner-Filter; Import hinter
+`TryGetProperty`-Guard, dedupliziert auf dem Unique-Schlüssel, **nicht**
+in `RequiredDataProperties` (alte Backups bleiben lesbar).

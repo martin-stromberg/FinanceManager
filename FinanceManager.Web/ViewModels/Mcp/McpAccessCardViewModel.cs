@@ -39,7 +39,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     public McpAccessDetailDto? Access { get; private set; }
 
     /// <summary>Server-side level definitions used to render level names/explanations.</summary>
-    public IReadOnlyList<McpAccessLevelDto> Levels { get; private set; } = Array.Empty<McpAccessLevelDto>();
+    public IReadOnlyList<McpAccessLevelDto> Levels { get; private set; } = [];
 
     /// <summary>UI options of the access management (TLS flag, scope matrix, categories).</summary>
     public McpAccessOptionsDto? Options { get; private set; }
@@ -146,12 +146,14 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
         return fallback ?? string.Empty;
     }
 
+    private const short IndividualLevelValue = (short)McpAccessLevel.Individuell;
+
     /// <summary>
     /// Whether the loaded access uses the individually configured level — only then is the
     /// scope matrix editable and are filter rows persisted.
     /// </summary>
     public bool IsIndividualLevel
-        => Access is not null && (McpAccessLevel)Access.Level == McpAccessLevel.Individuell;
+        => Access is not null && Access.Level == IndividualLevelValue;
 
     private short ResolvePendingApprovalMode()
     {
@@ -170,6 +172,10 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     /// or its localized <c>EnumType_{Type}_{Member}</c> display text (the dropdown options
     /// carry the localized names).
     /// </summary>
+    /// <typeparam name="TEnum">The enum type to parse.</typeparam>
+    /// <param name="text">Raw member name or localized display text.</param>
+    /// <param name="value">The parsed member when the parse succeeds.</param>
+    /// <returns><see langword="true"/> when the text maps to a defined member.</returns>
     private bool TryParseLocalizedEnum<TEnum>(string text, out TEnum value) where TEnum : struct, Enum
     {
         if (Enum.TryParse<TEnum>(text, ignoreCase: true, out var parsed))
@@ -333,6 +339,61 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     }
 
     /// <summary>
+    /// Replaces the approval-grant profile of the access (<c>PUT …/approval-grants</c>),
+    /// consulted by the granular approval mode. Newly added write grants
+    /// (Complete/Modify/Create) confirm first — they silently pre-approve future
+    /// mutations; an Administration write grant gets the critical severity. Removed
+    /// grants withdraw the open requests they had pre-approved (server-side).
+    /// </summary>
+    /// <param name="grants">The grant tuples to persist.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><c>true</c> when the profile was applied.</returns>
+    public async Task<bool> SaveApprovalGrantsAsync(IReadOnlyList<McpAccessApprovalGrantDto> grants, CancellationToken ct = default)
+    {
+        if (Access is null) return false;
+
+        var before = Access.ApprovalGrants
+            .Select(g => $"{g.DataType}:{g.Right}")
+            .ToHashSet(StringComparer.Ordinal);
+        var added = grants.Where(g => !before.Contains($"{g.DataType}:{g.Right}")).ToList();
+        if (added.Any(g => g.DataType == (short)McpDataType.Administration
+                && g.Right is (short)McpRightKind.Modify or (short)McpRightKind.Create))
+        {
+            var confirmed = await ConfirmationService.ConfirmAsync(new(
+                TitleResourceKey: "Confirmation_McpGrantAdminWrite_Title",
+                MessageResourceKey: "Confirmation_McpGrantAdminWrite_Message",
+                Severity: ConfirmationSeverity.Critical), ct);
+            if (!confirmed) return false;
+        }
+        else if (added.Any(g => g.Right is (short)McpRightKind.Complete or (short)McpRightKind.Modify
+                or (short)McpRightKind.Create))
+        {
+            var confirmed = await ConfirmationService.ConfirmAsync(new(
+                TitleResourceKey: "Confirmation_McpGrantWrite_Title",
+                MessageResourceKey: "Confirmation_McpGrantWrite_Message",
+                Severity: ConfirmationSeverity.Warning), ct);
+            if (!confirmed) return false;
+        }
+
+        try
+        {
+            var ok = await _api.Mcp_SetApprovalGrantsAsync(Access.Id, new McpApprovalGrantSetRequest(grants), ct);
+            if (!ok)
+            {
+                SetError("Err_NotFound", Localizer?["Err_NotFound"].Value ?? "Not found");
+                return false;
+            }
+            await LoadAsync(Access.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetError(_api.LastErrorCode, _api.LastError ?? ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Saves pending master data changes (name, description, level, approval mode, expiry,
     /// IP binding). A level downgrade is confirmed via <see cref="IConfirmationService"/> first
     /// because rights are lost.
@@ -454,6 +515,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     /// <see cref="FinanceManager.Application.ICurrentUserService"/> the other MCP views use
     /// (absent service ⇒ restrictive <see langword="false"/>).
     /// </summary>
+    /// <value><see langword="true"/> when the signed-in user is an administrator.</value>
     private bool IsCurrentUserAdmin
         => ServiceProvider.GetService(typeof(FinanceManager.Application.ICurrentUserService))
             is FinanceManager.Application.ICurrentUserService cu && cu.IsAdmin;
@@ -502,6 +564,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     /// Activates a deactivated access (confirmed via <see cref="IConfirmationService"/>).
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the access was activated.</returns>
     public async Task<bool> ActivateAsync(CancellationToken ct = default)
     {
         if (Access is null) return false;
@@ -517,6 +580,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     /// Deactivates the access (confirmed, high severity — running client sessions are rejected immediately).
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the access was deactivated.</returns>
     public async Task<bool> DeactivateAsync(CancellationToken ct = default)
     {
         if (Access is null) return false;
@@ -555,6 +619,7 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
     /// navigates back to the list.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the access was revoked.</returns>
     public async Task<bool> RevokeAsync(CancellationToken ct = default)
     {
         if (Access is null) return false;

@@ -79,6 +79,26 @@ public interface IMcpAccessService
     Task<bool> SetFiltersAsync(Guid ownerUserId, Guid id, Guid scopeId, McpFilterSetRequest request, CancellationToken ct);
 
     /// <summary>
+    /// Replaces the approval-grant profile (Vorab-Freigabe-Tupel) consulted by the
+    /// <see cref="FinanceManager.Domain.Mcp.McpApprovalMode.Granular"/> mode. Every tuple
+    /// must carry a grantable right kind (Read/Complete/Modify/Create) and a valid
+    /// F3-matrix combination; <see cref="FinanceManager.Domain.Mcp.McpDataType.Administration"/>
+    /// grants require the owner's administrative role. Removing a grant system-withdraws
+    /// the still-open requests it pre-approved
+    /// (<see cref="FinanceManager.Domain.Mcp.PreApprovalKind.GrantPreApproved"/>).
+    /// </summary>
+    /// <param name="ownerUserId">Owner user id.</param>
+    /// <param name="id">Access id.</param>
+    /// <param name="request">Grant set request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when applied; <see langword="false"/> when not found.</returns>
+    /// <exception cref="FinanceManager.Application.Exceptions.DomainValidationException">
+    /// <c>Err_Mcp_InvalidScope</c> for invalid tuples,
+    /// <c>Err_Mcp_AdminRequired</c> for administration grants without the admin role.
+    /// </exception>
+    Task<bool> SetApprovalGrantsAsync(Guid ownerUserId, Guid id, McpApprovalGrantSetRequest request, CancellationToken ct);
+
+    /// <summary>
     /// Activates an access (effective immediately).
     /// </summary>
     /// <param name="ownerUserId">Owner user id.</param>

@@ -266,6 +266,8 @@ public sealed class SecurityService : ISecurityService
             ArchivedUtc = s.ArchivedUtc,
             SymbolAttachmentId = s.SymbolAttachmentId,
             HasPriceError = s.HasPriceError,
+            PriceErrorMessage = s.PriceErrorMessage,
+            PriceErrorSinceUtc = s.PriceErrorSinceUtc,
             OpenQuantity = openQuantity ?? await ComputeOpenQuantityAsync(s.Id, ct),
             Region = s.Region,
             Sector = s.Sector

@@ -32,6 +32,11 @@ public sealed class McpAccessesController : ControllerBase
     private readonly IStringLocalizer<Controller> _localizer;
 
     /// <summary>Creates the controller.</summary>
+    /// <param name="svc">Access administration service.</param>
+    /// <param name="settings">MCP feature switches.</param>
+    /// <param name="current">Current-user service.</param>
+    /// <param name="logger">Logger.</param>
+    /// <param name="localizer">Error text localizer.</param>
     public McpAccessesController(
         IMcpAccessService svc,
         IMcpSettingsService settings,
@@ -65,6 +70,8 @@ public sealed class McpAccessesController : ControllerBase
     /// or annotate the MCP UI surface (navigation, lists, cards) without loading data.
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The feature status.</returns>
+    /// <response code="200">The feature status.</response>
     [HttpGet("status")]
     [ProducesResponseType(typeof(McpStatusDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStatusAsync(CancellationToken ct)
@@ -81,6 +88,8 @@ public sealed class McpAccessesController : ControllerBase
     /// <param name="skip">Items to skip.</param>
     /// <param name="take">Items to take (clamped ≤ 200).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The own access list.</returns>
+    /// <response code="200">The own access list.</response>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<McpAccessListItemDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListAsync([FromQuery] string? q, [FromQuery] int skip = 0, [FromQuery] int take = 100, CancellationToken ct = default)
@@ -92,6 +101,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <summary>Gets one access detail (404 when not found/not owned).</summary>
     /// <param name="id">Access id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The access detail.</returns>
+    /// <response code="200">The access detail.</response>
+    /// <response code="404">Access not found.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(McpAccessDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -108,6 +120,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <summary>Creates an access; response contains the plaintext token exactly once.</summary>
     /// <param name="req">Creation request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The created access plus plaintext token.</returns>
+    /// <response code="201">The created access plus plaintext token.</response>
+    /// <response code="400">Invalid request data.</response>
     [HttpPost]
     [ProducesResponseType(typeof(McpAccessCreatedDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -129,6 +144,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <param name="id">Access id.</param>
     /// <param name="req">Update request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content or not found.</returns>
+    /// <response code="204">Update applied.</response>
+    /// <response code="404">Access not found.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -149,6 +167,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <param name="id">Access id.</param>
     /// <param name="req">Scope set request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content or not found.</returns>
+    /// <response code="204">Profile applied.</response>
+    /// <response code="404">Access not found.</response>
     [HttpPut("{id:guid}/scopes")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -161,11 +182,38 @@ public sealed class McpAccessesController : ControllerBase
         catch (Exception ex) { return Error(ex); }
     }
 
+    /// <summary>
+    /// Replaces the approval-grant profile of an access (granular mode). Grants carry a
+    /// grantable right kind (Read/Complete/Modify/Create) and a valid F3 combination;
+    /// administration grants require the owner's admin role. Removing a grant
+    /// system-withdraws the still-open requests it had pre-approved.
+    /// </summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="req">Grant set request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content or not found.</returns>
+    /// <response code="204">Grants applied.</response>
+    /// <response code="404">Access not found.</response>
+    [HttpPut("{id:guid}/approval-grants")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetApprovalGrantsAsync(Guid id, [FromBody] McpApprovalGrantSetRequest req, CancellationToken ct)
+    {
+        try
+        {
+            return await _svc.SetApprovalGrantsAsync(_current.UserId, id, req, ct) ? NoContent() : NotFound();
+        }
+        catch (Exception ex) { return Error(ex); }
+    }
+
     /// <summary>Replaces the filter dimensions of one persisted scope row.</summary>
     /// <param name="id">Access id.</param>
     /// <param name="scopeId">Scope row id.</param>
     /// <param name="req">Filter set request.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content or not found.</returns>
+    /// <response code="204">Filters applied.</response>
+    /// <response code="404">Scope row not found.</response>
     [HttpPut("{id:guid}/filters/{scopeId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -181,6 +229,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <summary>Activates an access (effective immediately).</summary>
     /// <param name="id">Access id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content or not found.</returns>
+    /// <response code="204">Access activated.</response>
+    /// <response code="404">Access not found.</response>
     [HttpPost("{id:guid}/activate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -190,6 +241,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <summary>Deactivates an access (effective immediately).</summary>
     /// <param name="id">Access id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content or not found.</returns>
+    /// <response code="204">Access deactivated.</response>
+    /// <response code="404">Access not found.</response>
     [HttpPost("{id:guid}/deactivate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -211,6 +265,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <summary>Rotates the token; response contains the new plaintext exactly once.</summary>
     /// <param name="id">Access id.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The rotated token DTO.</returns>
+    /// <response code="200">The new plaintext token.</response>
+    /// <response code="404">Access not found.</response>
     [HttpPost("{id:guid}/rotate-token")]
     [ProducesResponseType(typeof(McpAccessRotatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -228,6 +285,9 @@ public sealed class McpAccessesController : ControllerBase
     /// <param name="id">Access id.</param>
     /// <param name="req">Optional revocation reason.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content or not found.</returns>
+    /// <response code="204">Access revoked.</response>
+    /// <response code="404">Access not found.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -242,6 +302,8 @@ public sealed class McpAccessesController : ControllerBase
 
     /// <summary>Lists the server-side level definitions incl. default scope profiles.</summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The level definitions.</returns>
+    /// <response code="200">The level definitions.</response>
     [HttpGet("levels")]
     [ProducesResponseType(typeof(IReadOnlyList<McpAccessLevelDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLevelsAsync(CancellationToken ct)
@@ -252,6 +314,8 @@ public sealed class McpAccessesController : ControllerBase
 
     /// <summary>UI options: scope matrix, filter dimensions, category lists, TLS flag.</summary>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>The UI options.</returns>
+    /// <response code="200">The UI options.</response>
     [HttpGet("options")]
     [ProducesResponseType(typeof(McpAccessOptionsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOptionsAsync(CancellationToken ct)
