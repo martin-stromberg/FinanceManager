@@ -113,6 +113,48 @@ public class SecurityPriceService : ISecurityPriceService
     }
 
     /// <summary>
+    /// Gets the most recently stored price for each of the specified securities in a single batch query.
+    /// </summary>
+    /// <param name="ownerUserId">The identifier of the user who owns the securities.</param>
+    /// <param name="securityIds">The identifiers of the securities whose latest prices to retrieve.</param>
+    /// <param name="ct">CancellationToken to cancel the operation.</param>
+    /// <returns>
+    /// A task that returns a dictionary keyed by security identifier with the latest stored
+    /// <see cref="SecurityPriceDto"/> per security. Securities without any stored price and securities
+    /// not owned by <paramref name="ownerUserId"/> (or unknown) are absent from the result.
+    /// </returns>
+    public async Task<IReadOnlyDictionary<Guid, SecurityPriceDto>> GetLatestPricesAsync(Guid ownerUserId, IReadOnlyCollection<Guid> securityIds, CancellationToken ct)
+    {
+        _logger.LogInformation("Getting latest security prices for {SecurityCount} securities", securityIds?.Count ?? 0);
+
+        ArgumentNullException.ThrowIfNull(securityIds);
+
+        if (securityIds.Count == 0)
+        {
+            return new Dictionary<Guid, SecurityPriceDto>();
+        }
+
+        var ids = securityIds.Distinct().ToList();
+        var owned = _db.SecurityPrices.AsNoTracking()
+            .Where(p => ids.Contains(p.SecurityId))
+            .Join(_db.Securities.AsNoTracking().Where(s => s.OwnerUserId == ownerUserId),
+                p => p.SecurityId, s => s.Id, (p, s) => p);
+
+        // Unique index (SecurityId, Date) guarantees at most one price per security and date,
+        // so the back-join on the grouped max date yields exactly one row per security.
+        var rows = await owned
+            .GroupBy(p => p.SecurityId)
+            .Select(g => new { SecurityId = g.Key, Date = g.Max(p => p.Date) })
+            .Join(_db.SecurityPrices.AsNoTracking(),
+                l => new { l.SecurityId, l.Date },
+                p => new { p.SecurityId, p.Date },
+                (l, p) => new { p.SecurityId, p.Date, p.Close })
+            .ToListAsync(ct);
+
+        return rows.ToDictionary(x => x.SecurityId, x => new SecurityPriceDto(x.Date, x.Close));
+    }
+
+    /// <summary>
     /// Upserts a batch of daily prices for one security.
     /// </summary>
     /// <param name="ownerUserId">Owner user identifier.</param>

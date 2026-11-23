@@ -69,6 +69,10 @@ public sealed class SecurityPriceErrorRecoveryTests
             => _inner.GetLatestDateAsync(ownerUserId, securityId, ct);
 
         /// <inheritdoc />
+        public Task<IReadOnlyDictionary<Guid, SecurityPriceDto>> GetLatestPricesAsync(Guid ownerUserId, IReadOnlyCollection<Guid> securityIds, CancellationToken ct)
+            => _inner.GetLatestPricesAsync(ownerUserId, securityIds, ct);
+
+        /// <inheritdoc />
         public Task<SecurityPriceImportResultDto> UpsertDailyPricesAsync(Guid ownerUserId, Guid securityId, IReadOnlyList<SecurityPriceImportItem> items, CancellationToken ct)
             => _inner.UpsertDailyPricesAsync(ownerUserId, securityId, items, ct);
 

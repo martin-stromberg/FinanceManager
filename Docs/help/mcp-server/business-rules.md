@@ -178,3 +178,19 @@
 - Praxisbeispiel „aktuelles Jahr": `interval: "Ytd"` zusammen mit `year: 2026`, oder `interval: "Year"` mit clientseitigem `periodStart`-Filter.
 
 **Umsetzung:** `FmReportingAggregateTool` (`year`-Filter + `coverage`-Projektion).
+
+## Wertpapier-Antworten tragen stets den letzten gespeicherten Kurs
+
+**Beschreibung:** `fm_securities_analysis` liefert je ausgegebenem Wertpapier das Feld `latestPrice { close, date }` — immer aktiv, unabhängig davon, ob die Kurshistorie (`includePrices`/`priceTake`) angefordert wurde. Es ersetzt den Workaround `includePrices: true` + `priceTake: 1` und macht die Kursaktualität über das Datum transparent.
+
+**Bedingungen:**
+- Ausschließlich persistierte `SecurityPrice`-Sätze werden berücksichtigt — es gibt keinen Live-/Realtime-Abruf und keinen externen Kurzabruf.
+- Die Kursabfrage läuft erst **nach** dem Record-Scope-Filter (`McpRecordScopeFilter`): Kurse scope-gefilterter Wertpapiere werden nicht abgefragt und nicht ausgegeben.
+
+**Verhalten:**
+- Kurs vorhanden → `{ close, date }` mit dem jüngsten gespeicherten `Date` (eindeutig je Wertpapier und Datum); kein gespeicherter Kurs → `null`.
+- `latestPrice` wird auch bei `hasPriceError: true` ausgegeben — ein letzter fehlgeschlagener Abruf verwirft den gespeicherten Kurs nicht; `hasPriceError` bleibt eigenständiges Signal im selben Objekt.
+- Es gibt keine serverseitige Staleness-Bewertung oder Schwellwerte — die Aktualität beurteilt der Aufrufer anhand von `date`.
+- Eine fehlende, fremde oder scope-gefilterte `securityId` im Einzelpfad verhält sich wie „nicht vorhanden" (leere `securities`-Liste, kein `latestPrice`).
+
+**Umsetzung:** `FmSecuritiesAnalysisHandler.InvokeAsync` (Top-Level-Projektion im anonymen Ausgabeobjekt neben `hasPriceError`/`openQuantity`), `ISecurityPriceService.GetLatestPricesAsync` / `SecurityPriceService.GetLatestPricesAsync` — eine Batch-Abfrage statt N Einzelabfragen: Besitzer-Join auf `Securities` (`OwnerUserId`), `GroupBy`/`Max(Date)` mit Rück-Join für `Close` (deterministisch über den Unique-Index `(SecurityId, Date)`); Wertpapiere ohne Kurs oder ohne Besitzbezug fehlen im Ergebnis-Dictionary und erhalten `null`.

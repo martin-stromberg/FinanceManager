@@ -34,33 +34,10 @@ namespace FinanceManager.Tests.Mcp;
 /// <c>Err_Mcp_ApprovalRequired</c> answer of the genehmigungspflichtigen Teiloperationen
 /// (merge/delete/archive) — which must produce <b>no</b> service effect until EP-09.
 /// </summary>
-public sealed class McpMasterDataWriteToolsTests
+public sealed class McpMasterDataWriteToolsTests : McpToolTestBase
 {
-    private static McpAccess NewAccess(Guid owner, McpAccessLevel level = McpAccessLevel.Buchhalter)
-        => new(owner, "acc", "HINT01", "pbkdf2|1|AA|AA", level, McpApprovalMode.PerAction);
-
-    private static Mock<IMcpAccessContext> NewAccessContext(Guid owner, McpAccess? access = null)
-    {
-        var ctx = new Mock<IMcpAccessContext>();
-        ctx.SetupGet(c => c.OwnerUserId).Returns(owner);
-        ctx.SetupGet(c => c.Access).Returns(access ?? NewAccess(owner));
-        return ctx;
-    }
-
-    private static McpToolCallContext NewCallContext(IMcpAccessContext access,
-        McpToolExecutionMode mode = McpToolExecutionMode.Interactive)
-        => new(access, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null, mode);
-
-    private static McpRecordScopeFilter NewFilter(params McpAccessScope[] scopes)
-    {
-        var evaluator = new Mock<IMcpScopeEvaluator>();
-        evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(scopes.Length == 0
-                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Buchhalter, isAdmin: true)
-                    .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList()
-                : scopes.ToList());
-        return new McpRecordScopeFilter(evaluator.Object);
-    }
+    /// <inheritdoc />
+    protected override McpAccessLevel DefaultLevel => McpAccessLevel.Buchhalter;
 
     private static Mock<IMcpScopeEvaluator> NewScopeEvaluator(bool allowDelete = true, bool allowModify = true)
     {
@@ -90,10 +67,6 @@ public sealed class McpMasterDataWriteToolsTests
         staged = () => captured;
         return audit;
     }
-
-    private static JsonElement Args(string json) => JsonDocument.Parse(json).RootElement;
-
-    private static JsonDocument Serialize(object result) => JsonDocument.Parse(JsonSerializer.Serialize(result));
 
     private static ContactDto NewContact(Guid? id = null, ContactType type = ContactType.Organization, Guid? categoryId = null, string name = "contact")
         => new(id ?? Guid.NewGuid(), name, type, categoryId, "desc", false, null);
@@ -226,7 +199,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T22 fm_contacts_manage
     // ------------------------------------------------------------------
 
-    private static FmContactsManageHandler ContactsHandler(
+    private FmContactsManageHandler ContactsHandler(
         Mock<IContactService> contacts, Mock<IContactCategoryService>? categories = null,
         Mock<IMcpScopeEvaluator>? evaluator = null, Mock<IMcpAuditWriter>? audit = null,
         McpRecordScopeFilter? filter = null)
@@ -449,7 +422,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T27 fm_categories_manage
     // ------------------------------------------------------------------
 
-    private static FmCategoriesManageHandler CategoriesHandler(
+    private FmCategoriesManageHandler CategoriesHandler(
         Mock<IContactCategoryService>? contacts = null,
         Mock<ISavingsPlanCategoryService>? savings = null,
         Mock<ISecurityCategoryService>? securities = null,
@@ -511,7 +484,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T23 fm_accounts_manage
     // ------------------------------------------------------------------
 
-    private static FmAccountsManageHandler AccountsHandler(
+    private FmAccountsManageHandler AccountsHandler(
         Mock<IAccountService> accounts, Mock<IMcpScopeEvaluator>? evaluator = null,
         Mock<IMcpAuditWriter>? audit = null, McpRecordScopeFilter? filter = null)
         => new(accounts.Object,
@@ -673,7 +646,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T24 fm_savings_plans_manage
     // ------------------------------------------------------------------
 
-    private static FmSavingsPlansManageHandler PlansHandler(
+    private FmSavingsPlansManageHandler PlansHandler(
         Mock<ISavingsPlanService> plans, Mock<ISavingsPlanCategoryService>? categories = null,
         Mock<IMcpScopeEvaluator>? evaluator = null, Mock<IMcpAuditWriter>? audit = null,
         Mock<ISavingsPlanAccountLinkService>? links = null, Mock<IAccountService>? accounts = null,
@@ -1031,7 +1004,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T25 fm_securities_manage
     // ------------------------------------------------------------------
 
-    private static FmSecuritiesManageHandler SecuritiesHandler(
+    private FmSecuritiesManageHandler SecuritiesHandler(
         Mock<ISecurityService> securities, Mock<ISecurityCategoryService>? categories = null,
         Mock<IMcpScopeEvaluator>? evaluator = null, Mock<IMcpAuditWriter>? audit = null)
         => new(securities.Object,
@@ -1269,7 +1242,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T26 fm_budgets_manage
     // ------------------------------------------------------------------
 
-    private static FmBudgetsManageHandler BudgetsHandler(
+    private FmBudgetsManageHandler BudgetsHandler(
         Mock<IBudgetPurposeService>? purposes = null, Mock<IBudgetRuleService>? rules = null,
         Mock<IBudgetOverrideService>? overrides = null, Mock<IBudgetCategoryService>? categories = null,
         Mock<IContactService>? contacts = null, Mock<IContactCategoryService>? contactCategories = null,
@@ -1526,7 +1499,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T28 fm_attachments_manage
     // ------------------------------------------------------------------
 
-    private static FmAttachmentsManageHandler AttachmentsHandler(
+    private FmAttachmentsManageHandler AttachmentsHandler(
         Mock<IAttachmentService> attachments,
         Mock<IAttachmentCategoryService>? attachmentCategories = null,
         Mock<IContactService>? contacts = null,
@@ -1708,7 +1681,7 @@ public sealed class McpMasterDataWriteToolsTests
     // T29 fm_reports_configuration_manage
     // ------------------------------------------------------------------
 
-    private static FmReportsConfigurationManageHandler ReportsConfigHandler(
+    private FmReportsConfigurationManageHandler ReportsConfigHandler(
         Mock<IReportFavoriteService>? favorites = null, Mock<IHomeKpiService>? kpis = null,
         Mock<IMcpScopeEvaluator>? evaluator = null, Mock<IMcpAuditWriter>? audit = null)
         => new((favorites ?? new Mock<IReportFavoriteService>()).Object,
