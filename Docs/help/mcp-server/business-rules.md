@@ -228,3 +228,20 @@
 - Opt-out: ohne `includeStatistics` ist `statistics` `null` — bestehender Vertrag unverändert.
 
 **Umsetzung:** `FmSecuritiesAnalysisHandler.InvokeAsync` + `BuildStatistics` (tool-interne Aggregation, anonymer Contract wie der übrige Output), Input-Schema-Parameter `includeStatistics`, Descriptor-Doku.
+
+## EUR-Gegenwert von Fremdwährungspositionen ist Opt-in und stichtagsbezogen
+
+**Beschreibung:** Mit `includeEurValue: true` trägt jede ausgegebene Position von `fm_securities_analysis` zusätzlich `valueEur` (EUR-Gegenwert) und `fxRate`; die Statistik ergänzt `marketValueEur` je `byCurrency`-Zeile und `totalMarketValueEur`. Damit ist ein aussagekräftiger Gesamtwert auch über mehrere Währungen möglich.
+
+**Bedingungen:**
+- Bewertungsbasis bleibt `openQuantity` × letzter **gespeicherter** Schlusskurs; der Wechselkurs gilt zum Kursdatum (`latestPrice.date`), nicht zum Abrufzeitpunkt — der Wert ist ein Stichtagswert, kein Live-Marktwert.
+- Der Kurs wird aus dem globalen `CurrencyExchangeRates`-Referenzpool (kein `OwnerUserId` — dokumentierte Ausnahme, Kurse sind für alle Benutzer identisch) bedient: neuster gespeicherter Kurs ≤ Kursdatum gewinnt; fehlt ein passender, fragt `FxRateService` den Frankfurter-Provider (EZB-Referenzkurse, „Fremdwährung je 1 EUR", konfigurierbar über `Fx:*`, `Enabled: false` = kein Provider-Verkehr) einmalig an und persistiert die Antwort; bei Provider-Ausfall greift der früheste gespeicherte Kurs der Währung als Fallback, sonst `null` — der Dienst wirft nie.
+- Kurskonvention „Fremdwährung je 1 EUR": `valueEur = openQuantity × close / ratePerEur` (Division); EUR-Positionen rechnen 1:1 ohne `fxRate`-Objekt (`fxRate: null` — keine Umrechnung).
+
+**Verhalten:**
+- `valueEur`/`fxRate` bleiben `null`, wenn Kurs, `openQuantity` oder FX-Kurs fehlt; ohne das Flag sind die Felder `null` bzw. in der Statistik gar nicht vorhanden.
+- `marketValueEur` einer `byCurrency`-Zeile ist `null`, sobald eine bewertbare Position der Zeile nicht umrechenbar ist; `totalMarketValueEur` ist `null`, wenn nicht alle bewertbaren Positionen umrechenbar sind — keine stillschweigend unvollständigen Summen.
+- FX-Werte sind System-Referenzdaten (strukturiert, Top-Level) und gehören nicht unter `untrusted_data`.
+- Der Handler gruppiert die benötigten (Währung, Kursdatum)-Paare und ruft `IFxRateService` je Paar einmal — kein Aufruf je Position, kein HTTP-Request je Position (persistenter Cache + In-Flight-Dedupe).
+
+**Umsetzung:** `FmSecuritiesAnalysisHandler` (`includeEurValue`-Schema-Parameter, `IFxRateService` per DI), `FxRateService` (Cache/Lazy-Fill/Fallback), `FrankfurterFxRateProvider` (`AddHttpClient "Frankfurter"`, `Fx`-Konfiguration), Entität `CurrencyExchangeRate` + Backup-Sektion `CurrencyExchangeRates`.

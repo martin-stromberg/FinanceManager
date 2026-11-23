@@ -1575,6 +1575,43 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.ToTable("SavingsPlanCategories");
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Securities.CurrencyExchangeRate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("RatePerEur")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyCode", "Date", "Source")
+                        .IsUnique();
+
+                    b.ToTable("CurrencyExchangeRates");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Securities.Security", b =>
                 {
                     b.Property<Guid>("Id")

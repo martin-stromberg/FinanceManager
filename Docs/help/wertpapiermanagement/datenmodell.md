@@ -63,6 +63,27 @@ Goldenes-Kreuz-Hinweise auf der Startseite erzeugt werden.
 | `OwnerUserId` | `Guid` | Eigentümer |
 | `Name` | `string` | Kategoriename |
 
+### `CurrencyExchangeRate`
+
+| Eigenschaft | Typ | Beschreibung |
+|-------------|-----|--------------|
+| `Id` | `Guid` | Kurs-ID |
+| `CurrencyCode` | `string` | Fremdwährung (ISO 4217, normalisiert Großbuchstaben) |
+| `Date` | `DateTime` | Datum des Referenzkurses |
+| `RatePerEur` | `decimal` | Fremdwährungseinheiten je 1 EUR |
+| `Source` | `string` | Kursquelle (z. B. `Frankfurter` = EZB-Referenzkurse via api.frankfurter.dev) |
+| `CreatedUtc` | `DateTime` | Erzeugungszeit |
+| `ModifiedUtc` | `DateTime?` | Änderungszeit (unbenutzt) |
+
+`CurrencyExchangeRate` ist ein **globaler, benutzerübergreifender
+Referenzdatenbestand** — die Entität trägt bewusst **kein** `OwnerUserId`
+(dokumentierte Ausnahme von der OwnerUserId-Regel): Wechselkurse sind objektive
+Markt-Referenzwerte, die für alle Benutzer identisch sind; ein gemeinsamer Pool
+vermeidet doppelte Provider-Aufrufe und hält die Tabelle klein. Eindeutigkeit je
+(`CurrencyCode`, `Date`, `Source`). `ClearUserDataAsync` lässt die Tabelle
+unberührt; im Benutzer-Backup wandert sie als optionale Sektion
+`CurrencyExchangeRates` mit (Import dedupliziert auf dem Unique-Schlüssel).
+
 ## Beziehungen
 
 - Ein `Security` hat viele `SecurityPrice`-Einträge.
@@ -79,6 +100,10 @@ Goldenes-Kreuz-Hinweise auf der Startseite erzeugt werden.
 - Eine `PortfolioKpiConfiguration` gehört genau einem Benutzer
   (`OwnerUserId` eindeutig) und bestimmt, welche Kacheln im
   Depot-Analysebericht angezeigt werden und in welcher Reihenfolge.
+- `CurrencyExchangeRate` steht ohne Beziehung zu Benutzerdaten im globalen Pool;
+  `FxRateService` nutzt die Tabelle als persistenten Kurs-Cache für die
+  EUR-Bewertung von Fremdwährungspositionen (`fm_securities_analysis`,
+  `includeEurValue`).
 
 ## Diagramm
 

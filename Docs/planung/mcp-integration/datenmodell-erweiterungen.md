@@ -414,3 +414,36 @@ Kategorie-Ids), nicht umgekehrt:
   `pbkdf2|…`-Hash-Format und die Enum-Wertelisten dieses Dokuments
   sind verbindlich; Abweichungen nur über Änderung dieses Dokuments
   (Katalog-/Konzept-Versionierung).
+
+---
+
+## 13. `CurrencyExchangeRate` – FX-Referenzkurse (Schritt 3 / #561)
+
+Erweiterung für den EUR-Gegenwert in `fm_securities_analysis`
+(`includeEurValue`): persistente Wechselkurse „Fremdwährung je 1 EUR"
+(EZB-Referenzkurse, abgerufen über die Frankfurter-API).
+
+|| Feld | Typ | Beschreibung |
+|---|---|---|---|
+| `Id` | `Guid` | Datensatz-ID (`Entity`-Basisklasse) |
+| `CurrencyCode` | `string` (max. 8) | Fremdwährung, ISO 4217, normalisiert Großbuchstaben |
+| `Date` | `DateTime` | Stichtag des Kurses (Datumskomponente) |
+| `RatePerEur` | `decimal(18,6)` | Fremdwährungseinheiten je 1 EUR (> 0) |
+| `Source` | `string` (max. 40) | Kursquelle (`"Frankfurter"` — ehrliche API-Herkunft; Daten sind EZB-Referenzkurse) |
+| `CreatedUtc`/`ModifiedUtc` | `DateTime`/`DateTime?` | Zeitstempel aus `Entity` |
+
+**OwnerUserId-Ausnahme (explizit gefordert, dokumentiert):**
+`CurrencyExchangeRate` ist ein **globaler, benutzerübergreifender
+Referenzpool** — Wechselkurse sind objektive Marktdaten und für alle
+Benutzer identisch; der Pool vermeidet doppelte Provider-Aufrufe und
+bleibt quota-freundlich klein. `ClearUserDataAsync` räumt die Tabelle
+nicht mit ab (kein Benutzerbezug).
+
+**Index:** unique `(CurrencyCode, Date, Source)` — Grundlage für
+Lazy-Fill-Dedupe und den Backup-Import.
+
+**Backup:** optionale Sektion `CurrencyExchangeRates`
+(`CurrencyExchangeRateBackupDto`, `ToBackupDto`/`AssignBackupDto`) —
+vollständiger Export ohne Owner-Filter; Import hinter
+`TryGetProperty`-Guard, dedupliziert auf dem Unique-Schlüssel, **nicht**
+in `RequiredDataProperties` (alte Backups bleiben lesbar).

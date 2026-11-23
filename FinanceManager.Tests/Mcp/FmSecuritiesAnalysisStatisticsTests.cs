@@ -33,8 +33,9 @@ public sealed class FmSecuritiesAnalysisStatisticsTests : McpToolTestBase
         };
 
     private static FmSecuritiesAnalysisHandler NewHandler(
-        ISecurityService securities, ISecurityPriceService prices, McpRecordScopeFilter filter)
-        => new(securities, prices, Mock.Of<ISecurityCategoryService>(), filter);
+        ISecurityService securities, ISecurityPriceService prices, McpRecordScopeFilter filter,
+        IFxRateService? fxRates = null)
+        => new(securities, prices, Mock.Of<ISecurityCategoryService>(), filter, fxRates ?? Mock.Of<IFxRateService>());
 
     private static Mock<ISecurityService> SecuritiesReturning(Guid owner, params SecurityDto[] items)
     {

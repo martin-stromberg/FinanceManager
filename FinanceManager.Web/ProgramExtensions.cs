@@ -289,6 +289,16 @@ namespace FinanceManager.Web
             }
             builder.Services.Configure<AlphaVantageQuotaOptions>(builder.Configuration.GetSection("AlphaVantage:Quota"));
 
+            // FX rates: Frankfurter API (free ECB reference rates, no API key)
+            var fxOptions = builder.Configuration.GetSection(FxOptions.SectionName).Get<FxOptions>() ?? new FxOptions();
+            builder.Services.Configure<FxOptions>(builder.Configuration.GetSection(FxOptions.SectionName));
+            builder.Services.AddHttpClient(FrankfurterFxRateProvider.HttpClientName, client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(Math.Max(1, fxOptions.TimeoutSeconds));
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/Muesli84/FinanceManager)");
+            });
+            builder.Services.AddScoped<IFxRateProvider, FrankfurterFxRateProvider>();
+
             // JWT + Identity
             builder.Services
                 .AddOptions<JwtOptions>()
