@@ -51,6 +51,19 @@ public interface ISecurityPriceService
     Task<DateTime?> GetLatestDateAsync(Guid ownerUserId, Guid securityId, CancellationToken ct);
 
     /// <summary>
+    /// Returns the most recently stored price for each of the specified securities in a single batch query.
+    /// </summary>
+    /// <param name="ownerUserId">The identifier of the user who owns the securities.</param>
+    /// <param name="securityIds">The identifiers of the securities whose latest prices to retrieve.</param>
+    /// <param name="ct">Cancellation token used to cancel the operation.</param>
+    /// <returns>
+    /// A task that returns a dictionary keyed by security identifier with the latest stored
+    /// <see cref="SecurityPriceDto"/> per security. Securities without any stored price and securities
+    /// not owned by <paramref name="ownerUserId"/> (or unknown) are absent from the result.
+    /// </returns>
+    Task<IReadOnlyDictionary<Guid, SecurityPriceDto>> GetLatestPricesAsync(Guid ownerUserId, IReadOnlyCollection<Guid> securityIds, CancellationToken ct);
+
+    /// <summary>
     /// Upserts daily prices for the given security.
     /// </summary>
     /// <param name="ownerUserId">The owner of the security.</param>

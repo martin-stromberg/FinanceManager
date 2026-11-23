@@ -10,6 +10,8 @@ Der Zugriff erfolgt ausschließlich über fachliche Werkzeuge (Tools) auf densel
 
 Die Sparplan-Analyse (`fm_savings_plan_analysis`) weist mit `scheduleDeficit` zusätzlich den Rückstand eines Plans gegenüber seinem erkannten Einzahlungsrhythmus aus — ein positiver Wert bedeutet ausgefallene Einzahlungen. Der Deficit zählt nur den laufenden Finanzierungszyklus seit der letzten fälligen Entnahme (bzw. dem letzten erreichten Zieldatum oder der ersten Einzahlung); Entnahmen erscheinen getrennt als `disbursements`, stornierte Buchungen fließen nicht ein, und revolvierende Pläne melden `null` statt eines Deficits. Die `observedMonthlyRate` folgt der beobachteten Einzahlungskadenz aus den Buchungen (Median der Belegmonats-Abstände der dominanten Betragsklasse), nicht dem Ausgaben-Fälligkeitsintervall des Plans — `interval` greift nur als Fallback bei nicht ableitbarer Kadenz.
 
+Die Wertpapier-Analyse (`fm_securities_analysis`) liefert zu jedem ausgegebenen Wertpapier zusätzlich das Feld `latestPrice` mit dem zuletzt gespeicherten Schlusskurs und seinem Datum — immer, auch wenn keine Kurshistorie angefordert wurde. `null` bedeutet, dass noch kein Kurs gespeichert ist. Wie aktuell ein Kurs ist, ergibt sich allein aus dem mitgelieferten Datum; das KI-System muss dafür keinen separaten Kursabruf starten.
+
 ## Funktionsweise
 
 ### Aktivierung durch den Administrator

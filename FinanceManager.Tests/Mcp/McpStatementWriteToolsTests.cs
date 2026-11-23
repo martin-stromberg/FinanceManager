@@ -27,32 +27,10 @@ namespace FinanceManager.Tests.Mcp;
 /// semantics, dryRun, atomic rejection, record-scope denials, audit staging and the
 /// untrusted_data wrapper convention.
 /// </summary>
-public sealed class McpStatementWriteToolsTests
+public sealed class McpStatementWriteToolsTests : McpToolTestBase
 {
-    private static McpAccess NewAccess(Guid owner, McpAccessLevel level = McpAccessLevel.Sachbearbeiter)
-        => new(owner, "acc", "HINT01", "pbkdf2|1|AA|AA", level, McpApprovalMode.PerAction);
-
-    private static Mock<IMcpAccessContext> NewAccessContext(Guid owner, McpAccess? access = null)
-    {
-        var ctx = new Mock<IMcpAccessContext>();
-        ctx.SetupGet(c => c.OwnerUserId).Returns(owner);
-        ctx.SetupGet(c => c.Access).Returns(access ?? NewAccess(owner));
-        return ctx;
-    }
-
-    private static McpToolCallContext NewCallContext(IMcpAccessContext access)
-        => new(access, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null);
-
-    private static McpRecordScopeFilter NewFilter(params McpAccessScope[] scopes)
-    {
-        var evaluator = new Mock<IMcpScopeEvaluator>();
-        evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(scopes.Length == 0
-                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Sachbearbeiter, isAdmin: true)
-                    .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList()
-                : scopes.ToList());
-        return new McpRecordScopeFilter(evaluator.Object);
-    }
+    /// <inheritdoc />
+    protected override McpAccessLevel DefaultLevel => McpAccessLevel.Sachbearbeiter;
 
     private static Mock<IMcpAuditWriter> NullAudit()
     {
@@ -62,11 +40,7 @@ public sealed class McpStatementWriteToolsTests
         return audit;
     }
 
-    private static JsonElement Args(string json) => JsonDocument.Parse(json).RootElement;
-
     private static JsonElement ArgsObj(object args) => JsonDocument.Parse(JsonSerializer.Serialize(args)).RootElement;
-
-    private static JsonDocument Serialize(object result) => JsonDocument.Parse(JsonSerializer.Serialize(result));
 
     private static async IAsyncEnumerable<StatementDraftDto> AsyncEnum(params StatementDraftDto[] items)
     {
@@ -315,7 +289,7 @@ public sealed class McpStatementWriteToolsTests
     // T17 fm_statement_draft_complete
     // ------------------------------------------------------------------
 
-    private static FmStatementDraftCompleteHandler CompleteHandler(
+    private FmStatementDraftCompleteHandler CompleteHandler(
         Mock<IStatementDraftService> drafts, Mock<IContactService>? contacts = null,
         Mock<ISavingsPlanService>? plans = null, Mock<ISecurityService>? securities = null,
         Mock<IAccountService>? accounts = null, Mock<IMcpAuditWriter>? audit = null,
@@ -655,7 +629,7 @@ public sealed class McpStatementWriteToolsTests
     // T18 fm_statement_draft_edit
     // ------------------------------------------------------------------
 
-    private static FmStatementDraftEditHandler EditHandler(
+    private FmStatementDraftEditHandler EditHandler(
         Mock<IStatementDraftService> drafts, Mock<IMcpScopeEvaluator>? evaluator = null,
         Mock<IMcpAuditWriter>? audit = null, McpRecordScopeFilter? filter = null,
         Mock<IAccountService>? accounts = null)

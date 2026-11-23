@@ -31,37 +31,8 @@ namespace FinanceManager.Tests.Mcp;
 /// catalog, paging clamp, untrusted_data wrapper convention, foreign-data invisibility
 /// and the ownership derivation of <see cref="IStatementImportQueryService"/> (T08).
 /// </summary>
-public sealed class McpReadOnlyToolsTests
+public sealed class McpReadOnlyToolsTests : McpToolTestBase
 {
-    private static McpAccess NewAccess(Guid owner, McpAccessLevel level = McpAccessLevel.Analyse)
-        => new(owner, "acc", "HINT01", "pbkdf2|1|AA|AA", level, McpApprovalMode.PerAction);
-
-    private static Mock<IMcpAccessContext> NewAccessContext(Guid owner, McpAccess? access = null)
-    {
-        var ctx = new Mock<IMcpAccessContext>();
-        ctx.SetupGet(c => c.OwnerUserId).Returns(owner);
-        ctx.SetupGet(c => c.Access).Returns(access ?? NewAccess(owner));
-        return ctx;
-    }
-
-    private static McpToolCallContext NewCallContext(IMcpAccessContext access)
-        => new(access, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null);
-
-    private static McpRecordScopeFilter NewFilter(params McpAccessScope[] scopes)
-    {
-        var evaluator = new Mock<IMcpScopeEvaluator>();
-        evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(scopes.Length == 0
-                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Analyse, isAdmin: true)
-                    .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList()
-                : scopes.ToList());
-        return new McpRecordScopeFilter(evaluator.Object);
-    }
-
-    private static JsonElement Args(string json) => JsonDocument.Parse(json).RootElement;
-
-    private static JsonDocument Serialize(object result) => JsonDocument.Parse(JsonSerializer.Serialize(result));
-
     private static IMcpToolDescriptor[] LiveCatalog() => new IMcpToolDescriptor[]
     {
         new FmCapabilitiesDescribeDescriptor(),
@@ -498,7 +469,7 @@ public sealed class McpReadOnlyToolsTests
         return evaluator.Object;
     }
 
-    private static FmStatementDraftValidateHandler ValidateHandler(
+    private FmStatementDraftValidateHandler ValidateHandler(
         Mock<IStatementDraftService> drafts,
         Mock<IContactService>? contacts = null,
         Mock<ISavingsPlanService>? plans = null,

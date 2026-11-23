@@ -1,15 +1,11 @@
 using FinanceManager.Application.Demo;
 using FinanceManager.Infrastructure;
 using FinanceManager.Shared;
-using FinanceManager.Shared.Dtos.Mcp;
 using FinanceManager.Shared.Dtos.Postings;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit;
 
@@ -24,27 +20,12 @@ namespace FinanceManager.Tests.Integration;
 /// maintains the link set with immediate effect.
 /// </summary>
 [Collection("DemoDataSerial")]
-public sealed class McpSavingsPlanLinkTests : IClassFixture<TestWebApplicationFactory>
+public sealed class McpSavingsPlanLinkTests : McpIntegrationTestBase
 {
-    private const string JwtKey = "PLEASE_REPLACE_WITH_LONG_RANDOM_256BIT_SECRET_BASE64";
-
-    private readonly TestWebApplicationFactory _factory;
-
     /// <summary>Initializes the suite with a dedicated factory where MCP is enabled.</summary>
     /// <param name="factory">The shared web application factory.</param>
-    public McpSavingsPlanLinkTests(TestWebApplicationFactory factory)
+    public McpSavingsPlanLinkTests(TestWebApplicationFactory factory) : base(factory)
     {
-        factory.ConfigurationOverrides["Mcp:Enabled"] = "true";
-        _factory = factory;
-    }
-
-    private FinanceManager.Shared.ApiClient CreateApiClient()
-    {
-        var http = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false,
-        });
-        return new FinanceManager.Shared.ApiClient(http);
     }
 
     /// <summary>
@@ -78,61 +59,6 @@ public sealed class McpSavingsPlanLinkTests : IClassFixture<TestWebApplicationFa
             .SingleAsync(x => x.OwnerUserId == userId && x.Name == "Sparkonto Allgemein", TestContext.Current.CancellationToken);
 
         return (username, userId, plan.Id, bauspar.Id, bauspar.CurrentBalance, other.Id, other.CurrentBalance);
-    }
-
-    /// <summary>Creates an MCP access for the user and returns the plaintext PAT.</summary>
-    /// <param name="client">HTTP client of the test host.</param>
-    /// <param name="username">User the JWT and the access are issued for.</param>
-    /// <param name="level">Access level (<see cref="FinanceManager.Domain.Mcp.McpAccessLevel"/> as short).</param>
-    /// <param name="approvalMode">Approval mode (<see cref="FinanceManager.Domain.Mcp.McpApprovalMode"/> as short).</param>
-    /// <returns>The plaintext personal access token.</returns>
-    private async Task<string> CreateAccessTokenAsync(HttpClient client, string username, short level, short approvalMode)
-    {
-        var jwt = TestJwtTokens.Create(_factory.Services, JwtKey, username: username);
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/mcp-accesses")
-        {
-            Content = JsonContent.Create(new McpAccessCreateRequest(
-                Name: $"it-{Guid.NewGuid():N}"[..20],
-                Description: null,
-                Level: level,
-                ApprovalMode: approvalMode,
-                ExpiresUtc: null,
-                AllowedIpRanges: null,
-                Scopes: null))
-        };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
-        var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var created = await response.Content.ReadFromJsonAsync<McpAccessCreatedDto>(TestContext.Current.CancellationToken);
-        Assert.NotNull(created);
-        return created!.PlainTextToken;
-    }
-
-    /// <summary>
-    /// Invokes one <c>tools/call</c> JSON-RPC request against the live <c>/mcp</c> endpoint
-    /// and fails the test when the response carries a JSON-RPC error object.
-    /// </summary>
-    /// <param name="client">HTTP client authenticated with the PAT.</param>
-    /// <param name="toolName">Name of the MCP tool to call.</param>
-    /// <param name="arguments">Tool arguments (serialized into the <c>arguments</c> parameter).</param>
-    /// <param name="id">JSON-RPC request id.</param>
-    /// <returns>The <c>result</c> element of the JSON-RPC response.</returns>
-    private async Task<JsonElement> CallToolAsync(HttpClient client, string toolName, object arguments, int id)
-    {
-        var response = await client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id,
-            method = "tools/call",
-            @params = new { name = toolName, arguments }
-        }, cancellationToken: TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var doc = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: TestContext.Current.CancellationToken);
-        if (doc.TryGetProperty("error", out var error))
-        {
-            throw new Xunit.Sdk.XunitException($"tools/call {toolName} failed: {error.GetRawText()}");
-        }
-        return doc.GetProperty("result");
     }
 
     /// <summary>

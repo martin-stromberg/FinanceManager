@@ -54,6 +54,10 @@ public sealed class FmSecuritiesAnalysisHandler : IMcpToolHandler
     private readonly McpRecordScopeFilter _recordFilter;
 
     /// <summary>Creates the handler.</summary>
+    /// <param name="securities">Service used to list and load the owner's securities.</param>
+    /// <param name="prices">Service used to read stored security prices (latest and history).</param>
+    /// <param name="categories">Service used to resolve security category names.</param>
+    /// <param name="recordFilter">Record-level scope filter applied before any price lookup.</param>
     public FmSecuritiesAnalysisHandler(
         ISecurityService securities,
         ISecurityPriceService prices,
@@ -112,6 +116,9 @@ public sealed class FmSecuritiesAnalysisHandler : IMcpToolHandler
             context.Access, McpDataType.Securities, securities,
             s => new McpRecordContext { SecurityCategoryId = s.CategoryId }, ct);
 
+        // Single batch lookup of the last stored close price per visible security.
+        var latestPrices = await _prices.GetLatestPricesAsync(owner, visible.Select(s => s.Id).ToList(), ct);
+
         var result = new List<object>(visible.Count);
         foreach (var s in visible)
         {
@@ -132,6 +139,9 @@ public sealed class FmSecuritiesAnalysisHandler : IMcpToolHandler
                 symbolAttachmentId = s.SymbolAttachmentId,
                 hasPriceError = s.HasPriceError,
                 openQuantity = s.OpenQuantity,
+                latestPrice = latestPrices.TryGetValue(s.Id, out var latest)
+                    ? new { close = latest.Close, date = latest.Date }
+                    : null,
                 prices,
                 untrusted_data = new
                 {
