@@ -33,7 +33,7 @@ public sealed class McpSecuritiesAnalysisTests : McpIntegrationTestBase
     {
         var api = CreateApiClient();
         var username = $"mcpsec_{Guid.NewGuid():N}";
-        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null));
+        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null), TestContext.Current.CancellationToken);
 
         Guid userId;
         Guid securityId;
