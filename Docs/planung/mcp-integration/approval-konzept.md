@@ -213,6 +213,41 @@ für ihn ist der Vorgang transparent, für das Audit identisch
 protokolliert. Damit existiert **kein** Ausführungspfad an der
 `AiActionRequest`-Spur vorbei.
 
+### 3.5 Granulare Vorab-Freigabe (Expertenmodus)
+
+Der dritte Genehmigungsmodus `Granular` (Opt-in; `PerAction` und
+`PreApproved` bleiben unverändert) ersetzt die pauschale Vorab-Genehmigung
+durch ein **Grant-Profil** aus `(McpDataType, McpRightKind)`-Tupeln
+(`McpAccessApprovalGrant`, unique je Zugang/Tupel; Suggest/Book/Delete sind
+nie grantbar). Der Aktionskatalog `McpApprovalActionCatalog` bildet jedes
+`(Tool, ActionKey)` auf genau ein Tupel zuzüglich eines
+`RequiresApproval`-Flags ab; nicht abgebildete Aktionen schlagen
+fail-closed als genehmigungspflichtig durch.
+
+- **Routine-Aktion** (schreibvorbereitend, `RequiresApproval = false`)
+  mit passendem Grant → direkte Ausführung, wie bei `PreApproved`.
+- **Routine-Aktion** ohne Grant oder ohne Katalogabbildung → normaler
+  Pending-Request (Einzelfallentscheidung).
+- **Genehmigungspflichtige/destruktive Aktion** mit passendem Grant → der
+  Request wird angelegt und startet sofort `Approved`
+  (`DecisionNote` = „Vorab-Freigabe Expertenmodus-Grant"); die Queue-Spur
+  bleibt die dokumentierte Freigabeinstanz.
+- Genehmigungspflichtige Aktion ohne Grant → Pending wie bei `PerAction`.
+
+Die Herkunft der Vorab-Freigabe ist am Request maschinenlesbar markiert:
+`AiActionRequest.PreApprovalKind` ∈ `None | AccessPreApproved |
+GrantPreApproved` — kein String-Match auf die `DecisionNote`.
+
+**Grant-Entzug:** Beim Ersetzen des Grant-Profils
+(`IMcpAccessService.SetApprovalGrantsAsync`, `PUT
+/api/mcp-accesses/{id}/approval-grants`) zieht
+`WithdrawGrantUncoveredForAccessAsync` alle noch offenen Requests zurück,
+deren Grant-Tupel entfallen ist — ausschließlich
+`PreApprovalKind.GrantPreApproved`-Zeilen ohne aktiven Claim;
+`AccessPreApproved`- und normal entschiedene Requests bleiben unberührt
+(System-Withdrawal, Audit-Event `ApprovalWithdrawn`, Begründung „Freigabe
+entzogen").
+
 ---
 
 ## 4. Fachlicher Ablauf

@@ -23,7 +23,11 @@ public interface IMcpApprovalService
     /// <see cref="AiActionRequestStatus.Pending"/> — or already
     /// <see cref="AiActionRequestStatus.Approved"/> when the access runs in the
     /// <see cref="McpApprovalMode.PreApproved"/> mode (documented pre-approval,
-    /// approval-konzept.md §3.4).
+    /// approval-konzept.md §3.5), or when a matching
+    /// <see cref="McpAccessApprovalGrant"/> covers the operation under
+    /// <see cref="McpApprovalMode.Granular"/>. The request's
+    /// <see cref="AiActionRequest.PreApprovalKind"/> records which documented
+    /// pre-approval applied.
     /// </summary>
     /// <param name="access">The authenticated access entity requesting the action.</param>
     /// <param name="toolName">The <c>fm_*</c> tool name.</param>
@@ -176,6 +180,27 @@ public interface IMcpApprovalService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Number of withdrawn requests.</returns>
     Task<int> WithdrawScopeUncoveredForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct);
+
+    /// <summary>
+    /// System-side withdrawal of the open requests of one access that were pre-approved by
+    /// a granular-mode grant whose covered tuple no longer exists — the grant-removal
+    /// transition (approval-konzept.md §3.5). Only requests with
+    /// <see cref="PreApprovalKind.GrantPreApproved"/> whose
+    /// (<see cref="AiActionRequest.ToolName"/>, <see cref="AiActionRequest.ActionKey"/>)
+    /// profile is no longer covered by a persisted <see cref="McpAccessApprovalGrant"/>
+    /// are withdrawn; requests pre-approved by the access-wide
+    /// <see cref="McpApprovalMode.PreApproved"/> mode, normally decided requests, and
+    /// requests under an active claim stay untouched. Called by the access
+    /// administration after <c>SetApprovalGrants</c>. A request claimed between
+    /// the grant removal and this withdrawal may still execute — bounded by the
+    /// executor's execution-time access/scope re-check (revocation, kill-switch,
+    /// scope coverage), which does not re-evaluate the grant itself.
+    /// </summary>
+    /// <param name="mcpAccessId">Access identifier.</param>
+    /// <param name="reason">Documented system reason (e.g. "Freigabe entzogen").</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Number of withdrawn requests.</returns>
+    Task<int> WithdrawGrantUncoveredForAccessAsync(Guid mcpAccessId, string reason, CancellationToken ct);
 
     /// <summary>
     /// Aggregates the agent-monitoring view of one own access over its request workload

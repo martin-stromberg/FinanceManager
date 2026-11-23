@@ -69,11 +69,12 @@
 
 **Bedingungen:**
 - Klassen: `Lesend`, `Vorschlagend`, `Schreibvorbereitend`, `Genehmigungspflichtig`.
-- Der Genehmigungsmodus des Zugangs (`PerAction` oder `PreApproved`) steuert, ob eine Anforderung im Genehmigungscenter landet oder als vorab genehmigt direkt in die Warteschlange geht.
+- Der Genehmigungsmodus des Zugangs (`PerAction`, `PreApproved` oder `Granular`) steuert, ob eine Anforderung im Genehmigungscenter landet oder als vorab genehmigt direkt in die Warteschlange geht.
 
 **Verhalten:**
 - Genehmigungspflichtige Werkzeuge (Verbuchung, Storno, Verwerfen) erzeugen immer einen `AiActionRequest` — niemals eine „stille" Direktausführung.
 - Im Modus `PreApproved` bleibt die Genehmigungsinstanz dokumentiert auf dem Datensatz; die Anforderung läuft ohne Wartephase in die Ausführungswarteschlange.
+- Im Modus `Granular` (Expertenmodus) entscheidet das Grant-Profil des Zugangs — `(Datentyp, Recht)`-Tupel: passende Routine-Aktionen laufen direkt, passende genehmigungspflichtige Aktionen starten als bereits genehmigte Anforderung (`PreApprovalKind.GrantPreApproved`); alles ohne passendes Tupel wird je Aktion entschieden. Entfernte Grants ziehen die von ihnen vorab freigegebenen, noch offenen Anforderungen zurück.
 - Der Parametersatz einer Anforderung ist zum Anfragezeitpunkt eingefroren und unveränderlich; eine Genehmigung kann nur erteilen oder ablehnen, niemals editieren.
 - Deaktiviert der Administrator den Schreibzugriff, werden die Klassen `Schreibvorbereitend` und `Genehmigungspflichtig` vollständig abgelehnt; genehmigte, aber zurückgehaltene Anforderungen können ablaufen.
 

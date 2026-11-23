@@ -135,7 +135,8 @@ public sealed class McpSuggestionToolsTests : McpToolTestBase
             .ReturnsAsync(false);
         var audit = new Mock<IMcpAuditWriter>();
         var gate = new Mock<IMcpApprovalGate>();
-        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(McpApprovalDecision.Direct);
         var opts = new TestOptionsMonitor(new McpOptions());
         var dispatcher = new McpToolDispatcher(

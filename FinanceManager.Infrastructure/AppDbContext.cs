@@ -382,6 +382,16 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         }
     }
 
+    /// <summary>Approval grants of MCP accesses (granular approval mode).</summary>
+    /// <returns>The result.</returns>
+    public DbSet<McpAccessApprovalGrant> McpAccessApprovalGrants
+    {
+        get
+        {
+            return Set<McpAccessApprovalGrant>();
+        }
+    }
+
     /// <summary>Append-only MCP audit entries (hash-chained).</summary>
     /// <returns>The result.</returns>
     public DbSet<McpAuditEntry> McpAuditEntries
@@ -944,6 +954,10 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
                 .WithOne(x => x.Access)
                 .HasForeignKey(x => x.McpAccessId)
                 .OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(x => x.ApprovalGrants)
+                .WithOne(x => x.Access)
+                .HasForeignKey(x => x.McpAccessId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // MCP access scopes (datenmodell-erweiterungen.md §4)
@@ -951,6 +965,18 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         {
             b.HasKey(x => x.Id);
             b.HasIndex(x => new { x.McpAccessId, x.DataType, x.Right });
+            b.HasIndex(x => x.OwnerUserId);
+            b.Property(x => x.OwnerUserId).IsRequired();
+            b.Property(x => x.DataType).HasConversion<short>().IsRequired();
+            b.Property(x => x.Right).HasConversion<short>().IsRequired();
+        });
+
+        // MCP access approval grants (granular mode, approval-konzept.md §3.4):
+        // one row per (access, data type, right) pre-approval tuple.
+        modelBuilder.Entity<McpAccessApprovalGrant>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.McpAccessId, x.DataType, x.Right }).IsUnique();
             b.HasIndex(x => x.OwnerUserId);
             b.Property(x => x.OwnerUserId).IsRequired();
             b.Property(x => x.DataType).HasConversion<short>().IsRequired();
@@ -1018,6 +1044,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             b.Property(x => x.ParameterSnapshot).IsRequired();
             b.Property(x => x.ReasonText).HasMaxLength(1000);
             b.Property(x => x.Status).HasConversion<short>().IsRequired();
+            // Existing rows predate the field — default keeps them reading as None.
+            b.Property(x => x.PreApprovalKind).HasConversion<short>()
+                .HasDefaultValue(PreApprovalKind.None).IsRequired();
             b.Property(x => x.RequestedUtc).IsRequired();
             b.Property(x => x.ExpiresUtc).IsRequired();
             b.Property(x => x.DecisionNote).HasMaxLength(500);

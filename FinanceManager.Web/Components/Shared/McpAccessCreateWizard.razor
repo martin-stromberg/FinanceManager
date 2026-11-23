@@ -85,6 +85,13 @@
                             <small style="display:block;color:var(--muted);">@L["Mcp_ApprovalModeDesc_PreApproved"]</small>
                         </span>
                     </label>
+                    <label style="display:flex;gap:.5rem;align-items:flex-start;">
+                        <input type="radio" name="mcp-approval" checked="@(_approvalMode == (short)McpApprovalMode.Granular)" @onchange="() => _approvalMode = (short)McpApprovalMode.Granular" />
+                        <span>
+                            @McpAccessText.ApprovalMode(L, (short)McpApprovalMode.Granular)
+                            <small style="display:block;color:var(--muted);">@L["Mcp_ApprovalModeDesc_Granular"]</small>
+                        </span>
+                    </label>
                     <small style="display:block;color:var(--muted);margin-top:.4rem;">@L["Mcp_Approval_KillSwitchHint"]</small>
                 </fieldset>
             }

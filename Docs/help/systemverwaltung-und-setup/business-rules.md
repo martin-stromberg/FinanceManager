@@ -338,7 +338,7 @@ oder aus der Profil-API lesen koennen.
 **Verhalten:**
 - Neben den Stammdaten enthält das Backup die Kontoauszugs-Import-Historie (`StatementImports`/`StatementEntries`), `Notifications`, `AccountShares`, `AccountLinkedIbans` (Unter-IBANs von Sammelkonten) und `PortfolioKpiConfigurations` — alle werden beim Restore zurückgeschrieben.
 - `BudgetRuleBackupDto` und `SecurityBackupDto` decken alle persistierten Felder ab, inklusive `PurposePattern`/`PurposePatternIsRegex` sowie der Preisfehler- (`HasPriceError`, `PriceErrorMessage`, `PriceErrorSinceUtc`) und Notified-Felder (`GoldenCrossNotifiedPhase`, `TrendReversalNotifiedStatus`).
-- Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) sind bewusst nur exportiert, nicht importiert — `ClearUserDataAsync` löscht sie nicht.
+- Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAccessApprovalGrants`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) sind bewusst nur exportiert, nicht importiert — `ClearUserDataAsync` löscht sie nicht.
 
 **Umsetzung:** `BackupService.BuildBackupDataAsync`, `SetupImportService.ImportVersion3`, `AppDbContext.ClearUserDataAsync`; abgesichert durch Round-Trip-Tests (`FinanceManager.Tests/Infrastructure/BackupRestoreCoverageTests.cs`, `BackupServiceFullExportTests.cs`).
 

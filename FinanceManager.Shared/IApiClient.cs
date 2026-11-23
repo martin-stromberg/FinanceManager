@@ -1763,6 +1763,14 @@ public interface IApiClient
     /// <returns>True when applied.</returns>
     Task<bool> Mcp_SetFiltersAsync(Guid id, Guid scopeId, FinanceManager.Shared.Dtos.Mcp.McpFilterSetRequest request, CancellationToken ct = default);
 
+    /// <summary>Replaces the approval-grant profile of an access (granular mode).
+    /// Returns false when not found.</summary>
+    /// <param name="id">Access id.</param>
+    /// <param name="request">Grant set request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>True when applied.</returns>
+    Task<bool> Mcp_SetApprovalGrantsAsync(Guid id, FinanceManager.Shared.Dtos.Mcp.McpApprovalGrantSetRequest request, CancellationToken ct = default);
+
     /// <summary>Activates an access. Returns false when not found.</summary>
     /// <param name="id">Access id.</param>
     /// <param name="ct">Cancellation token.</param>
