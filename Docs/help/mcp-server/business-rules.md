@@ -194,3 +194,19 @@
 - Eine fehlende, fremde oder scope-gefilterte `securityId` im Einzelpfad verhält sich wie „nicht vorhanden" (leere `securities`-Liste, kein `latestPrice`).
 
 **Umsetzung:** `FmSecuritiesAnalysisHandler.InvokeAsync` (Top-Level-Projektion im anonymen Ausgabeobjekt neben `hasPriceError`/`openQuantity`), `ISecurityPriceService.GetLatestPricesAsync` / `SecurityPriceService.GetLatestPricesAsync` — eine Batch-Abfrage statt N Einzelabfragen: Besitzer-Join auf `Securities` (`OwnerUserId`), `GroupBy`/`Max(Date)` mit Rück-Join für `Close` (deterministisch über den Unique-Index `(SecurityId, Date)`); Wertpapiere ohne Kurs oder ohne Besitzbezug fehlen im Ergebnis-Dictionary und erhalten `null`.
+
+## Wertpapier-Preisfehler werden mit Grund und Zeitpunkt ausgeliefert
+
+**Beschreibung:** Jedes Wertpapier-Objekt von `fm_securities_analysis` trägt zusätzlich zu `hasPriceError` die Metadaten des letzten bekannten Providerfehlers: `priceErrorSinceUtc` als strukturiertes Top-Level-Feld und den Provider-Fehlertext unter `untrusted_data.priceErrorMessage`.
+
+**Bedingungen:**
+- Die Felder entstammen den persistierten `Security`-Eigenschaften (`PriceErrorMessage`, `PriceErrorSinceUtc`) und werden über `SecurityService.MapToDtoAsync` in den `SecurityDto` gehoben — keine Migration nötig, die Daten existieren bereits.
+- Provider-Fehlertext ist Drittinhalt und steht ausschließlich unter `untrusted_data`; der Zeitstempel ist strukturierte Systemmetadaten und darf Top-Level stehen.
+
+**Verhalten:**
+- Fehler protokolliert → `hasPriceError: true`, `priceErrorSinceUtc` = Zeitstempel, `untrusted_data.priceErrorMessage` = Text; `hasPriceError` wird erst mit einem erfolgreichen Abruf zurückgesetzt, der letzte gespeicherte Kurs bleibt nutzbar.
+- Kein Fehler → alle drei Felder `false`/`null` (Explizit-`null`, kein Weglassen).
+- Ein leeres `prices`-Array ist kein Fehlersignal: mögliche Ursachen sind fehlender `alphaVantageCode`, Provider ohne Daten oder kein gespeicherter Kurs im Zeitraum.
+- Ein negatives `openQuantity` bedeutet Buchungsinkonsistenz (verkauft > gekauft), kein Short-Exposure.
+
+**Umsetzung:** `SecurityDto`-Felder `PriceErrorMessage`/`PriceErrorSinceUtc`, Mapping in `SecurityService.MapToDtoAsync`, Projektion in `FmSecuritiesAnalysisHandler` (Listen- und Einzelpfad teilen dieselbe Objektprojektion), Semantik im `FmSecuritiesAnalysisDescriptor.Description` dokumentiert.

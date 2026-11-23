@@ -74,4 +74,48 @@ public sealed class McpSecuritiesAnalysisTests : McpIntegrationTestBase
         prices.GetArrayLength().Should().Be(2);
         latest.GetProperty("date").GetString().Should().Be(prices[0].GetProperty("date").GetString());
     }
+
+    /// <summary>
+    /// A seeded security with a recorded price error answers the call with the failure
+    /// timestamp as top-level <c>priceErrorSinceUtc</c> and the provider message inside
+    /// <c>untrusted_data.priceErrorMessage</c> — the message is not duplicated at top level.
+    /// </summary>
+    [Fact]
+    public async Task ToolsCall_SecuritiesAnalysis_ReturnsPriceErrorDetails()
+    {
+        var api = CreateApiClient();
+        var username = $"mcpsecerr_{Guid.NewGuid():N}";
+        await api.Auth_RegisterAsync(new RegisterRequest(username, "Secret123", PreferredLanguage: null, TimeZoneId: null), TestContext.Current.CancellationToken);
+
+        Guid userId;
+        Guid securityId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            userId = await db.Users
+                .Where(x => x.UserName == username)
+                .Select(x => x.Id)
+                .FirstAsync(TestContext.Current.CancellationToken);
+
+            var security = new Security(userId, "Broken Feed Corp", "ISIN-SECERR", null, null, "USD", null);
+            security.SetPriceError("Symbol not found");
+            db.Securities.Add(security);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            securityId = security.Id;
+        }
+
+        using var client = _factory.CreateClient();
+        var pat = await CreateAccessTokenAsync(client, username, level: 0 /* Analyse */, approvalMode: 0);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat);
+
+        var result = await CallToolAsync(client, "fm_securities_analysis",
+            new { securityId = securityId.ToString() }, id: 2);
+        var entry = result.GetProperty("structuredContent").GetProperty("securities")[0];
+
+        entry.GetProperty("hasPriceError").GetBoolean().Should().BeTrue();
+        entry.GetProperty("priceErrorSinceUtc").GetDateTime().Should().BeAfter(DateTime.MinValue);
+        entry.GetProperty("untrusted_data").GetProperty("priceErrorMessage").GetString()
+            .Should().Be("Symbol not found");
+        entry.TryGetProperty("priceErrorMessage", out _).Should().BeFalse();
+    }
 }

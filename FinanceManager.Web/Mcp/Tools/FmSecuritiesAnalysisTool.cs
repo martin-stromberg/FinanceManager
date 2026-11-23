@@ -26,7 +26,10 @@ public sealed class FmSecuritiesAnalysisDescriptor : McpToolDescriptorBase
 
     /// <inheritdoc />
     public override string Description
-        => "Security stock, categories and historical prices (read-only). Scopes: (Wertpapiere, Lesen), (Wertpapierkategorien, Lesen).";
+        => "Security stock, categories and historical prices (read-only). Scopes: (Wertpapiere, Lesen), (Wertpapierkategorien, Lesen)."
+        + " Data notes: hasPriceError marks a recorded provider price-fetch failure for the symbol; the flag is only cleared by a successful fetch, so prices may still show the last good data (see untrusted_data.priceErrorMessage for the last known provider error and priceErrorSinceUtc for its timestamp)."
+        + " An empty prices array is not an error: the security may have no AlphaVantageCode configured, the provider may have returned no data, or no price exists in the requested range."
+        + " A negative openQuantity means sold quantity exceeds bought quantity — a booking inconsistency (missing/duplicate postings or unmapped corporate actions), not a supported short position.";
 
     /// <inheritdoc />
     public override McpToolSecurityClass SecurityClass => McpToolSecurityClass.Lesend;
@@ -138,6 +141,7 @@ public sealed class FmSecuritiesAnalysisHandler : IMcpToolHandler
                 archivedUtc = s.ArchivedUtc,
                 symbolAttachmentId = s.SymbolAttachmentId,
                 hasPriceError = s.HasPriceError,
+                priceErrorSinceUtc = s.PriceErrorSinceUtc,
                 openQuantity = s.OpenQuantity,
                 latestPrice = latestPrices.TryGetValue(s.Id, out var latest)
                     ? new { close = latest.Close, date = latest.Date }
@@ -151,7 +155,8 @@ public sealed class FmSecuritiesAnalysisHandler : IMcpToolHandler
                     alphaVantageCode = s.AlphaVantageCode,
                     categoryName = s.CategoryName,
                     region = s.Region,
-                    sector = s.Sector
+                    sector = s.Sector,
+                    priceErrorMessage = s.PriceErrorMessage
                 }
             });
         }

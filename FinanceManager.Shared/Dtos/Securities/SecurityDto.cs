@@ -37,6 +37,10 @@ public sealed class SecurityDto
     /// A value indicating whether a pricing error has occurred for the current instance.
     /// </summary>
     public bool HasPriceError { get; set; }
+    /// <summary>Normalized provider error message recorded for the last failed price fetch, if any.</summary>
+    public string? PriceErrorMessage { get; set; }
+    /// <summary>UTC timestamp when the last price fetch failed, if any.</summary>
+    public DateTime? PriceErrorSinceUtc { get; set; }
     /// <summary>Open holding quantity (Σ buy − Σ sell quantities from postings; null when not computed).</summary>
     public decimal? OpenQuantity { get; set; }
     /// <summary>Optional region of the security (e.g. "Europa", "Nordamerika") used for regional distribution.</summary>
