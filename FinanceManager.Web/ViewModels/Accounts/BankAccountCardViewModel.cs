@@ -167,7 +167,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             get
             {
                 var title = Localizer?["Chart_Title_Account_Aggregates"] ?? "Account";
-                var endpoint = $"/api/accounts/{Id}/aggregates";
+                var endpoint = $"api/accounts/{Id}/aggregates";
                 return new AggregateBarChartViewModel(ServiceProvider, endpoint, title);
             }
         }
@@ -279,7 +279,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             // Group: Navigieren (Back)
             var navActions = new List<UiRibbonAction>
             {
-                new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
+                new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
             };
 
             var isNew = Account == null || Account.Id == Guid.Empty;
@@ -287,21 +287,21 @@ namespace FinanceManager.Web.ViewModels.Accounts
             // Group: Verwalten (Save, Reset, Delete)
             var manageActions = new List<UiRibbonAction>
             {
-                new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SavePendingAsync(); }) { MobileShortcut = true },
-                new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='/icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }) { MobileShortcut = true },
-                new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, isNew, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+                new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SavePendingAsync(); }) { MobileShortcut = true },
+                new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }) { MobileShortcut = true },
+                new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, isNew, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
             };
 
             // Group: Verknüpfte Informationen (OpenPostings, OpenBankContact, OpenAttachments)
             var linkedActions = new List<UiRibbonAction>
             {
-                new UiRibbonAction("OpenPostings", localizer["Ribbon_OpenPostings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Account == null, null, () => {
+                new UiRibbonAction("OpenPostings", localizer["Ribbon_OpenPostings"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Account == null, null, () => {
                     // Provide target URL as payload so the page doesn't need to know ViewModel type
-                    var url = $"/list/postings/account/{Id}";
+                    var url = $"list/postings/account/{Id}";
                     RaiseUiActionRequested("OpenPostings", url);
                     return Task.CompletedTask;
                 }),
-                new UiRibbonAction("OpenBankContact", localizer["Ribbon_OpenBankContact"].Value, "<svg><use href='/icons/sprite.svg#bank'/></svg>", UiRibbonItemSize.Small, Account == null || Account.BankContactId == Guid.Empty, null, () => {
+                new UiRibbonAction("OpenBankContact", localizer["Ribbon_OpenBankContact"].Value, "<svg><use href='icons/sprite.svg#bank'/></svg>", UiRibbonItemSize.Small, Account == null || Account.BankContactId == Guid.Empty, null, () => {
                     if (Account != null && Account.BankContactId != Guid.Empty)
                     {
                         var payload = $"contacts,{Account.BankContactId}";
@@ -309,7 +309,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                     }
                     return Task.CompletedTask;
                 }),
-                new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Account == null, null, () => {
+                new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Account == null, null, () => {
                     // Request attachments overlay with ParentKind/ParentId payload
                     RequestOpenAttachments(FinanceManager.Domain.Attachments.AttachmentEntityKind.Account, Id);
                     return Task.CompletedTask;
@@ -319,7 +319,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
             // Group: Buchungen (CreatePreliminaryDraft)
             var bookingActions = new List<UiRibbonAction>
             {
-                new UiRibbonAction("CreatePreliminaryDraft", localizer["Ribbon_CreatePreliminaryDraft"].Value ?? "Vorläufige Buchungen erfassen", "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, isNew, null, async () => {
+                new UiRibbonAction("CreatePreliminaryDraft", localizer["Ribbon_CreatePreliminaryDraft"].Value ?? "Vorläufige Buchungen erfassen", "<svg><use href='icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, isNew, null, async () => {
                     var request = new FinanceManager.Shared.Dtos.Statements.CreatePreliminaryStatementDraftRequest(Id);
                     var draft = await ApiClient.StatementDrafts_CreatePreliminaryAsync(request);
                     if (draft == null)
@@ -328,11 +328,11 @@ namespace FinanceManager.Web.ViewModels.Accounts
                         RaiseStateChanged();
                         return;
                     }
-                    var url = $"/card/statement-drafts/{draft.DraftId}?quickEdit=true";
+                    var url = $"card/statement-drafts/{draft.DraftId}?quickEdit=true";
                     RaiseUiActionRequested("OpenStatementDraft", url);
                 })
                 { MobileShortcut = true },
-                new UiRibbonAction("ReevaluatePostingTypes", localizer["Ribbon_ReevaluatePostingTypes"].Value ?? "Postenarten neu bewerten", "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, isNew, null, async () => {
+                new UiRibbonAction("ReevaluatePostingTypes", localizer["Ribbon_ReevaluatePostingTypes"].Value ?? "Postenarten neu bewerten", "<svg><use href='icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, isNew, null, async () => {
                     try
                     {
                         await ApiClient.EnqueuePostingTypeReevaluationAsync(Id);
@@ -344,7 +344,7 @@ namespace FinanceManager.Web.ViewModels.Accounts
                         RaiseStateChanged();
                     }
                 }),
-                new UiRibbonAction("OpenPostingRules", localizer["Ribbon_PostingRules"].Value, "<svg><use href='/icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, isNew, isNew ? localizer["Ribbon_PostingRules_DisabledHint"].Value : null, () => {
+                new UiRibbonAction("OpenPostingRules", localizer["Ribbon_PostingRules"].Value, "<svg><use href='icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, isNew, isNew ? localizer["Ribbon_PostingRules_DisabledHint"].Value : null, () => {
                     var spec = new UiOverlaySpec(
                         typeof(FinanceManager.Web.Components.Shared.PostingRulesPanel),
                         new Dictionary<string, object?>

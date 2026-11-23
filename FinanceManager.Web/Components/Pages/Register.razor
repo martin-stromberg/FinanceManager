@@ -87,7 +87,7 @@
 
         if (!_isFirstUser && !AuthOptions.Value.AllowSelfRegistration)
         {
-            Nav.NavigateTo("/login");
+            Nav.NavigateTo("login");
         }
     }
 
@@ -95,7 +95,7 @@
     {
         if (firstRender)
         {
-            _profileModule = await JS.InvokeAsync<IJSObjectReference>("import", "/js/profile.js");
+            _profileModule = await JS.InvokeAsync<IJSObjectReference>("import", "js/profile.js");
         }
     }
 
@@ -133,7 +133,7 @@
             {
                 var _ = await Api.Auth_RegisterAsync(req, CancellationToken.None);
                 navigated = true;
-                Nav.NavigateTo("/", forceLoad: true);
+                Nav.NavigateTo("", forceLoad: true);
             }
             catch (HttpRequestException)
             {

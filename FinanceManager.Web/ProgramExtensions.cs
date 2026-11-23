@@ -230,7 +230,7 @@ namespace FinanceManager.Web
                 var baseUri = !string.IsNullOrWhiteSpace(configuredBaseUri)
                     ? configuredBaseUri
                     : ctx != null
-                    ? $"{ctx.Request.Scheme}://{ctx.Request.Host.ToUriComponent()}/"
+                    ? $"{ctx.Request.Scheme}://{ctx.Request.Host.ToUriComponent()}{ctx.Request.PathBase.Value}/"
                     : "https://localhost:5001/";
                 client.BaseAddress = new Uri(baseUri);
             })
@@ -791,6 +791,11 @@ namespace FinanceManager.Web
             app.UseRequestLocalization(app.BuildLocalizationOptions());
 
             app.UseMiddleware<JwtRefreshMiddleware>();
+
+            // Converts ApiAuthenticationRequiredException thrown by server-side API calls during
+            // prerendering into a 302 redirect to the login page (incl. returnUrl). Registered
+            // inside the exception-handler scope so it wins over the /Error page.
+            app.UseMiddleware<AuthenticationRedirectMiddleware>();
 
             // Map static assets for CSS/JS bundling
             app.MapStaticAssets();

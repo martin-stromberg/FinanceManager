@@ -17,7 +17,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">When the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<IReadOnlyList<StatementDraftDto>> StatementDrafts_ListOpenAsync(int skip = 0, int take = 3, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/statement-drafts?skip={skip}&take={take}", ct);
+        var resp = await _http.GetAsync($"api/statement-drafts?skip={skip}&take={take}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<StatementDraftDto>>(cancellationToken: ct) ?? Array.Empty<StatementDraftDto>();
     }
@@ -30,7 +30,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">When the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<int> StatementDrafts_GetOpenCountAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/statement-drafts/count", ct);
+        var resp = await _http.GetAsync("api/statement-drafts/count", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("count", out var prop) && prop.TryGetInt32(out var cnt)) return cnt;
@@ -45,7 +45,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">When the HTTP request fails.</exception>
     public async Task<bool> StatementDrafts_DeleteAllAsync(CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync("/api/statement-drafts/all", ct);
+        var resp = await _http.DeleteAsync("api/statement-drafts/all", ct);
         resp.EnsureSuccessStatusCode();
         return true;
     }
@@ -62,7 +62,7 @@ public partial class ApiClient
     {
         using var content = new MultipartFormDataContent();
         content.Add(new StreamContent(stream), "file", fileName);
-        var resp = await _http.PostAsync("/api/statement-drafts/upload", content, ct);
+        var resp = await _http.PostAsync("api/statement-drafts/upload", content, ct);
         if (!resp.IsSuccessStatusCode) return null;
         var primary = await resp.Content.ReadFromJsonAsync<StatementDraftUploadResult>(cancellationToken: ct);
         if (primary != null) return primary;
@@ -96,7 +96,7 @@ public partial class ApiClient
     /// <returns>Batch result or null when the request failed.</returns>
     public async Task<MassImportBatchResultDto?> StatementDrafts_ProcessMassImportAsync(MassImportBatchRequestDto request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/statement-drafts/mass-import", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/statement-drafts/mass-import", request, ct);
         if (!resp.IsSuccessStatusCode)
         {
             await EnsureSuccessOrSetErrorAsync(resp);
@@ -115,7 +115,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">When the HTTP request fails.</exception>
     public async Task<StatementDraftDetailDto?> StatementDrafts_CreateAsync(string? fileName = null, CancellationToken ct = default)
     {
-        var url = "/api/statement-drafts";
+        var url = "api/statement-drafts";
         if (!string.IsNullOrWhiteSpace(fileName)) url += $"?fileName={Uri.EscapeDataString(fileName)}";
         var resp = await _http.PostAsync(url, content: null, ct);
         if (!resp.IsSuccessStatusCode)
@@ -139,7 +139,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">When the HTTP request fails.</exception>
     public async Task<StatementDraftDetailDto?> StatementDrafts_GetAsync(Guid draftId, bool headerOnly = false, string? src = null, Guid? fromEntryDraftId = null, Guid? fromEntryId = null, CancellationToken ct = default)
     {
-        var url = $"/api/statement-drafts/{draftId}?headerOnly={(headerOnly ? "true" : "false")}";
+        var url = $"api/statement-drafts/{draftId}?headerOnly={(headerOnly ? "true" : "false")}";
         if (!string.IsNullOrWhiteSpace(src)) url += $"&src={Uri.EscapeDataString(src)}";
         if (fromEntryDraftId.HasValue) url += $"&fromEntryDraftId={fromEntryDraftId.Value}";
         if (fromEntryId.HasValue) url += $"&fromEntryId={fromEntryId.Value}";
@@ -158,7 +158,7 @@ public partial class ApiClient
     /// <returns>Entry detail DTO or null when not found.</returns>
     public async Task<StatementDraftEntryDetailDto?> StatementDrafts_GetEntryAsync(Guid draftId, Guid entryId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/entries/{entryId}", ct);
+        var resp = await _http.GetAsync($"api/statement-drafts/{draftId}/entries/{entryId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDetailDto>(cancellationToken: ct);
@@ -229,7 +229,7 @@ public partial class ApiClient
 
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         using var content = new StringContent(JsonSerializer.Serialize(payload, options), System.Text.Encoding.UTF8, "application/json");
-        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/batch-update", content, ct);
+        var resp = await _http.PostAsync($"api/statement-drafts/{draftId}/entries/batch-update", content, ct);
         if (resp.IsSuccessStatusCode)
         {
             try
@@ -280,7 +280,7 @@ public partial class ApiClient
     /// <returns>Updated entry DTO or null when not found.</returns>
     public async Task<StatementDraftEntryDto?> StatementDrafts_UpdateEntryCoreAsync(Guid draftId, Guid entryId, StatementDraftUpdateEntryCoreRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/edit-core", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/edit-core", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
@@ -295,7 +295,7 @@ public partial class ApiClient
     /// <returns>Updated draft detail DTO or null when draft not found.</returns>
     public async Task<StatementDraftDetailDto?> StatementDrafts_AddEntryAsync(Guid draftId, StatementDraftAddEntryRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
@@ -309,7 +309,7 @@ public partial class ApiClient
     /// <returns>Updated draft detail DTO or null when request is invalid or draft not found.</returns>
     public async Task<StatementDraftDetailDto?> StatementDrafts_ClassifyAsync(Guid draftId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/classify", content: null, ct);
+        var resp = await _http.PostAsync($"api/statement-drafts/{draftId}/classify", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
@@ -325,7 +325,7 @@ public partial class ApiClient
     /// <returns>Updated draft detail DTO or null when not found.</returns>
     public async Task<StatementDraftDetailDto?> StatementDrafts_SetAccountAsync(Guid draftId, Guid accountId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/account/{accountId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/statement-drafts/{draftId}/account/{accountId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
@@ -340,7 +340,7 @@ public partial class ApiClient
     /// <returns>Updated draft detail DTO or null when not found.</returns>
     public async Task<StatementDraftDetailDto?> StatementDrafts_SetDescriptionAsync(Guid draftId, string? description, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/description", description, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/description", description, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDetailDto>(cancellationToken: ct);
@@ -354,7 +354,7 @@ public partial class ApiClient
     /// <returns>Created draft DTO or null when not found.</returns>
     public async Task<StatementDraftDto?> StatementDrafts_CreatePreliminaryAsync(CreatePreliminaryStatementDraftRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/statement-drafts/preliminary", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/statement-drafts/preliminary", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftDto>(cancellationToken: ct);
@@ -369,7 +369,7 @@ public partial class ApiClient
     /// <returns>Result object from the server (format may vary) or null when draft not found.</returns>
     public async Task<object?> StatementDrafts_CommitAsync(Guid draftId, StatementDraftCommitRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/commit", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/commit", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
@@ -386,7 +386,7 @@ public partial class ApiClient
     /// <returns>Updated entry DTO or null when not found.</returns>
     public async Task<StatementDraftEntryDto?> StatementDrafts_SetEntryContactAsync(Guid draftId, Guid entryId, StatementDraftSetContactRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/contact", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/contact", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
@@ -402,7 +402,7 @@ public partial class ApiClient
     /// <returns>Updated entry DTO or null when not found.</returns>
     public async Task<StatementDraftEntryDto?> StatementDrafts_SetEntryCostNeutralAsync(Guid draftId, Guid entryId, StatementDraftSetCostNeutralRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/costneutral", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/costneutral", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
@@ -418,7 +418,7 @@ public partial class ApiClient
     /// <returns>Updated entry DTO or null when not found.</returns>
     public async Task<StatementDraftEntryDto?> StatementDrafts_SetEntrySavingsPlanAsync(Guid draftId, Guid entryId, StatementDraftSetSavingsPlanRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/savingsplan", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/savingsplan", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
@@ -434,7 +434,7 @@ public partial class ApiClient
     /// <returns>Updated entry DTO or null when not found.</returns>
     public async Task<StatementDraftEntryDto?> StatementDrafts_SetEntrySecurityAsync(Guid draftId, Guid entryId, StatementDraftSetEntrySecurityRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/security", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/security", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
@@ -451,7 +451,7 @@ public partial class ApiClient
     /// <returns>Updated entry DTO or null when not found.</returns>
     public async Task<StatementDraftEntryDto?> StatementDrafts_SetEntryArchiveOnBookingAsync(Guid draftId, Guid entryId, StatementDraftSetArchiveSavingsPlanOnBookingRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/savingsplan/archive-on-booking", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/savingsplan/archive-on-booking", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<StatementDraftEntryDto>(cancellationToken: ct);
@@ -465,7 +465,7 @@ public partial class ApiClient
     /// <returns>Validation result DTO or null on error.</returns>
     public async Task<DraftValidationResultDto?> StatementDrafts_ValidateAsync(Guid draftId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/validate", ct);
+        var resp = await _http.GetAsync($"api/statement-drafts/{draftId}/validate", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<DraftValidationResultDto>(cancellationToken: ct);
     }
@@ -479,7 +479,7 @@ public partial class ApiClient
     /// <returns>Validation result DTO or null on error.</returns>
     public async Task<DraftValidationResultDto?> StatementDrafts_ValidateEntryAsync(Guid draftId, Guid entryId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/validate", ct);
+        var resp = await _http.GetAsync($"api/statement-drafts/{draftId}/entries/{entryId}/validate", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<DraftValidationResultDto>(cancellationToken: ct);
     }
@@ -493,7 +493,7 @@ public partial class ApiClient
     /// <returns>Booking result DTO or null when server refused the operation.</returns>
     public async Task<BookingResult?> StatementDrafts_BookAsync(Guid draftId, bool forceWarnings = false, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/book?forceWarnings={(forceWarnings ? "true" : "false")}", content: null, ct);
+        var resp = await _http.PostAsync($"api/statement-drafts/{draftId}/book?forceWarnings={(forceWarnings ? "true" : "false")}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             // validation errors
@@ -517,7 +517,7 @@ public partial class ApiClient
     /// <returns>Booking result DTO or null when operation not applicable.</returns>
     public async Task<BookingResult?> StatementDrafts_BookEntryAsync(Guid draftId, Guid entryId, bool forceWarnings = false, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/book?forceWarnings={(forceWarnings ? "true" : "false")}", content: null, ct);
+        var resp = await _http.PostAsync($"api/statement-drafts/{draftId}/entries/{entryId}/book?forceWarnings={(forceWarnings ? "true" : "false")}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             return await resp.Content.ReadFromJsonAsync<BookingResult>(cancellationToken: ct);
@@ -541,7 +541,7 @@ public partial class ApiClient
     /// <returns>Server response object or null when not found.</returns>
     public async Task<object?> StatementDrafts_SaveEntryAllAsync(Guid draftId, Guid entryId, StatementDraftSaveEntryAllRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/save-all", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/save-all", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
@@ -556,7 +556,7 @@ public partial class ApiClient
     /// <returns>True when deleted; false when not found.</returns>
     public async Task<bool> StatementDrafts_DeleteEntryAsync(Guid draftId, Guid entryId, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/statement-drafts/{draftId}/entries/{entryId}", ct);
+        var resp = await _http.DeleteAsync($"api/statement-drafts/{draftId}/entries/{entryId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -571,7 +571,7 @@ public partial class ApiClient
     /// <returns>Server response object or null when not found.</returns>
     public async Task<object?> StatementDrafts_ResetDuplicateEntryAsync(Guid draftId, Guid entryId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/reset-duplicate", content: null, ct);
+        var resp = await _http.PostAsync($"api/statement-drafts/{draftId}/entries/{entryId}/reset-duplicate", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
@@ -586,7 +586,7 @@ public partial class ApiClient
     /// <returns>Updated draft detail DTO or null when not found or request invalid.</returns>
     public async Task<StatementDraftDetailDto?> StatementDrafts_ClassifyEntryAsync(Guid draftId, Guid entryId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/classify-entry", content: null, ct);
+        var resp = await _http.PostAsync($"api/statement-drafts/{draftId}/entries/{entryId}/classify-entry", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
@@ -601,7 +601,7 @@ public partial class ApiClient
     /// <returns>Stream containing the original file or null when not found.</returns>
     public async Task<Stream?> StatementDrafts_DownloadOriginalAsync(Guid draftId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/statement-drafts/{draftId}/file", ct);
+        var resp = await _http.GetAsync($"api/statement-drafts/{draftId}/file", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         var ms = new MemoryStream();
@@ -618,7 +618,7 @@ public partial class ApiClient
     /// <returns>True when deleted; false when not found.</returns>
     public async Task<bool> StatementDrafts_DeleteAsync(Guid draftId, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/statement-drafts/{draftId}", ct);
+        var resp = await _http.DeleteAsync($"api/statement-drafts/{draftId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -634,7 +634,7 @@ public partial class ApiClient
     /// <returns>Result DTO with updated split information or null when not found/invalid.</returns>
     public async Task<StatementDraftSetEntrySplitDraftResultDto?> StatementDrafts_SetEntrySplitDraftAsync(Guid draftId, Guid entryId, StatementDraftSetSplitDraftRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/statement-drafts/{draftId}/entries/{entryId}/split", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/statement-drafts/{draftId}/entries/{entryId}/split", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
@@ -680,7 +680,7 @@ public partial class ApiClient
     /// <returns>Classification status information or null when the server returns an error.</returns>
     public async Task<StatementDraftsClassifyStatus?> StatementDrafts_StartClassifyAsync(CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync("/api/statement-drafts/classify", content: null, ct);
+        var resp = await _http.PostAsync("api/statement-drafts/classify", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.Accepted)
         {
             return await resp.Content.ReadFromJsonAsync<StatementDraftsClassifyStatus>(cancellationToken: ct);
@@ -700,7 +700,7 @@ public partial class ApiClient
     /// <returns>Classification status DTO or null when the status cannot be retrieved.</returns>
     public async Task<StatementDraftsClassifyStatus?> StatementDrafts_GetClassifyStatusAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/statement-drafts/classify/status", ct);
+        var resp = await _http.GetAsync("api/statement-drafts/classify/status", ct);
         if (!resp.IsSuccessStatusCode) return null;
         return await resp.Content.ReadFromJsonAsync<StatementDraftsClassifyStatus>(cancellationToken: ct);
     }
@@ -716,7 +716,7 @@ public partial class ApiClient
     public async Task<StatementDraftMassBookStatusDto?> StatementDrafts_StartBookAllAsync(bool ignoreWarnings, bool abortOnFirstIssue, bool bookEntriesIndividually, CancellationToken ct = default)
     {
         var payload = new { ignoreWarnings, abortOnFirstIssue, bookEntriesIndividually };
-        var resp = await _http.PostAsJsonAsync("/api/statement-drafts/book-all", payload, ct);
+        var resp = await _http.PostAsJsonAsync("api/statement-drafts/book-all", payload, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.Accepted || resp.IsSuccessStatusCode)
         {
             return await resp.Content.ReadFromJsonAsync<StatementDraftMassBookStatusDto>(cancellationToken: ct);
@@ -732,7 +732,7 @@ public partial class ApiClient
     /// <returns>Mass book status DTO or null when unavailable.</returns>
     public async Task<StatementDraftMassBookStatusDto?> StatementDrafts_GetBookAllStatusAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/statement-drafts/book-all/status", ct);
+        var resp = await _http.GetAsync("api/statement-drafts/book-all/status", ct);
         if (!resp.IsSuccessStatusCode) return null;
         return await resp.Content.ReadFromJsonAsync<StatementDraftMassBookStatusDto>(cancellationToken: ct);
     }
@@ -744,7 +744,7 @@ public partial class ApiClient
     /// <returns>True if the cancel request was accepted by the server; otherwise false.</returns>
     public async Task<bool> StatementDrafts_CancelBookAllAsync(CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync("/api/statement-drafts/book-all/cancel", content: null, ct);
+        var resp = await _http.PostAsync("api/statement-drafts/book-all/cancel", content: null, ct);
         return resp.IsSuccessStatusCode;
     }
 

@@ -248,7 +248,7 @@ public sealed class HomeViewModel : ViewModelBase
         var importAction = new UiRibbonAction(
             Id: "Import",
             Label: localizer["Ribbon_Import"],
-            IconSvg: "<svg><use href='/icons/sprite.svg#upload'/></svg>",
+            IconSvg: "<svg><use href='icons/sprite.svg#upload'/></svg>",
             Size: UiRibbonItemSize.Large,
             Disabled: false,
             Tooltip: null,
@@ -269,7 +269,7 @@ public sealed class HomeViewModel : ViewModelBase
         var kpiAction = new UiRibbonAction(
             Id: "ToggleKpi",
             Label: KpiEditMode ? localizer["Ribbon_Kpi_Done"] : localizer["Ribbon_Kpi_Edit"],
-            IconSvg: KpiEditMode ? "<svg><use href='/icons/sprite.svg#check'/></svg>" : "<svg><use href='/icons/sprite.svg#edit'/></svg>",
+            IconSvg: KpiEditMode ? "<svg><use href='icons/sprite.svg#check'/></svg>" : "<svg><use href='icons/sprite.svg#edit'/></svg>",
             Size: UiRibbonItemSize.Large,
             Disabled: false,
             Tooltip: null,

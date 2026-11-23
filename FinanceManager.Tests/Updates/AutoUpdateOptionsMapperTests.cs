@@ -36,6 +36,25 @@ public sealed class AutoUpdateOptionsMapperTests
         options.HealthTimeoutSeconds.Should().Be(90);
         options.ScheduledInstallTime.Should().Be(new TimeOnly(3, 30));
         options.AllowPrereleaseUpdates.Should().BeTrue();
+        options.EnableAutomaticInstallation.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="AutoUpdateOptions.EnableAutomaticInstallation"/> - which has no dedicated field in
+    /// the settings UI - is turned off when no scheduled install time is configured, even if it was previously on.
+    /// Without this, a cleared schedule would still let a stale "automatic installation allowed" flag linger, and a
+    /// configured schedule time with the flag stuck off would mean the scheduled install silently never runs (the
+    /// exact defect this mapping prevents).
+    /// </summary>
+    [Fact]
+    public void ApplySettings_WhenScheduledInstallTimeIsNull_DisablesAutomaticInstallation()
+    {
+        var options = new AutoUpdateOptions { EnableAutomaticInstallation = true };
+        var settings = new UpdateSettingsDto(true, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, null, null, "updates", 120, true);
+
+        AutoUpdateOptionsMapper.ApplySettings(options, settings);
+
+        options.EnableAutomaticInstallation.Should().BeFalse();
     }
 
     /// <summary>

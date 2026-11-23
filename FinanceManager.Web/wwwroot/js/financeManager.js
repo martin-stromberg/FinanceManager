@@ -2,7 +2,7 @@ window.financeManager = window.financeManager || {};
 
 (function (fm) {
   const loadingBarId = "fm-loading-bar";
-  const keepaliveUrl = "/api/auth/keepalive";
+  const keepaliveUrl = "api/auth/keepalive";
   const keepaliveIntervalMs = 60000;
   const keepaliveForcedIntervalMs = 5000;
   const keepaliveTimeoutMs = 8000;
@@ -136,8 +136,22 @@ window.financeManager = window.financeManager || {};
     stopIfValidationFailed();
   }
 
+  function getBasePath() {
+    const baseEl = document.querySelector("base");
+    if (!baseEl) return "";
+    try {
+      return new URL(baseEl.getAttribute("href"), window.location.origin).pathname.replace(/\/$/, "");
+    } catch (e) {
+      return "";
+    }
+  }
+
   function isPublicKeepalivePath() {
-    const path = (window.location.pathname || "/").toLowerCase();
+    const basePath = getBasePath().toLowerCase();
+    let path = (window.location.pathname || "/").toLowerCase();
+    if (basePath && path.startsWith(basePath)) {
+      path = path.slice(basePath.length) || "/";
+    }
     return path === "/login"
       || path === "/register"
       || path === "/help"

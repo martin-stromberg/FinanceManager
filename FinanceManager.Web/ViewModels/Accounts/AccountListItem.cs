@@ -18,6 +18,6 @@ namespace FinanceManager.Web.ViewModels.Accounts
         /// Returns the relative navigation URL for this account list item used by the UI.
         /// </summary>
         /// <returns>A string containing the relative URL to the account detail page.</returns>
-        public string GetNavigateUrl() => $"/card/accounts/{Id}";
+        public string GetNavigateUrl() => $"card/accounts/{Id}";
     }
 }

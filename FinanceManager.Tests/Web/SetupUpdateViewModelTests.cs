@@ -236,6 +236,29 @@ public sealed class SetupUpdateViewModelTests
     }
 
     /// <summary>
+    /// Verifies that when a check completes without throwing but finds no update (or was blocked/skipped for a
+    /// reason the result message explains), the view model surfaces that message via <c>LastError</c> instead of
+    /// leaving the screen looking exactly as before the click - previously, a non-exceptional "nothing to report"
+    /// result was silently discarded, so clicking "check now" appeared to do nothing at all.
+    /// </summary>
+    [Fact]
+    public async Task CheckAsync_WhenNoUpdateAvailable_SurfacesResultMessage()
+    {
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Updates_GetSettingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdateSettingsDto(false, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, null, null, "updates", 120, false));
+        apiMock.Setup(a => a.Updates_GetStatusAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Status(UpdateStatusKind.NoUpdate));
+        apiMock.Setup(a => a.Updates_CheckAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdateCheckResultDto(false, Status(UpdateStatusKind.NoUpdate), "No update is currently available."));
+        var vm = CreateVm(apiMock.Object);
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+
+        await vm.CheckAsync(TestContext.Current.CancellationToken);
+
+        vm.LastError.Should().Be("No update is currently available.");
+    }
+
+    /// <summary>
     /// Verifies that changing a user-editable settings field (service name) marks the view model dirty.
     /// </summary>
     [Fact]

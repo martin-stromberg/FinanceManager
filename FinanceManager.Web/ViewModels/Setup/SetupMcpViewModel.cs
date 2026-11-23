@@ -209,37 +209,37 @@ public sealed class SetupMcpViewModel : BaseViewModel
             new UiRibbonAction(
                 "McpApprovals",
                 approvalsLabel,
-                "<svg><use href='/icons/sprite.svg#check'/></svg>",
+                "<svg><use href='icons/sprite.svg#check'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,
                 new Func<Task>(() =>
                 {
-                    Navigation.NavigateTo("/card/mcp-approvals");
+                    Navigation.NavigateTo("card/mcp-approvals");
                     return Task.CompletedTask;
                 })),
             new UiRibbonAction(
                 "McpAudit",
                 localizer["Mcp_Ribbon_AuditLog"].Value,
-                "<svg><use href='/icons/sprite.svg#list'/></svg>",
+                "<svg><use href='icons/sprite.svg#list'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
                 new Func<Task>(() =>
                 {
-                    Navigation.NavigateTo("/card/mcp-audit");
+                    Navigation.NavigateTo("card/mcp-audit");
                     return Task.CompletedTask;
                 })),
             new UiRibbonAction(
                 "McpSecurity",
                 localizer["Nav_McpSecurity"].Value,
-                "<svg><use href='/icons/sprite.svg#key'/></svg>",
+                "<svg><use href='icons/sprite.svg#key'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
                 new Func<Task>(() =>
                 {
-                    Navigation.NavigateTo("/card/mcp-security");
+                    Navigation.NavigateTo("card/mcp-security");
                     return Task.CompletedTask;
                 }))
             { Hidden = !IsAdmin }

@@ -161,11 +161,11 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
                 new UiRibbonAction(
                     "Back",
                     localizer["Ribbon_Back"].Value,
-                    "<svg><use href='/icons/sprite.svg#back'/></svg>",
+                    "<svg><use href='icons/sprite.svg#back'/></svg>",
                     UiRibbonItemSize.Large,
                     false,
                     null,
-                    () => { _nav.NavigateTo($"/card/securities/{SecurityId}"); return Task.CompletedTask; }
+                    () => { _nav.NavigateTo($"card/securities/{SecurityId}"); return Task.CompletedTask; }
                 )
             }),
 
@@ -174,7 +174,7 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
                 new UiRibbonAction(
                     "ImportPrices",
                     localizer["Ribbon_Import"].Value,
-                    "<svg><use href='/icons/sprite.svg#upload'/></svg>",
+                    "<svg><use href='icons/sprite.svg#upload'/></svg>",
                     UiRibbonItemSize.Small,
                     SecurityId == Guid.Empty,
                     null,
@@ -183,7 +183,7 @@ public sealed class SecurityPricesListViewModel : BaseListViewModel<SecurityPric
                 new UiRibbonAction(
                     "BackfillPrices",
                     localizer["Ribbon_Backfill"].Value,
-                    "<svg><use href='/icons/sprite.svg#postings'/></svg>",
+                    "<svg><use href='icons/sprite.svg#postings'/></svg>",
                     UiRibbonItemSize.Small,
                     SecurityId == Guid.Empty,
                     null,

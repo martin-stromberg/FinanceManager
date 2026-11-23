@@ -66,7 +66,7 @@ public sealed class HelpContentRendererTests
         Assert.Contains("<table", html);
         Assert.Contains("href=\"https://example.test\"", html);
         Assert.Contains("rel=\"noopener noreferrer\"", html);
-        Assert.Contains("href=\"/help/view/f001-konten\"", html);
+        Assert.Contains("href=\"help/view/f001-konten\"", html);
     }
 
     /// <summary>
@@ -80,9 +80,9 @@ public sealed class HelpContentRendererTests
 
         var html = _renderer.RenderMarkdownToHtml(markdown, "index.md");
 
-        Assert.Contains("href=\"/help/view/bestandsaufnahme\"", html);
-        Assert.Contains("href=\"/help/view/budgetplanung\"", html);
-        Assert.Contains("href=\"/help/view/kontoauszuege-und-import\"", html);
+        Assert.Contains("href=\"help/view/bestandsaufnahme\"", html);
+        Assert.Contains("href=\"help/view/budgetplanung\"", html);
+        Assert.Contains("href=\"help/view/kontoauszuege-und-import\"", html);
         Assert.DoesNotContain("href=\"budgetplanung/index.md\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -98,9 +98,9 @@ public sealed class HelpContentRendererTests
 
         var html = _renderer.RenderMarkdownToHtml(markdown, "budgetplanung/index.md");
 
-        Assert.Contains("href=\"/help/view/budgetplanung/beschreibung\"", html);
-        Assert.Contains("href=\"/help/view/budgetplanung/api\"", html);
-        Assert.Contains("href=\"/help/view/budgetplanung/datenmodell\"", html);
+        Assert.Contains("href=\"help/view/budgetplanung/beschreibung\"", html);
+        Assert.Contains("href=\"help/view/budgetplanung/api\"", html);
+        Assert.Contains("href=\"help/view/budgetplanung/datenmodell\"", html);
         Assert.DoesNotContain("href=\"beschreibung.md\"", html, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -115,7 +115,7 @@ public sealed class HelpContentRendererTests
 
         var html = _renderer.RenderMarkdownToHtml(markdown, "budgetplanung/beschreibung.md");
 
-        Assert.Contains("href=\"/help/view/budgetplanung\"", html);
+        Assert.Contains("href=\"help/view/budgetplanung\"", html);
         Assert.DoesNotContain("href=\"index.md\"", html, StringComparison.OrdinalIgnoreCase);
     }
 

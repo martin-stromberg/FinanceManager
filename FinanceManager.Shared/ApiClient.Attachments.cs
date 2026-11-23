@@ -21,7 +21,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">When the HTTP request fails.</exception>
     public async Task<PageResult<AttachmentDto>> Attachments_ListAsync(short entityKind, Guid entityId, int skip = 0, int take = 50, Guid? categoryId = null, bool? isUrl = null, string? q = null, CancellationToken ct = default)
     {
-        var url = $"/api/attachments/{entityKind}/{entityId}?skip={skip}&take={take}";
+        var url = $"api/attachments/{entityKind}/{entityId}?skip={skip}&take={take}";
         if (categoryId.HasValue) url += $"&categoryId={categoryId}";
         if (isUrl.HasValue) url += isUrl.Value ? "&isUrl=true" : "&isUrl=false";
         if (!string.IsNullOrWhiteSpace(q)) url += $"&q={Uri.EscapeDataString(q)}";
@@ -50,7 +50,7 @@ public partial class ApiClient
         part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
         content.Add(part, "file", fileName);
         if (categoryId.HasValue) content.Add(new StringContent(categoryId.Value.ToString()), "categoryId");
-        var url = $"/api/attachments/{entityKind}/{entityId}";
+        var url = $"api/attachments/{entityKind}/{entityId}";
         if (role.HasValue) url += $"?role={role.Value}";
         var resp = await _http.PostAsync(url, content, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
@@ -69,7 +69,7 @@ public partial class ApiClient
     public async Task<AttachmentDto> Attachments_CreateUrlAsync(short entityKind, Guid entityId, string url, Guid? categoryId = null, CancellationToken ct = default)
     {
         var payload = new { file = (string?)null, categoryId, url };
-        var resp = await _http.PostAsJsonAsync($"/api/attachments/{entityKind}/{entityId}", payload, ct);
+        var resp = await _http.PostAsJsonAsync($"api/attachments/{entityKind}/{entityId}", payload, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AttachmentDto>(cancellationToken: ct))!;
     }
@@ -82,7 +82,7 @@ public partial class ApiClient
     /// <returns>True if deleted; false when not found.</returns>
     public async Task<bool> Attachments_DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/attachments/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/attachments/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -99,7 +99,7 @@ public partial class ApiClient
     public async Task<bool> Attachments_UpdateCoreAsync(Guid id, string? fileName, Guid? categoryId, CancellationToken ct = default)
     {
         var req = new AttachmentUpdateCoreRequest(fileName, categoryId);
-        var resp = await _http.PutAsJsonAsync($"/api/attachments/{id}", req, ct);
+        var resp = await _http.PutAsJsonAsync($"api/attachments/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -115,7 +115,7 @@ public partial class ApiClient
     public async Task<bool> Attachments_UpdateCategoryAsync(Guid id, Guid? categoryId, CancellationToken ct = default)
     {
         var req = new AttachmentUpdateCategoryRequest(categoryId);
-        var resp = await _http.PutAsJsonAsync($"/api/attachments/{id}/category", req, ct);
+        var resp = await _http.PutAsJsonAsync($"api/attachments/{id}/category", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -128,7 +128,7 @@ public partial class ApiClient
     /// <returns>List of <see cref="AttachmentCategoryDto"/> objects.</returns>
     public async Task<IReadOnlyList<AttachmentCategoryDto>> Attachments_ListCategoriesAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/attachments/categories", ct);
+        var resp = await _http.GetAsync("api/attachments/categories", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<AttachmentCategoryDto>>(cancellationToken: ct) ?? Array.Empty<AttachmentCategoryDto>();
     }
@@ -142,7 +142,7 @@ public partial class ApiClient
     public async Task<AttachmentCategoryDto> Attachments_CreateCategoryAsync(string name, CancellationToken ct = default)
     {
         var req = new AttachmentCreateCategoryRequest(name);
-        var resp = await _http.PostAsJsonAsync("/api/attachments/categories", req, ct);
+        var resp = await _http.PostAsJsonAsync("api/attachments/categories", req, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<AttachmentCategoryDto>(cancellationToken: ct))!;
     }
@@ -157,7 +157,7 @@ public partial class ApiClient
     public async Task<AttachmentCategoryDto?> Attachments_UpdateCategoryNameAsync(Guid id, string name, CancellationToken ct = default)
     {
         var req = new AttachmentUpdateCategoryNameRequest(name);
-        var resp = await _http.PutAsJsonAsync($"/api/attachments/categories/{id}", req, ct);
+        var resp = await _http.PutAsJsonAsync($"api/attachments/categories/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AttachmentCategoryDto>(cancellationToken: ct);
@@ -171,7 +171,7 @@ public partial class ApiClient
     /// <returns>True when deleted; false when not found.</returns>
     public async Task<bool> Attachments_DeleteCategoryAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/attachments/categories/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/attachments/categories/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -186,7 +186,7 @@ public partial class ApiClient
     /// <returns>Download token DTO or null when not found.</returns>
     public async Task<AttachmentDownloadTokenDto?> Attachments_CreateDownloadTokenAsync(Guid id, int validSeconds = 60, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/attachments/{id}/download-token?validSeconds={validSeconds}", content: null, ct);
+        var resp = await _http.PostAsync($"api/attachments/{id}/download-token?validSeconds={validSeconds}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<AttachmentDownloadTokenDto>(cancellationToken: ct);

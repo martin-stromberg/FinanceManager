@@ -21,5 +21,5 @@ public sealed record BudgetRuleListItem(
     string? PurposePattern = null) : IListItemNavigation
 {
     /// <inheritdoc />
-    public string GetNavigateUrl() => $"/card/budget/rules/{Id}";
+    public string GetNavigateUrl() => $"card/budget/rules/{Id}";
 }

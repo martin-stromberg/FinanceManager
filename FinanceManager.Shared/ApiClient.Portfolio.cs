@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<PortfolioAnalysisReportDto> Portfolio_GetAnalysisReportAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/portfolio/analysis-report", ct);
+        var resp = await _http.GetAsync("api/portfolio/analysis-report", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<PortfolioAnalysisReportDto>(cancellationToken: ct))!;
     }
@@ -27,7 +27,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<PortfolioKpiConfigurationDto> Portfolio_GetKpiConfigurationAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/portfolio/kpi-configuration", ct);
+        var resp = await _http.GetAsync("api/portfolio/kpi-configuration", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<PortfolioKpiConfigurationDto>(cancellationToken: ct))!;
     }
@@ -42,7 +42,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than a validation (400) response.</exception>
     public async Task<PortfolioKpiConfigurationDto?> Portfolio_SaveKpiConfigurationAsync(PortfolioKpiConfigurationRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/portfolio/kpi-configuration", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/portfolio/kpi-configuration", request, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
             await EnsureSuccessOrSetErrorAsync(resp);
@@ -60,7 +60,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task Portfolio_ResetCacheAsync(CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync("/api/portfolio/cache/reset", content: null, ct);
+        var resp = await _http.PostAsync("api/portfolio/cache/reset", content: null, ct);
         resp.EnsureSuccessStatusCode();
     }
 

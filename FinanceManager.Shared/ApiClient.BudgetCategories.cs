@@ -28,7 +28,7 @@ public partial class ApiClient
         }
 
         var qs = parts.Count > 0 ? ("?" + string.Join('&', parts)) : string.Empty;
-        var resp = await _http.GetAsync($"/api/budget/categories{qs}", ct);
+        var resp = await _http.GetAsync($"api/budget/categories{qs}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BudgetCategoryOverviewDto>>(cancellationToken: ct) ?? Array.Empty<BudgetCategoryOverviewDto>();
     }
@@ -41,7 +41,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetCategoryDto?> Budgets_GetCategoryAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/budget/categories/{id}", ct);
+        var resp = await _http.GetAsync($"api/budget/categories/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BudgetCategoryDto>(cancellationToken: ct);
@@ -55,7 +55,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetCategoryDto> Budgets_CreateCategoryAsync(BudgetCategoryCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/categories", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/categories", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetCategoryDto>(cancellationToken: ct))!;
     }
@@ -69,7 +69,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetCategoryDto?> Budgets_UpdateCategoryAsync(Guid id, BudgetCategoryUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/budget/categories/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/budget/categories/{id}", request, ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await Budgets_GetCategoryAsync(id, ct);
@@ -83,7 +83,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Budgets_DeleteCategoryAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/budget/categories/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/budget/categories/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;

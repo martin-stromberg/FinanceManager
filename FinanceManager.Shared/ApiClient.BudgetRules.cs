@@ -15,7 +15,7 @@ public partial class ApiClient
     /// <returns>The created budget rule.</returns>
     public async Task<BudgetRuleDto> BudgetRules_CreateAsync(BudgetRuleCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/rules", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/rules", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetRuleDto>(cancellationToken: ct))!;
     }

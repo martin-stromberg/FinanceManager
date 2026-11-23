@@ -16,7 +16,7 @@ public partial class ApiClient
     /// <returns>Authentication result.</returns>
     public async Task<AuthOkResponse> Auth_LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/auth/login", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/auth/login", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         CaptureAuthCookieAsBearer(resp);
         return (await resp.Content.ReadFromJsonAsync<AuthOkResponse>(cancellationToken: ct))!;
@@ -30,7 +30,7 @@ public partial class ApiClient
     /// <returns>Authentication result for the new user.</returns>
     public async Task<AuthOkResponse> Auth_RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/auth/register", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/auth/register", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         CaptureAuthCookieAsBearer(resp);
         return (await resp.Content.ReadFromJsonAsync<AuthOkResponse>(cancellationToken: ct))!;
@@ -43,7 +43,7 @@ public partial class ApiClient
     /// <returns>True on successful logout.</returns>
     public async Task<bool> Auth_LogoutAsync(CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync("/api/auth/logout", content: null, ct);
+        var resp = await _http.PostAsync("api/auth/logout", content: null, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         // The mirrored bearer credential must die with the cookie session: without clearing it, a
         // still-valid JWT would keep authorizing unsafe calls after logout.

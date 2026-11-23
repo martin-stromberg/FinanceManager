@@ -131,22 +131,22 @@ public sealed class PostingsCardViewModel : BaseCardViewModel<(string Key, strin
         };
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back", kindLower); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back", kindLower); return Task.CompletedTask; }) { MobileShortcut = true }
         });
 
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonAction("OpenAccount", localizer["Ribbon_OpenAccount"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.AccountId == null, null, () => { RequestOpenLinkedCard("accounts", Posting?.AccountId); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenContact", localizer["Ribbon_OpenContact"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.ContactId == null, null, () => { RequestOpenLinkedCard("contacts", Posting?.ContactId); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SavingsPlanId == null, null, () => { RequestOpenLinkedCard("savings-plans", Posting?.SavingsPlanId); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='/icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SecurityId == null, null, () => { RequestOpenLinkedCard("securities", Posting?.SecurityId); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Posting == null, null, () => { RequestOpenAttachments(AttachmentEntityKind.Posting, Id); return Task.CompletedTask; })
+            new UiRibbonAction("OpenAccount", localizer["Ribbon_OpenAccount"].Value, "<svg><use href='icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.AccountId == null, null, () => { RequestOpenLinkedCard("accounts", Posting?.AccountId); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenContact", localizer["Ribbon_OpenContact"].Value, "<svg><use href='icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.ContactId == null, null, () => { RequestOpenLinkedCard("contacts", Posting?.ContactId); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenSavingsPlan", localizer["Ribbon_OpenSavingsPlan"].Value, "<svg><use href='icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SavingsPlanId == null, null, () => { RequestOpenLinkedCard("savings-plans", Posting?.SavingsPlanId); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenSecurity", localizer["Ribbon_OpenSecurity"].Value, "<svg><use href='icons/sprite.svg#external'/></svg>", UiRibbonItemSize.Small, Posting?.SecurityId == null, null, () => { RequestOpenLinkedCard("securities", Posting?.SecurityId); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Posting == null, null, () => { RequestOpenAttachments(AttachmentEntityKind.Posting, Id); return Task.CompletedTask; })
         });
 
         var actionsDisabled = Posting?.IsReversed == true || Posting?.IsReversal == true;
         var actions = new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, new List<UiRibbonAction>
         {
-            new UiRibbonAction("Reverse", localizer["Ribbon_Reverse"].Value, "<svg><use href='/icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Large, actionsDisabled, null, async () =>
+            new UiRibbonAction("Reverse", localizer["Ribbon_Reverse"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Large, actionsDisabled, null, async () =>
             {
                 await ReverseAsync();
             })

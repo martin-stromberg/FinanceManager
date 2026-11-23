@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<PostingServiceDto?> Postings_GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/postings/{id}", ct);
+        var resp = await _http.GetAsync($"api/postings/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<PostingServiceDto>(cancellationToken: ct);
@@ -33,7 +33,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<PostingServiceDto>> Postings_GetAccountAsync(Guid accountId, int skip = 0, int take = 50, string? q = null, DateTime? from = null, DateTime? to = null, CancellationToken ct = default)
     {
-        var url = $"/api/postings/account/{accountId}?skip={skip}&take={take}";
+        var url = $"api/postings/account/{accountId}?skip={skip}&take={take}";
         if (!string.IsNullOrWhiteSpace(q)) url += $"&q={Uri.EscapeDataString(q)}";
         if (from.HasValue) url += $"&from={from.Value:O}";
         if (to.HasValue) url += $"&to={to.Value:O}";
@@ -56,7 +56,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<PostingServiceDto>> Postings_GetContactAsync(Guid contactId, int skip = 0, int take = 50, string? q = null, DateTime? from = null, DateTime? to = null, CancellationToken ct = default)
     {
-        var url = $"/api/postings/contact/{contactId}?skip={skip}&take={take}";
+        var url = $"api/postings/contact/{contactId}?skip={skip}&take={take}";
         if (!string.IsNullOrWhiteSpace(q)) url += $"&q={Uri.EscapeDataString(q)}";
         if (from.HasValue) url += $"&from={from.Value:O}";
         if (to.HasValue) url += $"&to={to.Value:O}";
@@ -79,7 +79,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<PostingServiceDto>> Postings_GetSavingsPlanAsync(Guid planId, int skip = 0, int take = 50, DateTime? from = null, DateTime? to = null, string? q = null, CancellationToken ct = default)
     {
-        var url = $"/api/postings/savings-plan/{planId}?skip={skip}&take={take}";
+        var url = $"api/postings/savings-plan/{planId}?skip={skip}&take={take}";
         if (!string.IsNullOrWhiteSpace(q)) url += $"&q={Uri.EscapeDataString(q)}";
         if (from.HasValue) url += $"&from={from.Value:O}";
         if (to.HasValue) url += $"&to={to.Value:O}";
@@ -101,7 +101,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<PostingServiceDto>> Postings_GetSecurityAsync(Guid securityId, int skip = 0, int take = 50, DateTime? from = null, DateTime? to = null, CancellationToken ct = default)
     {
-        var url = $"/api/postings/security/{securityId}?skip={skip}&take={take}";
+        var url = $"api/postings/security/{securityId}?skip={skip}&take={take}";
         if (from.HasValue) url += $"&from={from.Value:O}";
         if (to.HasValue) url += $"&to={to.Value:O}";
         var resp = await _http.GetAsync(url, ct);
@@ -118,7 +118,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<GroupLinksDto?> Postings_GetGroupLinksAsync(Guid groupId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/postings/group/{groupId}", ct);
+        var resp = await _http.GetAsync($"api/postings/group/{groupId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         resp.EnsureSuccessStatusCode();
@@ -133,7 +133,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ReversalResultDto?> Postings_ReverseAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/postings/{id}/reverse", null, ct);
+        var resp = await _http.PostAsync($"api/postings/{id}/reverse", null, ct);
         if (!resp.IsSuccessStatusCode)
         {
             try { await EnsureSuccessOrSetErrorAsync(resp); } catch { }
@@ -150,7 +150,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ReversalValidationDto?> Postings_ValidateReversalAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/postings/{id}/validate-reversal", ct);
+        var resp = await _http.GetAsync($"api/postings/{id}/validate-reversal", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ReversalValidationDto>(cancellationToken: ct);
     }

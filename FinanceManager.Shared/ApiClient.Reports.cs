@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <returns>Aggregation result.</returns>
     public async Task<ReportAggregationResult> Reports_QueryAggregatesAsync(ReportAggregatesQueryRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/report-aggregates", req, ct);
+        var resp = await _http.PostAsJsonAsync("api/report-aggregates", req, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<ReportAggregationResult>(cancellationToken: ct))!;
     }
@@ -27,7 +27,7 @@ public partial class ApiClient
     /// <returns>The postings result.</returns>
     public async Task<ReportPostingsResult> Reports_QueryPostingsAsync(ReportPostingsQueryRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/report-postings", req, ct);
+        var resp = await _http.PostAsJsonAsync("api/report-postings", req, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<ReportPostingsResult>(cancellationToken: ct))!;
     }
@@ -39,7 +39,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<ReportFavoriteDto>> Reports_ListFavoritesAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/report-favorites", ct);
+        var resp = await _http.GetAsync("api/report-favorites", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<ReportFavoriteDto>>(cancellationToken: ct) ?? Array.Empty<ReportFavoriteDto>();
     }
@@ -52,7 +52,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ReportFavoriteDto?> Reports_GetFavoriteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/report-favorites/{id}", ct);
+        var resp = await _http.GetAsync($"api/report-favorites/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ReportFavoriteDto>(cancellationToken: ct);
@@ -66,7 +66,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ReportFavoriteDto> Reports_CreateFavoriteAsync(ReportFavoriteCreateApiRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/report-favorites", req, ct);
+        var resp = await _http.PostAsJsonAsync("api/report-favorites", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             var err = await resp.Content.ReadAsStringAsync(ct);
@@ -85,7 +85,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ReportFavoriteDto?> Reports_UpdateFavoriteAsync(Guid id, ReportFavoriteUpdateApiRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/report-favorites/{id}", req, ct);
+        var resp = await _http.PutAsJsonAsync($"api/report-favorites/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
@@ -105,7 +105,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Reports_DeleteFavoriteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/report-favorites/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/report-favorites/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;
@@ -119,7 +119,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<ReportSuppressedExpectationDto>> Reports_ListSuppressedExpectationsAsync(Guid favoriteId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/report-favorites/{favoriteId}/suppressed-expectations", ct);
+        var resp = await _http.GetAsync($"api/report-favorites/{favoriteId}/suppressed-expectations", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return Array.Empty<ReportSuppressedExpectationDto>();
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<ReportSuppressedExpectationDto>>(cancellationToken: ct) ?? Array.Empty<ReportSuppressedExpectationDto>();
@@ -134,7 +134,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<ReportSuppressedExpectationDto?> Reports_SuppressExpectationAsync(Guid favoriteId, ReportSuppressedExpectationRequest req, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync($"/api/report-favorites/{favoriteId}/suppressed-expectations", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/report-favorites/{favoriteId}/suppressed-expectations", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<ReportSuppressedExpectationDto>(cancellationToken: ct);
@@ -149,7 +149,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Reports_UnsuppressExpectationAsync(Guid favoriteId, Guid suppressionId, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/report-favorites/{favoriteId}/suppressed-expectations/{suppressionId}", ct);
+        var resp = await _http.DeleteAsync($"api/report-favorites/{favoriteId}/suppressed-expectations/{suppressionId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;

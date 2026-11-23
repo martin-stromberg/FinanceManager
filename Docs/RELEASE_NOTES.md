@@ -2,6 +2,7 @@
 
 ## Important Notes Before Update
 
+- Release tooling now requires Node.js 26.x (`engines.node >= 26.13`, needed by semantic-release 26): `npm ci` and the release/version scripts fail on older Node versions. This only matters for release-near tasks run locally or for operating a fork's release pipeline — updating and running the application itself is unaffected (issue #574).
 - The update adds the database check constraint `CK_Postings_HasReference`: every posting must reference an account, contact, savings plan or security. If an existing database contained postings without any reference, the migration — and thus the app start — would fail deliberately; such rows cannot be produced by the application, but should the update abort for this reason, the orphaned postings must be removed manually first (issue #497).
 - New opt-in feature: the MCP server (`/mcp`) lets external AI assistants access the owner's financial data through scoped, audited tools. It ships **disabled by default** — an administrator enables it anytime in the admin security settings (`/card/mcp-security`, database-stored `Enabled`/`WriteAccessEnabled` switches). Existing installations keep working unchanged.
 - The MCP settings are stored in the database, not in `appsettings.json`; write access has a separate opt-in kill switch so an admin can enable read-only MCP access first.
@@ -12,6 +13,11 @@
 
 ## What's New
 
+- New help documentation: complete server installation guide for Linux with systemd — from a bare system to a running service — covering both standalone operation via HTTP on port 5003 and hosting behind a reverse proxy with TLS termination, PathBase and forwarded headers (issue #558).
+- Bugfix: the app now works correctly when hosted under a path base behind a reverse proxy — a codebase-wide sweep made every remaining domain-absolute URL PathBase-relative (auth/login/logout/profile fetch calls in `auth.js`, the keepalive request, help-search result links, the attachments antiforgery fetch, all `ApiClient` calls, controller `Location` headers, dynamic JS module imports, `NavigationManager` targets and icon/asset references); URL parsing switched from `Uri.AbsolutePath` to `ToBaseRelativePath`, and the server-side self-API `HttpClient` no longer drops the path base (issue #557).
+- Bugfix: login and register redirects no longer resolve outside the app's path base (issue #556).
+- Bugfix: logo and manifest icon paths are relative so they load under a reverse-proxy path base (issue #554).
+- Bugfix: asset and navigation paths are relative so the app works behind a reverse-proxy path base — root-absolute `NavigateTo` targets, SVG icon hrefs and `RenderTreeBuilder` hrefs converted (issue #552).
 - Bugfix: the reports "bank posting type" filter now also applies to the projection ("Hochrechnung") and its expected postings, is persisted when saving or updating report favorites, is applied by the home KPI tiles, and treats postings of linked savings-plan accounts consistently in the postings drill-down.
 - Reports: bank reports gain a "bank posting type" filter (Inflow/Outflow/Interest/Tax) analogous to the security subtype filter — stored in report favorites and backups and evaluated identically by the aggregate and the postings drill-down endpoints; MCP exposes it as `bankPostingTypes` (`fm_reporting_aggregate`, `fm_reports_configuration_manage`) (issue #540).
 - Reports: report favorites now store the dashboard chart — the chart type (history over time, breakdown as bar chart, or pie chart that groups the smallest values into "Other" with at most ten segments) and its position above or below the table; existing favorites and old backups keep the history chart above the table (issue #540).
@@ -70,6 +76,7 @@
 
 ## Wichtige Hinweise vor dem Update
 
+- Das Release-Tooling setzt jetzt Node.js 26.x voraus (`engines.node >= 26.13`, benötigt von semantic-release 26): `npm ci` und die Release-/Versionsskripte schlagen auf älteren Node-Versionen fehl. Relevant nur für lokal ausgeführte release-nahe Aufgaben bzw. den Betrieb einer eigenen Release-Pipeline — Update und Betrieb der Anwendung selbst sind unverändert (Issue #574).
 - Das Update führt den Datenbank-Check-Constraint `CK_Postings_HasReference` ein: Jede Buchung muss ein Konto, einen Kontakt, einen Sparplan oder ein Wertpapier referenzieren. Enthielte eine Bestandsdatenbank Buchungen ganz ohne Referenz, würde die Migration — und damit der App-Start — bewusst fehlschlagen; die Anwendung kann solche Zeilen nicht erzeugen, sollte das Update dennoch daran scheitern, sind die verwaisten Buchungen zuvor manuell zu entfernen (Issue #497).
 - Neue Opt-in-Funktion: Der MCP-Server (`/mcp`) gibt externen KI-Assistenten über abgestufte, protokollierte Werkzeuge Zugriff auf die Finanzdaten des jeweiligen Besitzers. Er ist **standardmäßig deaktiviert** — ein Administrator aktiviert ihn jederzeit in den Admin-Sicherheitseinstellungen (`/card/mcp-security`, datenbankgestützte Schalter `Enabled`/`WriteAccessEnabled`). Bestehende Installationen bleiben unverändert funktionsfähig.
 - Die MCP-Einstellungen liegen in der Datenbank, nicht in `appsettings.json`; der Schreibzugriff hat einen eigenen Opt-in-Schalter, sodass zunächst reiner Lesezugriff freigegeben werden kann.
@@ -79,6 +86,11 @@
 
 ## Neuerungen
 
+- Neue Hilfe-Dokumentation: vollständige Server-Installationsanleitung für Linux mit systemd — vom leeren System bis zum laufenden Dienst — für den eigenständigen Betrieb per HTTP auf Port 5003 sowie den Betrieb hinter einem Reverse-Proxy mit TLS-Terminierung, PathBase und Forwarded-Headers (Issue #558).
+- Bugfix: Die Anwendung funktioniert jetzt korrekt unter einer PathBase hinter einem Reverse-Proxy — ein codeweiter Sweep hat alle verbliebenen domänen-absoluten URLs PathBase-relativ gemacht (Auth-/Login-/Logout-/Profil-Fetch-Aufrufe in `auth.js`, der Keepalive-Request, Hilfe-Suchlinks, der Antiforgery-Abruf der Anhänge, sämtliche `ApiClient`-Aufrufe, `Location`-Header der Controller, dynamische JS-Modul-Imports, `NavigationManager`-Ziele und Icon-/Asset-Referenzen); die URL-Auswertung nutzt jetzt `ToBaseRelativePath` statt `Uri.AbsolutePath`, und der serverseitige Self-API-`HttpClient` lässt die PathBase nicht mehr fallen (Issue #557).
+- Bugfix: Login- und Registrierungs-Weiterleitungen verlassen die PathBase der Anwendung nicht mehr (Issue #556).
+- Bugfix: Logo- und Manifest-Icon-Pfade sind relativ und laden damit auch unter einer Reverse-Proxy-PathBase (Issue #554).
+- Bugfix: Asset- und Navigationspfade sind relativ, sodass die Anwendung hinter einer Reverse-Proxy-PathBase funktioniert — root-absolute `NavigateTo`-Ziele, SVG-Icon-Hrefs und `RenderTreeBuilder`-Hrefs wurden umgestellt (Issue #552).
 - Bugfix: Der Berichtsfilter „Bankpostenart“ wirkt jetzt auch auf die Hochrechnung und deren erwartete Posten, bleibt beim Speichern und Aktualisieren von Berichtsfavoriten erhalten, wird von den KPI-Kacheln der Startseite angewendet und behandelt Posten verknüpfter Sparplan-Konten in der Posteneinsicht konsistent.
 - Berichte: Bankberichte erhalten einen Filter „Bankpostenart“ (Eingang/Ausgang/Zinsen/Steuer) analog zum Wertpapier-Subtypfilter — in Berichtsfavoriten und Backups gespeichert und vom Aggregat- sowie dem Posten-Drilldown-Endpunkt identisch ausgewertet; für MCP als `bankPostingTypes` verfügbar (`fm_reporting_aggregate`, `fm_reports_configuration_manage`) (Issue #540).
 - Berichte: Berichtsfavoriten speichern jetzt das Dashboard-Diagramm — den Diagrammtyp (Historie über die Zeit, Aufteilung als Balkendiagramm oder Kreisdiagramm, das die kleinsten Werte zu „Sonstiges“ gruppiert, maximal zehn Segmente) und seine Position über oder unter der Tabelle; bestehende Favoriten und alte Backups verwenden weiterhin die Historie über der Tabelle (Issue #540).

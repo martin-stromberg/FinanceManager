@@ -470,7 +470,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 new UiRibbonAction(
                     "Save",
                     localizer["Ribbon_Save"].Value,
-                    "<svg><use href='/icons/sprite.svg#save'/></svg>",
+                    "<svg><use href='icons/sprite.svg#save'/></svg>",
                     UiRibbonItemSize.Large,
                     Saving || !HasPendingChanges,
                     null,
@@ -480,7 +480,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 new UiRibbonAction(
                     "Reset",
                     localizer["Ribbon_Reset"].Value,
-                    "<svg><use href='/icons/sprite.svg#undo'/></svg>",
+                    "<svg><use href='icons/sprite.svg#undo'/></svg>",
                     UiRibbonItemSize.Small,
                     Saving || !HasPendingChanges,
                     null,
@@ -490,7 +490,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 new UiRibbonAction(
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,
-                    "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                    "<svg><use href='icons/sprite.svg#refresh'/></svg>",
                     UiRibbonItemSize.Small,
                     false,
                     localizer["Hint_RebuildAggregates"].Value,
@@ -505,7 +505,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                 new UiRibbonAction(
                     "ResetReportCache",
                     localizer["Ribbon_ResetReportCache"].Value,
-                    "<svg><use href='/icons/sprite.svg#delete'/></svg>",
+                    "<svg><use href='icons/sprite.svg#delete'/></svg>",
                     UiRibbonItemSize.Small,
                     false,
                     localizer["Hint_ResetReportCache"].Value,

@@ -348,9 +348,9 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         // Navigation group
         var navItems = new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })) { MobileShortcut = true },
-            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='/icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.PrevInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Prev"); return Task.CompletedTask; })) { MobileShortcut = true },
-            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='/icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.NextInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Next"); return Task.CompletedTask; })) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })) { MobileShortcut = true },
+            new UiRibbonAction("Prev", localizer["Ribbon_Prev"].Value, "<svg><use href='icons/sprite.svg#chevron-left'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.PrevInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Prev"); return Task.CompletedTask; })) { MobileShortcut = true },
+            new UiRibbonAction("Next", localizer["Ribbon_Next"].Value, "<svg><use href='icons/sprite.svg#chevron-right'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.NextInUpload == null, null, new Func<Task>(() => { RaiseUiActionRequested("Next"); return Task.CompletedTask; })) { MobileShortcut = true }
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navItems));
 
@@ -359,12 +359,12 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         var manageItems = new List<UiRibbonAction>
         {
             // Save should be enabled when there are pending changes (including create-mode selections)
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })) { MobileShortcut = true },
-            new UiRibbonAction("Add", localizer["Ribbon_NewEntry"].Value, "<svg><use href='/icons/sprite.svg#new'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { Navigation.NavigateTo($"/card/statement-drafts/entries/new?draftId={DraftId}"); return Task.CompletedTask; })),
-            new UiRibbonAction("Book", localizer["Ribbon_Book"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await BookAsync(); })),
-            new UiRibbonAction("DeleteDraft", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })),
-            new UiRibbonAction("Classify", localizer["Ribbon_Reclassify"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await ClassifyAsync(); })),
-            new UiRibbonAction("Validate", localizer["Ribbon_Validate"].Value, "<svg><use href='/icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await ValidateAsync(); }))
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, new Func<Task>(async () => { await SaveAsync(); })) { MobileShortcut = true },
+            new UiRibbonAction("Add", localizer["Ribbon_NewEntry"].Value, "<svg><use href='icons/sprite.svg#new'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { Navigation.NavigateTo($"card/statement-drafts/entries/new?draftId={DraftId}"); return Task.CompletedTask; })),
+            new UiRibbonAction("Book", localizer["Ribbon_Book"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await BookAsync(); })),
+            new UiRibbonAction("DeleteDraft", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })),
+            new UiRibbonAction("Classify", localizer["Ribbon_Reclassify"].Value, "<svg><use href='icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await ClassifyAsync(); })),
+            new UiRibbonAction("Validate", localizer["Ribbon_Validate"].Value, "<svg><use href='icons/sprite.svg#check'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await ValidateAsync(); }))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manageItems));
 
@@ -372,7 +372,7 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         var quickEditItems = new List<UiRibbonAction>
         {
             // QuickEdit toggle — hidden while quick-edit is already active (save/cancel are shown instead)
-            new UiRibbonAction("ToggleQuickEdit", localizer["Ribbon_QuickEdit"].Value, "<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(async () =>
+            new UiRibbonAction("ToggleQuickEdit", localizer["Ribbon_QuickEdit"].Value, "<svg><use href='icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, Draft == null, null, new Func<Task>(async () =>
             {
                 if (EmbeddedList is StatementDraftEntriesListViewModel evm)
                 {
@@ -387,12 +387,12 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
                     RaiseStateChanged();
                 }
             })) { Hidden = EmbeddedList is StatementDraftEntriesListViewModel toggleEvm && toggleEvm.IsQuickEditActive },
-            new UiRibbonAction("SaveQuickEdit", localizer["Ribbon_SaveQuickEdit"].Value, (Loading ? "<svg class='spin'><use href='/icons/sprite.svg#spinner'/></svg>" : "<svg><use href='/icons/sprite.svg#save'/></svg>"), UiRibbonItemSize.Small,
+            new UiRibbonAction("SaveQuickEdit", localizer["Ribbon_SaveQuickEdit"].Value, (Loading ? "<svg class='spin'><use href='icons/sprite.svg#spinner'/></svg>" : "<svg><use href='icons/sprite.svg#save'/></svg>"), UiRibbonItemSize.Small,
                 // compute Disabled dynamically using embedded list state
                 !(EmbeddedList is StatementDraftEntriesListViewModel sevm && sevm.HasPendingQuickEditChanges() && sevm.QuickEditRowsAreValid() && !Loading),
                 null, new Func<Task>(async ()
                     => { await SaveQuickEditAsync(); })) { FileCallback = null, Hidden = !(EmbeddedList is StatementDraftEntriesListViewModel saveEvm && saveEvm.IsQuickEditActive) },
-            new UiRibbonAction("CancelQuickEdit", localizer["Ribbon_CancelQuickEdit"].Value, "<svg><use href='/icons/sprite.svg#close'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await CancelQuickEditAsync(); })) { Hidden = !(EmbeddedList is StatementDraftEntriesListViewModel cancelEvm && cancelEvm.IsQuickEditActive) }
+            new UiRibbonAction("CancelQuickEdit", localizer["Ribbon_CancelQuickEdit"].Value, "<svg><use href='icons/sprite.svg#close'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(async () => { await CancelQuickEditAsync(); })) { Hidden = !(EmbeddedList is StatementDraftEntriesListViewModel cancelEvm && cancelEvm.IsQuickEditActive) }
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_QuickEdit"].Value, quickEditItems));
         // Additional comment for clarity
@@ -400,23 +400,23 @@ public sealed class StatementDraftCardViewModel : BaseCardViewModel<(string Key,
         // Statement group (Original view / download)
         var stmtItems = new List<UiRibbonAction>
         {
-            new UiRibbonAction("ViewOriginal", localizer["Ribbon_ViewOriginal"].Value, "<svg><use href='/icons/sprite.svg#view'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ViewOriginal"); return Task.CompletedTask; })),
-            new UiRibbonAction("DownloadOriginal", localizer["Ribbon_Download"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("DownloadOriginal"); return Task.CompletedTask; }))
+            new UiRibbonAction("ViewOriginal", localizer["Ribbon_ViewOriginal"].Value, "<svg><use href='icons/sprite.svg#view'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ViewOriginal"); return Task.CompletedTask; })),
+            new UiRibbonAction("DownloadOriginal", localizer["Ribbon_Download"].Value, "<svg><use href='icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("DownloadOriginal"); return Task.CompletedTask; }))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Statement"].Value, stmtItems));
 
         // Export group (CSV / XLSX download of draft entries)
         var exportItems = new List<UiRibbonAction>
         {
-            new UiRibbonAction("ExportCsv", localizer["Ribbon_ExportCsv"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ExportCsv"); return Task.CompletedTask; })),
-            new UiRibbonAction("ExportXlsx", localizer["Ribbon_ExportExcel"].Value, "<svg><use href='/icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ExportXlsx"); return Task.CompletedTask; }))
+            new UiRibbonAction("ExportCsv", localizer["Ribbon_ExportCsv"].Value, "<svg><use href='icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ExportCsv"); return Task.CompletedTask; })),
+            new UiRibbonAction("ExportXlsx", localizer["Ribbon_ExportExcel"].Value, "<svg><use href='icons/sprite.svg#download'/></svg>", UiRibbonItemSize.Small, Draft == null, null, new Func<Task>(() => { RaiseUiActionRequested("ExportXlsx"); return Task.CompletedTask; }))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Export"].Value, exportItems));
 
         // Linked information group
         var linkedItems = new List<UiRibbonAction>
         {
-            new UiRibbonAction("OpenAccountDetails", localizer["Ribbon_AccountDetails"].Value, "<svg><use href='/icons/sprite.svg#bank'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.DetectedAccountId == null, null, new Func<Task>(() => { RaiseUiActionRequested("OpenAccountDetails"); return Task.CompletedTask; }))
+            new UiRibbonAction("OpenAccountDetails", localizer["Ribbon_AccountDetails"].Value, "<svg><use href='icons/sprite.svg#bank'/></svg>", UiRibbonItemSize.Small, Draft == null || Draft.DetectedAccountId == null, null, new Func<Task>(() => { RaiseUiActionRequested("OpenAccountDetails"); return Task.CompletedTask; }))
         };
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linkedItems));
 

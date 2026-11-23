@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/actions/workflow/status/martin-stromberg/FinanceManager/release.yml?label=Release)](https://github.com/martin-stromberg/FinanceManager/actions/workflows/release.yml)
 [![License](https://img.shields.io/github/license/martin-stromberg/FinanceManager)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![Node.js](https://img.shields.io/badge/node-22.x-339933?logo=nodedotjs)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-26.x-339933?logo=nodedotjs)](https://nodejs.org/)
 
 `FinanceManager` ist eine Blazor-Server-Anwendung zur Verwaltung persönlicher Finanzen.  
 Die Anwendung bündelt Stammdatenverwaltung, Kontoauszugsimport, Budget- und Reporting-Funktionen, Portfolio-Auswertungen sowie Setup- und Admin-Funktionen in einer gemeinsamen Weboberfläche.
@@ -13,7 +13,7 @@ Die Anwendung bündelt Stammdatenverwaltung, Kontoauszugsimport, Budget- und Rep
 
 Die Anwendung bietet unter anderem:
 
-- **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity, inklusive Selbstbedienungs-Seite zum Ändern des eigenen Passworts (`/change-password`); aktive Navigation und Eingaben in Quick Edit halten die Sitzung, bei echter Inaktivität darf sie auslaufen (ohne periodischen Keepalive)
+- **Authentifizierung und Benutzerverwaltung** über JWT-geschützte API-Endpunkte und ASP.NET Core Identity, inklusive Selbstbedienungs-Seite zum Ändern des eigenen Passworts (`/change-password`); aktive Navigation und Eingaben in Quick Edit halten die Sitzung, bei echter Inaktivität darf sie auslaufen (ohne periodischen Keepalive); bei abgelaufener Sitzung leitet die Anwendung zentral zum Login weiter und kehrt anschließend zur ursprünglichen Seite zurück
 - **Konten, Kontakte, Sparpläne und Wertpapiere** mit Listen-, Detail- und Bearbeitungsbereichen sowie Verteilungen in der Bankübersicht; Kursstatistiken pro Wertpapier (Goldenes Kreuz, bärische Umkehrsignale mit Trendstatus) inkl. optionaler Startseiten-Benachrichtigungen
 - **Kontoauszugsverarbeitung** mit Upload, Massenimport, Klassifizierung, Schnellbearbeitung und Buchung sowie CSV-/Excel-Export der Einträge eines Kontoauszugs; Bankposten tragen eine Postenart (Eingang, Ausgang, Zins, Steuer), die bei der Klassifizierung automatisch über am Bankkonto verwaltete Kontierungsregeln — mit Vorzeichen-Fallback — bestimmt wird, in der Entwurfszeile manuell korrigierbar ist und per Ribbon-Aktion am Konto in einem Hintergrundtask für alle gebuchten Posten neu bewertet werden kann
 - **Budget- und Reporting-Funktionen** inklusive Budget-Kategorien, -Zwecken, -Regeln und Berichten; der Filterdialog der Berichte bietet je Buchungsart (Bank, Kontakt, Sparplan, Wertpapier) beliebig viele Freitext-Filter (ODER-verknüpft, Groß-/Kleinschreibung ignorierend, je max. 500 Zeichen) auf Verwendungszweck und Buchungsbeschreibung — in Berichtsfavoriten gespeicherte Textfilter wirken automatisch auch auf die KPI-Kacheln der Startseite; jede Betragszelle der Berichtsspalten Betrag, Vorperiode und Vorjahr öffnet per Symbolbutton ein Overlay mit den zugrunde liegenden Einzelposten (Drill-down ohne Verlassen des Berichts); die Vergleichsoption „Hochrechnung“ projiziert wiederkehrende Vorjahresposten aller Buchungsarten (Bank, Kontakt, Sparplan, Wertpapier) in die aktuelle Periode und listet die erwarteten Posten je Entität im Detail-Overlay — einzelne Erwartungen lassen sich pro Berichtsfavorit ausblenden und wieder einbeziehen
@@ -39,7 +39,7 @@ Die Screenshots zeigen die Anwendung nach einer Erstregistrierung mit aktivierte
 - **ASP.NET Core Identity** und **JWT-Bearer-Authentifizierung**
 - **xUnit v3**, **FluentAssertions**, **bUnit** für Unit-/Komponententests
 - **Microsoft.Playwright** für End-to-End-Tests
-- **Node.js 22.x** für Release-/Versionsskripte und GitHub-Workflows
+- **Node.js 26.x** für Release-/Versionsskripte und GitHub-Workflows
 
 Zusätzlich werden lokale Paketquellen aus `external/` verwendet:
 
@@ -73,7 +73,7 @@ Für die lokale Ausführung der Webanwendung:
 
 Zusätzlich für Release-/CI-nahe Aufgaben:
 
-- Node.js **22.x**
+- Node.js **26.x**
 
 ## Lokal starten
 

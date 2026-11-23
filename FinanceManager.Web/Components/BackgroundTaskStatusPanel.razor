@@ -185,7 +185,7 @@
                 <div class="bgt-row">
                     <span class="bgt-type">@GetTypeLabel(ActiveTask.Type)</span>
                     <span class="bgt-status bgt-badge bgt-@ActiveTask.Status.ToString().ToLowerInvariant()">@Localizer[$"Bgt_Status_{ActiveTask.Status}"]</span>
-                    <button class="icon-btn" @onclick="() => CancelTaskAsync(ActiveTask.Id)" title="@Localizer["Bgt_Cancel"]"><svg><use href="/icons/sprite.svg#clear" /></svg></button>
+                    <button class="icon-btn" @onclick="() => CancelTaskAsync(ActiveTask.Id)" title="@Localizer["Bgt_Cancel"]"><svg><use href="icons/sprite.svg#clear" /></svg></button>
                 </div>
                 <div class="bgt-progress">
                     @if (ActiveTask.Total.HasValue && ActiveTask.Total > 0)
@@ -238,7 +238,7 @@
                         <span class="bgt-type">@GetTypeLabel(task.Type)</span>
                         <span class="bgt-status bgt-badge bgt-queued">@Localizer[$"Bgt_Status_{task.Status}"]</span>
                         <span class="bgt-position">@Localizer["Bgt_Position"]: @(idx + 1)</span>
-                        <button class="icon-btn" @onclick="() => RemoveQueuedAsync(task.Id)" title="@Localizer["Bgt_Remove"]"><svg><use href="/icons/sprite.svg#delete" /></svg></button>
+                        <button class="icon-btn" @onclick="() => RemoveQueuedAsync(task.Id)" title="@Localizer["Bgt_Remove"]"><svg><use href="icons/sprite.svg#delete" /></svg></button>
                     </li>
                 }
             </ul>

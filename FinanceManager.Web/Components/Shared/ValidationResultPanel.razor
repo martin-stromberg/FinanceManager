@@ -16,7 +16,7 @@ else
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
             <div style="font-weight:600;">@Localizer["Validation_Header"]</div>
             <div>
-                <button class="icon-btn" title="@Localizer["Btn_Close"]" @onclick="Close"> <svg><use href="/icons/sprite.svg#clear"/></svg></button>
+                <button class="icon-btn" title="@Localizer["Btn_Close"]" @onclick="Close"> <svg><use href="icons/sprite.svg#clear"/></svg></button>
             </div>
         </div>
         <div style="margin-bottom:.5rem;">@((ValidationResult.IsValid) ? (Localizer?["Validation_Valid"] ?? "No errors found") : (Localizer?["Validation_Invalid"] ?? "Issues found"))</div>
@@ -77,8 +77,7 @@ else
 
     private string? BuildRelatedRecordUrl(DraftValidationMessageDto message)
     {
-        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        var currentUrl = "/" + currentPath;
+        var currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
 
         // The preliminary-reversal warning carries the target posting list URL as the second segment.
         if (message.Message.StartsWith("Validation_PRELIMINARY_POSTINGS_WILL_BE_REVERSED", StringComparison.Ordinal) && message.Message.Contains('|'))
@@ -101,7 +100,7 @@ else
             return null;
         }
 
-        return $"/card/{kind}/{message.RelatedRecordId}?back={Uri.EscapeDataString(currentUrl)}";
+        return $"card/{kind}/{message.RelatedRecordId}?back={Uri.EscapeDataString(currentUrl)}";
     }
 
     private string GetLocalizedMessage(DraftValidationMessageDto message)

@@ -15,7 +15,7 @@ public partial class ApiClient
     /// <returns>The created budget purpose.</returns>
     public async Task<BudgetPurposeDto> BudgetPurposes_CreateAsync(BudgetPurposeCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/purposes", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/purposes", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetPurposeDto>(cancellationToken: ct))!;
     }

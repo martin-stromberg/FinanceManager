@@ -14,7 +14,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<IReadOnlyList<NotificationDto>> Notifications_ListAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/notifications", ct);
+        var resp = await _http.GetAsync("api/notifications", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<NotificationDto>>(cancellationToken: ct) ?? Array.Empty<NotificationDto>();
     }
@@ -28,7 +28,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> Notifications_DismissAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/notifications/{id}/dismiss", content: null, ct);
+        var resp = await _http.PostAsync($"api/notifications/{id}/dismiss", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         resp.EnsureSuccessStatusCode();
         return true;

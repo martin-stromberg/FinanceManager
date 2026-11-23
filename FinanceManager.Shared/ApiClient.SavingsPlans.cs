@@ -17,7 +17,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<IReadOnlyList<SavingsPlanDto>> SavingsPlans_ListAsync(bool onlyActive = true, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/savings-plans?onlyActive={(onlyActive ? "true" : "false")}", ct);
+        var resp = await _http.GetAsync($"api/savings-plans?onlyActive={(onlyActive ? "true" : "false")}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<SavingsPlanDto>>(cancellationToken: ct) ?? Array.Empty<SavingsPlanDto>();
     }
@@ -31,7 +31,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the response cannot be parsed.</exception>
     public async Task<int> SavingsPlans_CountAsync(bool onlyActive = true, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/savings-plans/count?onlyActive={(onlyActive ? "true" : "false")}", ct);
+        var resp = await _http.GetAsync($"api/savings-plans/count?onlyActive={(onlyActive ? "true" : "false")}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
         if (json.TryGetProperty("count", out var countProp) && countProp.TryGetInt32(out var cnt))
@@ -50,7 +50,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<SavingsPlanDto?> SavingsPlans_GetAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/savings-plans/{id}", ct);
+        var resp = await _http.GetAsync($"api/savings-plans/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SavingsPlanDto>(cancellationToken: ct);
@@ -67,7 +67,7 @@ public partial class ApiClient
     public async Task<SavingsPlanDto> SavingsPlans_CreateAsync(SavingsPlanCreateRequest req, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(req);
-        var resp = await _http.PostAsJsonAsync("/api/savings-plans", req, ct);
+        var resp = await _http.PostAsJsonAsync("api/savings-plans", req, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<SavingsPlanDto>(cancellationToken: ct))!;
     }
@@ -84,7 +84,7 @@ public partial class ApiClient
     public async Task<SavingsPlanDto?> SavingsPlans_UpdateAsync(Guid id, SavingsPlanCreateRequest req, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(req);
-        var resp = await _http.PutAsJsonAsync($"/api/savings-plans/{id}", req, ct);
+        var resp = await _http.PutAsJsonAsync($"api/savings-plans/{id}", req, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<SavingsPlanDto>(cancellationToken: ct);
@@ -99,7 +99,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails or the server returns a non-success status code.</exception>
     public async Task<SavingsPlanAnalysisDto> SavingsPlans_AnalyzeAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/savings-plans/{id}/analysis", ct);
+        var resp = await _http.GetAsync($"api/savings-plans/{id}/analysis", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<SavingsPlanAnalysisDto>(cancellationToken: ct))!;
     }
@@ -113,7 +113,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> SavingsPlans_ArchiveAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/savings-plans/{id}/archive", content: null, ct);
+        var resp = await _http.PostAsync($"api/savings-plans/{id}/archive", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -128,7 +128,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> SavingsPlans_DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/savings-plans/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/savings-plans/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -144,7 +144,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
     public async Task<bool> SavingsPlans_SetSymbolAsync(Guid id, Guid attachmentId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/savings-plans/{id}/symbol/{attachmentId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/savings-plans/{id}/symbol/{attachmentId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
@@ -164,7 +164,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
     public async Task<bool> SavingsPlans_ClearSymbolAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/savings-plans/{id}/symbol", ct);
+        var resp = await _http.DeleteAsync($"api/savings-plans/{id}/symbol", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
@@ -184,7 +184,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<IReadOnlyList<Guid>?> SavingsPlans_GetLinkedAccountsAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/savings-plans/{id}/linked-accounts", ct);
+        var resp = await _http.GetAsync($"api/savings-plans/{id}/linked-accounts", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<Guid>>(cancellationToken: ct) ?? Array.Empty<Guid>();
@@ -200,7 +200,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound or BadRequest.</exception>
     public async Task<bool> SavingsPlans_AddAccountLinkAsync(Guid id, Guid accountId, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsync($"/api/savings-plans/{id}/linked-accounts/{accountId}", content: null, ct);
+        var resp = await _http.PostAsync($"api/savings-plans/{id}/linked-accounts/{accountId}", content: null, ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NoContent) return true;
         if (resp.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.BadRequest)
         {
@@ -221,7 +221,7 @@ public partial class ApiClient
     /// <exception cref="HttpRequestException">Thrown when the HTTP request fails for reasons other than NotFound.</exception>
     public async Task<bool> SavingsPlans_RemoveAccountLinkAsync(Guid id, Guid accountId, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/savings-plans/{id}/linked-accounts/{accountId}", ct);
+        var resp = await _http.DeleteAsync($"api/savings-plans/{id}/linked-accounts/{accountId}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -239,7 +239,7 @@ public partial class ApiClient
     public async Task<SavingsPlanActualReportResponse?> SavingsPlans_ReportActualBalanceAsync(Guid id, SavingsPlanActualReportRequest req, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(req);
-        var resp = await _http.PostAsJsonAsync($"/api/savings-plans/{id}/actual-reports", req, ct);
+        var resp = await _http.PostAsJsonAsync($"api/savings-plans/{id}/actual-reports", req, ct);
         if (resp.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.BadRequest)
         {
             LastError = await resp.Content.ReadAsStringAsync(ct);

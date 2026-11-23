@@ -141,7 +141,7 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
             new UiRibbonAction(
                 "NewRule",
                 localizer["Ribbon_New"].Value,
-                "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+                "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,

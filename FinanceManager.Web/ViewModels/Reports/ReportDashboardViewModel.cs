@@ -1362,24 +1362,24 @@ public sealed class ReportDashboardViewModel : ViewModelBase
         // Navigation
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Navigation"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_BackToOverview"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_BackToOverview"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })) { MobileShortcut = true }
         }));
 
         // Actions
         tabs.Add(new UiRibbonTab(localizer["Ribbon_ReportActions"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("ToggleEdit", (EditMode ? localizer["Ribbon_View"].Value : localizer["Ribbon_Edit"].Value), EditMode? "<svg><use href='/icons/sprite.svg#eye'/></svg>":"<svg><use href='/icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(() => { RaiseUiActionRequested("ToggleEdit"); return Task.CompletedTask; })),
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })) { MobileShortcut = true },
-            new UiRibbonAction("SaveAs", localizer["Ribbon_SaveAs"].Value, "<svg><use href='/icons/sprite.svg#save-as'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("SaveAs"); return Task.CompletedTask; })),
-            new UiRibbonAction("DeleteFavorite", localizer["Ribbon_DeleteFavorite"].Value, "<svg><use href='/icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, !ActiveFavoriteId.HasValue, null, new Func<Task>(() => { RaiseUiActionRequested("DeleteFavorite"); return Task.CompletedTask; })),
-            new UiRibbonAction("Reload", localizer["Ribbon_ReloadData"].Value, "<svg><use href='/icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(() => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; })) { MobileShortcut = true }
+            new UiRibbonAction("ToggleEdit", (EditMode ? localizer["Ribbon_View"].Value : localizer["Ribbon_Edit"].Value), EditMode? "<svg><use href='icons/sprite.svg#eye'/></svg>":"<svg><use href='icons/sprite.svg#edit'/></svg>", UiRibbonItemSize.Large, false, null, new Func<Task>(() => { RaiseUiActionRequested("ToggleEdit"); return Task.CompletedTask; })),
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("Save"); return Task.CompletedTask; })) { MobileShortcut = true },
+            new UiRibbonAction("SaveAs", localizer["Ribbon_SaveAs"].Value, "<svg><use href='icons/sprite.svg#save-as'/></svg>", UiRibbonItemSize.Small, !EditMode && !FiltersDirty, null, new Func<Task>(() => { RaiseUiActionRequested("SaveAs"); return Task.CompletedTask; })),
+            new UiRibbonAction("DeleteFavorite", localizer["Ribbon_DeleteFavorite"].Value, "<svg><use href='icons/sprite.svg#trash'/></svg>", UiRibbonItemSize.Small, !ActiveFavoriteId.HasValue, null, new Func<Task>(() => { RaiseUiActionRequested("DeleteFavorite"); return Task.CompletedTask; })),
+            new UiRibbonAction("Reload", localizer["Ribbon_ReloadData"].Value, "<svg><use href='icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, new Func<Task>(() => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; })) { MobileShortcut = true }
         }));
 
         // Filters
         tabs.Add(new UiRibbonTab(localizer["Ribbon_Filter"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("FiltersOpen", localizer["Ribbon_OpenFilters"].Value, "<svg><use href='/icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, FilterOptionsLoading, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersOpen"); return Task.CompletedTask; })),
-            new UiRibbonAction("FiltersClear", localizer["Ribbon_ClearFilters"].Value, "<svg><use href='/icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, GetSelectedFiltersCount()==0, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersClear"); return Task.CompletedTask; }))
+            new UiRibbonAction("FiltersOpen", localizer["Ribbon_OpenFilters"].Value, "<svg><use href='icons/sprite.svg#filters'/></svg>", UiRibbonItemSize.Small, FilterOptionsLoading, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersOpen"); return Task.CompletedTask; })),
+            new UiRibbonAction("FiltersClear", localizer["Ribbon_ClearFilters"].Value, "<svg><use href='icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, GetSelectedFiltersCount()==0, null, new Func<Task>(() => { RaiseUiActionRequested("FiltersClear"); return Task.CompletedTask; }))
         }));
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

@@ -142,6 +142,10 @@ public sealed class SetupUpdateViewModel : BaseViewModel
 
             var result = await ApiClient.Updates_CheckAsync(ct);
             Status = result.Status;
+            if (!result.UpdateAvailable && !string.IsNullOrWhiteSpace(result.Message))
+            {
+                SetError(null, result.Message);
+            }
         }, ct);
     }
 
@@ -357,7 +361,7 @@ public sealed class SetupUpdateViewModel : BaseViewModel
             new(
                 "UpdateCheckNow",
                 localizer["SetupUpdate_Btn_CheckNow"].Value,
-                "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                "<svg><use href='icons/sprite.svg#refresh'/></svg>",
                 UiRibbonItemSize.Small,
                 Busy || Status is null,
                 localizer["Hint_SetupUpdate_CheckNow"].Value,
@@ -365,7 +369,7 @@ public sealed class SetupUpdateViewModel : BaseViewModel
             new(
                 "UpdateInstall",
                 localizer["SetupUpdate_Btn_Install"].Value,
-                "<svg><use href='/icons/sprite.svg#download'/></svg>",
+                "<svg><use href='icons/sprite.svg#download'/></svg>",
                 UiRibbonItemSize.Small,
                 Busy || Status is null || Status.Status != UpdateStatusKind.Ready || ConfirmInstallAsync is null,
                 localizer["Hint_SetupUpdate_Install"].Value,
@@ -373,7 +377,7 @@ public sealed class SetupUpdateViewModel : BaseViewModel
             new(
                 "UpdateResetLock",
                 localizer["SetupUpdate_Btn_ResetLock"].Value,
-                "<svg><use href='/icons/sprite.svg#undo'/></svg>",
+                "<svg><use href='icons/sprite.svg#undo'/></svg>",
                 UiRibbonItemSize.Small,
                 Status is null || !Status.IsLocked,
                 localizer["Hint_SetupUpdate_ResetLock"].Value,

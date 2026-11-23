@@ -57,7 +57,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
     /// <summary>
     /// Relative endpoint used by the optional chart view model to fetch aggregates for this contact.
     /// </summary>
-    public string ChartEndpoint => Id != Guid.Empty ? $"/api/contacts/{Id}/aggregates" : string.Empty;
+    public string ChartEndpoint => Id != Guid.Empty ? $"api/contacts/{Id}/aggregates" : string.Empty;
 
     /// <summary>
     /// Optional chart view model instance used to display aggregated data for the contact. Returns <c>null</c> for new contacts.
@@ -254,12 +254,12 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
     {
         var nav = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='/icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
+            new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
         });
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='/icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => {
+            new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => {
                 var dto = BuildDto(CardRecord);
                 if (Id == Guid.Empty)
                 {
@@ -287,17 +287,17 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                     if (updated != null) { Contact = updated; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
                 }
             }) { MobileShortcut = true },
-            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='/icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
+            new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         });
 
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='/icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { var url = $"/list/postings/contact/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; }),
-            new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='/icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => {
+            new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { var url = $"list/postings/contact/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; }),
+            new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => {
                 RequestOpenMerge(Id, Contact?.Type.ToString() ?? string.Empty);
                 return Task.CompletedTask;
             }),
-            new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='/icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => {
+            new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => {
                 RequestOpenAttachments(FinanceManager.Domain.Attachments.AttachmentEntityKind.Contact, Id);
                 return Task.CompletedTask;
             })

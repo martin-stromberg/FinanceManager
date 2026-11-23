@@ -76,13 +76,17 @@ public static class AuthReturnUrl
     /// Builds the login URL and appends the provided return URL only when it is valid.
     /// </summary>
     /// <param name="returnUrl">The return URL candidate.</param>
-    /// <returns>The login URL, optionally with an encoded <c>returnUrl</c> query parameter.</returns>
+    /// <returns>
+    /// The login URL relative to the app's base (not the host domain root), optionally with
+    /// an encoded <c>returnUrl</c> query parameter, so <c>NavigationManager.NavigateTo</c>
+    /// resolves it correctly whether or not the app runs behind a reverse-proxy PathBase.
+    /// </returns>
     public static string BuildLoginUrl(string? returnUrl)
     {
         var safeReturnUrl = Validate(returnUrl);
         return safeReturnUrl is null
-            ? "/login"
-            : $"/login?returnUrl={Uri.EscapeDataString(safeReturnUrl)}";
+            ? "login"
+            : $"login?returnUrl={Uri.EscapeDataString(safeReturnUrl)}";
     }
 
     /// <summary>

@@ -43,9 +43,17 @@ public partial class ApiClient : IApiClient
     /// <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/>.
     /// </summary>
     /// <param name="resp">The HTTP response message to inspect.</param>
+    /// <exception cref="ApiAuthenticationRequiredException">
+    /// Thrown instead of a generic <see cref="HttpRequestException"/> when the response indicates
+    /// an authentication failure, so the hosting application can redirect to the login page.
+    /// </exception>
     private async Task EnsureSuccessOrSetErrorAsync(HttpResponseMessage resp)
     {
         await TrySetErrorFromResponseAsync(resp);
+        if (IsAuthenticationFailure(resp))
+        {
+            throw new ApiAuthenticationRequiredException(resp.StatusCode, LastErrorCode, LastError);
+        }
         resp.EnsureSuccessStatusCode();
     }
 
@@ -220,7 +228,7 @@ public partial class ApiClient : IApiClient
     /// <returns><c>true</c> when at least one user exists; otherwise <c>false</c>.</returns>
     public async Task<bool> Users_HasAnyAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/users/exists", ct);
+        var resp = await _http.GetAsync("api/users/exists", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         var json = await resp.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
 
@@ -251,7 +259,7 @@ public partial class ApiClient : IApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>> Budgets_ListRulesByCategoryAsync(Guid budgetCategoryId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/budget/rules/by-category/{budgetCategoryId}", ct);
+        var resp = await _http.GetAsync($"api/budget/rules/by-category/{budgetCategoryId}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         var list = await resp.Content.ReadFromJsonAsync<IReadOnlyList<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>>(cancellationToken: ct);
         return list ?? Array.Empty<FinanceManager.Shared.Dtos.Budget.BudgetRuleDto>();

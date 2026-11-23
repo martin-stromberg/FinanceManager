@@ -49,7 +49,7 @@ public partial class ApiClient
         }
 
         var qs = parts.Count > 0 ? ("?" + string.Join('&', parts)) : string.Empty;
-        var resp = await _http.GetAsync($"/api/budget/purposes{qs}", ct);
+        var resp = await _http.GetAsync($"api/budget/purposes{qs}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BudgetPurposeOverviewDto>>(cancellationToken: ct) ?? Array.Empty<BudgetPurposeOverviewDto>();
     }
@@ -62,7 +62,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetPurposeDto?> Budgets_GetPurposeAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/budget/purposes/{id}", ct);
+        var resp = await _http.GetAsync($"api/budget/purposes/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BudgetPurposeDto>(cancellationToken: ct);
@@ -76,7 +76,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetPurposeDto> Budgets_CreatePurposeAsync(BudgetPurposeCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/purposes", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/purposes", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetPurposeDto>(cancellationToken: ct))!;
     }
@@ -90,7 +90,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetPurposeDto?> Budgets_UpdatePurposeAsync(Guid id, BudgetPurposeUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/budget/purposes/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/budget/purposes/{id}", request, ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await Budgets_GetPurposeAsync(id, ct);
@@ -104,7 +104,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Budgets_DeletePurposeAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/budget/purposes/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/budget/purposes/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -118,7 +118,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<BudgetRuleDto>> Budgets_ListRulesByPurposeAsync(Guid budgetPurposeId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/budget/rules/by-purpose/{budgetPurposeId}", ct);
+        var resp = await _http.GetAsync($"api/budget/rules/by-purpose/{budgetPurposeId}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BudgetRuleDto>>(cancellationToken: ct) ?? Array.Empty<BudgetRuleDto>();
     }
@@ -131,7 +131,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetRuleDto> Budgets_CreateRuleAsync(BudgetRuleCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/rules", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/rules", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetRuleDto>(cancellationToken: ct))!;
     }
@@ -145,7 +145,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetRuleDto?> Budgets_UpdateRuleAsync(Guid id, BudgetRuleUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/budget/rules/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/budget/rules/{id}", request, ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         // controller returns NoContent; re-fetch
@@ -160,7 +160,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetRuleDto?> Budgets_GetRuleAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/budget/rules/{id}", ct);
+        var resp = await _http.GetAsync($"api/budget/rules/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BudgetRuleDto>(cancellationToken: ct);
@@ -174,7 +174,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Budgets_DeleteRuleAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/budget/rules/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/budget/rules/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;
@@ -188,7 +188,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<IReadOnlyList<BudgetOverrideDto>> Budgets_ListOverridesByPurposeAsync(Guid budgetPurposeId, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/budget/overrides/by-purpose/{budgetPurposeId}", ct);
+        var resp = await _http.GetAsync($"api/budget/overrides/by-purpose/{budgetPurposeId}", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<BudgetOverrideDto>>(cancellationToken: ct) ?? Array.Empty<BudgetOverrideDto>();
     }
@@ -201,7 +201,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetOverrideDto> Budgets_CreateOverrideAsync(BudgetOverrideCreateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PostAsJsonAsync("/api/budget/overrides", request, ct);
+        var resp = await _http.PostAsJsonAsync("api/budget/overrides", request, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<BudgetOverrideDto>(cancellationToken: ct))!;
     }
@@ -214,7 +214,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetOverrideDto?> Budgets_GetOverrideAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/budget/overrides/{id}", ct);
+        var resp = await _http.GetAsync($"api/budget/overrides/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<BudgetOverrideDto>(cancellationToken: ct);
@@ -229,7 +229,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<BudgetOverrideDto?> Budgets_UpdateOverrideAsync(Guid id, BudgetOverrideUpdateRequest request, CancellationToken ct = default)
     {
-        var resp = await _http.PutAsJsonAsync($"/api/budget/overrides/{id}", request, ct);
+        var resp = await _http.PutAsJsonAsync($"api/budget/overrides/{id}", request, ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await Budgets_GetOverrideAsync(id, ct);
@@ -243,7 +243,7 @@ public partial class ApiClient
     /// <returns>The result.</returns>
     public async Task<bool> Budgets_DeleteOverrideAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.DeleteAsync($"/api/budget/overrides/{id}", ct);
+        var resp = await _http.DeleteAsync($"api/budget/overrides/{id}", ct);
         if (resp.StatusCode == HttpStatusCode.NotFound) return false;
         await EnsureSuccessOrSetErrorAsync(resp);
         return true;

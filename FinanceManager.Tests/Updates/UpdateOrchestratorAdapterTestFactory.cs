@@ -30,6 +30,7 @@ internal static class UpdateOrchestratorAdapterTestFactory
         IAutoUpdatePackageStore? packageStore = null,
         IInstalledReleaseMetadataProvider? installedProvider = null,
         IAutoUpdatePlatformResolver? platformResolver = null,
+        AutoUpdateOptions? autoUpdateOptions = null,
         ILogger<UpdateOrchestratorAdapter>? logger = null)
     {
         var settings = settingsStore ?? new Mock<IUpdateSettingsStore>().Object;
@@ -44,6 +45,7 @@ internal static class UpdateOrchestratorAdapterTestFactory
             settings,
             packageStore ?? new Mock<IAutoUpdatePackageStore>().Object,
             mapper,
+            autoUpdateOptions ?? new AutoUpdateOptions(),
             logger ?? NullLogger<UpdateOrchestratorAdapter>.Instance);
     }
 }

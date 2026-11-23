@@ -347,7 +347,7 @@ namespace FinanceManager.Web.ViewModels.Common
                 return;
             }
 
-            var url = $"/card/{route}/{linkedId}";
+            var url = $"card/{route}/{linkedId}";
             try
             {
                 var nav = ServiceProvider.GetService<NavigationManager>();

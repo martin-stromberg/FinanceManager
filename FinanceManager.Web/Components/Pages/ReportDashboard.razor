@@ -71,9 +71,9 @@
                 </div>
                 <div class="row inline month-row">
                     <label>@Localizer["Label_AnalysisMonth"]</label>
-                    <button type="button" class="icon-btn small" title="@Localizer["Button_PrevMonth"]" @onclick="PrevMonth"><svg><use href="/icons/sprite.svg#chevron-left"/></svg></button>
+                    <button type="button" class="icon-btn small" title="@Localizer["Button_PrevMonth"]" @onclick="PrevMonth"><svg><use href="icons/sprite.svg#chevron-left"/></svg></button>
                     <input type="month" value="@_analysisMonthString" @onchange="OnAnalysisMonthChange" />
-                    <button type="button" class="icon-btn small" title="@Localizer["Button_NextMonth"]" @onclick="NextMonth"><svg><use href="/icons/sprite.svg#chevron-right"/></svg></button>
+                    <button type="button" class="icon-btn small" title="@Localizer["Button_NextMonth"]" @onclick="NextMonth"><svg><use href="icons/sprite.svg#chevron-right"/></svg></button>
                 </div>
                 <div class="row inline">
                     <label class="chk"><input type="checkbox" @bind="_includeCategory" @bind:after="OnIncludeCategoryChanged" /> @Localizer["Label_IncludeCategory"]</label>
@@ -121,7 +121,7 @@
                     <div class="projection-detail-header">
                         <h3 id="projection-detail-title">@_projectionDetailsTitle</h3>
                         <button type="button" class="icon-btn small" title="@Localizer["Button_Close"]" @onclick="CloseProjectionDetails">
-                            <svg><use href="/icons/sprite.svg#close" /></svg>
+                            <svg><use href="icons/sprite.svg#close" /></svg>
                         </button>
                     </div>
                     <div class="projection-detail-summary">
@@ -230,7 +230,7 @@
                     <div class="projection-detail-header">
                         <h3>@_vm!.PostingsOverlayTitle</h3>
                         <button type="button" class="icon-btn small" title="@Localizer["Button_Close"]" @onclick="(()=> _vm!.HidePostings())">
-                            <svg><use href="/icons/sprite.svg#close" /></svg>
+                            <svg><use href="icons/sprite.svg#close" /></svg>
                         </button>
                     </div>
                     @if(_vm!.PostingsOverlayLoading)
@@ -366,7 +366,7 @@
                                 @if(hasChildren)
                                 {
                                     <button type="button" class="toggle-btn" @onclick="(()=>_vm!.ToggleExpanded(top.GroupKey))" title="@(expanded?Localizer["Collapse"]:Localizer["Expand"])" aria-expanded="@expanded">
-                                        <svg class="ico"><use href="/icons/sprite.svg#@(expanded?"chevron-down":"chevron-right")" /></svg>
+                                        <svg class="ico"><use href="icons/sprite.svg#@(expanded?"chevron-down":"chevron-right")" /></svg>
                                     </button>
                                 }
                             </td>
@@ -376,22 +376,22 @@
                                     @if (symTop != null)
                                     {
                                         <div style="width:24px;height:24px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:6px;">
-                                            <img src="@($"/api/attachments/{symTop}/download")" alt="symbol" style="max-width:100%;max-height:100%;display:block;" />
+                                            <img src="@($"api/attachments/{symTop}/download")" alt="symbol" style="max-width:100%;max-height:100%;display:block;" />
                                         </div>
                                     }
                                     else
                                     {
                                         <div style="width:24px;height:24px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                            <svg style="width:16px;height:16px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                            <svg style="width:16px;height:16px;opacity:.6;"><use href="icons/sprite.svg#image" /></svg>
                                         </div>
                                     }
                                     <span>@GetDisplayName(top)</span>
                                 </div>
                             </td>
                             @if(ShowCategoryColumn){<td>@(string.IsNullOrWhiteSpace(top.CategoryName)?"-":top.CategoryName)</td>}
-                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(top.PreviousAmount.HasValue? top.PreviousAmount.Value.ToString("N2") : "-")</span>@if(top.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(top.Amount, top.PreviousAmount)</td>}
-                            @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(top.YearAgoAmount.HasValue? top.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(top.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(top.Amount, top.YearAgoAmount)</td>}
-                            <td class="amt-current" style="text-align:right;"><span>@top.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
+                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(top.PreviousAmount.HasValue? top.PreviousAmount.Value.ToString("N2") : "-")</span>@if(top.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.Previous)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(top.Amount, top.PreviousAmount)</td>}
+                            @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(top.YearAgoAmount.HasValue? top.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(top.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.YearAgo)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(top.Amount, top.YearAgoAmount)</td>}
+                            <td class="amt-current" style="text-align:right;"><span>@top.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(top, ReportPostingsPeriod.Current)"><svg><use href="icons/sprite.svg#search" /></svg></button></td>
                             @if(ShowProjectionColumn)
                             {
                                 <td class="amt-projection projection-cell" style="text-align:right;">
@@ -399,7 +399,7 @@
                                     @if (top.ProjectionExpectedItems is { Count: > 0 })
                                     {
                                         <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(top), top.Amount, top.ProjectionAmount ?? 0m, top.ProjectionExpectedItems!, top.GroupKey, top.PeriodStart)">
-                                            <svg><use href="/icons/sprite.svg#info" /></svg>
+                                            <svg><use href="icons/sprite.svg#info" /></svg>
                                         </button>
                                     }
                                 </td>
@@ -417,7 +417,7 @@
                                         @if(childHasChildren)
                                         {
                                             <button type="button" class="toggle-btn" @onclick="(()=>_vm!.ToggleExpanded(child.GroupKey))" title="@(childExpanded?Localizer["Collapse"]:Localizer["Expand"])" aria-expanded="@childExpanded">
-                                                <svg class="ico"><use href="/icons/sprite.svg#@(childExpanded?"chevron-down":"chevron-right")" /></svg>
+                                                <svg class="ico"><use href="icons/sprite.svg#@(childExpanded?"chevron-down":"chevron-right")" /></svg>
                                             </button>
                                         }
                                     </td>
@@ -427,22 +427,22 @@
                                             @if (symChild != null)
                                             {
                                                 <div style="width:20px;height:20px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:6px;">
-                                                    <img src="@($"/api/attachments/{symChild}/download")" alt="symbol" style="max-width:100%;max-height:100%;display:block;" />
+                                                    <img src="@($"api/attachments/{symChild}/download")" alt="symbol" style="max-width:100%;max-height:100%;display:block;" />
                                                 </div>
                                             }
                                             else
                                             {
                                                 <div style="width:20px;height:20px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                    <svg style="width:14px;height:14px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                    <svg style="width:14px;height:14px;opacity:.6;"><use href="icons/sprite.svg#image" /></svg>
                                                 </div>
                                             }
                                             <span>@GetDisplayName(child)</span>
                                         </div>
                                     </td>
                                     @if(ShowCategoryColumn){<td>@(string.IsNullOrWhiteSpace(child.CategoryName)?"-":child.CategoryName)</td>}
-                                    @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(child.PreviousAmount.HasValue? child.PreviousAmount.Value.ToString("N2") : "-")</span>@if(child.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(child.Amount, child.PreviousAmount)</td>}
-                                    @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(child.YearAgoAmount.HasValue? child.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(child.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(child.Amount, child.YearAgoAmount)</td>}
-                                    <td class="amt-current" style="text-align:right;"><span>@child.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
+                                    @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(child.PreviousAmount.HasValue? child.PreviousAmount.Value.ToString("N2") : "-")</span>@if(child.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.Previous)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(child.Amount, child.PreviousAmount)</td>}
+                                    @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(child.YearAgoAmount.HasValue? child.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(child.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.YearAgo)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(child.Amount, child.YearAgoAmount)</td>}
+                                    <td class="amt-current" style="text-align:right;"><span>@child.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(child, ReportPostingsPeriod.Current)"><svg><use href="icons/sprite.svg#search" /></svg></button></td>
                                     @if(ShowProjectionColumn)
                                     {
                                         <td class="amt-projection projection-cell" style="text-align:right;">
@@ -450,7 +450,7 @@
                                             @if (child.ProjectionExpectedItems is { Count: > 0 })
                                             {
                                                 <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(child), child.Amount, child.ProjectionAmount ?? 0m, child.ProjectionExpectedItems!, child.GroupKey, child.PeriodStart)">
-                                                    <svg><use href="/icons/sprite.svg#info" /></svg>
+                                                    <svg><use href="icons/sprite.svg#info" /></svg>
                                                 </button>
                                             }
                                         </td>
@@ -469,22 +469,22 @@
                                                     @if (symGrand != null)
                                                     {
                                                         <div style="width:20px;height:20px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:6px;">
-                                                            <img src="@($"/api/attachments/{symGrand}/download")" alt="symbol" style="max-width:100%;max-height:100%;display:block;" />
+                                                            <img src="@($"api/attachments/{symGrand}/download")" alt="symbol" style="max-width:100%;max-height:100%;display:block;" />
                                                         </div>
                                                     }
                                                     else
                                                     {
                                                         <div style="width:20px;height:20px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                                                            <svg style="width:14px;height:14px;opacity:.6;"><use href="/icons/sprite.svg#image" /></svg>
+                                                            <svg style="width:14px;height:14px;opacity:.6;"><use href="icons/sprite.svg#image" /></svg>
                                                         </div>
                                                     }
                                                     <span>@GetDisplayName(grand)</span>
                                                 </div>
                                             </td>
                                             @if(ShowCategoryColumn){<td></td>}
-                                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(grand.PreviousAmount.HasValue? grand.PreviousAmount.Value.ToString("N2") : "-")</span>@if(grand.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(grand.Amount, grand.PreviousAmount)</td>}
-                                            @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(grand.YearAgoAmount.HasValue? grand.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(grand.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(grand.Amount, grand.YearAgoAmount)</td>}
-                                            <td class="amt-current" style="text-align:right;"><span>@grand.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
+                                            @if(ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(grand.PreviousAmount.HasValue? grand.PreviousAmount.Value.ToString("N2") : "-")</span>@if(grand.PreviousAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.Previous)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@FormatDelta(grand.Amount, grand.PreviousAmount)</td>}
+                                            @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(grand.YearAgoAmount.HasValue? grand.YearAgoAmount.Value.ToString("N2") : "-")</span>@if(grand.YearAgoAmount.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.YearAgo)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@FormatDelta(grand.Amount, grand.YearAgoAmount)</td>}
+                                            <td class="amt-current" style="text-align:right;"><span>@grand.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowCellPostingsAsync(grand, ReportPostingsPeriod.Current)"><svg><use href="icons/sprite.svg#search" /></svg></button></td>
                                             @if(ShowProjectionColumn)
                                             {
                                                 <td class="amt-projection projection-cell" style="text-align:right;">
@@ -492,7 +492,7 @@
                                                     @if (grand.ProjectionExpectedItems is { Count: > 0 })
                                                     {
                                                         <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(GetDisplayName(grand), grand.Amount, grand.ProjectionAmount ?? 0m, grand.ProjectionExpectedItems!, grand.GroupKey, grand.PeriodStart)">
-                                                            <svg><use href="/icons/sprite.svg#info" /></svg>
+                                                            <svg><use href="icons/sprite.svg#info" /></svg>
                                                         </button>
                                                     }
                                                 </td>
@@ -512,9 +512,9 @@
                                 <td></td>
                                 <td>@totalLabel</td>
                                 @if(_vm!.ShowCategoryColumn){<td></td>}
-                                @if(_vm!.ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(totals.Prev.HasValue ? totals.Prev.Value.ToString("N2") : "-")</span>@if(totals.Prev.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.Previous)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? FormatDelta(totals.Amount, totals.Prev) : "-")</td>}
-                                @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(totals.Year.HasValue ? totals.Year.Value.ToString("N2") : "-")</span>@if(totals.Year.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.YearAgo)"><svg><use href="/icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@(totals.Year.HasValue ? FormatDelta(totals.Amount, totals.Year) : "-")</td>}
-                                <td class="amt-current" style="text-align:right;"><span>@totals.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.Current)"><svg><use href="/icons/sprite.svg#search" /></svg></button></td>
+                                @if(_vm!.ShowPreviousColumns){<td class="amt-prev" style="text-align:right;"><span>@(totals.Prev.HasValue ? totals.Prev.Value.ToString("N2") : "-")</span>@if(totals.Prev.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.Previous)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-prev" style="text-align:right;">@(totals.Prev.HasValue ? FormatDelta(totals.Amount, totals.Prev) : "-")</td>}
+                                @if(_compareYear){<td class="amt-year" style="text-align:right;"><span>@(totals.Year.HasValue ? totals.Year.Value.ToString("N2") : "-")</span>@if(totals.Year.HasValue){<button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.YearAgo)"><svg><use href="icons/sprite.svg#search" /></svg></button>}</td><td class="delta amt-year" style="text-align:right;">@(totals.Year.HasValue ? FormatDelta(totals.Amount, totals.Year) : "-")</td>}
+                                <td class="amt-current" style="text-align:right;"><span>@totals.Amount.ToString("N2")</span><button type="button" class="icon-btn small" title="@Localizer["Postings_Open"]" @onclick="() => ShowTotalPostingsAsync(ReportPostingsPeriod.Current)"><svg><use href="icons/sprite.svg#search" /></svg></button></td>
                                 @if(ShowProjectionColumn)
                                 {
                                     <td class="amt-projection projection-cell" style="text-align:right;">
@@ -522,7 +522,7 @@
                                         @if (totalProjectionDetails.Count > 0)
                                         {
                                             <button type="button" class="projection-info-btn" title="@Localizer["ProjectionDetails_Open"]" @onclick="() => OpenProjectionDetails(totalLabel, totals.Amount, totals.Projection ?? 0m, totalProjectionDetails)">
-                                                <svg><use href="/icons/sprite.svg#info" /></svg>
+                                                <svg><use href="icons/sprite.svg#info" /></svg>
                                             </button>
                                         }
                                     </td>
@@ -630,7 +630,7 @@
                         var entry = tf;
                         <div class="mk-item line" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;">
                             <span>@entry</span>
-                            <button type="button" class="btn secondary" style="padding:.1rem .4rem;" title="@Localizer["TextFilter_Remove"]" aria-label="@Localizer["TextFilter_Remove"]" @onclick="(()=> _vm!.RemoveTempTextFilter(_vm!.GetActiveFilterTabKind(), entry))"><svg style="width:1rem;height:1rem;vertical-align:middle;"><use href="/icons/sprite.svg#close"/></svg></button>
+                            <button type="button" class="btn secondary" style="padding:.1rem .4rem;" title="@Localizer["TextFilter_Remove"]" aria-label="@Localizer["TextFilter_Remove"]" @onclick="(()=> _vm!.RemoveTempTextFilter(_vm!.GetActiveFilterTabKind(), entry))"><svg style="width:1rem;height:1rem;vertical-align:middle;"><use href="icons/sprite.svg#close"/></svg></button>
                         </div>
                     }
                     <div style="display:flex;gap:.5rem;align-items:center;margin-top:.25rem;">
@@ -1068,7 +1068,7 @@
         switch (action)
         {
             case "Back":
-                Nav.NavigateTo("/reports");
+                Nav.NavigateTo("reports");
                 break;
             case "ToggleEdit":
                 ToggleEditMode();
@@ -1434,7 +1434,7 @@
         {
             _vm!.ActiveFavoriteId = null;
             _vm!.FavoriteName = string.Empty;
-            Nav.NavigateTo("/reports");
+            Nav.NavigateTo("reports");
         }
     }
 

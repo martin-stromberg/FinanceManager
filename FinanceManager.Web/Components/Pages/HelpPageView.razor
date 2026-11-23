@@ -25,7 +25,7 @@ else if (error != null)
         <div class="help-error-panel">
             <h1>@(lang == "en" ? "Help page not available" : "Hilfeseite nicht verfuegbar")</h1>
             <p>@error</p>
-            <a class="btn btn-primary" href="/help">@(lang == "en" ? "Back to help overview" : "Zur Hilfeuebersicht")</a>
+            <a class="btn btn-primary" href="help">@(lang == "en" ? "Back to help overview" : "Zur Hilfeuebersicht")</a>
         </div>
     </div>
 }
@@ -33,7 +33,7 @@ else if (markdown != null && topic != null && currentDocument != null)
 {
     <div class="help-shell help-detail-shell">
         <nav class="help-breadcrumb" aria-label="@(lang == "en" ? "Help navigation" : "Hilfe-Navigation")">
-            <a href="/help">@(lang == "en" ? "Help overview" : "Hilfeuebersicht")</a>
+            <a href="help">@(lang == "en" ? "Help overview" : "Hilfeuebersicht")</a>
             <span aria-hidden="true">/</span>
             <span>@topic.Title</span>
         </nav>
@@ -51,7 +51,7 @@ else if (markdown != null && topic != null && currentDocument != null)
                                 ? topic.Id
                                 : $"{topic.Id}/{document.RouteSegment}";
                             <a class="@(document.RouteSegment.Equals(currentDocument.RouteSegment, StringComparison.OrdinalIgnoreCase) ? "active" : null)"
-                               href="@($"/help/view/{route}")">
+                               href="@($"help/view/{route}")">
                                 @document.Title
                             </a>
                         }

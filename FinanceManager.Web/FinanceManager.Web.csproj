@@ -51,7 +51,7 @@
 	</PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="1.10.3" />
+    <PackageReference Include="AngleSharp" Version="1.10.5" />
     <PackageReference Include="itext.bouncy-castle-adapter" Version="9.8.0" />
     <PackageReference Include="Markdig" Version="1.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.15" />
@@ -130,6 +130,26 @@
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </ResolvedFileToPublish>
     </ItemGroup>
+  </Target>
+
+  <!--
+    Fallback fuer release-metadata.json: die Release-Pipeline (build-and-package/action.yml)
+    schreibt diese Datei bereits selbst mit der echten semantic-release-Version und ueberschreibt
+    das Ergebnis dieses Targets dabei einfach. Ohne dieses Target fehlt die Datei aber bei jedem
+    "dotnet publish" ausserhalb dieser Pipeline (z. B. ein manuelles Hotfix-Deployment) komplett,
+    wodurch msTools.Updater die installierte Version als unbekannt meldet und Update-Prüfungen
+    nicht funktionieren. "1.0.0" als Platzhalter (wie im VideoPlayer-Projekt) stellt wenigstens
+    sicher, dass ein Update auf die neueste Version weiterhin angeboten werden kann.
+  -->
+  <Target Name="GenerateReleaseMetadata" AfterTargets="Build;Publish">
+    <PropertyGroup>
+      <_ReleaseVersion>$(Version)</_ReleaseVersion>
+      <_ReleaseVersion Condition="'$(_ReleaseVersion)' == ''">1.0.0</_ReleaseVersion>
+      <_ReleaseTimestamp>$([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))</_ReleaseTimestamp>
+      <_ReleaseMetadataDir Condition="'$(PublishDir)' != ''">$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))</_ReleaseMetadataDir>
+      <_ReleaseMetadataDir Condition="'$(_ReleaseMetadataDir)' == ''">$([MSBuild]::EnsureTrailingSlash('$(OutDir)'))</_ReleaseMetadataDir>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_ReleaseMetadataDir)release-metadata.json" Overwrite="true" Lines="{ &quot;version&quot;: &quot;$(_ReleaseVersion)&quot;, &quot;publishedAt&quot;: &quot;$(_ReleaseTimestamp)&quot;, &quot;commitSha&quot;: &quot;&quot;, &quot;repository&quot;: &quot;&quot;, &quot;runtimeIdentifier&quot;: &quot;$(RuntimeIdentifier)&quot; }" />
   </Target>
 
   </Project>

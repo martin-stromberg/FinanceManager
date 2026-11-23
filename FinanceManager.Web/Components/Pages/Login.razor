@@ -58,7 +58,7 @@
     {
         if (firstRender && _shouldRedirectToRegister)
         {
-            Nav.NavigateTo("/register", forceLoad: true);
+            Nav.NavigateTo("register", forceLoad: true);
         }
     }
 
@@ -79,7 +79,7 @@
             }
             else
             {
-                Nav.NavigateTo(AuthReturnUrl.Validate(ReturnUrl) ?? "/", forceLoad: true);
+                Nav.NavigateTo(AuthReturnUrl.Validate(ReturnUrl) ?? "", forceLoad: true);
             }
         }
         catch (Exception ex)

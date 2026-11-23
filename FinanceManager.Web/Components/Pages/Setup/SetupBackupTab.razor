@@ -52,7 +52,7 @@
                                 <button class="icon-btn" title="@Localizer["Ribbon_Restore"]" disabled="@(_vm!.Busy || _vm!.HasActiveRestore)" @onclick:stopPropagation @onclick="() => ShowRestoreDialog(b)">
                                     <svg class="icon"><use href="icons/sprite.svg#restore" /></svg>
                                 </button>
-                                <a class="icon-btn" title="@Localizer["Ribbon_Download"]" href="@($"/api/setup/backups/{b.Id}/download")" download @onclick:stopPropagation>
+                                <a class="icon-btn" title="@Localizer["Ribbon_Download"]" href="@($"api/setup/backups/{b.Id}/download")" download @onclick:stopPropagation>
                                     <svg class="icon"><use href="icons/sprite.svg#download" /></svg>
                                 </a>
                                 <button class="icon-btn danger" title="@Localizer["Ribbon_Delete"]" @onclick:stopPropagation @onclick="() => DeleteBackupAsync(b.Id)" disabled="@_vm!.Busy">
@@ -99,7 +99,7 @@
                         <button class="icon-btn" title="@Localizer["Ribbon_Restore"]" disabled="@(_vm!.Busy || _vm!.HasActiveRestore)" @onclick="() => ShowRestoreDialog(b)">
                             <svg class="icon"><use href="icons/sprite.svg#restore" /></svg>
                         </button>
-                        <a class="icon-btn" title="@Localizer["Ribbon_Download"]" href="@($"/api/setup/backups/{b.Id}/download")" download>
+                        <a class="icon-btn" title="@Localizer["Ribbon_Download"]" href="@($"api/setup/backups/{b.Id}/download")" download>
                             <svg class="icon"><use href="icons/sprite.svg#download" /></svg>
                         </a>
                         <button class="icon-btn danger" title="@Localizer["Ribbon_Delete"]" @onclick="() => DeleteBackupAsync(b.Id)" disabled="@_vm!.Busy">

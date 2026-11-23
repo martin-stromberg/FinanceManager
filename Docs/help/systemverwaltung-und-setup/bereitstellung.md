@@ -31,9 +31,33 @@ Ein gültiger manueller Tag `vX.Y.Z` hat Vorrang vor der automatischen
 Berechnung. Ein Push auf `main` ohne release-relevante Commits wird
 erfolgreich mit `released=false` beendet und erzeugt kein leeres Release.
 
+## Vorabversionen aus dem Staging-Workflow
+
+Ein Push auf `staging` startet zusätzlich den Workflow `Pre-Release`
+(`.github/workflows/staging-ci.yml`). Nach statischen Prüfungen, Build
+und Tests ermittelt er die nächste Version über einen
+Semantic-Release-Dry-Run. `staging` ist dabei kein konfigurierter
+Release-Branch in `release.config.js`; der Branch wird nur für diesen
+einen Lauf als Release-Branch behandelt, und der Lauf verwendet die
+reduzierte Plugin-Liste der reinen Commit-Analyse (`RESOLVE_DRY_RUN`).
+
+Ein Fehlschlag der Versionsermittlung bricht den Workflow sichtbar mit
+einer Fehlerannotation ab. Nur ein erfolgreicher Lauf ohne neue Version
+endet mit `changed=false` („kein Release erforderlich"). Wurde eine neue
+Version `X.Y.Z` ermittelt, ergänzt der Workflow einen RC-Zähler
+(`vX.Y.Z-rc.N`), baut dieselben Publish-Artefakte und `update.json` wie
+das Release und veröffentlicht ein GitHub-Pre-Release. Diese
+Vorabversionen sind die Quelle, die `Updates:IncludePrereleases` in der
+Self-Update-Prüfung einbezieht.
+
+Alle Node- und npm-Schritte der Workflows laufen auf derselben in
+`package.json` deklarierten Basis (`engines.node >= 26.13`, benötigt von
+`semantic-release@26.0.1`); die Workflows pinnen sie über
+`actions/setup-node` auf Node 26.
+
 ## Build und Veröffentlichungsartefakt
 
-Der Workflow verwendet `windows-latest`, Node 22 und das .NET-SDK `10.0.x`.
+Der Workflow verwendet `windows-latest`, Node 26 und das .NET-SDK `10.0.x`.
 Vor der Veröffentlichung laufen:
 
 1. `npm ci` für die gesperrten Semantic-Release-Abhängigkeiten;
@@ -56,6 +80,10 @@ Die Inhalte der runtime-spezifischen Publish-Verzeichnisse werden als
 enthalten `release-metadata.json` mit Version, Commit, Repository und Runtime.
 Ein fehlendes oder leeres Publish-Verzeichnis sowie ein leeres Archiv brechen
 den Workflow vor der Veröffentlichung ab.
+
+Die schrittweise Installation des ZIP-Pakets auf einem Server (Service-Account,
+systemd-Unit, optionaler Reverse-Proxy) beschreibt die
+[Server-Installation](server-installation.md).
 
 ## Release und Asset
 

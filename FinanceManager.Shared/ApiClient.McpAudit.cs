@@ -28,7 +28,7 @@ public partial class ApiClient
         Guid? mcpAccessId = null, Guid? correlationId = null, string? toolName = null,
         string? result = null, int skip = 0, int take = 100, CancellationToken ct = default)
     {
-        var url = "/api/mcp-audit" + BuildAuditQuery(from, to, category, mcpAccessId, correlationId, toolName, result, skip, take);
+        var url = "api/mcp-audit" + BuildAuditQuery(from, to, category, mcpAccessId, correlationId, toolName, result, skip, take);
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<IReadOnlyList<McpAuditEntryListItemDto>>(cancellationToken: ct)
@@ -43,7 +43,7 @@ public partial class ApiClient
     /// <returns>The detail DTO or null.</returns>
     public async Task<McpAuditEntryDetailDto?> Mcp_GetAuditEntryAsync(Guid id, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/mcp-audit/{id}", ct);
+        var resp = await _http.GetAsync($"api/mcp-audit/{id}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<McpAuditEntryDetailDto>(cancellationToken: ct);
@@ -57,7 +57,7 @@ public partial class ApiClient
     /// <returns>The verification result.</returns>
     public async Task<McpAuditVerifyResultDto> Mcp_VerifyAuditChainAsync(CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync("/api/mcp-audit/verify", ct);
+        var resp = await _http.GetAsync("api/mcp-audit/verify", ct);
         await EnsureSuccessOrSetErrorAsync(resp);
         return (await resp.Content.ReadFromJsonAsync<McpAuditVerifyResultDto>(cancellationToken: ct))!;
     }
@@ -72,7 +72,7 @@ public partial class ApiClient
     /// <returns>The usage DTO or null.</returns>
     public async Task<McpAccessUsageDto?> Mcp_GetAccessUsageAsync(Guid accessId, int recent = 10, CancellationToken ct = default)
     {
-        var resp = await _http.GetAsync($"/api/mcp-audit/usage/{accessId}?recent={recent}", ct);
+        var resp = await _http.GetAsync($"api/mcp-audit/usage/{accessId}?recent={recent}", ct);
         if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         await EnsureSuccessOrSetErrorAsync(resp);
         return await resp.Content.ReadFromJsonAsync<McpAccessUsageDto>(cancellationToken: ct);
@@ -97,7 +97,7 @@ public partial class ApiClient
         Guid? mcpAccessId = null, Guid? correlationId = null, string? toolName = null,
         string? result = null)
     {
-        var qs = new StringBuilder("/api/mcp-audit/export?format=" + Uri.EscapeDataString(format ?? "json"));
+        var qs = new StringBuilder("api/mcp-audit/export?format=" + Uri.EscapeDataString(format ?? "json"));
         AppendAuditQuery(qs, from, to, category, mcpAccessId, correlationId, toolName, result, null, null);
         return qs.ToString();
     }

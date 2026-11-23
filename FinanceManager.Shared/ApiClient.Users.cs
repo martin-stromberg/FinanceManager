@@ -14,7 +14,7 @@ public partial class ApiClient
     public async Task Users_CreateDemoDataAsync(Guid userId, bool createPostings, CancellationToken ct = default)
     {
         var request = new DemoRequest(createPostings);
-        var resp = await _http.PostAsync($"/api/users/demo/{userId}", JsonContent.Create(request), ct);
+        var resp = await _http.PostAsync($"api/users/demo/{userId}", JsonContent.Create(request), ct);
         await EnsureSuccessOrSetErrorAsync(resp);
     }
 }

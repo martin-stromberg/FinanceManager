@@ -22,7 +22,7 @@ public record UserListItem(Guid Id, string Username, bool IsAdmin, bool Active, 
     /// Returns the navigation URL for the user's detail card.
     /// </summary>
     /// <returns>Relative URL to the user card.</returns>
-    public string GetNavigateUrl() => $"/card/users/{Id}";
+    public string GetNavigateUrl() => $"card/users/{Id}";
 }
 
 /// <summary>
@@ -113,7 +113,7 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
             new UiRibbonAction(
                 "New",
                 localizer["Ribbon_New"].Value,
-                "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+                "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,

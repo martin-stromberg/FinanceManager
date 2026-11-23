@@ -152,6 +152,41 @@ public sealed class UpdateOrchestratorAdapterTests
     }
 
     /// <summary>
+    /// Verifies that a manually triggered "check now" still runs the check against the update source even when
+    /// <see cref="AutoUpdateOptions.Enabled"/> is turned off, and restores it to its original (disabled) value
+    /// afterwards - "Enabled" also gates the scheduled background check, but an admin explicitly clicking "check
+    /// now" must always get a real check, while the scheduled check stays off exactly as configured.
+    /// </summary>
+    [Fact]
+    public async Task Adapter_CheckAsync_WhenDisabled_StillChecksAndRestoresDisabledAfterwards()
+    {
+        var autoUpdateOptions = new AutoUpdateOptions { Enabled = false };
+        var orchestrator = new Mock<IAutoUpdateOrchestrator>();
+        var observedEnabledDuringCheck = false;
+        orchestrator.Setup(o => o.CheckForUpdateAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => observedEnabledDuringCheck = autoUpdateOptions.Enabled)
+            .ReturnsAsync(new AutoUpdateResult(AutoUpdateOutcome.NoUpdate, AutoUpdateState.Idle, "no update", null));
+        var settingsStore = new Mock<IUpdateSettingsStore>();
+        settingsStore.Setup(s => s.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UpdateSettingsDto(false, "owner", "repo", "update.json", new TimeOnly(20, 0), new TimeOnly(6, 0), null, "svc", null, "updates", 120, false));
+        var installedProvider = new Mock<IInstalledReleaseMetadataProvider>();
+        installedProvider.Setup(p => p.GetAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InstalledReleaseMetadataDto(null, null, null, null, null));
+        var adapter = UpdateOrchestratorAdapterTestFactory.Create(
+            orchestrator: orchestrator.Object,
+            settingsStore: settingsStore.Object,
+            installedProvider: installedProvider.Object,
+            autoUpdateOptions: autoUpdateOptions);
+
+        var result = await adapter.CheckAsync(TestContext.Current.CancellationToken);
+
+        orchestrator.Verify(o => o.CheckForUpdateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        observedEnabledDuringCheck.Should().BeTrue();
+        autoUpdateOptions.Enabled.Should().BeFalse();
+        result.UpdateAvailable.Should().BeFalse();
+    }
+
+    /// <summary>
     /// Verifies that saving update settings through the adapter both persists them via the settings store and
     /// immediately applies them to the live runtime options - mirroring
     /// <see cref="UpdateOrchestratorAdapterLockAndScheduleTests.ScheduleAsync_SavesScheduleAndAppliesToAutoUpdateOptions"/>

@@ -30,7 +30,7 @@ public sealed record McpAccessListItem(
     /// Returns the navigation URL for the access detail card.
     /// </summary>
     /// <returns>Relative URL to the MCP access card.</returns>
-    public string GetNavigateUrl() => $"/card/mcp-accesses/{Id}";
+    public string GetNavigateUrl() => $"card/mcp-accesses/{Id}";
 }
 
 /// <summary>
@@ -172,7 +172,7 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
             new UiRibbonAction(
                 "New",
                 localizer["Ribbon_New"].Value,
-                "<svg><use href='/icons/sprite.svg#plus'/></svg>",
+                "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
                 false,
                 null,
@@ -185,7 +185,7 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
             new UiRibbonAction(
                 "Approvals",
                 localizer["Nav_McpApprovals"].Value,
-                "<svg><use href='/icons/sprite.svg#check'/></svg>",
+                "<svg><use href='icons/sprite.svg#check'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -194,13 +194,13 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                     // /card/mcp-approvals — the approval center is reachable inside the
                     // access area (top-level nav is consolidated to a single entry).
                     ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
-                        .NavigateTo("/card/mcp-approvals");
+                        .NavigateTo("card/mcp-approvals");
                     return Task.CompletedTask;
                 })),
             new UiRibbonAction(
                 "AuditLog",
                 localizer["Mcp_Ribbon_AuditLog"].Value,
-                "<svg><use href='/icons/sprite.svg#list'/></svg>",
+                "<svg><use href='icons/sprite.svg#list'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
@@ -208,13 +208,13 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                 {
                     // /card/mcp-audit — the audit timeline is a card-route view without record id.
                     ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
-                        .NavigateTo("/card/mcp-audit");
+                        .NavigateTo("card/mcp-audit");
                     return Task.CompletedTask;
                 })),
             new UiRibbonAction(
                 "Security",
                 localizer["Nav_McpSecurity"].Value,
-                "<svg><use href='/icons/sprite.svg#key'/></svg>",
+                "<svg><use href='icons/sprite.svg#key'/></svg>",
                 UiRibbonItemSize.Small,
                 !(ServiceProvider.GetService(typeof(FinanceManager.Application.ICurrentUserService)) is FinanceManager.Application.ICurrentUserService cu && cu.IsAdmin),
                 null,
@@ -223,13 +223,13 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                     // /card/mcp-security — admin security overview incl. the MCP settings
                     // (Enabled / WriteAccessEnabled), reachable for admins only.
                     ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
-                        .NavigateTo("/card/mcp-security");
+                        .NavigateTo("card/mcp-security");
                     return Task.CompletedTask;
                 })),
             new UiRibbonAction(
                 "Reload",
                 localizer["Ribbon_Reload"].Value,
-                "<svg><use href='/icons/sprite.svg#refresh'/></svg>",
+                "<svg><use href='icons/sprite.svg#refresh'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
                 null,
