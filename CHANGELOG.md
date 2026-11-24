@@ -41,6 +41,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **msTools.Updater auf 0.11.0-rc.8 aktualisiert:** `FinanceManager.Web`, `FinanceManager.Tests` und `FinanceManager.Tests.Integration` referenzieren jetzt das lokale NuGet-Paket `msTools.Updater 0.11.0-rc.8`. Damit wird der Upstream-Fix aus `martin-stromberg/msTools.Updater#85` wirksam: Eine geplante Update-Installation, deren Zeitpunkt verstrichen ist, während das Paket bereitstand oder der Prozess nicht lief, wird unmittelbar nachgeholt statt auf das nächste konfigurierte Zeitfenster zu warten — nach dem Upgrade kann eine zuvor versäumte Installation daher unmittelbar starten. Die bisherigen Paketdateien `0.10.1` und `0.10.0-rc.1` unter `external/msTools.Updater/` wurden entfernt.
+
 - **msTools.Updater auf 0.10.0-rc.1 aktualisiert:** `FinanceManager.Web`, `FinanceManager.Tests` und `FinanceManager.Tests.Integration` referenzieren jetzt das lokale NuGet-Paket `msTools.Updater 0.10.0-rc.1`. Die alte `0.8.0-rc.1`-Paketdatei in `external/msTools.Updater/` wurde entfernt.
 
 - **Schnellbearbeitung im Kontoauszug:** `Strg`+`Pfeil hoch` bzw. `Strg`+`Pfeil runter` navigiert im Schnellbearbeitungsmodus in derselben Feldspalte zur vorherigen bzw. nächsten sichtbaren editierbaren Zeile.

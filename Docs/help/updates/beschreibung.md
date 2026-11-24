@@ -42,6 +42,8 @@ Die Option **Vorabversionen berücksichtigen** ist standardmäßig deaktiviert. 
 
 Der Service-Name bietet Autocomplete-Vorschläge aus den Diensten des aktuellen Systems. Unter Windows liest das System Windows-Dienste, unter Linux systemd-Services. Auf anderen Plattformen oder bei fehlenden Systemwerkzeugen bleibt die Vorschlagsliste leer.
 
+Ist eine **geplante Installationszeit** gesetzt und liegt ein bereitgestelltes Update vor, startet die Installation automatisch zum angegebenen Zeitpunkt. Wurde der Zeitpunkt verpasst — etwa weil die Anwendung zu diesem Zeitpunkt nicht lief oder das Update-Paket erst später bereitstand —, wird die Installation unmittelbar nachgeholt, statt auf den nächsten Termin zu warten.
+
 Die Aktionen **Jetzt prüfen**, **Update installieren** und **Update-Lock zurücksetzen** sind im Ribbon der Setup-Seite verfügbar. **Update installieren** ist nur aktiv, wenn der Status `Ready` ist; **Update-Lock zurücksetzen** ist nur aktiv, wenn ein Lock gemeldet wird. Wenn der Reset nicht möglich ist, zeigt die UI den konkreten Grund an, z. B. dass kein aktiver Lock vorhanden ist, der Lock noch nicht alt genug ist, die Lock-Datei nicht entfernt werden konnte oder ein technischer Reset-Fehler aufgetreten ist.
 
 Technische Update-Werte werden Anwendern nicht mehr als Eingabefelder angezeigt. Die Oberfläche beschränkt sich auf die betrieblichen Einstellungen, die Administratoren im Alltag benötigen.
@@ -65,7 +67,7 @@ Technische Update-Werte werden Anwendern nicht mehr als Eingabefelder angezeigt.
 ## Einschränkungen
 
 - **Nur GitHub-Releases**: Manifeste müssen in GitHub-Releases verfügbar sein
-- **Keine automatische Installation**: Installation erfordert Admin-Bestätigung über Web-UI
+- **Keine unangekündigte Installation**: Die Installation startet nur manuell per Admin-Bestätigung über Web-UI oder zur konfigurierten geplanten Installationszeit
 - **Ein Lock pro System**: Nur eine Installation gleichzeitig (Lock verhindert Parallelität)
 - **Keine Rollback-Automatik**: Fehlerhafte Updates müssen manuell rückgängig gemacht werden
 - **Plattformspezifisches Asset**: System prüft `RuntimeIdentifier` (z. B. `linux-x64`, `win-x64`) und wählt passendes Asset

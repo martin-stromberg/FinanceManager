@@ -287,13 +287,15 @@ Beteiligte Komponenten: `BackgroundTaskStatusPanel`, `ICurrentUserService`, `Api
 
 ### 11. Self-Update-Pruefung und Download
 
-Die Self-Update-Logik wird aus dem externen Release-Artefakt
-`msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung liegt der
-gepruefte Release `v0.3.0` unter `external/msTools.Updater/v0.3.0/`; die dort
-entpackte `msTools.Updater.dll` wird ueber `builder.UseAutoUpdate(...)` in
-`ProgramExtensions` registriert. FinanceManager greift ausschliesslich ueber
-die Adapterklasse `UpdateOrchestratorAdapter` darauf zu, sodass Controller,
-`ApiClient` und ViewModel stabil bleiben.
+Die Self-Update-Logik wird aus dem externen NuGet-Paket
+`msTools.Updater` eingebunden. Das gepruefte Paket `0.11.0-rc.8` liegt unter
+`external/msTools.Updater/msTools.Updater.0.11.0-rc.8.nupkg`; der Ordner
+`external/msTools.Updater` ist in `NuGet.config` als lokale Paketquelle
+`local-msTools.Updater` registriert. Die Bibliothek wird ueber
+`builder.UseAutoUpdate(...)` in `ProgramExtensions` registriert.
+FinanceManager greift ausschliesslich ueber die Adapterklasse
+`UpdateOrchestratorAdapter` darauf zu, sodass Controller, `ApiClient` und
+ViewModel stabil bleiben.
 
 `UseAutoUpdate(...)` seedet die Bibliothekseinstellungen (`AutoUpdateOptions`)
 zunaechst ausschliesslich aus `appsettings*.json`. Direkt danach, aber noch vor
@@ -346,7 +348,12 @@ Beteiligte Komponenten: `UpdateController`, `AutoUpdateCheckerService`,
 1. Ein Administrator startet `POST /api/setup/update/install/start` mit
    `ConfirmDowntime = true` oder der Hintergrunddienst
    `AutoUpdateSchedulerService` erreicht eine geplante Uhrzeit
-   (`Updates:ScheduledInstallTime`) bei Status `Ready`.
+   (`Updates:ScheduledInstallTime`) bei Status `Ready`. Liegt der geplante
+   Zeitpunkt bereits in der Vergangenheit — etwa weil der Prozess zu diesem
+   Zeitpunkt nicht lief oder das Paket erst spaeter bereitstand —, holt
+   `AutoUpdateSchedulerService` die Installation seit `msTools.Updater`
+   `0.11.0-rc.8` unmittelbar nach, statt auf den naechsten geplanten Termin
+   zu warten.
 2. Der Orchestrator lehnt den Start ab, wenn kein vorbereitetes Paket vorliegt,
    ein Lock aktiv ist, keine Downtime-Bestaetigung vorliegt oder bereits
    `Installing` gemeldet wird.
