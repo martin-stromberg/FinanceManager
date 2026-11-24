@@ -117,20 +117,22 @@ Repository-Berechtigungen.
 ## Self-Update im Betrieb
 
 Das Self-Update ist eine Admin-Funktion im Setup und standardmaessig
-deaktiviert. Die Logik wird durch das externe Release-Artefakt
-`msTools.Updater` bereitgestellt. FinanceManager konsumiert die unter
-`external/msTools.Updater/v0.3.0/` abgelegte `msTools.Updater.dll` ueber einen
-Adapter (`UpdateOrchestratorAdapter`); die oeffentliche REST-API und die
-Setup-UI bleiben davon unberührt.
+deaktiviert. Die Logik wird durch das externe NuGet-Paket `msTools.Updater`
+bereitgestellt, das ueber `builder.UseAutoUpdate(...)` in `ProgramExtensions`
+registriert wird. FinanceManager greift ausschliesslich ueber einen Adapter
+(`UpdateOrchestratorAdapter`) darauf zu; die oeffentliche REST-API und die
+Setup-UI bleiben davon unberuehrt.
 
-Das eingebundene Artefakt stammt aus dem GitHub-Release `v0.3.0` des
-Repositories `martin-stromberg/msTools.Updater`. Das Original-ZIP
-`release.zip` und `SHA256SUMS.txt` bleiben im Repository erhalten; massgeblich
-ist der SHA-256-Wert
-`9b9e578deffddd44a36a3ac844ca9b55b1c201984823f6134db56aafdd292834`. Die
-frueher lokale Updater-Bibliothek ist kein Projekt dieser Solution mehr. Eine
-spaetere NuGet-Referenz ersetzt nur diese lokale Artefaktablage, nicht die
-FinanceManager-spezifische Update-API.
+Das Paket ist vendored eingebunden: Das gepruefte Paket
+`msTools.Updater.0.11.0-rc.8.nupkg` liegt unter `external/msTools.Updater/`;
+der Ordner ist in `NuGet.config` als lokale Paketquelle
+`local-msTools.Updater` registriert. Die Versionsauswahl erfolgt ueber
+`PackageReference`-Eintraege in `FinanceManager.Web.csproj`,
+`FinanceManager.Tests.csproj` und `FinanceManager.Tests.Integration.csproj`;
+alle drei Projekte referenzieren stets dieselbe Version. Der Upgrade-Prozess
+fuer vendored Abhaengigkeiten ist in
+[dependency-upgrade-process.md](../../maintenance/dependency-upgrade-process.md)
+beschrieben.
 
 Die Update-Quelle ist wahlweise GitHub-Releases (`Updates:SourceType: Github`,
 Standardwert) oder ein lokales Verzeichnis (`Updates:SourceType: LocalFolder`).
