@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-25T04:56:22.970Z",
+  "generatedAt": "2026-11-25T20:04:39.779Z",
   "viewports": {
     "desktop": {
       "width": 1280,
@@ -144,6 +144,20 @@
       "notes": []
     },
     {
+      "id": "home",
+      "group": "concrete",
+      "url": "/",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "partial",
+      "screenshot": "screenshots/desktop/home.png",
+      "html": "html/desktop/home.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)",
+        "wait selector not visible in SSR DOM: .kpi-grid .kpi-tile"
+      ]
+    },
+    {
       "id": "change-password",
       "group": "concrete",
       "url": "/change-password",
@@ -211,7 +225,7 @@
     {
       "id": "security-performance",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -224,7 +238,7 @@
     {
       "id": "security-performance-overview",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Overview",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Overview",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -237,7 +251,7 @@
     {
       "id": "security-performance-timeseries",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/TimeSeries",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/TimeSeries",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -250,7 +264,7 @@
     {
       "id": "security-performance-cashflows",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Cashflows",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Cashflows",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -263,7 +277,7 @@
     {
       "id": "security-performance-metrics",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Metrics",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Metrics",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -276,7 +290,7 @@
     {
       "id": "security-performance-benchmark",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Benchmark",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Benchmark",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -328,7 +342,7 @@
     {
       "id": "list-postings-account",
       "group": "list",
-      "url": "/list/postings/account/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "url": "/list/postings/account/a001a459-a4f7-4c8e-ad18-b9d695f99593",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -341,7 +355,7 @@
     {
       "id": "list-postings-contact",
       "group": "list",
-      "url": "/list/postings/contact/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "url": "/list/postings/contact/89649633-8081-4106-b1be-8516e8bb8063",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -354,7 +368,7 @@
     {
       "id": "list-postings-savings-plan",
       "group": "list",
-      "url": "/list/postings/savings-plan/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "url": "/list/postings/savings-plan/1491a473-2d9d-441b-b012-3b6fddfb9725",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -367,7 +381,7 @@
     {
       "id": "list-postings-security",
       "group": "list",
-      "url": "/list/postings/security/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "url": "/list/postings/security/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -417,14 +431,40 @@
       ]
     },
     {
+      "id": "list-securities-categories",
+      "group": "list",
+      "url": "/list/securities/categories",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-securities-categories.png",
+      "html": "html/desktop/list-securities-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
       "id": "list-securities-prices",
       "group": "list",
-      "url": "/list/securities/prices/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "url": "/list/securities/prices/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
       "screenshot": "screenshots/desktop/list-securities-prices.png",
       "html": "html/desktop/list-securities-prices.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-statement-drafts",
+      "group": "list",
+      "url": "/list/statement-drafts",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-statement-drafts.png",
+      "html": "html/desktop/list-statement-drafts.html",
       "notes": [
         "ssr-capture (blazor.web.js blocked)"
       ]
@@ -497,7 +537,7 @@
     {
       "id": "card-account",
       "group": "card",
-      "url": "/card/accounts/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "url": "/card/accounts/a001a459-a4f7-4c8e-ad18-b9d695f99593",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -510,7 +550,7 @@
     {
       "id": "card-budget-category",
       "group": "card",
-      "url": "/card/budget/categories/74926048-ea4d-40e7-ac23-8795421b6d6c",
+      "url": "/card/budget/categories/2d1f0cb0-4f72-4d6c-9e2d-619b011807e0",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -523,7 +563,7 @@
     {
       "id": "card-budget-purpose",
       "group": "card",
-      "url": "/card/budget/purposes/1642e7a2-711b-413c-b51d-e948205ca83b",
+      "url": "/card/budget/purposes/9057f04d-be04-44f6-8c9b-70724a9c7afe",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -536,7 +576,7 @@
     {
       "id": "card-budget-rule",
       "group": "card",
-      "url": "/card/budget/rules/c9543814-5824-4d30-9123-3855821be510",
+      "url": "/card/budget/rules/631524a7-7f37-4bd7-9a49-8aabf138ef40",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -549,7 +589,7 @@
     {
       "id": "card-contact",
       "group": "card",
-      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "url": "/card/contacts/89649633-8081-4106-b1be-8516e8bb8063",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -562,7 +602,7 @@
     {
       "id": "card-contact-category",
       "group": "card",
-      "url": "/card/contacts/categories/9aeb8b79-2258-4552-bddd-846b406d4379",
+      "url": "/card/contacts/categories/1c4cbf29-fd92-488c-9014-90c1e257c59b",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -575,7 +615,7 @@
     {
       "id": "card-mcp-access",
       "group": "card",
-      "url": "/card/mcp-accesses/4b6a97bb-cc99-43f0-b4e9-a029a95f4e04",
+      "url": "/card/mcp-accesses/abd26524-8f3e-487d-8d1c-5ecfa6f16677",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -640,7 +680,7 @@
     {
       "id": "card-posting",
       "group": "card",
-      "url": "/card/postings/2a1c44b7-2500-4b4c-8e7f-d59ae5c5f6f0",
+      "url": "/card/postings/42ee50bf-6776-43d7-abd3-e448cd83d2aa",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -653,7 +693,7 @@
     {
       "id": "card-savings-plan",
       "group": "card",
-      "url": "/card/savings-plans/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "url": "/card/savings-plans/1491a473-2d9d-441b-b012-3b6fddfb9725",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -666,7 +706,7 @@
     {
       "id": "card-savings-plan-category",
       "group": "card",
-      "url": "/card/savings-plans/categories/98135cc6-7639-4530-ac3a-04566f5f5ea9",
+      "url": "/card/savings-plans/categories/77eb3efc-f96c-4040-97a2-7e9cd6a7bc46",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -679,7 +719,7 @@
     {
       "id": "card-security",
       "group": "card",
-      "url": "/card/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "url": "/card/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -692,7 +732,7 @@
     {
       "id": "card-security-category",
       "group": "card",
-      "url": "/card/securities/categories/ae5440af-6612-4b9c-8e45-2a57daf83212",
+      "url": "/card/securities/categories/b3c2cf44-2ef4-488a-acd2-95cc5fc80c48",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -718,7 +758,7 @@
     {
       "id": "card-user",
       "group": "card",
-      "url": "/card/users/39350b0e-dc14-4b6a-a59f-46ad79577088",
+      "url": "/card/users/99dba9d4-50e0-457d-94ba-47e307552989",
       "auth": "admin",
       "viewport": "desktop",
       "status": "captured",
@@ -731,7 +771,7 @@
     {
       "id": "card-statement-draft",
       "group": "card",
-      "url": "/card/statement-drafts/73acbb5f-b46e-4bf3-acbf-7dcae6f107f2",
+      "url": "/card/statement-drafts/29bd2d49-ec4b-462f-a11b-5e4a922ef967",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -744,7 +784,7 @@
     {
       "id": "card-statement-draft-entry",
       "group": "card",
-      "url": "/card/statement-drafts/entries/7cccdbc4-7aca-401d-a3b0-3eaffa3664b0",
+      "url": "/card/statement-drafts/entries/afd17a94-3b20-4a65-bb68-2af238c621a4",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
@@ -928,18 +968,36 @@
       "status": "captured",
       "screenshot": "screenshots/desktop/overlay-mcp-access-wizard.png",
       "html": "html/desktop/overlay-mcp-access-wizard.html",
-      "notes": []
+      "notes": [
+        "Post-action wait failed: page.waitForSelector: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.mcp-wizard, .split-dialog, .modal-overlay') to be visible\u001b[22m\n"
+      ]
     },
     {
       "id": "overlay-confirm-dialog",
       "group": "overlay",
-      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "url": "/card/contacts/89649633-8081-4106-b1be-8516e8bb8063",
       "auth": "user",
       "viewport": "desktop",
       "status": "captured",
       "screenshot": "screenshots/desktop/overlay-confirm-dialog.png",
       "html": "html/desktop/overlay-confirm-dialog.html",
-      "notes": []
+      "notes": [
+        "Post-action wait failed: page.waitForSelector: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.confirm-dialog, .modal-overlay, .split-dialog') to be visible\u001b[22m\n"
+      ]
+    },
+    {
+      "id": "home",
+      "group": "concrete",
+      "url": "/",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "partial",
+      "screenshot": "screenshots/mobile/home.png",
+      "html": "html/mobile/home.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)",
+        "wait selector not visible in SSR DOM: .kpi-grid .kpi-tile"
+      ]
     },
     {
       "id": "change-password",
@@ -1009,7 +1067,7 @@
     {
       "id": "security-performance",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1022,7 +1080,7 @@
     {
       "id": "security-performance-overview",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Overview",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Overview",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1035,7 +1093,7 @@
     {
       "id": "security-performance-timeseries",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/TimeSeries",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/TimeSeries",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1048,7 +1106,7 @@
     {
       "id": "security-performance-cashflows",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Cashflows",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Cashflows",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1061,7 +1119,7 @@
     {
       "id": "security-performance-metrics",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Metrics",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Metrics",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1074,7 +1132,7 @@
     {
       "id": "security-performance-benchmark",
       "group": "security-tabs",
-      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Benchmark",
+      "url": "/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8/performance/Benchmark",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1126,7 +1184,7 @@
     {
       "id": "list-postings-account",
       "group": "list",
-      "url": "/list/postings/account/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "url": "/list/postings/account/a001a459-a4f7-4c8e-ad18-b9d695f99593",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1139,7 +1197,7 @@
     {
       "id": "list-postings-contact",
       "group": "list",
-      "url": "/list/postings/contact/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "url": "/list/postings/contact/89649633-8081-4106-b1be-8516e8bb8063",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1152,7 +1210,7 @@
     {
       "id": "list-postings-savings-plan",
       "group": "list",
-      "url": "/list/postings/savings-plan/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "url": "/list/postings/savings-plan/1491a473-2d9d-441b-b012-3b6fddfb9725",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1165,7 +1223,7 @@
     {
       "id": "list-postings-security",
       "group": "list",
-      "url": "/list/postings/security/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "url": "/list/postings/security/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1215,14 +1273,40 @@
       ]
     },
     {
+      "id": "list-securities-categories",
+      "group": "list",
+      "url": "/list/securities/categories",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-securities-categories.png",
+      "html": "html/mobile/list-securities-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
       "id": "list-securities-prices",
       "group": "list",
-      "url": "/list/securities/prices/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "url": "/list/securities/prices/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
       "screenshot": "screenshots/mobile/list-securities-prices.png",
       "html": "html/mobile/list-securities-prices.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-statement-drafts",
+      "group": "list",
+      "url": "/list/statement-drafts",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-statement-drafts.png",
+      "html": "html/mobile/list-statement-drafts.html",
       "notes": [
         "ssr-capture (blazor.web.js blocked)"
       ]
@@ -1295,7 +1379,7 @@
     {
       "id": "card-account",
       "group": "card",
-      "url": "/card/accounts/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "url": "/card/accounts/a001a459-a4f7-4c8e-ad18-b9d695f99593",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1308,7 +1392,7 @@
     {
       "id": "card-budget-category",
       "group": "card",
-      "url": "/card/budget/categories/74926048-ea4d-40e7-ac23-8795421b6d6c",
+      "url": "/card/budget/categories/2d1f0cb0-4f72-4d6c-9e2d-619b011807e0",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1321,7 +1405,7 @@
     {
       "id": "card-budget-purpose",
       "group": "card",
-      "url": "/card/budget/purposes/1642e7a2-711b-413c-b51d-e948205ca83b",
+      "url": "/card/budget/purposes/9057f04d-be04-44f6-8c9b-70724a9c7afe",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1334,7 +1418,7 @@
     {
       "id": "card-budget-rule",
       "group": "card",
-      "url": "/card/budget/rules/c9543814-5824-4d30-9123-3855821be510",
+      "url": "/card/budget/rules/631524a7-7f37-4bd7-9a49-8aabf138ef40",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1347,7 +1431,7 @@
     {
       "id": "card-contact",
       "group": "card",
-      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "url": "/card/contacts/89649633-8081-4106-b1be-8516e8bb8063",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1360,7 +1444,7 @@
     {
       "id": "card-contact-category",
       "group": "card",
-      "url": "/card/contacts/categories/9aeb8b79-2258-4552-bddd-846b406d4379",
+      "url": "/card/contacts/categories/1c4cbf29-fd92-488c-9014-90c1e257c59b",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1373,7 +1457,7 @@
     {
       "id": "card-mcp-access",
       "group": "card",
-      "url": "/card/mcp-accesses/4b6a97bb-cc99-43f0-b4e9-a029a95f4e04",
+      "url": "/card/mcp-accesses/abd26524-8f3e-487d-8d1c-5ecfa6f16677",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1438,7 +1522,7 @@
     {
       "id": "card-posting",
       "group": "card",
-      "url": "/card/postings/2a1c44b7-2500-4b4c-8e7f-d59ae5c5f6f0",
+      "url": "/card/postings/42ee50bf-6776-43d7-abd3-e448cd83d2aa",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1451,7 +1535,7 @@
     {
       "id": "card-savings-plan",
       "group": "card",
-      "url": "/card/savings-plans/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "url": "/card/savings-plans/1491a473-2d9d-441b-b012-3b6fddfb9725",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1464,7 +1548,7 @@
     {
       "id": "card-savings-plan-category",
       "group": "card",
-      "url": "/card/savings-plans/categories/98135cc6-7639-4530-ac3a-04566f5f5ea9",
+      "url": "/card/savings-plans/categories/77eb3efc-f96c-4040-97a2-7e9cd6a7bc46",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1477,7 +1561,7 @@
     {
       "id": "card-security",
       "group": "card",
-      "url": "/card/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "url": "/card/securities/7d0f830e-6fa9-4c0b-baaa-fbc14f47a7b8",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1490,7 +1574,7 @@
     {
       "id": "card-security-category",
       "group": "card",
-      "url": "/card/securities/categories/ae5440af-6612-4b9c-8e45-2a57daf83212",
+      "url": "/card/securities/categories/b3c2cf44-2ef4-488a-acd2-95cc5fc80c48",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1516,7 +1600,7 @@
     {
       "id": "card-user",
       "group": "card",
-      "url": "/card/users/39350b0e-dc14-4b6a-a59f-46ad79577088",
+      "url": "/card/users/99dba9d4-50e0-457d-94ba-47e307552989",
       "auth": "admin",
       "viewport": "mobile",
       "status": "captured",
@@ -1529,7 +1613,7 @@
     {
       "id": "card-statement-draft",
       "group": "card",
-      "url": "/card/statement-drafts/73acbb5f-b46e-4bf3-acbf-7dcae6f107f2",
+      "url": "/card/statement-drafts/29bd2d49-ec4b-462f-a11b-5e4a922ef967",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1542,7 +1626,7 @@
     {
       "id": "card-statement-draft-entry",
       "group": "card",
-      "url": "/card/statement-drafts/entries/7cccdbc4-7aca-401d-a3b0-3eaffa3664b0",
+      "url": "/card/statement-drafts/entries/afd17a94-3b20-4a65-bb68-2af238c621a4",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
@@ -1726,98 +1810,20 @@
       "status": "captured",
       "screenshot": "screenshots/mobile/overlay-mcp-access-wizard.png",
       "html": "html/mobile/overlay-mcp-access-wizard.html",
-      "notes": []
+      "notes": [
+        "Post-action wait failed: page.waitForSelector: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.mcp-wizard, .split-dialog, .modal-overlay') to be visible\u001b[22m\n"
+      ]
     },
     {
       "id": "overlay-confirm-dialog",
       "group": "overlay",
-      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "url": "/card/contacts/89649633-8081-4106-b1be-8516e8bb8063",
       "auth": "user",
       "viewport": "mobile",
       "status": "captured",
       "screenshot": "screenshots/mobile/overlay-confirm-dialog.png",
       "html": "html/mobile/overlay-confirm-dialog.html",
       "notes": []
-    },
-    {
-      "id": "home",
-      "group": "concrete",
-      "url": "/",
-      "auth": "user",
-      "viewport": "desktop",
-      "status": "partial",
-      "screenshot": "screenshots/desktop/home.png",
-      "html": "html/desktop/home.html",
-      "notes": [
-        "ssr-capture (blazor.web.js blocked)",
-        "wait selector not visible in SSR DOM: .kpi-grid .kpi-tile"
-      ]
-    },
-    {
-      "id": "list-securities-categories",
-      "group": "list",
-      "url": "/list/securities/categories",
-      "auth": "user",
-      "viewport": "desktop",
-      "status": "captured",
-      "screenshot": "screenshots/desktop/list-securities-categories.png",
-      "html": "html/desktop/list-securities-categories.html",
-      "notes": [
-        "ssr-capture (blazor.web.js blocked)"
-      ]
-    },
-    {
-      "id": "list-statement-drafts",
-      "group": "list",
-      "url": "/list/statement-drafts",
-      "auth": "user",
-      "viewport": "desktop",
-      "status": "captured",
-      "screenshot": "screenshots/desktop/list-statement-drafts.png",
-      "html": "html/desktop/list-statement-drafts.html",
-      "notes": [
-        "ssr-capture (blazor.web.js blocked)"
-      ]
-    },
-    {
-      "id": "home",
-      "group": "concrete",
-      "url": "/",
-      "auth": "user",
-      "viewport": "mobile",
-      "status": "partial",
-      "screenshot": "screenshots/mobile/home.png",
-      "html": "html/mobile/home.html",
-      "notes": [
-        "ssr-capture (blazor.web.js blocked)",
-        "wait selector not visible in SSR DOM: .kpi-grid .kpi-tile"
-      ]
-    },
-    {
-      "id": "list-securities-categories",
-      "group": "list",
-      "url": "/list/securities/categories",
-      "auth": "user",
-      "viewport": "mobile",
-      "status": "captured",
-      "screenshot": "screenshots/mobile/list-securities-categories.png",
-      "html": "html/mobile/list-securities-categories.html",
-      "notes": [
-        "ssr-capture (blazor.web.js blocked)"
-      ]
-    },
-    {
-      "id": "list-statement-drafts",
-      "group": "list",
-      "url": "/list/statement-drafts",
-      "auth": "user",
-      "viewport": "mobile",
-      "status": "captured",
-      "screenshot": "screenshots/mobile/list-statement-drafts.png",
-      "html": "html/mobile/list-statement-drafts.html",
-      "notes": [
-        "ssr-capture (blazor.web.js blocked)"
-      ]
     }
   ],
   "gaps": [

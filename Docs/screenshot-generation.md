@@ -84,6 +84,22 @@ Die Skripte liegen unter [`scripts/screenshots/`](../scripts/screenshots/):
 - **Umgebung:** Der App-Prozess läuft mit `ASPNETCORE_ENVIRONMENT=Development`, `E2E__DisableHttpsRedirection=true` und deaktivierten Hintergrund-Workern (`Workers__SecurityPriceWorker__Enabled=false`, `Updates__HostedServicesEnabled=false`), damit keine externen Dienste nötig sind.
 - **Temporäre Datenbank:** Das Skript legt für jeden Lauf eine neue SQLite-Datenbank im System-Temp-Verzeichnis an und entfernt sie danach. Bei einem Fehler bleibt das Verzeichnis samt `app.log` zum Debuggen erhalten und der Pfad wird ausgegeben.
 
+## Bekannte Einschränkung (Circuit-Authentifizierung)
+
+In Umgebungen, in denen interaktive Blazor-Circuits ohne `HttpContext` laufen
+(`IHttpContextAccessor.HttpContext == null` → `CurrentUserService.IsAuthenticated
+== false`), bricht `generate-screenshots.js` an der Wartebedingung
+`.kpi-grid .kpi-tile` auf `/` ab: Die KPI-Kacheln laden ausschließlich im
+interaktiven Circuit (`OnAfterRenderAsync` in `HomeKpiGrid`), und die
+Startseite zeigt ohne authentifizierten Circuit nur den Signed-out-Platzhalter.
+Hintergrund siehe `design/inventory/data-gaps.md`.
+
+Workaround für die GIF-Frames in solchen Umgebungen: die SSR-Captures aus
+`design/inventory/screenshots/desktop/` (erzeugt über
+`scripts/screenshots/generate-inventory.js`, dort ist `blazor.web.js`
+blockiert) auf die gleichnamigen Dateien in `Docs/screenshots/` kopieren und
+`make-gif.js` ausführen. Die Startseite erscheint dann ohne KPI-Kacheln.
+
 ## Erweiterung für neue Features
 
 1. In `generate-screenshots.js` eine neue `page.goto`/`page.screenshot`-Sequenz ergänzen.

@@ -5,30 +5,30 @@
 /* Widget */
 body.dark-mode .return-summary-widget.return-summary-widget,
 .app-shell.dark-mode .return-summary-widget.return-summary-widget {
-    background: #2b2b2b !important;
-    border-color: var(--border-color, #333) !important;
-    color: #e6e6e6 !important;
+    background: var(--panel-bg-2) !important;
+    border-color: var(--border-color, var(--border)) !important;
+    color: var(--text) !important;
 }
 
 .dark-mode .return-summary-widget.skeleton {
-    background: linear-gradient(90deg, #2a2a3a 25%, #1e1e2e 50%, #2a2a3a 75%);
+    background: linear-gradient(90deg, var(--border) 25%, var(--panel-bg) 50%, var(--border) 75%);
     background-size: 200% 100%;
 }
 
 .dark-mode .rsw-row {
-    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+    border-bottom-color: var(--border-color-subtle, var(--border));
 }
 
 body.dark-mode .rsw-label,
-.app-shell.dark-mode .rsw-label { color: #cfcfcf !important; }
+.app-shell.dark-mode .rsw-label { color: var(--text) !important; }
 body.dark-mode .rsw-value,
-.app-shell.dark-mode .rsw-value { color: #f0f0f0 !important; }
+.app-shell.dark-mode .rsw-value { color: var(--text) !important; }
 
 body.dark-mode .return-summary-widget.error-state,
 body.dark-mode .return-summary-widget.no-data,
 .app-shell.dark-mode .return-summary-widget.error-state,
 .app-shell.dark-mode .return-summary-widget.no-data {
-    color: #cfcfcf;
+    color: var(--text);
 }
 
 .dark-mode .rsw-value.positive { color: #4ade80; }
@@ -37,29 +37,29 @@ body.dark-mode .return-summary-widget.no-data,
 /* KPI info side panel */
 body.dark-mode .rsw-panel.rsw-panel,
 .app-shell.dark-mode .rsw-panel.rsw-panel {
-    background: #2b2b2b !important;
-    border-left-color: #3a3a3a !important;
-    color: #e6e6e6 !important;
+    background: var(--panel-bg-2) !important;
+    border-left-color: var(--border) !important;
+    color: var(--text) !important;
 }
 
 body.dark-mode .rsw-panel-header.rsw-panel-header,
 .app-shell.dark-mode .rsw-panel-header.rsw-panel-header {
-    background: #2b2b2b !important;
-    border-bottom-color: #3a3a3a !important;
+    background: var(--panel-bg-2) !important;
+    border-bottom-color: var(--border) !important;
 }
 
 body.dark-mode .rsw-panel-title,
-.app-shell.dark-mode .rsw-panel-title { color: #f2f2f2 !important; }
+.app-shell.dark-mode .rsw-panel-title { color: var(--text) !important; }
 
 body.dark-mode .rsw-panel-close,
 .app-shell.dark-mode .rsw-panel-close {
-    color: #cfcfcf;
+    color: var(--text);
 }
 
 body.dark-mode .rsw-panel-close:hover,
 .app-shell.dark-mode .rsw-panel-close:hover {
-    background: #3a3a3a;
-    color: #ffffff;
+    background: var(--border);
+    color: var(--text);
 }
 
 body.dark-mode .rsw-panel-loading,
@@ -82,72 +82,72 @@ body.dark-mode .rsw-group-total-row-label,
 .app-shell.dark-mode .rsw-group-single,
 .app-shell.dark-mode .rsw-group-note-row,
 .app-shell.dark-mode .rsw-group-total-row-label {
-    color: #cfcfcf;
+    color: var(--text);
 }
 
 .dark-mode .rsw-formula-box {
-    background: #333333;
-    border-color: #444444;
+    background: var(--border);
+    border-color: var(--border);
 }
 
 .dark-mode .rsw-group {
-    border-color: #3a3a3a;
+    border-color: var(--border);
 }
 
 .dark-mode .rsw-items-table td {
-    border-top-color: #3a3a3a;
+    border-top-color: var(--border);
 }
 
 body.dark-mode .rsw-group-note-row,
 body.dark-mode .rsw-group-total-row,
 .app-shell.dark-mode .rsw-group-note-row,
 .app-shell.dark-mode .rsw-group-total-row {
-    border-top-color: #3a3a3a;
+    border-top-color: var(--border);
 }
 
 .dark-mode .rsw-items-table tbody tr:hover {
-    background: #353535;
+    background: var(--border);
 }
 
 /* Chart */
 .dark-mode .perf-svg,
 .dark-mode .benchmark-svg {
-    background: var(--chart-bg, #1a1a2e);
-    border-color: var(--border-color, #333);
+    background: var(--chart-bg, var(--panel-bg));
+    border-color: var(--border-color, var(--border));
 }
 
 /* KPI sections */
 .dark-mode .kpi-section {
-    background: var(--card-bg, #1e1e2e);
-    border-color: var(--border-color, #333);
+    background: var(--card-bg, var(--panel-bg));
+    border-color: var(--border-color, var(--border));
 }
 
 .dark-mode .kpi-section h3 {
-    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+    border-bottom-color: var(--border-color-subtle, var(--border));
 }
 
 .dark-mode .kpi-row {
-    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+    border-bottom-color: var(--border-color-subtle, var(--border));
 }
 
 .dark-mode .kpi-value { color: var(--text, #e0e0e0); }
 
 /* Tables */
 .dark-mode .fm-table th {
-    border-bottom-color: var(--border-color, #333);
+    border-bottom-color: var(--border-color, var(--border));
 }
 
 .dark-mode .fm-table td {
-    border-bottom-color: var(--border-color-subtle, #2a2a3a);
+    border-bottom-color: var(--border-color-subtle, var(--border));
 }
 
 .dark-mode .fm-table tr:hover td {
-    background: var(--hover-bg, #2a2a3a);
+    background: var(--hover-bg, var(--border));
 }
 
 /* Tab bar */
 .dark-mode .tab-bar {
-    border-bottom-color: var(--border-color, #333);
+    border-bottom-color: var(--border-color, var(--border));
 }
 
 /* CF Badges dark */
@@ -164,6 +164,6 @@ body.dark-mode .rsw-group-total-row,
 @media (max-width: 900px) {
     .dark-mode .perf-svg,
     .dark-mode .benchmark-svg {
-        background: #171b22;
+        background: var(--bg);
     }
 }

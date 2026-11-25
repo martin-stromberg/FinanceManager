@@ -57,7 +57,7 @@
     <link rel="stylesheet" href="css/theme.Dark.PortfolioReport.css">
 
     <link rel="stylesheet" href="FinanceManager.Web.styles.css">
-    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWXunG3fwHiiyZKsReHZiW7gySAWXuYanr2xAKkxPu_HMT_3u02mxZifyg4HbTuNNqwiJsqk3Me88WSTN2hkY4KXMSHerHSwQ17SDZI9r_bUdCNYOg-hGJOqqX5ji12rkPNaezKD7ugcDDWAtFH1FOSFErcxOQ3KlcsMneGNXPEB0w"><script type="importmap">{
+    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWVms4EBElFT4X4V08C9huFA4u4aSfOf9jj7f0Fl814BwgOovUxljT0t5uUDxFX3P1oPt9vUKuWXUhn_jE5bjyNbe09gcKw4EW-ioXbixrPEeH1IOjwSQgcHWDm7ucjJK784uexkTo0aUYT3tdHRqLOBcg3qUZTqm3nBc0ZKRbZ_yg"><script type="importmap">{
   "imports": {
     "./_framework/blazor.server.js": "./_framework/blazor.server.kyitu4x8cy.js",
     "./_framework/blazor.web.js": "./_framework/blazor.web.whefm3rrpu.js",
@@ -96,35 +96,41 @@
         }
     }
 </style>
-        <!--!--><link rel="stylesheet" href="css/ribbon.css">
-<link rel="stylesheet" href="css/app.css">
-
-<div class="app-shell dark-mode"><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
-    <nav class="sidebar"><div class="brand"><img src="icons/finance_manager.png" alt="App-Logo" class="brand-logo">
-            <span>Finance Manager</span></div>
-        <ul class="nav-links"><li><a href="" class="active" aria-current="page">Start</a></li>
-                <li><a href="list/accounts">Konten</a></li>
-                <li><a href="list/statement-drafts">Kontoauszüge</a></li>
-                <li><a href="list/contacts">Kontakte</a></li>
-                <li><a href="list/savings-plans">Sparpläne</a></li>
-                <li><a href="list/securities">Wertpapiere</a></li>
-                <li><a href="list/budget/purposes">Budgetplanung</a></li>
-                <li><a href="reports">Berichte</a></li>
-                <li><a href="card/setup">Einrichtung</a></li><li><a href="list/users">Benutzer</a></li><li><a href="help">📖 Hilfe</a></li></ul>
-        <div class="user-area"><div style="margin-bottom:.35rem; font-size:.85rem;"><a href="legal">Impressum</a></div>
+        <!--!--><div class="app-shell dark-mode "><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
+    <nav class="sidebar"><div class="brand"><span class="brand-logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect>
+                    <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect>
+                    <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span>
+            <span class="brand-text"><span class="brand-name">Finance Manager</span>
+                <span class="brand-sub">Finanzverwaltung</span></span></div>
+        <ul class="nav-links"><li><a href="" class="active" aria-current="page"><svg class="nav-ico"><use href="icons/sprite.svg#nav-home"></use></svg><span>Start</span></a></li>
+                <li><a href="list/accounts"><svg class="nav-ico"><use href="icons/sprite.svg#bank"></use></svg><span>Konten</span></a></li>
+                <li><a href="list/contacts"><svg class="nav-ico"><use href="icons/sprite.svg#nav-contacts"></use></svg><span>Kontakte</span></a></li>
+                <li><a href="list/savings-plans"><svg class="nav-ico"><use href="icons/sprite.svg#nav-savings"></use></svg><span>Sparpläne</span></a></li>
+                <li><a href="list/securities"><svg class="nav-ico"><use href="icons/sprite.svg#nav-trending"></use></svg><span>Wertpapiere</span></a></li>
+                <li><a href="list/statement-drafts"><svg class="nav-ico"><use href="icons/sprite.svg#nav-receipt"></use></svg><span>Kontoauszüge</span></a></li>
+                <li><a href="list/budget/purposes"><svg class="nav-ico"><use href="icons/sprite.svg#nav-pie"></use></svg><span>Budget</span></a></li>
+                <li><a href="reports"><svg class="nav-ico"><use href="icons/sprite.svg#chart"></use></svg><span>Berichte</span></a></li>
+                <li class="nav-sep" aria-hidden="true"></li><li><a href="list/users"><svg class="nav-ico"><use href="icons/sprite.svg#groups"></use></svg><span>Benutzerverwaltung</span></a></li><li><a href="list/mcp-accesses"><svg class="nav-ico"><use href="icons/sprite.svg#nav-ai"></use></svg><span>KI-Zugänge</span></a></li>
+                <li><a href="card/setup"><svg class="nav-ico"><use href="icons/sprite.svg#settings"></use></svg><span>Einstellungen</span></a></li>
+                <li class="nav-sep" aria-hidden="true"></li>
+                <li><a href="help"><svg class="nav-ico"><use href="icons/sprite.svg#nav-help"></use></svg><span>Hilfe</span></a></li>
+                <li><button type="button" class="nav-entry"><svg class="nav-ico"><use href="icons/sprite.svg#nav-logout"></use></svg><span>Abmelden</span></button></li></ul>
+        <div class="user-area"><a href="legal" class="legal-link">Impressum</a>
             <!--!--><!--!--><div class="login-status"><a href="login">Login</a></div></div></nav>
     <main class="content"><div class="mobile-topbar"><label for="nav-toggle" class="hamburger" aria-label="Menü"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></label>
-            <div class="mobile-brand"><img src="icons/finance_manager.png" alt="App-Logo" class="brand-logo">
-                <span>Finance Manager</span></div></div>
-        <div class="inner app-inner"><!--!--><!--!--><!--!--><!--!-->
+            <div class="mobile-brand"><span class="brand-logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect>
+                        <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect>
+                        <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span>
+                <span class="page-title">Start</span></div></div><div class="topbar"><span class="page-title">Start</span>
+                <span class="avatar" aria-hidden="true"><svg><use href="icons/sprite.svg#account"></use></svg></span></div><div class="inner app-inner "><!--!--><!--!--><!--!--><!--!-->
 
 <!--!--><div class="fm-ribbon single-tab" role="region" aria-label="Application ribbon"><div class="fm-ribbon-content" role="tabpanel" id="ribbon-panel-0" aria-labelledby="ribbon-tab-0"><div class="fm-ribbon-groups" role="toolbar" aria-label="Ribbon action groups"><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-0"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="Import" aria-label="Importieren" title="Importieren" type="button" class="fm-ribbon-btn large" style="position:relative"><!--!-->
-        <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#upload"></use></svg></span><span class="text">Importieren</span><!--!--><input multiple="" style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; opacity: 0; z-index: 2; pointer-events: auto; cursor: pointer;" type="file" _bl_63a2a316-f88e-4a49-bf47-846951cd165f=""></button></div><!--!-->
+        <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#upload"></use></svg></span><span class="text">Importieren</span><!--!--><input multiple="" style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; opacity: 0; z-index: 2; pointer-events: auto; cursor: pointer;" type="file" _bl_8c0e7982-e655-40c4-bb79-89ee1898ecc8=""></button></div><!--!-->
                            <div class="fm-ribbon-group-footer" id="ribbon-group-label-0-0">Importieren</div></div><!--!-->
                        <div class="fm-ribbon-mobile-group-panel"><div class="fm-ribbon-mobile-group-header"><button type="button" class="fm-ribbon-mobile-group-title-toggle" aria-controls="ribbon-mobile-menu-0-0"><span class="fm-ribbon-mobile-group-title">Importieren</span></button><div class="fm-ribbon-mobile-shortcuts" aria-label="Importieren"><button id="Import-mobile-shortcut" aria-label="Importieren" title="Importieren" type="button" class="fm-ribbon-mobile-shortcut" style="position:relative"><!--!-->
-        <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#upload"></use></svg></span><!--!--><input multiple="" style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; opacity: 0; z-index: 2; pointer-events: auto; cursor: pointer;" type="file" _bl_bc5c309c-50d4-4c0f-ae48-1da4a549fad4=""></button></div><button type="button" class="fm-ribbon-mobile-group-toggle" aria-controls="ribbon-mobile-menu-0-0"><!--!--><span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></span></button></div><!--!-->
+        <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#upload"></use></svg></span><!--!--><input multiple="" style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; opacity: 0; z-index: 2; pointer-events: auto; cursor: pointer;" type="file" _bl_026990a0-72fc-48c2-b254-e585fc113821=""></button></div><button type="button" class="fm-ribbon-mobile-group-toggle" aria-controls="ribbon-mobile-menu-0-0"><!--!--><span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></span></button></div><!--!-->
                            <div id="ribbon-mobile-menu-0-0" class="fm-ribbon-mobile-menu "><button id="Import-mobile" aria-label="Importieren" title="Importieren" type="button" class="fm-ribbon-mobile-menu-item" style="position:relative"><!--!-->
-        <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#upload"></use></svg></span><span class="text-inline">Importieren</span><!--!--><input multiple="" style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; opacity: 0; z-index: 2; pointer-events: auto; cursor: pointer;" type="file" _bl_9e26c5bc-4ae1-48d0-b733-7af9451fa3bb=""></button></div></div><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-1"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="ToggleKpi" aria-label="Bearbeiten" title="Bearbeiten" type="button" class="fm-ribbon-btn large"><!--!-->
+        <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#upload"></use></svg></span><span class="text-inline">Importieren</span><!--!--><input multiple="" style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; opacity: 0; z-index: 2; pointer-events: auto; cursor: pointer;" type="file" _bl_22b139ae-855c-4cdd-9151-58cbe4d5f260=""></button></div></div><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-1"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="ToggleKpi" aria-label="Bearbeiten" title="Bearbeiten" type="button" class="fm-ribbon-btn large"><!--!-->
         <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#edit"></use></svg></span><span class="text">Bearbeiten</span></button></div><!--!-->
                            <div class="fm-ribbon-group-footer" id="ribbon-group-label-0-1">Kennzahlen</div></div><!--!-->
                        <div class="fm-ribbon-mobile-group-panel"><div class="fm-ribbon-mobile-group-header"><button type="button" class="fm-ribbon-mobile-group-title-toggle" aria-controls="ribbon-mobile-menu-0-1"><span class="fm-ribbon-mobile-group-title">Kennzahlen</span></button><div class="fm-ribbon-mobile-shortcuts" aria-label="Kennzahlen"><button id="ToggleKpi-mobile-shortcut" aria-label="Bearbeiten" title="Bearbeiten" type="button" class="fm-ribbon-mobile-shortcut"><!--!-->

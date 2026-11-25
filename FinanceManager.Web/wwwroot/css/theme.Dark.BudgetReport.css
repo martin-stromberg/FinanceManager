@@ -15,7 +15,7 @@
 
 .budget-report-chart {
     border: 1px dashed var(--border);
-    background: #141519;
+    background: var(--bg);
     color: var(--text);
 }
 
@@ -33,24 +33,24 @@
 }
 
 .budget-report-postings-head {
-    background: #1f2937;
-    color: #f9fafb;
+    background: var(--panel-bg-2);
+    color: var(--text);
 }
 
 .budget-report-postings-head th {
-    border-bottom: 1px solid #4b5563;
+    border-bottom: 1px solid var(--border);
 }
 
 .budget-report-posting-unbudgeted {
-    background: #111827;
-    color: #f9fafb;
+    background: var(--bg);
+    color: var(--text);
     opacity: 0.8;
 }
 
 .budget-report-posting-badge {
-    border-color: #4b5563;
-    color: #e5e7eb;
-    background: #111827;
+    border-color: var(--border);
+    color: var(--text);
+    background: var(--bg);
 }
 
 @media (max-width: 900px) {

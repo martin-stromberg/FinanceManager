@@ -1,22 +1,22 @@
 /* =====================================================
-   theme.Dark.BackgroundTaskStatusPanel.css - Dark Theme für BackgroundTaskStatusPanel
+   theme.Dark.BackgroundTaskStatusPanel.css - Dark Theme fÃ¼r BackgroundTaskStatusPanel
    ===================================================== */
 
 .bgt-panel {
-    border: 1px solid #444;
-    background: #1e1e24;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
 }
 
 .bgt-badge {
-    background: #333;
+    background: var(--border);
 }
 
 .bgt-running {
-    background: #2d6cdf;
+    background: var(--accent);
 }
 
 .bgt-queued {
-    background: #666;
+    background: var(--muted);
 }
 
 .bgt-completed {
@@ -28,15 +28,15 @@
 }
 
 .bgt-cancelled {
-    background: #555;
+    background: var(--muted);
 }
 
 .bgt-bar {
-    background: #333;
+    background: var(--border);
 }
 
 .bgt-bar-fill {
-    background: #2d6cdf;
+    background: var(--accent);
 }
 
 .bgt-bar-fill-sub {
@@ -44,16 +44,16 @@
 }
 
 .bgt-indeterminate {
-    background: #333;
+    background: var(--border);
 }
 
 .bgt-indeterminate::after {
-    background: linear-gradient(90deg, transparent 0%, #2d6cdf 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
 }
 
 .bgt-queue-item {
-    border: 1px solid #333;
-    background: #26262c;
+    border: 1px solid var(--border);
+    background: var(--panel-bg-2);
 }
 
 .bgt-warn {
@@ -61,7 +61,7 @@
 }
 
 .bgt-err {
-    color: #e66;
+    color: var(--danger);
 }
 
 .bgt-message-secondary {

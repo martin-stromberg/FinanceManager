@@ -14,14 +14,14 @@ Verfügung — alle Lifecycle-Phasen werden vom Hauptagenten selbst ausgeführt.
 | [x] | 4 | Bestandsaufnahme (selbst ausgeführt, Wiederverwendung Entwurfsphase) | `inventory.md` |
 | [x] | 5 | Umsetzungsplanung (selbst ausgeführt) | `plan.md` |
 | [x] | 5a | Offene Punkte prüfen und ggf. Planung wiederholen | `plan.md` (keine offenen Punkte) |
-| [x] | 5b | Planungscommit | – |
-| [ ] | 6 | Implementierung (selbst ausgeführt) | Codeänderungen |
-| [ ] | 7 | Plan-Review (selbst ausgeführt) | `review.md` |
-| [ ] | 8 | Code-Review (selbst ausgeführt) | `review-code.md` |
-| [ ] | 8b | Tests ausführen (selbst ausgeführt) | `test-results.md` |
-| [ ] | – | Iteration oder Abschluss entscheiden | – |
+| [x] | 5b | Planungscommit | `d1460742` |
+| [x] | 6 | Implementierung (selbst ausgeführt) | Codeänderungen |
+| [x] | 7 | Plan-Review (selbst ausgeführt) | `review.md` |
+| [x] | 8 | Code-Review (selbst ausgeführt) | `review-code.md` |
+| [x] | 8b | Tests ausführen (selbst ausgeführt) | `test-results.md` |
+| [x] | – | Iteration oder Abschluss entscheiden | Abschluss (keine neue Iteration nötig — Baseline-identisch, neue Befunde aufgelöst) |
 | [ ] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
-| [ ] | 9 | Dokumentation erstellen (selbst ausgeführt) | `Docs/help/` |
-| [ ] | 9b | README aktualisieren (selbst ausgeführt) | `README.md` |
+| [x] | 9 | Dokumentation erstellen (selbst ausgeführt) | `Docs/help/benutzeroberflaeche/*`, `Docs/help/programminformationen/ablauf-anwender.md` |
+| [x] | 9b | README/Release-Notes aktualisieren (selbst ausgeführt) | `docs/RELEASE_NOTES.md` |
 | [ ] | – | Feature-Verzeichnis löschen | – |
 | [ ] | – | Commit durchführen | – |

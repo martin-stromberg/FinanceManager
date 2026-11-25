@@ -1,18 +1,18 @@
 /* =====================================================
-   theme.Dark.ReportsHome.css - Dark Theme für ReportsHome
+   theme.Dark.ReportsHome.css - Dark Theme fÃ¼r ReportsHome
    ===================================================== */
 
 .fav-card {
-    background: #1a1f24;
-    border: 1px solid #2b3138;
-    color: #eee;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .fav-card:hover {
-    background: #20262b;
+    background: var(--panel-bg-2);
 }
 
 .btn {
-    background: #2d6cdf;
-    color: #fff;
+    background: var(--accent);
+    color: var(--text);
 }

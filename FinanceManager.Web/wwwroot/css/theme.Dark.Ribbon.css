@@ -1,10 +1,11 @@
 /* =====================================================
    theme.Dark.Ribbon.css - Dark Theme für Ribbon
+   Design-Variante A (Issue #590): ruhige Aktionsleiste
    ===================================================== */
 
 .fm-ribbon {
     border-bottom: 1px solid var(--border);
-    background: var(--panel-bg, #181818);
+    background: var(--panel-bg-2);
 }
 
 /* Tabs Theme */
@@ -13,12 +14,19 @@
 }
 
 .fm-ribbon-tabs li button {
-    color: #ccc;
+    color: var(--muted);
+    border-radius: 7px;
+}
+
+.fm-ribbon-tabs li button:hover {
+    color: var(--text);
+    background: var(--hover);
 }
 
 .fm-ribbon-tabs li.active button {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
 }
 
 .fm-ribbon-tabs li button:focus-visible {
@@ -27,56 +35,85 @@
 
 /* Group Theme */
 .fm-ribbon-group {
-    border: 1px solid var(--border);
-    background: #141414;
+    border: 0;
+    background: transparent;
+}
+
+/* group separator (each desktop group is followed by its mobile panel) */
+.fm-ribbon-group ~ .fm-ribbon-group {
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    padding-left: .9rem;
+    margin-left: .15rem;
 }
 
 .fm-ribbon-group-footer {
-    border-top: 1px solid #222;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
 }
 
 /* Button Theme */
 .fm-ribbon-btn {
     --rb-focus-outline: 2px solid var(--accent);
-    border: 1px solid #333;
-    background: #1e1e1e;
-    color: #ddd;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
 }
 
 .fm-ribbon-btn:hover:not(:disabled) {
-    background: #2a2a2a;
-    color: #fff;
-    border-color: #444;
+    background: var(--hover);
+    color: var(--text);
+    border-color: var(--border);
 }
 
 .fm-ribbon-btn:focus-visible {
     outline: var(--rb-focus-outline);
 }
 
+/* Primary action: first large button of each group is accent-filled */
+.fm-ribbon-group-body > .fm-ribbon-btn.large:first-child {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.fm-ribbon-group-body > .fm-ribbon-btn.large:first-child:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: var(--text);
+}
+
+.fm-ribbon-group-body > .fm-ribbon-btn.large:first-child:disabled {
+    background: var(--accent);
+    color: var(--text);
+    opacity: .5;
+}
+
 /* High contrast (prefers-contrast) */
 @media (prefers-contrast: more) {
     .fm-ribbon-btn:focus-visible {
-        outline: 2px solid #fff;
+        outline: 2px solid var(--text);
     }
     .fm-ribbon-tabs li button:focus-visible {
-        outline: 2px solid #fff;
+        outline: 2px solid var(--text);
     }
 }
 
 @media (max-width: 900px) {
     .fm-ribbon-mobile-group-panel {
         border: 1px solid var(--border);
-        background: #151515;
+        background: var(--panel-bg);
+        border-radius: var(--radius-lg);
     }
 
     .fm-ribbon-mobile-group-header {
-        color: #f0f0f0;
+        color: var(--text);
     }
 
     .fm-ribbon-mobile-group-title-toggle,
     .fm-ribbon-mobile-group-toggle,
     .fm-ribbon-mobile-shortcut {
-        color: #f0f0f0;
+        color: var(--text);
     }
 
     .fm-ribbon-mobile-group-title-toggle:hover:not(:disabled),
@@ -85,7 +122,9 @@
     .fm-ribbon-mobile-group-title-toggle:focus-visible,
     .fm-ribbon-mobile-group-toggle:focus-visible,
     .fm-ribbon-mobile-shortcut:focus-visible {
-        color: #fff;
+        color: var(--text);
+        background: var(--hover);
+        border-radius: 6px;
     }
 
     .fm-ribbon-mobile-group-title-toggle:focus-visible,
@@ -101,15 +140,15 @@
     }
 
     .fm-ribbon-mobile-menu-item {
-        border-color: #3a3a3a;
-        background: #1e1e1e;
-        color: #ddd;
+        border-color: var(--border);
+        background: var(--panel-bg-2);
+        color: var(--text);
     }
 
     .fm-ribbon-mobile-menu-item:hover:not(:disabled) {
-        background: #2a2a2a;
-        color: #fff;
-        border-color: #444;
+        background: var(--hover);
+        color: var(--text);
+        border-color: var(--border);
     }
 
     .fm-ribbon-mobile-menu-item:disabled {
@@ -117,6 +156,6 @@
     }
 
     .fm-ribbon-btn.large {
-        border-color: #3a3a3a;
+        border-color: transparent;
     }
 }

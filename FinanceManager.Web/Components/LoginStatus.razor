@@ -9,9 +9,9 @@
 
 @if (CurrentUser.IsAuthenticated)
 {
-    <div class="login-status">@DisplayVersion<br />
-        <a id="change-password-link" href="change-password">@L["Nav_ChangePassword"]</a><br />
-        <button @onclick="LogoutAsync">Logout</button>
+    <div class="login-status">
+        <span class="login-version">@DisplayVersion</span>
+        <a id="change-password-link" href="change-password">@L["Nav_ChangePassword"]</a>
     </div>
 }
 else
@@ -29,12 +29,5 @@ else
     protected override async Task OnInitializedAsync()
     {
         _versionInfo = await ReleaseMetadata.GetAsync();
-    }
-
-    private async Task LogoutAsync()
-    {
-        var ok = await JS.InvokeAsync<bool>("fmAuthLogout");
-        // Fallback: falls API nicht erreichbar, erzwungener Reload löscht serverseitig nicht gesetzte Cookies evtl. nicht, aber UI wird zur Login-Seite gehen
-        Nav.NavigateTo("login", forceLoad: true);
     }
 }

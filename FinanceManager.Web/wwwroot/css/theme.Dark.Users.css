@@ -1,15 +1,15 @@
 /* =====================================================
-   theme.Dark.Users.css - Dark Theme für Users Page
+   theme.Dark.Users.css - Dark Theme fÃ¼r Users Page
    ===================================================== */
 
 .create-user-form {
-    background: #1e1e24;
-    border: 1px solid #333;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
 }
 
 .user-table th,
 .user-table td {
-    border-bottom: 1px solid #2c2c34;
+    border-bottom: 1px solid var(--border);
 }
 
 .user-table tr.locked-row {
@@ -21,7 +21,7 @@
 }
 
 .user-table tr:hover {
-    background: #23232b;
+    background: var(--panel-bg-2);
 }
 
 .error {
@@ -29,6 +29,6 @@
 }
 
 .pw-reset-hint {
-    border: 1px solid #444;
-    background: #25252d;
+    border: 1px solid var(--border);
+    background: var(--panel-bg-2);
 }

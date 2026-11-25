@@ -1,5 +1,5 @@
 /* =====================================================
-   theme.Dark.ContactMergeDialog.css - Dark Theme für ContactMergeDialog
+   theme.Dark.ContactMergeDialog.css - Dark Theme fÃ¼r ContactMergeDialog
    ===================================================== */
 
 .modal-backdrop {
@@ -7,22 +7,22 @@
 }
 
 .modal {
-    background: var(--panel-bg, #1f1f1f);
-    color: var(--fg, #eee);
+    background: var(--panel-bg, var(--panel-bg));
+    color: var(--fg, var(--text));
     box-shadow: 0 4px 24px rgba(0, 0, 0, .4);
 }
 
 .result-list {
-    border: 1px solid #444;
+    border: 1px solid var(--border);
     background: rgba(255, 255, 255, .03);
 }
 
 .result-list .row {
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
 }
 
 .result-list .row.selected {
-    background: #2d5a8a;
+    background: var(--accent);
 }
 
 .result-list .row:hover {
@@ -30,7 +30,7 @@
 }
 
 .error {
-    color: #e66;
+    color: var(--danger);
 }
 
 /* Modal error styling */

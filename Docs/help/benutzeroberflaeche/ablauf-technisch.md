@@ -13,12 +13,14 @@ Bestätigungsdialoge rendern auf einer eigenen Schicht oberhalb aller Overlay-Co
 
 ### 1. Einstieg und Layout-Umschaltung
 
-`MainLayout` rendert neben Sidebar und Content eine mobile Topbar und ein Overlay für Navigation auf kleinen Viewports.
+`MainLayout` rendert neben Sidebar und Content eine mobile Topbar, eine Desktop-Titelzeile (`.topbar`) und ein Overlay für Navigation auf kleinen Viewports. Seit der Design-Umstellung (Variante A, Issue #590) trägt die Sidebar die kanonische 13er-Navigation mit Sprite-Icons; der Abmelden-Eintrag ruft `fmAuthLogout` direkt aus dem Layout heraus. Für nicht angemeldete Benutzer erhält `.app-shell` die Klasse `signed-out`: Sidebar und Titelzeile entfallen, stattdessen erscheinen die schmale `.public-brand`-Leiste und der Inhalt als zentrierte Karte (`.inner`, schmal via `inner-auth` auf login/register/error).
 
 Beteiligte Komponenten:
-- `MainLayout.UpdateLogo(string uri)` — setzt Logo und Full-Width-Verhalten abhängig von der Route.
+- `MainLayout.UpdateChrome(string uri)` — setzt Ansichtstitel, Full-Width-Verhalten und die `inner-auth`-Kartenbreite abhängig von der Route.
 - `MainLayout.HandleLocationChanged(...)` — aktualisiert Layout-Zustand bei Navigation.
-- `FinanceManager.Web/wwwroot/css/app.css` — aktiviert mobile Layoutregeln über `@media (max-width: 900px)`.
+- `MainLayout.LogoutAsync()` — Abmeldung über `fmAuthLogout` (JS) mit `NavigateTo("login", forceLoad: true)` als Fallback.
+- `FinanceManager.Web/wwwroot/css/app.css` — aktiviert mobile Layoutregeln über `@media (max-width: 900px)`; enthält die Shell-/Signed-out-Layoutregeln.
+- `FinanceManager.Web/wwwroot/css/theme.Dark.css` — kanonische Design-Tokens der Variante A (`--bg`, `--panel-bg*`, `--border`, `--text`, `--muted`, `--accent`, `--hover`).
 
 ### 2. Responsives Rendering von Listen und Karten
 

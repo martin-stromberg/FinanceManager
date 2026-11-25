@@ -1,2 +1,16 @@
-/* Compatibility copy of theme.Dark.SetupNotificationsTab.css to avoid 404s */
-@import url('theme.Dark.SetupNotificationsTab.css.css');
+/* ========================================================================
+   theme.Dark.SetupNotificationsTab.css - Dark theme overrides for Setup Notifications tab
+   ======================================================================== */
+
+.setup-notifications-tab {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+/* keep specific controls readable in dark mode */
+.setup-notifications-tab .form-row input,
+.setup-notifications-tab .form-row select {
+    background: var(--panel-bg-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+}

@@ -1,122 +1,260 @@
 /* =====================================================
    theme.Dark.css - Dark Theme Farbschema und Effekte
+   Design-Variante A (Issue #590): ruhiges Dark-UI,
+   Indigo-Akzent, Inter-Typografie
    ===================================================== */
 
 :root {
     color-scheme: dark;
-    --bg: #0f0f11;
-    --bg-alt: #191b1f;
-    --panel-bg: #181818;
-    --border: #2a2d33;
-    /* theme-specific variables used by shared styles */
-    --muted: #7f8a96;
-    --panel-bg: #181818;
-    --text: #e2e6ea;
-    --accent: #4dabf7;
-    --accent-hover: #339af0;
+
+    /* --- Design-Tokens (Variante A, kanonisch) --- */
+    --bg: #0b0e13;
+    --bg-alt: #10131a;
+    --panel-bg: #10131a;
+    --panel-bg-2: #151922;
+    --border: #232a36;
+    --border-subtle: #1a1f2b;
+    --text: #e1e2ea;
+    --muted: #8e9aa8;
+    --accent: #6d8dff;
+    --accent-hover: #5c7cf0;
+    --accent-soft: #1c2333;
+    --hover: #171c26;
+    --th-bg: #131720;
+    --icon-bg: #181d28;
     --danger: #ff6b6b;
     --success: #51cf66;
+    --sidebar-width: 232px;
+    --topbar-height: 52px;
 }
 
-html, body { 
-    background: var(--bg); 
-    color: var(--text); 
+html, body {
+    background: var(--bg);
+    color: var(--text);
 }
 
-.dark-mode { 
-    background: var(--bg); 
-    color: var(--text); 
+.dark-mode {
+    background: var(--bg);
+    color: var(--text);
 }
 
 /* Sidebar Theme */
-.sidebar { 
-    background: var(--bg-alt); 
-    border-right: 1px solid var(--border); 
+.sidebar {
+    background: var(--bg-alt);
+    border-right: 1px solid var(--border);
 }
 
-.nav-links a { 
-    color: var(--text); 
+.nav-links a,
+.nav-links .nav-entry {
+    color: var(--muted);
 }
 
-.nav-links a.active, 
-.nav-links a:hover { 
-    background: var(--border); 
-    color: var(--text); 
+.nav-links a.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.nav-links a:hover,
+.nav-links .nav-entry:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.nav-sep {
+    height: 1px;
+    background: var(--border);
+    margin: .5rem .9rem;
+}
+
+.brand {
+    border-bottom: 1px solid var(--border);
+}
+
+.brand .brand-logo-badge {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.brand .brand-name {
+    color: var(--text);
+}
+
+.brand .brand-sub {
+    color: var(--muted);
+}
+
+.user-area {
+    border-top: 1px solid var(--border);
+}
+
+.user-area a {
+    color: var(--muted);
+}
+
+.user-area a:hover {
+    color: var(--text);
+}
+
+/* Topbar Theme */
+.topbar {
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+}
+
+.topbar .page-title {
+    color: var(--text);
+}
+
+.topbar .avatar {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* Public (signed-out) chrome: minimal brand bar + centered card */
+.public-brand {
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+}
+
+.public-brand .brand-logo-badge {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.public-brand .public-brand-name {
+    color: var(--text);
+}
+
+.app-shell.signed-out .inner {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
 }
 
 /* Button Theme */
-button { 
-    background: var(--accent); 
-    color: #000; 
+button {
+    background: var(--accent);
+    color: #fff;
 }
 
-button:hover:not(:disabled) { 
-    background: var(--accent-hover); 
+button:hover:not(:disabled) {
+    background: var(--accent-hover);
 }
 
-button.danger { 
-    background: var(--danger); 
-    color: #000; 
+button.danger {
+    background: var(--danger);
+    color: #0b0e13;
 }
 
-button.danger:hover:not(:disabled) { 
-    filter: brightness(1.15); 
+button.danger:hover:not(:disabled) {
+    filter: brightness(1.12);
+}
+
+button.btn-secondary,
+button.secondary {
+    background: var(--panel-bg-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+button.btn-secondary:hover:not(:disabled),
+button.secondary:hover:not(:disabled) {
+    background: var(--hover);
 }
 
 /* Input Theme */
-input { 
-    background: var(--bg-alt); 
-    color: var(--text); 
-    border: 1px solid var(--border); 
+input,
+select,
+textarea {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent);
+    outline: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    outline-offset: 0;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted);
 }
 
 /* Error Theme */
-.error { 
-    background: var(--danger); 
-    color: #000; 
+.error {
+    background: color-mix(in srgb, var(--danger) 18%, var(--panel-bg));
+    color: var(--danger);
+    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 /* Icon Button Theme */
-.icon-btn { 
-    background: var(--bg-alt); 
-    border: 1px solid var(--border); 
-    color: var(--text); 
+.icon-btn {
+    background: var(--panel-bg-2);
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
-.icon-btn:hover:not(:disabled) { 
-    background: var(--border); 
+.icon-btn:hover:not(:disabled) {
+    background: var(--hover);
 }
 
 /* Login Status Theme */
-.login-status button { 
-    background: #343a40; 
-    color: var(--text); 
+.login-status {
+    color: var(--muted);
 }
 
-.login-status button:hover { 
-    background: #495057; 
+.login-status a {
+    color: var(--muted);
+}
+
+.login-status a:hover {
+    color: var(--text);
+}
+
+.login-status button {
+    background: var(--panel-bg-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.login-status button:hover {
+    background: var(--hover);
 }
 
 /* Table Theme */
+.table-responsive {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+}
+
 .fm-table {
-    background: #222;
-    color: #eee;
+    background: transparent;
+    color: var(--text);
+}
+
+.fm-table thead th {
+    background: var(--th-bg);
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
 }
 
 .fm-table th, .fm-table td {
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
-.fm-table th {
-    background: #282828;
+.fm-table tbody tr:last-child td {
+    border-bottom: 0;
 }
 
 .fm-table tbody tr:hover {
-    background: #2a2a2a;
-}
-
-.table-responsive {
-    box-shadow: 0 2px 8px #0002;
+    background: var(--hover);
 }
 
 /* Muted row style for dark theme */
@@ -128,57 +266,92 @@ input {
 }
 
 /* Split Dialog Theme */
-.split-center { 
-    background: rgba(0,0,0,.55); 
+.split-center {
+    background: rgba(0, 0, 0, .6);
 }
 
-.split-dialog { 
-    background: var(--bg-alt); 
-    border: 1px solid var(--border); 
-    box-shadow: 0 6px 28px #000a, 0 0 0 1px #000 inset; 
+.split-dialog {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
 }
 
-.split-scroll { 
-    border: 1px solid var(--border); 
-    background: #141519; 
+.split-scroll {
+    border: 1px solid var(--border);
+    background: var(--bg);
 }
 
-.split-row { 
-    background: transparent; 
+.split-row {
+    background: transparent;
 }
 
-.split-row:hover { 
-    background: #1f2227; 
+.split-row:hover {
+    background: var(--hover);
 }
 
-.split-row.active { 
-    background: #253041; 
-    border-color: var(--accent); 
+.split-row.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
 }
 
-.split-error { 
-    background: var(--danger); 
-    color: #000; 
+.split-hint {
+    color: var(--muted);
+}
+
+.split-error {
+    background: color-mix(in srgb, var(--danger) 18%, var(--panel-bg));
+    color: var(--danger);
+    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+/* Modal Theme (shared overlay pattern) */
+.modal-overlay {
+    background: rgba(0, 0, 0, .6);
+}
+
+.modal,
+.modal-overlay .modal {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
 }
 
 /* Mobile Theme */
-.mobile-topbar { 
-    border-bottom: 1px solid var(--border); 
-    background: var(--bg); 
+.mobile-topbar {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-alt);
 }
 
-.mobile-topbar .hamburger { 
-    color: var(--text); 
-    border: 1px solid var(--border); 
+.mobile-topbar .hamburger {
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: transparent;
 }
 
-.mobile-overlay { 
-    background: rgba(0,0,0,.5); 
+.mobile-topbar .hamburger:hover {
+    color: var(--text);
+    background: var(--hover);
+}
+
+.mobile-brand {
+    color: var(--text);
+}
+
+.mobile-brand .brand-logo-badge {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.mobile-overlay {
+    background: rgba(0, 0, 0, .55);
 }
 
 @media (max-width: 900px) {
-    .sidebar { 
-        box-shadow: 2px 0 12px #0006; 
+    .sidebar {
+        box-shadow: 2px 0 16px rgba(0, 0, 0, .5);
     }
 
     .app-inner {
@@ -186,8 +359,7 @@ input {
     }
 }
 
-
 div.components-reconnect-overlay {
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, .75);
     color: var(--text);
 }

@@ -15,7 +15,7 @@ Starten Sie die Anwendung und melden Sie sich mit Ihren Anmeldedaten an.
 
 ### 2. Suchen Sie die Versionsnummer
 
-Nach erfolgreicher Anmeldung finden Sie die Versionsnummer im **Menü-Fußbereich** (rechts oben neben dem Logout-Button). Die Versionsnummer wird auf einer separaten Zeile angezeigt.
+Nach erfolgreicher Anmeldung finden Sie die Versionsnummer im **Menü-Fußbereich** der Seitenleiste (links unten, unter dem Impressum-Link). Die Versionsnummer steht auf einer eigenen Zeile über dem Link „Passwort ändern"; die Abmeldung erfolgt über den Navigationspunkt „Abmelden" in der Seitenleiste.
 
 > **Hinweis:** Die Versionsnummer ist nur für authentifizierte Benutzer sichtbar. Wenn Sie nicht angemeldet sind, sehen Sie stattdessen den Login-Link.
 

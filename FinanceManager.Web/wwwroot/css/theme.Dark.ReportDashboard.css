@@ -18,13 +18,13 @@
 }
 
 .tab-btn.active {
-    background: #253041;
+    background: var(--accent-soft);
     border-color: var(--accent);
 }
 
 .option-list {
     border: 1px solid var(--border);
-    background: #141519;
+    background: var(--bg);
 }
 
 .query-overlay {
@@ -51,7 +51,7 @@
 }
 
 .mini-chart .bar-inner {
-    background: #4dabf7;
+    background: var(--accent);
 }
 
 .mini-chart .bar-inner.pos {
@@ -64,6 +64,6 @@
 
 @media (max-width: 900px) {
     .modal {
-        background: #17191d;
+        background: var(--bg);
     }
 }

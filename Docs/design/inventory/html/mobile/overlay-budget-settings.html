@@ -57,7 +57,7 @@
     <link rel="stylesheet" href="css/theme.Dark.PortfolioReport.css">
 
     <link rel="stylesheet" href="FinanceManager.Web.styles.css">
-    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWWxswLsAuhyPqOcdUTO0RCDvwZT3OK_MdJKZzniedOm6Tpms7vTvVi7riFbvJZ104pNzasXr238PYhHCb_YsGvulsofeRuaQhukTteCj3ZulVR22aH7zpYT5tc0UUIp7Fk6myyy2the4WWFmREsuVb811C4rZyKPRfe2-LYM1izzg"><script type="importmap">{
+    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWWb8xRZ0j70cFXQeqYgUh-WhN38PLYeUjQcBsti0SE-OeD4ORMVuLN1l4g2FHljJ9lNRkVb04EkJsBeJgUut0zHi85jRRsygdIwPGlxgVa5YC2_JDeaUXDfsfodCY6rl0Rb2lJ1nG5smSx4Qfk0FofbeNeFLdw7Za-qr__oB5E-hQ"><script type="importmap">{
   "imports": {
     "./_framework/blazor.server.js": "./_framework/blazor.server.kyitu4x8cy.js",
     "./_framework/blazor.web.js": "./_framework/blazor.web.whefm3rrpu.js",
@@ -88,7 +88,7 @@
   }
 }</script><title>Budgetbericht</title></head>
 
-<body class="dark-mode"><div id="fm-loading-bar" class="mst-loading-bar" style="--mst-loading-bar-height: 3px; --mst-loading-bar-top: 0; --mst-loading-bar-mobile-top: 54px; --mst-loading-bar-z-index: 1200; --mst-loading-bar-color: #b197fc;" data-mst-loading-bar="" data-loading-colors="#4dabf7,#51cf66,#ffd43b,#ff6b6b,#b197fc,#20c997,#ff922b" aria-hidden="true" b-w8317ziaus="" data-sequence="2"></div>
+<body class="dark-mode"><div id="fm-loading-bar" class="mst-loading-bar" style="--mst-loading-bar-height: 3px; --mst-loading-bar-top: 0; --mst-loading-bar-mobile-top: 54px; --mst-loading-bar-z-index: 1200; --mst-loading-bar-color: #ff922b;" data-mst-loading-bar="" data-loading-colors="#4dabf7,#51cf66,#ffd43b,#ff6b6b,#b197fc,#20c997,#ff922b" aria-hidden="true" b-w8317ziaus="" data-sequence="2"></div>
 
 <style b-w8317ziaus="">@media (max-width: 900px) {
         #fm-loading-bar {
@@ -96,27 +96,33 @@
         }
     }
 </style>
-        <!--!--><link rel="stylesheet" href="css/ribbon.css">
-<link rel="stylesheet" href="css/app.css">
-
-<div class="app-shell dark-mode"><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
-    <nav class="sidebar"><div class="brand"><img src="icons/finance_manager-reports.png" alt="App-Logo" class="brand-logo">
-            <span>Finance Manager</span></div>
-        <ul class="nav-links"><li><a href="">Start</a></li>
-                <li><a href="list/accounts">Konten</a></li>
-                <li><a href="list/statement-drafts">Kontoauszüge</a></li>
-                <li><a href="list/contacts">Kontakte</a></li>
-                <li><a href="list/savings-plans">Sparpläne</a></li>
-                <li><a href="list/securities">Wertpapiere</a></li>
-                <li><a href="list/budget/purposes">Budgetplanung</a></li>
-                <li><a href="reports" class="active" aria-current="page">Berichte</a></li>
-                <li><a href="card/setup">Einrichtung</a></li><li><a href="list/users">Benutzer</a></li><li><a href="help">📖 Hilfe</a></li></ul>
-        <div class="user-area"><div style="margin-bottom:.35rem; font-size:.85rem;"><a href="legal">Impressum</a></div>
+        <!--!--><div class="app-shell dark-mode "><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
+    <nav class="sidebar"><div class="brand"><span class="brand-logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect>
+                    <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect>
+                    <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span>
+            <span class="brand-text"><span class="brand-name">Finance Manager</span>
+                <span class="brand-sub">Finanzverwaltung</span></span></div>
+        <ul class="nav-links"><li><a href=""><svg class="nav-ico"><use href="icons/sprite.svg#nav-home"></use></svg><span>Start</span></a></li>
+                <li><a href="list/accounts"><svg class="nav-ico"><use href="icons/sprite.svg#bank"></use></svg><span>Konten</span></a></li>
+                <li><a href="list/contacts"><svg class="nav-ico"><use href="icons/sprite.svg#nav-contacts"></use></svg><span>Kontakte</span></a></li>
+                <li><a href="list/savings-plans"><svg class="nav-ico"><use href="icons/sprite.svg#nav-savings"></use></svg><span>Sparpläne</span></a></li>
+                <li><a href="list/securities"><svg class="nav-ico"><use href="icons/sprite.svg#nav-trending"></use></svg><span>Wertpapiere</span></a></li>
+                <li><a href="list/statement-drafts"><svg class="nav-ico"><use href="icons/sprite.svg#nav-receipt"></use></svg><span>Kontoauszüge</span></a></li>
+                <li><a href="list/budget/purposes"><svg class="nav-ico"><use href="icons/sprite.svg#nav-pie"></use></svg><span>Budget</span></a></li>
+                <li><a href="reports" class="active" aria-current="page"><svg class="nav-ico"><use href="icons/sprite.svg#chart"></use></svg><span>Berichte</span></a></li>
+                <li class="nav-sep" aria-hidden="true"></li><li><a href="list/users"><svg class="nav-ico"><use href="icons/sprite.svg#groups"></use></svg><span>Benutzerverwaltung</span></a></li><li><a href="list/mcp-accesses"><svg class="nav-ico"><use href="icons/sprite.svg#nav-ai"></use></svg><span>KI-Zugänge</span></a></li>
+                <li><a href="card/setup"><svg class="nav-ico"><use href="icons/sprite.svg#settings"></use></svg><span>Einstellungen</span></a></li>
+                <li class="nav-sep" aria-hidden="true"></li>
+                <li><a href="help"><svg class="nav-ico"><use href="icons/sprite.svg#nav-help"></use></svg><span>Hilfe</span></a></li>
+                <li><button type="button" class="nav-entry"><svg class="nav-ico"><use href="icons/sprite.svg#nav-logout"></use></svg><span>Abmelden</span></button></li></ul>
+        <div class="user-area"><a href="legal" class="legal-link">Impressum</a>
             <!--!--><!--!--><div class="login-status"><a href="login">Login</a></div></div></nav>
     <main class="content"><div class="mobile-topbar"><label for="nav-toggle" class="hamburger" aria-label="Menü"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></label>
-            <div class="mobile-brand"><img src="icons/finance_manager-reports.png" alt="App-Logo" class="brand-logo">
-                <span>Finance Manager</span></div></div>
-        <div class="inner app-inner" style="max-width:none"><!--!--><!--!--><!--!--><!--!--><div class="fm-ribbon single-tab" role="region" aria-label="Application ribbon"><div class="fm-ribbon-content" role="tabpanel" id="ribbon-panel-0" aria-labelledby="ribbon-tab-0"><div class="fm-ribbon-groups" role="toolbar" aria-label="Ribbon action groups"><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-0"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="Settings" aria-label="Einstellungen" title="Einstellungen" type="button" class="fm-ribbon-btn small"><!--!-->
+            <div class="mobile-brand"><span class="brand-logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect>
+                        <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect>
+                        <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span>
+                <span class="page-title">Berichte</span></div></div><div class="topbar"><span class="page-title">Berichte</span>
+                <span class="avatar" aria-hidden="true"><svg><use href="icons/sprite.svg#account"></use></svg></span></div><div class="inner app-inner " style="max-width:none"><!--!--><!--!--><!--!--><!--!--><div class="fm-ribbon single-tab" role="region" aria-label="Application ribbon"><div class="fm-ribbon-content" role="tabpanel" id="ribbon-panel-0" aria-labelledby="ribbon-tab-0"><div class="fm-ribbon-groups" role="toolbar" aria-label="Ribbon action groups"><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-0"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="Settings" aria-label="Einstellungen" title="Einstellungen" type="button" class="fm-ribbon-btn small"><!--!-->
         <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#settings"></use></svg></span><span class="text-inline">Einstellungen</span></button></div><!--!-->
                            <div class="fm-ribbon-group-footer" id="ribbon-group-label-0-0">Verwalten</div></div><!--!-->
                        <div class="fm-ribbon-mobile-group-panel"><div class="fm-ribbon-mobile-group-header"><button type="button" class="fm-ribbon-mobile-group-title-toggle" aria-controls="ribbon-mobile-menu-0-0"><span class="fm-ribbon-mobile-group-title">Verwalten</span></button><div class="fm-ribbon-mobile-shortcuts" aria-label="Verwalten"><button id="Settings-mobile-shortcut" aria-label="Einstellungen" title="Einstellungen" type="button" class="fm-ribbon-mobile-shortcut"><!--!-->

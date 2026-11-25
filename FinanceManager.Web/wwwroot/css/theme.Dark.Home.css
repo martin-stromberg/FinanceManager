@@ -1,24 +1,24 @@
 /* =====================================================
-   theme.Dark.Home.css - Dark Theme für Home Page
+   theme.Dark.Home.css - Dark Theme fÃ¼r Home Page
    ===================================================== */
 
 /* Upload progress */
 .upload-progress {
-    border: 1px solid #2a323a;
-    background: #141a20;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
 }
 
 .upload-progress .bar {
-    background: #0f1419;
-    border: 1px solid #2a323a;
+    background: var(--bg);
+    border: 1px solid var(--border);
 }
 
 .upload-progress .bar-inner {
-    background: #2d6cdf;
+    background: var(--accent);
 }
 
 /* Split info */
 .split-info {
-    border: 1px solid #334;
-    background: #182028;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
 }

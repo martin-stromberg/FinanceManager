@@ -8,6 +8,17 @@ Die Anwendung stellt zentrale Seiten auf kleinen Displays (z. B. Smartphone-Brei
 
 ## Funktionsweise
 
+Die Anwendung verwendet ein dunkles Design („Variante A") mit Indigo-Akzenten und der Schriftart Inter.
+
+### Grundgerüst (Desktop)
+
+- **Seitenleiste:** Links befindet sich die dauerhafte Navigation mit allen Hauptbereichen — Start, Konten, Kontakte, Sparpläne, Wertpapiere, Kontoauszüge, Budget, Berichte, Benutzerverwaltung (nur für Administratoren), KI-Zugänge, Einstellungen, Hilfe und Abmelden. Der aktive Bereich ist farblich hervorgehoben; jeder Eintrag trägt ein Symbol.
+- **Titelzeile:** Oben zeigt eine schmale Leiste den Titel der aktuellen Ansicht sowie ein Benutzer-Symbol.
+- **Aktionsleiste (Ribbon):** Direkt unter der Titelzeile liegen die Aktionen der Ansicht in beschrifteten Gruppen (z. B. „Navigieren", „Verwalten"). Jede Aktion zeigt ein Symbol über dem Text; die wichtigste Aktion einer Gruppe ist farblich hervorgehoben.
+- **Öffentliche Seiten:** Anmeldung, Registrierung, Impressum und Fehlerseiten erscheinen ohne Seitenleiste — nur eine schmale Leiste mit dem Produktlogo und einer zentrierten Karte für den Inhalt.
+
+### Mobil
+
 Das Layout nutzt eine mobile Leiste mit Menü-Schalter, ein ausklappbares Seitenmenü und eine abdeckende Fläche für die mobile Navigation.
 Listen, Karten und tabellarische Bereiche sind so eingebettet, dass bei Bedarf nur der Tabellenbereich horizontal scrollt.
 Zusätzlich gibt es seitenbezogene Anpassungen für Startseite, Berichte, Budgetreport, Einrichtung und Wertpapier-Auswertung auf schmalen Bildschirmen.

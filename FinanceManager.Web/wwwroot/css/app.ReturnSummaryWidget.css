@@ -2,11 +2,11 @@
    app.ReturnSummaryWidget.css - Return Summary Widget Styles
    ===================================================== */
 .return-summary-widget {
-    border: 1px solid var(--border-color, #ddd);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.75rem 1rem;
     margin: 0.75rem 0;
-    background: var(--card-bg, #fff);
+    background: var(--panel-bg);
     font-size: 0.9rem;
 }
 
@@ -24,7 +24,7 @@
 
 .return-summary-widget.error-state,
 .return-summary-widget.no-data {
-    color: var(--text-muted, #888);
+    color: var(--muted);
     font-style: italic;
     padding: 1rem;
 }
@@ -34,7 +34,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.2rem 0;
-    border-bottom: 1px solid var(--border-color-subtle, #f0f0f0);
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .rsw-row:last-child { border-bottom: none; }
@@ -42,7 +42,7 @@
 .rsw-header { font-weight: 600; margin-bottom: 0.25rem; }
 
 .rsw-label {
-    color: var(--text-muted, #666);
+    color: var(--muted);
     display: flex;
     align-items: center;
     gap: 0.3rem;
@@ -63,7 +63,7 @@
 .rsw-detail-btn {
     background: none;
     border: none;
-    color: var(--primary-color, #2d6cdf);
+    color: var(--accent);
     cursor: pointer;
     font-size: 0.85rem;
     padding: 0.2rem 0;
@@ -79,7 +79,7 @@
     padding: 0;
     cursor: pointer;
     font-size: 0.9rem;
-    color: var(--text-muted, #aaa);
+    color: var(--muted);
     line-height: 1;
     opacity: 0.6;
     transition: opacity 0.15s, color 0.15s;
@@ -89,7 +89,7 @@
 .rsw-info-btn:hover,
 .rsw-info-btn:focus {
     opacity: 1;
-    color: var(--primary-color, #2d6cdf);
+    color: var(--accent);
     outline: none;
 }
 
@@ -109,8 +109,8 @@
     right: 0;
     bottom: 0;
     width: min(420px, 95vw);
-    background: var(--card-bg, #fff);
-    border-left: 1px solid var(--border-color, #ddd);
+    background: var(--panel-bg);
+    border-left: 1px solid var(--border);
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.12);
     z-index: 901;
     display: flex;
@@ -129,8 +129,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color, #ddd);
-    background: var(--card-bg, #fff);
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-bg);
     flex-shrink: 0;
 }
 
@@ -145,7 +145,7 @@
     border: none;
     cursor: pointer;
     font-size: 1.1rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
     padding: 0.2rem 0.4rem;
     line-height: 1;
     border-radius: 3px;
@@ -153,7 +153,7 @@
 }
 
 .rsw-panel-close:hover {
-    background: var(--border-color-subtle, #f0f0f0);
+    background: var(--border-subtle);
     color: var(--text, #333);
 }
 
@@ -165,15 +165,15 @@
 
 .rsw-panel-loading,
 .rsw-panel-no-data {
-    color: var(--text-muted, #888);
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
 }
 
 /* ── Formula Box ────────────────────────────────────── */
 .rsw-formula-box {
-    background: var(--border-color-subtle, #f7f8fa);
-    border: 1px solid var(--border-color, #e0e0e0);
+    background: var(--border-subtle);
+    border: 1px solid var(--border);
     border-radius: 5px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -184,21 +184,21 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted, #888);
+    color: var(--muted);
     margin-bottom: 0.3rem;
 }
 
 .rsw-formula-text {
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.85rem;
-    color: var(--primary-color, #2d6cdf);
+    color: var(--accent);
     word-break: break-word;
 }
 
 /* ── Description ───────────────────────────────────── */
 .rsw-panel-desc {
     font-size: 0.85rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
     margin: 0 0 1rem;
     line-height: 1.5;
 }
@@ -206,7 +206,7 @@
 /* ── Groups & Items ────────────────────────────────── */
 .rsw-group {
     margin-bottom: 0.75rem;
-    border: 1px solid var(--border-color, #ddd);
+    border: 1px solid var(--border);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -238,16 +238,16 @@
 .rsw-group-note-row {
     padding: 0.3rem 0.75rem;
     font-size: 0.75rem;
-    color: var(--text-muted, #888);
-    border-top: 1px solid var(--border-color-subtle, #f0f0f0);
-    background: var(--card-bg, #fff);
+    color: var(--muted);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--panel-bg);
     font-style: italic;
 }
 
 .rsw-group-single {
     padding: 0.3rem 0.75rem;
     font-size: 0.82rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
 }
 
 .rsw-items-table {
@@ -257,23 +257,23 @@
 }
 
 .rsw-items-table tbody tr:hover {
-    background: var(--border-color-subtle, #f7f8fa);
+    background: var(--border-subtle);
 }
 
 .rsw-items-table td {
     padding: 0.3rem 0.75rem;
-    border-top: 1px solid var(--border-color-subtle, #f0f0f0);
+    border-top: 1px solid var(--border-subtle);
     vertical-align: middle;
 }
 
 .rsw-item-date {
-    color: var(--text-muted, #888);
+    color: var(--muted);
     white-space: nowrap;
     width: 6rem;
 }
 
 .rsw-item-note {
-    color: var(--text-muted, #666);
+    color: var(--muted);
     font-size: 0.8rem;
 }
 
@@ -295,7 +295,7 @@
 
 .rsw-item-detail {
     font-size: 0.75rem;
-    color: var(--text-muted, #888);
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
     line-height: 1.6;
 }
@@ -312,12 +312,12 @@
     padding: 0.4rem 0.75rem;
     font-size: 0.85rem;
     font-weight: 600;
-    border-top: 1px solid var(--border-color-subtle, #f0f0f0);
-    background: var(--border-color-subtle, #f7f8fa);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--border-subtle);
 }
 
 .rsw-group-total-row-label {
-    color: var(--text-muted, #666);
+    color: var(--muted);
     font-weight: 400;
 }
 
@@ -355,7 +355,7 @@
 }
 
 .rsw-sparkline-invested {
-    stroke: var(--text-muted, #bbb);
+    stroke: var(--muted);
     stroke-width: 1.5;
     stroke-dasharray: 4 3;
 }
@@ -385,11 +385,11 @@
 .golden-cross-widget.gcw-crossed .gcw-hint { color: #8a6d0b; }
 .golden-cross-widget .gcw-asof { font-size: 0.8rem; }
 
-.golden-cross-panel .gcw-section { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color, #e3e3e3); }
+.golden-cross-panel .gcw-section { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 .golden-cross-panel .gcw-section-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
 .golden-cross-panel .gcw-sep::before { content: ' '; }
 .golden-cross-panel .gcw-disclaimer { font-style: italic; }
-.golden-cross-panel .gcw-entry { margin: 0.35rem 0; padding: 0.3rem 0.5rem; border-left: 3px solid var(--border-color, #c8c8c8); background: rgba(127, 127, 127, 0.08); }
+.golden-cross-panel .gcw-entry { margin: 0.35rem 0; padding: 0.3rem 0.5rem; border-left: 3px solid var(--border); background: rgba(127, 127, 127, 0.08); }
 .golden-cross-panel .gcw-entry-open { border-left-color: #b7700a; }
 .golden-cross-panel .gcw-entry-confirmed { border-left-color: #2e7d32; }
 
@@ -408,10 +408,10 @@
 .trend-reversal-widget.trw-reversal .trw-hint { color: #c94040; }
 .trend-reversal-widget .trw-asof { font-size: 0.8rem; }
 
-.trend-reversal-panel .trw-section { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color, #e3e3e3); }
+.trend-reversal-panel .trw-section { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 .trend-reversal-panel .trw-section-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
 .trend-reversal-panel .trw-disclaimer { font-style: italic; }
-.trend-reversal-panel .trw-signal-detail { margin: 0.35rem 0; padding: 0.3rem 0.5rem; border-left: 3px solid var(--border-color, #c8c8c8); background: rgba(127, 127, 127, 0.08); }
+.trend-reversal-panel .trw-signal-detail { margin: 0.35rem 0; padding: 0.3rem 0.5rem; border-left: 3px solid var(--border); background: rgba(127, 127, 127, 0.08); }
 .trend-reversal-panel .trw-signal-detail.trw-strength-weak { border-left-color: #b7700a; }
 .trend-reversal-panel .trw-signal-detail.trw-strength-moderate { border-left-color: #c9702a; }
 .trend-reversal-panel .trw-signal-detail.trw-strength-strong { border-left-color: #c94040; }

@@ -33,7 +33,7 @@
 }
 
 .budget-linechart .line.budget {
-    stroke: #4dabf7;
+    stroke: var(--accent);
 }
 
 .budget-linechart .line.actual {
@@ -45,7 +45,7 @@
 }
 
 .budget-linechart .dot.budget {
-    fill: #4dabf7;
+    fill: var(--accent);
 }
 
 .budget-linechart .dot.actual {
@@ -83,5 +83,5 @@
     border-radius: 3px;
 }
 
-.budget-linechart .legend .swatch.budget { background: #4dabf7; }
+.budget-linechart .legend .swatch.budget { background: var(--accent); }
 .budget-linechart .legend .swatch.actual { background: #51cf66; }

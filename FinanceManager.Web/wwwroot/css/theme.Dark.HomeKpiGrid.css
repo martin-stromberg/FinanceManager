@@ -1,22 +1,22 @@
 /* =====================================================
-   theme.Dark.HomeKpiGrid.css - Dark Theme für HomeKpiGrid
+   theme.Dark.HomeKpiGrid.css - Dark Theme fÃ¼r HomeKpiGrid
    ===================================================== */
 
 .kpi-tile {
-    background: #141a20;
-    border: 1px solid #2a323a;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
     overflow: visible; /* allow tooltips to overflow */
 }
 
 /* add tile */
 .kpi-tile.add-tile {
-    background: #10161c;
-    color: #88a;
-    border: 1px dashed #2a323a;
+    background: var(--panel-bg);
+    color: var(--muted);
+    border: 1px dashed var(--border);
 }
 
 .add-ico {
-    fill: #8fb0ff;
+    fill: var(--accent);
 }
 
 .kpi-delete .ico {
@@ -24,7 +24,7 @@
 }
 
 .kpi-move .ico {
-    fill: #8fb0ff;
+    fill: var(--accent);
 }
 
 /* dialog styles */
@@ -39,8 +39,8 @@
 }
 
 .modal {
-    background: #141a20;
-    border: 1px solid #2a323a;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
     box-shadow: 0 10px 30px rgba(0, 0, 0, .6);
@@ -51,32 +51,32 @@
 
 .tab-btn {
     background: transparent;
-    border: 1px solid #2a323a;
-    color: #cbd5e1;
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .tab-btn.active {
-    background: #1b2430;
-    border-color: #39506a;
+    background: var(--panel-bg-2);
+    border-color: var(--border);
 }
 
 .mk-item.line {
-    border-bottom: 1px dashed #2a323a;
+    border-bottom: 1px dashed var(--border);
 }
 
 .scroll-box {
-    border: 1px solid #2a323a;
+    border: 1px solid var(--border);
 }
 
 .btn {
-    background: #2d6cdf;
-    color: #fff;
+    background: var(--accent);
+    color: var(--text);
 }
 
 .btn.secondary {
     background: transparent;
-    border: 1px solid #2a323a;
-    color: #cbd5e1;
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 /* KPI kind colors */
@@ -87,7 +87,7 @@
 
 .kpi-contacts .kpi-bg-ico,
 .kpi-bg-ico.kpi-contacts {
-    color: #8fb0ff;
+    color: var(--accent);
 }
 
 .kpi-securities .kpi-bg-ico,
@@ -102,8 +102,8 @@
 
 /* Monthly budget KPI */
 .budget-bar {
-    background: #0f141a;
-    border: 1px solid #2a323a;
+    background: var(--bg);
+    border: 1px solid var(--border);
     width: 100%;
 }
 
@@ -135,8 +135,8 @@
     pointer-events: none;
     position: absolute;
     z-index: 60;
-    background: #0c1116;
-    color: #e6eef6;
+    background: var(--bg);
+    color: var(--text);
     padding: .4rem;
     border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.04);
@@ -159,7 +159,7 @@
 }
 
 .budget-soll-marker {
-    background-color: #2196f3;
+    background-color: var(--accent);
 }
 .budget-saldo-marker {
     background-color: white;

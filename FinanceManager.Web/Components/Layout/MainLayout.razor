@@ -6,39 +6,51 @@
 @inject IJSRuntime JS
 @implements IDisposable
 
-<link rel="stylesheet" href="css/ribbon.css" />
-<link rel="stylesheet" href="css/app.css" />
-
-<div class="app-shell dark-mode">
+<div class="app-shell dark-mode @(CurrentUser.IsAuthenticated ? null : "signed-out")">
     <input type="checkbox" id="nav-toggle" class="nav-toggle" />
     <nav class="sidebar">
         <div class="brand">
-            <img src="@_logoPath" alt="@L["Nav_AppLogoAlt"]" class="brand-logo" />
-            <span>@L["Brand"]</span>
+            <span class="brand-logo-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"/>
+                    <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"/>
+                    <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"/>
+                </svg>
+            </span>
+            <span class="brand-text">
+                <span class="brand-name">@L["Brand"]</span>
+                <span class="brand-sub">@L["Brand_Sub"]</span>
+            </span>
         </div>
         <ul class="nav-links">
             @if (CurrentUser.IsAuthenticated)
             {
-                <li><NavLink href="" Match="NavLinkMatch.All">@L["Nav_Home"]</NavLink></li>
-                <li><NavLink href="list/accounts">@L["Nav_Accounts"]</NavLink></li>
-                <li><NavLink href="list/statement-drafts" Match="NavLinkMatch.All">@L["Nav_StatementDrafts"]</NavLink></li>
-                <li><NavLink href="list/contacts">@L["Nav_Contacts"]</NavLink></li>
-                <li><NavLink href="list/savings-plans">@L["Nav_Plans"]</NavLink></li>
-                <li><NavLink href="list/securities">@L["Nav_Securities"]</NavLink></li>
-                <li><NavLink href="list/budget/purposes">@L["Nav_BudgetPurposes"]</NavLink></li>
-                <li><NavLink href="reports">@L["Nav_Reports"]</NavLink></li>
-                <li><NavLink href="card/setup">@L["Nav_Setup"]</NavLink></li>
+                <li><NavLink href="" Match="NavLinkMatch.All"><svg class="nav-ico"><use href="icons/sprite.svg#nav-home" /></svg><span>@L["Nav_Home"]</span></NavLink></li>
+                <li><NavLink href="list/accounts"><svg class="nav-ico"><use href="icons/sprite.svg#bank" /></svg><span>@L["Nav_Accounts"]</span></NavLink></li>
+                <li><NavLink href="list/contacts"><svg class="nav-ico"><use href="icons/sprite.svg#nav-contacts" /></svg><span>@L["Nav_Contacts"]</span></NavLink></li>
+                <li><NavLink href="list/savings-plans"><svg class="nav-ico"><use href="icons/sprite.svg#nav-savings" /></svg><span>@L["Nav_Plans"]</span></NavLink></li>
+                <li><NavLink href="list/securities"><svg class="nav-ico"><use href="icons/sprite.svg#nav-trending" /></svg><span>@L["Nav_Securities"]</span></NavLink></li>
+                <li><NavLink href="list/statement-drafts" Match="NavLinkMatch.All"><svg class="nav-ico"><use href="icons/sprite.svg#nav-receipt" /></svg><span>@L["Nav_StatementDrafts"]</span></NavLink></li>
+                <li><NavLink href="list/budget/purposes"><svg class="nav-ico"><use href="icons/sprite.svg#nav-pie" /></svg><span>@L["Nav_Budget"]</span></NavLink></li>
+                <li><NavLink href="reports"><svg class="nav-ico"><use href="icons/sprite.svg#chart" /></svg><span>@L["Nav_Reports"]</span></NavLink></li>
+                <li class="nav-sep" aria-hidden="true"></li>
                 @if (CurrentUser.IsAdmin)
                 {
-                    <li><NavLink href="list/users">@L["Nav_Users"]</NavLink></li>
+                    <li><NavLink href="list/users"><svg class="nav-ico"><use href="icons/sprite.svg#groups" /></svg><span>@L["Nav_UserManagement"]</span></NavLink></li>
                 }
-                <li><NavLink href="help">📖 @L["Nav_Help"]</NavLink></li>
+                <li><NavLink href="list/mcp-accesses"><svg class="nav-ico"><use href="icons/sprite.svg#nav-ai" /></svg><span>@L["Nav_McpAccesses"]</span></NavLink></li>
+                <li><NavLink href="card/setup"><svg class="nav-ico"><use href="icons/sprite.svg#settings" /></svg><span>@L["Nav_Settings"]</span></NavLink></li>
+                <li class="nav-sep" aria-hidden="true"></li>
+                <li><NavLink href="help"><svg class="nav-ico"><use href="icons/sprite.svg#nav-help" /></svg><span>@L["Nav_Help"]</span></NavLink></li>
+                <li>
+                    <button type="button" class="nav-entry" @onclick="LogoutAsync">
+                        <svg class="nav-ico"><use href="icons/sprite.svg#nav-logout" /></svg><span>@L["Nav_Logout"]</span>
+                    </button>
+                </li>
             }
         </ul>
         <div class="user-area">
-            <div style="margin-bottom:.35rem; font-size:.85rem;">
-                <NavLink href="legal">@L["Nav_Legal"]</NavLink>
-            </div>
+            <NavLink class="legal-link" href="legal">@L["Nav_Legal"]</NavLink>
             <LoginStatus />
         </div>
     </nav>
@@ -50,11 +62,39 @@
                 </svg>
             </label>
             <div class="mobile-brand">
-                <img src="@_logoPath" alt="@L["Nav_AppLogoAlt"]" class="brand-logo" />
-                <span>@L["Brand"]</span>
+                <span class="brand-logo-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"/>
+                        <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"/>
+                        <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"/>
+                    </svg>
+                </span>
+                <span class="page-title">@_pageTitle</span>
             </div>
         </div>
-        <div class="inner app-inner" style="@(_useFullWidth ? "max-width:none" : null)">
+        @if (CurrentUser.IsAuthenticated)
+        {
+            <div class="topbar">
+                <span class="page-title">@_pageTitle</span>
+                <span class="avatar" aria-hidden="true">
+                    <svg><use href="icons/sprite.svg#account" /></svg>
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="public-brand">
+                <span class="brand-logo-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"/>
+                        <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"/>
+                        <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"/>
+                    </svg>
+                </span>
+                <span class="public-brand-name">@L["Brand"]</span>
+            </div>
+        }
+        <div class="inner app-inner @(!CurrentUser.IsAuthenticated && _authCard ? "inner-auth" : null)" style="@(_useFullWidth && CurrentUser.IsAuthenticated ? "max-width:none" : null)">
             @Body
         </div>
     </main>
@@ -68,14 +108,15 @@
 </div>
 
 @code {
-    private string _logoPath = "icons/finance_manager.png";
+    private string _pageTitle = string.Empty;
     private bool _useFullWidth;
+    private bool _authCard;
     private IDisposable? _locationChangingRegistration;
     private bool _keepaliveRegistered;
 
     protected override void OnInitialized()
     {
-        UpdateLogo(Nav.Uri);
+        UpdateChrome(Nav.Uri);
         _locationChangingRegistration = Nav.RegisterLocationChangingHandler(HandleLocationChanging);
         Nav.LocationChanged += HandleLocationChanged;
     }
@@ -90,7 +131,7 @@
 
     private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        UpdateLogo(e.Location);
+        UpdateChrome(e.Location);
         _ = PingKeepaliveAsync();
         _ = StopLoadingBarAsync();
         _ = InvokeAsync(StateHasChanged);
@@ -142,7 +183,20 @@
         await LoadingBar.StopAsync();
     }
 
-    private void UpdateLogo(string uri)
+    private async Task LogoutAsync()
+    {
+        try
+        {
+            await JS.InvokeAsync<bool>("fmAuthLogout");
+        }
+        catch
+        {
+            // Fallback below: forced navigation still lands on the login page.
+        }
+        Nav.NavigateTo("login", forceLoad: true);
+    }
+
+    private void UpdateChrome(string uri)
     {
         // ToBaseRelativePath strips scheme+host+PathBase, returning a path with no leading
         // slash (e.g. "list/accounts") regardless of any reverse-proxy PathBase prefix.
@@ -157,50 +211,13 @@
             path = uri.ToLowerInvariant().TrimStart('/');
         }
 
-        // Support generic list routes, e.g., list/accounts
-        string? kind = null;
-        if (path.StartsWith("list/"))
-        {
-            var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 2)
-            {
-                kind = parts[1];
-            }
-        }
+        _pageTitle = GetPageTitle(path);
 
-        // decide logo
-        if (path.StartsWith("accounts") || string.Equals(kind, "accounts", StringComparison.OrdinalIgnoreCase))
-        {
-            _logoPath = "icons/finance_manager-accounts.png";
-        }
-        else if (path.StartsWith("contacts") || string.Equals(kind, "contacts", StringComparison.OrdinalIgnoreCase))
-        {
-            _logoPath = "icons/finance_manager-contacts.png";
-        }
-        else if (path.StartsWith("statement-drafts"))
-        {
-            _logoPath = "icons/finance_manager-statementdrafts.png";
-        }
-        else if (path.StartsWith("reports"))
-        {
-            _logoPath = "icons/finance_manager-reports.png";
-        }
-        else if (path.StartsWith("savings-plans") || string.Equals(kind, "savings-plans", StringComparison.OrdinalIgnoreCase))
-        {
-            _logoPath = "icons/finance_manager-savingplans.png";
-        }
-        else if (path.StartsWith("securities") || string.Equals(kind, "securities", StringComparison.OrdinalIgnoreCase))
-        {
-            _logoPath = "icons/finance_manager-securities.png";
-        }
-        else if (path.StartsWith("setup"))
-        {
-            _logoPath = "icons/finance_manager-setup.png";
-        }
-        else
-        {
-            _logoPath = "icons/finance_manager.png"; // Home and default
-        }
+        // Narrow centered card for auth views (login/register/error) when signed out;
+        // other public pages (e.g. legal) keep the wider signed-out card.
+        _authCard = path.StartsWith("login")
+            || path.StartsWith("register")
+            || path.StartsWith("error");
 
         // Full-width for table-heavy pages
         _useFullWidth = path.StartsWith("statement-drafts")
@@ -212,6 +229,82 @@
             || path.StartsWith("portfolio")
             || path.StartsWith("list/")
             || path.StartsWith("card/");
+    }
+
+    private string GetPageTitle(string path)
+    {
+        var key = ResolveTitleKey(path);
+        return L[key].Value;
+    }
+
+    private static string ResolveTitleKey(string path)
+    {
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var kind = parts.Length >= 2 ? parts[1] : null;
+
+        if (path.StartsWith("list/", StringComparison.Ordinal))
+        {
+            return kind switch
+            {
+                "accounts" => "Nav_Accounts",
+                "contacts" => "Nav_Contacts",
+                "savings-plans" => "Nav_Plans",
+                "securities" => "Nav_Securities",
+                "statement-drafts" => "Nav_StatementDrafts",
+                "budget" => "Nav_Budget",
+                "users" => "Nav_UserManagement",
+                "mcp-accesses" => "Nav_McpAccesses",
+                "postings" => parts.Length >= 3 ? parts[2] switch
+                {
+                    "contact" => "Nav_Contacts",
+                    "savings-plan" => "Nav_Plans",
+                    "security" => "Nav_Securities",
+                    _ => "Nav_Accounts",
+                } : "Nav_Accounts",
+                _ => "Brand",
+            };
+        }
+
+        if (path.StartsWith("card/", StringComparison.Ordinal))
+        {
+            return kind switch
+            {
+                "accounts" => "Nav_Accounts",
+                "contacts" => "Nav_Contacts",
+                "savings-plans" => "Nav_Plans",
+                "securities" => "Nav_Securities",
+                "statement-drafts" => "Nav_StatementDrafts",
+                "budget" => "Nav_Budget",
+                "users" => "Nav_UserManagement",
+                "setup" => "Nav_Settings",
+                "postings" => "Nav_Accounts",
+                "mcp-accesses" or "mcp-approvals" or "mcp-audit" or "mcp-security" => "Nav_McpAccesses",
+                _ => "Brand",
+            };
+        }
+
+        if (path.StartsWith("reports", StringComparison.Ordinal)
+            || path.StartsWith("portfolio", StringComparison.Ordinal))
+        {
+            return "Nav_Reports";
+        }
+        if (path.StartsWith("securities", StringComparison.Ordinal))
+        {
+            return "Nav_Securities";
+        }
+        if (path.StartsWith("change-password", StringComparison.Ordinal))
+        {
+            return "Nav_ChangePassword";
+        }
+        if (path.StartsWith("legal", StringComparison.Ordinal))
+        {
+            return "Nav_Legal";
+        }
+        if (path.StartsWith("help", StringComparison.Ordinal))
+        {
+            return "Nav_Help";
+        }
+        return "Nav_Home";
     }
 
     public void Dispose()

@@ -3,11 +3,11 @@
    ===================================================== */
 
 .fm-table tr[style*="opacity:.55"] td {
-    color: #aaa;
+    color: var(--muted);
 }
 
-.row-booked { background: #141414; }
-.row-announced { background: #131313; }
+.row-booked { background: var(--bg); }
+.row-announced { background: var(--bg); }
 .quick-edit-new-row td {
     background-color: rgba(84, 160, 120, .12);
 }
@@ -27,16 +27,16 @@
 }
 
 .validation-row {
-    background: #181818;
+    background: var(--panel-bg);
 }
 
 .global-messages {
-    border: 1px solid #444;
-    background: #181818;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
 }
 
 .booking-error {
-    color: #e66;
+    color: var(--danger);
 }
 
 .warning-confirmation {
@@ -45,12 +45,12 @@
 }
 
 .parent-entry-amount {
-    color: #ccc;
+    color: var(--muted);
 }
 
 .file-viewer {
     border: 1px solid var(--border);
-    background: #111;
+    background: var(--bg);
 }
 
 .file-viewer-header {

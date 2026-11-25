@@ -1344,6 +1344,11 @@
   <data name="Nav_Legal" xml:space="preserve">
     <value>Impressum</value>
   </data>
+  <data name="Brand_Sub" xml:space="preserve"><value>Finanzverwaltung</value></data>
+  <data name="Nav_Budget" xml:space="preserve"><value>Budget</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Nav_UserManagement" xml:space="preserve"><value>Benutzerverwaltung</value></data>
+  <data name="Nav_Logout" xml:space="preserve"><value>Abmelden</value></data>
   <data name="Nav_ChangePassword" xml:space="preserve">
     <value>Passwort ändern</value>
   </data>

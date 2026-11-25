@@ -57,7 +57,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
     z-index: 3;
     border-radius: var(--radius);
     padding: 0.5rem 0.75rem;
@@ -84,7 +84,7 @@
 
 .budget-report-loading-range {
     font-size: 0.85rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
 }
 
 .budget-report-postings-head {

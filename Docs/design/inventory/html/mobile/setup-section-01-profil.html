@@ -57,7 +57,7 @@
     <link rel="stylesheet" href="css/theme.Dark.PortfolioReport.css">
 
     <link rel="stylesheet" href="FinanceManager.Web.styles.css">
-    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWUxXyVIlbUovW_9s27GaoVvCaFO-Gw_oiG89hu1eT9Ae8PXWbB-Gqwgxcsi6htVFhdmDKBvabr_jGZvwu_S0QjnWBJYhWc7P4oT7lzfpKzYIiyL5yrLYF9kMgQmi5W0T3o-rIX1Jjb5OxWdX9d04XsSb2TkaZOh71en0Ro9Zfa59w"><script type="importmap">{
+    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWUaZt8v3feVWa27FW5UzEWqXU70QP4c1uCo9zBkT7NVVZN1azzU6rNPtJhg0SX4Z_Cs5i2z3BYhO76008HpN58cEsqPYj3cNyntplb1wPR5iXHN5nXvXeLItHo1uB2Se-UPx0uUisVH_Ty2Smkdc9BLFRjoKH2kLfVm3IbTQ4bwdw"><script type="importmap">{
   "imports": {
     "./_framework/blazor.server.js": "./_framework/blazor.server.kyitu4x8cy.js",
     "./_framework/blazor.web.js": "./_framework/blazor.web.whefm3rrpu.js",
@@ -96,27 +96,33 @@
         }
     }
 </style>
-        <!--!--><link rel="stylesheet" href="css/ribbon.css">
-<link rel="stylesheet" href="css/app.css">
-
-<div class="app-shell dark-mode"><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
-    <nav class="sidebar"><div class="brand"><img src="icons/finance_manager.png" alt="App-Logo" class="brand-logo">
-            <span>Finance Manager</span></div>
-        <ul class="nav-links"><li><a href="">Start</a></li>
-                <li><a href="list/accounts">Konten</a></li>
-                <li><a href="list/statement-drafts">Kontoauszüge</a></li>
-                <li><a href="list/contacts">Kontakte</a></li>
-                <li><a href="list/savings-plans">Sparpläne</a></li>
-                <li><a href="list/securities">Wertpapiere</a></li>
-                <li><a href="list/budget/purposes">Budgetplanung</a></li>
-                <li><a href="reports">Berichte</a></li>
-                <li><a href="card/setup" class="active" aria-current="page">Einrichtung</a></li><li><a href="list/users">Benutzer</a></li><li><a href="help">📖 Hilfe</a></li></ul>
-        <div class="user-area"><div style="margin-bottom:.35rem; font-size:.85rem;"><a href="legal">Impressum</a></div>
+        <!--!--><div class="app-shell dark-mode "><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
+    <nav class="sidebar"><div class="brand"><span class="brand-logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect>
+                    <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect>
+                    <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span>
+            <span class="brand-text"><span class="brand-name">Finance Manager</span>
+                <span class="brand-sub">Finanzverwaltung</span></span></div>
+        <ul class="nav-links"><li><a href=""><svg class="nav-ico"><use href="icons/sprite.svg#nav-home"></use></svg><span>Start</span></a></li>
+                <li><a href="list/accounts"><svg class="nav-ico"><use href="icons/sprite.svg#bank"></use></svg><span>Konten</span></a></li>
+                <li><a href="list/contacts"><svg class="nav-ico"><use href="icons/sprite.svg#nav-contacts"></use></svg><span>Kontakte</span></a></li>
+                <li><a href="list/savings-plans"><svg class="nav-ico"><use href="icons/sprite.svg#nav-savings"></use></svg><span>Sparpläne</span></a></li>
+                <li><a href="list/securities"><svg class="nav-ico"><use href="icons/sprite.svg#nav-trending"></use></svg><span>Wertpapiere</span></a></li>
+                <li><a href="list/statement-drafts"><svg class="nav-ico"><use href="icons/sprite.svg#nav-receipt"></use></svg><span>Kontoauszüge</span></a></li>
+                <li><a href="list/budget/purposes"><svg class="nav-ico"><use href="icons/sprite.svg#nav-pie"></use></svg><span>Budget</span></a></li>
+                <li><a href="reports"><svg class="nav-ico"><use href="icons/sprite.svg#chart"></use></svg><span>Berichte</span></a></li>
+                <li class="nav-sep" aria-hidden="true"></li><li><a href="list/users"><svg class="nav-ico"><use href="icons/sprite.svg#groups"></use></svg><span>Benutzerverwaltung</span></a></li><li><a href="list/mcp-accesses"><svg class="nav-ico"><use href="icons/sprite.svg#nav-ai"></use></svg><span>KI-Zugänge</span></a></li>
+                <li><a href="card/setup" class="active" aria-current="page"><svg class="nav-ico"><use href="icons/sprite.svg#settings"></use></svg><span>Einstellungen</span></a></li>
+                <li class="nav-sep" aria-hidden="true"></li>
+                <li><a href="help"><svg class="nav-ico"><use href="icons/sprite.svg#nav-help"></use></svg><span>Hilfe</span></a></li>
+                <li><button type="button" class="nav-entry"><svg class="nav-ico"><use href="icons/sprite.svg#nav-logout"></use></svg><span>Abmelden</span></button></li></ul>
+        <div class="user-area"><a href="legal" class="legal-link">Impressum</a>
             <!--!--><!--!--><div class="login-status"><a href="login">Login</a></div></div></nav>
     <main class="content"><div class="mobile-topbar"><label for="nav-toggle" class="hamburger" aria-label="Menü"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></label>
-            <div class="mobile-brand"><img src="icons/finance_manager.png" alt="App-Logo" class="brand-logo">
-                <span>Finance Manager</span></div></div>
-        <div class="inner app-inner" style="max-width:none"><!--!--><div class="card-page-content"><!--!--><div class="fm-ribbon single-tab" role="region" aria-label="Application ribbon"><div class="fm-ribbon-content" role="tabpanel" id="ribbon-panel-0" aria-labelledby="ribbon-tab-0"><div class="fm-ribbon-groups" role="toolbar" aria-label="Ribbon action groups"><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-0"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="Save" disabled="" aria-disabled="true" aria-label="Speichern" title="Speichern" type="button" class="fm-ribbon-btn large"><!--!-->
+            <div class="mobile-brand"><span class="brand-logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect>
+                        <rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect>
+                        <rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span>
+                <span class="page-title">Einstellungen</span></div></div><div class="topbar"><span class="page-title">Einstellungen</span>
+                <span class="avatar" aria-hidden="true"><svg><use href="icons/sprite.svg#account"></use></svg></span></div><div class="inner app-inner " style="max-width:none"><!--!--><div class="card-page-content"><!--!--><div class="fm-ribbon single-tab" role="region" aria-label="Application ribbon"><div class="fm-ribbon-content" role="tabpanel" id="ribbon-panel-0" aria-labelledby="ribbon-tab-0"><div class="fm-ribbon-groups" role="toolbar" aria-label="Ribbon action groups"><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-0"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="Save" disabled="" aria-disabled="true" aria-label="Speichern" title="Speichern" type="button" class="fm-ribbon-btn large"><!--!-->
         <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#save"></use></svg></span><span class="text">Speichern</span></button><button id="Reset" disabled="" aria-disabled="true" aria-label="Zurücksetzen" title="Zurücksetzen" type="button" class="fm-ribbon-btn small"><!--!-->
         <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#undo"></use></svg></span><span class="text-inline">Zurücksetzen</span></button><button id="RebuildAggregates" aria-label="Aggregatposten neu berechnen" title="Hint_RebuildAggregates" type="button" class="fm-ribbon-btn small"><!--!-->
         <span class="icon" aria-hidden="true"><!--!--><svg><use href="icons/sprite.svg#refresh"></use></svg></span><span class="text-inline">Aggregatposten neu berechnen</span></button><button id="ResetReportCache" aria-label="Cache zurücksetzen" title="Setzt die zwischengespeicherten Reports zurück." type="button" class="fm-ribbon-btn small"><!--!-->

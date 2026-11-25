@@ -19,7 +19,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--primary-color, #2d6cdf);
+    color: var(--accent);
     padding: 0.25rem 0.5rem;
     display: flex;
     align-items: center;
@@ -29,7 +29,7 @@
 .tab-bar {
     display: flex;
     gap: 0.25rem;
-    border-bottom: 2px solid var(--border-color, #ddd);
+    border-bottom: 2px solid var(--border);
     margin-bottom: 1.25rem;
     flex-wrap: wrap;
 }
@@ -47,13 +47,13 @@
     padding: 0.5rem 1rem;
     cursor: pointer;
     font-size: 0.9rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
     transition: color 0.15s, border-color 0.15s;
 }
 
 .tab-btn.active {
-    color: var(--primary-color, #2d6cdf);
-    border-bottom-color: var(--primary-color, #2d6cdf);
+    color: var(--accent);
+    border-bottom-color: var(--accent);
     font-weight: 600;
 }
 
@@ -78,28 +78,28 @@
 
 .range-btn {
     background: none;
-    border: 1px solid var(--border-color, #ddd);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.25rem 0.6rem;
     cursor: pointer;
     font-size: 0.8rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
     transition: background 0.15s, color 0.15s;
 }
 
 .range-btn.active {
-    background: var(--primary-color, #2d6cdf);
+    background: var(--accent);
     color: #fff;
-    border-color: var(--primary-color, #2d6cdf);
+    border-color: var(--accent);
 }
 
-.range-btn:hover:not(.active) { background: var(--hover-bg, #f5f5f5); }
+.range-btn:hover:not(.active) { background: var(--hover); }
 
 .chart-placeholder,
 .no-data-msg {
     padding: 2rem;
     text-align: center;
-    color: var(--text-muted, #888);
+    color: var(--muted);
     font-style: italic;
 }
 
@@ -137,16 +137,16 @@
 .perf-svg {
     width: 100%;
     height: 200px;
-    border: 1px solid var(--border-color-subtle, #eee);
+    border: 1px solid var(--border-subtle);
     border-radius: 4px;
-    background: var(--chart-bg, #fafafa);
+    background: var(--panel-bg);
 }
 
 .chart-dates {
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: var(--text-muted, #999);
+    color: var(--muted);
     margin-top: 0.25rem;
     padding: 0 0.25rem;
 }
@@ -198,14 +198,14 @@
 
 .bar-label {
     font-size: 0.7rem;
-    color: var(--text-muted, #888);
+    color: var(--muted);
     margin-top: 0.25rem;
     white-space: nowrap;
 }
 
 .ytd-note {
     font-size: 0.75rem;
-    color: var(--text-muted, #999);
+    color: var(--muted);
     margin-top: 0.25rem;
 }
 
@@ -227,14 +227,14 @@
 .heatmap-header span {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-muted, #666);
+    color: var(--muted);
     text-align: center;
 }
 
 .heatmap-year {
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--text-muted, #666);
+    color: var(--muted);
 }
 
 .heatmap-cell {
@@ -256,7 +256,7 @@
     gap: 0.5rem;
     margin-top: 0.5rem;
     font-size: 0.75rem;
-    color: var(--text-muted, #888);
+    color: var(--muted);
 }
 
 .legend-gradient {
@@ -290,20 +290,20 @@
 .fm-table th {
     text-align: left;
     padding: 0.4rem 0.6rem;
-    border-bottom: 2px solid var(--border-color, #ddd);
-    color: var(--text-muted, #666);
+    border-bottom: 2px solid var(--border);
+    color: var(--muted);
     font-weight: 600;
     white-space: nowrap;
 }
 
 .fm-table td {
     padding: 0.35rem 0.6rem;
-    border-bottom: 1px solid var(--border-color-subtle, #f0f0f0);
+    border-bottom: 1px solid var(--border-subtle);
     vertical-align: middle;
 }
 
 .fm-table tr:last-child td { border-bottom: none; }
-.fm-table tr:hover td { background: var(--hover-bg, #f9f9f9); }
+.fm-table tr:hover td { background: var(--hover); }
 
 .fm-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
@@ -342,10 +342,10 @@
 }
 
 .kpi-section {
-    border: 1px solid var(--border-color, #ddd);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.75rem 1rem;
-    background: var(--card-bg, #fff);
+    background: var(--panel-bg);
 }
 
 .kpi-section h3 {
@@ -353,10 +353,10 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted, #888);
+    color: var(--muted);
     margin: 0 0 0.6rem 0;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--border-color-subtle, #f0f0f0);
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .kpi-row {
@@ -364,7 +364,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.3rem 0;
-    border-bottom: 1px solid var(--border-color-subtle, #f5f5f5);
+    border-bottom: 1px solid var(--border-subtle);
     cursor: default;
 }
 
@@ -372,7 +372,7 @@
 
 .kpi-label {
     font-size: 0.85rem;
-    color: var(--text-muted, #555);
+    color: var(--muted);
     flex: 1;
     margin-right: 0.5rem;
 }
@@ -389,13 +389,13 @@
 .no-benchmark-hint {
     padding: 2rem;
     text-align: center;
-    color: var(--text-muted, #888);
+    color: var(--muted);
 }
 
 .no-benchmark-hint p { margin-bottom: 0.5rem; }
 
 .btn-primary {
-    background: var(--primary-color, #2d6cdf);
+    background: var(--accent);
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -410,7 +410,7 @@
 
 .benchmark-name {
     font-size: 0.9rem;
-    color: var(--text-muted, #666);
+    color: var(--muted);
     margin-bottom: 0.5rem;
 }
 
@@ -448,9 +448,9 @@
 .benchmark-svg {
     width: 100%;
     height: 220px;
-    border: 1px solid var(--border-color-subtle, #eee);
+    border: 1px solid var(--border-subtle);
     border-radius: 4px;
-    background: var(--chart-bg, #fafafa);
+    background: var(--panel-bg);
 }
 
 .benchmark-svg-wrap {

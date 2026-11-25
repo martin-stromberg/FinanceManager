@@ -1,11 +1,11 @@
 /* =====================================================
-   theme.Dark.AggregateBarChart.css - Dark Theme für AggregateBarChart
+   theme.Dark.AggregateBarChart.css - Dark Theme fÃ¼r AggregateBarChart
    ===================================================== */
 
 .chart {
-    --bar-color: #2d6cdf;
+    --bar-color: var(--accent);
     --bar-neg: #c94;
-    --axis: #555;
+    --axis: var(--muted);
     border: 1px solid var(--border);
 }
 
@@ -27,7 +27,7 @@
 }
 
 .bar:focus-visible {
-    box-shadow: 0 0 0 2px #ffffff40, 0 0 0 4px #2d6cdf90;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 0 0 4px rgba(109,141,255,.56);
 }
 
 .zero-line {
@@ -35,7 +35,7 @@
 }
 
 .labels-row {
-    color: #aaa;
+    color: var(--muted);
 }
 
 .chart-loading-overlay {
@@ -47,9 +47,9 @@
 }
 
 .chart-skeleton .skeleton-bar {
-    background: linear-gradient(180deg, #2a3036 0%, #1b1f23 100%);
+    background: linear-gradient(180deg, var(--panel-bg-2) 0%, var(--panel-bg-2) 100%);
 }
 
 .chart-skeleton .skeleton-label {
-    background: #262b30;
+    background: var(--panel-bg-2);
 }

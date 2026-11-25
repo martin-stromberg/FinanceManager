@@ -1,5 +1,5 @@
 /* =====================================================
-   theme.Dark.SecurityPrices.css - Dark Theme für SecurityPrices
+   theme.Dark.SecurityPrices.css - Dark Theme fÃ¼r SecurityPrices
    ===================================================== */
 
 .modal-overlay {
@@ -7,28 +7,28 @@
 }
 
 .modal {
-    background: #141a20;
-    border: 1px solid #2a323a;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
     box-shadow: 0 10px 30px rgba(0, 0, 0, .6);
 }
 
 .btn {
-    background: #2d6cdf;
-    color: #fff;
+    background: var(--accent);
+    color: var(--text);
 }
 
 .btn.secondary {
     background: transparent;
-    border: 1px solid #2a323a;
-    color: #cbd5e1;
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .alert.info {
-    border: 1px solid #29425f;
-    background: #0f1419;
-    color: #9ec1ff;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--accent);
 }
 
 .dialog-error {
-    color: #e66;
+    color: var(--danger);
 }

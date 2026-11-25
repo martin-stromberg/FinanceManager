@@ -77,7 +77,7 @@
     border: 1px solid var(--border, #6c757d);
     border-radius: .25rem;
     background: transparent;
-    color: var(--text-muted, #6c757d);
+    color: var(--muted);
     cursor: pointer;
     padding: 0;
     display: inline-flex;
@@ -89,8 +89,8 @@
 
 .quick-edit-open-button:hover,
 .quick-edit-open-button:focus-visible {
-    background: var(--text-muted, #6c757d);
-    color: var(--card-bg, #fff);
+    background: var(--muted);
+    color: var(--panel-bg);
 }
 
 .quick-edit-open-button svg {
