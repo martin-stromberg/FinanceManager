@@ -25,3 +25,13 @@ Branch: `task-issue-590-c1454f4ac23246f98840e1a8c7175f1e-design-ueberarbeiten`
 | [ ] | 12c | Release Notes aktualisieren (Unteragent) | `docs/RELEASE_NOTES.md` |
 | [ ] | – | Feature-Verzeichnis löschen | – |
 | [ ] | – | Commit durchführen | – |
+
+## Abnahme-Iteration 2 (Issue-Kommentar-Feedback)
+
+Feedback zu beiden Varianten eingearbeitet (Commit ce1ff973): einheitliches Chrome
+(kanonische Sidebar-Nav, FM-Logo, echte Ribbon-Aktionen aus dem Inventar),
+erfundene Features entfernt (Sync-/PSD2-/CAMT-Badges, Multi-Kategorie und
+Aktivier-Toggles bei Budgetzwecken), Erklaertexte hinter Info-Bereichen,
+Startseite mit Mitteilungen + konfigurierbaren KPI-Kacheln + Berichts-Favoriten
+nach echtem Modell neu aufgebaut. Alle 136 PNGs neu gerendert (Playwright).
+Antwort-Kommentar im Issue gepostet; Abnahme-Gate offen.
