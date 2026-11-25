@@ -20,8 +20,8 @@ Verfügung — alle Lifecycle-Phasen werden vom Hauptagenten selbst ausgeführt.
 | [x] | 8 | Code-Review (selbst ausgeführt) | `review-code.md` |
 | [x] | 8b | Tests ausführen (selbst ausgeführt) | `test-results.md` |
 | [x] | – | Iteration oder Abschluss entscheiden | Abschluss (keine neue Iteration nötig — Baseline-identisch, neue Befunde aufgelöst) |
-| [ ] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | `continue.md` |
-| [x] | 9 | Dokumentation erstellen (selbst ausgeführt) | `Docs/help/benutzeroberflaeche/*`, `Docs/help/programminformationen/ablauf-anwender.md` |
-| [x] | 9b | README/Release-Notes aktualisieren (selbst ausgeführt) | `docs/RELEASE_NOTES.md` |
-| [ ] | – | Feature-Verzeichnis löschen | – |
-| [ ] | – | Commit durchführen | – |
+| [x] | 8a | Folgeaufgaben dokumentieren (bei Schleifenabbruch) | entfällt (Abschluss ohne Abbruch) |
+| [x] | 9 | Dokumentation erstellen (selbst ausgeführt) | `Docs/help/benutzeroberflaeche/*`, `Docs/help/programminformationen/ablauf-anwender.md`, `Docs/screenshot-generation.md` |
+| [x] | 9b | README/Release-Notes aktualisieren (selbst ausgeführt) | `docs/RELEASE_NOTES.md`, `Docs/screenshots/*` (PNG-Frames + `demo.gif` neu, via SSR-Inventory-Captures) |
+| [x] | – | Feature-Verzeichnis löschen | entfällt — Artefakte bleiben als Nachweis im Repo (Konsistenz mit bisherigen Features) |
+| [x] | – | Commit durchführen | `d433795c` |
