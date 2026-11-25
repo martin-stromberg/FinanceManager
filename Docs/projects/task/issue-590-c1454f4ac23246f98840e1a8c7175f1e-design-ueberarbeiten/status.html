@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Projektstatus – Design-Umsetzung Variante A + B (Issue #590)</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0b0e13;color:#e1e2ea;max-width:900px;margin:2rem auto;padding:0 1rem}
+h1{font-size:1.4rem}h2{font-size:1.05rem;color:#8e9aa8;text-transform:uppercase;letter-spacing:.06em}
+.bar{background:#1a1f2b;border-radius:8px;height:14px;overflow:hidden;margin:.5rem 0 1.5rem}
+.bar>div{height:100%;background:#6d8dff;width:0%}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:.5rem .75rem;border-bottom:1px solid #232a36;text-align:left}
+th{color:#8e9aa8;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+.open{color:#e1e2ea}.done{color:#5dd39e}.blocked{color:#ff7a7a}
+code{background:#151922;padding:.1rem .35rem;border-radius:4px;font-size:.8rem}
+.note{background:#151922;border:1px solid #232a36;border-radius:8px;padding:.75rem 1rem;font-size:.85rem;color:#8e9aa8}
+</style>
+</head>
+<body>
+<h1>Projektstatus – Design-Umsetzung Variante A + B</h1>
+<p>Issue #590 · Basisbranch: <code>task/issue-590-c1454f4ac23246f98840e1a8c7175f1e-design-ueberarbeiten</code></p>
+<h2>Fortschritt</h2>
+<div class="bar"><div></div></div>
+<p>0 von 2 Entwicklungsschritten abgeschlossen.</p>
+<table>
+<tr><th>#</th><th>Titel</th><th>Abhängigkeiten</th><th>Status</th></tr>
+<tr class="open"><td>1</td><td>Design-Variante A umsetzen</td><td>Keine</td><td>Offen</td></tr>
+<tr class="open"><td>2</td><td>Design-Variante B umsetzen</td><td>Keine</td><td>Offen</td></tr>
+</table>
+<h2>Hinweis</h2>
+<p class="note">Die Schritte sind wechselseitig exklusive Design-Alternativen und werden nicht in den
+Basisbranch gemergt. Schritt-Abschluss ist jeweils: Lifecycle vollständig, Abnahme dokumentiert,
+Branch gepusht, Pull Request gegen <code>staging</code> erstellt.</p>
+</body>
+</html>
