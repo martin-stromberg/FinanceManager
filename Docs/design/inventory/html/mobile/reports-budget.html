@@ -1,0 +1,175 @@
+<!DOCTYPE html><html lang="en" data-culture="de"><head><script type="importmap">{"imports":{"js/profile.js":"/js/profile.js","js/financeManager.js":"/js/financeManager.js","js/attachments.js":"/js/attachments.js"}}</script><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
+    <link rel="shortcut icon" type="image/icon" href="icons/finance_manager-64x64.ico">
+    <script src="js/financeManager.js"></script>
+
+    
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/ribbon.css">
+    <link rel="stylesheet" href="css/app.Contacts.css">
+    <link rel="stylesheet" href="css/app.ContactMergeDialog.css">
+    <link rel="stylesheet" href="css/app.ReportDashboard.css">
+    <link rel="stylesheet" href="css/app.BudgetReport.css">
+    <link rel="stylesheet" href="css/app.BudgetLineChart.css">
+    <link rel="stylesheet" href="css/app.StatementDraftDetail.css">
+    <link rel="stylesheet" href="css/app.ReportKpiTile.css">
+    <link rel="stylesheet" href="css/app.NumericKpi.css">
+    <link rel="stylesheet" href="css/app.HomeKpiGrid.css">
+    <link rel="stylesheet" href="css/app.Home.css">
+    <link rel="stylesheet" href="css/app.AggregateBarChart.css">
+    <link rel="stylesheet" href="css/app.HomeNotifications.css">
+    <link rel="stylesheet" href="css/app.Users.css">
+    <link rel="stylesheet" href="css/app.Setup.css">
+    <link rel="stylesheet" href="css/app.SecurityPrices.css">
+    <link rel="stylesheet" href="css/app.SavingsPlanList.css">
+    <link rel="stylesheet" href="css/app.ReportsHome.css">
+    <link rel="stylesheet" href="css/app.BackgroundTaskStatusPanel.css">
+    <link rel="stylesheet" href="css/app.SetupNotificationsTab.css">
+    <link rel="stylesheet" href="css/app.ReturnAnalysis.css">
+    <link rel="stylesheet" href="help/css/help-page.css">
+    <link rel="stylesheet" href="css/app.ReturnSummaryWidget.css">
+    <link rel="stylesheet" href="css/app.PortfolioReport.css">
+
+    
+    
+    <link rel="stylesheet" href="css/theme.Dark.css">
+    <link rel="stylesheet" href="css/theme.Dark.Ribbon.css">
+    <link rel="stylesheet" href="css/theme.Dark.Contacts.css">
+    <link rel="stylesheet" href="css/theme.Dark.ContactMergeDialog.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReportDashboard.css">
+    <link rel="stylesheet" href="css/theme.Dark.BudgetReport.css">
+    <link rel="stylesheet" href="css/theme.Dark.BudgetLineChart.css">
+    <link rel="stylesheet" href="css/theme.Dark.StatementDraftDetail.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReportKpiTile.css">
+    <link rel="stylesheet" href="css/theme.Dark.HomeKpiGrid.css">
+    <link rel="stylesheet" href="css/theme.Dark.Home.css">
+    <link rel="stylesheet" href="css/theme.Dark.AggregateBarChart.css">
+    <link rel="stylesheet" href="css/theme.Dark.HomeNotifications.css">
+    <link rel="stylesheet" href="css/theme.Dark.Users.css">
+    <link rel="stylesheet" href="css/theme.Dark.Setup.css">
+    <link rel="stylesheet" href="css/theme.Dark.SecurityPrices.css">
+    <link rel="stylesheet" href="css/theme.Dark.SavingsPlanList.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReportsHome.css">
+    <link rel="stylesheet" href="css/theme.Dark.BackgroundTaskStatusPanel.css">
+    <link rel="stylesheet" href="css/theme.Dark.SetupNotificationsTab.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReturnAnalysis.css">
+    <link rel="stylesheet" href="css/theme.Dark.PortfolioReport.css">
+
+    <link rel="stylesheet" href="FinanceManager.Web.styles.css">
+    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWXSDevRHdwRIh8n2-_wBgQ8HVw_oK-cR89ns7J6jjVAWrAaiYsNWwrEgV-octsxd5sjVOhp1PGaGtfhhmPMUQJ5UrD6k0GBBDRK1njsRk3yw0YkwFA0yjUOFe3kR5IpbLxOKd3wkIGmZRmBFYyTBHU4HpqaZQHNi6e-9dVvRsgthg"><script type="importmap">{
+  "imports": {
+    "./_framework/blazor.server.js": "./_framework/blazor.server.kyitu4x8cy.js",
+    "./_framework/blazor.web.js": "./_framework/blazor.web.whefm3rrpu.js",
+    "./auth.js": "./auth.1ygq65ce9r.js",
+    "./help/js/help-search.js": "./help/js/help-search.2jobhb7ckq.js",
+    "./js/attachments.js": "./js/attachments.d3qsotv1io.js",
+    "./js/financeManager.js": "./js/financeManager.407i7ksy61.js",
+    "./js/profile.js": "./js/profile.p4g8baeoxp.js",
+    "./scroll.js": "./scroll.rr5db2fayq.js"
+  },
+  "integrity": {
+    "./_framework/blazor.server.js": "sha256-PIOH5QlrFWt/dguZM0yUYJfMD5u0BamSuVy30XXrAzs=",
+    "./_framework/blazor.server.kyitu4x8cy.js": "sha256-PIOH5QlrFWt/dguZM0yUYJfMD5u0BamSuVy30XXrAzs=",
+    "./_framework/blazor.web.js": "sha256-JCkXN7mlakRbdRiGAWIeq1aFJKx6A3jlt5Fq2mbVLSU=",
+    "./_framework/blazor.web.whefm3rrpu.js": "sha256-JCkXN7mlakRbdRiGAWIeq1aFJKx6A3jlt5Fq2mbVLSU=",
+    "./auth.1ygq65ce9r.js": "sha256-t+1cOy5425rDPCT8B6TeiJKpNm67ens2LWWfhE2WwiQ=",
+    "./auth.js": "sha256-t+1cOy5425rDPCT8B6TeiJKpNm67ens2LWWfhE2WwiQ=",
+    "./help/js/help-search.2jobhb7ckq.js": "sha256-EoIezdfZSZveZuFog6gLyAbxxPhu8iJcBZoHyG3wEH4=",
+    "./help/js/help-search.js": "sha256-EoIezdfZSZveZuFog6gLyAbxxPhu8iJcBZoHyG3wEH4=",
+    "./js/attachments.d3qsotv1io.js": "sha256-57CMJQNh8O7I3q2Nn4MvC4X90wvkYHr+LXBIdSGKSLk=",
+    "./js/attachments.js": "sha256-57CMJQNh8O7I3q2Nn4MvC4X90wvkYHr+LXBIdSGKSLk=",
+    "./js/financeManager.407i7ksy61.js": "sha256-DJU2YJwGKk7TwNCoxeWhImC21NEGWFZmRlRs0jUvRLw=",
+    "./js/financeManager.js": "sha256-DJU2YJwGKk7TwNCoxeWhImC21NEGWFZmRlRs0jUvRLw=",
+    "./js/profile.js": "sha256-qTboG6X62h8K+v3ATETntBjiCuLXP8bOxo+jmKzPXJo=",
+    "./js/profile.p4g8baeoxp.js": "sha256-qTboG6X62h8K+v3ATETntBjiCuLXP8bOxo+jmKzPXJo=",
+    "./scroll.js": "sha256-if6MFj2EHIDdHRM3lMiZqewPxiNL8oBbz8KwrOj1ol0=",
+    "./scroll.rr5db2fayq.js": "sha256-if6MFj2EHIDdHRM3lMiZqewPxiNL8oBbz8KwrOj1ol0="
+  }
+}</script><title>Budgetbericht</title></head>
+
+<body class="dark-mode"><div id="fm-loading-bar" class="mst-loading-bar" style="--mst-loading-bar-height:3px;--mst-loading-bar-top:0;--mst-loading-bar-mobile-top:54px;--mst-loading-bar-z-index:1200" data-mst-loading-bar="" data-loading-colors="#4dabf7,#51cf66,#ffd43b,#ff6b6b,#b197fc,#20c997,#ff922b" aria-hidden="true" b-w8317ziaus=""></div>
+
+<style b-w8317ziaus="">@media (max-width: 900px) {
+        #fm-loading-bar {
+            top: var(--mst-loading-bar-mobile-top, var(--mst-loading-bar-top, 0));
+        }
+    }
+</style>
+        <!--Blazor:{"type":"server","prerenderId":"7d2f230e8dd24e7a8315b8c522859e39","key":{"locationHash":"3D52735BBB4D599BB422BD989FA24C35B3D97C802CE2BFD86697C04A187302EA:19","formattedComponentKey":""},"sequence":0,"descriptor":"CfDJ8A01FDFIdqJEllLlLrlmLWWG52xCWM1uDeUMv2y3YnxuPIt\u002B12lhTzLsjF8AV/\u002Bs1GpiXr8kG7jwfJ/V6on7DLiqwHwYs15OiMIINBSFMq7VVaMOhXqEKesHvhpyhuGL0pJzrMdY0IRtzlZCiQNqrSgdLOzKtv2W9gPOj0ljlhI21fF4\u002B8oyIi56l8S0UHU9ZFMp6fQ\u002BpOwEICnyEvSMlGLDDifRzdYtwTHpOXTHDbF5XmcjTT2795jA5oW3LsaYEkeANgvTLQzP5ZUv8jAc5RhKoSHyVozZH0w1x74d20pxxOI\u002BeYS03fAzY\u002BoouxsOZGmRT3GxNq34nAJEvJqR/Y9w9Gzv1SUjXnDZGaJbNIXmPVWrMjOaEmp4rwILIIcdhDpwGTSmkOL8HtxkxM5TZaGOtOHVGRZYpoHhY/EgGHHH3c/wSqcPADEIZunoyZpWOakoeenhAb8oke\u002B\u002BiyfmAq8sr\u002BARiOYx45NrL7ucA\u002BAYbJH8R05Wteb08geNPlU1zJTBFqr0DNXnUZuIJrjhoxsUrNaC1C165SVSMW0BVwd2"}--><!--Blazor:{"prerenderId":"7d2f230e8dd24e7a8315b8c522859e39"}--><link rel="stylesheet" href="css/ribbon.css">
+<link rel="stylesheet" href="css/app.css">
+
+<div class="app-shell dark-mode"><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
+    <nav class="sidebar"><div class="brand"><img src="icons/finance_manager-reports.png" alt="App-Logo" class="brand-logo">
+            <span>Finance Manager</span></div>
+        <ul class="nav-links"><li><a href="">Start</a></li>
+                <li><a href="list/accounts">Konten</a></li>
+                <li><a href="list/statement-drafts">Kontoauszüge</a></li>
+                <li><a href="list/contacts">Kontakte</a></li>
+                <li><a href="list/savings-plans">Sparpläne</a></li>
+                <li><a href="list/securities">Wertpapiere</a></li>
+                <li><a href="list/budget/purposes">Budgetplanung</a></li>
+                <li><a href="reports" class="active" aria-current="page">Berichte</a></li>
+                <li><a href="card/setup">Einrichtung</a></li><li><a href="list/users">Benutzer</a></li><li><a href="help">📖 Hilfe</a></li></ul>
+        <div class="user-area"><div style="margin-bottom:.35rem; font-size:.85rem;"><a href="legal">Impressum</a></div>
+            <!--Blazor:{"type":"server","prerenderId":"2c683fdc2d3547e99d68b4ecf607b335","key":{"locationHash":"42963F96764D9EB7F224AAF502B368012E4690D75899E094AC069B3B3E71F4C7:94","formattedComponentKey":""},"sequence":1,"descriptor":"CfDJ8A01FDFIdqJEllLlLrlmLWUr1\u002Bg6UXZv0ykWFsoyeL5TJyZCESKcNTjzwTU3CRIFMU1NO\u002BsCo7mWZidKj2Djn2yLKkbBYU9e9NYoTqu767el6Jfxnt6OTUJmt4Kbp4IVxSe0mBe\u002BUdiCVeYNaUM9q6FW61G6WEEM1Sot0rhkUCvyggtgeTk0ue8Hmb6k7tz75ilJttS7SMUIMSgVP73mieRFmZhiqNOVZJtuDYkcYUzPEVotu7qQeq8dTO6dq\u002BZKE4cBOz5bhmyLRdtlENozi/EC99tyybMklXOfUYPgoUPx2WFSVENWehy7VbmN3FNXN8r1IdEbCxy10GSvCuZXKeGSzrdZ\u002BK1XnGs0oUWQjzFjKYyVvGR2IjadpzxK/fKaDNGvpYQPQ/4YOvRTOe1MYX4R\u002BVxAuF9wOpwJsdoEcpojNs7KzfNfR9Wp3r6MyZCd4eGQFR2jGbEpFJDCv9DDcOFmejPj/\u002BzlFsc5\u002Bu/AMleW7OuU6P8Mc5L0oNMzp7SAkV1pt8POD3QYh8MYVwiM9edWzHbGCYtbkhyZUvCOwbS8"}--><div class="login-status">1.0.0<br>
+        <a id="change-password-link" href="change-password">Passwort ändern</a><br>
+        <button>Logout</button></div><!--Blazor:{"prerenderId":"2c683fdc2d3547e99d68b4ecf607b335"}--></div></nav>
+    <main class="content"><div class="mobile-topbar"><label for="nav-toggle" class="hamburger" aria-label="Menü"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></label>
+            <div class="mobile-brand"><img src="icons/finance_manager-reports.png" alt="App-Logo" class="brand-logo">
+                <span>Finance Manager</span></div></div>
+        <div class="inner app-inner" style="max-width:none"><!--Blazor:{"type":"server","prerenderId":"a64c806ef2f246579a67691d9c9010fa","key":{"locationHash":"B495229B2AFE13E1BF724555F1184C2BDBBCA9975150A144D3396122378813BB:0","formattedComponentKey":""},"sequence":2,"descriptor":"CfDJ8A01FDFIdqJEllLlLrlmLWWntcMsRuCSufu6iiOB\u002Bg65UoYhbm0QuBtqFowHCrfQue1xHkcRaKlrwzjtoHEfelu6mAOFszc9s8o3\u002BmykbnkeUwyjNZyW2lN1KfkBmyPLD1eG/BovQvJimw533ERQ3yNn0gj\u002Bp0UcFBMJHN1qXG3yLfXdROeEh/REDdpfo/1BaCJ0RugzIdrFa7rdKSsf1bCYqrg2hnWR67lh7uDM4tivEhyFEa9NbXMzvaNIBB4pYWpcHWCMCAjDq8Ua6IO4qcWQFv7GD2zIc/bhpAvNpXYyPO/GwoS0keoMhg4VC\u002ByhC4RPpmRHPfocgxXlmvW\u002BgL1HYY/Z57/M6lSZrAM8fNJDY8r2Or0DYXSdroQgKELoMXttdhi/MKedeD6leYVqeo15EMR7ss/XcnyWj5Bx6I1T9GgX/issrMse/ODPYHA797Eo3Nsco0j93QM65\u002BKtpVAbCnhfcfLA0tLefaeGfBwSw1zalwmqhfWoGhvKdL\u002BDsLmgdAUesdLgzVEmqb4jQIuK/R4UD2v9e31t9vBP/ssi7Cn4huzagQa3P4FfVNaBLQ=="}--><div class="fm-ribbon single-tab" role="region" aria-label="Application ribbon"><div class="fm-ribbon-content" role="tabpanel" id="ribbon-panel-0" aria-labelledby="ribbon-tab-0"><div class="fm-ribbon-groups" role="toolbar" aria-label="Ribbon action groups"><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-0"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="Settings" aria-label="Einstellungen" title="Einstellungen" type="button" class="fm-ribbon-btn small">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#settings"></use></svg></span><span class="text-inline">Einstellungen</span></button></div>
+                           <div class="fm-ribbon-group-footer" id="ribbon-group-label-0-0">Verwalten</div></div>
+                       <div class="fm-ribbon-mobile-group-panel"><div class="fm-ribbon-mobile-group-header"><button type="button" class="fm-ribbon-mobile-group-title-toggle" aria-controls="ribbon-mobile-menu-0-0"><span class="fm-ribbon-mobile-group-title">Verwalten</span></button><div class="fm-ribbon-mobile-shortcuts" aria-label="Verwalten"><button id="Settings-mobile-shortcut" aria-label="Einstellungen" title="Einstellungen" type="button" class="fm-ribbon-mobile-shortcut" __internal_stoppropagation_onclick="">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#settings"></use></svg></span></button></div><button type="button" class="fm-ribbon-mobile-group-toggle" aria-controls="ribbon-mobile-menu-0-0"><span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></span></button></div>
+                           <div id="ribbon-mobile-menu-0-0" class="fm-ribbon-mobile-menu "><button id="Settings-mobile" aria-label="Einstellungen" title="Einstellungen" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#settings"></use></svg></span><span class="text-inline">Einstellungen</span></button></div></div><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-1"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="PrevMonth" aria-label="Vormonat" title="Vormonat" type="button" class="fm-ribbon-btn small">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#prev"></use></svg></span><span class="text-inline">Vormonat</span></button><button id="ThisMonth" aria-label="Aktueller Monat" title="Aktueller Monat" type="button" class="fm-ribbon-btn small">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#calendar"></use></svg></span><span class="text-inline">Aktueller Monat</span></button><button id="NextMonth" aria-label="Nächster Monat" title="Nächster Monat" type="button" class="fm-ribbon-btn small">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#next"></use></svg></span><span class="text-inline">Nächster Monat</span></button><button id="PrevYear" aria-label="Vorjahr" title="Vorjahr" type="button" class="fm-ribbon-btn small">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#prev"></use></svg></span><span class="text-inline">Vorjahr</span></button><button id="NextYear" aria-label="Nächstes Jahr" title="Nächstes Jahr" type="button" class="fm-ribbon-btn small">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#next"></use></svg></span><span class="text-inline">Nächstes Jahr</span></button></div>
+                           <div class="fm-ribbon-group-footer" id="ribbon-group-label-0-1">Analyse</div></div>
+                       <div class="fm-ribbon-mobile-group-panel"><div class="fm-ribbon-mobile-group-header"><button type="button" class="fm-ribbon-mobile-group-title-toggle" aria-controls="ribbon-mobile-menu-0-1"><span class="fm-ribbon-mobile-group-title">Analyse</span></button><button type="button" class="fm-ribbon-mobile-group-toggle" aria-controls="ribbon-mobile-menu-0-1"><span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></span></button></div>
+                           <div id="ribbon-mobile-menu-0-1" class="fm-ribbon-mobile-menu "><button id="PrevMonth-mobile" aria-label="Vormonat" title="Vormonat" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#prev"></use></svg></span><span class="text-inline">Vormonat</span></button><button id="ThisMonth-mobile" aria-label="Aktueller Monat" title="Aktueller Monat" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#calendar"></use></svg></span><span class="text-inline">Aktueller Monat</span></button><button id="NextMonth-mobile" aria-label="Nächster Monat" title="Nächster Monat" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#next"></use></svg></span><span class="text-inline">Nächster Monat</span></button><button id="PrevYear-mobile" aria-label="Vorjahr" title="Vorjahr" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#prev"></use></svg></span><span class="text-inline">Vorjahr</span></button><button id="NextYear-mobile" aria-label="Nächstes Jahr" title="Nächstes Jahr" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#next"></use></svg></span><span class="text-inline">Nächstes Jahr</span></button></div></div><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-2"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="ExportExcel" aria-label="Excel exportieren" title="Excel exportieren" type="button" class="fm-ribbon-btn small">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#download"></use></svg></span><span class="text-inline">Excel exportieren</span></button></div>
+                           <div class="fm-ribbon-group-footer" id="ribbon-group-label-0-2">Export</div></div>
+                       <div class="fm-ribbon-mobile-group-panel"><div class="fm-ribbon-mobile-group-header"><button type="button" class="fm-ribbon-mobile-group-title-toggle" aria-controls="ribbon-mobile-menu-0-2"><span class="fm-ribbon-mobile-group-title">Export</span></button><div class="fm-ribbon-mobile-shortcuts" aria-label="Export"><button id="ExportExcel-mobile-shortcut" aria-label="Excel exportieren" title="Excel exportieren" type="button" class="fm-ribbon-mobile-shortcut" __internal_stoppropagation_onclick="">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#download"></use></svg></span></button></div><button type="button" class="fm-ribbon-mobile-group-toggle" aria-controls="ribbon-mobile-menu-0-2"><span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></span></button></div>
+                           <div id="ribbon-mobile-menu-0-2" class="fm-ribbon-mobile-menu "><button id="ExportExcel-mobile" aria-label="Excel exportieren" title="Excel exportieren" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#download"></use></svg></span><span class="text-inline">Excel exportieren</span></button></div></div></div></div></div><div class="budget-report budget-report-page" style="margin:1rem auto;max-width:900px;"><div class="budget-report-sheet"><h2 class="budget-report-title" style="margin-top:0;">Budgetbericht</h2>
+                <div class="budget-report-period" style="font-size:.875rem;color:var(--text-muted,#666);margin-top:-.25rem;margin-bottom:1rem;">01.12.2025 – 30.11.2026</div><div class="budget-linechart" role="img" aria-label="Liniendiagramm (Soll vs. Ist)"><svg viewBox="0 0 1000 325" preserveAspectRatio="none" class="budget-linechart-svg"><g class="grid"><line x1="60" y1="20" x2="980" y2="20"></line><line x1="60" y1="90" x2="980" y2="90"></line><line x1="60" y1="160" x2="980" y2="160"></line><line x1="60" y1="230" x2="980" y2="230"></line><line x1="60" y1="300" x2="980" y2="300"></line></g>
+
+        <g class="axes"><line x1="60" y1="300" x2="980" y2="300"></line>
+            <line x1="60" y1="20" x2="60" y2="300"></line></g>
+
+        <g class="ylabels"><text x="52" y="26" text-anchor="end"></text><text x="52" y="96" text-anchor="end"></text><text x="52" y="166" text-anchor="end"></text><text x="52" y="236" text-anchor="end"></text><text x="52" y="306" text-anchor="end"></text></g><g class="labels"></g></svg>
+
+    <div class="legend"><span class="legend-item"><span class="swatch budget"></span>Budget</span>
+        <span class="legend-item"><span class="swatch actual"></span>Istwert</span></div></div><h3 class="budget-report-section-title">Monatswerte</h3>
+                <div class="budget-table-wrap table-responsive"><table class="table budget-report-table" style="width:100%;"><thead><tr><th style="text-align:left;">Zeitraum</th>
+                                <th style="text-align:right;">Budget</th>
+                                <th style="text-align:right;">Istwert</th>
+                                <th style="text-align:right;">Abweichung</th>
+                                <th style="text-align:right;">Abw. %</th></tr></thead>
+                        <tbody></tbody></table></div><h3 class="budget-report-section-title">Kategorien und Zwecke</h3><div class="budget-table-wrap table-responsive"><table class="table budget-report-table" style="width:100%;margin-bottom:1rem;"><thead><tr><th style="text-align:left;">Name</th>
+                            <th style="text-align:right;">Budget</th>
+                            <th style="text-align:right;">Istwert</th>
+                            <th style="text-align:right;">Abweichung</th>
+                            <th style="text-align:right;">Abw. %</th>
+                            <th style="width:1%;"></th></tr></thead>
+                    <tbody></tbody></table></div></div></div><!--Blazor:{"prerenderId":"a64c806ef2f246579a67691d9c9010fa"}--></div></main>
+    <label for="nav-toggle" class="mobile-overlay" aria-hidden="true"></label></div>
+
+<div id="blazor-error-ui" data-nosnippet="">Ein unerwarteter Fehler ist aufgetreten.
+    <a href="." class="reload">Neu laden</a>
+    <span class="dismiss">🗙</span></div>
+        <blazor-focus-on-navigate selector="h1"></blazor-focus-on-navigate><script src="auth.js"></script>
+        <script src="scroll.js"></script>
+        <script src="_framework/blazor.web.js"></script></body></html>
