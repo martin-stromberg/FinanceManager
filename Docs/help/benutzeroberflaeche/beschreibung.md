@@ -8,7 +8,8 @@ Die Anwendung stellt zentrale Seiten auf kleinen Displays (z. B. Smartphone-Brei
 
 ## Funktionsweise
 
-Das Layout nutzt eine mobile Leiste mit Menü-Schalter, ein ausklappbares Seitenmenü und eine abdeckende Fläche für die mobile Navigation.
+Die Anwendung nutzt auf dem Desktop eine schmale Symbol-Leiste am linken Rand als Hauptnavigation. Die Leiste enthält die Bereiche in fester Reihenfolge (Start, Konten, Kontakte, Sparpläne, Wertpapiere, Kontoauszüge, Budget, Berichte sowie – für Administratoren – Benutzerverwaltung, KI-Zugänge, Einrichtung, Hilfe und Abmelden); die Beschriftung erscheint als Tooltip, wenn der Mauszeiger auf einem Symbol ruht. Oberhalb des Inhalts zeigt eine Leiste den Titel des aktuellen Bereichs.
+Auf kleinen Displays ersetzt eine mobile Leiste mit Menü-Schalter die Symbol-Leiste; das Menü klappt dann als einblendbares Seitenmenü mit sichtbaren Beschriftungen auf und lässt sich über eine abdeckende Fläche wieder schließen.
 Listen, Karten und tabellarische Bereiche sind so eingebettet, dass bei Bedarf nur der Tabellenbereich horizontal scrollt.
 Zusätzlich gibt es seitenbezogene Anpassungen für Startseite, Berichte, Budgetreport, Einrichtung und Wertpapier-Auswertung auf schmalen Bildschirmen.
 Das Ribbon wird auf mobilen Breiten als Gruppe dargestellt. Geschlossene Gruppen können rechts im Gruppen-Header kompakte Symbol-Shortcuts anzeigen, wenn eine Aktion als mobiler Shortcut vorgesehen ist oder die Gruppe genau eine sichtbare und aktivierte Aktion enthält. Diese Shortcuts führen dieselbe Aktion wie der normale Ribbon-Eintrag aus, ohne die Gruppe zu öffnen. Sobald die Gruppe geöffnet ist, werden die Header-Shortcuts ausgeblendet.

@@ -3,32 +3,32 @@
    ===================================================== */
 
 .create-user-form {
-    background: #1e1e24;
-    border: 1px solid #333;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
 }
 
 .user-table th,
 .user-table td {
-    border-bottom: 1px solid #2c2c34;
+    border-bottom: 1px solid var(--panel-bg);
 }
 
 .user-table tr.locked-row {
-    background: #402626;
+    background: rgba(248,113,113,.14);
 }
 
 .user-table tr.locked-row:hover {
-    background: #4a2d2d;
+    background: rgba(248,113,113,.14);
 }
 
 .user-table tr:hover {
-    background: #23232b;
+    background: var(--panel-bg);
 }
 
 .error {
-    color: #ffb3b3;
+    color: var(--danger);
 }
 
 .pw-reset-hint {
-    border: 1px solid #444;
-    background: #25252d;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
 }

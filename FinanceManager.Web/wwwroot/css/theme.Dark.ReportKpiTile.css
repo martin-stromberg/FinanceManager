@@ -3,19 +3,19 @@
    ===================================================== */
 
 .kpi-kind-savings .kpi-bg-ico {
-    color: #2d9d4f;
+    color: var(--success);
 }
 
 .kpi-kind-contacts .kpi-bg-ico {
-    color: #8fb0ff;
+    color: var(--accent);
 }
 
 .kpi-kind-securities .kpi-bg-ico {
-    color: #d4a72c;
+    color: var(--warning);
 }
 
 .kpi-kind-bank .kpi-bg-ico {
-    color: #6aa84f;
+    color: var(--success);
 }
 
 /* Mini-Chart Theme */
@@ -23,21 +23,21 @@
     border: 1px solid var(--border);
     padding: .4rem .5rem;
     border-radius: .4rem;
-    background: #141618;
+    background: var(--bg-alt);
 }
 
 .mini-chart.split .bars.split::after {
-    background: rgba(200, 200, 200, .15);
+    background: var(--border);
 }
 
 .bar-inner {
-    background: #2d6cdf;
+    background: var(--accent);
 }
 
 .bar-inner.pos {
-    background: #2d6cdf;
+    background: var(--accent);
 }
 
 .bar-inner.neg {
-    background: #c94;
+    background: var(--warning);
 }

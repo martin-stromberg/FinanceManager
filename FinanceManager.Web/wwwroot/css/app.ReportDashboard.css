@@ -264,8 +264,8 @@
     min-width: 2px;
 }
 
-.allocation-bar.pos, .bar-inner.pos { background: #16a34a; }
-.allocation-bar.neg, .bar-inner.neg { background: #dc2626; }
+.allocation-bar.pos, .bar-inner.pos { background: var(--success); }
+.allocation-bar.neg, .bar-inner.neg { background: var(--danger); }
 
 .allocation-amount {
     text-align: right;

@@ -13,10 +13,10 @@ Bestätigungsdialoge rendern auf einer eigenen Schicht oberhalb aller Overlay-Co
 
 ### 1. Einstieg und Layout-Umschaltung
 
-`MainLayout` rendert neben Sidebar und Content eine mobile Topbar und ein Overlay für Navigation auf kleinen Viewports.
+`MainLayout` rendert neben der Symbol-Leiste (`nav.sidebar`, Icon-Rail) und dem Content eine Topbar mit dem Titel des aktuellen Bereichs (`_sectionTitle` aus der Route) sowie eine mobile Topbar und ein Overlay für die Navigation auf kleinen Viewports.
 
 Beteiligte Komponenten:
-- `MainLayout.UpdateLogo(string uri)` — setzt Logo und Full-Width-Verhalten abhängig von der Route.
+- `MainLayout.UpdateChrome(string uri)` — setzt Abschnittstitel, Gast-Modus und Full-Width-Verhalten abhängig von der Route.
 - `MainLayout.HandleLocationChanged(...)` — aktualisiert Layout-Zustand bei Navigation.
 - `FinanceManager.Web/wwwroot/css/app.css` — aktiviert mobile Layoutregeln über `@media (max-width: 900px)`.
 

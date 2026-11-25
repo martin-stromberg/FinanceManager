@@ -11,6 +11,7 @@
 
 ### 1. Navigation öffnen
 
+Auf dem Desktop steht links eine schmale Symbol-Leiste mit allen Bereichen zur Verfügung; die Beschriftung eines Eintrags erscheint als Tooltip über dem Symbol.
 Auf kleinen Displays wird oben eine mobile Leiste angezeigt.  
 Über das Menü-Symbol (`aria-label="Menu"`) kann die Navigation ein- und ausgeblendet werden.
 

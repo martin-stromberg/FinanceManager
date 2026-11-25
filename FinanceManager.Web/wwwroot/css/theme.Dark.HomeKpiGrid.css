@@ -3,28 +3,28 @@
    ===================================================== */
 
 .kpi-tile {
-    background: #141a20;
-    border: 1px solid #2a323a;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
     overflow: visible; /* allow tooltips to overflow */
 }
 
 /* add tile */
 .kpi-tile.add-tile {
-    background: #10161c;
-    color: #88a;
-    border: 1px dashed #2a323a;
+    background: var(--bg-alt);
+    color: var(--muted);
+    border: 1px dashed var(--border);
 }
 
 .add-ico {
-    fill: #8fb0ff;
+    fill: var(--accent);
 }
 
 .kpi-delete .ico {
-    fill: #a66;
+    fill: var(--warning);
 }
 
 .kpi-move .ico {
-    fill: #8fb0ff;
+    fill: var(--accent);
 }
 
 /* dialog styles */
@@ -39,8 +39,8 @@
 }
 
 .modal {
-    background: #141a20;
-    border: 1px solid #2a323a;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
     box-shadow: 0 10px 30px rgba(0, 0, 0, .6);
@@ -51,65 +51,65 @@
 
 .tab-btn {
     background: transparent;
-    border: 1px solid #2a323a;
-    color: #cbd5e1;
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .tab-btn.active {
-    background: #1b2430;
-    border-color: #39506a;
+    background: var(--bg-alt);
+    border-color: var(--accent-soft);
 }
 
 .mk-item.line {
-    border-bottom: 1px dashed #2a323a;
+    border-bottom: 1px dashed var(--border);
 }
 
 .scroll-box {
-    border: 1px solid #2a323a;
+    border: 1px solid var(--border);
 }
 
 .btn {
-    background: #2d6cdf;
-    color: #fff;
+    background: var(--accent);
+    color: var(--text);
 }
 
 .btn.secondary {
     background: transparent;
-    border: 1px solid #2a323a;
-    color: #cbd5e1;
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 /* KPI kind colors */
 .kpi-savings .kpi-bg-ico,
 .kpi-bg-ico.kpi-savings {
-    color: #2d9d4f;
+    color: var(--success);
 }
 
 .kpi-contacts .kpi-bg-ico,
 .kpi-bg-ico.kpi-contacts {
-    color: #8fb0ff;
+    color: var(--accent);
 }
 
 .kpi-securities .kpi-bg-ico,
 .kpi-bg-ico.kpi-securities {
-    color: #d4a72c;
+    color: var(--warning);
 }
 
 .kpi-drafts .kpi-bg-ico,
 .kpi-bg-ico.kpi-drafts {
-    color: #6aa84f;
+    color: var(--success);
 }
 
 /* Monthly budget KPI */
 .budget-bar {
-    background: #0f141a;
-    border: 1px solid #2a323a;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
     width: 100%;
 }
 
 .budget-loading-spinner {
     border-color: rgba(87, 209, 122, .22);
-    border-top-color: #57d17a;
+    border-top-color: var(--success);
     box-shadow: 0 0 0 4px rgba(12, 17, 22, .68);
 }
 
@@ -120,7 +120,7 @@
 }
 
 .budget-side.income .budget-fill {
-    background: linear-gradient(90deg,#57d17a,#2d9d4f);
+    background: linear-gradient(90deg,var(--success),var(--success));
 }
 
 .budget-side.expense {
@@ -128,15 +128,15 @@
 }
 
 .budget-side.expense .budget-fill {
-    background: linear-gradient(90deg,#ff8080,#b55);
+    background: linear-gradient(90deg,var(--danger),var(--danger));
 }
 
 .kpi-tooltip {
     pointer-events: none;
     position: absolute;
     z-index: 60;
-    background: #0c1116;
-    color: #e6eef6;
+    background: var(--bg-alt);
+    color: var(--text);
     padding: .4rem;
     border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.04);
@@ -151,40 +151,40 @@
 .kpi-tooltip-expense { right:6px; top:-8px; }
 
 .budget-result.pos {
-    color: #2d9d4f;
+    color: var(--success);
 }
 
 .budget-result.neg {
-    color: #b55;
+    color: var(--danger);
 }
 
 .budget-soll-marker {
-    background-color: #2196f3;
+    background-color: var(--accent);
 }
 .budget-saldo-marker {
     background-color: white;
 }
 .budget-text-pos {
-    color: #43e97b;
+    color: var(--success);
 }
 .budget-text-neg {
-    color: #ff5c5c;
+    color: var(--danger);
 }
 .budget-saldo-pos {
-    background-color: #43e97b;
+    background-color: var(--success);
 }
 .budget-saldo-neg {
-    background-color: #ff5c5c;
+    background-color: var(--danger);
 }
 .budget-soll-pos {
-    background-color: #2e8c5a;
+    background-color: var(--success);
 }
 .budget-soll-neg {
-    background-color: #b23b3b;
+    background-color: var(--danger);
 }
 .budget-label-soll-pos {
-    color: #2e8c5a;
+    color: var(--success);
 }
 .budget-label-soll-neg {
-    color: #b23b3b;
+    color: var(--danger);
 }

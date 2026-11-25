@@ -56,7 +56,7 @@
 
 /* Negative amounts */
 .negative {
-    color: #e66;
+    color: var(--danger);
 }
 
 /* Target date cell */

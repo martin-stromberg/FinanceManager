@@ -3477,4 +3477,11 @@
   <data name="Confirmation_McpGrantWrite_Message" xml:space="preserve"><value>New write grants silently pre-approve matching mutations of this access - create, modify and complete operations no longer ask per action. Apply?</value></data>
   <data name="Confirmation_McpGrantAdminWrite_Title" xml:space="preserve"><value>Pre-approve administrative mutations</value></data>
   <data name="Confirmation_McpGrantAdminWrite_Message" xml:space="preserve"><value>An Administration Modify/Create grant silently pre-approves administrative mutations - installs, schedules, settings changes, backup operations - without per-action approval. Apply?</value></data>
+  <data name="Nav_Logout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Nav_Login" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Nav_Budget" xml:space="preserve"><value>Budget</value></data>
+  <data name="Nav_UserManagement" xml:space="preserve"><value>User management</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav_Rail_AriaLabel" xml:space="preserve"><value>Main navigation</value></data>
+  <data name="LoginStatus_VersionUnknown" xml:space="preserve"><value>Version unknown</value></data>
 </root>

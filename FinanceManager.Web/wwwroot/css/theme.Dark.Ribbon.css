@@ -1,10 +1,11 @@
 /* =====================================================
-   theme.Dark.Ribbon.css - Dark Theme für Ribbon
+   theme.Dark.Ribbon.css - Dark Theme für die Action-Bar
+   (Variante B: Glaspillen-Gruppen, Teal-Akzent)
    ===================================================== */
 
 .fm-ribbon {
-    border-bottom: 1px solid var(--border);
-    background: var(--panel-bg, #181818);
+    border-bottom: none;
+    background: transparent;
 }
 
 /* Tabs Theme */
@@ -13,70 +14,89 @@
 }
 
 .fm-ribbon-tabs li button {
-    color: #ccc;
+    color: var(--muted);
 }
 
 .fm-ribbon-tabs li.active button {
-    background: #2a2a2a;
-    color: #fff;
+    background: var(--accent-soft);
+    color: var(--accent);
 }
 
 .fm-ribbon-tabs li button:focus-visible {
     outline: 2px solid var(--accent);
 }
 
-/* Group Theme */
+/* Group Theme - Glaspille */
 .fm-ribbon-group {
-    border: 1px solid var(--border);
-    background: #141414;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-card);
 }
 
 .fm-ribbon-group-footer {
-    border-top: 1px solid #222;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
 }
 
-/* Button Theme */
+/* Button Theme - Ghost-Kacheln, Hover Teal */
 .fm-ribbon-btn {
     --rb-focus-outline: 2px solid var(--accent);
-    border: 1px solid #333;
-    background: #1e1e1e;
-    color: #ddd;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
 }
 
 .fm-ribbon-btn:hover:not(:disabled) {
-    background: #2a2a2a;
-    color: #fff;
-    border-color: #444;
+    background: rgba(255, 255, 255, .06);
+    color: var(--accent);
+    border-color: var(--glass-border);
 }
 
 .fm-ribbon-btn:focus-visible {
     outline: var(--rb-focus-outline);
 }
 
+/* Primary-Optik fuer Large-Aktionen (erste Kachel je Gruppe
+   wirkt durch Teal-Hover betont, ohne DOM-Aenderung) */
+.fm-ribbon-btn.large {
+    border-color: var(--glass-border);
+    background: rgba(255, 255, 255, .03);
+}
+
+.fm-ribbon-btn.large:hover:not(:disabled) {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
 /* High contrast (prefers-contrast) */
 @media (prefers-contrast: more) {
     .fm-ribbon-btn:focus-visible {
-        outline: 2px solid #fff;
+        outline: 2px solid var(--text);
     }
     .fm-ribbon-tabs li button:focus-visible {
-        outline: 2px solid #fff;
+        outline: 2px solid var(--text);
     }
 }
 
 @media (max-width: 900px) {
     .fm-ribbon-mobile-group-panel {
-        border: 1px solid var(--border);
-        background: #151515;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
     }
 
     .fm-ribbon-mobile-group-header {
-        color: #f0f0f0;
+        color: var(--text);
     }
 
     .fm-ribbon-mobile-group-title-toggle,
     .fm-ribbon-mobile-group-toggle,
     .fm-ribbon-mobile-shortcut {
-        color: #f0f0f0;
+        color: var(--text);
     }
 
     .fm-ribbon-mobile-group-title-toggle:hover:not(:disabled),
@@ -85,7 +105,7 @@
     .fm-ribbon-mobile-group-title-toggle:focus-visible,
     .fm-ribbon-mobile-group-toggle:focus-visible,
     .fm-ribbon-mobile-shortcut:focus-visible {
-        color: #fff;
+        color: var(--accent);
     }
 
     .fm-ribbon-mobile-group-title-toggle:focus-visible,
@@ -101,15 +121,15 @@
     }
 
     .fm-ribbon-mobile-menu-item {
-        border-color: #3a3a3a;
-        background: #1e1e1e;
-        color: #ddd;
+        border-color: var(--glass-border);
+        background: rgba(255, 255, 255, .03);
+        color: var(--text);
     }
 
     .fm-ribbon-mobile-menu-item:hover:not(:disabled) {
-        background: #2a2a2a;
-        color: #fff;
-        border-color: #444;
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: var(--accent);
     }
 
     .fm-ribbon-mobile-menu-item:disabled {
@@ -117,6 +137,6 @@
     }
 
     .fm-ribbon-btn.large {
-        border-color: #3a3a3a;
+        border-color: var(--glass-border);
     }
 }

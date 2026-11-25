@@ -20,7 +20,7 @@ fs.mkdirSync(outputDir, { recursive: true });
 
   let keepTempDir = false;
   try {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({ headless: true, args: ['--disable-features=LocalNetworkAccessChecks,BlockInsecurePrivateNetworkRequests', '--allow-insecure-localhost'] });
     const context = await browser.newContext({
       viewport: { width: 1280, height: 900 },
       locale: 'de-DE',
