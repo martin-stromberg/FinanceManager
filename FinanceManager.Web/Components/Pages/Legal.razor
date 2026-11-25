@@ -1,7 +1,15 @@
 @page "/legal"
 @inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Components.Pages.Legal> L
+@inject FinanceManager.Application.ICurrentUserService CurrentUser
 
 <PageTitle>@L["Title"]</PageTitle>
+
+<p>
+    <a class="legal-back" href="@(CurrentUser.IsAuthenticated ? "." : "login")">
+        <svg class="nav-ico" aria-hidden="true"><use href="icons/sprite.svg#back" /></svg>
+        @L["Back"]
+    </a>
+</p>
 
 <h2>@L["Title"]</h2>
 

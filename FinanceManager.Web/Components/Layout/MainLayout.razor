@@ -49,10 +49,13 @@
                 </li>
             }
         </ul>
-        <div class="user-area">
-            <NavLink class="legal-link" href="legal">@L["Nav_Legal"]</NavLink>
-            <LoginStatus />
-        </div>
+        @if (CurrentUser.IsAuthenticated)
+        {
+            <div class="user-area">
+                <NavLink class="legal-link" href="legal">@L["Nav_Legal"]</NavLink>
+                <LoginStatus />
+            </div>
+        }
     </nav>
     <main class="content">
         <div class="mobile-topbar">
@@ -92,6 +95,10 @@
                     </svg>
                 </span>
                 <span class="public-brand-name">@L["Brand"]</span>
+                <div class="public-nav">
+                    <NavLink class="legal-link" href="legal">@L["Nav_Legal"]</NavLink>
+                    <LoginStatus />
+                </div>
             </div>
         }
         <div class="inner app-inner @(!CurrentUser.IsAuthenticated && _authCard ? "inner-auth" : null)" style="@(_useFullWidth && CurrentUser.IsAuthenticated ? "max-width:none" : null)">

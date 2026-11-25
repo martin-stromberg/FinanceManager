@@ -96,6 +96,14 @@ html, body {
     color: var(--text);
 }
 
+.legal-back {
+    color: var(--muted);
+}
+
+.legal-back:hover {
+    color: var(--text);
+}
+
 /* Topbar Theme */
 .topbar {
     background: var(--bg-alt);
@@ -124,6 +132,18 @@ html, body {
 
 .public-brand .public-brand-name {
     color: var(--text);
+}
+
+.public-brand .public-nav a {
+    color: var(--muted);
+}
+
+.public-brand .public-nav a:hover {
+    color: var(--text);
+}
+
+.public-brand .public-nav a.active {
+    color: var(--accent);
 }
 
 .app-shell.signed-out .inner {

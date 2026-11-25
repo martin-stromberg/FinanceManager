@@ -64,6 +64,7 @@
   </resheader>
 
   <data name="Title" xml:space="preserve"><value>Legal</value></data>
+  <data name="Back" xml:space="preserve"><value>Back</value></data>
   <data name="Intro" xml:space="preserve"><value>This page provides information about the source code, third-party components and privacy aspects of this application.</value></data>
 
   <data name="Section_Usage" xml:space="preserve"><value>Usage</value></data>
