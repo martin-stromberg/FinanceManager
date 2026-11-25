@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -73,180 +73,84 @@
       background: #2dd4bf;
     }
   </style>
-</head>
-<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style id="fm-canonical">
 
-  <!-- Ambient Light Overlays -->
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative fm-body-b">
+
+  <aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class=" active" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Hilfe-Artikel</span><div class="fm-avatar">FM</div></header><!-- Ambient Light Overlays -->
   <div class="fixed inset-0 pointer-events-none z-0 glow-teal"></div>
   <div class="fixed inset-0 pointer-events-none z-0 glow-violet"></div>
   <div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
 
   <!-- ==================== LEFT SIDEBAR (SLIM ICON-RAIL VARIANT B) ==================== -->
-  <aside class="w-full md:w-20 md:min-h-screen glass-panel flex-shrink-0 z-30 flex md:flex-col items-center justify-between py-3 px-4 md:py-6 md:px-0 border-b md:border-b-0 md:border-r border-white/10 sticky top-0 md:h-screen">
-    
-    <!-- Logo & Brand Header -->
-    <div class="flex items-center gap-3 md:flex-col md:gap-6">
-      <div class="relative group cursor-pointer" title="FinanceManager">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 via-teal-400 to-violet-500 p-[1.5px] transition-transform duration-300 group-hover:scale-105 active-nav-glow">
-          <div class="w-full h-full bg-[#090d15] rounded-[14px] flex items-center justify-center">
-            <svg class="w-6 h-6 text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="4"></rect>
-              <path d="M7 15h0M2 10h20M7 15l2-2 3 3 5-5"></path>
-            </svg>
-          </div>
-        </div>
-        <span class="absolute -bottom-1 -right-1 flex h-3 w-3">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500 border-2 border-[#090d15]"></span>
-        </span>
-      </div>
-
-      <!-- Mobile Hamburger Button (conceptual small screens support) -->
-      <button class="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white" aria-label="Menü öffnen">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-      </button>
-    </div>
-
-    <!-- Navigation Entries (Strictly preserving the 13 required items) -->
-    <nav class="hidden md:flex flex-col items-center gap-1.5 w-full px-2 overflow-y-auto no-scrollbar py-2">
-      
-      <!-- Start -->
-      <a href="#" title="Start" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Start</span>
-      </a>
-
-      <!-- Konten -->
-      <a href="#" title="Konten" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Konten</span>
-      </a>
-
-      <!-- Kontakte -->
-      <a href="#" title="Kontakte" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontakte</span>
-      </a>
-
-      <!-- Sparpläne -->
-      <a href="#" title="Sparpläne" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Sparpläne</span>
-      </a>
-
-      <!-- Wertpapiere -->
-      <a href="#" title="Wertpapiere" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Wertpapiere</span>
-      </a>
-
-      <!-- Kontoauszüge -->
-      <a href="#" title="Kontoauszüge" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontoauszüge</span>
-      </a>
-
-      <!-- Budget -->
-      <a href="#" title="Budget" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Budget</span>
-      </a>
-
-      <!-- Berichte -->
-      <a href="#" title="Berichte" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Berichte</span>
-      </a>
-
-      <!-- Benutzerverwaltung -->
-      <a href="#" title="Benutzerverwaltung" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Benutzerverwaltung</span>
-      </a>
-
-      <!-- KI-Zugänge -->
-      <a href="#" title="KI-Zugänge" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">KI-Zugänge</span>
-      </a>
-
-      <!-- Einstellungen -->
-      <a href="#" title="Einstellungen" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        <span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Einstellungen</span>
-      </a>
-
-      <!-- Hilfe (ACTIVE) -->
-      <a href="#" title="Hilfe" class="group relative flex items-center justify-center w-12 h-11 rounded-xl bg-gradient-to-r from-teal-500/20 to-teal-400/10 text-teal-300 border border-teal-500/30 transition-all active-nav-glow">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span class="absolute -left-1 w-1.5 h-6 bg-teal-400 rounded-r-full"></span>
-        <span class="absolute left-16 bg-[#181f2f] text-teal-300 text-xs font-semibold px-2.5 py-1 rounded-md shadow-xl border border-teal-500/30 whitespace-nowrap z-50">Hilfe (Aktiv)</span>
-      </a>
-
-    </nav>
-
-    <!-- Bottom Action (Abmelden) -->
-    <div class="hidden md:flex flex-col items-center gap-2 w-full pt-4 border-t border-white/10">
-      <a href="#" title="Abmelden" class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        <span class="absolute left-16 bg-[#1f1722] text-rose-300 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-rose-500/20 whitespace-nowrap z-50">Abmelden</span>
-      </a>
-    </div>
-
-  </aside>
-
   <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
   <div class="flex-1 flex flex-col min-w-0 z-10">
 
     <!-- TOP CONTEXTUAL ACTION BAR (Variant B rethink of classic ribbon toolbar) -->
-    <header class="h-18 px-6 py-3.5 glass-panel border-b border-white/10 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
-      
-      <!-- Search & Context status -->
-      <div class="flex items-center gap-3 flex-1 max-w-xl">
-        <div class="relative w-full">
-          <svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" placeholder="In Finanzwissen, APIs und Hilfe suchen..." class="w-full bg-slate-900/70 border border-white/10 text-xs text-slate-200 placeholder-slate-500 rounded-xl pl-10 pr-12 py-2 focus:outline-none focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 transition-all font-sans">
-          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">⌘K</span>
-        </div>
-      </div>
-
-      <!-- Grouped Actions (Identical functionality: Buchung, Übertrag, Export + notifications + user) -->
-      <div class="flex items-center gap-2.5">
-        
-        <!-- Action Group: Transaktionen -->
-        <div class="flex items-center bg-white/5 p-1 rounded-xl border border-white/10 backdrop-blur-md">
-          <button class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-900 bg-gradient-to-r from-teal-400 to-teal-300 hover:from-teal-300 hover:to-teal-200 rounded-lg shadow-sm shadow-teal-500/20 transition-all">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            <span>Buchung</span>
-          </button>
-          
-          <button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-            <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-            <span>Übertrag</span>
-          </button>
-
-          <button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            <span>Export</span>
-          </button>
-        </div>
-
-        <!-- Notification & Status Pill -->
-        <button class="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all" title="Mitteilungen">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-400"></span>
-        </button>
-
-        <!-- User Profile Pill -->
-        <div class="flex items-center gap-2 pl-1.5">
-          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-violet-500/20">
-            FM
-          </div>
-        </div>
-
-      </div>
-    </header>
-
     <!-- ==================== SCROLLABLE CONTENT AREA ==================== -->
     <main class="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-10">
       <div class="max-w-7xl mx-auto space-y-8">
@@ -257,14 +161,13 @@
           <!-- Brotkrümel (Breadcrumbs) -->
           <nav class="flex items-center gap-2 text-xs font-medium text-slate-400 flex-wrap" aria-label="Breadcrumb">
             <a href="#" class="hover:text-teal-300 transition-colors flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
               Hilfe-Center
             </a>
             <span class="text-slate-600">/</span>
             <a href="#" class="hover:text-teal-300 transition-colors">Konten und Buchungen</a>
             <span class="text-slate-600">/</span>
-            <span class="text-teal-400 font-semibold">Bankkonten synchronisieren & FinTS/EBICS einrichten</span>
-          </nav>
+            </nav>
 
           <!-- Status badge / Public Indicator -->
           <div class="flex items-center gap-3">
@@ -281,133 +184,10 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           <!-- LINKS: INHALTSVERZEICHNIS DER HILFETHEMEN (Sticky Navigation Sidebar) -->
-          <aside class="lg:col-span-4 xl:col-span-3 space-y-5 lg:sticky lg:top-24">
-            
-            <div class="glass-card rounded-2xl p-5 relative overflow-hidden">
-              <div class="absolute -right-6 -top-6 w-24 h-24 bg-teal-500/10 rounded-full blur-xl pointer-events-none"></div>
-
-              <div class="flex items-center justify-between pb-3.5 mb-3 border-b border-white/10">
-                <div class="flex items-center gap-2">
-                  <div class="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
-                  </div>
-                  <h3 class="text-sm font-bold text-white tracking-wide uppercase">Themenübersicht</h3>
-                </div>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-slate-400 border border-white/10">8 Bereiche</span>
-              </div>
-
-              <!-- Themenliste -->
-              <div class="space-y-1 text-xs">
-                
-                <!-- Bereich 1: Active with sub-topics -->
-                <div class="rounded-xl bg-white/[0.04] border border-teal-500/30 p-2.5 space-y-2">
-                  <div class="flex items-center justify-between text-teal-300 font-bold">
-                    <span class="flex items-center gap-2">
-                      <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-                      1. Konten und Buchungen
-                    </span>
-                    <svg class="w-3.5 h-3.5 text-teal-400 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                  </div>
-
-                  <!-- Inhaltsverzeichnis des aktuellen Artikels -->
-                  <div class="pl-3.5 border-l border-teal-500/30 space-y-1.5 pt-1 text-slate-400">
-                    <a href="#voraussetzungen" class="block hover:text-teal-300 transition-colors py-0.5 text-slate-300 font-medium">1.1 Voraussetzungen & Protokolle</a>
-                    <a href="#fints-einrichtung" class="block hover:text-teal-300 transition-colors py-0.5 text-teal-400 font-semibold flex items-center gap-1.5">
-                      <span class="w-1 h-1 rounded-full bg-teal-400"></span>
-                      1.2 FinTS 3.0 Schnittstelle
-                    </a>
-                    <a href="#automatisierung" class="block hover:text-teal-300 transition-colors py-0.5">1.3 Automatische Regeln</a>
-                    <a href="#fehlerbehebung" class="block hover:text-teal-300 transition-colors py-0.5">1.4 Fehlercodes (9999/9050)</a>
-                  </div>
-                </div>
-
-                <!-- Bereich 2 -->
-                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                  <span>2. Kontakte & Debitoren</span>
-                  <span class="text-[10px] text-slate-600 font-mono">12 Art.</span>
-                </a>
-
-                <!-- Bereich 3 -->
-                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                  <span>3. Sparpläne & Daueraufträge</span>
-                  <span class="text-[10px] text-slate-600 font-mono">7 Art.</span>
-                </a>
-
-                <!-- Bereich 4 -->
-                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                  <span>4. Wertpapiere & Depotanbindung</span>
-                  <span class="text-[10px] text-slate-600 font-mono">19 Art.</span>
-                </a>
-
-                <!-- Bereich 5 -->
-                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                  <span>5. Import (CAMT, MT940, CSV)</span>
-                  <span class="text-[10px] text-slate-600 font-mono">14 Art.</span>
-                </a>
-
-                <!-- Bereich 6 -->
-                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                  <span>6. Budget & Cashflow-Regeln</span>
-                  <span class="text-[10px] text-slate-600 font-mono">9 Art.</span>
-                </a>
-
-                <!-- Bereich 7 -->
-                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                  <span>7. Berichte & Steuerübersicht</span>
-                  <span class="text-[10px] text-slate-600 font-mono">11 Art.</span>
-                </a>
-
-                <!-- Bereich 8 -->
-                <a href="#" class="flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                  <span>8. KI-Zugänge & Automatisierung</span>
-                  <span class="text-[10px] text-slate-600 font-mono">5 Art.</span>
-                </a>
-
-              </div>
-
-              <!-- Quick article feedback card -->
-              <div class="mt-5 pt-4 border-t border-white/10 text-center">
-                <p class="text-[11px] text-slate-400 mb-2">War dieser Hilfe-Artikel nützlich?</p>
-                <div class="flex items-center justify-center gap-2">
-                  <button class="px-3 py-1 rounded-lg bg-white/5 hover:bg-teal-500/20 text-slate-300 hover:text-teal-300 border border-white/10 text-xs transition-all flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/></svg>
-                    Ja (428)
-                  </button>
-                  <button class="px-3 py-1 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-white/10 text-xs transition-all flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"/></svg>
-                    Nein (6)
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-          </aside>
-
           <!-- RECHTS: FLIESSTEXT, ARTIKELTITEL, ZWISCHENÜBERSCHRIFTEN & SCREENSHOT-PLATZHALTER -->
           <article class="lg:col-span-8 xl:col-span-9 space-y-8">
             
             <!-- Artikeltitel & Lead -->
-            <div class="glass-card rounded-2xl p-7 lg:p-9 relative overflow-hidden border border-white/10">
-              <div class="absolute right-0 top-0 w-80 h-80 bg-gradient-to-bl from-teal-500/10 via-violet-500/10 to-transparent rounded-full blur-2xl pointer-events-none"></div>
-
-              <!-- Tags / Meta -->
-              <div class="flex flex-wrap items-center gap-2 mb-4">
-                <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30">Bankenschnittstelle</span>
-                <span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-violet-500/15 text-violet-300 border border-violet-500/30">FinTS / EBICS</span>
-                <span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 border border-white/5">Lesedauer: 4 Min.</span>
-              </div>
-
-              <!-- ARTIKELTITEL -->
-              <h1 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-4">
-                Bankkonten synchronisieren & FinTS/EBICS einrichten
-              </h1>
-              
-              <p class="text-base lg:text-lg text-slate-300 leading-relaxed font-normal">
-                Verbinden Sie Ihre Geschäfts- und Girokonten direkt mit dem FinanceManager Pro Cockpit. Diese Anleitung führt Sie schrittweise durch die Autorisierung, das Zertifikatsmanagement sowie die automatisierte Buchungsabfrage.
-              </p>
-            </div>
-
             <!-- ARTIKEL-INHALT -->
             <div class="glass-card rounded-2xl p-7 lg:p-10 space-y-8 text-slate-300 text-sm lg:text-base leading-relaxed">
               
@@ -415,28 +195,24 @@
               <section id="voraussetzungen" class="space-y-4">
                 <div class="flex items-center gap-3">
                   <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/20 text-teal-300 font-mono font-bold text-xs border border-teal-500/30">01</span>
-                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Voraussetzungen & Unterstützte Bankstandards</h2>
+                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Voraussetzungen &amp; Unterstützte Bankstandards</h2>
                 </div>
                 
-                <p>
-                  Für den automatisierten Abruf von Kontoständen und Umsatzdaten nutzt der FinanceManager standardmäßig die PSD2-konforme <strong class="text-white">FinTS 3.0 Schnittstelle</strong> sowie für Firmenkunden optional das <strong class="text-white">EBICS-Verfahren</strong>. Bevor Sie mit der Einrichtung beginnen, halten Sie bitte folgende Zugangsdaten Ihres Kreditinstituts bereit:
-                </p>
-
                 <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                   <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span>Bankleitzahl (BLZ) oder BIC des Kreditinstituts</span>
                   </li>
                   <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span>Online-Banking-Anmeldekennung / Legitimations-ID</span>
                   </li>
                   <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span>Aktives Zwei-Faktor-Verfahren (pushTAN, photoTAN oder ChipTAN)</span>
                   </li>
                   <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span>Freigabe für Drittanbieter im Online-Portal der Bank</span>
                   </li>
                 </ul>
@@ -457,7 +233,7 @@
                 <!-- Mocked UI Inside Screenshot Placeholder -->
                 <div class="h-64 rounded-xl border border-dashed border-teal-500/30 bg-[#080b12]/80 flex flex-col items-center justify-center text-center p-6 relative">
                   <div class="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-300 mb-3 group-hover:scale-110 transition-transform">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewbox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                   </div>
                   <h4 class="text-sm font-semibold text-white mb-1">Abbildung 1.1: Auswahldialog der Bankenschnittstelle</h4>
                   <p class="text-xs text-slate-400 max-w-md">Maske zur Eingabe der Bankleitzahl mit automatischer Erkennung des FinTS-Servers und TAN-Medium-Zuordnung.</p>
@@ -473,18 +249,15 @@
                 </div>
 
                 <p>
-                  Wechseln Sie in der Hauptnavigation auf <strong class="text-teal-300">Konten</strong> und wählen Sie den Menüpunkt <em>„Neues Bankkonto verbinden“</em>. Unser Einrichtungsassistent prüft im Hintergrund automatisch die Kompatibilität des gewählten Bankrechenzentrums (z.&nbsp;B. Finanz Informatik, Atruvia oder Bundesbank-Knoten).
+                  Wechseln Sie in der Hauptnavigation auf <strong class="text-teal-300">Konten</strong> und wählen Sie den Menüpunkt <em>„Neues Bankkonto verbinden“</em>. Unser Einrichtungsassistent prüft im Hintergrund automatisch die Kompatibilität des gewählten Bankrechenzentrums (z. B. Finanz Informatik, Atruvia oder Bundesbank-Knoten).
                 </p>
 
                 <div class="p-4 rounded-xl bg-violet-500/10 border border-violet-500/25 space-y-2">
                   <div class="flex items-center gap-2 text-violet-300 font-semibold text-xs tracking-wide uppercase">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Sicherheitshinweis zu 90-Tage-SCA
                   </div>
-                  <p class="text-xs text-slate-300">
-                    Gemäß BaFin-Vorgaben muss die Autorisierung der Schnittstelle alle 90 Tage via Zwei-Faktor-Authentifizierung (2FA) erneuert werden. FinanceManager Pro erinnert Sie 5 Tage vor Ablauf automatisch im Dashboard.
-                  </p>
-                </div>
+                  </div>
 
                 <p>
                   Nach erfolgreicher Authentifizierung erhalten Sie eine Übersicht sämtlicher unter dieser Kundennummer geführten Unterkonten (Giro, Festgeld, Kreditkarten und Tagesgeld). Markieren Sie die Konten, die in die laufende Liquiditätsplanung einbezogen werden sollen.
@@ -492,33 +265,11 @@
               </section>
 
               <!-- SCREENSHOT-PLATZHALTER 2 -->
-              <div class="my-6 rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-b from-[#111622] to-[#0c0f18] p-4 lg:p-6 shadow-2xl relative group">
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/10 text-xs text-slate-400">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                    <span class="ml-2 font-mono text-[11px] text-slate-500">screenshot_kontenliste_synchronisation.png</span>
-                  </div>
-                  <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20">Screenshot-Ansicht</span>
-                </div>
-                
-                <!-- Mocked UI Inside Screenshot Placeholder -->
-                <div class="h-64 rounded-xl border border-dashed border-violet-500/30 bg-[#080b12]/80 flex flex-col items-center justify-center text-center p-6 relative">
-                  <div class="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-300 mb-3 group-hover:scale-110 transition-transform">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  </div>
-                  <h4 class="text-sm font-semibold text-white mb-1">Abbildung 1.2: Zuordnung der IBANs & Synchronisationsintervall</h4>
-                  <p class="text-xs text-slate-400 max-w-md">Live-Abgleich der Kontostände inklusive automatischer Kategorisierung von Gehaltseingängen und Fixkosten.</p>
-                  <span class="mt-3 text-[11px] text-violet-400/80 font-mono">1920 × 1080 px • High-Resolution Mockup</span>
-                </div>
-              </div>
-
               <!-- ZWISCHENÜBERSCHRIFT 3 -->
               <section id="automatisierung" class="space-y-4 pt-4 border-t border-white/5">
                 <div class="flex items-center gap-3">
                   <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/20 text-teal-300 font-mono font-bold text-xs border border-teal-500/30">03</span>
-                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Automatische Regeln & Buchungsabgleich</h2>
+                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Automatische Regeln &amp; Buchungsabgleich</h2>
                 </div>
 
                 <p>
@@ -548,46 +299,15 @@
               <section id="fehlerbehebung" class="space-y-4 pt-4 border-t border-white/5">
                 <div class="flex items-center gap-3">
                   <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 font-mono font-bold text-xs border border-rose-500/30">04</span>
-                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Häufige FinTS-Rückmeldecodes & Fehlerbehebung</h2>
+                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Häufige FinTS-Rückmeldecodes &amp; Fehlerbehebung</h2>
                 </div>
 
-                <div class="space-y-2.5">
-                  <div class="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-start justify-between gap-4">
-                    <div>
-                      <span class="text-xs font-mono text-amber-400 font-bold">Code 9050:</span>
-                      <span class="text-xs text-white ml-2 font-medium">Teilweise fehlerhaft (TAN-Medium abgelaufen)</span>
-                      <p class="text-[11px] text-slate-400 mt-1">Öffnen Sie Ihre Bank-App und synchronisieren Sie den Push-Token erneut.</p>
-                    </div>
-                    <span class="text-[10px] text-slate-500 font-mono">Warnung</span>
-                  </div>
-
-                  <div class="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-start justify-between gap-4">
-                    <div>
-                      <span class="text-xs font-mono text-rose-400 font-bold">Code 9999:</span>
-                      <span class="text-xs text-white ml-2 font-medium">Kreditinstitut antwortet nicht (Server-Timeout)</span>
-                      <p class="text-[11px] text-slate-400 mt-1">Bankrechenzentrum befindet sich im nächtlichen Batch-Lauf. Bitte nach 06:00 Uhr wiederholen.</p>
-                    </div>
-                    <span class="text-[10px] text-slate-500 font-mono">Kritisch</span>
-                  </div>
-                </div>
-              </section>
+                </section>
 
             </div>
 
             <!-- Footer Navigation / Verwandte Themen -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 pb-12 border-t border-white/10 text-xs">
-              <a href="#" class="flex items-center gap-2 text-slate-400 hover:text-teal-300 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                <span>Vorheriger Artikel: <strong>Kontoauszüge als PDF & CAMT archivieren</strong></span>
-              </a>
-
-              <a href="#" class="flex items-center gap-2 text-slate-400 hover:text-teal-300 transition-colors">
-                <span>Nächster Artikel: <strong>Sparpläne und Portfolio-Automatisierung</strong></span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-              </a>
-            </div>
-
-          </article>
+            </article>
 
         </div>
 

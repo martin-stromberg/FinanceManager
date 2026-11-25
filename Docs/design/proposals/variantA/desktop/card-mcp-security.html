@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -56,137 +56,79 @@
       background: #363e4f;
     }
   </style>
-</head>
-<body class="bg-[#0b0e13] text-[#e2e8f0] flex h-screen overflow-hidden antialiased select-none">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style id="fm-canonical">
 
-  <!-- LEFT SIDEBAR -->
-  <aside class="w-64 flex-shrink-0 bg-[#111319] border-r border-[#232a36] flex flex-col justify-between h-full">
-    <!-- Header / Brand -->
-    <div>
-      <div class="h-16 px-5 border-b border-[#232a36] flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-[#6d8dff]/15 border border-[#6d8dff]/30 flex items-center justify-center text-[#6d8dff] font-bold text-sm tracking-tight">
-          FM
-        </div>
-        <div class="flex flex-col">
-          <span class="text-sm font-semibold tracking-wide text-white leading-tight">FinanceManager</span>
-          <span class="text-[10px] text-gray-400 font-mono tracking-wider uppercase">Blazor Core</span>
-        </div>
-      </div>
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
 
-      <!-- Navigation Links -->
-      <nav class="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-        <!-- Start -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-          <span>Start</span>
-        </a>
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0b0e13] text-[#e2e8f0] flex h-screen overflow-hidden antialiased select-none fm-body-a">
 
-        <!-- Konten -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-          <span>Konten</span>
-        </a>
-
-        <!-- Kontakte -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-          <span>Kontakte</span>
-        </a>
-
-        <!-- Sparpläne -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span>Sparpläne</span>
-        </a>
-
-        <!-- Wertpapiere -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-          <span>Wertpapiere</span>
-        </a>
-
-        <!-- Kontoauszüge -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span>Kontoauszüge</span>
-        </a>
-
-        <!-- Budget -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-          <span>Budget</span>
-        </a>
-
-        <!-- Berichte -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-          <span>Berichte</span>
-        </a>
-
-        <!-- Benutzerverwaltung -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-          <span>Benutzerverwaltung</span>
-        </a>
-
-        <!-- KI-Zugänge (ACTIVE PARENT) -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-white bg-[#6d8dff]/15 border border-[#6d8dff]/30 transition-colors">
-          <svg class="w-4 h-4 text-[#6d8dff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          <span>KI-Zugänge</span>
-        </a>
-
-        <!-- Einstellungen -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          <span>Einstellungen</span>
-        </a>
-
-        <!-- Hilfe -->
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#191c23] transition-colors">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span>Hilfe</span>
-        </a>
-      </nav>
-    </div>
-
-    <!-- Abmelden Button (Bottom) -->
-    <div class="p-3 border-t border-[#232a36]">
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        <span>Abmelden</span>
-      </a>
-    </div>
-  </aside>
-
+  <aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class=" active" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">KI-Sicherheit</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Neu laden"><span class="material-symbols-outlined">refresh</span><span>Neu laden</span></button></div><div class="fm-rib-caption">Verwalten</div></div></div><!-- LEFT SIDEBAR -->
   <!-- MAIN CONTENT AREA -->
   <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0b0e13]">
     
     <!-- TOP APP BAR -->
-    <header class="h-16 px-6 bg-[#111319] border-b border-[#232a36] flex items-center justify-between flex-shrink-0">
-      <div class="flex items-center gap-4">
-        <!-- Breadcrumb -->
-        <nav class="flex items-center gap-2 text-xs text-gray-400 font-medium">
-          <a href="#" class="hover:text-white transition-colors">KI-Zugänge</a>
-          <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          <span class="text-white font-semibold">KI-Sicherheit</span>
-        </nav>
-        <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-          SYSTEM AKTIV
-        </span>
-      </div>
-
-      <!-- User / Host Status -->
-      <div class="flex items-center gap-4 text-xs">
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#191c23] border border-[#232a36] text-gray-300">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="font-mono text-[11px]">Lokal / Synchronisiert</span>
-        </div>
-        <div class="w-8 h-8 rounded-full bg-[#191c23] border border-[#232a36] flex items-center justify-center text-gray-300 font-medium text-xs">
-          AW
-        </div>
-      </div>
-    </header>
-
     <!-- CLASSIC RIBBON TOOLBAR -->
     <div class="bg-[#111319] border-b border-[#232a36] px-6 py-2 flex items-center justify-between flex-shrink-0 overflow-x-auto gap-4">
       <div class="flex items-center gap-4">
@@ -195,7 +137,7 @@
         <div class="flex items-center gap-1.5">
           <span class="text-[10px] uppercase font-bold tracking-wider text-gray-500 mr-1.5 select-none">Navigation</span>
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-[#191c23] hover:bg-[#222631] border border-[#232a36] transition-colors">
-            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             <span>Zurück</span>
           </button>
         </div>
@@ -208,19 +150,19 @@
           
           <!-- Speichern (Primary Accent) -->
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#6d8dff] hover:bg-[#5876e8] shadow-sm transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
             <span>Speichern</span>
           </button>
 
           <!-- Zurücksetzen -->
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-[#191c23] hover:bg-[#222631] border border-[#232a36] transition-colors">
-            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             <span>Zurücksetzen</span>
           </button>
 
           <!-- Löschen -->
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-colors">
-            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             <span>Löschen</span>
           </button>
         </div>
@@ -229,9 +171,9 @@
 
         <!-- Gruppe 3: Prüfung & Audit (Weitere Aktionsgruppe) -->
         <div class="flex items-center gap-1.5">
-          <span class="text-[10px] uppercase font-bold tracking-wider text-gray-500 mr-1.5 select-none">Audit & Prüfung</span>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-gray-500 mr-1.5 select-none">Audit &amp; Prüfung</span>
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-[#191c23] hover:bg-[#222631] border border-[#232a36] transition-colors">
-            <svg class="w-3.5 h-3.5 text-[#6d8dff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <svg class="w-3.5 h-3.5 text-[#6d8dff]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
             <span>Integrität prüfen</span>
           </button>
         </div>
@@ -242,11 +184,11 @@
         <div class="flex items-center gap-1.5">
           <span class="text-[10px] uppercase font-bold tracking-wider text-gray-500 mr-1.5 select-none">Verknüpfte Informationen</span>
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-[#191c23] hover:bg-[#222631] border border-[#232a36] transition-colors">
-            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>Auditprotokoll anzeigen</span>
           </button>
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-[#191c23] hover:bg-[#222631] border border-[#232a36] transition-colors">
-            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             <span>KI-Freigaben öffnen</span>
           </button>
         </div>
@@ -272,10 +214,7 @@
               Zone SEC-AI-01
             </span>
           </h1>
-          <p class="text-xs text-gray-400 mt-1">
-            Zentrale Sicherheits- und Zugriffskontrolle für alle angebundenen KI-Modelle, Assistenten und MCP-Endpunkte im lokalen Blazor Core.
-          </p>
-        </div>
+          </div>
 
         <!-- 1. STATUS-KACHELN (Overview Grid) -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -283,7 +222,7 @@
           <div class="p-4 rounded-lg bg-[#111319] border border-[#232a36] flex flex-col justify-between">
             <div class="flex items-center justify-between text-xs text-gray-400">
               <span class="font-medium">Sicherheitslevel</span>
-              <svg class="w-4 h-4 text-[#6d8dff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              <svg class="w-4 h-4 text-[#6d8dff]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
             </div>
             <div class="mt-2">
               <div class="text-lg font-bold text-white">Stufe 2 (Restriktiv)</div>
@@ -295,7 +234,7 @@
           <div class="p-4 rounded-lg bg-[#111319] border border-[#232a36] flex flex-col justify-between">
             <div class="flex items-center justify-between text-xs text-gray-400">
               <span class="font-medium">Aktive Zugänge</span>
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             </div>
             <div class="mt-2">
               <div class="text-lg font-bold text-white">6 konfiguriert</div>
@@ -304,22 +243,11 @@
           </div>
 
           <!-- Kachel 3: Zertifikats- & Token-Gültigkeit -->
-          <div class="p-4 rounded-lg bg-[#111319] border border-[#232a36] flex flex-col justify-between">
-            <div class="flex items-center justify-between text-xs text-gray-400">
-              <span class="font-medium">mTLS & Signaturen</span>
-              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            </div>
-            <div class="mt-2">
-              <div class="text-lg font-bold text-white">Gültig bis 31.12.2025</div>
-              <div class="text-[11px] text-emerald-400 mt-0.5">SHA-256 Integrität OK</div>
-            </div>
-          </div>
-
           <!-- Kachel 4: Autonomes Ausführungslimit -->
           <div class="p-4 rounded-lg bg-[#111319] border border-[#232a36] flex flex-col justify-between">
             <div class="flex items-center justify-between text-xs text-gray-400">
               <span class="font-medium">Max. Autonomes Limit</span>
-              <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
             <div class="mt-2">
               <div class="text-lg font-bold text-white">50,00 € / Tag</div>
@@ -333,23 +261,20 @@
           <!-- Hinweis 1: Wichtiger Sicherheitshinweis -->
           <div class="p-4 rounded-lg bg-[#111319] border border-amber-500/30 flex items-start gap-3">
             <div class="p-1 rounded bg-amber-500/10 text-amber-400 flex-shrink-0 mt-0.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
             <div class="flex-1 text-xs">
               <span class="font-semibold text-amber-300">Hinweis zur SEPA-Überweisungsberechtigung:</span>
-              <span class="text-gray-300 ml-1">Autonome Banküberweisungen sind systemweit auf Entwurfsmodus beschränkt. Keine Buchung wird ohne biometrische oder 2FA-Bestätigung über die Blazor-Hauptinstanz an Bank-Schnittstellen übermittelt.</span>
-            </div>
+              <span class="fm-info" title="Autonome Banküberweisungen sind systemweit auf Entwurfsmodus beschränkt. Keine Buchung wird ohne biometrische oder 2FA-Bestätigung über die Blazor-Hauptinstanz an Bank-Schnittstellen übermittelt."><span class="material-symbols-outlined">info</span></span></div>
           </div>
 
           <!-- Hinweis 2: Revisionssicherheit -->
           <div class="p-4 rounded-lg bg-[#111319] border border-[#232a36] flex items-start gap-3">
             <div class="p-1 rounded bg-[#6d8dff]/10 text-[#6d8dff] flex-shrink-0 mt-0.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <div class="flex-1 text-xs">
-              <span class="font-semibold text-white">Revisionskonformes GoBD-Protokoll:</span>
-              <span class="text-gray-400 ml-1">Alle von KI-Instanzen vorgeschlagenen Kategoriezuordnungen, Budgetsanpassungen und Transaktionsentwürfe werden unveränderbar im lokalen Audit-Log hash-verkettet protokolliert.</span>
-            </div>
+              <span class="fm-info" title="Alle von KI-Instanzen vorgeschlagenen Kategoriezuordnungen, Budgetsanpassungen und Transaktionsentwürfe werden unveränderbar im lokalen Audit-Log hash-verkettet protokolliert."><span class="material-symbols-outlined">info</span></span></div>
           </div>
         </div>
 
@@ -359,8 +284,8 @@
           <!-- Card Header -->
           <div class="px-5 py-3.5 border-b border-[#232a36] flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <svg class="w-4 h-4 text-[#6d8dff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              <h2 class="text-sm font-semibold text-white">Sicherheitskonfiguration & Freigabeparameter</h2>
+              <svg class="w-4 h-4 text-[#6d8dff]" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              <h2 class="text-sm font-semibold text-white">Sicherheitskonfiguration &amp; Freigabeparameter</h2>
             </div>
             <span class="text-[11px] font-mono text-gray-500">ID: SEC-CFG-2025</span>
           </div>
@@ -376,8 +301,8 @@
               </div>
               <div class="sm:w-2/3 max-w-md">
                 <select class="w-full px-3 py-1.5 rounded-lg bg-[#191c23] border border-[#232a36] text-xs text-white focus:outline-none focus:border-[#6d8dff]">
-                  <option selected>Stufe 2 (Erweitert – Analyse & Entwurfsgenerierung)</option>
-                  <option>Stufe 1 (Basis – Reiner Lesezugriff & OCR)</option>
+                  <option selected>Stufe 2 (Erweitert – Analyse &amp; Entwurfsgenerierung)</option>
+                  <option>Stufe 1 (Basis – Reiner Lesezugriff &amp; OCR)</option>
                   <option>Stufe 3 (Autonom – Direkte Verbuchung bis Freigabelimit)</option>
                 </select>
               </div>
@@ -406,7 +331,7 @@
               </div>
               <div class="sm:w-2/3 max-w-md">
                 <select class="w-full px-3 py-1.5 rounded-lg bg-[#191c23] border border-[#232a36] text-xs text-white focus:outline-none focus:border-[#6d8dff]">
-                  <option selected>Bestätigung bei Abweichung > 10 % erforderlich</option>
+                  <option selected>Bestätigung bei Abweichung &gt; 10 % erforderlich</option>
                   <option>Immer manuelle Freigabe anfordern</option>
                   <option>Automatisch innerhalb des Monatsrahmens anpassen</option>
                 </select>
@@ -414,23 +339,6 @@
             </div>
 
             <!-- Zeile 4: Zertifikatsbasierte mTLS-Validierung -->
-            <div class="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#191c23]/50 transition-colors">
-              <div class="sm:w-1/3">
-                <label class="text-xs font-semibold text-gray-200">mTLS-Zertifikatsabgleich</label>
-                <p class="text-[11px] text-gray-500">Gegenseitige kryptografische Identifikation der Endpunkte</p>
-              </div>
-              <div class="sm:w-2/3 max-w-md flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span class="text-xs text-white font-mono">Aktiviert (TLS 1.3 / Ed25519)</span>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked class="sr-only peer">
-                  <div class="w-9 h-5 bg-[#232a36] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6d8dff]"></div>
-                </label>
-              </div>
-            </div>
-
             <!-- Zeile 5: Lokale Tokenverschlüsselung -->
             <div class="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#191c23]/50 transition-colors">
               <div class="sm:w-1/3">
@@ -445,14 +353,10 @@
 
             <!-- Zeile 6: Protokollierungsdichte (Audit-Level) -->
             <div class="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#191c23]/50 transition-colors">
-              <div class="sm:w-1/3">
-                <label class="text-xs font-semibold text-gray-200">Audit-Protokollierungslevel</label>
-                <p class="text-[11px] text-gray-500">Tiefe der Revisionsdatensätze für GoBD-Konformität</p>
-              </div>
               <div class="sm:w-2/3 max-w-md">
                 <select class="w-full px-3 py-1.5 rounded-lg bg-[#191c23] border border-[#232a36] text-xs text-white focus:outline-none focus:border-[#6d8dff]">
-                  <option selected>Vollständig (Trace, Tokenverbrauch & Kryptografische Signatur)</option>
-                  <option>Standard (Aktionen, Beträge & Freigabestatus)</option>
+                  <option selected>Vollständig (Trace, Tokenverbrauch &amp; Kryptografische Signatur)</option>
+                  <option>Standard (Aktionen, Beträge &amp; Freigabestatus)</option>
                   <option>Minimal (Nur ausgeführte Transaktionen)</option>
                 </select>
               </div>
@@ -466,28 +370,14 @@
               </div>
               <div class="sm:w-2/3 max-w-md flex items-center justify-between">
                 <span class="text-xs text-gray-300">Schwellwert: 3 Integritätsfehler innerhalb 5 Min.</span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked class="sr-only peer">
-                  <div class="w-9 h-5 bg-[#232a36] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6d8dff]"></div>
-                </label>
-              </div>
+                </div>
             </div>
 
           </div>
         </div>
 
         <!-- FOOTER STATUS BAR -->
-        <div class="pt-2 pb-6 border-t border-[#232a36] flex items-center justify-between text-xs text-gray-500">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Letzte Sicherheitsprüfung: 15.03.2025, 10:14 Uhr (Erfolgreich)</span>
-          </div>
-          <div class="font-mono text-[11px]">
-            FinanceManager Blazor Core • Version 3.4.2
-          </div>
         </div>
-
-      </div>
     </div>
   </main>
 

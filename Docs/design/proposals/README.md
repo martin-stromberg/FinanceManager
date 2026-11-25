@@ -56,6 +56,28 @@ Der Lauf ist fortsetzbar: vorhandene PNGs werden übersprungen (`manifest.json`)
 Der API-Key wird aus der Windows-Benutzervariable `GOOGLE_STITCH` gelesen und nie
 protokolliert.
 
+## Überarbeitung nach Abnahme-Feedback
+
+Nach dem ersten Feedback wurden die HTML-Entwürfe deterministisch nachbearbeitet
+(`scripts/stitch/rework-proposals.py`), statt sie neu zu generieren:
+
+- **Einheitliches Chrome:** Alle Ansichten erhalten dieselbe Sidebar-Navigation
+  (13 Einträge, konsistente Icons und Gruppierung), Topbar mit Ansichtstitel und
+  die aus dem Inventar extrahierte echte Ribbon-Aktionsleiste je Ansicht.
+- **Erfundene Features entfernt:** „Lokal/Synchronisiert"-Badges, PSD2/EBICS-/
+  Banking-Sync-Verweise, Multi-Kategorie-Zuordnung und Aktivierungs-Toggles bei
+  Budgetzwecken (ein `BudgetPurpose` hat genau ein `BudgetCategoryId`, kein
+  Aktiv-Flag), Rollierend/Übertrag-Toggles bei Budgetregeln, erfundene
+  Ribbon-Aktionen.
+- **Erklärtexte:** Lange Fließtexte sind hinter aufklappbaren Info-Bereichen
+  verborgen.
+- **Startseite:** Wieder aufgebaut nach dem echten Modell — Mitteilungen,
+  konfigurierbare Kennzahlen-Kacheln („Kachel hinzufügen") und Berichts-Favoriten
+  (dynamisch zusammengestellte Berichte).
+- **Logo:** Einheitliches FM-Logo-SVG in allen Ansichten.
+
+`rework-report.json` enthält die Zähler der Nachbearbeitung je Datei.
+
 ## Abnahme
 
 Die Varianten werden im GitHub-Issue #590 vorgelegt; eine Umsetzung erfolgt erst nach

@@ -1,337 +1,101 @@
 <!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary": "#00354a", "secondary-container": "#23429c", "primary-fixed": "#dce1ff", "on-tertiary-fixed-variant": "#004c69", "on-primary-fixed-variant": "#0d3bac", "inverse-on-surface": "#2e3036", "inverse-primary": "#3255c5", "on-surface": "#e1e2ea", "error": "#ffb4ab", "primary": "#b6c4ff", "on-tertiary-container": "#003145", "tertiary-fixed": "#c4e7ff", "surface-container-lowest": "#0b0e13", "on-error": "#690005", "surface": "#111319", "tertiary-fixed-dim": "#7bd0ff", "surface-container-high": "#272a30", "on-tertiary-fixed": "#001e2c", "on-secondary": "#00287d", "on-primary-fixed": "#001550", "on-secondary-fixed": "#00164f", "secondary-fixed-dim": "#b6c4ff", "surface-bright": "#36393f", "surface-tint": "#b6c4ff", "background": "#111319", "surface-variant": "#32353b", "surface-dim": "#111319", "surface-container-highest": "#32353b", "outline-variant": "#444653", "on-surface-variant": "#c4c5d5", "surface-container-low": "#191c21", "surface-container": "#1d2025", "on-secondary-container": "#a2b5ff", "on-background": "#e1e2ea", "error-container": "#93000a", "tertiary": "#7bd0ff", "primary-container": "#6d8dff", "tertiary-container": "#009fd6", "on-secondary-fixed-variant": "#204099", "secondary": "#b6c4ff", "secondary-fixed": "#dce1ff", "on-primary-container": "#002477", "outline": "#8e909f", "inverse-surface": "#e1e2ea", "on-error-container": "#ffdad6", "primary-fixed-dim": "#b6c4ff", "on-primary": "#002780" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1.5rem", "space-lg": "1.25rem", "space-sm": "0.5rem", "margin-mobile": "1rem", "gutter-mobile": "0.75rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-md": "0.75rem", "gutter": "1rem" }, "fontFamily": { "label-md": ["Inter"], "headline-sm": ["Inter"], "headline-xl": ["Inter"], "headline-md": ["Inter"], "body-sm": ["Inter"], "headline-xl-mobile": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "currency-display": ["Inter"], "label-lg": ["Inter"] }, "fontSize": { "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "currency-display": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }] } } } };</script><style id="fm-canonical">
 
-<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary": "#00354a", "secondary-container": "#23429c", "primary-fixed": "#dce1ff", "on-tertiary-fixed-variant": "#004c69", "on-primary-fixed-variant": "#0d3bac", "inverse-on-surface": "#2e3036", "inverse-primary": "#3255c5", "on-surface": "#e1e2ea", "error": "#ffb4ab", "primary": "#b6c4ff", "on-tertiary-container": "#003145", "tertiary-fixed": "#c4e7ff", "surface-container-lowest": "#0b0e13", "on-error": "#690005", "surface": "#111319", "tertiary-fixed-dim": "#7bd0ff", "surface-container-high": "#272a30", "on-tertiary-fixed": "#001e2c", "on-secondary": "#00287d", "on-primary-fixed": "#001550", "on-secondary-fixed": "#00164f", "secondary-fixed-dim": "#b6c4ff", "surface-bright": "#36393f", "surface-tint": "#b6c4ff", "background": "#111319", "surface-variant": "#32353b", "surface-dim": "#111319", "surface-container-highest": "#32353b", "outline-variant": "#444653", "on-surface-variant": "#c4c5d5", "surface-container-low": "#191c21", "surface-container": "#1d2025", "on-secondary-container": "#a2b5ff", "on-background": "#e1e2ea", "error-container": "#93000a", "tertiary": "#7bd0ff", "primary-container": "#6d8dff", "tertiary-container": "#009fd6", "on-secondary-fixed-variant": "#204099", "secondary": "#b6c4ff", "secondary-fixed": "#dce1ff", "on-primary-container": "#002477", "outline": "#8e909f", "inverse-surface": "#e1e2ea", "on-error-container": "#ffdad6", "primary-fixed-dim": "#b6c4ff", "on-primary": "#002780" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1.5rem", "space-lg": "1.25rem", "space-sm": "0.5rem", "margin-mobile": "1rem", "gutter-mobile": "0.75rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-md": "0.75rem", "gutter": "1rem" }, "fontFamily": { "label-md": ["Inter"], "headline-sm": ["Inter"], "headline-xl": ["Inter"], "headline-md": ["Inter"], "body-sm": ["Inter"], "headline-xl-mobile": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "currency-display": ["Inter"], "label-lg": ["Inter"] }, "fontSize": { "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "currency-display": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface-container-lowest font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-60 bg-surface z-50 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex flex-col"><div class="h-14 px-margin flex items-center gap-space-md"><img alt="FinanceManager Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCCMAsHTVZIaQ-vf26ZvyDfhzlfZ_0IGRs-GDYNf2yJY4ifMJofcZe5RKCEkP1s4wT07GwmPOg3hkLuaxSqkYiauJf5pzp6Sb30rCbWJbKYHt2hDtP_gN5MVyfa0r6zo7-myIwZ3Uz9wbgFcAir0wreYCamYnZh9oNiSillu7JbCTvX_dxGGUHy7DVKgNEOuGhCaGkQAsa6wbVH11IFqY4WGIvOXC-KQpFuxcc-WkKA"/><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-semibold">FinanceManager</span></div><nav class="flex flex-col gap-space-xs px-space-sm mt-space-md" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg"><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="start" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span>Start</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="konten" href="#"><span class="material-symbols-outlined text-[20px]">account_balance</span>Konten</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="kontakte" href="#"><span class="material-symbols-outlined text-[20px]">contacts</span>Kontakte</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="sparplaene" href="#"><span class="material-symbols-outlined text-[20px]">savings</span>Sparpläne</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="wertpapiere" href="#"><span class="material-symbols-outlined text-[20px]">trending_up</span>Wertpapiere</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="kontoauszuege" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span>Kontoauszüge</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="budget" href="#"><span class="material-symbols-outlined text-[20px]">pie_chart</span>Budget</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="berichte" href="#"><span class="material-symbols-outlined text-[20px]">analytics</span>Berichte</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="benutzerverwaltung" href="#"><span class="material-symbols-outlined text-[20px]">manage_accounts</span>Benutzerverwaltung</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="ki-zugaenge" href="#"><span class="material-symbols-outlined text-[20px]">neurology</span>KI-Zugänge</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="einstellungen" href="#"><span class="material-symbols-outlined text-[20px]">settings</span>Einstellungen</a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="hilfe" href="#"><span class="material-symbols-outlined text-[20px]">help</span>Hilfe</a></nav></div><div class="px-space-sm"><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-error transition-colors font-label-lg text-label-lg" data-path="abmelden" href="#"><span class="material-symbols-outlined text-[20px]">logout</span>Abmelden</a></div></aside><div class="pl-60"><header class="fixed top-0 left-60 right-0 h-14 bg-surface/90 backdrop-blur-md z-40 px-margin flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.3)]"><div class="flex items-center gap-space-md"><img alt="FinanceManager Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCCMAsHTVZIaQ-vf26ZvyDfhzlfZ_0IGRs-GDYNf2yJY4ifMJofcZe5RKCEkP1s4wT07GwmPOg3hkLuaxSqkYiauJf5pzp6Sb30rCbWJbKYHt2hDtP_gN5MVyfa0r6zo7-myIwZ3Uz9wbgFcAir0wreYCamYnZh9oNiSillu7JbCTvX_dxGGUHy7DVKgNEOuGhCaGkQAsa6wbVH11IFqY4WGIvOXC-KQpFuxcc-WkKA"/><span class="font-headline-sm text-headline-sm text-on-surface font-semibold">FinanceManager</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider px-space-xs py-0.5 rounded bg-surface-container-high">Blazor Core</span></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-space-xs rounded-lg text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">dns</span><span class="font-label-sm text-label-sm">Lokal / Synchronisiert</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><div class="pt-14 px-margin bg-surface-container-lowest"><div class="mt-space-md rounded-xl bg-surface p-space-sm shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="flex items-center justify-between gap-space-md overflow-x-auto"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs"><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">add</span>Neu</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">edit</span>Bearbeiten</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">delete</span>Löschen</button></div><div class="h-6 w-px bg-surface-container-highest"></div><div class="flex items-center gap-space-xs"><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">sync</span>Synchronisieren</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span>Exportieren</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">filter_alt</span>Filter</button></div></div><div class="flex items-center gap-space-xs"><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">security</span>Rollen prüfen</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>Berechtigungen</button></div></div></div></div><main class="w-full max-w-[1200px] px-margin py-space-lg bg-surface-container-lowest"><div class="flex flex-col w-full">
-<!-- Kontext- & Breadcrumb-Leiste -->
-<div class="flex flex-col gap-space-xs mb-space-md">
-<nav aria-label="Brotkrumennavigation" class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm tracking-wide">
-<span class="hover:text-on-surface cursor-pointer transition-colors">Finanzplanung</span>
-<span class="material-symbols-outlined text-[14px]">chevron_right</span>
-<span class="hover:text-on-surface cursor-pointer transition-colors">Budget</span>
-<span class="material-symbols-outlined text-[14px]">chevron_right</span>
-<span class="hover:text-on-surface cursor-pointer transition-colors">Budgetzwecke</span>
-<span class="material-symbols-outlined text-[14px]">chevron_right</span>
-<span class="text-primary font-semibold">Budgetzweck-Detailkarte</span>
-</nav>
-</div>
-<!-- Integrierte Ribbon-Toolbar -->
-<div class="mb-space-lg rounded-xl bg-surface p-space-sm shadow-[0_1px_8px_rgba(0,0,0,0.35)]">
-<div class="flex items-center justify-between gap-space-md overflow-x-auto">
-<div class="flex items-center gap-space-lg">
-<!-- Gruppe: Navigation -->
-<div class="flex items-center gap-space-xs">
-<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline px-space-xs select-none">Navigation</span>
-<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
-<span class="material-symbols-outlined text-[16px]">arrow_back</span>
-<span>Zurück</span>
-</button>
-</div>
-<div class="h-6 w-px bg-surface-container-highest"></div>
-<!-- Gruppe: Verwalten -->
-<div class="flex items-center gap-space-xs">
-<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline px-space-xs select-none">Verwalten</span>
-<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-primary-container text-on-primary-container font-semibold hover:bg-primary hover:text-on-primary transition-colors font-label-md text-label-md shadow-sm" type="button">
-<span class="material-symbols-outlined text-[16px]">save</span>
-<span>Speichern</span>
-</button>
-<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
-<span class="material-symbols-outlined text-[16px]">restart_alt</span>
-<span>Zurücksetzen</span>
-</button>
-<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-error hover:bg-error-container hover:text-on-error-container transition-colors font-label-md text-label-md" type="button">
-<span class="material-symbols-outlined text-[16px]">delete</span>
-<span>Löschen</span>
-</button>
-</div>
-<div class="h-6 w-px bg-surface-container-highest"></div>
-<!-- Gruppe: Verknüpfte Informationen -->
-<div class="flex items-center gap-space-xs">
-<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline px-space-xs select-none">Verknüpfung</span>
-<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
-<span class="material-symbols-outlined text-[16px]">account_tree</span>
-<span>Zugeordnete Kategorien</span>
-</button>
-<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
-<span class="material-symbols-outlined text-[16px]">pie_chart</span>
-<span>Budgetübersicht öffnen</span>
-</button>
-</div>
-</div>
-<!-- Synchronisations-Indikator -->
-<div class="hidden xl:flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant bg-surface-container-low px-space-md py-space-xs rounded-lg">
-<span class="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-<span>ID: ZWK-102</span>
-</div>
-</div>
-</div>
-<!-- Seiten-Titel & Quick-Metric Banner -->
-<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg mb-space-lg p-space-lg rounded-xl bg-surface-container-low shadow-sm">
-<div class="flex flex-col gap-space-xs">
-<div class="flex items-center gap-space-md flex-wrap">
-<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-semibold">Budgetzweck-Detailkarte</h1>
-<span class="inline-flex items-center gap-1 px-space-sm py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase tracking-wider font-semibold">
-<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
-          Aktiv
-        </span>
-<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container px-space-sm py-0.5 rounded font-mono">ZWK-102</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant">Zweckdetails, Gültigkeitszeitraum, zugeordnete Kategorien und Budgetregeln</p>
-</div>
-<!-- Quick Metric Cards -->
-<div class="flex items-center gap-space-md flex-wrap sm:flex-nowrap">
-<div class="flex flex-col px-space-md py-space-sm bg-surface-container rounded-lg min-w-[200px]">
-<div class="flex items-center justify-between gap-space-sm mb-0.5">
-<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Monatsbudget</span>
-<span class="material-symbols-outlined text-[16px] text-primary">account_balance_wallet</span>
-</div>
-<div class="font-currency-display text-currency-display text-on-surface tracking-tight tabular-nums">1.250,00 €</div>
-<span class="font-label-sm text-label-sm text-primary mt-0.5">Vollständig gedeckt</span>
-</div>
-<div class="flex flex-col px-space-md py-space-sm bg-surface-container rounded-lg min-w-[160px]">
-<div class="flex items-center justify-between gap-space-sm mb-0.5">
-<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Verknüpfung</span>
-<span class="material-symbols-outlined text-[16px] text-tertiary">category</span>
-</div>
-<div class="font-headline-md text-headline-md text-on-surface tabular-nums">3 Kategorien</div>
-<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">100% aktiv</span>
-</div>
-</div>
-</div>
-<!-- 2-Spalten Hauptbereich (Data Cards) -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg mb-space-lg">
-<!-- Spalte 1: Zweckdetails & Stammdaten (5 von 12 Spalten) -->
-<section class="lg:col-span-5 flex flex-col gap-space-md bg-surface p-space-lg rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.35)]">
-<div class="flex items-center justify-between pb-space-xs">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-primary text-[20px]">badge</span>
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Zweckdetails &amp; Stammdaten</h2>
-</div>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Stammsatz</span>
-</div>
-<!-- Formularzeilen -->
-<form class="flex flex-col gap-space-md" onsubmit="event.preventDefault();">
-<!-- Name des Budgetzwecks -->
-<div class="flex flex-col gap-space-xs">
-<label class="font-label-md text-label-md text-on-surface-variant font-medium" for="purpose-name">Name des Budgetzwecks</label>
-<div class="relative">
-<input class="w-full h-9 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:bg-surface-container-low transition-colors" id="purpose-name" type="text" value="Lebenshaltung &amp; Haushalt"/>
-</div>
-</div>
-<!-- Beschreibung -->
-<div class="flex flex-col gap-space-xs">
-<label class="font-label-md text-label-md text-on-surface-variant font-medium" for="purpose-desc">Beschreibung &amp; Zweckbestimmung</label>
-<textarea class="w-full p-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:bg-surface-container-low transition-colors resize-none leading-relaxed" id="purpose-desc" rows="3">Grundlegende periodische Ausgaben für die tägliche Haushaltsführung, Lebensmittel und Drogerieartikel</textarea>
-</div>
-<!-- Gültigkeit -->
-<div class="flex flex-col gap-space-sm p-space-md rounded-lg bg-surface-container-lowest">
-<span class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-[16px] text-tertiary">date_range</span>
-            Gültigkeitszeitraum
-          </span>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md pt-space-xs">
-<div class="flex flex-col gap-space-xs">
-<label class="font-label-sm text-label-sm text-on-surface-variant" for="valid-from">Gültig ab</label>
-<input class="w-full h-8 px-space-sm bg-surface-container text-on-surface font-body-sm text-body-sm rounded focus:outline-none tabular-nums" id="valid-from" type="text" value="01.01.2024"/>
-</div>
-<div class="flex flex-col gap-space-xs">
-<label class="font-label-sm text-label-sm text-on-surface-variant" for="valid-to">Gültig bis</label>
-<input class="w-full h-8 px-space-sm bg-surface-container-high text-outline font-body-sm text-body-sm rounded cursor-not-allowed" disabled="" id="valid-to" type="text" value="Unbegrenzt (Fortlaufend)"/>
-</div>
-</div>
-<div class="flex items-center gap-space-sm pt-space-xs">
-<input checked="" class="w-4 h-4 rounded bg-surface-container text-primary-container focus:ring-0 cursor-pointer" id="indefinite-validity" type="checkbox"/>
-<label class="font-label-sm text-label-sm text-on-surface-variant cursor-pointer select-none" for="indefinite-validity">
-              Unbefristet gültig (Kein fixes Enddatum)
-            </label>
-</div>
-</div>
-<!-- Prioritätsstufe / Klassifizierung -->
-<div class="flex flex-col gap-space-xs">
-<label class="font-label-md text-label-md text-on-surface-variant font-medium" for="priority-class">Prioritätsstufe / Klassifizierung</label>
-<div class="relative">
-<select class="w-full h-9 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg focus:outline-none appearance-none cursor-pointer" id="priority-class">
-<option selected="">Hohe Priorität (Fixer / Notwendiger Lebensbedarf)</option>
-<option>Mittlere Priorität (Veränderliche Ausgaben / Konsum)</option>
-<option>Niedrige Priorität (Freizeit &amp; Diskretionär)</option>
-<option>Strategisch (Rücklagen &amp; Notgroschen)</option>
-</select>
-<span class="material-symbols-outlined pointer-events-none absolute right-3 top-2.5 text-on-surface-variant text-[18px]">expand_more</span>
-</div>
-</div>
-<!-- System-Status & Steuerung -->
-<div class="flex items-center justify-between p-space-md rounded-lg bg-surface-container-lowest mt-space-xs">
-<div class="flex flex-col">
-<span class="font-label-md text-label-md text-on-surface font-medium">System-Status</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Aktiv in Budgetberechnung einbeziehen</span>
-</div>
-<label class="relative inline-flex items-center cursor-pointer">
-<input checked="" class="sr-only peer" type="checkbox"/>
-<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-primary-container after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-</label>
-</div>
-</form>
-</section>
-<!-- Spalte 2: Zugeordnete Kategorien & Budgetregeln (7 von 12 Spalten) -->
-<div class="lg:col-span-7 flex flex-col gap-space-lg">
-<!-- Bereich: Zugeordnete Budgetkategorien -->
-<section class="bg-surface p-space-lg rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.35)] flex flex-col gap-space-md">
-<div class="flex items-center justify-between pb-space-xs">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-tertiary text-[20px]">account_tree</span>
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Zugeordnete Budgetkategorien</h2>
-</div>
-<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md font-medium" type="button">
-<span class="material-symbols-outlined text-[16px]">add</span>
-<span>+ Kategorie zuweisen</span>
-</button>
-</div>
-<!-- Kompakte Finanztabelle -->
-<div class="overflow-x-auto rounded-lg bg-surface-container-lowest">
-<table class="w-full text-left font-body-sm text-body-sm border-collapse">
-<thead>
-<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-<th class="py-space-sm px-space-md font-semibold" scope="col">Kategorie</th>
-<th class="py-space-sm px-space-md font-semibold" scope="col">Postenart</th>
-<th class="py-space-sm px-space-md font-semibold text-right" scope="col">Monatl. Richtwert</th>
-<th class="py-space-sm px-space-md font-semibold text-center" scope="col">Status</th>
-<th class="py-space-sm px-space-xs text-right pr-space-md" scope="col">Aktion</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-surface-container-high/40">
-<!-- Zeile 1 -->
-<tr class="hover:bg-surface-container-low/70 transition-colors">
-<td class="py-space-sm px-space-md font-medium text-on-surface flex items-center gap-space-sm">
-<div class="w-2 h-2 rounded-full bg-primary"></div>
-<span>Lebensmittel</span>
-</td>
-<td class="py-space-sm px-space-md text-on-surface-variant">Ausgabe</td>
-<td class="py-space-sm px-space-md text-right font-mono font-medium text-on-surface tabular-nums">750,00 €</td>
-<td class="py-space-sm px-space-md text-center">
-<span class="px-space-xs py-0.5 rounded text-label-sm font-label-sm bg-primary-container/20 text-primary">Aktiv</span>
-</td>
-<td class="py-space-sm px-space-xs text-right pr-space-md">
-<button aria-label="Kategorie bearbeiten" class="text-on-surface-variant hover:text-on-surface p-1 rounded transition-colors" type="button">
-<span class="material-symbols-outlined text-[16px]">open_in_new</span>
-</button>
-</td>
-</tr>
-<!-- Zeile 2 -->
-<tr class="hover:bg-surface-container-low/70 transition-colors">
-<td class="py-space-sm px-space-md font-medium text-on-surface flex items-center gap-space-sm">
-<div class="w-2 h-2 rounded-full bg-primary"></div>
-<span>Drogerie</span>
-</td>
-<td class="py-space-sm px-space-md text-on-surface-variant">Ausgabe</td>
-<td class="py-space-sm px-space-md text-right font-mono font-medium text-on-surface tabular-nums">200,00 €</td>
-<td class="py-space-sm px-space-md text-center">
-<span class="px-space-xs py-0.5 rounded text-label-sm font-label-sm bg-primary-container/20 text-primary">Aktiv</span>
-</td>
-<td class="py-space-sm px-space-xs text-right pr-space-md">
-<button aria-label="Kategorie bearbeiten" class="text-on-surface-variant hover:text-on-surface p-1 rounded transition-colors" type="button">
-<span class="material-symbols-outlined text-[16px]">open_in_new</span>
-</button>
-</td>
-</tr>
-<!-- Zeile 3 -->
-<tr class="hover:bg-surface-container-low/70 transition-colors">
-<td class="py-space-sm px-space-md font-medium text-on-surface flex items-center gap-space-sm">
-<div class="w-2 h-2 rounded-full bg-primary"></div>
-<span>Haushaltswaren</span>
-</td>
-<td class="py-space-sm px-space-md text-on-surface-variant">Ausgabe</td>
-<td class="py-space-sm px-space-md text-right font-mono font-medium text-on-surface tabular-nums">300,00 €</td>
-<td class="py-space-sm px-space-md text-center">
-<span class="px-space-xs py-0.5 rounded text-label-sm font-label-sm bg-primary-container/20 text-primary">Aktiv</span>
-</td>
-<td class="py-space-sm px-space-xs text-right pr-space-md">
-<button aria-label="Kategorie bearbeiten" class="text-on-surface-variant hover:text-on-surface p-1 rounded transition-colors" type="button">
-<span class="material-symbols-outlined text-[16px]">open_in_new</span>
-</button>
-</td>
-</tr>
-</tbody>
-<tfoot>
-<tr class="bg-surface-container-low/50 font-medium text-on-surface">
-<td class="py-space-sm px-space-md" colspan="2">Gesamtsumme Richtwerte</td>
-<td class="py-space-sm px-space-md text-right font-mono font-semibold text-primary tabular-nums">1.250,00 €</td>
-<td colspan="2"></td>
-</tr>
-</tfoot>
-</table>
-</div>
-</section>
-<!-- Bereich: Budgetregeln & Prüflogik -->
-<section class="bg-surface p-space-lg rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.35)] flex flex-col gap-space-md">
-<div class="flex items-center justify-between pb-space-xs">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-secondary text-[20px]">rule</span>
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Budgetregeln &amp; Prüflogik</h2>
-</div>
-<span class="font-label-sm text-label-sm text-secondary font-medium">3 Regeln aktiv</span>
-</div>
-<div class="flex flex-col gap-space-sm">
-<!-- Regel 1 -->
-<div class="flex items-start gap-space-md p-space-md rounded-lg bg-surface-container-lowest">
-<div class="p-2 rounded bg-surface-container text-primary mt-0.5">
-<span class="material-symbols-outlined text-[18px]">sync_alt</span>
-</div>
-<div class="flex flex-col gap-0.5 flex-1">
-<div class="flex items-center justify-between">
-<span class="font-label-md text-label-md text-on-surface font-semibold">Übertrag unverbrauchter Mittel</span>
-<span class="font-label-sm text-label-sm text-primary uppercase font-mono">Rollierend</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Restguthaben am Monatsende automatisch in den Folgemonat vortragen.</p>
-</div>
-</div>
-<!-- Regel 2 -->
-<div class="flex items-start gap-space-md p-space-md rounded-lg bg-surface-container-lowest">
-<div class="p-2 rounded bg-surface-container text-tertiary mt-0.5">
-<span class="material-symbols-outlined text-[18px]">notification_important</span>
-</div>
-<div class="flex flex-col gap-0.5 flex-1">
-<div class="flex items-center justify-between">
-<span class="font-label-md text-label-md text-on-surface font-semibold">Warnschwelle bei Budgetüberschreitung</span>
-<span class="font-label-sm text-label-sm text-tertiary uppercase font-mono">Schwellwert 90%</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Automatischen Systemhinweis ausgeben, sobald 90% des Monatsbudgets beansprucht sind.</p>
-</div>
-</div>
-<!-- Regel 3 -->
-<div class="flex items-start gap-space-md p-space-md rounded-lg bg-surface-container-lowest">
-<div class="p-2 rounded bg-surface-container text-on-surface-variant mt-0.5">
-<span class="material-symbols-outlined text-[18px]">auto_fix_high</span>
-</div>
-<div class="flex flex-col gap-0.5 flex-1">
-<div class="flex items-center justify-between">
-<span class="font-label-md text-label-md text-on-surface font-semibold">Buchungszuordnung</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-mono">Automatik</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Automatische Erkennung und Zuordnung neu synchronisierter Bankumsätze nach hinterlegten Schlagwörtern aktivieren.</p>
-</div>
-</div>
-</div>
-</section>
-</div>
-</div>
-<!-- Footer / Statusleiste der Detailkarte -->
-<footer class="mt-space-sm p-space-md rounded-xl bg-surface flex flex-col sm:flex-row items-center justify-between gap-space-md shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
-<div class="flex items-center gap-space-sm text-on-surface-variant font-body-sm text-body-sm">
-<span class="material-symbols-outlined text-[18px] text-outline">history</span>
-<span>Letzte Änderung: <strong class="text-on-surface font-medium">14.03.2025</strong> durch Alexander Weber</span>
-<span class="text-outline hidden md:inline">•</span>
-<span class="hidden md:inline text-on-surface-variant">Status: Synchronisiert mit Hauptbuch</span>
-</div>
-<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
-<button class="px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md font-medium" type="button">
-        Abbrechen
-      </button>
-<button class="px-space-md py-space-xs rounded-lg bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-colors font-label-md text-label-md font-semibold shadow-sm" type="button">
-        Änderungen übernehmen
-      </button>
-</div>
-</footer>
-</div></main></div></body></html>
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head><body class="bg-surface-container-lowest font-body-md text-on-surface antialiased fm-body-a"><aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class=" active" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Budgetzweck-Detailkarte</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Kategorie"><span class="material-symbols-outlined">label</span><span>Kategorie</span></button></div><div class="fm-rib-caption">Verknüpfte Informationen</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Neu"><span class="material-symbols-outlined">add</span><span>Neu</span></button></div><div class="fm-rib-caption">Regeln</div></div></div><div class="pl-60"><main class="w-full max-w-[1200px] px-margin py-space-lg bg-surface-container-lowest"><div id="fm-purpose-card">
+<div class="flex flex-col w-full gap-5 max-w-[1100px]">
+  <section class="rounded-xl border border-[#232a36] bg-[#10131a] p-5">
+    <h2 class="text-sm font-semibold text-[#e1e2ea] mb-4">Stammdaten</h2>
+    <div class="grid grid-cols-1 gap-4">
+      <div><label class="block text-xs font-medium text-[#8e9aa8] mb-1.5">Name des Budgetzwecks</label>
+        <div class="w-full rounded-lg bg-[#0b0e13] border border-[#232a36] px-3 py-2 text-sm text-[#e1e2ea]">Lebenshaltung &amp; Haushalt</div></div>
+      <div><label class="block text-xs font-medium text-[#8e9aa8] mb-1.5">Beschreibung</label>
+        <div class="w-full rounded-lg bg-[#0b0e13] border border-[#232a36] px-3 py-2 text-sm text-[#e1e2ea]">Laufende Grundbedürfnisse und Haushaltsführung</div></div>
+    </div>
+  </section>
+  <section class="rounded-xl border border-[#232a36] bg-[#10131a] p-5">
+    <h2 class="text-sm font-semibold text-[#e1e2ea] mb-4">Zuordnung</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div><label class="block text-xs font-medium text-[#8e9aa8] mb-1.5">Quelle</label>
+        <div class="w-full rounded-lg bg-[#0b0e13] border border-[#232a36] px-3 py-2 text-sm text-[#e1e2ea] flex items-center justify-between">Kontaktgruppe · Einzelhandel
+          <span class="material-symbols-outlined text-[16px]">expand_more</span></div></div>
+      <div><label class="block text-xs font-medium text-[#8e9aa8] mb-1.5">Kategorie</label>
+        <div class="w-full rounded-lg bg-[#0b0e13] border border-[#232a36] px-3 py-2 text-sm text-[#e1e2ea] flex items-center justify-between">Lebensmittel
+          <span class="material-symbols-outlined text-[16px]">expand_more</span></div></div>
+      <div><label class="block text-xs font-medium text-[#8e9aa8] mb-1.5">Bewertungsart</label>
+        <div class="w-full rounded-lg bg-[#0b0e13] border border-[#232a36] px-3 py-2 text-sm text-[#e1e2ea] flex items-center justify-between">Exakte Buchungen
+          <span class="material-symbols-outlined text-[16px]">expand_more</span></div></div>
+    </div>
+  </section>
+  <section class="rounded-xl border border-[#232a36] bg-[#10131a] p-5">
+    <h2 class="text-sm font-semibold text-[#e1e2ea] mb-4">Budgetregeln</h2>
+    <div class="flex items-center justify-between gap-3 py-2.5 border-b border-[#1a1f2b]"><div><div class="text-sm font-medium text-[#e1e2ea]">Lebenshaltung monatlich</div><div class="text-xs text-[#8e9aa8]">Monatlich</div></div><span class="text-sm font-semibold tabular-nums text-[#6d8dff]">750,00 €</span></div><div class="flex items-center justify-between gap-3 py-2.5 border-b border-[#1a1f2b]"><div><div class="text-sm font-medium text-[#e1e2ea]">Haushalt Wochenmarkt</div><div class="text-xs text-[#8e9aa8]">Monatlich</div></div><span class="text-sm font-semibold tabular-nums text-[#6d8dff]">120,00 €</span></div><div class="flex items-center justify-between gap-3 py-2.5"><div><div class="text-sm font-medium text-[#e1e2ea]">Jahresbudget Drogerie</div><div class="text-xs text-[#8e9aa8]">Jährlich</div></div><span class="text-sm font-semibold tabular-nums text-[#6d8dff]">600,00 €</span></div>
+  </section>
+</div></div></main></div></body></html>

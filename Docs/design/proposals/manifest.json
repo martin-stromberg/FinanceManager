@@ -1497,5 +1497,7 @@
       "screenId": null,
       "error": null
     }
-  ]
+  ],
+  "reworkedAt": "2026-11-25T17:44:29Z",
+  "rework": "scripts/stitch/rework-proposals.py — kanonisches Chrome (Nav/Ribbon/Topbar), Entfernung erfundener Features, Home mit Kennzahlen+Berichts-Favoriten"
 }
