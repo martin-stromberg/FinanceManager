@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Berichts-Dashboard (Variant B)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            teal: {
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              900: '#134e4a',
+            },
+            violet: {
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              900: '#4c1d95',
+            },
+            dark: {
+              950: '#07090e',
+              900: '#0a0d12',
+              850: '#11141c',
+              800: '#161a24',
+              700: '#232938',
+              600: '#323b50',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0a0d12;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .glass-panel {
+      background: rgba(17, 20, 28, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glass-panel-hover:hover {
+      background: rgba(22, 26, 36, 0.85);
+      border-color: rgba(45, 212, 191, 0.25);
+    }
+    .glow-teal {
+      box-shadow: 0 0 40px -10px rgba(45, 212, 191, 0.15);
+    }
+    .glow-violet {
+      box-shadow: 0 0 40px -10px rgba(139, 92, 246, 0.15);
+    }
+    /* custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0d12;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #232938;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #323b50;
+    }
+  </style>
+</head>
+<body class="bg-[#0a0d12] text-slate-200 min-h-screen flex antialiased selection:bg-teal-400 selection:text-dark-950 relative overflow-x-hidden">
+
+  <!-- Ambient Background Glows (Variant B Visual Language) -->
+  <div class="fixed top-[-120px] left-[15%] w-[550px] h-[550px] bg-teal-500/10 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+  <div class="fixed bottom-[-100px] right-[10%] w-[650px] h-[650px] bg-violet-600/10 rounded-full blur-[160px] pointer-events-none -z-10"></div>
+  <div class="fixed top-[40%] right-[30%] w-[400px] h-[400px] bg-teal-400/5 rounded-full blur-[130px] pointer-events-none -z-10"></div>
+
+  <!-- FIXED LEFT SIDEBAR (Variant B Slim Icon-Rail with Expandable Drawer & Tooltips) -->
+  <aside class="w-[84px] shrink-0 h-screen sticky top-0 bg-[#07090e]/90 backdrop-blur-xl border-r border-white/[0.06] flex flex-col items-center py-5 z-40 justify-between">
+    <!-- Top: Logo & Main Navigation -->
+    <div class="flex flex-col items-center w-full">
+      <!-- App Brand / Logo -->
+      <a href="#" class="mb-7 group relative flex items-center justify-center p-2 rounded-2xl bg-gradient-to-br from-teal-400/20 to-violet-500/20 border border-teal-400/30 text-teal-400 hover:border-teal-400 transition-all shadow-lg shadow-teal-500/10" title="FinanceManager">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="3" />
+          <path d="M7 10h1.5l1.5 3 2.5-6 2 4h2.5" />
+          <circle cx="18" cy="8" r="1.5" fill="currentColor" />
+        </svg>
+      </a>
+
+      <!-- Primary Navigation Rail Items (exact requested menu entries) -->
+      <nav class="flex flex-col items-center gap-1.5 w-full px-2" aria-label="Hauptnavigation">
+        <!-- Start -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Start">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Start</span>
+        </a>
+
+        <!-- Konten -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Konten">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <rect x="3" y="5" width="18" height="14" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Konten</span>
+        </a>
+
+        <!-- Kontakte -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Kontakte">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Kontakte</span>
+        </a>
+
+        <!-- Sparpläne -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Sparpläne">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Sparpläne</span>
+        </a>
+
+        <!-- Wertpapiere -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Wertpapiere">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Wertpapiere</span>
+        </a>
+
+        <!-- Kontoauszüge -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Kontoauszüge">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Kontoauszüge</span>
+        </a>
+
+        <!-- Budget -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Budget">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Budget</span>
+        </a>
+
+        <!-- Berichte (ACTIVE) -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl bg-teal-400/15 text-teal-300 border border-teal-400/40 shadow-lg shadow-teal-500/20" title="Berichte" aria-current="page">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          <span class="absolute left-1 bg-teal-400 w-1 h-5 rounded-r-full"></span>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-teal-400/30 text-teal-300 shadow-xl whitespace-nowrap z-50">Berichte (Aktiv)</span>
+        </a>
+
+        <!-- Benutzerverwaltung -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Benutzerverwaltung">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Benutzerverwaltung</span>
+        </a>
+
+        <!-- KI-Zugänge -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="KI-Zugänge">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">KI-Zugänge</span>
+        </a>
+
+        <!-- Einstellungen -->
+        <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Einstellungen">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Einstellungen</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Bottom: Hilfe & Abmelden -->
+    <div class="flex flex-col items-center gap-1.5 w-full px-2 pt-3 border-t border-white/[0.06]">
+      <!-- Hilfe -->
+      <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] transition-all" title="Hilfe">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <circle cx="12" cy="12" r="9"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m0 3.5h.01"/>
+        </svg>
+        <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-white/10 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Hilfe</span>
+      </a>
+
+      <!-- Abmelden -->
+      <a href="#" class="group relative w-12 h-12 flex items-center justify-center rounded-xl text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-all" title="Abmelden">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        <span class="absolute left-16 bg-[#161a24] text-xs font-medium px-2.5 py-1.5 rounded-lg border border-rose-500/20 text-rose-300 opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">Abmelden</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN APPLICATION AREA -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+
+    <!-- TOP CONTEXTUAL RIBBON TOOLBAR (Variant B rethink of top actions with grouped ribbon layout) -->
+    <header class="sticky top-0 z-30 bg-[#0a0d12]/80 backdrop-blur-xl border-b border-white/[0.06] px-8 py-3.5 flex items-center justify-between gap-4">
+      <!-- Breadcrumb & Page Identifier -->
+      <div class="flex items-center gap-3">
+        <button class="md:hidden text-slate-400 hover:text-white p-2 rounded-lg bg-white/5" title="Menü umschalten">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <div class="flex items-center gap-2 text-xs font-mono tracking-wider text-slate-400">
+          <span class="text-teal-400 font-semibold">FINANCE_MANAGER</span>
+          <span>/</span>
+          <span>ANALYTICS</span>
+          <span>/</span>
+          <span class="text-slate-200">BERICHTS-DASHBOARD</span>
+        </div>
+      </div>
+
+      <!-- Ribbon Toolbar Actions: Grouped Actions + Filter Button -->
+      <div class="flex items-center gap-3">
+        <!-- Search Quick Bar -->
+        <div class="relative hidden lg:block">
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" placeholder="In Berichten suchen..." class="bg-[#11141c] border border-white/[0.08] text-xs rounded-xl pl-9 pr-8 py-2 w-64 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-400/50 transition-all font-sans" />
+          <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">⌘K</span>
+        </div>
+
+        <!-- Ribbon Action Group: Export, Übertrag, Buchung -->
+        <div class="flex items-center bg-[#11141c] p-1 rounded-xl border border-white/[0.07] gap-1">
+          <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span>Export</span>
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+            <span>Übertrag</span>
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-teal-300 hover:text-teal-200 hover:bg-teal-400/10 transition-all">
+            <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span>+ Buchung</span>
+          </button>
+        </div>
+
+        <!-- FILTER-BUTTON (Explicitly Requested: Ribbon mit Filter-Button, der den Filterdialog öffnet) -->
+        <button id="openFilterBtn" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-teal-400 to-teal-500 text-dark-950 hover:brightness-110 shadow-lg shadow-teal-500/25 transition-all font-sans cursor-pointer active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+          </svg>
+          <span>Filter & Kriterien</span>
+          <span class="w-2 h-2 rounded-full bg-dark-950/60 ring-2 ring-teal-200"></span>
+        </button>
+
+        <!-- User Profile Quick Indicator -->
+        <div class="h-8 w-px bg-white/10 mx-0.5 hidden sm:block"></div>
+        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-400 to-violet-500 p-[1.5px] cursor-pointer" title="Finanz-Profil">
+          <div class="w-full h-full bg-[#11141c] rounded-full flex items-center justify-center text-[11px] font-bold text-teal-300 font-mono">
+            FM
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- SCROLLABLE DASHBOARD CONTENT AREA -->
+    <main class="p-8 max-w-[1600px] w-full mx-auto space-y-7">
+
+      <!-- HERO BANNER / KPI BAR -->
+      <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
+        <div>
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-300 text-xs font-medium mb-2.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+            Echtzeit-Aggregat • Konsolidiertes Geschäftsjahr 2024
+          </div>
+          <h1 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">Berichts-Dashboard</h1>
+          <p class="text-sm text-slate-400 mt-1 max-w-2xl">
+            Zentralisierte Analyse sämtlicher Finanzströme, Liquiditätsverläufe und Spartrends im Vergleich zum Vormonat.
+          </p>
+        </div>
+
+        <!-- Filter Status Tag / Time Range Quick Toggle -->
+        <div class="flex items-center gap-2 self-start md:self-auto">
+          <div class="flex items-center bg-[#11141c] border border-white/[0.08] p-1 rounded-xl text-xs font-medium">
+            <button class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">30 Tage</button>
+            <button class="px-3 py-1.5 rounded-lg bg-teal-400/20 text-teal-300 border border-teal-400/30">Aktuelles Quartal</button>
+            <button class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">Jahr 2024</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOP SUMMARY KPI CARDS (Expressive KPI typography) -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: Gesamteinnahmen -->
+        <div class="glass-panel rounded-2xl p-5 relative overflow-hidden transition-all duration-300 hover:border-teal-400/30">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
+            <span>Gesamteinnahmen</span>
+            <span class="text-teal-400 bg-teal-400/10 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">+18,4%</span>
+          </div>
+          <div class="mt-3 text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-mono">
+            48.250,00 <span class="text-teal-400 text-lg font-sans font-bold">€</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            <span>+7.510 € vs. Vorperiode</span>
+          </div>
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-teal-500/10 rounded-full blur-xl pointer-events-none"></div>
+        </div>
+
+        <!-- KPI 2: Gesamtausgaben -->
+        <div class="glass-panel rounded-2xl p-5 relative overflow-hidden transition-all duration-300 hover:border-violet-400/30">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
+            <span>Gesamtausgaben</span>
+            <span class="text-violet-400 bg-violet-400/10 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">-4,2%</span>
+          </div>
+          <div class="mt-3 text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-mono">
+            29.840,50 <span class="text-violet-400 text-lg font-sans font-bold">€</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+            <span>Optimiert • Innerhalb Budgetgrenze</span>
+          </div>
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-violet-500/10 rounded-full blur-xl pointer-events-none"></div>
+        </div>
+
+        <!-- KPI 3: Netto-Cashflow -->
+        <div class="glass-panel rounded-2xl p-5 relative overflow-hidden transition-all duration-300 hover:border-teal-400/30">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
+            <span>Netto-Überschuss</span>
+            <span class="text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">Positiv</span>
+          </div>
+          <div class="mt-3 text-2xl lg:text-3xl font-extrabold text-teal-300 tracking-tight font-mono">
+            +18.409,50 <span class="text-teal-400 text-lg font-sans font-bold">€</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+            <span>Sparquote: 38,15%</span>
+          </div>
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-teal-400/10 rounded-full blur-xl pointer-events-none"></div>
+        </div>
+
+        <!-- KPI 4: Konsolidierter Depotstand -->
+        <div class="glass-panel rounded-2xl p-5 relative overflow-hidden transition-all duration-300 hover:border-slate-500/30">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
+            <span>Portfolio & Liquidität</span>
+            <span class="text-slate-300 bg-white/10 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold">6 Konten</span>
+          </div>
+          <div class="mt-3 text-2xl lg:text-3xl font-extrabold text-white tracking-tight font-mono">
+            142.850,40 <span class="text-slate-400 text-lg font-sans font-bold">€</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <span class="text-teal-400 font-mono font-medium">✓ GoBD-konform</span>
+            <span>• Auto-Abgleich 98,4%</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- GRID WITH REQUESTED CHART-KARTEN:
+           1. Ausgaben/Einnahmen über Zeit (Bar Chart / Timeline)
+           2. Top-Kategorien (Donut Chart)
+           3. Kontoentwicklung (Linienchart)
+      -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- CHART-KARTE 1: Ausgaben / Einnahmen über Zeit (Timeline Bar Chart) [8 Cols on LG] -->
+        <section class="lg:col-span-8 glass-panel rounded-3xl p-6 lg:p-7 relative flex flex-col justify-between">
+          <div>
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
+              <div>
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-xl bg-teal-400/15 text-teal-300 flex items-center justify-center border border-teal-400/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-base font-bold text-white tracking-wide">Ausgaben / Einnahmen über Zeit</h2>
+                    <p class="text-xs text-slate-400">Monatlicher Saldenvergleich und Deckungsgrad</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Legend -->
+              <div class="flex items-center gap-4 text-xs font-medium">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-md bg-teal-400 shadow-sm shadow-teal-400/50"></span>
+                  <span class="text-slate-300">Einnahmen</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-md bg-violet-500 shadow-sm shadow-violet-500/50"></span>
+                  <span class="text-slate-300">Ausgaben</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-slate-500 border-l border-white/10 pl-3">
+                  <span class="font-mono text-[11px]">EUR (€)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart Canvas / Visual Bars -->
+            <div class="mt-6 pt-2">
+              <!-- Y-Axis Grid Lines & Values -->
+              <div class="h-64 w-full flex flex-col justify-between relative text-[11px] font-mono text-slate-500 select-none">
+                <div class="flex items-center w-full">
+                  <span class="w-12 text-right pr-3">12.000 €</span>
+                  <div class="flex-1 h-px bg-white/[0.05]"></div>
+                </div>
+                <div class="flex items-center w-full">
+                  <span class="w-12 text-right pr-3">9.000 €</span>
+                  <div class="flex-1 h-px bg-white/[0.05]"></div>
+                </div>
+                <div class="flex items-center w-full">
+                  <span class="w-12 text-right pr-3">6.000 €</span>
+                  <div class="flex-1 h-px bg-white/[0.05]"></div>
+                </div>
+                <div class="flex items-center w-full">
+                  <span class="w-12 text-right pr-3">3.000 €</span>
+                  <div class="flex-1 h-px bg-white/[0.05]"></div>
+                </div>
+                <div class="flex items-center w-full">
+                  <span class="w-12 text-right pr-3">0 €</span>
+                  <div class="flex-1 h-px bg-white/[0.1]"></div>
+                </div>
+
+                <!-- Bar Columns Container Overlay -->
+                <div class="absolute inset-x-0 bottom-0 top-3 left-12 right-2 flex items-end justify-between px-3">
+                  
+                  <!-- Mai -->
+                  <div class="flex flex-col items-center gap-2 group flex-1 max-w-[54px]">
+                    <div class="flex items-end gap-1.5 h-52 w-full justify-center">
+                      <!-- Einnahmen Bar -->
+                      <div class="w-4 bg-gradient-to-t from-teal-500/40 to-teal-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125 group-hover:w-4.5" style="height: 65%;">
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 -translate-x-1/2 bg-[#161a24] text-[10px] font-mono px-2 py-1 rounded text-teal-300 whitespace-nowrap border border-teal-400/30 z-20">7.800 €</div>
+                      </div>
+                      <!-- Ausgaben Bar -->
+                      <div class="w-4 bg-gradient-to-t from-violet-600/40 to-violet-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125 group-hover:w-4.5" style="height: 48%;">
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 -translate-x-1/2 bg-[#161a24] text-[10px] font-mono px-2 py-1 rounded text-violet-300 whitespace-nowrap border border-violet-400/30 z-20">5.750 €</div>
+                      </div>
+                    </div>
+                    <span class="text-xs font-medium text-slate-400 group-hover:text-teal-300">Mai</span>
+                  </div>
+
+                  <!-- Jun -->
+                  <div class="flex flex-col items-center gap-2 group flex-1 max-w-[54px]">
+                    <div class="flex items-end gap-1.5 h-52 w-full justify-center">
+                      <div class="w-4 bg-gradient-to-t from-teal-500/40 to-teal-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 72%;"></div>
+                      <div class="w-4 bg-gradient-to-t from-violet-600/40 to-violet-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 52%;"></div>
+                    </div>
+                    <span class="text-xs font-medium text-slate-400 group-hover:text-teal-300">Jun</span>
+                  </div>
+
+                  <!-- Jul -->
+                  <div class="flex flex-col items-center gap-2 group flex-1 max-w-[54px]">
+                    <div class="flex items-end gap-1.5 h-52 w-full justify-center">
+                      <div class="w-4 bg-gradient-to-t from-teal-500/40 to-teal-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 60%;"></div>
+                      <div class="w-4 bg-gradient-to-t from-violet-600/40 to-violet-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 58%;"></div>
+                    </div>
+                    <span class="text-xs font-medium text-slate-400 group-hover:text-teal-300">Jul</span>
+                  </div>
+
+                  <!-- Aug -->
+                  <div class="flex flex-col items-center gap-2 group flex-1 max-w-[54px]">
+                    <div class="flex items-end gap-1.5 h-52 w-full justify-center">
+                      <div class="w-4 bg-gradient-to-t from-teal-500/40 to-teal-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 84%;"></div>
+                      <div class="w-4 bg-gradient-to-t from-violet-600/40 to-violet-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 44%;"></div>
+                    </div>
+                    <span class="text-xs font-medium text-slate-400 group-hover:text-teal-300">Aug</span>
+                  </div>
+
+                  <!-- Sep -->
+                  <div class="flex flex-col items-center gap-2 group flex-1 max-w-[54px]">
+                    <div class="flex items-end gap-1.5 h-52 w-full justify-center">
+                      <div class="w-4 bg-gradient-to-t from-teal-500/40 to-teal-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 68%;"></div>
+                      <div class="w-4 bg-gradient-to-t from-violet-600/40 to-violet-400 rounded-t-lg transition-all duration-300 group-hover:brightness-125" style="height: 50%;"></div>
+                    </div>
+                    <span class="text-xs font-medium text-slate-400 group-hover:text-teal-300">Sep</span>
+                  </div>
+
+                  <!-- Okt (Current Active) -->
+                  <div class="flex flex-col items-center gap-2 group flex-1 max-w-[54px] relative">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-teal-400 shadow-sm shadow-teal-400"></div>
+                    <div class="flex items-end gap-1.5 h-52 w-full justify-center bg-teal-400/5 rounded-xl pt-2 px-1 border border-teal-400/20">
+                      <div class="w-4 bg-gradient-to-t from-teal-500/50 to-teal-300 rounded-t-lg shadow-lg shadow-teal-500/30" style="height: 92%;"></div>
+                      <div class="w-4 bg-gradient-to-t from-violet-600/50 to-violet-400 rounded-t-lg shadow-lg shadow-violet-500/30" style="height: 56%;"></div>
+                    </div>
+                    <span class="text-xs font-bold text-teal-300">Okt</span>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Micro-Summary for Chart 1 -->
+          <div class="mt-6 pt-4 border-t border-white/[0.06] grid grid-cols-3 gap-2 text-center">
+            <div class="bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
+              <div class="text-[11px] text-slate-400">Durchschnitt Einnahmen</div>
+              <div class="text-sm font-bold font-mono text-teal-300 mt-0.5">8.041,60 €</div>
+            </div>
+            <div class="bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
+              <div class="text-[11px] text-slate-400">Durchschnitt Ausgaben</div>
+              <div class="text-sm font-bold font-mono text-violet-300 mt-0.5">4.973,40 €</div>
+            </div>
+            <div class="bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
+              <div class="text-[11px] text-slate-400">Durchschnittl. Sparrate</div>
+              <div class="text-sm font-bold font-mono text-emerald-400 mt-0.5">+38,1 %</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CHART-KARTE 2: Top-Kategorien (Donut Chart) [4 Cols on LG] -->
+        <section class="lg:col-span-4 glass-panel rounded-3xl p-6 lg:p-7 flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute -top-12 -right-12 w-36 h-36 bg-violet-600/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div>
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center border border-violet-500/20">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke-width="2"/>
+                    <path stroke-width="2" d="M12 3a9 9 0 019 9h-9V3z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 class="text-base font-bold text-white tracking-wide">Top-Kategorien</h2>
+                  <p class="text-xs text-slate-400">Ausgabenverteilung & Budgets</p>
+                </div>
+              </div>
+              <span class="text-[11px] font-mono text-teal-300 bg-teal-400/10 px-2 py-1 rounded-lg border border-teal-400/20">100% Soll</span>
+            </div>
+
+            <!-- Donut Visual (SVG Donut with Center Expressive Text) -->
+            <div class="mt-6 flex flex-col items-center">
+              <div class="relative w-44 h-44 flex items-center justify-center">
+                <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                  <!-- Background Ring -->
+                  <circle cx="50" cy="50" r="38" stroke="rgba(255,255,255,0.05)" stroke-width="12" fill="none"/>
+                  
+                  <!-- Segment 1: IT & Cloud (Teal 35%) -->
+                  <!-- Circumference = 2 * PI * 38 = 238.76 -->
+                  <!-- 35% = 83.5 -->
+                  <circle cx="50" cy="50" r="38" stroke="#2dd4bf" stroke-width="12" stroke-dasharray="83.5 238.76" stroke-dashoffset="0" fill="none" class="transition-all duration-500 hover:opacity-90"/>
+                  
+                  <!-- Segment 2: Miete & Büro (Violet 25% = 59.7) -->
+                  <circle cx="50" cy="50" r="38" stroke="#8b5cf6" stroke-width="12" stroke-dasharray="59.7 238.76" stroke-dashoffset="-83.5" fill="none" class="transition-all duration-500 hover:opacity-90"/>
+
+                  <!-- Segment 3: Steuern & Beratung (Cyan 20% = 47.7) -->
+                  <circle cx="50" cy="50" r="38" stroke="#38bdf8" stroke-width="12" stroke-dasharray="47.7 238.76" stroke-dashoffset="-143.2" fill="none" class="transition-all duration-500 hover:opacity-90"/>
+
+                  <!-- Segment 4: Mobilität & Reisen (Amber 12% = 28.6) -->
+                  <circle cx="50" cy="50" r="38" stroke="#fbbf24" stroke-width="12" stroke-dasharray="28.6 238.76" stroke-dashoffset="-190.9" fill="none" class="transition-all duration-500 hover:opacity-90"/>
+
+                  <!-- Segment 5: Sonstiges (Slate 8% = 19.1) -->
+                  <circle cx="50" cy="50" r="38" stroke="#64748b" stroke-width="12" stroke-dasharray="19.1 238.76" stroke-dashoffset="-219.5" fill="none" class="transition-all duration-500 hover:opacity-90"/>
+                </svg>
+
+                <!-- Center Donut Text -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span class="text-[10px] uppercase font-mono tracking-wider text-slate-400">Total Ausgaben</span>
+                  <span class="text-xl font-bold font-mono text-white mt-0.5">29.840 €</span>
+                  <span class="text-[10px] text-teal-400 font-medium mt-0.5">5 Segmente</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Category Breakdown Legend List -->
+            <div class="mt-6 space-y-2.5">
+              <!-- Item 1 -->
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
+                  <span class="text-slate-200 font-medium">IT-Infrastruktur & Cloud</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono">
+                  <span class="text-white font-semibold">10.444 €</span>
+                  <span class="text-teal-400 text-[11px] w-8 text-right">35%</span>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span>
+                  <span class="text-slate-200 font-medium">Miete & Arbeitsplätze</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono">
+                  <span class="text-white font-semibold">7.460 €</span>
+                  <span class="text-violet-400 text-[11px] w-8 text-right">25%</span>
+                </div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+                  <span class="text-slate-200 font-medium">Kanzlei & Steuerberatung</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono">
+                  <span class="text-white font-semibold">5.968 €</span>
+                  <span class="text-sky-400 text-[11px] w-8 text-right">20%</span>
+                </div>
+              </div>
+
+              <!-- Item 4 -->
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                  <span class="text-slate-200 font-medium">Reisen & Vertrieb</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono">
+                  <span class="text-white font-semibold">3.580 €</span>
+                  <span class="text-amber-400 text-[11px] w-8 text-right">12%</span>
+                </div>
+              </div>
+
+              <!-- Item 5 -->
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                  <span class="text-slate-300">Sonstiges & Lizenzen</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono">
+                  <span class="text-slate-200 font-semibold">2.388 €</span>
+                  <span class="text-slate-400 text-[11px] w-8 text-right">8%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CHART-KARTE 3: Kontoentwicklung Linie (Line Chart Grid) [12 Cols Full Width] -->
+        <section class="lg:col-span-12 glass-panel rounded-3xl p-6 lg:p-7 relative overflow-hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/[0.06]">
+            <div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-teal-400/15 text-teal-300 flex items-center justify-center border border-teal-400/20">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 class="text-base font-bold text-white tracking-wide">Kontoentwicklung & Liquiditätskurve</h2>
+                  <p class="text-xs text-slate-400">Kumulierter Verlauf aller verknüpften Geschäfts- und Anlagekonten</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metric Chips & Legend -->
+            <div class="flex flex-wrap items-center gap-3 text-xs">
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#11141c] border border-white/[0.07]">
+                <span class="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
+                <span class="text-slate-300">Hauptgirokonto (Sparkasse)</span>
+              </div>
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#11141c] border border-white/[0.07]">
+                <span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span>
+                <span class="text-slate-300">Wertpapierdepot (Scalable)</span>
+              </div>
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#11141c] border border-white/[0.07]">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+                <span class="text-slate-300">Tagesgeld (Deutsche Bank)</span>
+              </div>
+              <div class="bg-teal-400/10 border border-teal-400/30 text-teal-300 px-3 py-1.5 rounded-xl font-mono font-semibold">
+                Stichtag: Heute
+              </div>
+            </div>
+          </div>
+
+          <!-- Line Chart SVG Graphic -->
+          <div class="mt-6 relative">
+            <!-- Y-Axis labels & Grid lines -->
+            <div class="h-72 w-full flex flex-col justify-between text-[11px] font-mono text-slate-500">
+              <div class="flex items-center w-full">
+                <span class="w-16 text-right pr-3">150.000 €</span>
+                <div class="flex-1 h-px bg-white/[0.04]"></div>
+              </div>
+              <div class="flex items-center w-full">
+                <span class="w-16 text-right pr-3">125.000 €</span>
+                <div class="flex-1 h-px bg-white/[0.04]"></div>
+              </div>
+              <div class="flex items-center w-full">
+                <span class="w-16 text-right pr-3">100.000 €</span>
+                <div class="flex-1 h-px bg-white/[0.04]"></div>
+              </div>
+              <div class="flex items-center w-full">
+                <span class="w-16 text-right pr-3">75.000 €</span>
+                <div class="flex-1 h-px bg-white/[0.04]"></div>
+              </div>
+              <div class="flex items-center w-full">
+                <span class="w-16 text-right pr-3">50.000 €</span>
+                <div class="flex-1 h-px bg-white/[0.08]"></div>
+              </div>
+
+              <!-- SVG Line Graph overlay with gradients -->
+              <div class="absolute inset-x-0 bottom-0 top-3 left-16 right-4">
+                <svg class="w-full h-full overflow-visible" viewBox="0 0 1000 250" preserveAspectRatio="none">
+                  <defs>
+                    <!-- Gradient for Area fill (Total/Teal) -->
+                    <linearGradient id="tealAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.25"/>
+                      <stop offset="90%" stop-color="#2dd4bf" stop-opacity="0.0"/>
+                    </linearGradient>
+                    <!-- Gradient for Area fill (Depot/Violet) -->
+                    <linearGradient id="violetAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+                      <stop offset="95%" stop-color="#8b5cf6" stop-opacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+
+                  <!-- Depot Area Fill (Scalable) -->
+                  <path d="M 0,180 Q 150,165 300,150 T 600,120 T 850,90 T 1000,75 L 1000,250 L 0,250 Z" fill="url(#violetAreaGrad)" />
+                  <!-- Depot Line (Scalable) -->
+                  <path d="M 0,180 Q 150,165 300,150 T 600,120 T 850,90 T 1000,75" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="4 4" class="opacity-80"/>
+
+                  <!-- Primary Liquiditäts-Area Fill (Teal) -->
+                  <path d="M 0,140 Q 120,130 250,95 T 500,110 T 750,60 T 1000,32 L 1000,250 L 0,250 Z" fill="url(#tealAreaGrad)" />
+                  
+                  <!-- Primary Liquiditäts-Line (Teal) -->
+                  <path d="M 0,140 Q 120,130 250,95 T 500,110 T 750,60 T 1000,32" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+                  <!-- Data Point Coordinates on Teal Line -->
+                  <!-- Point 1 -->
+                  <circle cx="0" cy="140" r="4" fill="#0a0d12" stroke="#2dd4bf" stroke-width="2.5"/>
+                  <!-- Point 2 -->
+                  <circle cx="250" cy="95" r="4" fill="#0a0d12" stroke="#2dd4bf" stroke-width="2.5"/>
+                  <!-- Point 3 -->
+                  <circle cx="500" cy="110" r="4" fill="#0a0d12" stroke="#2dd4bf" stroke-width="2.5"/>
+                  <!-- Point 4 -->
+                  <circle cx="750" cy="60" r="4" fill="#0a0d12" stroke="#2dd4bf" stroke-width="2.5"/>
+                  
+                  <!-- Active Target Stichtag Point (142.850 €) -->
+                  <circle cx="1000" cy="32" r="6" fill="#2dd4bf" stroke="#ffffff" stroke-width="2" class="animate-pulse"/>
+                </svg>
+
+                <!-- Tooltip Overlay on Current Value -->
+                <div class="absolute right-0 top-1 -translate-y-full bg-[#161a24] border border-teal-400/40 rounded-xl px-3 py-1.5 shadow-xl text-right">
+                  <div class="text-[10px] font-mono text-slate-400">Aktueller Stand (24. Okt)</div>
+                  <div class="text-xs font-bold font-mono text-teal-300">142.850,40 €</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- X-Axis Labels (Date Timeline) -->
+            <div class="flex justify-between pl-16 pr-4 pt-3 text-[11px] font-mono text-slate-400 border-t border-white/[0.06]">
+              <span>01. Mai</span>
+              <span>01. Jun</span>
+              <span>01. Jul</span>
+              <span>01. Aug</span>
+              <span>01. Sep</span>
+              <span class="text-teal-300 font-bold">24. Okt (Heute)</span>
+            </div>
+          </div>
+
+          <!-- Account Mini-Stat Badges Under Chart -->
+          <div class="mt-6 pt-5 border-t border-white/[0.06] grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+              <div>
+                <div class="text-xs font-medium text-slate-300">Hauptgirokonto (Sparkasse)</div>
+                <div class="text-[11px] font-mono text-slate-500">DE89 2005 0550 ... 4410</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold font-mono text-white">68.420,00 €</div>
+                <div class="text-[10px] font-mono text-teal-400">+4.250 € lfd. Monat</div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+              <div>
+                <div class="text-xs font-medium text-slate-300">Geschäftskonto (Commerzbank)</div>
+                <div class="text-[11px] font-mono text-slate-500">DE44 2004 0000 ... 9102</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold font-mono text-white">42.180,40 €</div>
+                <div class="text-[10px] font-mono text-violet-400">GoBD-Geprüft</div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+              <div>
+                <div class="text-xs font-medium text-slate-300">Depot & Rücklagen (Scalable & DB)</div>
+                <div class="text-[11px] font-mono text-slate-500">Zins- & Wertpapierallokation</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold font-mono text-white">32.250,00 €</div>
+                <div class="text-[10px] font-mono text-emerald-400">+14,82% Rendite</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- FILTERDIALOG (Modal / Dialog - geöffnet durch den Ribbon-Filter-Button) -->
+  <div id="filterModal" class="fixed inset-0 z-50 bg-[#07090e]/80 backdrop-blur-md flex items-center justify-center p-4 transition-all opacity-100">
+    <div class="glass-panel w-full max-w-xl rounded-3xl p-7 border border-teal-400/30 shadow-2xl relative">
+      <!-- Glow effect -->
+      <div class="absolute -top-12 -left-12 w-48 h-48 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Dialog Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white tracking-tight">Berichtsfilter & Kriterien</h3>
+            <p class="text-xs text-slate-400">Passen Sie den Datenraum des aktuellen Berichts-Dashboards an</p>
+          </div>
+        </div>
+        <button id="closeFilterBtn" class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Filter Controls Form -->
+      <div class="mt-6 space-y-5 text-xs">
+        <!-- Filter 1: Zeitraum -->
+        <div>
+          <label class="block text-slate-300 font-semibold mb-2">Zeitraum & Intervall</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <span class="text-[11px] text-slate-500 mb-1 block">Von</span>
+              <input type="date" value="2024-05-01" class="w-full bg-[#11141c] border border-white/[0.08] text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-400/50 font-mono text-xs" />
+            </div>
+            <div>
+              <span class="text-[11px] text-slate-500 mb-1 block">Bis</span>
+              <input type="date" value="2024-10-24" class="w-full bg-[#11141c] border border-white/[0.08] text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-400/50 font-mono text-xs" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter 2: Konten-Auswahl -->
+        <div>
+          <label class="block text-slate-300 font-semibold mb-2">Einzubeziehende Konten (6 ausgewählt)</label>
+          <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+            <label class="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] cursor-pointer hover:bg-white/[0.04]">
+              <span class="flex items-center gap-2 text-slate-200">
+                <input type="checkbox" checked class="rounded border-slate-700 text-teal-400 focus:ring-teal-400/20 bg-dark-900" />
+                <span>Hauptgirokonto (Sparkasse)</span>
+              </span>
+              <span class="font-mono text-slate-500 text-[11px]">DE89...4410</span>
+            </label>
+            <label class="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] cursor-pointer hover:bg-white/[0.04]">
+              <span class="flex items-center gap-2 text-slate-200">
+                <input type="checkbox" checked class="rounded border-slate-700 text-teal-400 focus:ring-teal-400/20 bg-dark-900" />
+                <span>Geschäftskonto (Commerzbank)</span>
+              </span>
+              <span class="font-mono text-slate-500 text-[11px]">DE44...9102</span>
+            </label>
+            <label class="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] cursor-pointer hover:bg-white/[0.04]">
+              <span class="flex items-center gap-2 text-slate-200">
+                <input type="checkbox" checked class="rounded border-slate-700 text-teal-400 focus:ring-teal-400/20 bg-dark-900" />
+                <span>Wertpapierdepot (Scalable Capital)</span>
+              </span>
+              <span class="font-mono text-slate-500 text-[11px]">DEP-89104</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Filter 3: Buchungsarten & Schwellenwert -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-2">Buchungstyp</label>
+            <select class="w-full bg-[#11141c] border border-white/[0.08] text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-400/50 text-xs">
+              <option>Alle Buchungen (Einnahmen & Ausgaben)</option>
+              <option>Nur Ausgaben</option>
+              <option>Nur Einnahmen</option>
+              <option>Nur steuerrelevante Posten</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-2">Mindestbetrag (€)</label>
+            <input type="number" placeholder="z. B. 50,00" class="w-full bg-[#11141c] border border-white/[0.08] text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-400/50 font-mono text-xs" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Dialog Footer Actions -->
+      <div class="mt-7 pt-4 border-t border-white/[0.08] flex items-center justify-between">
+        <button id="resetFilterBtn" class="text-xs text-slate-400 hover:text-white transition-colors">
+          Filter zurücksetzen
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="cancelFilterBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-white/[0.05] hover:bg-white/[0.1] transition-all">
+            Abbrechen
+          </button>
+          <button id="applyFilterBtn" class="px-5 py-2 rounded-xl text-xs font-bold bg-teal-400 text-dark-950 hover:bg-teal-300 transition-all shadow-lg shadow-teal-500/20">
+            Filter anwenden
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive script to toggle modal for demonstration -->
+  <script>
+    const filterModal = document.getElementById('filterModal');
+    const openBtn = document.getElementById('openFilterBtn');
+    const closeBtn = document.getElementById('closeFilterBtn');
+    const cancelBtn = document.getElementById('cancelFilterBtn');
+    const applyBtn = document.getElementById('applyFilterBtn');
+
+    function closeModal() {
+      filterModal.classList.add('hidden');
+    }
+    function openModal() {
+      filterModal.classList.remove('hidden');
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (applyBtn) applyBtn.addEventListener('click', closeModal);
+    if (openBtn) openBtn.addEventListener('click', openModal);
+
+    // Optional: click outside modal backdrop to close
+    filterModal.addEventListener('click', (e) => {
+      if (e.target === filterModal) closeModal();
+    });
+  </script>
+</body>
+</html>

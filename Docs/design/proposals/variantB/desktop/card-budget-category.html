@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#00354a","surface":"#111319","on-primary":"#003731","secondary":"#d0bcff","on-error-container":"#ffdad6","surface-dim":"#111319","tertiary-fixed-dim":"#7bd0ff","on-secondary-fixed-variant":"#5516be","background":"#111319","primary-container":"#2dd4bf","on-primary-fixed-variant":"#005047","inverse-primary":"#006b5f","surface-tint":"#3cddc7","on-tertiary-fixed-variant":"#004c69","primary-fixed":"#62fae3","on-primary-container":"#00574d","on-secondary-fixed":"#23005c","on-secondary":"#3c0091","secondary-fixed":"#e9ddff","inverse-on-surface":"#2e3036","on-tertiary-container":"#005371","surface-container-lowest":"#0b0e13","surface-container-high":"#272a30","on-secondary-container":"#c4abff","on-surface":"#e1e2ea","on-primary-fixed":"#00201c","error-container":"#93000a","surface-variant":"#32353b","on-background":"#e1e2ea","primary":"#57f1db","surface-bright":"#36393f","secondary-fixed-dim":"#d0bcff","surface-container-highest":"#32353b","outline-variant":"#3c4a46","primary-fixed-dim":"#3cddc7","on-surface-variant":"#bacac5","surface-container-low":"#191c21","tertiary-container":"#5ec9ff","tertiary-fixed":"#c4e7ff","surface-container":"#1d2025","secondary-container":"#571bc1","tertiary":"#afe0ff","error":"#ffb4ab","on-tertiary-fixed":"#001e2c","on-error":"#690005","inverse-surface":"#e1e2ea","outline":"#859490"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"gutter":"1rem","margin-tablet":"1.5rem","space-md":"1rem","space-xs":"0.25rem","space-xl":"2.5rem","space-lg":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem","margin":"1rem","gutter-desktop":"1.5rem"},fontFamily:{"display-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"]},fontSize:{"display-lg":["3.5rem",{lineHeight:"4rem",letterSpacing:"-0.03em",fontWeight:"700"}],"headline-lg-mobile":["1.5rem",{lineHeight:"2rem",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-lg":["2rem",{lineHeight:"2.5rem",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["1.25rem",{lineHeight:"1.75rem",letterSpacing:"-0.01em",fontWeight:"600"}],"body-lg":["1rem",{lineHeight:"1.5rem",fontWeight:"400"}],"headline-sm":["1.125rem",{lineHeight:"1.5rem",fontWeight:"600"}],"label-sm":["0.6875rem",{lineHeight:"0.875rem",letterSpacing:"0.04em",fontWeight:"500"}],"label-lg":["0.875rem",{lineHeight:"1.25rem",letterSpacing:"0.01em",fontWeight:"600"}],"body-md":["0.875rem",{lineHeight:"1.25rem",fontWeight:"400"}],"display-lg-mobile":["2.25rem",{lineHeight:"2.75rem",letterSpacing:"-0.02em",fontWeight:"700"}],"label-md":["0.75rem",{lineHeight:"1rem",letterSpacing:"0.02em",fontWeight:"600"}],"body-sm":["0.75rem",{lineHeight:"1rem",fontWeight:"400"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-16 bg-surface-container-lowest/85 backdrop-blur-xl z-50 flex flex-col items-center justify-between py-space-sm shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col items-center w-full gap-space-sm"><div class="h-12 w-12 rounded-xl bg-surface-container flex items-center justify-center text-primary shadow-[0_0_16px_rgba(45,212,191,0.2)]" title="FinanceManager"><span class="material-symbols-outlined text-[24px]">account_balance</span></div><nav class="flex flex-col items-center w-full gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-headline-sm"><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="start" href="#" title="Start"><span class="material-symbols-outlined text-[20px]">home</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined text-[20px]">wallet</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined text-[20px]">contacts</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined text-[20px]">savings</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined text-[20px]">trending_up</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined text-[20px]">receipt_long</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined text-[20px]">pie_chart</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined text-[20px]">analytics</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined text-[20px]">group</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined text-[20px]">smart_toy</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined text-[20px]">settings</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined text-[20px]">help</span></a></nav></div><div class="flex flex-col items-center w-full gap-space-xs"><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></aside><div class="pl-16"><header class="fixed top-0 left-16 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl z-40 flex items-center justify-between px-gutter-desktop shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-md text-label-md"><span class="text-on-surface-variant tracking-wider uppercase">VERWALTUNG</span><span class="text-on-surface-variant">›</span><span class="text-primary font-headline-sm text-headline-sm tracking-normal">KI-Zugänge</span></div><div class="hidden md:flex items-center ml-space-lg"><button class="flex items-center gap-space-xs bg-primary-container text-on-primary-container font-label-lg text-label-lg px-space-md py-space-xs rounded-lg shadow-[0_0_16px_rgba(45,212,191,0.25)] hover:bg-primary transition-all"><span class="material-symbols-outlined text-[18px]">add</span><span>Neu</span></button></div></div><div class="flex items-center gap-space-md"><button class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface relative transition-all"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden sm:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface">Max Mustermann</span><span class="font-label-sm text-label-sm text-on-surface-variant">Quant Desk DE</span></div></div></div></header><main class="relative pt-16 bg-background w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-space-xl">
+<!-- Glow Orbs (Contained Absolute Background Dynamics) -->
+<div class="relative w-full">
+<div class="absolute -top-12 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[128px] pointer-events-none"></div>
+<div class="absolute top-48 right-10 w-80 h-80 bg-secondary/10 rounded-full blur-[140px] pointer-events-none"></div>
+</div>
+<!-- CONTEXTUAL ACTION RIBBON / TOOLBAR -->
+<div class="sticky top-16 z-30 mb-space-lg w-full">
+<div class="bg-surface-container/90 backdrop-blur-2xl rounded-xl shadow-2xl p-space-sm flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-sm">
+<!-- Ribbon Group 1: Navigation -->
+<div class="flex items-center gap-space-sm">
+<button class="group flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container-high/60 hover:bg-surface-container-highest text-on-surface transition-all duration-200" type="button">
+<span class="material-symbols-outlined text-primary text-[20px] transition-transform group-hover:-translate-x-0.5">arrow_back</span>
+<span class="font-label-lg text-label-lg">Zurück</span>
+</button>
+<div class="h-6 w-px bg-surface-variant/70 hidden sm:block"></div>
+<div class="hidden sm:flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<span>BUDGET</span>
+<span>/</span>
+<span>KATEGORIEN</span>
+<span>/</span>
+<span class="text-on-surface">DETAIL</span>
+</div>
+</div>
+<!-- Ribbon Group 2: Verwalten -->
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-on-surface-variant/60 uppercase tracking-widest mr-1 hidden lg:inline">Aktionen:</span>
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-primary-container text-on-primary-container font-label-lg text-label-lg shadow-[0_0_20px_rgba(45,212,191,0.25)] hover:bg-primary transition-all duration-200" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Speichern</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container-high/60 hover:bg-surface-container-highest text-on-surface font-label-lg text-label-lg transition-all duration-200" type="button">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+<span>Zurücksetzen</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-error-container/20 hover:bg-error-container/40 text-error font-label-lg text-label-lg transition-all duration-200" title="Kategorie unwiderruflich archivieren / löschen" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span class="hidden sm:inline">Löschen</span>
+</button>
+</div>
+<!-- Ribbon Group 3: Verknüpfte Informationen (Quick Jumps) -->
+<div class="flex items-center gap-space-xs overflow-x-auto py-1 xl:py-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant/60 uppercase tracking-widest mr-1 hidden lg:inline">Sprungmarken:</span>
+<a class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-highest/60 hover:bg-surface-bright text-on-surface-variant hover:text-primary transition-all text-label-sm font-label-sm whitespace-nowrap" href="#zweck-detail">
+<span class="material-symbols-outlined text-[16px] text-primary">hub</span>
+<span>Zugeordneter Zweck</span>
+</a>
+<a class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-highest/60 hover:bg-surface-bright text-on-surface-variant hover:text-secondary transition-all text-label-sm font-label-sm whitespace-nowrap" href="#buchungen">
+<span class="material-symbols-outlined text-[16px] text-secondary">filter_alt</span>
+<span>Umsätze filtern</span>
+</a>
+<a class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-highest/60 hover:bg-surface-bright text-on-surface-variant hover:text-tertiary transition-all text-label-sm font-label-sm whitespace-nowrap" href="#planung">
+<span class="material-symbols-outlined text-[16px] text-tertiary">monitoring</span>
+<span>Budgetplanung</span>
+</a>
+</div>
+</div>
+</div>
+<!-- CATEGORY HERO BANNER & STATUS MATRIX -->
+<section class="mb-space-lg">
+<div class="relative bg-gradient-to-r from-surface-container via-surface-container-high/90 to-surface-container-lowest rounded-xl p-space-lg shadow-xl overflow-hidden">
+<!-- Ambient Backing Glow -->
+<div class="absolute -right-20 -bottom-20 w-72 h-72 bg-secondary/15 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-lg relative z-10">
+<!-- Left: Category Identity -->
+<div class="flex items-center gap-space-md">
+<div class="w-16 h-16 rounded-xl bg-surface-container-highest/90 flex items-center justify-center text-primary shadow-[0_0_24px_rgba(45,212,191,0.2)]">
+<span class="material-symbols-outlined text-[36px]" style="font-variation-settings: 'FILL' 1;">shopping_basket</span>
+</div>
+<div>
+<div class="flex items-center gap-space-sm flex-wrap">
+<span class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Lebensmittel &amp; Grundbedarf</span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                Aktiv • Ausgabenposten
+              </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+              Identifikator: <span class="font-mono text-on-surface">KAT-004-HAUSH</span> • Zuordnung: <span class="text-tertiary font-label-md text-label-md">Haushalt &amp; Lebenshaltung</span>
+</p>
+</div>
+</div>
+<!-- Right: Realtime Meta Pills -->
+<div class="flex items-center gap-space-md w-full lg:w-auto justify-between lg:justify-end">
+<div class="bg-surface-container-lowest/80 px-space-md py-space-sm rounded-lg shadow-sm">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase">Auslastung MTD</div>
+<div class="font-headline-md text-headline-md text-primary mt-0.5">81,8 %</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">450,00 € von 550,00 €</div>
+</div>
+<div class="bg-surface-container-lowest/80 px-space-md py-space-sm rounded-lg shadow-sm">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase">Buchungen Ø/Monat</div>
+<div class="font-headline-md text-headline-md text-secondary mt-0.5">28 Transaktionen</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Trend: stabil (+2,1 %)</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- MAIN 2-COLUMN WORKSPACE: FORM + KPI PANELS -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT COLUMN (8 Cols): KATEGORIEDETAILS & STAMMDATEN -->
+<main class="xl:col-span-8 flex flex-col gap-space-lg min-w-0">
+<!-- Panel: Allgemeine Stammdaten & Postenart -->
+<section class="bg-surface-container/75 backdrop-blur-xl rounded-xl p-space-lg shadow-lg">
+<header class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[22px]">tune</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Kategoriedetails &amp; Klassifizierung</h2>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">Pflichtfelder *</span>
+</header>
+<form class="space-y-space-md" onsubmit="event.preventDefault();">
+<!-- Row 1: Name -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm items-center">
+<label class="md:col-span-3 font-label-lg text-label-lg text-on-surface-variant" for="cat-name">
+              Kategoriename *
+            </label>
+<div class="md:col-span-9 relative">
+<input class="w-full bg-surface-container-lowest/90 text-on-surface font-body-lg text-body-lg px-space-md py-space-sm rounded-lg shadow-inner focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="cat-name" type="text" value="Lebensmittel &amp; Grundbedarf"/>
+<span class="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant/50 text-[18px]">edit</span>
+</div>
+</div>
+<!-- Row 2: Postenart (Ausgabe / Einnahme / Umbuchung) -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm items-start">
+<span class="md:col-span-3 font-label-lg text-label-lg text-on-surface-variant pt-2">
+              Postenart *
+            </span>
+<div class="md:col-span-9 grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
+<!-- Option 1: Ausgabe (Selected) -->
+<label class="cursor-pointer relative flex flex-col p-space-sm rounded-lg bg-surface-container-highest/70 shadow-sm transition-all">
+<input checked="" class="peer sr-only" name="postenart" type="radio" value="ausgabe"/>
+<div class="flex items-center justify-between w-full">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-error text-[20px]">arrow_outward</span>
+<span class="font-label-lg text-label-lg text-on-surface">Ausgabe</span>
+</div>
+<div class="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-on-primary"></div>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Verringert Liquidität</span>
+</label>
+<!-- Option 2: Einnahme -->
+<label class="cursor-pointer relative flex flex-col p-space-sm rounded-lg bg-surface-container-lowest/60 hover:bg-surface-container-high/60 transition-all">
+<input class="peer sr-only" name="postenart" type="radio" value="einnahme"/>
+<div class="flex items-center justify-between w-full">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">south_west</span>
+<span class="font-label-lg text-label-lg text-on-surface">Einnahme</span>
+</div>
+<div class="w-4 h-4 rounded-full bg-surface-variant"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Erhöht Ertrag</span>
+</label>
+<!-- Option 3: Umbuchung -->
+<label class="cursor-pointer relative flex flex-col p-space-sm rounded-lg bg-surface-container-lowest/60 hover:bg-surface-container-high/60 transition-all">
+<input class="peer sr-only" name="postenart" type="radio" value="umbuchung"/>
+<div class="flex items-center justify-between w-full">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">sync_alt</span>
+<span class="font-label-lg text-label-lg text-on-surface">Umbuchung</span>
+</div>
+<div class="w-4 h-4 rounded-full bg-surface-variant"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Neutraler Transfer</span>
+</label>
+</div>
+</div>
+<!-- Row 3: Übergeordneter Budgetzweck -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm items-center pt-2" id="zweck-detail">
+<label class="md:col-span-3 font-label-lg text-label-lg text-on-surface-variant" for="budget-purpose">
+              Zweck-Zuordnung *
+            </label>
+<div class="md:col-span-9 flex flex-col sm:flex-row gap-space-sm">
+<div class="relative flex-1">
+<select class="w-full appearance-none bg-surface-container-lowest/90 text-on-surface font-body-lg text-body-lg px-space-md py-space-sm rounded-lg shadow-inner focus:outline-none focus:ring-1 focus:ring-primary transition-all pr-10" id="budget-purpose">
+<option selected="">Haushalt &amp; Lebenshaltung (Basisbedürfnis)</option>
+<option>Mobilität &amp; Pendeln</option>
+<option>Freizeit, Kultur &amp; Konsum</option>
+<option>Vorsorge &amp; Investitionen</option>
+<option>Fixkosten &amp; Wohnen</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+<button class="flex items-center justify-center gap-space-xs px-space-md py-space-sm bg-surface-container-high/60 hover:bg-surface-container-highest text-tertiary rounded-lg font-label-md text-label-md whitespace-nowrap transition-all" title="Zweck-Hierarchie im neuen Tab ansehen" type="button">
+<span class="material-symbols-outlined text-[18px]">account_tree</span>
+<span>Zweck öffnen</span>
+</button>
+</div>
+</div>
+<!-- Row 4: Beschreibung / Notiz -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm items-start pt-2">
+<label class="md:col-span-3 font-label-lg text-label-lg text-on-surface-variant pt-2" for="cat-desc">
+              Beschreibung &amp; Notiz
+            </label>
+<div class="md:col-span-9">
+<textarea class="w-full bg-surface-container-lowest/90 text-on-surface font-body-md text-body-md p-space-md rounded-lg shadow-inner focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-y" id="cat-desc" rows="3">Laufende Ausgaben für Supermarkt, Bäckereien, Frischetheken, Wochenmärkte und täglichen Lebensmittelbedarf. Nicht enthalten sind Restaurant- und Lieferdienstausgaben (siehe separate Kategorie »Gastronomie«).</textarea>
+<div class="flex justify-between items-center mt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sichtbar in Buchungsvorschauen &amp; Analysen</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">192 / 500 Zeichen</span>
+</div>
+</div>
+</div>
+</form>
+</section>
+<!-- Panel: Symbolauswahl & Farbcodierung -->
+<section class="bg-surface-container/75 backdrop-blur-xl rounded-xl p-space-lg shadow-lg">
+<header class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">palette</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Symbol &amp; Visuelle Kennzeichnung</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Iconset: Material FinTech</span>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<!-- Active Preview -->
+<div class="md:col-span-4 flex items-center gap-space-md p-space-md rounded-xl bg-surface-container-lowest/80">
+<div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-[0_0_16px_rgba(45,212,191,0.2)]">
+<span class="material-symbols-outlined text-[30px]" id="active-icon-display" style="font-variation-settings: 'FILL' 1;">shopping_basket</span>
+</div>
+<div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase">Aktives Icon</div>
+<div class="font-headline-sm text-headline-sm text-on-surface mt-0.5">shopping_basket</div>
+<div class="font-body-sm text-body-sm text-primary">Akzent: Teal #2dd4bf</div>
+</div>
+</div>
+<!-- Selector Grid -->
+<div class="md:col-span-8">
+<span class="font-label-sm text-label-sm text-on-surface-variant block mb-space-xs">Schnellwechsler verfügbare Symbole:</span>
+<div class="grid grid-cols-6 sm:grid-cols-8 gap-space-xs">
+<button class="h-10 rounded-lg bg-surface-container-highest text-primary flex items-center justify-center shadow-[0_0_10px_rgba(45,212,191,0.3)] ring-1 ring-primary transition-transform hover:scale-105" title="Korb" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_basket</span>
+</button>
+<button class="h-10 rounded-lg bg-surface-container-lowest/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-transform hover:scale-105" title="Wagen" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+</button>
+<button class="h-10 rounded-lg bg-surface-container-lowest/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-transform hover:scale-105" title="Essen" type="button">
+<span class="material-symbols-outlined text-[20px]">restaurant</span>
+</button>
+<button class="h-10 rounded-lg bg-surface-container-lowest/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-transform hover:scale-105" title="Store" type="button">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+</button>
+<button class="h-10 rounded-lg bg-surface-container-lowest/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-transform hover:scale-105" title="Kaffee" type="button">
+<span class="material-symbols-outlined text-[20px]">local_cafe</span>
+</button>
+<button class="h-10 rounded-lg bg-surface-container-lowest/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-transform hover:scale-105" title="Fastfood" type="button">
+<span class="material-symbols-outlined text-[20px]">fastfood</span>
+</button>
+<button class="h-10 rounded-lg bg-surface-container-lowest/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-transform hover:scale-105" title="Küche" type="button">
+<span class="material-symbols-outlined text-[20px]">kitchen</span>
+</button>
+<button class="h-10 rounded-lg bg-surface-container-lowest/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-transform hover:scale-105" title="Mehr Symbole anzeigen..." type="button">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Panel: Auto-Matching Schlagwörter & Regeln -->
+<section class="bg-surface-container/75 backdrop-blur-xl rounded-xl p-space-lg shadow-lg" id="buchungen">
+<header class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[22px]">smart_toy</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Buchungszuordnungs-Regeln (Auto-Match)</h2>
+</div>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">bolt</span> KI-Erkennung aktiv
+          </span>
+</header>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md">
+          Banktransaktionen mit folgenden Verwendungszweck-Fragmenten oder Auftraggeber-Strings werden automatisch dieser Kategorie zugewiesen.
+        </p>
+<!-- Tag Container -->
+<div class="flex flex-wrap items-center gap-space-xs p-space-sm bg-surface-container-lowest/90 rounded-lg shadow-inner mb-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md">
+<span>REWE</span>
+<button class="text-on-surface-variant hover:text-error transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md">
+<span>EDEKA</span>
+<button class="text-on-surface-variant hover:text-error transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md">
+<span>ALDI</span>
+<button class="text-on-surface-variant hover:text-error transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md">
+<span>LIDL</span>
+<button class="text-on-surface-variant hover:text-error transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md">
+<span>DM-DROGERIE</span>
+<button class="text-on-surface-variant hover:text-error transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md">
+<span>BIO COMPAGNIE</span>
+<button class="text-on-surface-variant hover:text-error transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<span class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md">
+<span>DENNS</span>
+<button class="text-on-surface-variant hover:text-error transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<!-- Add Tag Input Inline -->
+<div class="flex items-center gap-1 ml-1 flex-1 min-w-[160px]">
+<input class="bg-transparent text-on-surface font-body-sm text-body-sm focus:outline-none placeholder:text-on-surface-variant/50 w-full" placeholder="+ Schlagwort hinzufügen..." type="text"/>
+</div>
+</div>
+<!-- Automation Switches -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-lowest/50 cursor-pointer hover:bg-surface-container-lowest transition-all">
+<input checked="" class="mt-0.5 accent-primary w-4 h-4 rounded" type="checkbox"/>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface block">Automatische Zuordnung aktiv</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Eingehende Bankumsätze bei 95% Match-Score direkt zuweisen.</span>
+</div>
+</label>
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-lowest/50 cursor-pointer hover:bg-surface-container-lowest transition-all">
+<input checked="" class="mt-0.5 accent-primary w-4 h-4 rounded" type="checkbox"/>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface block">In Budgetplanung berücksichtigen</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Posten fließt voll in Monatslimite und Schwellwertwarnungen ein.</span>
+</div>
+</label>
+</div>
+</section>
+<!-- Panel: Letzte 3 zugeordnete Transaktionen (Preview) -->
+<section class="bg-surface-container/75 backdrop-blur-xl rounded-xl p-space-lg shadow-lg">
+<header class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[22px]">receipt_long</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Zuletzt zugeordnete Buchungen</h2>
+</div>
+<button class="text-primary hover:underline font-label-md text-label-md flex items-center gap-1" type="button">
+<span>Alle 28 Umsätze öffnen</span>
+<span class="material-symbols-outlined text-[16px]">open_in_new</span>
+</button>
+</header>
+<div class="space-y-space-xs">
+<!-- Item 1 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface truncate">REWE Markt Filiale 4291</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Gestern, 18:42 • Girokonto Hauptkonto</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0 ml-space-md">
+<div class="font-headline-sm text-headline-sm text-error">- 64,82 €</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Auto-Match (99%)</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface truncate">Bio Company Bergmannstr.</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">14. Mai • Kreditkarte Business</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0 ml-space-md">
+<div class="font-headline-sm text-headline-sm text-error">- 42,10 €</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Auto-Match (97%)</div>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<div class="font-label-lg text-label-lg text-on-surface truncate">LIDL Dienstleistungen Berlin</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">11. Mai • Girokonto Hauptkonto</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0 ml-space-md">
+<div class="font-headline-sm text-headline-sm text-error">- 29,15 €</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Manuell bestätigt</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- RIGHT COLUMN (4 Cols): KOMPAKTE KENNZAHLENKARTE & ANALYTIK -->
+<aside class="xl:col-span-4 flex flex-col gap-space-lg min-w-0" id="planung">
+<!-- Compact Category Performance Card -->
+<section class="bg-surface-container/85 backdrop-blur-2xl rounded-xl p-space-lg shadow-xl relative overflow-hidden">
+<!-- Header -->
+<div class="flex items-center justify-between mb-space-md">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary">Kategorie-KPIs</span>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-0.5">Budgetstatus &amp; Saldo</h3>
+</div>
+<span class="p-2 rounded-lg bg-surface-container-highest text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">insights</span>
+</span>
+</div>
+<!-- Gauge / Progress Bar Widget -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest/90 mb-space-md shadow-sm">
+<div class="flex items-baseline justify-between mb-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Monats-Ist vs. Geplant</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">81,8 %</span>
+</div>
+<!-- Segmented Progress Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden p-0.5">
+<div class="bg-gradient-to-r from-primary via-primary-container to-secondary h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(45,212,191,0.5)]" style="width: 81.8%;"></div>
+</div>
+<div class="flex justify-between items-center mt-2 font-body-sm text-body-sm">
+<span class="text-on-surface font-semibold">450,00 € verausgabt</span>
+<span class="text-on-surface-variant">Limit: 550,00 €</span>
+</div>
+<div class="mt-2 text-right">
+<span class="font-label-sm text-label-sm text-primary bg-primary/10 px-2 py-0.5 rounded">Verbleibend: 100,00 € (noch 12 Tage)</span>
+</div>
+</div>
+<!-- Metric Grid -->
+<div class="grid grid-cols-2 gap-space-sm mb-space-md">
+<div class="p-space-sm rounded-lg bg-surface-container-lowest/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Monatsdurchschnitt</span>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-0.5 block">620,00 €</span>
+<span class="font-body-sm text-body-sm text-secondary">Laufendes Jahr</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-lowest/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Letzte Buchung</span>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-0.5 block">Vor 1 Tag</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">REWE (-64,82 €)</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-lowest/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Max. Einzelausgabe</span>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-0.5 block">142,30 €</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">02. Mai (Großeinkauf)</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-lowest/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Abweichung Vormonat</span>
+<span class="font-headline-sm text-headline-sm text-primary mt-0.5 block">- 4,2 %</span>
+<span class="font-body-sm text-body-sm text-primary">Unter Planbudget</span>
+</div>
+</div>
+<!-- Linked Purpose Badge Block -->
+<div class="p-space-md rounded-xl bg-gradient-to-br from-surface-container-lowest via-surface-container-low to-surface-container-lowest shadow-sm mb-space-md">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase mb-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">hub</span>
+<span>Übergeordneter Budgetzweck</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface">Haushalt &amp; Lebenshaltung</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Dieser Zweck bündelt 4 Kategorien (Lebensmittel, Drogerie, Kleidung, Haushaltswaren) mit einem Gesamtziel von 1.250,00 € / Monat.
+          </p>
+<div class="mt-space-sm flex items-center justify-between pt-space-xs">
+<span class="font-label-sm text-label-sm text-tertiary">Zweck-Anteil: 44 %</span>
+<a class="text-on-surface hover:text-primary font-label-md text-label-md flex items-center gap-1" href="#zweck-detail">
+<span>Zweck analysieren</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- 6-Month Mini Sparkline SVG -->
+<div class="p-space-sm rounded-lg bg-surface-container-lowest/60">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ausgabenverlauf (Letzte 6 Monate)</span>
+<span class="font-label-sm text-label-sm text-primary">Ø 620 €</span>
+</div>
+<div class="h-14 w-full flex items-end">
+<!-- Inline Mini SVG Chart -->
+<svg class="w-full h-12 text-primary overflow-visible" fill="none" preserveaspectratio="none" viewbox="0 0 300 60">
+<!-- Grid hint lines -->
+<line stroke="currentColor" stroke-dasharray="2 2" stroke-opacity="0.1" x1="0" x2="300" y1="15" y2="15"></line>
+<line stroke="currentColor" stroke-dasharray="2 2" stroke-opacity="0.1" x1="0" x2="300" y1="45" y2="45"></line>
+<!-- Gradient Area -->
+<defs>
+<lineargradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="currentColor" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="currentColor" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<path d="M 0 40 Q 60 20, 120 32 T 240 18 T 300 24 L 300 60 L 0 60 Z" fill="url(#areaGradient)"></path>
+<path d="M 0 40 Q 60 20, 120 32 T 240 18 T 300 24" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Points -->
+<circle class="fill-surface stroke-primary" cx="0" cy="40" r="3" stroke-width="2"></circle>
+<circle class="fill-surface stroke-primary" cx="60" cy="24" r="3" stroke-width="2"></circle>
+<circle class="fill-surface stroke-primary" cx="120" cy="32" r="3" stroke-width="2"></circle>
+<circle class="fill-surface stroke-primary" cx="180" cy="28" r="3" stroke-width="2"></circle>
+<circle class="fill-surface stroke-primary" cx="240" cy="18" r="3" stroke-width="2"></circle>
+<circle class="fill-primary" cx="300" cy="24" r="3.5"></circle>
+</svg>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant/70 mt-1 px-1">
+<span>Dez</span>
+<span>Jan</span>
+<span>Feb</span>
+<span>Mär</span>
+<span>Apr</span>
+<span class="text-primary font-bold">Mai</span>
+</div>
+</div>
+</section>
+<!-- Category Meta & Audit Trail Card -->
+<section class="bg-surface-container/60 backdrop-blur-xl rounded-xl p-space-md shadow-md text-on-surface-variant">
+<div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface mb-space-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">history</span>
+<span>System &amp; Protokoll</span>
+</div>
+<div class="space-y-space-xs font-body-sm text-body-sm">
+<div class="flex justify-between">
+<span>Erstellt am:</span>
+<span class="text-on-surface font-mono">14.01.2023 10:14</span>
+</div>
+<div class="flex justify-between">
+<span>Letzte Änderung:</span>
+<span class="text-on-surface font-mono">Heute, 09:28 (M. Mustermann)</span>
+</div>
+<div class="flex justify-between">
+<span>Zugeordnete Regeln:</span>
+<span class="text-on-surface">7 aktive Match-Filter</span>
+</div>
+<div class="flex justify-between">
+<span>Kategorie-ID:</span>
+<span class="text-on-surface font-mono">CAT-UUID-8892-DE</span>
+</div>
+</div>
+</section>
+</aside>
+</div>
+</div></main></div></body></html>

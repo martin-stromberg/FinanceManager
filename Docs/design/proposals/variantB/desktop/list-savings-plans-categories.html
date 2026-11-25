@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type"/>
+</head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen">
+<!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<header class="md:hidden fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 bg-[#0c1017]/90 border-b border-white/5 z-40 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-500 flex items-center justify-center p-0.5 shadow-md shadow-teal-500/20">
+<div class="w-full h-full bg-[#0a0d12] rounded-[10px] flex items-center justify-center">
+<svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 2v20m9-9H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<span class="font-bold tracking-tight text-white text-base">FinanceManager</span>
+</div>
+<button aria-label="Menü öffnen" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</header>
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<aside class="fixed top-0 bottom-0 left-0 hidden md:flex flex-col w-20 lg:w-64 bg-[#080b0f]/90 border-r border-white/5 z-30 flex-shrink-0 backdrop-blur-xl transition-all duration-300">
+<!-- Brand / Logo Area -->
+<div class="h-20 flex items-center px-4 lg:px-6 border-b border-white/5 gap-3.5">
+<div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 via-teal-500 to-violet-600 p-[1.5px] shadow-lg shadow-teal-500/20 flex-shrink-0">
+<div class="w-full h-full bg-[#0a0d12] rounded-[14px] flex items-center justify-center">
+<svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+<polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+<line x1="12" x2="12" y1="22.08" y2="12"></line>
+</svg>
+</div>
+</div>
+<div class="hidden lg:flex flex-col">
+<span class="font-extrabold tracking-tight text-white text-base leading-tight">Finance<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-violet-400">Manager</span></span>
+<span class="text-[11px] font-mono text-slate-500 tracking-wider uppercase">SPA Portal</span>
+</div>
+</div>
+<!-- Navigation Entries -->
+<nav class="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-1" data-active-classes="bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 font-semibold shadow-sm glow-active-pill">
+<!-- 1. Start -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="start" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Start</span>
+</a>
+<!-- 2. Konten -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="konten" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="5"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Konten</span>
+</a>
+<!-- 3. Kontakte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontakte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Kontakte</span>
+</a>
+<!-- 4. Sparpläne (AKTIV) -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 glow-active-pill font-semibold group relative" data-path="sparplaene" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-to-b from-teal-400 to-violet-400 rounded-r-full shadow-sm shadow-teal-400/50"></div>
+<svg class="w-5 h-5 flex-shrink-0 text-teal-300 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-teal-300 to-violet-200">Sparpläne</span>
+</a>
+<!-- 5. Wertpapiere -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="wertpapiere" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Wertpapiere</span>
+</a>
+<!-- 6. Kontoauszüge -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontoauszuege" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Kontoauszüge</span>
+</a>
+<!-- 7. Budget -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="budget" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Budget</span>
+</a>
+<!-- 8. Berichte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="berichte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Berichte</span>
+</a>
+<div class="pt-3 pb-1">
+<div class="h-px bg-white/5 mx-2"></div>
+</div>
+<!-- 9. Benutzerverwaltung -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="benutzerverwaltung" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Benutzerverwaltung</span>
+</a>
+<!-- 10. KI-Zugänge -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="ki-zugaenge" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">KI-Zugänge</span>
+</a>
+<!-- 11. Einstellungen -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="einstellungen" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Einstellungen</span>
+</a>
+<!-- 12. Hilfe -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="hilfe" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke-linecap="round" stroke-linejoin="round"></path><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Hilfe</span>
+</a>
+<!-- 13. Abmelden -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all group" data-path="abmelden" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-red-400/70 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Abmelden</span>
+</a>
+</nav>
+</aside>
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full">
+<!-- Content Canvas Area -->
+<div class="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6">
+<!-- TOP BREADCRUMB & HEADER SECTION -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div class="flex flex-col gap-1.5">
+<!-- Breadcrumb Tracker -->
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">
+<span class="hover:text-primary transition-colors cursor-pointer">FINANCEMANAGER</span>
+<span class="text-surface-container-highest">/</span>
+<span class="hover:text-primary transition-colors cursor-pointer">SPARPLÄNE</span>
+<span class="text-surface-container-highest">/</span>
+<span class="text-primary font-medium">SPARPLANKATEGORIEN</span>
+</nav>
+<!-- Headline & Counter Tag -->
+<div class="flex items-center gap-3.5 mt-0.5">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+            Sparplankategorien
+          </h1>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border-0 font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+            5 AKTIV
+          </span>
+</div>
+</div>
+<!-- Action Ribbon / Toolbar Desktop (Verwaltung) -->
+<div class="flex items-center gap-3 self-start lg:self-center">
+<!-- Export / Utility trigger -->
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface text-body-md font-body-md transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">tune</span>
+<span>Spalten anpassen</span>
+</button>
+<!-- Primary Action: Neue Kategorie -->
+<button class="group relative flex items-center gap-2.5 px-4 py-2 rounded-lg bg-primary text-on-primary font-headline-sm text-body-md shadow-md hover:bg-primary-fixed hover:shadow-primary/20 transition-all duration-200" id="btn-add-kategorie">
+<span class="material-symbols-outlined text-[20px] font-semibold transition-transform duration-200 group-hover:rotate-90">add</span>
+<span>Neue Kategorie</span>
+</button>
+</div>
+</div>
+<!-- FILTER & SEARCH CONTROL BAR -->
+<div class="glass-card rounded-xl p-3 sm:p-4 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between shadow-xl">
+<!-- Search Input Container -->
+<div class="relative flex-1 min-w-[280px]">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</span>
+<input class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface-container-lowest text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none focus:ring-1 focus:ring-primary focus:bg-surface-container-low transition-all" id="category-search" placeholder="Kategorien nach Name, Tags oder Sparplänen durchsuchen..." type="text"/>
+<div class="absolute inset-y-0 right-0 flex items-center pr-3">
+<kbd class="hidden sm:inline-block px-1.5 py-0.5 text-label-numeric-sm font-label-numeric-sm bg-surface-variant text-on-surface-variant rounded">⌘K</kbd>
+</div>
+</div>
+<!-- Segmented Control / Filter Pills -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 xl:pb-0 scrollbar-none" id="filter-pills">
+<button class="filter-pill active px-3.5 py-2 rounded-lg text-body-sm font-body-sm whitespace-nowrap transition-all bg-primary/15 text-primary shadow-sm font-medium" data-filter="all">
+          Alle (5)
+        </button>
+<button class="filter-pill px-3.5 py-2 rounded-lg text-body-sm font-body-sm whitespace-nowrap transition-all text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high" data-filter="aktien">
+          Aktien &amp; ETFs
+        </button>
+<button class="filter-pill px-3.5 py-2 rounded-lg text-body-sm font-body-sm whitespace-nowrap transition-all text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high" data-filter="vorsorge">
+          Altersvorsorge
+        </button>
+<button class="filter-pill px-3.5 py-2 rounded-lg text-body-sm font-body-sm whitespace-nowrap transition-all text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high" data-filter="aufbau">
+          Vermögensaufbau
+        </button>
+<button class="filter-pill px-3.5 py-2 rounded-lg text-body-sm font-body-sm whitespace-nowrap transition-all text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high" data-filter="sicherheit">
+          Sicherheit &amp; Notgroschen
+        </button>
+</div>
+</div>
+<!-- MAIN DATA TABLE / CARD-MOSAIC (B-VARIANT CONTAINER) -->
+<div class="glass-panel rounded-xl shadow-2xl overflow-hidden flex flex-col">
+<!-- Responsive Table Header (Desktop Only) -->
+<div class="hidden md:grid grid-cols-12 gap-4 px-6 py-3.5 bg-surface-container-low text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">
+<div class="col-span-5 flex items-center gap-1">
+<span>Name &amp; Beschreibung</span>
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+</div>
+<div class="col-span-4">Zugeordnete Sparpläne</div>
+<div class="col-span-2 text-right">Monatliches Volumen</div>
+<div class="col-span-1 text-right">Aktion</div>
+</div>
+<!-- Categories List Body -->
+<div class="flex flex-col" id="categories-container">
+<!-- ROW 1: ETFs & Indexfonds -->
+<div class="category-row group relative md:grid grid-cols-12 gap-4 items-center px-5 sm:px-6 py-4.5 bg-surface-container/40 hover:bg-surface-container-high/60 transition-all duration-200 cursor-pointer" data-category="aktien">
+<!-- Col 1: Name & Icon & Description -->
+<div class="col-span-5 flex items-start sm:items-center gap-4">
+<div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary shadow-sm shadow-primary/10 group-hover:scale-105 transition-transform duration-200">
+<span class="material-symbols-outlined text-[24px]">query_stats</span>
+</div>
+<div class="flex flex-col min-w-0 pr-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                  ETFs &amp; Indexfonds
+                </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-caps font-label-caps bg-primary/10 text-primary">
+                  Aktien
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+                Langfristiger weltweiter Vermögensaufbau über breit gestreute ETFs
+              </p>
+</div>
+</div>
+<!-- Col 2: Assigned Sparpläne -->
+<div class="col-span-4 mt-3 md:mt-0 flex flex-col justify-center">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">3 Sparpläne</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="text-body-sm font-body-sm text-primary">100% aktiv</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+              MSCI World Core ETF, S&amp;P 500 Info Tech, Emerging Markets ETF
+            </p>
+</div>
+<!-- Col 3: Monthly Volume -->
+<div class="col-span-2 mt-2 md:mt-0 flex flex-col md:items-end justify-center">
+<div class="flex items-baseline md:justify-end gap-1">
+<span class="font-label-numeric-lg text-label-numeric-lg text-on-surface font-semibold tracking-tight">
+                700,00
+              </span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-medium">€</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">monatlich</span>
+</div>
+<!-- Col 4: Action / Chevron -->
+<div class="col-span-1 mt-3 md:mt-0 flex items-center justify-end">
+<a class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-variant/40 hover:bg-primary/20 text-on-surface hover:text-primary text-body-sm font-body-sm transition-all" href="#">
+<span>Details</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- ROW 2: Notgroschen & Liquidität -->
+<div class="category-row group relative md:grid grid-cols-12 gap-4 items-center px-5 sm:px-6 py-4.5 bg-surface-container-low/40 hover:bg-surface-container-high/60 transition-all duration-200 cursor-pointer" data-category="sicherheit">
+<!-- Col 1: Name & Icon & Description -->
+<div class="col-span-5 flex items-start sm:items-center gap-4">
+<div class="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0 text-secondary shadow-sm shadow-secondary/10 group-hover:scale-105 transition-transform duration-200">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+<div class="flex flex-col min-w-0 pr-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                  Notgroschen &amp; Liquidität
+                </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-caps font-label-caps bg-secondary/15 text-secondary">
+                  Sicherheit
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+                Aufbau und Erhalt liquider Rücklagen auf Tagesgeldkonten
+              </p>
+</div>
+</div>
+<!-- Col 2: Assigned Sparpläne -->
+<div class="col-span-4 mt-3 md:mt-0 flex flex-col justify-center">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">1 Sparplan</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Tagesgeld</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+              DKB Tagesgeld-Sparplan (Rücklage Notfall)
+            </p>
+</div>
+<!-- Col 3: Monthly Volume -->
+<div class="col-span-2 mt-2 md:mt-0 flex flex-col md:items-end justify-center">
+<div class="flex items-baseline md:justify-end gap-1">
+<span class="font-label-numeric-lg text-label-numeric-lg text-on-surface font-semibold tracking-tight">
+                200,00
+              </span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-medium">€</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">monatlich</span>
+</div>
+<!-- Col 4: Action / Chevron -->
+<div class="col-span-1 mt-3 md:mt-0 flex items-center justify-end">
+<a class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-variant/40 hover:bg-primary/20 text-on-surface hover:text-primary text-body-sm font-body-sm transition-all" href="#">
+<span>Details</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- ROW 3: Altersvorsorge & Kinderdepot -->
+<div class="category-row group relative md:grid grid-cols-12 gap-4 items-center px-5 sm:px-6 py-4.5 bg-surface-container/40 hover:bg-surface-container-high/60 transition-all duration-200 cursor-pointer" data-category="vorsorge">
+<!-- Col 1: Name & Icon & Description -->
+<div class="col-span-5 flex items-start sm:items-center gap-4">
+<div class="w-11 h-11 rounded-xl bg-tertiary-container/15 flex items-center justify-center flex-shrink-0 text-tertiary shadow-sm shadow-tertiary/10 group-hover:scale-105 transition-transform duration-200">
+<span class="material-symbols-outlined text-[24px]">family_restroom</span>
+</div>
+<div class="flex flex-col min-w-0 pr-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                  Altersvorsorge &amp; Kinderdepot
+                </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-caps font-label-caps bg-tertiary-container/20 text-tertiary">
+                  Vorsorge
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+                Zweckgebundene Anlage für Kinder und spätere Rentenlücke
+              </p>
+</div>
+</div>
+<!-- Col 2: Assigned Sparpläne -->
+<div class="col-span-4 mt-3 md:mt-0 flex flex-col justify-center">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">1 Sparplan</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Laufzeit &gt; 15 Jahre</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+              Kinderdepot Ausbildungsfonds (All-World Acc.)
+            </p>
+</div>
+<!-- Col 3: Monthly Volume -->
+<div class="col-span-2 mt-2 md:mt-0 flex flex-col md:items-end justify-center">
+<div class="flex items-baseline md:justify-end gap-1">
+<span class="font-label-numeric-lg text-label-numeric-lg text-on-surface font-semibold tracking-tight">
+                75,00
+              </span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-medium">€</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">monatlich</span>
+</div>
+<!-- Col 4: Action / Chevron -->
+<div class="col-span-1 mt-3 md:mt-0 flex items-center justify-end">
+<a class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-variant/40 hover:bg-primary/20 text-on-surface hover:text-primary text-body-sm font-body-sm transition-all" href="#">
+<span>Details</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- ROW 4: Kryptowährungen & Digital Assets -->
+<div class="category-row group relative md:grid grid-cols-12 gap-4 items-center px-5 sm:px-6 py-4.5 bg-surface-container-low/40 hover:bg-surface-container-high/60 transition-all duration-200 cursor-pointer" data-category="aufbau">
+<!-- Col 1: Name & Icon & Description -->
+<div class="col-span-5 flex items-start sm:items-center gap-4">
+<div class="w-11 h-11 rounded-xl bg-secondary-container/20 flex items-center justify-center flex-shrink-0 text-secondary-fixed shadow-sm group-hover:scale-105 transition-transform duration-200">
+<span class="material-symbols-outlined text-[24px]">currency_bitcoin</span>
+</div>
+<div class="flex flex-col min-w-0 pr-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                  Kryptowährungen &amp; Digital Assets
+                </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-caps font-label-caps bg-secondary-container/30 text-secondary">
+                  Alternative Investments
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+                Automatisierte Sparpläne für Bitcoin &amp; digitale Sachwerte
+              </p>
+</div>
+</div>
+<!-- Col 2: Assigned Sparpläne -->
+<div class="col-span-4 mt-3 md:mt-0 flex flex-col justify-center">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">1 Sparplan</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Cold Wallet Sync</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+              BTC Krypto-Sparplan (DCA wöchentlich)
+            </p>
+</div>
+<!-- Col 3: Monthly Volume -->
+<div class="col-span-2 mt-2 md:mt-0 flex flex-col md:items-end justify-center">
+<div class="flex items-baseline md:justify-end gap-1">
+<span class="font-label-numeric-lg text-label-numeric-lg text-on-surface font-semibold tracking-tight">
+                50,00
+              </span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-medium">€</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">monatlich</span>
+</div>
+<!-- Col 4: Action / Chevron -->
+<div class="col-span-1 mt-3 md:mt-0 flex items-center justify-end">
+<a class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-variant/40 hover:bg-primary/20 text-on-surface hover:text-primary text-body-sm font-body-sm transition-all" href="#">
+<span>Details</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- ROW 5: Festverzinsliche & Anleihen -->
+<div class="category-row group relative md:grid grid-cols-12 gap-4 items-center px-5 sm:px-6 py-4.5 bg-surface-container/40 hover:bg-surface-container-high/60 transition-all duration-200 cursor-pointer" data-category="sicherheit">
+<!-- Col 1: Name & Icon & Description -->
+<div class="col-span-5 flex items-start sm:items-center gap-4">
+<div class="w-11 h-11 rounded-xl bg-surface-variant/60 flex items-center justify-center flex-shrink-0 text-outline group-hover:scale-105 transition-transform duration-200">
+<span class="material-symbols-outlined text-[24px]">account_balance</span>
+</div>
+<div class="flex flex-col min-w-0 pr-2">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                  Festverzinsliche &amp; Anleihen
+                </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-caps font-label-caps bg-surface-variant text-on-surface-variant">
+                  Defensiv
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
+                Konservativer Baustein zur Portfoliodiversifikation
+              </p>
+</div>
+</div>
+<!-- Col 2: Assigned Sparpläne -->
+<div class="col-span-4 mt-3 md:mt-0 flex flex-col justify-center">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-outline font-medium">0 Sparpläne</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="text-body-sm font-body-sm text-on-surface-variant/80">Inaktiv / Vorbereitet</span>
+</div>
+<p class="font-body-sm text-body-sm text-outline truncate mt-0.5">
+              Keine aktiven Daueraufträge zugeordnet
+            </p>
+</div>
+<!-- Col 3: Monthly Volume -->
+<div class="col-span-2 mt-2 md:mt-0 flex flex-col md:items-end justify-center">
+<div class="flex items-baseline md:justify-end gap-1">
+<span class="font-label-numeric-lg text-label-numeric-lg text-outline font-semibold tracking-tight">
+                0,00
+              </span>
+<span class="font-label-numeric-md text-label-numeric-md text-outline font-medium">€</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">monatlich</span>
+</div>
+<!-- Col 4: Action / Chevron -->
+<div class="col-span-1 mt-3 md:mt-0 flex items-center justify-end">
+<a class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-variant/40 hover:bg-primary/20 text-on-surface hover:text-primary text-body-sm font-body-sm transition-all" href="#">
+<span>Details</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+<!-- TABLE FOOTER (PAGINATION & KPI SUMMARY) -->
+<div class="px-6 py-4 bg-surface-container-low flex flex-col md:flex-row items-center justify-between gap-4">
+<!-- Count Display Left -->
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span>Zeige</span>
+<span class="font-label-numeric-sm text-on-surface font-semibold">1–5</span>
+<span>von</span>
+<span class="font-label-numeric-sm text-on-surface font-semibold">5</span>
+<span>Sparplankategorien</span>
+</div>
+<!-- Middle Metric (Total Monthly Volume) -->
+<div class="flex items-center gap-2.5 px-4 py-1.5 rounded-lg bg-surface-container-high/50">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Gesamtvolumen Sparpläne:</span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-semibold tracking-tight">
+            1.025,00 €
+          </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">/ Monat</span>
+</div>
+<!-- Pagination Controls Right -->
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-variant/30 text-outline cursor-not-allowed text-body-sm font-body-sm flex items-center gap-1" disabled="">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+<span>Zurück</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-primary/20 text-primary font-label-numeric-md text-label-numeric-sm font-medium flex items-center justify-center">
+            1
+          </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-variant/30 text-outline cursor-not-allowed text-body-sm font-body-sm flex items-center gap-1" disabled="">
+<span>Weiter</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- QUICK STATS TILES (VARIANTE B ARCHITECTURE) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+<!-- Stat 1 -->
+<div class="glass-card rounded-xl p-4 flex items-center gap-3.5 shadow-md">
+<div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">category</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Kategorien</span>
+<span class="font-label-numeric-lg text-headline-sm text-on-surface font-semibold">5 definiert</span>
+</div>
+</div>
+<!-- Stat 2 -->
+<div class="glass-card rounded-xl p-4 flex items-center gap-3.5 shadow-md">
+<div class="w-10 h-10 rounded-lg bg-primary-container/15 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">auto_graph</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Aktive Pläne</span>
+<span class="font-label-numeric-lg text-headline-sm text-on-surface font-semibold">6 Ausführungen</span>
+</div>
+</div>
+<!-- Stat 3 -->
+<div class="glass-card rounded-xl p-4 flex items-center gap-3.5 shadow-md">
+<div class="w-10 h-10 rounded-lg bg-secondary/15 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">payments</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Größter Anteil</span>
+<span class="font-headline-sm text-body-md text-on-surface font-semibold">ETFs (68,3%)</span>
+</div>
+</div>
+<!-- Stat 4 -->
+<div class="glass-card rounded-xl p-4 flex items-center gap-3.5 shadow-md">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container/15 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">event_repeat</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Nächste Sparrate</span>
+<span class="font-label-numeric-md text-body-md text-on-surface font-medium">01. nächsten Monats</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Client-side Interactive Filtering Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('category-search');
+      const rows = document.querySelectorAll('.category-row');
+      const filterPills = document.querySelectorAll('.filter-pill');
+
+      // Live search function
+      searchInput?.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+
+      // Filter Pill click interaction
+      filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          filterPills.forEach(p => {
+            p.classList.remove('bg-primary/15', 'text-primary', 'font-medium');
+            p.classList.add('text-on-surface-variant');
+          });
+          pill.classList.add('bg-primary/15', 'text-primary', 'font-medium');
+          pill.classList.remove('text-on-surface-variant');
+
+          const filterVal = pill.getAttribute('data-filter');
+          rows.forEach(row => {
+            if (filterVal === 'all') {
+              row.style.display = '';
+            } else {
+              const cat = row.getAttribute('data-category');
+              row.style.display = (cat === filterVal) ? '' : 'none';
+            }
+          });
+        });
+      });
+
+      // Row click delegation to detail
+      rows.forEach(row => {
+        row.addEventListener('click', (e) => {
+          if (!e.target.closest('a')) {
+            const link = row.querySelector('a');
+            if (link) link.click();
+          }
+        });
+      });
+    });
+  </script>
+</div></main>
+</body></html>

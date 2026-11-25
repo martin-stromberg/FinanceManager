@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"on-error":"#690005","on-primary":"#003731","inverse-primary":"#006b5f","on-primary-fixed-variant":"#005047","on-secondary-fixed-variant":"#5516be","on-primary-container":"#00574d","primary-fixed-dim":"#3cddc7","surface":"#111319","on-surface-variant":"#bacac5","surface-dim":"#111319","primary-container":"#2dd4bf","surface-container-highest":"#32353b","on-primary-fixed":"#00201c","secondary":"#d0bcff","surface-bright":"#36393f","secondary-fixed-dim":"#d0bcff","on-tertiary-fixed-variant":"#6b3b00","on-error-container":"#ffdad6","surface-variant":"#32353b","outline-variant":"#3c4a46","inverse-on-surface":"#2e3036","tertiary-container":"#ffac5a","on-tertiary-fixed":"#2d1600","secondary-fixed":"#e9ddff","tertiary-fixed-dim":"#ffb875","on-secondary-container":"#c4abff","surface-container-low":"#191c21","secondary-container":"#571bc1","on-tertiary":"#4b2800","on-tertiary-container":"#744000","on-background":"#e1e2ea","background":"#111319","outline":"#859490","inverse-surface":"#e1e2ea","tertiary-fixed":"#ffdcc0","tertiary":"#ffd1aa","primary-fixed":"#62fae3","surface-container-lowest":"#0b0e13","surface-tint":"#3cddc7","primary":"#57f1db","on-secondary-fixed":"#23005c","on-surface":"#e1e2ea","error-container":"#93000a","surface-container-high":"#272a30","surface-container":"#1d2025","on-secondary":"#3c0091","error":"#ffb4ab"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-sm":"0.5rem","space-md":"1rem","margin":"2rem","gutter":"1.5rem","space-xs":"0.25rem","space-xl":"2.5rem","space-lg":"1.5rem","gutter-sm":"1rem","margin-sm":"1rem"},"fontFamily":{"body-md":["Inter"],"headline-xl-mobile":["Inter"],"headline-lg":["Inter"],"headline-xl":["Inter"],"label-numeric-md":["JetBrains Mono"],"headline-lg-mobile":["Inter"],"label-numeric-lg":["JetBrains Mono"],"body-sm":["Inter"],"headline-md":["Inter"],"body-lg":["Inter"],"label-caps":["Inter"],"headline-sm":["Inter"],"label-numeric-sm":["JetBrains Mono"]},"fontSize":{"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-xl-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-xl":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-numeric-md":["14px",{"lineHeight":"20px","fontWeight":"500"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-numeric-lg":["20px",{"lineHeight":"28px","letterSpacing":"-0.02em","fontWeight":"500"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-md":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"500"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-caps":["11px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"600"}],"headline-sm":["18px",{"lineHeight":"24px","fontWeight":"500"}],"label-numeric-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"500"}]}}}};</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest/90 backdrop-blur-2xl z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="flex flex-col flex-1 overflow-y-auto px-4 py-6"><div class="flex items-center gap-3 px-3 mb-8"><div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shadow-[0_0_20px_rgba(45,212,191,0.2)]"><span class="material-symbols-outlined text-[24px]">hexagon</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight font-semibold">FinanceManager</span><span class="font-label-caps text-label-caps text-on-surface-variant tracking-wider uppercase">SPA Portal</span></div></div><nav class="space-y-6 flex-1" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_0_24px_rgba(45,212,191,0.25)]"><div class="space-y-1"><p class="px-3 font-label-caps text-label-caps text-outline tracking-wider uppercase mb-2">Finanzübersicht</p><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="start" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">dashboard</span><span class="font-body-md text-body-md">Start</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="konten" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">account_balance_wallet</span><span class="font-body-md text-body-md">Konten</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="kontakte" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">group</span><span class="font-body-md text-body-md">Kontakte</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="sparplaene" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">savings</span><span class="font-body-md text-body-md">Sparpläne</span></a><a aria-current="page" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group bg-primary-container text-on-primary-container font-semibold shadow-[0_0_24px_rgba(45,212,191,0.25)]" data-path="wertpapiere" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">monitoring</span><span class="font-body-md text-body-md">Wertpapiere</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="kontoauszuege" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">receipt_long</span><span class="font-body-md text-body-md">Kontoauszüge</span></a></div><div class="space-y-1"><p class="px-3 font-label-caps text-label-caps text-outline tracking-wider uppercase mb-2">Planung &amp; Analyse</p><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="budget" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">donut_large</span><span class="font-body-md text-body-md">Budget</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="berichte" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">analytics</span><span class="font-body-md text-body-md">Berichte</span></a></div><div class="space-y-1"><p class="px-3 font-label-caps text-label-caps text-outline tracking-wider uppercase mb-2">System &amp; Verwaltung</p><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="benutzerverwaltung" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">manage_accounts</span><span class="font-body-md text-body-md">Benutzerverwaltung</span></a><a class="flex items-center justify-between px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="ki-zugaenge" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">neurology</span><span class="font-body-md text-body-md">KI-Zugänge</span></div><span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps">PRO</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="einstellungen" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">settings</span><span class="font-body-md text-body-md">Einstellungen</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="hilfe" href="#"><span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">help</span><span class="font-body-md text-body-md">Hilfe</span></a></div></nav></div><div class="p-4 bg-surface-container-lowest/50"><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-error hover:bg-error-container hover:text-on-error transition-all" data-path="login" href="#"><span class="material-symbols-outlined text-[20px]">logout</span><span class="font-body-md text-body-md font-medium">Abmelden</span></a></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl z-40 px-gutter flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.12)]"><div class="flex items-center gap-4 flex-1 max-w-xl"><div class="relative w-full"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span><input class="w-full bg-surface-container-low text-on-surface placeholder:text-outline pl-10 pr-16 py-2 rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Transaktionen, Konten, ISIN oder Sparpläne suchen..." type="text"/><kbd class="absolute right-3 top-1/2 -translate-y-1/2 font-label-numeric-sm text-label-numeric-sm text-outline bg-surface-container-high px-1.5 py-0.5 rounded">⌘K</kbd></div></div><div class="flex items-center gap-5"><div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span></span><span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">PSD2 Synchron</span></div><div class="flex items-center gap-2"><button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span></button><button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">tune</span></button></div><div class="flex items-center gap-3 pl-3"><div class="flex flex-col text-right"><span class="font-body-sm text-body-sm font-semibold text-on-surface leading-tight">Dr. Florian Weber</span><span class="font-label-caps text-label-caps text-secondary font-medium tracking-wider uppercase leading-tight">Private Wealth Client</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 px-gutter bg-surface min-h-screen"><div class="flex flex-col w-full pb-16 space-y-6">
+<!-- 1. BREADCRUMB & TITELZEILE -->
+<div class="flex flex-col gap-3 pt-2">
+<!-- Breadcrumb -->
+<nav class="flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-outline">
+<span class="hover:text-on-surface transition-colors cursor-pointer">Financemanager</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-on-surface transition-colors cursor-pointer">Wertpapiere</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-semibold">Wertpapierdetails</span>
+</nav>
+<!-- Header Block -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div class="flex flex-col gap-1.5">
+<div class="flex flex-wrap items-center gap-3">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">
+            Wertpapierdetails: Apple Inc.
+          </h1>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-container/15 text-primary-fixed-dim text-label-caps font-label-caps uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+            Aktiv im Depot
+          </span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface font-label-numeric-sm text-label-numeric-sm tracking-wide">
+            ISIN: US0378331005
+          </span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface-variant font-label-numeric-sm text-label-numeric-sm tracking-wide">
+            WKN: 865985
+          </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-3">
+<span class="text-on-surface font-medium">Symbol: AAPL</span>
+<span class="text-outline-variant">•</span>
+<span>Börsen: XETRA / NASDAQ</span>
+<span class="text-outline-variant">•</span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">account_balance</span>
+            Verwahrstelle: Trade Republic Depot
+          </span>
+</p>
+</div>
+<!-- Live-Indikator Tag -->
+<div class="flex items-center gap-2 self-start lg:self-center px-3 py-1.5 rounded-lg bg-surface-container-low shadow-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">WM Datenservice ID: #98421-DE</span>
+</div>
+</div>
+</div>
+<!-- 2. RIBBON-TOOLBAR -->
+<div class="w-full bg-surface-container-lowest/80 backdrop-blur-md rounded-xl p-2.5 flex flex-wrap items-center gap-4 shadow-md">
+<!-- Gruppe 1: Navigation -->
+<div class="flex items-center gap-1.5 pr-3">
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-high/60 hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm transition-all hover:scale-[1.02]" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Zurück</span>
+</button>
+</div>
+<!-- Gruppe 2: Verwalten -->
+<div class="flex items-center gap-2 pr-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-headline-sm text-body-sm font-semibold hover:shadow-[0_0_20px_rgba(45,212,191,0.35)] transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">save</span>
+<span>Speichern</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+<span>Zurücksetzen</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg bg-error-container/20 hover:bg-error-container text-error font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span>Löschen</span>
+</button>
+</div>
+<!-- Gruppe 3: Aktionen -->
+<div class="flex items-center gap-2 pr-3">
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">add_chart</span>
+<span>Neuer Kurs</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+<span>Order / Buchung erfassen</span>
+</button>
+</div>
+<!-- Gruppe 4: Verknüpfte Informationen -->
+<div class="flex items-center gap-2 ml-auto">
+<button class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">show_chart</span>
+<span>Kurshistorie</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>Buchungen</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">label</span>
+<span>Kategorie</span>
+</button>
+</div>
+</div>
+<!-- 3. SCHNELLÜBERSICHT / KEY-METRICS (4 KPI-KARTEN) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1: Aktueller Kurs -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-all"></div>
+<div class="flex items-center justify-between text-on-surface-variant mb-2">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Aktueller Kurs</span>
+<span class="material-symbols-outlined text-[18px] text-primary">trending_up</span>
+</div>
+<div>
+<div class="font-label-numeric-lg text-headline-lg font-bold text-on-surface tracking-tight">178,45 €</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary-container/20 text-primary-fixed-dim font-label-numeric-sm text-label-numeric-sm">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+            +1,24 % (+2,18 €)
+          </span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">Heute</span>
+</div>
+</div>
+</div>
+<!-- KPI 2: 52-Wochen-Spanne -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-5 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-2">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">52-Wochen-Spanne</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">L / H</span>
+</div>
+<div>
+<div class="font-label-numeric-md text-headline-sm font-semibold text-on-surface">142,10 € – 184,50 €</div>
+<div class="w-full mt-3">
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="bg-primary h-full rounded-full" style="width: 85%;"></div>
+</div>
+<div class="flex justify-between items-center text-outline font-label-numeric-sm text-label-numeric-sm mt-1.5">
+<span>Tief: 142,10 €</span>
+<span class="text-primary font-medium">85 %</span>
+<span>Hoch: 184,50 €</span>
+</div>
+</div>
+</div>
+</div>
+<!-- KPI 3: Bestand / Depotwert -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-5 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-2">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Bestand / Depotwert</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">pie_chart</span>
+</div>
+<div>
+<div class="font-label-numeric-lg text-headline-lg font-bold text-on-surface tracking-tight">8.030,25 €</div>
+<div class="flex flex-wrap items-center gap-2 mt-1.5 text-on-surface-variant font-body-sm text-body-sm">
+<span class="font-label-numeric-md text-on-surface font-semibold">45 Stk.</span>
+<span class="text-outline-variant">•</span>
+<span class="text-primary font-label-numeric-sm text-label-numeric-sm font-medium">+1.845,00 € (+29,8 %)</span>
+</div>
+</div>
+</div>
+<!-- KPI 4: Aktualisierung -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-5 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-2">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Kursaktualisierung</span>
+<span class="material-symbols-outlined text-[18px] text-primary">sync</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-ping"></span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Realtime</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-outline">schedule</span>
+          Vor 3 Min. via XETRA Feed
+        </p>
+</div>
+</div>
+</div>
+<!-- 4. CONTENT-LAYOUT (STAMMDATEN LINKS, DIAGRAMM RECHTS) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- Linke Spalte: STAMMDATEN-KARTE (5 Cols) -->
+<div class="lg:col-span-5 bg-surface-container-low/90 backdrop-blur-xl rounded-xl p-6 shadow-sm flex flex-col space-y-6">
+<!-- Card Header -->
+<div class="flex items-center justify-between pb-4">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">assignment</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Wertpapierstammdaten</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Konfiguration und Taxonomie</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-numeric-sm text-label-numeric-sm">
+          STAMM-01
+        </span>
+</div>
+<!-- Formularfeld 1: Name -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant flex items-center justify-between">
+<span>Wertpapierbezeichnung</span>
+<span class="text-error font-body-sm text-body-sm">*Pflichtfeld</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest text-on-surface px-3.5 py-2.5 rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" type="text" value="Apple Inc."/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">verified</span>
+</div>
+</div>
+<!-- Formularfeld 2: ISIN / WKN (2-Spaltig) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">ISIN</label>
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-numeric-md text-label-numeric-md px-3.5 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" type="text" value="US0378331005"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">WKN</label>
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-numeric-md text-label-numeric-md px-3.5 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" type="text" value="865985"/>
+</div>
+</div>
+<!-- Formularfeld 3: Symbol / Ticker -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Symbol / Ticker</label>
+<div class="flex gap-2">
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-numeric-md text-label-numeric-md px-3.5 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary shadow-inner uppercase" type="text" value="AAPL"/>
+<button class="px-3 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center" title="Symbol verifizieren" type="button">
+<span class="material-symbols-outlined text-[18px]">search_check</span>
+</button>
+</div>
+</div>
+<!-- Formularfeld 4: Wertpapierkategorie -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Wertpapierkategorie</label>
+<div class="flex items-center justify-between bg-surface-container-lowest px-3.5 py-2 rounded-lg shadow-inner">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface">Technologie &amp; US-Growth (Aktien)</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/60 text-secondary font-label-caps text-label-caps uppercase">
+            Wachstum
+          </span>
+</div>
+</div>
+<!-- Formularfeld 5: Währung (EUR vs USD) -->
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Depotwährung</label>
+<div class="flex items-center justify-between bg-surface-container-lowest px-3.5 py-2.5 rounded-lg">
+<span class="font-body-md text-body-md text-on-surface font-medium">EUR (€)</span>
+<span class="material-symbols-outlined text-primary text-[18px]">lock</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Heimatwährung</label>
+<div class="flex items-center justify-between bg-surface-container-lowest px-3.5 py-2.5 rounded-lg">
+<span class="font-body-md text-body-md text-on-surface-variant font-medium">USD ($)</span>
+<span class="material-symbols-outlined text-outline text-[18px]">public</span>
+</div>
+</div>
+</div>
+<!-- Formularfeld 6: Börsenplatz & Notierungsart -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Notierungsart / Börsenplätze</label>
+<div class="bg-surface-container-lowest p-3 rounded-lg flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">XETRA (Frankfurt)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sekundär: Tradegate, Lang &amp; Schwarz</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px]">storefront</span>
+</div>
+</div>
+<!-- Sparplan-Verknüpfung Badge/Hint -->
+<div class="bg-surface-container/60 p-3.5 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px]">calendar_month</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Verknüpfter Sparplan</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">150,00 € mtl. am 01. jeden Monats</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Rechte Spalte: KURSHISTORIE & PERFORMANCE (7 Cols) -->
+<div class="lg:col-span-7 bg-surface-container-low/90 backdrop-blur-xl rounded-xl p-6 shadow-sm flex flex-col space-y-6">
+<!-- Chart Header mit Filter-Buttons -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">timeline</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Kurshistorie &amp; Performance</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Interaktiver Verlauf inkl. Einstiegsmarke</p>
+</div>
+</div>
+<!-- Filter-Buttons Segmented Control -->
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-lg self-start sm:self-center">
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface font-label-caps text-label-caps uppercase transition-colors" type="button">1M</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface font-label-caps text-label-caps uppercase transition-colors" type="button">3M</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface font-label-caps text-label-caps uppercase transition-colors" type="button">6M</button>
+<button class="px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase font-bold shadow-sm" type="button">1J</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface font-label-caps text-label-caps uppercase transition-colors" type="button">3J</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface font-label-caps text-label-caps uppercase transition-colors" type="button">Gesamt</button>
+</div>
+</div>
+<!-- Legende -->
+<div class="flex items-center gap-5 font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-primary rounded-full"></span>
+<span class="text-on-surface">Schlusskurs XETRA</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-secondary border-b border-dashed"></span>
+<span class="text-on-surface-variant">Ø Einstandskurs (137,45 €)</span>
+</div>
+</div>
+<!-- SVG Chart Canvas Area -->
+<div class="relative w-full h-72 bg-surface-container-lowest/70 rounded-xl p-4 flex flex-col justify-between overflow-hidden shadow-inner">
+<!-- Tooltip Hover Simulation -->
+<div class="absolute top-6 right-16 z-20 bg-surface-container-highest/95 backdrop-blur-xl px-3 py-2 rounded-lg shadow-xl pointer-events-none">
+<div class="font-label-caps text-label-caps uppercase text-outline">Mai 2024</div>
+<div class="font-label-numeric-md text-label-numeric-md font-bold text-primary">178,45 €</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant text-[10px]">ATH: 184,50 €</div>
+</div>
+<!-- Inline SVG Line Chart -->
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 600 220">
+<defs>
+<lineargradient id="chartGradientTeal" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.35"></stop>
+<stop offset="70%" stop-color="#2dd4bf" stop-opacity="0.05"></stop>
+<stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.0"></stop>
+</lineargradient>
+<filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="2" flood-color="#2dd4bf" flood-opacity="0.4" stddeviation="3"></fedropshadow>
+</filter>
+</defs>
+<!-- Horizontale Gitterlinien -->
+<line stroke="#272a30" stroke-dasharray="3,3" stroke-width="1" x1="0" x2="600" y1="30" y2="30"></line>
+<line stroke="#272a30" stroke-dasharray="3,3" stroke-width="1" x1="0" x2="600" y1="90" y2="90"></line>
+<line stroke="#272a30" stroke-dasharray="3,3" stroke-width="1" x1="0" x2="600" y1="150" y2="150"></line>
+<!-- Gestrichelte Einstiegskurs-Referenzlinie (Violett #d0bcff) -->
+<line opacity="0.6" stroke="#d0bcff" stroke-dasharray="4,4" stroke-width="1.5" x1="0" x2="600" y1="165" y2="165"></line>
+<!-- Ausfüllung (Area Glow) -->
+<path d="M 0,180 Q 50,160 100,168 T 200,135 T 300,140 T 400,95 T 500,60 T 550,42 L 550,220 L 0,220 Z" fill="url(#chartGradientTeal)"></path>
+<!-- Haupt-Kurslinie Teal -->
+<path d="M 0,180 Q 50,160 100,168 T 200,135 T 300,140 T 400,95 T 500,60 T 550,42" fill="none" filter="url(#glow)" stroke="#2dd4bf" stroke-width="2.5"></path>
+<!-- Markierungspunkt am Ende / Höchstbereich -->
+<circle cx="550" cy="42" fill="#2dd4bf" r="5"></circle>
+<circle cx="550" cy="42" fill="#2dd4bf" opacity="0.25" r="9"></circle>
+<!-- Vertikale Highlight-Linie zum Tooltip -->
+<line opacity="0.4" stroke="#2dd4bf" stroke-dasharray="2,2" stroke-width="1" x1="550" x2="550" y1="42" y2="200"></line>
+</svg>
+<!-- Monats-Achsenbeschriftung -->
+<div class="flex justify-between items-center pt-2 font-label-numeric-sm text-label-numeric-sm text-outline border-t border-surface-container-high/40">
+<span>Jun 23</span>
+<span>Aug 23</span>
+<span>Okt 23</span>
+<span>Dez 23</span>
+<span>Feb 24</span>
+<span>Apr 24</span>
+<span class="text-primary font-medium">Mai 24</span>
+</div>
+</div>
+<!-- Sub-Metriken unter dem Chart -->
+<div class="grid grid-cols-3 gap-3 pt-1">
+<div class="bg-surface-container-lowest/80 p-3 rounded-lg flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-outline">Höchstkurs (1J)</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface mt-0.5">184,50 €</span>
+</div>
+<div class="bg-surface-container-lowest/80 p-3 rounded-lg flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-outline">Tiefstkurs (1J)</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface mt-0.5">142,10 €</span>
+</div>
+<div class="bg-surface-container-lowest/80 p-3 rounded-lg flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-outline">Handelsvolumen</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface mt-0.5">48,2 Mio.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 5. FOOTER-LEISTE DER DETAILKARTE -->
+<div class="w-full bg-surface-container-low/90 backdrop-blur-xl rounded-xl px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm text-on-surface-variant font-body-sm text-body-sm">
+<!-- Audit-Metadaten -->
+<div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">calendar_today</span>
+<span>Erstellt am: <span class="text-on-surface font-label-numeric-sm text-label-numeric-sm">15.01.2023</span></span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">update</span>
+<span>Zuletzt aktualisiert: <span class="text-on-surface font-label-numeric-sm text-label-numeric-sm">31.05.2024, 16:42 Uhr</span></span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">person_outline</span>
+<span>Bearbeiter: <span class="text-on-surface font-medium">Dr. Florian Weber</span></span>
+</div>
+</div>
+<!-- Live Status Feed -->
+<div class="flex items-center gap-2 self-start md:self-center">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface font-medium">
+        Realtime-Kursdaten synchron via XETRA / WM Datenservice
+      </span>
+</div>
+</div>
+</div></main></div></body></html>

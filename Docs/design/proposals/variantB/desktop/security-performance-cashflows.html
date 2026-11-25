@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hilfe-Artikel | FinanceManager Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            bgDark: '#080a0f',
+            bgSurface: '#0f131c',
+            bgElevated: '#161b26',
+            bgGlass: 'rgba(18, 24, 38, 0.72)',
+            tealAccent: '#2dd4bf',
+            violetAccent: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #080a0f;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .glow-teal {
+      background: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12) 0%, transparent 40%);
+    }
+    .glow-violet {
+      background: radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.13) 0%, transparent 45%);
+    }
+    .glass-panel {
+      background: rgba(15, 19, 28, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(22, 27, 38, 0.6) 0%, rgba(15, 19, 28, 0.8) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .active-nav-glow {
+      box-shadow: 0 0 20px -3px rgba(45, 212, 191, 0.4);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e2638;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"/></head>
+<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative">
+<!-- Ambient Light Overlays -->
+<div class="fixed inset-0 pointer-events-none z-0 glow-teal"></div>
+<div class="fixed inset-0 pointer-events-none z-0 glow-violet"></div>
+<div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
+<!-- ==================== LEFT SIDEBAR (SLIM ICON-RAIL VARIANT B) ==================== -->
+<aside class="w-full md:w-20 md:min-h-screen glass-panel flex-shrink-0 z-30 flex md:flex-col items-center justify-between py-3 px-4 md:py-6 md:px-0 border-b md:border-b-0 md:border-r border-white/10 sticky top-0 md:h-screen">
+<!-- Logo & Brand Header -->
+<div class="flex items-center gap-3 md:flex-col md:gap-6">
+<div class="relative group cursor-pointer" title="FinanceManager">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 via-teal-400 to-violet-500 p-[1.5px] transition-transform duration-300 group-hover:scale-105 active-nav-glow">
+<div class="w-full h-full bg-[#090d15] rounded-[14px] flex items-center justify-center">
+<svg class="w-6 h-6 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<rect height="16" rx="4" width="20" x="2" y="4"></rect>
+<path d="M7 15h0M2 10h20M7 15l2-2 3 3 5-5"></path>
+</svg>
+</div>
+</div>
+<span class="absolute -bottom-1 -right-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500 border-2 border-[#090d15]"></span>
+</span>
+</div>
+<!-- Mobile Hamburger Button (conceptual small screens support) -->
+<button aria-label="Menü öffnen" class="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<!-- Navigation Entries (Strictly preserving the 13 required items) -->
+<nav class="hidden md:flex flex-col items-center gap-1.5 w-full px-2 overflow-y-auto no-scrollbar py-2">
+<!-- Start -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Start">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Start</span>
+</a>
+<!-- Konten -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Konten">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Konten</span>
+</a>
+<!-- Kontakte -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Kontakte">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontakte</span>
+</a>
+<!-- Sparpläne -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Sparpläne">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Sparpläne</span>
+</a>
+<!-- Wertpapiere -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Wertpapiere">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Wertpapiere</span>
+</a>
+<!-- Kontoauszüge -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Kontoauszüge">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontoauszüge</span>
+</a>
+<!-- Budget -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Budget">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Budget</span>
+</a>
+<!-- Berichte -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Berichte">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Berichte</span>
+</a>
+<!-- Benutzerverwaltung -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Benutzerverwaltung">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Benutzerverwaltung</span>
+</a>
+<!-- KI-Zugänge -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="KI-Zugänge">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">KI-Zugänge</span>
+</a>
+<!-- Einstellungen -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Einstellungen">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Einstellungen</span>
+</a>
+<!-- Hilfe (ACTIVE) -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl bg-gradient-to-r from-teal-500/20 to-teal-400/10 text-teal-300 border border-teal-500/30 transition-all active-nav-glow" href="#" title="Hilfe">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute -left-1 w-1.5 h-6 bg-teal-400 rounded-r-full"></span>
+<span class="absolute left-16 bg-[#181f2f] text-teal-300 text-xs font-semibold px-2.5 py-1 rounded-md shadow-xl border border-teal-500/30 whitespace-nowrap z-50">Hilfe (Aktiv)</span>
+</a>
+</nav>
+<!-- Bottom Action (Abmelden) -->
+<div class="hidden md:flex flex-col items-center gap-2 w-full pt-4 border-t border-white/10">
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all" href="#" title="Abmelden">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#1f1722] text-rose-300 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-rose-500/20 whitespace-nowrap z-50">Abmelden</span>
+</a>
+</div>
+</aside>
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="flex-1 flex flex-col min-w-0 z-10">
+<!-- TOP CONTEXTUAL ACTION BAR (Variant B rethink of classic ribbon toolbar) -->
+<header class="h-18 px-6 py-3.5 glass-panel border-b border-white/10 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
+<!-- Search & Context status -->
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<div class="relative w-full">
+<svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<input class="w-full bg-slate-900/70 border border-white/10 text-xs text-slate-200 placeholder-slate-500 rounded-xl pl-10 pr-12 py-2 focus:outline-none focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 transition-all font-sans" placeholder="In Finanzwissen, APIs und Hilfe suchen..." type="text"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">⌘K</span>
+</div>
+</div>
+<!-- Grouped Actions (Identical functionality: Buchung, Übertrag, Export + notifications + user) -->
+<div class="flex items-center gap-2.5">
+<!-- Action Group: Transaktionen -->
+<div class="flex items-center bg-white/5 p-1 rounded-xl border border-white/10 backdrop-blur-md">
+<button class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-900 bg-gradient-to-r from-teal-400 to-teal-300 hover:from-teal-300 hover:to-teal-200 rounded-lg shadow-sm shadow-teal-500/20 transition-all">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Buchung</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+<svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Übertrag</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Export</span>
+</button>
+</div>
+<!-- Notification & Status Pill -->
+<button class="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all" title="Mitteilungen">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-400"></span>
+</button>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2 pl-1.5">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-violet-500/20">
+            FM
+          </div>
+</div>
+</div>
+</header>
+<!-- ==================== SCROLLABLE CONTENT AREA ==================== -->
+<main class="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-10"><div class="flex flex-col w-full space-y-8">
+<!-- Top Navigation & View Header -->
+<section class="flex flex-col gap-6">
+<!-- Breadcrumb & Context Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="flex flex-col gap-2">
+<nav class="flex items-center gap-2 font-label-sm text-outline uppercase tracking-wider">
+<span>Wertpapiere</span>
+<span class="material-symbols-outlined text-[12px] text-outline-variant">chevron_right</span>
+<span>Performance</span>
+<span class="material-symbols-outlined text-[12px] text-outline-variant">chevron_right</span>
+<span class="text-primary font-medium">Cashflows</span>
+</nav>
+<div class="flex flex-col">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Depot-Cashflows &amp; Liquiditätsströme</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Historische Einzahlungen, Auszahlungen, Dividenden-Cashflows &amp; kumulierte Netto-Zuflüsse</p>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-3 self-start md:self-auto">
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">stacked_line_chart</span>
+<span>Benchmark zuschalten</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md hover:brightness-110 transition-all shadow-lg shadow-primary-container/20" type="button">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+<span>Exportieren</span>
+</button>
+</div>
+</div>
+<!-- Sub-Navigation Tabs & Period Filter Rail -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-container-low p-2 rounded-2xl">
+<!-- Sub-Tabs -->
+<div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Übersicht</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Zeitreihe</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-primary bg-primary-container font-semibold shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">sync_alt</span>
+<span>Cashflows</span>
+</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Benchmark</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Rendite-Treiber</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Asset-Klassen</button>
+</div>
+<!-- Time Filter Pills -->
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-xl self-start lg:self-auto">
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">1M</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">6M</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">YTD</button>
+<button class="px-3 py-1 text-xs font-semibold text-on-primary-container bg-primary-container rounded-lg shadow-sm" type="button">1J</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">3J</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">5J</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">Max</button>
+</div>
+</div>
+</section>
+<!-- Summary KPI Cards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI 1: Kumulierte Netto-Einzahlungen -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-primary/10 blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Kumulierte Netto-Zuflüsse</span>
+<div class="p-2 rounded-xl bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight font-mono">+84.200,00</span>
+<span class="font-label-md text-label-md text-primary/80 font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">Einzahlungen abzgl. Entnahmen seit Depoteröffnung</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Letzte 12 Monate</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold font-mono">+14.200,00 €</span>
+</div>
+</div>
+<!-- KPI 2: Brutto-Einzahlungen -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Brutto-Einzahlungen</span>
+<div class="p-2 rounded-xl bg-surface-container-highest text-on-surface">
+<span class="material-symbols-outlined text-[20px]">south_west</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight font-mono">96.500,00</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">28 Sparplanausführungen + Einmalanlagen</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ø Monatlicher Zufluss</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold font-mono">1.183,33 €</span>
+</div>
+</div>
+<!-- KPI 3: Auszahlungen & Entnahmen -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Auszahlungen &amp; Entnahmen</span>
+<div class="p-2 rounded-xl bg-error/10 text-error">
+<span class="material-symbols-outlined text-[20px]">north_east</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-error tracking-tight font-mono">-12.300,00</span>
+<span class="font-label-md text-label-md text-error/80 font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">Rebalancing-Entnahmen &amp; Steuerliquidität</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Zuletzt Juli 2024</span>
+<span class="font-label-sm text-label-sm text-error font-semibold font-mono">-1.500,00 €</span>
+</div>
+</div>
+<!-- KPI 4: Reinvestierte Dividenden -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-secondary/10 blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Reinvestierte Dividenden</span>
+<div class="p-2 rounded-xl bg-secondary/15 text-secondary">
+<span class="material-symbols-outlined text-[20px]">autorenew</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-secondary tracking-tight font-mono">+3.428,50</span>
+<span class="font-label-md text-label-md text-secondary/80 font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">100% automatisch reinvestiert (DRIP)</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rendite auf Einstand</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold font-mono">4,07 %</span>
+</div>
+</div>
+</section>
+<!-- Interactive Cashflow Chart Section -->
+<section class="bg-surface-container p-6 rounded-2xl flex flex-col gap-6 shadow-xl relative">
+<!-- Chart Header & Mode Controls -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex flex-col">
+<h2 class="font-title-lg text-title-lg text-on-surface">Historischer Verlauf der Ein- und Auszahlungen</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Gegenüberstellung monatlicher Einlagen, Entnahmen sowie akkumulierter Netto-Verlauf</p>
+</div>
+<div class="flex flex-wrap items-center gap-3">
+<!-- Legend Indicator -->
+<div class="hidden sm:flex items-center gap-4 bg-surface-container-low px-3 py-1.5 rounded-xl font-label-sm text-label-sm text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary"></span>
+<span>Zuflüsse</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-error"></span>
+<span>Entnahmen</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-1 rounded-full bg-secondary"></span>
+<span>Kumuliert</span>
+</div>
+</div>
+<!-- Interval Toggle -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-xl">
+<button class="px-3 py-1 font-label-sm text-label-sm font-semibold text-on-primary-container bg-primary-container rounded-lg shadow-sm" type="button">Monatlich</button>
+<button class="px-3 py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">Quartalsweise</button>
+<button class="px-3 py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">Kumuliert</button>
+</div>
+</div>
+</div>
+<!-- Active Callout Tooltip Banner -->
+<div class="flex flex-wrap items-center justify-between gap-3 bg-surface-container-high/70 p-3.5 rounded-xl backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 rounded-full bg-primary"></div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Fokus-Periode: Oktober 2024</span>
+<p class="font-body-sm text-body-sm text-on-surface">
+<span class="font-mono text-primary font-semibold">+1.250,00 €</span> Sparplan &amp; Zuzahlung  •  
+            <span class="font-mono text-on-surface-variant">0,00 €</span> Entnahmen  •  
+            <span class="font-mono text-secondary font-medium">+48,20 €</span> Reinvestierte Dividenden
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Netto-Monatssaldo:</span>
+<span class="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono font-semibold text-label-md">+1.298,20 €</span>
+</div>
+</div>
+<!-- Inline SVG Cashflow Visualization -->
+<div class="w-full h-72 relative flex flex-col justify-end pt-4">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 240">
+<defs>
+<lineargradient id="primaryBarGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#57f1db" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.4"></stop>
+</lineargradient>
+<lineargradient id="errorBarGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffb4ab" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#93000a" stop-opacity="0.3"></stop>
+</lineargradient>
+<lineargradient id="lineGlow" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#d0bcff"></stop>
+<stop offset="100%" stop-color="#57f1db"></stop>
+</lineargradient>
+</defs>
+<!-- Zero / Base Line (Middle Baseline for Inflow vs Outflow) -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="1.5" x1="0" x2="1000" y1="160" y2="160"></line>
+<line stroke="#32353b" stroke-opacity="0.5" stroke-width="1" x1="0" x2="1000" y1="80" y2="80"></line>
+<line stroke="#32353b" stroke-opacity="0.3" stroke-width="1" x1="0" x2="1000" y1="20" y2="20"></line>
+<!-- Y-Axis Ticks -->
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="25">85k € (Kum.)</text>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="85">+2.000 €</text>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="155">0 €</text>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="210">-2.000 €</text>
+<!-- Bars for 12 Months: Nov23 to Oct24 -->
+<!-- Month 1: Nov 23 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="65" y="115"></rect>
+<!-- Month 2: Dez 23 (In: 1250) -->
+<rect fill="url(#primaryBarGrad)" height="57" rx="4" width="28" x="145" y="103"></rect>
+<!-- Month 3: Jan 24 (In: 2200 - Sonderzahlung) -->
+<rect fill="url(#primaryBarGrad)" height="100" rx="4" width="28" x="225" y="60"></rect>
+<!-- Month 4: Feb 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="305" y="115"></rect>
+<!-- Month 5: Mär 24 (In: 1100) -->
+<rect fill="url(#primaryBarGrad)" height="50" rx="4" width="28" x="385" y="110"></rect>
+<!-- Month 6: Apr 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="465" y="115"></rect>
+<!-- Month 7: Mai 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="545" y="115"></rect>
+<!-- Month 8: Jun 24 (In: 1065) -->
+<rect fill="url(#primaryBarGrad)" height="48" rx="4" width="28" x="625" y="112"></rect>
+<!-- Month 9: Jul 24 (In: 1000, Out: -1500) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="705" y="115"></rect>
+<rect fill="url(#errorBarGrad)" height="65" rx="4" width="28" x="705" y="160"></rect>
+<!-- Month 10: Aug 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="785" y="115"></rect>
+<!-- Month 11: Sep 24 (In: 1172) -->
+<rect fill="url(#primaryBarGrad)" height="53" rx="4" width="28" x="865" y="107"></rect>
+<!-- Month 12: Okt 24 (In: 1250 - Aktuell selektiert) -->
+<rect class="filter drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" fill="url(#primaryBarGrad)" height="57" rx="4" width="28" x="945" y="103"></rect>
+<!-- Cumulative Net Flow Curve -->
+<path d="M 79 125 Q 159 118, 239 100 T 399 92 T 559 84 T 719 86 T 879 66 T 959 52" fill="none" stroke="url(#lineGlow)" stroke-linecap="round" stroke-width="3"></path>
+<!-- Dot markers on cumulative curve -->
+<circle cx="79" cy="125" fill="#111319" r="4" stroke="#d0bcff" stroke-width="2"></circle>
+<circle cx="239" cy="100" fill="#111319" r="4" stroke="#d0bcff" stroke-width="2"></circle>
+<circle cx="719" cy="86" fill="#111319" r="4" stroke="#ffb4ab" stroke-width="2"></circle>
+<circle class="animate-pulse" cx="959" cy="52" fill="#57f1db" r="6" stroke="#111319" stroke-width="2.5"></circle>
+</svg>
+<!-- X-Axis Labels -->
+<div class="grid grid-cols-12 text-center font-mono font-label-sm text-[11px] text-outline pt-2">
+<span>Nov 23</span>
+<span>Dez 23</span>
+<span>Jan 24</span>
+<span>Feb 24</span>
+<span>Mär 24</span>
+<span>Apr 24</span>
+<span>Mai 24</span>
+<span>Jun 24</span>
+<span class="text-error font-medium">Jul 24</span>
+<span>Aug 24</span>
+<span>Sep 24</span>
+<span class="text-primary font-bold">Okt 24</span>
+</div>
+</div>
+</section>
+<!-- Cashflow Table Section -->
+<section class="bg-surface-container rounded-2xl flex flex-col overflow-hidden shadow-xl">
+<!-- Table Toolbar Header -->
+<div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[22px]">receipt_long</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Transaktionsjournal &amp; Liquiditätsbewegungen</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Vollständiges Register aller Valuta-Transaktionen im gewählten Zeitraum</p>
+</div>
+</div>
+<!-- Quick Filter Chips -->
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant hidden md:inline">Filter:</span>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container text-on-surface hover:bg-surface-variant transition-colors" type="button">Alle (42)</button>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container-highest text-primary transition-colors" type="button">Einzahlungen</button>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container text-on-surface hover:bg-surface-variant transition-colors" type="button">Entnahmen</button>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container text-on-surface hover:bg-surface-variant transition-colors" type="button">Dividenden</button>
+</div>
+</div>
+<!-- Responsive Table Container -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest/80 text-outline uppercase font-label-sm text-[11px] tracking-wider">
+<th class="py-3 px-5 font-medium">Datum / Valuta</th>
+<th class="py-3 px-5 font-medium">Art / Transaktionstyp</th>
+<th class="py-3 px-5 font-medium">Verwendungszweck / Quellkonto</th>
+<th class="py-3 px-5 font-medium text-right">Betrag</th>
+<th class="py-3 px-5 font-medium text-right">Kumulierter Saldo</th>
+<th class="py-3 px-5 font-medium text-center">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.10.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              84.200,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">01.10.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Einmal-Zuzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">Sparkasse Referenzkonto</span>
+</td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +250,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              83.200,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">28.09.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-medium text-secondary">Dividendengutschrift</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+              Vanguard FTSE All-World (<span class="font-mono text-xs">A1JX52</span>) • DRIP
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-secondary">
+              +172,20 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.950,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary/15 text-secondary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.09.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.777,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 5: Outflow -->
+<tr class="hover:bg-surface-container-high/40 transition-colors bg-error/5">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">18.07.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-medium text-error">Entnahme / Auszahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+              Wertpapierdepot › <span class="text-on-surface">Commerzbank</span>
+</td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-error">
+              -1.500,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              81.777,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-error/15 text-error">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.07.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              83.277,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">24.06.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-medium text-secondary">Dividendengutschrift</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+              ASML Holding N.V. • Automatische Reinvestition
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-secondary">
+              +65,25 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.277,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary/15 text-secondary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.06.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.212,55 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Summary Balance Bar (Summenzeile Zeitraum) -->
+<div class="p-4 bg-surface-container-high flex flex-col md:flex-row md:items-center justify-between gap-3 text-body-sm font-body-sm">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">functions</span>
+<span class="font-semibold">Summenzeile ausgewählter Zeitraum (1 Jahr):</span>
+</div>
+<div class="flex flex-wrap items-center gap-4 font-mono text-xs">
+<div>
+<span class="text-on-surface-variant">Einzahlungen:</span>
+<span class="text-primary font-bold ml-1">+14.200,00 €</span>
+</div>
+<div class="text-outline-variant">•</div>
+<div>
+<span class="text-on-surface-variant">Auszahlungen:</span>
+<span class="text-error font-bold ml-1">-1.500,00 €</span>
+</div>
+<div class="text-outline-variant">•</div>
+<div>
+<span class="text-on-surface-variant">Netto-Cashflow:</span>
+<span class="text-primary font-bold ml-1">+12.700,00 €</span>
+</div>
+</div>
+</div>
+<!-- Pagination Footer -->
+<div class="p-4 bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-4 font-label-sm text-label-sm text-on-surface-variant">
+<div>
+        Zeige <span class="text-on-surface font-semibold font-mono">1–8</span> von <span class="text-on-surface font-semibold font-mono">42</span> Cashflows
+      </div>
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-40" disabled="" type="button">
+          Vorherige
+        </button>
+<button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container font-bold font-mono text-xs flex items-center justify-center" type="button">1</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface font-mono text-xs flex items-center justify-center transition-colors" type="button">2</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface font-mono text-xs flex items-center justify-center transition-colors" type="button">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface font-mono text-xs flex items-center justify-center transition-colors" type="button">6</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface transition-colors" type="button">
+          Nächste
+        </button>
+</div>
+</div>
+</section>
+</div></main>
+</div>
+</body></html>

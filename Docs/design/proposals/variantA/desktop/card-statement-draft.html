@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"error-container":"#93000a","tertiary":"#7bd0ff","secondary-fixed-dim":"#b6c4ff","on-surface":"#d4e4fa","on-secondary-fixed-variant":"#0f3bac","outline":"#8e909f","surface-bright":"#2c3a4c","on-tertiary":"#00354a","surface-container":"#122131","outline-variant":"#444653","on-tertiary-fixed-variant":"#004c69","surface-container-high":"#1c2b3c","on-tertiary-fixed":"#001e2c","tertiary-fixed":"#c4e7ff","background":"#051424","tertiary-fixed-dim":"#7bd0ff","error":"#ffb4ab","surface-variant":"#273647","on-error-container":"#ffdad6","secondary-fixed":"#dce1ff","surface-container-highest":"#273647","secondary-container":"#133eaf","surface-tint":"#b6c4ff","on-primary":"#002780","secondary":"#b6c4ff","on-secondary":"#002780","on-secondary-container":"#a3b5ff","on-secondary-fixed":"#001551","primary-fixed":"#dce1ff","surface":"#051424","on-error":"#690005","on-tertiary-container":"#003145","surface-dim":"#051424","primary-container":"#6d8dff","surface-container-lowest":"#010f1f","on-primary-fixed":"#001550","tertiary-container":"#009fd6","on-background":"#d4e4fa","surface-container-low":"#0d1c2d","on-surface-variant":"#c4c5d5","inverse-surface":"#d4e4fa","on-primary-container":"#002477","on-primary-fixed-variant":"#0d3bac","primary-fixed-dim":"#b6c4ff","primary":"#b6c4ff","inverse-on-surface":"#233143","inverse-primary":"#3255c5"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"1rem","margin-tablet":"1.5rem","space-md":"0.75rem","space-lg":"1.25rem","gutter-desktop":"1.25rem","space-xl":"1.75rem","margin-desktop":"2rem","space-xs":"0.25rem","space-sm":"0.5rem","gutter":"1rem"},"fontFamily":{"headline-xl":["Inter"],"headline-md":["Inter"],"label-sm":["Inter"],"metric-lg":["Inter"],"body-sm":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"metric-md":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg":["Inter"]},"fontSize":{"headline-xl":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.025em","fontWeight":"600"}],"headline-md":["1.125rem",{"lineHeight":"1.5rem","letterSpacing":"-0.015em","fontWeight":"600"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"metric-lg":["1.75rem",{"lineHeight":"2rem","letterSpacing":"-0.03em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0em","fontWeight":"400"}],"headline-sm":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.005em","fontWeight":"400"}],"metric-md":["1.25rem",{"lineHeight":"1.5rem","letterSpacing":"-0.02em","fontWeight":"600"}],"label-md":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.01em","fontWeight":"500"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}]}}}};</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low border-r border-outline-variant/30 z-50 flex flex-col justify-between select-none"><div class="flex flex-col flex-1 min-h-0"><div class="h-14 px-space-lg flex items-center gap-space-sm border-b border-outline-variant/20 bg-surface-container-lowest"><span class="material-symbols-outlined text-primary-container text-[20px]">account_balance</span><div class="flex flex-col"><span class="font-label-sm text-label-sm tracking-wider uppercase text-on-surface font-semibold">FINANCEMANAGER</span><span class="font-label-sm text-[9px] tracking-widest text-outline uppercase">LEDGER OS V4.2</span></div></div><div class="overflow-y-auto flex-1 px-space-sm py-space-md"><div class="px-space-sm pb-space-xs font-label-sm text-label-sm uppercase tracking-wider text-outline">Hauptmenü</div><nav class="flex flex-col gap-0.5 mb-space-lg" data-active-classes="bg-surface-container-high text-primary-container font-semibold border-l-2 border-primary-container pl-[calc(0.75rem-2px)]"><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="start" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span><span>Start</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="konten" href="#"><span class="material-symbols-outlined text-[18px]">account_balance_wallet</span><span>Konten</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="kontakte" href="#"><span class="material-symbols-outlined text-[18px]">contacts</span><span>Kontakte</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="sparplane" href="#"><span class="material-symbols-outlined text-[18px]">savings</span><span>Sparpläne</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="wertpapiere" href="#"><span class="material-symbols-outlined text-[18px]">query_stats</span><span>Wertpapiere</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="kontoauszuge" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span>Kontoauszüge</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="budget" href="#"><span class="material-symbols-outlined text-[18px]">pie_chart</span><span>Budget</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="berichte" href="#"><span class="material-symbols-outlined text-[18px]">summarize</span><span>Berichte</span></a></nav><div class="px-space-sm pb-space-xs font-label-sm text-label-sm uppercase tracking-wider text-outline">System</div><nav class="flex flex-col gap-0.5" data-active-classes="bg-surface-container-high text-primary-container font-semibold border-l-2 border-primary-container pl-[calc(0.75rem-2px)]"><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="benutzerverwaltung" href="#"><span class="material-symbols-outlined text-[18px]">manage_accounts</span><span>Benutzerverwaltung</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="ki-zugange" href="#"><span class="material-symbols-outlined text-[18px]">neurology</span><span>KI-Zugänge</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="einstellungen" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>Einstellungen</span></a></nav></div></div><div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest"><nav class="flex flex-col gap-0.5"><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="hilfe" href="#"><span class="material-symbols-outlined text-[18px]">help_outline</span><span>Hilfe</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-colors font-body-md text-body-md" data-path="abmelden" href="#"><span class="material-symbols-outlined text-[18px]">logout</span><span>Abmelden</span></a></nav></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-low/95 backdrop-blur border-b border-outline-variant/30 z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-sm text-outline font-label-md text-label-md"><span class="text-on-surface-variant">Ledger OS</span><span class="text-outline/60">/</span><span class="text-on-surface font-semibold">Buchhaltung</span></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm"><div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-high border border-outline-variant/40"><span class="inline-block w-1.5 h-1.5 rounded-full bg-primary-container"></span><span class="font-label-sm text-label-sm text-on-surface font-medium">Auditor L2</span></div><div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-high border border-outline-variant/40"><span class="font-label-sm text-label-sm text-outline font-normal">Mandant:</span><span class="font-label-sm text-label-sm text-on-surface font-medium">DE-EUR</span></div></div><div class="h-4 w-px bg-outline-variant/30"></div><div class="flex items-center gap-space-xs"><button aria-label="Suche" class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">search</span></button><button aria-label="Benachrichtigungen" class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center relative"><span class="material-symbols-outlined text-[18px]">notifications</span><span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary-container"></span></button></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="relative pt-14 w-full min-h-screen bg-background"><div class="flex flex-col w-full">
+<!-- Top Context Header Area -->
+<div class="px-space-lg py-space-md bg-surface-container-low border-b border-outline-variant/30">
+<div class="flex flex-col gap-space-sm max-w-[1600px] mx-auto w-full">
+<!-- Meta Navigation / Path / Status Badges -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm uppercase tracking-wider text-outline flex-wrap">
+<span class="hover:text-on-surface transition-colors cursor-pointer">FINANCEMANAGER</span>
+<span class="text-outline-variant">/</span>
+<span class="hover:text-on-surface transition-colors cursor-pointer">KONTOAUSZÜGE</span>
+<span class="text-outline-variant">/</span>
+<span class="hover:text-on-surface transition-colors cursor-pointer">ENTWÜRFE</span>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface font-semibold">AUSZUG-2024-05-GIRO</span>
+<span class="text-outline/70 normal-case font-mono ml-1 text-body-sm">(ID: EXTR-0524-8841)</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-label-sm font-label-sm font-semibold bg-primary-container/15 text-primary border border-primary/30">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+            In Prüfung
+          </span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-label-sm font-label-sm font-medium bg-surface-container-high text-on-surface-variant border border-outline-variant/40">
+<span class="material-symbols-outlined text-[13px] text-outline">domain</span>
+            Mandant: DE-EUR (Hauptmandant)
+          </span>
+</div>
+</div>
+<!-- Main Headline & Semantic Subtitle -->
+<div class="flex flex-col md:flex-row md:items-baseline md:justify-between gap-1">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight flex items-center gap-space-sm">
+<span>Kontoauszug-Entwurf: Girokonto Hauptkonto</span>
+<span class="material-symbols-outlined text-outline text-[20px]" title="Revisionsgeschütztes Dokument">lock</span>
+</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+            Importierte Buchungszeilen zur Validierung, automatischem Kontenabgleich und Freigabe vor der Hauptbuchung.
+          </p>
+</div>
+<div class="flex items-center gap-space-xs text-body-sm font-body-sm text-outline font-mono self-start md:self-auto pt-1 md:pt-0">
+<span class="material-symbols-outlined text-[15px] text-tertiary">fingerprint</span>
+          CAMT.053 v4 • UTF-8 Validiert
+        </div>
+</div>
+</div>
+</div>
+<!-- Ribbon Action Bar (Strict German Fintech Tooling Ergonomics) -->
+<div class="bg-surface-container-lowest border-b border-outline-variant/30 px-space-lg py-2 select-none">
+<div class="max-w-[1600px] mx-auto w-full flex flex-wrap items-center justify-between gap-y-2 gap-x-space-lg">
+<!-- Action Groups Left -->
+<div class="flex items-center flex-wrap gap-space-md">
+<!-- Gruppe: Navigation -->
+<div class="flex items-center">
+<button class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+<span>Zurück</span>
+</button>
+</div>
+<div class="h-4 w-px bg-outline-variant/30"></div>
+<!-- Gruppe: Verwalten -->
+<div class="flex items-center gap-1.5">
+<button class="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-primary-container text-on-primary-container font-headline-sm text-headline-sm hover:brightness-110 active:scale-[0.99] transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Speichern</span>
+</button>
+<button class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/40 transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">undo</span>
+<span>Zurücksetzen</span>
+</button>
+<button class="inline-flex items-center gap-1 h-8 px-2 rounded hover:bg-error-container/30 text-error hover:text-on-error-container transition-colors font-label-md text-label-md" title="Entwurf unwiderruflich verwerfen" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+<span>Löschen</span>
+</button>
+</div>
+<div class="h-4 w-px bg-outline-variant/30"></div>
+<!-- Gruppe: Aktionen -->
+<div class="flex items-center gap-1.5">
+<button class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/40 transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px] text-tertiary">verified_user</span>
+<span>Entwurf prüfen</span>
+</button>
+<button class="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-secondary-container hover:bg-secondary-container/90 text-on-secondary-container font-headline-sm text-headline-sm transition-all border border-secondary/30" type="button">
+<span class="material-symbols-outlined text-[16px]">done_all</span>
+<span>Buchungen freigeben</span>
+</button>
+<button class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">download</span>
+<span>CSV/CAMT Export</span>
+</button>
+</div>
+</div>
+<!-- Action Groups Right (Verknüpfte Informationen) -->
+<div class="flex items-center gap-1.5">
+<button class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded bg-surface-container-high/60 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">account_balance_wallet</span>
+<span>Konto öffnen</span>
+<span class="material-symbols-outlined text-[13px] text-outline">open_in_new</span>
+</button>
+<button class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded bg-surface-container-high/60 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-outline-variant/40 transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">history_edu</span>
+<span>Importprotokoll</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Primary Content Grid Area -->
+<div class="p-space-lg max-w-[1600px] mx-auto w-full flex flex-col gap-space-lg">
+<!-- Top Split: Metadata Form Module & Structured Analytics Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-stretch">
+<!-- Left Panel: Entwurfsparameter & Zuordnung Form View (7 Cols) -->
+<div class="lg:col-span-8 bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col overflow-hidden">
+<!-- Card Header -->
+<div class="px-space-md py-space-sm bg-surface-container-high/40 border-b border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">receipt_long</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Entwurfsparameter &amp; Zuordnungsmatrix</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-mono">PAR-REC #00938</span>
+</div>
+<!-- Card Body / Dense 2-Column Property Grid -->
+<div class="p-space-md grid grid-cols-1 md:grid-cols-2 gap-x-space-lg gap-y-3 font-body-sm text-body-sm">
+<!-- Field: Zeitraum -->
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Abrechnungszeitraum</span>
+<div class="flex items-center gap-1.5 text-on-surface font-medium pt-0.5">
+<span class="material-symbols-outlined text-[16px] text-primary">date_range</span>
+<span class="font-mono">01.05.2024</span>
+<span class="text-outline">bis</span>
+<span class="font-mono">31.05.2024</span>
+</div>
+</div>
+<!-- Field: Verknüpftes Konto -->
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Zugeordnetes Bankkonto</span>
+<div class="flex items-center gap-1.5 text-on-surface truncate pt-0.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">account_balance</span>
+<span class="font-medium truncate">Girokonto Hauptkonto</span>
+<span class="text-outline font-mono text-label-sm">(DE44 5001 •••• 78)</span>
+</div>
+</div>
+<!-- Field: Dateiquelle -->
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Dateiquelle / XML-Spezifikation</span>
+<div class="flex items-center gap-1.5 text-on-surface font-mono pt-0.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">file_present</span>
+<span>CAMT.053 XML (Auszug_2024_05_Giro.xml)</span>
+</div>
+</div>
+<!-- Field: Importdatum & Prüfer -->
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Import-Zeitstempel &amp; Auditor</span>
+<div class="flex items-center gap-1.5 text-on-surface pt-0.5">
+<span class="material-symbols-outlined text-[16px] text-outline">schedule</span>
+<span>02.06.2024, 08:45 Uhr durch <strong class="font-semibold text-on-surface">Finanzprüfer (System)</strong></span>
+</div>
+</div>
+<!-- Field: Erfasste Summen (Full Width in grid) -->
+<div class="md:col-span-2 pt-2 border-t border-outline-variant/20 flex flex-col md:flex-row md:items-center justify-between gap-2">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Giro-Volumen (Summenprüfung)</span>
+<div class="flex items-center gap-space-sm pt-0.5 font-mono text-body-md flex-wrap">
+<span class="text-primary font-medium">Haben: +14.280,50 €</span>
+<span class="text-outline/40">|</span>
+<span class="text-error font-medium">Soll: -9.845,20 €</span>
+<span class="text-outline/40">|</span>
+<span class="text-on-surface font-semibold">Netto-Saldo: +4.435,30 €</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-start md:self-end">
+<span class="inline-flex items-center gap-1 text-[11px] font-mono text-outline bg-surface-container px-2 py-1 rounded border border-outline-variant/30">
+<span class="material-symbols-outlined text-[13px] text-primary">enhanced_encryption</span>
+                SHA256: 4f9b8c3d...e12a (GoBD Revisionssicher)
+              </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Compact KPI / Control Cards (4 Cols) -->
+<div class="lg:col-span-4 flex flex-col gap-2.5">
+<!-- KPI 1: Gesamt-Einträge -->
+<div class="p-space-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Gesamt-Einträge</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-metric-lg text-metric-lg font-semibold text-on-surface tabular-nums">48</span>
+<span class="font-body-sm text-body-sm text-outline">Positionen</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+              Alle CAMT-Knoten strukturiert
+            </span>
+</div>
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30">
+<span class="material-symbols-outlined text-primary text-[22px]">list_alt</span>
+</div>
+</div>
+<!-- KPI 2: Prüfungsstatus -->
+<div class="p-space-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Prüfungsstatus</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-metric-lg text-metric-lg font-semibold text-primary tabular-nums">100%</span>
+<span class="font-body-sm text-body-sm text-on-surface">Validiert</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[13px] text-tertiary">check_circle</span>
+              0 Datenkonflikte, 0 Dubletten
+            </span>
+</div>
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30">
+<span class="material-symbols-outlined text-tertiary text-[22px]">rule</span>
+</div>
+</div>
+<!-- KPI 3: Errechneter Endsaldo -->
+<div class="p-space-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Errechneter Endsaldo</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-metric-lg text-metric-lg font-semibold text-on-surface tabular-nums">18.940,12 €</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">sync_saved_locally</span>
+              Bankabschluss Saldo konform
+            </span>
+</div>
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30">
+<span class="material-symbols-outlined text-secondary text-[22px]">account_balance_wallet</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table Section: Auszugseinträge -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col overflow-hidden">
+<!-- Table Header Bar: Filter, Search, Action Controls -->
+<div class="px-space-md py- space-sm py-2.5 bg-surface-container-high/30 border-b border-outline-variant/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap- space-sm gap-2">
+<!-- Left: Search input -->
+<div class="flex items-center gap-2 flex-1 max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-8 pl-8 pr-3 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface placeholder:text-outline/70 font-body-sm text-body-sm focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" placeholder="Verwendungszweck, Empfänger oder IBAN filtern..." type="text"/>
+</div>
+</div>
+<!-- Right: Filters & Summary Indicator -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- Buchungsart Select -->
+<div class="relative">
+<select class="h-8 pl-2.5 pr-7 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface-variant font-label-md text-label-md appearance-none focus:outline-none focus:border-primary-container cursor-pointer">
+<option>Alle Buchungsarten</option>
+<option>Nur Haben (+) Eingänge</option>
+<option>Nur Soll (-) Ausgänge</option>
+<option>Dauerauftrag / Lastschrift</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<!-- Kategorie Select -->
+<div class="relative">
+<select class="h-8 pl-2.5 pr-7 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface-variant font-label-md text-label-md appearance-none focus:outline-none focus:border-primary-container cursor-pointer">
+<option>Alle Kategorien</option>
+<option>Gehalt &amp; Bezüge</option>
+<option>Miete &amp; Wohnen</option>
+<option>Lebensmittel &amp; Haushalt</option>
+<option>Sparplan / Investment</option>
+<option>Nebenkosten &amp; Energie</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<!-- Status Select -->
+<div class="relative">
+<select class="h-8 pl-2.5 pr-7 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface-variant font-label-md text-label-md appearance-none focus:outline-none focus:border-primary-container cursor-pointer">
+<option>Status (Alle)</option>
+<option>Zugeordnet</option>
+<option>Regel erkannt</option>
+<option>Manuell geprüft</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<div class="h-4 w-px bg-outline-variant/30 mx-1 hidden sm:block"></div>
+<!-- Counter Label -->
+<div class="font-label-sm text-label-sm text-outline font-medium px-1 flex items-center gap-1">
+<span class="text-on-surface font-semibold">48</span> Positionen
+            <span class="text-outline-variant">•</span>
+<span class="text-primary font-medium">3</span> ausgewählt
+          </div>
+</div>
+</div>
+<!-- Modernized Evolution Financial Table (Strictly Zebra-Free with 1px Clean Hairlines) -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse select-text">
+<!-- Tabellen-Kopfzeile -->
+<thead>
+<tr class="h-9 border-b border-outline-variant/30 bg-surface-container-high/20 font-label-sm text-label-sm uppercase tracking-wider text-outline select-none">
+<th class="w-10 px-3 text-center">
+<input checked="" class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 text-primary-container accent-primary-container cursor-pointer" type="checkbox"/>
+</th>
+<th class="px-3 min-w-[90px]">Valuta</th>
+<th class="px-3 min-w-[220px]">Begünstigter / Auftraggeber</th>
+<th class="px-3 min-w-[280px]">Verwendungszweck &amp; Details</th>
+<th class="px-3 min-w-[170px]">Kategorie / Zuordnung</th>
+<th class="px-3 min-w-[130px] text-right">Betrag (€)</th>
+<th class="px-3 min-w-[130px] text-center">Prüfstatus</th>
+<th class="w-14 px-3 text-right">Aktion</th>
+</tr>
+</thead>
+<!-- Tabellen-Inhalt (7 hochpräzise Datensätze) -->
+<tbody class="divide-y divide-outline-variant/20 font-body-sm text-body-sm">
+<!-- Row 1: Gehalt -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox"/>
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">31.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Arbeitgeber Tech AG</span>
+<span class="font-mono text-[10px] text-outline">DE89 5007 0010 0987 6543 21</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">description</span>
+<span class="truncate">Gehaltsabrechnung 05/2024 Ref: 89410 Pers-Nr 442</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Gehalt &amp; Bezüge
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-semibold text-primary tabular-nums whitespace-nowrap">
+                +4.650,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Stadtwerke München -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox"/>
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">28.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Stadtwerke München GmbH</span>
+<span class="font-mono text-[10px] text-outline">DE32 7001 0080 0123 4567 89</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">receipt</span>
+<span class="truncate">Abschlagszahlung Strom / Gas 05/2024 Kd-Nr: 88102</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Nebenkosten &amp; Energie
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -185,40 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-tertiary-container/20 text-tertiary border border-tertiary/30">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+                  Regel erkannt
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Trade Republic -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input checked="" class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox"/>
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">24.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Trade Republic Bank</span>
+<span class="font-mono text-[10px] text-outline">DE11 1001 1001 2233 4455 66</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">trending_up</span>
+<span class="truncate">Wertpapiersparplan Ausführung iShares Core MSCI World</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-secondary/15 text-secondary border border-secondary/30">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Sparplan / Investment
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -250,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: EDEKA -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox"/>
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">20.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>EDEKA Markt Frische e.K.</span>
+<span class="font-mono text-[10px] text-outline">POS Kartenzahlung (Trace: 499102)</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">shopping_bag</span>
+<span class="truncate">Kartenzahlung Girocard Terminal 9942 20.05 14:22</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Lebensmittel &amp; Haushalt
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -84,20 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 5: Apple Services -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox"/>
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">15.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Apple Distribution Intl.</span>
+<span class="font-mono text-[10px] text-outline">IE29 9900 1234 5678 90</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">cloud</span>
+<span class="truncate">Abo-Dienst iCloud+ / Apple One Monatsbeitrag</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Software &amp; IT
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -16,99 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-tertiary-container/20 text-tertiary border border-tertiary/30">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+                  Regel erkannt
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 6: Hausverwaltung Schmidt -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox"/>
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">10.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Hausverwaltung Schmidt GbR</span>
+<span class="font-mono text-[10px] text-outline">DE77 5008 0000 1122 3344 55</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">home</span>
+<span class="truncate">Mietüberweisung Mai 2024 WE-04 Hauptstr. 12</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Miete &amp; Wohnen
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -1.150,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 7: Bundeszentralamt für Steuern -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox"/>
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">02.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Bundeszentralamt f. Steuern</span>
+<span class="font-mono text-[10px] text-outline">DE02 1000 0000 0000 0110 01</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">account_balance</span>
+<span class="truncate">Erstattung ESt-Bescheid 2023 St-Nr: 143/210/90411</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Steuererstattung
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-semibold text-primary tabular-nums whitespace-nowrap">
+                +1.420,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-bright text-on-surface border border-outline-variant/40">
+<span class="material-symbols-outlined text-[12px] text-tertiary">person_search</span>
+                  Manuell geprüft
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Bottom Summary & Batch Operation Bar -->
+<div class="px-space-md py-space-xs bg-surface-container-high/20 border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-sm font-body-sm text-body-sm">
+<div class="flex items-center gap-space-md text-outline">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Haben: <strong>2 Posten (+6.070,00 €)</strong></span>
+</span>
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Soll: <strong>5 Posten (-1.636,59 €)</strong></span>
+</span>
+<span class="hidden sm:inline-block text-outline/40">|</span>
+<span class="hidden sm:inline-block text-on-surface-variant font-mono">Zwischensumme Seite: +4.433,41 €</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="h-7 px-2 rounded hover:bg-surface-container text-outline hover:text-on-surface transition-colors font-label-sm text-label-sm" type="button">
+            Vorherige 50
+          </button>
+<span class="px-2 font-mono text-label-sm text-on-surface font-semibold">1 – 7 von 48</span>
+<button class="h-7 px-2 rounded hover:bg-surface-container text-outline hover:text-on-surface transition-colors font-label-sm text-label-sm" type="button">
+            Nächste
+          </button>
+</div>
+</div>
+</div>
+<!-- Audit Footer / GoBD Compliance Disclaimer Bar -->
+<div class="px-space-md py- space-sm py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-outline font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[17px]">verified</span>
+<span>
+<strong class="font-medium text-on-surface">Revision &amp; GoBD-Status:</strong>
+          Entwurf unverändert seit Import • 48 Positionen bereit zur Buchungsübernahme in den Kontoverlauf.
+        </span>
+</div>
+<div class="flex items-center gap-space-sm font-mono text-[11px] text-outline/80 self-end sm:self-auto">
+<span>CAMT-PARSER v4.2.0</span>
+<span>•</span>
+<span>LEDGER AUDIT OK</span>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

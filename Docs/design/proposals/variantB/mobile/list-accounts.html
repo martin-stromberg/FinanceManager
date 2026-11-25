@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#111319;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "tertiary-fixed-dim": "#ffb875", "surface-container-low": "#191c21", "surface": "#111319", "on-surface": "#e1e2ea", "surface-container-highest": "#32353b", "surface-tint": "#3cddc7", "secondary-fixed-dim": "#d0bcff", "tertiary-fixed": "#ffdcc0", "tertiary": "#ffd1aa", "on-primary": "#003731", "inverse-surface": "#e1e2ea", "on-secondary-fixed-variant": "#5516be", "on-background": "#e1e2ea", "on-error": "#690005", "on-primary-container": "#00574d", "surface-dim": "#111319", "secondary-container": "#571bc1", "primary-fixed-dim": "#3cddc7", "surface-bright": "#36393f", "on-secondary": "#3c0091", "surface-variant": "#32353b", "inverse-primary": "#006b5f", "on-tertiary-fixed-variant": "#6b3b00", "secondary": "#d0bcff", "outline-variant": "#3c4a46", "on-primary-fixed": "#00201c", "surface-container": "#1d2025", "on-error-container": "#ffdad6", "on-secondary-container": "#c4abff", "primary": "#57f1db", "primary-fixed": "#62fae3", "secondary-fixed": "#e9ddff", "primary-container": "#2dd4bf", "background": "#111319", "surface-container-high": "#272a30", "on-tertiary": "#4b2800", "on-surface-variant": "#bacac5", "on-secondary-fixed": "#23005c", "on-tertiary-fixed": "#2d1600", "outline": "#859490", "on-tertiary-container": "#744000", "surface-container-lowest": "#0b0e13", "error-container": "#93000a", "error": "#ffb4ab", "tertiary-container": "#ffac5a", "inverse-on-surface": "#2e3036", "on-primary-fixed-variant": "#005047" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "2rem", "space-xl": "2.5rem", "space-sm": "0.5rem", "margin-sm": "1rem", "gutter-sm": "1rem", "gutter": "1.5rem", "space-lg": "1.5rem", "space-md": "1rem", "space-xs": "0.25rem" }, "fontFamily": { "label-numeric-sm": ["JetBrains Mono"], "headline-sm": ["Inter"], "headline-lg-mobile": ["Inter"], "label-numeric-lg": ["JetBrains Mono"], "headline-xl": ["Inter"], "body-lg": ["Inter"], "headline-xl-mobile": ["Inter"], "label-caps": ["Inter"], "headline-lg": ["Inter"], "label-numeric-md": ["JetBrains Mono"], "headline-md": ["Inter"], "body-md": ["Inter"], "body-sm": ["Inter"] }, "fontSize": { "label-numeric-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "500" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-numeric-lg": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "500" }], "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-xl-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "600" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-numeric-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md min-h-screen relative overflow-x-hidden antialiased select-none"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_12px_rgba(0,0,0,0.4)]"><div class="h-14 px-margin-sm flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm"><button aria-label="Menü öffnen" class="w-11 h-11 -ml-space-xs flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container-high transition-colors" id="drawer-toggle"><span class="material-symbols-outlined text-[24px]">menu</span></button><div class="flex items-center gap-space-xs"><img alt="FinanceManager Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCCgPRMpp9A_NQeAnJYs0CjNVZa_gyL-MslY_6KNH7qO_uQCiZhSevsyFntu_zO3Tlm235rAVYo2CcHnfTisTd9eEU1X7xJj3H15DLcSSIKx7vvrNFxNaWgLOK8S5uU2r-mxFOot_A_1wDznw6lfaCDPZZKereySaGmo0dzZYt4-VnKimBt3rzPnNuXS3s15cgWF539YWWrVGzv9x9_-YdPaBLneFWg_CMNfx6tKGp69g"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight font-semibold">FinanceManager</span></div></div><div class="flex items-center gap-space-sm"><div class="hidden xs:flex flex-col items-end"><span class="font-label-caps text-label-caps text-primary tracking-wider">ONLINE</span><span class="font-body-sm text-body-sm text-on-surface-variant font-medium">PSD2 Aktiv</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div><div class="h-12 px-margin-sm flex items-center justify-between bg-surface-container-low/70 backdrop-blur-md"><div class="flex items-center gap-space-xs overflow-hidden"><span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">VERWALTUNG</span><span class="text-on-surface-variant/40">/</span><span class="font-headline-sm text-body-md text-on-surface font-medium truncate">Konten</span></div><a class="h-9 px-space-md flex items-center gap-1.5 rounded-lg bg-primary-container text-on-primary font-headline-sm text-body-sm font-semibold shadow-[0_0_16px_rgba(45,212,191,0.35)] hover:bg-primary transition-all active:scale-95" data-path="konto-anlegen" href="#"><span class="material-symbols-outlined text-[18px]">add</span><span>+ Neu</span></a></div></header><div class="fixed inset-0 z-50 bg-surface-container-lowest/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300" id="nav-drawer-scrim"></div><aside class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-surface-container-lowest/95 backdrop-blur-2xl -translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-[0_20px_48px_rgba(0,0,0,0.8)] pt-safe pb-safe" id="nav-drawer"><div class="p-space-lg flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="FinanceManager Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCCgPRMpp9A_NQeAnJYs0CjNVZa_gyL-MslY_6KNH7qO_uQCiZhSevsyFntu_zO3Tlm235rAVYo2CcHnfTisTd9eEU1X7xJj3H15DLcSSIKx7vvrNFxNaWgLOK8S5uU2r-mxFOot_A_1wDznw6lfaCDPZZKereySaGmo0dzZYt4-VnKimBt3rzPnNuXS3s15cgWF539YWWrVGzv9x9_-YdPaBLneFWg_CMNfx6tKGp69g"/><div class="flex flex-col"><span class="font-headline-sm text-body-lg text-on-surface font-semibold leading-tight">FinanceManager</span><span class="font-label-caps text-label-caps text-outline">DE · BLZ BANKING</span></div></div><button class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-on-surface" id="drawer-close"><span class="material-symbols-outlined text-[22px]">close</span></button></div><nav class="flex-1 overflow-y-auto px-space-sm py-space-xs space-y-0.5" data-active-classes="bg-surface-container-high text-primary font-semibold shadow-[inset_3px_0_0_0_#57f1db]"><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="start" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-body-md text-body-md">Start</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md h-11 rounded-lg transition-colors bg-surface-container-high text-primary font-semibold shadow-[inset_3px_0_0_0_#57f1db]" data-path="konten" href="#"><span class="material-symbols-outlined text-[20px]">account_balance</span><span class="font-body-md text-body-md">Konten</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="kontakte" href="#"><span class="material-symbols-outlined text-[20px]">contacts</span><span class="font-body-md text-body-md">Kontakte</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="sparplaene" href="#"><span class="material-symbols-outlined text-[20px]">savings</span><span class="font-body-md text-body-md">Sparpläne</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="wertpapiere" href="#"><span class="material-symbols-outlined text-[20px]">show_chart</span><span class="font-body-md text-body-md">Wertpapiere</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="kontoauszuege" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span class="font-body-md text-body-md">Kontoauszüge</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="budget" href="#"><span class="material-symbols-outlined text-[20px]">pie_chart</span><span class="font-body-md text-body-md">Budget</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="berichte" href="#"><span class="material-symbols-outlined text-[20px]">analytics</span><span class="font-body-md text-body-md">Berichte</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="benutzerverwaltung" href="#"><span class="material-symbols-outlined text-[20px]">manage_accounts</span><span class="font-body-md text-body-md">Benutzerverwaltung</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="ki-zugaenge" href="#"><span class="material-symbols-outlined text-[20px]">auto_awesome</span><span class="font-body-md text-body-md">KI-Zugänge</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="einstellungen" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span class="font-body-md text-body-md">Einstellungen</span></a><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" data-path="hilfe" href="#"><span class="material-symbols-outlined text-[20px]">help_outline</span><span class="font-body-md text-body-md">Hilfe</span></a></nav><div class="p-space-sm bg-surface-container-lowest"><a class="flex items-center gap-space-md px-space-md h-11 rounded-lg text-error hover:bg-error-container/20 transition-colors" data-path="abmelden" href="#"><span class="material-symbols-outlined text-[20px]">logout</span><span class="font-body-md text-body-md font-medium">Abmelden</span></a></div></aside><main class="flex flex-col relative w-full pt-[6.5rem] pb-24 min-h-screen bg-surface px-margin-sm"><div class="flex flex-col w-full pb-8 space-y-space-md">
+<!-- Contextual Ribbon / Action Bar -->
+<div class="flex items-center justify-between gap-space-sm bg-surface-container-low/90 backdrop-blur-xl px-space-md py-space-sm rounded-xl shadow-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance_wallet</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant font-semibold">VERWALTUNG</span>
+<span class="text-on-surface-variant/40">·</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">5 Konten aktiv</span>
+</div>
+<a class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-primary-container text-on-primary font-headline-sm text-body-sm font-semibold shadow-[0_0_18px_rgba(45,212,191,0.35)] hover:bg-primary active:scale-95 transition-all" data-path="konto-anlegen" href="#">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>+ Neu</span>
+</a>
+</div>
+<!-- Search & Filter Bar -->
+<div class="flex flex-col space-y-space-sm">
+<!-- Search Input -->
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input aria-label="Konten durchsuchen" class="w-full h-11 pl-10 pr-10 rounded-xl bg-surface-container-lowest text-on-surface placeholder:text-outline text-body-md focus:outline-none focus:bg-surface-container transition-all shadow-inner" id="konto-search-input" placeholder="Konten durchsuchen..." type="search"/>
+<button aria-label="Suchfeld leeren" class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-outline hover:text-on-surface" id="konto-search-clear">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Quick Filter Pills -->
+<div aria-label="Kontotypen filtern" class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-0.5" role="tablist">
+<button aria-selected="true" class="filter-pill shrink-0 px-3.5 py-1.5 rounded-full text-body-sm font-headline-sm font-medium bg-primary text-on-primary shadow-[0_0_12px_rgba(45,212,191,0.25)] transition-all" data-filter="all" role="tab" type="button">
+        Alle (5)
+      </button>
+<button aria-selected="false" class="filter-pill shrink-0 px-3.5 py-1.5 rounded-full text-body-sm font-headline-sm font-medium bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" data-filter="girokonto" role="tab" type="button">
+        Girokonto
+      </button>
+<button aria-selected="false" class="filter-pill shrink-0 px-3.5 py-1.5 rounded-full text-body-sm font-headline-sm font-medium bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" data-filter="tagesgeld" role="tab" type="button">
+        Tagesgeld
+      </button>
+<button aria-selected="false" class="filter-pill shrink-0 px-3.5 py-1.5 rounded-full text-body-sm font-headline-sm font-medium bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" data-filter="depot" role="tab" type="button">
+        Depot
+      </button>
+<button aria-selected="false" class="filter-pill shrink-0 px-3.5 py-1.5 rounded-full text-body-sm font-headline-sm font-medium bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" data-filter="kreditkarte" role="tab" type="button">
+        Kreditkarte
+      </button>
+</div>
+</div>
+<!-- Accounts Card List -->
+<div aria-label="Liste der Bankkonten" class="flex flex-col space-y-space-sm" id="accounts-container" role="list">
+<!-- Card 1: Hauptgirokonto (DKB) -->
+<a class="account-card group relative flex flex-col p-space-md rounded-xl bg-surface-container-low/80 backdrop-blur-md hover:bg-surface-container transition-all active:scale-[0.99] shadow-sm overflow-hidden" data-path="konto-details/dkb-haupt" data-search="hauptgirokonto dkb girokonto de89120300001029384756" data-type="girokonto" href="#" role="listitem">
+<div class="flex items-start justify-between gap-space-xs mb-3">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+            Hauptgirokonto (DKB)
+          </span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline tracking-wider select-all mt-0.5">
+            DE89 1203 0000 1029 3847 56
+          </span>
+</div>
+<span class="shrink-0 px-2.5 py-0.5 rounded-full font-label-caps text-label-caps uppercase tracking-wider bg-primary/10 text-primary font-semibold">
+          Girokonto
+        </span>
+</div>
+<div class="flex items-end justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Aktueller Saldo</span>
+<span class="font-label-numeric-lg text-headline-lg-mobile text-primary font-medium tracking-tight">
+            +4.820,50 €
+          </span>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+</a>
+<!-- Card 2: Tagesgeld Notgroschen (ING) -->
+<a class="account-card group relative flex flex-col p-space-md rounded-xl bg-surface-container-low/80 backdrop-blur-md hover:bg-surface-container transition-all active:scale-[0.99] shadow-sm overflow-hidden" data-path="konto-details/ing-tagesgeld" data-search="tagesgeld notgroschen ing tagesgeld de27500105179928340112" data-type="tagesgeld" href="#" role="listitem">
+<div class="flex items-start justify-between gap-space-xs mb-3">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold truncate group-hover:text-secondary transition-colors">
+            Tagesgeld Notgroschen (ING)
+          </span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline tracking-wider select-all mt-0.5">
+            DE27 5001 0517 9928 3401 12
+          </span>
+</div>
+<span class="shrink-0 px-2.5 py-0.5 rounded-full font-label-caps text-label-caps uppercase tracking-wider bg-secondary-container/30 text-secondary font-semibold">
+          Tagesgeld
+        </span>
+</div>
+<div class="flex items-end justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Aktueller Saldo</span>
+<span class="font-label-numeric-lg text-headline-lg-mobile text-primary font-medium tracking-tight">
+            +15.500,00 €
+          </span>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:text-secondary group-hover:translate-x-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+</a>
+<!-- Card 3: ETF-Investmentdepot (Trade Republic) -->
+<a class="account-card group relative flex flex-col p-space-md rounded-xl bg-surface-container-low/80 backdrop-blur-md hover:bg-surface-container transition-all active:scale-[0.99] shadow-sm overflow-hidden" data-path="konto-details/tr-depot" data-search="etf investmentdepot trade republic depot de44110101008823490177" data-type="depot" href="#" role="listitem">
+<div class="flex items-start justify-between gap-space-xs mb-3">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold truncate group-hover:text-primary-container transition-colors">
+            ETF-Investmentdepot (Trade Republic)
+          </span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline tracking-wider select-all mt-0.5">
+            DE44 1101 0100 8823 4901 77
+          </span>
+</div>
+<span class="shrink-0 px-2.5 py-0.5 rounded-full font-label-caps text-label-caps uppercase tracking-wider bg-primary-container/20 text-primary-fixed-dim font-semibold">
+          Depot
+        </span>
+</div>
+<div class="flex items-end justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Aktueller Saldo</span>
+<span class="font-label-numeric-lg text-headline-lg-mobile text-primary font-medium tracking-tight">
+            +28.940,15 €
+          </span>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:text-primary-container group-hover:translate-x-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+</a>
+<!-- Card 4: Reisekreditkarte (Barclays) -->
+<a class="account-card group relative flex flex-col p-space-md rounded-xl bg-surface-container-low/80 backdrop-blur-md hover:bg-surface-container transition-all active:scale-[0.99] shadow-sm overflow-hidden" data-path="konto-details/barclays-kredit" data-search="reisekreditkarte barclays kreditkarte de02200411550192837465" data-type="kreditkarte" href="#" role="listitem">
+<div class="flex items-start justify-between gap-space-xs mb-3">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold truncate group-hover:text-error transition-colors">
+            Reisekreditkarte (Barclays)
+          </span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline tracking-wider select-all mt-0.5">
+            DE02 2004 1155 0192 8374 65
+          </span>
+</div>
+<span class="shrink-0 px-2.5 py-0.5 rounded-full font-label-caps text-label-caps uppercase tracking-wider bg-tertiary-container/20 text-tertiary font-semibold">
+          Kreditkarte
+        </span>
+</div>
+<div class="flex items-end justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Aktueller Saldo</span>
+<span class="font-label-numeric-lg text-headline-lg-mobile text-error font-medium tracking-tight">
+            -642,80 €
+          </span>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:text-error group-hover:translate-x-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+</a>
+<!-- Card 5: Gemeinschaftskonto (Commerzbank) -->
+<a class="account-card group relative flex flex-col p-space-md rounded-xl bg-surface-container-low/80 backdrop-blur-md hover:bg-surface-container transition-all active:scale-[0.99] shadow-sm overflow-hidden" data-path="konto-details/commerzbank-gemeinschaft" data-search="gemeinschaftskonto commerzbank girokonto de61300400000394820199" data-type="girokonto" href="#" role="listitem">
+<div class="flex items-start justify-between gap-space-xs mb-3">
+<div class="flex flex-col min-w-0 pr-2">
+<span class="font-headline-sm text-body-lg text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
+            Gemeinschaftskonto (Commerzbank)
+          </span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline tracking-wider select-all mt-0.5">
+            DE61 3004 0000 0394 8201 99
+          </span>
+</div>
+<span class="shrink-0 px-2.5 py-0.5 rounded-full font-label-caps text-label-caps uppercase tracking-wider bg-primary/10 text-primary font-semibold">
+          Girokonto
+        </span>
+</div>
+<div class="flex items-end justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Aktueller Saldo</span>
+<span class="font-label-numeric-lg text-headline-lg-mobile text-primary font-medium tracking-tight">
+            +2.180,00 €
+          </span>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+</a>
+</div>
+<!-- Interactive Empty State (when search / filter yields 0 matches) -->
+<div class="hidden flex-col items-center justify-center text-center p-space-xl bg-surface-container-low/60 rounded-xl space-y-space-sm mt-2" id="no-accounts-state">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[28px]">search_off</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface font-medium">Keine Konten gefunden</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Prüfen Sie Ihre Suchbegriffe oder setzen Sie den Filter zurück.</span>
+</div>
+<button class="mt-2 px-space-md py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-headline-sm text-body-sm font-semibold transition-colors" id="reset-filter-btn" type="button">
+      Filter zurücksetzen
+    </button>
+</div>
+</div>
+<script>
+(function() {
+  const searchInput = document.getElementById('konto-search-input');
+  const clearBtn = document.getElementById('konto-search-clear');
+  const filterPills = document.querySelectorAll('.filter-pill');
+  const cards = document.querySelectorAll('.account-card');
+  const emptyState = document.getElementById('no-accounts-state');
+  const resetBtn = document.getElementById('reset-filter-btn');
+
+  let activeFilter = 'all';
+
+  function applyFilters() {
+    const query = (searchInput.value || '').trim().toLowerCase().replace(/\s+/g, '');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardType = card.getAttribute('data-type');
+      const cardSearchData = (card.getAttribute('data-search') || '').toLowerCase().replace(/\s+/g, '');
+      
+      const matchesType = (activeFilter === 'all') || (cardType === activeFilter);
+      const matchesSearch = query === '' || cardSearchData.includes(query);
+
+      if (matchesType && matchesSearch) {
+        card.classList.remove('hidden');
+        visibleCount++;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    if (visibleCount === 0) {
+      emptyState.classList.remove('hidden');
+      emptyState.classList.add('flex');
+    } else {
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+    }
+
+    if (query.length > 0) {
+      clearBtn.classList.remove('hidden');
+    } else {
+      clearBtn.classList.add('hidden');
+    }
+  }
+
+  // Filter button clicks
+  filterPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      filterPills.forEach(p => {
+        p.setAttribute('aria-selected', 'false');
+        p.className = 'filter-pill shrink-0 px-3.5 py-1.5 rounded-full text-body-sm font-headline-sm font-medium bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all';
+      });
+
+      pill.setAttribute('aria-selected', 'true');
+      pill.className = 'filter-pill shrink-0 px-3.5 py-1.5 rounded-full text-body-sm font-headline-sm font-medium bg-primary text-on-primary shadow-[0_0_12px_rgba(45,212,191,0.25)] transition-all';
+      
+      activeFilter = pill.getAttribute('data-filter');
+      applyFilters();
+    });
+  });
+
+  // Search input events
+  if (searchInput) {
+    searchInput.addEventListener('input', applyFilters);
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      applyFilters();
+      searchInput.focus();
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      const allPill = document.querySelector('.filter-pill[data-filter="all"]');
+      if (allPill) allPill.click();
+    });
+  }
+})();
+</script></main><nav class="fixed bottom-0 inset-x-0 z-40 pb-safe bg-surface/90 backdrop-blur-2xl shadow-[0_-1px_16px_rgba(0,0,0,0.5)]" data-active-classes="text-primary font-semibold"><div class="h-16 px-space-sm flex items-center justify-around"><a class="flex flex-col items-center justify-center gap-0.5 min-w-[3.5rem] h-12 text-on-surface-variant transition-colors" data-path="start" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-caps text-label-caps">Start</span></a><a aria-current="page" class="flex flex-col items-center justify-center gap-0.5 min-w-[3.5rem] h-12 transition-colors text-primary font-semibold" data-path="konten" href="#"><span class="material-symbols-outlined text-[22px]">account_balance</span><span class="font-label-caps text-label-caps">Konten</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[3.5rem] h-12 text-on-surface-variant transition-colors" data-path="sparplaene" href="#"><span class="material-symbols-outlined text-[22px]">savings</span><span class="font-label-caps text-label-caps">Sparen</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[3.5rem] h-12 text-on-surface-variant transition-colors" data-path="wertpapiere" href="#"><span class="material-symbols-outlined text-[22px]">trending_up</span><span class="font-label-caps text-label-caps">Depot</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[3.5rem] h-12 text-on-surface-variant transition-colors" data-path="budget" href="#"><span class="material-symbols-outlined text-[22px]">pie_chart</span><span class="font-label-caps text-label-caps">Budget</span></a></div></nav><script>(function(){const toggle=document.getElementById('drawer-toggle');const drawer=document.getElementById('nav-drawer');const scrim=document.getElementById('nav-drawer-scrim');const close=document.getElementById('drawer-close');function openDrawer(){drawer.classList.remove('-translate-x-full');scrim.classList.remove('opacity-0','pointer-events-none');}function closeDrawer(){drawer.classList.add('-translate-x-full');scrim.classList.add('opacity-0','pointer-events-none');}if(toggle)toggle.addEventListener('click',openDrawer);if(close)close.addEventListener('click',closeDrawer);if(scrim)scrim.addEventListener('click',closeDrawer);})();</script></body></html>

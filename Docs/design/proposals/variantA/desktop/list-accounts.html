@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konten - FinanceManager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            page: '#0b0e13',
+            surface: {
+              DEFAULT: '#10131a',
+              dim: '#10131a',
+              bright: '#1a1f2c',
+              container: '#151922',
+              card: '#131720',
+              subtle: '#181d28',
+            },
+            border: {
+              DEFAULT: '#232a36',
+              light: '#2d3545',
+            },
+            primary: {
+              DEFAULT: '#6d8dff',
+              hover: '#5877f5',
+              soft: 'rgba(109, 141, 255, 0.12)',
+            },
+            muted: '#8e9aa8',
+            danger: '#f87171',
+            success: '#34d399',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b0e13;
+      color: #e2e8f0;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0e13;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #232a36;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2d3545;
+    }
+  </style>
+</head>
+<body class="bg-[#0b0e13] text-[#e2e8f0] h-screen flex overflow-hidden antialiased text-sm">
+
+  <!-- LEFT SIDEBAR (Fixed layout structure with all required items) -->
+  <aside class="w-64 bg-[#10131a] border-r border-[#232a36] flex flex-col shrink-0 select-none z-20">
+    <!-- Brand Logo & Header -->
+    <div class="h-16 px-5 border-b border-[#232a36] flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-[#6d8dff]/15 border border-[#6d8dff]/30 flex items-center justify-center text-[#6d8dff]">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div class="flex flex-col">
+        <span class="font-semibold text-white tracking-tight text-base leading-tight">FinanceManager</span>
+        <span class="text-[11px] text-[#8e9aa8] leading-tight">Finanzübersicht</span>
+      </div>
+    </div>
+
+    <!-- Navigation Items -->
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+        <span class="font-medium text-xs">Start</span>
+      </a>
+
+      <!-- Active Menu Item: Konten -->
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#6d8dff] text-white font-medium shadow-sm transition-colors">
+        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+        </svg>
+        <span class="text-xs">Konten</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+        </svg>
+        <span class="font-medium text-xs">Kontakte</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+        <span class="font-medium text-xs">Sparpläne</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
+        </svg>
+        <span class="font-medium text-xs">Wertpapiere</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+        </svg>
+        <span class="font-medium text-xs">Kontoauszüge</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+        </svg>
+        <span class="font-medium text-xs">Budget</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+        </svg>
+        <span class="font-medium text-xs">Berichte</span>
+      </a>
+
+      <div class="pt-3 pb-1">
+        <div class="h-px bg-[#232a36] mx-2"></div>
+      </div>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+        </svg>
+        <span class="font-medium text-xs">Benutzerverwaltung</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+        </svg>
+        <span class="font-medium text-xs">KI-Zugänge</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+        <span class="font-medium text-xs">Einstellungen</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+        </svg>
+        <span class="font-medium text-xs">Hilfe</span>
+      </a>
+    </nav>
+
+    <!-- Bottom Logout -->
+    <div class="p-3 border-t border-[#232a36]">
+      <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors">
+        <svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+        </svg>
+        <span class="font-medium text-xs">Abmelden</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER (Top Header + Ribbon Toolbar + Scrollable Content) -->
+  <div class="flex-1 flex flex-col min-w-0 bg-[#0b0e13]">
+
+    <!-- TOP HEADER BAR (Global context & quick actions) -->
+    <header class="h-14 bg-[#10131a] border-b border-[#232a36] px-6 flex items-center justify-between shrink-0">
+      <!-- Breadcrumb / View info & Hamburger for mobile concept -->
+      <div class="flex items-center gap-3">
+        <button class="md:hidden text-[#8e9aa8] hover:text-white p-1 -ml-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="text-[#8e9aa8]">Buchhaltung</span>
+          <span class="text-[#232a36]">/</span>
+          <span class="text-white font-medium">Konten</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Status Indicator -->
+        <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#151922] border border-[#232a36] text-[11px] text-[#8e9aa8]">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#34d399]"></span>
+          <span>Online synchronisiert</span>
+        </div>
+        <!-- User avatar badge -->
+        <div class="w-8 h-8 rounded-full bg-[#181d28] border border-[#232a36] flex items-center justify-center text-xs font-semibold text-[#6d8dff]">
+          FM
+        </div>
+      </div>
+    </header>
+
+    <!-- CLASSIC RIBBON TOOLBAR (Modernized dark-mode evolution) -->
+    <div class="bg-[#10131a] border-b border-[#232a36] px-6 py-2.5 flex items-center gap-6 shrink-0 overflow-x-auto">
+      <!-- Group: Verwaltung -->
+      <div class="flex items-center gap-3">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-[10px] uppercase tracking-wider text-[#8e9aa8] font-semibold">Verwaltung</span>
+          <div class="flex items-center gap-2 mt-0.5">
+            <!-- Neu Button -->
+            <button class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#6d8dff] hover:bg-[#5877f5] text-white text-xs font-medium transition shadow-sm">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              <span>Neues Konto</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ribbon Divider -->
+      <div class="h-8 w-px bg-[#232a36] shrink-0"></div>
+
+      <!-- Quick Summary inside Ribbon -->
+      <div class="hidden sm:flex items-center gap-6 text-xs">
+        <div class="flex flex-col">
+          <span class="text-[10px] uppercase tracking-wider text-[#8e9aa8] font-medium">Gesamtsaldo</span>
+          <span class="text-sm font-semibold text-white tracking-tight">58.420,50 €</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-[10px] uppercase tracking-wider text-[#8e9aa8] font-medium">Aktive Konten</span>
+          <span class="text-sm font-semibold text-[#8e9aa8]">6 Konten</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCROLLABLE CONTENT AREA (Max-width ~1200px) -->
+    <main class="flex-1 overflow-y-auto px-6 py-6">
+      <div class="max-w-[1200px] mx-auto space-y-4">
+
+        <!-- FILTER- & SUCHLEISTE -->
+        <div class="bg-[#10131a] rounded-xl border border-[#232a36] p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm">
+          <!-- Suchfeld -->
+          <div class="relative flex-1 max-w-md">
+            <svg class="w-4 h-4 text-[#8e9aa8] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+            <input 
+              type="text" 
+              placeholder="Konto nach Name, Typ oder IBAN suchen..." 
+              value=""
+              class="w-full bg-[#151922] border border-[#232a36] focus:border-[#6d8dff] focus:outline-none rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder-[#8e9aa8]/60 transition"
+            >
+          </div>
+
+          <!-- Kontotypen Filter -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <button class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#151922] text-[#6d8dff] border border-[#6d8dff]/30 shrink-0">
+              Alle Konten (6)
+            </button>
+            <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-[#8e9aa8] hover:text-white hover:bg-[#151922] border border-transparent transition shrink-0">
+              Girokonten (2)
+            </button>
+            <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-[#8e9aa8] hover:text-white hover:bg-[#151922] border border-transparent transition shrink-0">
+              Tagesgeld / Sparkonten (2)
+            </button>
+            <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-[#8e9aa8] hover:text-white hover:bg-[#151922] border border-transparent transition shrink-0">
+              Wertpapierdepots (1)
+            </button>
+            <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-[#8e9aa8] hover:text-white hover:bg-[#151922] border border-transparent transition shrink-0">
+              Kreditkarten (1)
+            </button>
+          </div>
+        </div>
+
+        <!-- DESKTOP DATENTABELLE (Exact columns: Name, Typ, IBAN, aktueller Saldo | Zeilenklick führt zur Detailseite) -->
+        <div class="hidden md:block bg-[#10131a] rounded-xl border border-[#232a36] overflow-hidden shadow-sm">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-[#232a36] bg-[#131720] text-[#8e9aa8] text-[11px] font-semibold uppercase tracking-wider">
+                <th class="py-3.5 px-5">Name</th>
+                <th class="py-3.5 px-5">Typ</th>
+                <th class="py-3.5 px-5">IBAN</th>
+                <th class="py-3.5 px-5 text-right">Aktueller Saldo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#232a36] text-xs">
+              
+              <!-- Row 1: Girokonto Hauptkonto -->
+              <tr class="hover:bg-[#151922] cursor-pointer transition-colors group">
+                <td class="py-4 px-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8] group-hover:border-[#6d8dff]/40 group-hover:text-[#6d8dff] transition-colors shrink-0">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                      </svg>
+                    </div>
+                    <span class="font-medium text-white group-hover:text-[#6d8dff] transition-colors text-sm">Girokonto Hauptkonto (ING)</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">
+                    Girokonto
+                  </span>
+                </td>
+                <td class="py-4 px-5 text-[#8e9aa8] font-mono tracking-tight">
+                  DE45 5001 0517 5412 8901 00
+                </td>
+                <td class="py-4 px-5 text-right">
+                  <span class="font-semibold text-white text-sm">3.450,20 €</span>
+                </td>
+              </tr>
+
+              <!-- Row 2: Tagesgeldkonto -->
+              <tr class="hover:bg-[#151922] cursor-pointer transition-colors group">
+                <td class="py-4 px-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8] group-hover:border-[#6d8dff]/40 group-hover:text-[#6d8dff] transition-colors shrink-0">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                    </div>
+                    <span class="font-medium text-white group-hover:text-[#6d8dff] transition-colors text-sm">Tagesgeldkonto Notgroschen</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">
+                    Tagesgeld
+                  </span>
+                </td>
+                <td class="py-4 px-5 text-[#8e9aa8] font-mono tracking-tight">
+                  DE12 5001 0517 9923 1044 11
+                </td>
+                <td class="py-4 px-5 text-right">
+                  <span class="font-semibold text-white text-sm">12.000,00 €</span>
+                </td>
+              </tr>
+
+              <!-- Row 3: Hauptdepot Scalable Capital -->
+              <tr class="hover:bg-[#151922] cursor-pointer transition-colors group">
+                <td class="py-4 px-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8] group-hover:border-[#6d8dff]/40 group-hover:text-[#6d8dff] transition-colors shrink-0">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
+                      </svg>
+                    </div>
+                    <span class="font-medium text-white group-hover:text-[#6d8dff] transition-colors text-sm">Wertpapierdepot (Scalable Capital)</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">
+                    Depot
+                  </span>
+                </td>
+                <td class="py-4 px-5 text-[#8e9aa8] font-mono tracking-tight">
+                  DE82 1001 1001 2689 4432 01
+                </td>
+                <td class="py-4 px-5 text-right">
+                  <span class="font-semibold text-white text-sm">41.328,00 €</span>
+                </td>
+              </tr>
+
+              <!-- Row 4: Nebenkonto DKB -->
+              <tr class="hover:bg-[#151922] cursor-pointer transition-colors group">
+                <td class="py-4 px-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8] group-hover:border-[#6d8dff]/40 group-hover:text-[#6d8dff] transition-colors shrink-0">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                      </svg>
+                    </div>
+                    <span class="font-medium text-white group-hover:text-[#6d8dff] transition-colors text-sm">Girokonto Haushaltskonto (DKB)</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">
+                    Girokonto
+                  </span>
+                </td>
+                <td class="py-4 px-5 text-[#8e9aa8] font-mono tracking-tight">
+                  DE21 1203 0000 1029 3847 56
+                </td>
+                <td class="py-4 px-5 text-right">
+                  <span class="font-semibold text-white text-sm">1.820,50 €</span>
+                </td>
+              </tr>
+
+              <!-- Row 5: Festgeld Trade Republic -->
+              <tr class="hover:bg-[#151922] cursor-pointer transition-colors group">
+                <td class="py-4 px-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8] group-hover:border-[#6d8dff]/40 group-hover:text-[#6d8dff] transition-colors shrink-0">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                    </div>
+                    <span class="font-medium text-white group-hover:text-[#6d8dff] transition-colors text-sm">Zinskonto (Trade Republic Cash)</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">
+                    Tagesgeld
+                  </span>
+                </td>
+                <td class="py-4 px-5 text-[#8e9aa8] font-mono tracking-tight">
+                  DE67 1101 0101 4432 0981 22
+                </td>
+                <td class="py-4 px-5 text-right">
+                  <span class="font-semibold text-white text-sm">500,00 €</span>
+                </td>
+              </tr>
+
+              <!-- Row 6: Visa Kreditkarte -->
+              <tr class="hover:bg-[#151922] cursor-pointer transition-colors group">
+                <td class="py-4 px-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8] group-hover:border-[#6d8dff]/40 group-hover:text-[#6d8dff] transition-colors shrink-0">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                      </svg>
+                    </div>
+                    <span class="font-medium text-white group-hover:text-[#6d8dff] transition-colors text-sm">Visa Card Kreditkarte</span>
+                  </div>
+                </td>
+                <td class="py-4 px-5">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">
+                    Kreditkarte
+                  </span>
+                </td>
+                <td class="py-4 px-5 text-[#8e9aa8] font-mono tracking-tight">
+                  DE09 5001 0517 4410 9928 33
+                </td>
+                <td class="py-4 px-5 text-right">
+                  <span class="font-semibold text-[#f87171] text-sm">-678,20 €</span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- MOBILE KARTENLISTE (Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt) -->
+        <div class="block md:hidden space-y-3">
+          <!-- Card 1 -->
+          <div class="bg-[#10131a] rounded-xl border border-[#232a36] p-4 space-y-3 cursor-pointer hover:border-[#6d8dff]/40 transition">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Girokonto Hauptkonto (ING)</h4>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">Girokonto</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-[#8e9aa8] block">Saldo</span>
+                <span class="text-sm font-bold text-white">3.450,20 €</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-[#232a36] flex justify-between items-center text-xs text-[#8e9aa8]">
+              <span>IBAN</span>
+              <span class="font-mono text-white text-[11px]">DE45 5001 0517 5412 8901 00</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="bg-[#10131a] rounded-xl border border-[#232a36] p-4 space-y-3 cursor-pointer hover:border-[#6d8dff]/40 transition">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Tagesgeldkonto Notgroschen</h4>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">Tagesgeld</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-[#8e9aa8] block">Saldo</span>
+                <span class="text-sm font-bold text-white">12.000,00 €</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-[#232a36] flex justify-between items-center text-xs text-[#8e9aa8]">
+              <span>IBAN</span>
+              <span class="font-mono text-white text-[11px]">DE12 5001 0517 9923 1044 11</span>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="bg-[#10131a] rounded-xl border border-[#232a36] p-4 space-y-3 cursor-pointer hover:border-[#6d8dff]/40 transition">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Wertpapierdepot (Scalable)</h4>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">Depot</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-[#8e9aa8] block">Saldo</span>
+                <span class="text-sm font-bold text-white">41.328,00 €</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-[#232a36] flex justify-between items-center text-xs text-[#8e9aa8]">
+              <span>IBAN</span>
+              <span class="font-mono text-white text-[11px]">DE82 1001 1001 2689 4432 01</span>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="bg-[#10131a] rounded-xl border border-[#232a36] p-4 space-y-3 cursor-pointer hover:border-[#6d8dff]/40 transition">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Girokonto Haushaltskonto (DKB)</h4>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">Girokonto</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-[#8e9aa8] block">Saldo</span>
+                <span class="text-sm font-bold text-white">1.820,50 €</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-[#232a36] flex justify-between items-center text-xs text-[#8e9aa8]">
+              <span>IBAN</span>
+              <span class="font-mono text-white text-[11px]">DE21 1203 0000 1029 3847 56</span>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="bg-[#10131a] rounded-xl border border-[#232a36] p-4 space-y-3 cursor-pointer hover:border-[#6d8dff]/40 transition">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Zinskonto Trade Republic</h4>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">Tagesgeld</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-[#8e9aa8] block">Saldo</span>
+                <span class="text-sm font-bold text-white">500,00 €</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-[#232a36] flex justify-between items-center text-xs text-[#8e9aa8]">
+              <span>IBAN</span>
+              <span class="font-mono text-white text-[11px]">DE67 1101 0101 4432 0981 22</span>
+            </div>
+          </div>
+
+          <!-- Card 6 -->
+          <div class="bg-[#10131a] rounded-xl border border-[#232a36] p-4 space-y-3 cursor-pointer hover:border-[#6d8dff]/40 transition">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#181d28] border border-[#232a36] flex items-center justify-center text-[#8e9aa8]">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-white">Visa Card Kreditkarte</h4>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-[#151922] text-[#8e9aa8] border border-[#232a36]">Kreditkarte</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-[#8e9aa8] block">Saldo</span>
+                <span class="text-sm font-bold text-[#f87171]">-678,20 €</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-[#232a36] flex justify-between items-center text-xs text-[#8e9aa8]">
+              <span>IBAN</span>
+              <span class="font-mono text-white text-[11px]">DE09 5001 0517 4410 9928 33</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

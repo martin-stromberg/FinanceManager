@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Einrichtung - Variante B</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: '#0a0d12',
+            surface: {
+              DEFAULT: '#11151d',
+              glass: 'rgba(17, 21, 29, 0.72)',
+              card: 'rgba(21, 27, 38, 0.65)',
+              elevated: '#1a202c',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderSubtle: 'rgba(255, 255, 255, 0.04)',
+            },
+            teal: {
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              glow: 'rgba(45, 212, 191, 0.15)',
+            },
+            violet: {
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              glow: 'rgba(139, 92, 246, 0.15)',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0a0d12;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(10, 13, 18, 0.8);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(45, 212, 191, 0.4);
+    }
+    .glass-panel {
+      background: rgba(18, 24, 34, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(23, 30, 44, 0.55);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glow-accent-teal {
+      box-shadow: 0 0 25px -4px rgba(45, 212, 191, 0.25);
+    }
+    .glow-accent-violet {
+      box-shadow: 0 0 25px -4px rgba(139, 92, 246, 0.25);
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex bg-[#0a0d12] text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200">
+
+  <!-- Ambient Background Glows -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[140px]"></div>
+    <div class="absolute top-1/2 -right-40 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[160px]"></div>
+    <div class="absolute -bottom-20 left-1/3 w-[450px] h-[450px] bg-teal-400/5 rounded-full blur-[120px]"></div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- LEFT SIDEBAR (Slim Icon-Rail + Expandable Label) -->
+  <!-- Navigation entries: Start, Konten, Kontakte, Sparpläne, Wertpapiere, Kontoauszüge, Budget, Berichte, Benutzerverwaltung, KI-Zugänge, Einstellungen, Hilfe, Abmelden -->
+  <!-- ========================================== -->
+  <aside class="relative z-20 w-64 md:w-64 flex flex-col h-full bg-[#0d1118]/90 backdrop-blur-xl border-r border-white/5 shrink-0 transition-all duration-300">
+    <!-- Brand / Logo -->
+    <div class="h-16 flex items-center px-5 border-b border-white/5 gap-3.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-500 p-0.5 shadow-lg shadow-teal-500/20 flex items-center justify-center shrink-0">
+        <div class="w-full h-full bg-[#0d1118] rounded-[10px] flex items-center justify-center">
+          <svg class="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="flex flex-col">
+        <div class="flex items-center gap-1.5">
+          <span class="font-bold tracking-tight text-white text-base">FinanceManager</span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20 font-medium">PRO</span>
+        </div>
+        <span class="text-[11px] text-slate-400 font-mono tracking-wide">SPA PORTAL • v4.18</span>
+      </div>
+    </div>
+
+    <!-- Navigation List -->
+    <div class="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar space-y-6">
+      
+      <!-- Primary Core Nav -->
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-mono">Finanzübersicht</div>
+        <nav class="space-y-1">
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span>Start</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+            <span>Konten</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Kontakte</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+            <span>Sparpläne</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <span>Wertpapiere</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Kontoauszüge</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><line x1="12" y1="6" x2="12" y2="8"></line><line x1="12" y1="16" x2="12" y2="18"></line></svg>
+            <span>Budget</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <span>Berichte</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Administration Nav -->
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-mono">System &amp; Verwaltung</div>
+        <nav class="space-y-1">
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Benutzerverwaltung</span>
+          </a>
+          <a href="#" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-sm font-medium transition-colors">
+            <div class="flex items-center gap-3">
+              <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 2a10 10 0 0 1 10 10"></path></svg>
+              <span>KI-Zugänge</span>
+            </div>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">AI</span>
+          </a>
+          <!-- ACTIVE: Einstellungen -->
+          <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-teal-500/15 to-teal-500/5 text-teal-300 border border-teal-500/30 font-semibold text-sm shadow-sm shadow-teal-950/40">
+            <svg class="w-4 h-4 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>Einstellungen</span>
+          </a>
+        </nav>
+      </div>
+
+    </div>
+
+    <!-- Bottom utility links: Hilfe, Abmelden -->
+    <div class="p-3 border-t border-white/5 space-y-1">
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.04] text-xs font-medium transition-colors">
+        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <span>Hilfe</span>
+      </a>
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 text-xs font-medium transition-colors">
+        <svg class="w-4 h-4 text-rose-400/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        <span>Abmelden</span>
+      </a>
+      <!-- Security pill footer -->
+      <div class="mt-2 pt-2 px-2 flex items-center justify-between text-[10px] text-slate-400 font-mono border-t border-white/5">
+        <span class="flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          PSD2 Live Sync
+        </span>
+        <span class="text-slate-400">99.8%</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- MAIN WORKSPACE & CONTENT AREA -->
+  <!-- ========================================== -->
+  <main class="relative z-10 flex-1 flex flex-col h-full overflow-hidden bg-[#0a0d12]">
+
+    <!-- TOP CONTEXTUAL RIBBON ACTION BAR (Exact Ribbon functionality from Variant B) -->
+    <header class="h-16 border-b border-white/5 bg-[#0d1118]/80 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 gap-4">
+      
+      <!-- Left: Breadcrumbs & Page Identifier -->
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Mobile hamburger toggle representation -->
+        <button class="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white bg-white/5">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+
+        <div class="flex items-center text-xs text-slate-400 gap-1.5 font-mono">
+          <span>FINANCEMANAGER</span>
+          <span>/</span>
+          <span>EINSTELLUNGEN</span>
+          <span>/</span>
+          <span class="text-teal-400 font-medium">EINRICHTUNG (VARIANTE B)</span>
+        </div>
+
+        <div class="hidden xl:flex items-center gap-2 pl-3 border-l border-white/10">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-[11px] font-mono text-teal-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+            Bankenstandard v4.18
+          </span>
+          <span class="text-slate-400 text-xs font-mono">MANDANT: DR. FLORIAN WEBER (PRO)</span>
+        </div>
+      </div>
+
+      <!-- Right: Ribbon Toolbar Grouped Actions (Exact buttons from reference screens) -->
+      <div class="flex items-center gap-2.5">
+        
+        <!-- Navigation Group (NAV) -->
+        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 transition-all">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Zurück</span>
+        </button>
+
+        <div class="h-5 w-px bg-white/10 mx-0.5"></div>
+
+        <!-- Management Group (VERWALTEN) -->
+        <button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-950 bg-gradient-to-r from-teal-400 to-teal-300 hover:from-teal-300 hover:to-teal-200 shadow-md shadow-teal-500/20 transition-all">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          <span>Speichern</span>
+        </button>
+
+        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 transition-all">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+          <span>Zurücksetzen</span>
+        </button>
+
+        <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all">
+          <svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>Löschen</span>
+        </button>
+
+        <div class="h-5 w-px bg-white/10 mx-0.5"></div>
+
+        <!-- Section Action Group (EINRICHTUNG & WARTUNG) -->
+        <button class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 transition-all">
+          <svg class="w-3.5 h-3.5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Konfiguration prüfen</span>
+        </button>
+
+        <button class="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 transition-all">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span>Standardwerte wiederherstellen</span>
+        </button>
+
+        <!-- Information Popover Links -->
+        <div class="hidden 2xl:flex items-center gap-2 pl-2 border-l border-white/10 text-xs text-slate-400">
+          <button class="hover:text-teal-300 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            Systemprotokoll
+          </button>
+          <span class="text-slate-400">•</span>
+          <button class="hover:text-teal-300 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+            Speicherstatus
+          </button>
+        </div>
+
+        <!-- User Avatar Profile in Header -->
+        <div class="flex items-center gap-2.5 pl-3 border-l border-white/10">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-500 to-violet-500 p-0.5">
+            <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-teal-300">
+              DW
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- SCROLLABLE PAGE BODY -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-6">
+
+      <!-- Page Header: Title + Context Badges + Global Accordion Toggles -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/5">
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+              <span>Systemkonfiguration &amp; Parameter</span>
+            </h1>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Knoten aktiv
+            </span>
+            <span class="hidden sm:inline-flex px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 bg-white/5">
+              #SEC-9844-AX
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Zentrale Betriebsparameter, automatische Synchronisationsläufe und Archivierungsregeln des FinanceManager Mandanten.
+          </p>
+        </div>
+
+        <!-- Global Collapse / Expand Actions -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+            Alle ausklappen
+          </button>
+          <button class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-slate-400 hover:text-slate-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-colors flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
+            Alle einklappen
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- ACCORDION SECTIONS LIST -->
+      <!-- ============================================================== -->
+      <div class="space-y-4 max-w-7xl mx-auto">
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 1: Systeminformationen (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">1. Systeminformationen</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">AKTIV</span>
+                  <span class="text-xs font-mono text-slate-400">v4.18.2-pro</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Betriebsumgebung, Cluster-Status, Sicherheitsprüfung und Hosting-Rechenzentrum</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Frankfurt Equinix FR2 • PostgreSQL 16.2</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 2: Benachrichtigungen (AUFGEKLAPPTE AKKORDEON-SEKTION MIT FORMULARFELDERN & BUTTONS) -->
+        <!-- Formularfelder: Zeitraeume, Schwellwerte, Schalter + Sektions-Aktionsbuttons -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-teal-500/30 glow-accent-teal overflow-hidden shadow-2xl transition-all duration-300">
+          
+          <!-- Sektionstitel als aufklappbarer Header (AUFGEKLAPPT) -->
+          <div class="w-full px-6 py-4.5 bg-gradient-to-r from-teal-500/10 via-surface-card to-violet-500/5 border-b border-white/10 flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-300 shadow-sm shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white tracking-tight">2. Benachrichtigungen &amp; Alerting</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30">3 KANÄLE KONFIGURIERT</span>
+                  <span class="text-xs font-mono text-slate-400">Schwellenwert 500,00 €</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Push-Auslöser, Echtzeit-Umsatzmeldungen, Schwellenwerte und automatisierte Reporting-Zyklen</p>
+              </div>
+            </div>
+
+            <!-- Chevron Icon (Up = Expanded) -->
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-mono text-teal-400 font-medium">Sektion geöffnet</span>
+              <div class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center border border-teal-500/30">
+                <svg class="w-4 h-4 transform rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion Inner Body (Formularfelder: Zeiträume, Schwellwerte, Schalter + Aktionsbuttons) -->
+          <div class="p-6 lg:p-7 space-y-6">
+
+            <!-- Intro / Info Banner for this section -->
+            <div class="flex items-start gap-3 p-3.5 rounded-xl bg-teal-500/5 border border-teal-500/20 text-xs text-slate-300">
+              <svg class="w-4 h-4 text-teal-400 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <div class="flex-1 leading-relaxed">
+                Konfigurieren Sie hier die Dispatcher-Regeln für alle Banktransaktionen. Benachrichtigungen werden über das BaFin-zertifizierte mTLS-Gateway geroutet.
+              </div>
+              <span class="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20 shrink-0">MTLS-GATEWAY AKTIV</span>
+            </div>
+
+            <!-- Form Grid: Switches, Thresholds, Timeframes -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+              <!-- FIELD 1: SCHALTER (E-Mail Benachrichtigung) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="space-y-1">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                      E-Mail-Benachrichtigung bei Buchungen
+                    </label>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                      Sofortiger Versand bei jeder signierten Kontobewegung an hinterlegte Mandantenadresse: <span class="font-mono text-slate-300">f.weber@finanzkanzlei.de</span>
+                    </p>
+                  </div>
+                  <!-- Switch Component (Active: Teal) -->
+                  <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                    <div class="w-12 h-6.5 bg-gradient-to-r from-teal-500 to-teal-400 rounded-full transition-colors p-0.5 shadow-inner shadow-teal-900/50">
+                      <div class="w-5.5 h-5.5 bg-slate-950 rounded-full shadow-md transform translate-x-5.5 transition-transform"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Status: Aktiviert (Echtzeit)</span>
+                  <span class="text-teal-400">Prio 1 (Sofort)</span>
+                </div>
+              </div>
+
+              <!-- FIELD 2: SCHWELLWERT (Numerischer Threshold mit Währung) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      Schwellenwert für Alarmmeldungen
+                    </label>
+                    <span class="text-[10px] font-mono text-slate-400">MIN. 50,00 €</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                    Löst priorisierte Sofortwarnungen bei Einzelbuchungen ab Überschreitung dieses Betrags aus.
+                  </p>
+                  
+                  <!-- Input with EUR Badge and Stepper -->
+                  <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                      <input type="text" value="500,00" class="w-full bg-[#0d121a] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm font-mono text-white font-medium focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all">
+                      <span class="absolute right-3.5 top-2.5 text-xs font-mono text-slate-400">EUR (€)</span>
+                    </div>
+                    <button class="px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-mono text-slate-300 border border-white/10">
+                      Standard
+                    </button>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Greift für: Ausgaben &amp; Eingänge</span>
+                  <span class="text-amber-400">Sicherheitsgrenze</span>
+                </div>
+              </div>
+
+              <!-- FIELD 3: ZEITRAUM & REPORTING-ZYKLUS (Intervall & Wochentag) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      Wöchentlicher Finanzbericht per E-Mail (Zeitraum)
+                    </label>
+                    <!-- Switch Component -->
+                    <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                      <div class="w-10 h-5.5 bg-teal-500 rounded-full transition-colors p-0.5">
+                        <div class="w-4.5 h-4.5 bg-slate-950 rounded-full transform translate-x-4.5 transition-transform"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                    Zusammenfassung des aggregierten Portfoliowerts und Saldenabgleichs im gewählten Turnus.
+                  </p>
+
+                  <!-- Timeframe Controls -->
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <span class="block text-[10px] font-mono text-slate-400 mb-1">AUSFÜHRUNGSTAG</span>
+                      <select class="w-full bg-[#0d121a] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-400">
+                        <option selected>Jeden Montag</option>
+                        <option>Jeden Freitag</option>
+                        <option>Monatsletzter</option>
+                      </select>
+                    </div>
+                    <div>
+                      <span class="block text-[10px] font-mono text-slate-400 mb-1">UHRZEIT (MEZ)</span>
+                      <select class="w-full bg-[#0d121a] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-400">
+                        <option selected>07:00 Uhr</option>
+                        <option>08:00 Uhr</option>
+                        <option>18:00 Uhr</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Nächster Versand: 03.06.2024, 07:00 Uhr</span>
+                  <span class="text-emerald-400">Aktiv</span>
+                </div>
+              </div>
+
+              <!-- FIELD 4: SCHALTER (Kritische Sicherheitswarnungen via SMS) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div>
+                  <div class="flex items-start justify-between gap-4 mb-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                      Kritische Sicherheitswarnungen via SMS
+                    </label>
+                    <!-- Switch Component (Inactive: Gray) -->
+                    <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                      <div class="w-10 h-5.5 bg-slate-800 border border-white/10 rounded-full transition-colors p-0.5">
+                        <div class="w-4.5 h-4.5 bg-slate-400 rounded-full transition-transform"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                    SMS-Alerting bei API-Fehlschlägen, unautorisierten IP-Zugriffen oder geänderten Kontovollmachten.
+                  </p>
+
+                  <div class="flex items-center gap-2">
+                    <input type="text" value="+49 171 •••• 921 (mTLS-verifiziert)" disabled class="w-full bg-[#0d121a]/60 border border-white/5 rounded-lg px-3 py-2 text-xs font-mono text-slate-400">
+                    <span class="text-[10px] font-mono px-2 py-1 rounded bg-slate-800 text-slate-400 shrink-0">2FA</span>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Status: Deaktiviert</span>
+                  <span class="text-slate-400">Optional</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- SEKTIONS-AKTIONSBUTTONS (Requirement: "Sektions-Aktionsbuttons") -->
+            <div class="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-wrap items-center justify-between gap-3 pt-4">
+              <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+                <span>Ungespeicherte Änderungen in dieser Sektion: 0</span>
+              </div>
+              
+              <div class="flex items-center gap-2.5">
+                <button class="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                  <span>Test-Benachrichtigung senden</span>
+                </button>
+                <button class="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 transition-colors">
+                  <span>Sektions-Standard</span>
+                </button>
+                <button class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-950 bg-teal-400 hover:bg-teal-300 transition-colors shadow-sm shadow-teal-500/20 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Sektion 2 anwenden</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 3: Sicherungen & Archivierung (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">3. Sicherungen</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-teal-500/10 text-teal-300 border border-teal-500/20">TÄGLICH AKTIV</span>
+                  <span class="text-xs font-mono text-slate-400">90 Tage Vorhaltezeit</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Automatisierte Snapshots, Speicherpfade, GoBD-Archivierung und Integritätsprüfung</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Letzte Sicherung: Heute 02:00 Uhr (14,8 MB)</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 4: Wartungsmodus (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">4. Wartungsmodus</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-800 text-slate-400 border border-white/10">BEREIT</span>
+                  <span class="text-xs font-mono text-slate-400">Status: Inaktiv</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Sperrung für Zugriffe, Wartungsfenster und Ausfallzeit-Pläne</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Geplant: Sonntags 01:00 – 03:00 Uhr</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 5: Anhänge & Dokumentenspeicher (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">5. Anhänge &amp; Dokumentenspeicher</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OCR AKTIV</span>
+                  <span class="text-xs font-mono text-slate-400">Max. 25 MB / Datei</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Belegprüfung, Quotenlimitierungen und Formatanforderungen (PDF, XML)</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">4,2 GB von 25,0 GB belegt (16,8%)</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 6: Sprache & Lokalisierung (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">6. Sprache &amp; Lokalisierung</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-white/10">DE-DE</span>
+                  <span class="text-xs font-mono text-slate-400">EUR (€) / MEZ</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Zahlenformate, Zeitzoneneinstellungen und Währungsdarstellung</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Deutsch (Deutschland) • TT.MM.JJJJ</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FOOTER STATUS & COMPLIANCE BAR -->
+      <div class="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 font-mono gap-3">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center gap-1.5 text-teal-400">
+            <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+            PSD2 Core-Schnittstelle: Synchronisiert
+          </span>
+          <span>•</span>
+          <span>0 Latenz-Fehler</span>
+          <span>•</span>
+          <span>Zuletzt geändert: 01.06.2024, 08:42 Uhr (Admin)</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-slate-400">Client-Laufzeit: Blazor WASM</span>
+          <span class="px-2 py-0.5 rounded bg-white/5 text-slate-300 border border-white/10">Auth: mTLS + FIDO2</span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

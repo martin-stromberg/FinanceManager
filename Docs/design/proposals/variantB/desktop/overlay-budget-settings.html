@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type"/>
+</head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen">
+<!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<header class="md:hidden fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 bg-[#0c1017]/90 border-b border-white/5 z-40 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-500 flex items-center justify-center p-0.5 shadow-md shadow-teal-500/20">
+<div class="w-full h-full bg-[#0a0d12] rounded-[10px] flex items-center justify-center">
+<svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 2v20m9-9H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<span class="font-bold tracking-tight text-white text-base">FinanceManager</span>
+</div>
+<button aria-label="Menü öffnen" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</header>
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<aside class="fixed top-0 bottom-0 left-0 hidden md:flex flex-col w-20 lg:w-64 bg-[#080b0f]/90 border-r border-white/5 z-30 flex-shrink-0 backdrop-blur-xl transition-all duration-300">
+<!-- Brand / Logo Area -->
+<div class="h-20 flex items-center px-4 lg:px-6 border-b border-white/5 gap-3.5">
+<div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 via-teal-500 to-violet-600 p-[1.5px] shadow-lg shadow-teal-500/20 flex-shrink-0">
+<div class="w-full h-full bg-[#0a0d12] rounded-[14px] flex items-center justify-center">
+<svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+<polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+<line x1="12" x2="12" y1="22.08" y2="12"></line>
+</svg>
+</div>
+</div>
+<div class="hidden lg:flex flex-col">
+<span class="font-extrabold tracking-tight text-white text-base leading-tight">Finance<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-violet-400">Manager</span></span>
+<span class="text-[11px] font-mono text-slate-500 tracking-wider uppercase">SPA Portal</span>
+</div>
+</div>
+<!-- Navigation Entries -->
+<nav class="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-1" data-active-classes="bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 font-semibold shadow-sm glow-active-pill">
+<!-- 1. Start -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="start" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Start</span>
+</a>
+<!-- 2. Konten -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="konten" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="5"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Konten</span>
+</a>
+<!-- 3. Kontakte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontakte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Kontakte</span>
+</a>
+<!-- 4. Sparpläne (AKTIV) -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 glow-active-pill font-semibold group relative" data-path="sparplaene" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-to-b from-teal-400 to-violet-400 rounded-r-full shadow-sm shadow-teal-400/50"></div>
+<svg class="w-5 h-5 flex-shrink-0 text-teal-300 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-teal-300 to-violet-200">Sparpläne</span>
+</a>
+<!-- 5. Wertpapiere -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="wertpapiere" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Wertpapiere</span>
+</a>
+<!-- 6. Kontoauszüge -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontoauszuege" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Kontoauszüge</span>
+</a>
+<!-- 7. Budget -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="budget" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Budget</span>
+</a>
+<!-- 8. Berichte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="berichte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Berichte</span>
+</a>
+<div class="pt-3 pb-1">
+<div class="h-px bg-white/5 mx-2"></div>
+</div>
+<!-- 9. Benutzerverwaltung -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="benutzerverwaltung" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Benutzerverwaltung</span>
+</a>
+<!-- 10. KI-Zugänge -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="ki-zugaenge" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">KI-Zugänge</span>
+</a>
+<!-- 11. Einstellungen -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="einstellungen" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Einstellungen</span>
+</a>
+<!-- 12. Hilfe -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="hilfe" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke-linecap="round" stroke-linejoin="round"></path><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Hilfe</span>
+</a>
+<!-- 13. Abmelden -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all group" data-path="abmelden" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-red-400/70 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Abmelden</span>
+</a>
+</nav>
+</aside>
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen">
+<!-- SCRIPT FOR SIDEBAR SYNC: Setze 'Budget' aktiv statt 'Sparpläne' -->
+<script>
+    (function() {
+      const navLinks = document.querySelectorAll('aside nav a[data-path]');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'budget') {
+          link.className = 'flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 glow-active-pill font-semibold group relative';
+          if (!link.querySelector('.indicator-bar')) {
+            const bar = document.createElement('div');
+            bar.className = 'indicator-bar absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-to-b from-teal-400 to-violet-400 rounded-r-full shadow-sm shadow-teal-400/50';
+            link.prepend(bar);
+          }
+        } else if (link.getAttribute('data-path') === 'sparplaene') {
+          link.className = 'flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group';
+          const existingBar = link.querySelector('.indicator-bar, div.absolute');
+          if (existingBar) existingBar.remove();
+        }
+      });
+    })();
+  </script>
+<!-- HINTERGRUND-EBENE: Vollständiger Budgetbericht (Atmosphärisch sichtbar hinter Glas-Scrim) -->
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto flex flex-col gap-6 select-none pointer-events-none filter blur-[2px] opacity-40 transition-all duration-300">
+<!-- Kontextuelle Status- & Filterleiste -->
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
+<div>
+<div class="flex items-center gap-2 text-primary font-label-caps text-label-caps uppercase tracking-wider">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          Haushaltsplanung • Zyklus Juni 2024
+        </div>
+<h1 class="text-on-surface font-headline-lg text-headline-lg tracking-tight mt-1">
+          Budgetbericht &amp; Allokation
+        </h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">
+          Monatlich • 01.06. - 30.06.2024
+        </span>
+<button class="px-4 py-2 rounded-lg bg-surface-container-highest text-on-surface font-body-sm text-body-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-base">tune</span>
+          Budgeteinstellungen
+        </button>
+</div>
+</div>
+<!-- KPI Summary Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Gesamtbudget</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">3.200,00 €</div>
+<span class="text-primary font-body-sm text-body-sm">100 % Sollvorgabe</span>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Aktuelle Ausgaben</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">2.418,50 €</div>
+<span class="text-tertiary-container font-body-sm text-body-sm">75,6 % ausgeschöpft</span>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Verbleibender Puffer</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">781,50 €</div>
+<span class="text-primary font-body-sm text-body-sm">18 Tage verbleibend</span>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Vormonatsübertrag</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">+142,20 €</div>
+<span class="text-secondary font-body-sm text-body-sm">Roll-Over aktiv</span>
+</div>
+</div>
+<!-- Kategorienübersicht mit visuellen Fortschrittsbalken -->
+<div class="p-6 rounded-2xl bg-surface-container shadow-md flex flex-col gap-5">
+<div class="flex items-center justify-between">
+<h2 class="text-on-surface font-headline-sm text-headline-sm">Kategorieauslastung</h2>
+<span class="text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">Limit-Prüfung: Normal</span>
+</div>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Wohnen &amp; Fixkosten (Miete, Energie, Internet)</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">1.180,00 € / 1.200,00 € (98%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full" style="width: 98%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Lebensmittel &amp; Haushalt</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">485,30 € / 650,00 € (74%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 74%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Freizeit, Gastronomie &amp; Kultur</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">312,00 € / 450,00 € (69%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 69%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Mobilität &amp; Kfz</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">185,20 € / 300,00 € (61%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 61%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- FOREGROUND MODAL LAYER: Obsidian Aurora Frosted Scrim & Centered Dialog -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-surface-container-lowest/80 backdrop-blur-md overflow-y-auto" id="budget-modal-container">
+<!-- Atmospheric Underglow Orbs für den Dialog -->
+<div class="absolute w-80 h-80 rounded-full bg-primary/10 blur-[100px] pointer-events-none -top-12 -left-12"></div>
+<div class="absolute w-80 h-80 rounded-full bg-secondary-container/20 blur-[120px] pointer-events-none -bottom-12 -right-12"></div>
+<!-- Das eigentliche Dialogfenster -->
+<div class="relative w-full max-w-2xl bg-surface-container/95 rounded-2xl shadow-2xl backdrop-blur-2xl p-6 sm:p-8 flex flex-col gap-6 text-on-surface my-auto">
+<!-- Subtle Teal Top Edge Glow Decorator -->
+<div class="absolute -top-px left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80"></div>
+<!-- Header Bereich -->
+<div class="flex items-start justify-between gap-4">
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shadow-inner">
+<span class="material-symbols-outlined text-2xl">tune</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="text-on-surface font-headline-md text-headline-md tracking-tight">
+                Budgeteinstellungen
+              </h2>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-caps text-label-caps uppercase">
+                Aktiv
+              </span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+              Betragsgrenzen, Alarmierungsindikatoren und Berechnungsintervalle konfigurieren.
+            </p>
+</div>
+</div>
+<button aria-label="Dialog schließen" class="w-9 h-9 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" id="close-modal-btn">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<!-- Formularbereich -->
+<form class="flex flex-col gap-6" id="budget-settings-form">
+<!-- ABSCHNITT 1: Betragsgrenzen -->
+<div class="flex flex-col gap-4 p-5 rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center gap-2 text-primary font-label-caps text-label-caps tracking-wider uppercase">
+<span class="material-symbols-outlined text-base">payments</span>
+            1. Betragsgrenzen &amp; Schwellenwerte
+          </div>
+<!-- Gesamtbudget Monatslimit & Toleranzgrenze im 2-Spalten Layout -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Monatslimit -->
+<div class="flex flex-col gap-1.5">
+<label class="text-on-surface font-body-sm text-body-sm" for="monthly-limit">
+                Gesamtbudget-Monatslimit
+              </label>
+<div class="relative flex items-center">
+<input class="w-full h-11 pl-3.5 pr-12 rounded-lg bg-surface text-on-surface font-label-numeric-md text-label-numeric-md placeholder-on-surface-variant/40 focus:outline-none focus:bg-surface-container-high transition-all" id="monthly-limit" name="monthly-limit" type="text" value="3.200,00"/>
+<span class="absolute right-3.5 text-on-surface-variant font-label-numeric-md text-label-numeric-md pointer-events-none">
+                  €
+                </span>
+</div>
+<span class="text-on-surface-variant font-body-sm text-body-sm">
+                Monatliche Maximalobergrenze aller Kategorien.
+              </span>
+</div>
+<!-- Toleranzgrenze / Pufferbetrag -->
+<div class="flex flex-col gap-1.5">
+<label class="text-on-surface font-body-sm text-body-sm" for="buffer-amount">
+                Toleranzgrenze (Pufferbetrag)
+              </label>
+<div class="relative flex items-center">
+<input class="w-full h-11 pl-3.5 pr-12 rounded-lg bg-surface text-on-surface font-label-numeric-md text-label-numeric-md placeholder-on-surface-variant/40 focus:outline-none focus:bg-surface-container-high transition-all" id="buffer-amount" name="buffer-amount" type="text" value="250,00"/>
+<span class="absolute right-3.5 text-on-surface-variant font-label-numeric-md text-label-numeric-md pointer-events-none">
+                  €
+                </span>
+</div>
+<span class="text-on-surface-variant font-body-sm text-body-sm">
+                Kulanzspanne vor Auslösung roter Überschreitungen.
+              </span>
+</div>
+</div>
+<!-- Warnschwelle / Alarmgrenze mit interaktivem Schieberegler -->
+<div class="flex flex-col gap-2 pt-2">
+<div class="flex items-center justify-between">
+<label class="text-on-surface font-body-sm text-body-sm flex items-center gap-1.5" for="warning-threshold">
+<span>Warnschwelle bei Budgetauslastung</span>
+<span class="material-symbols-outlined text-sm text-on-surface-variant" title="Informiert Sie frühzeitig vor Budgeterschöpfung">info</span>
+</label>
+<span class="px-2.5 py-0.5 rounded-md bg-surface-container-highest text-primary font-label-numeric-md text-label-numeric-md" id="threshold-display">
+                85 %
+              </span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">50%</span>
+<input class="w-full h-2 bg-surface rounded-lg appearance-none cursor-pointer accent-teal-400" id="warning-threshold" max="95" min="50" name="warning-threshold" step="5" type="range" value="85"/>
+<span class="text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">95%</span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm">
+              Bei Erreichen von 2.720,00 € (85%) wird eine Warnmeldung im Cockpit eingeblendet.
+            </p>
+</div>
+</div>
+<!-- ABSCHNITT 2: Zeitraum & Roll-Over -->
+<div class="flex flex-col gap-4 p-5 rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center gap-2 text-secondary font-label-caps text-label-caps tracking-wider uppercase">
+<span class="material-symbols-outlined text-base">date_range</span>
+            2. Zeitraum &amp; Übertragslogik
+          </div>
+<!-- Segmented Picker: Berechnungsintervall -->
+<div class="flex flex-col gap-1.5">
+<label class="text-on-surface font-body-sm text-body-sm">
+              Budgetzyklus / Berechnungsintervall
+            </label>
+<div class="grid grid-cols-3 gap-1.5 p-1 bg-surface rounded-lg">
+<button class="interval-btn py-2 px-3 rounded-md bg-surface-container-high text-primary font-body-sm text-body-sm shadow-sm transition-all text-center" data-interval="monthly" type="button">
+                Monatlich
+              </button>
+<button class="interval-btn py-2 px-3 rounded-md text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-all text-center" data-interval="quarterly" type="button">
+                Quartalsweise
+              </button>
+<button class="interval-btn py-2 px-3 rounded-md text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-all text-center" data-interval="yearly" type="button">
+                Jährlich
+              </button>
+</div>
+</div>
+<!-- Startdatum / Stichtag -->
+<div class="flex flex-col gap-1.5">
+<label class="text-on-surface font-body-sm text-body-sm" for="validity-start">
+              Gültigkeitsbeginn / Stichtag
+            </label>
+<div class="relative flex items-center">
+<input class="w-full h-11 pl-3.5 pr-12 rounded-lg bg-surface text-on-surface font-body-md text-body-md placeholder-on-surface-variant/40 focus:outline-none focus:bg-surface-container-high transition-all" id="validity-start" name="validity-start" type="text" value="Ab 01. Juni 2024 (Erster des Monats)"/>
+<span class="material-symbols-outlined absolute right-3.5 text-on-surface-variant text-xl pointer-events-none">
+                calendar_today
+              </span>
+</div>
+</div>
+<!-- Toggle: Übertrag von Restbudgets (Roll-Over) -->
+<div class="flex items-center justify-between pt-2">
+<div class="flex flex-col pr-4">
+<span class="text-on-surface font-body-sm text-body-sm">
+                Übertrag von Restbudgets (Roll-Over)
+              </span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">
+                Nicht ausgeschöpfte Budgets automatisch in den nächsten Zyklus vortragen.
+              </span>
+</div>
+<!-- Accessible Switch Control -->
+<button aria-checked="true" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full bg-primary-container transition-colors duration-200 ease-in-out focus:outline-none shadow-sm" id="rollover-toggle" role="switch" type="button">
+<span class="sr-only">Übertrag aktivieren</span>
+<span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface-container-lowest shadow ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5" id="rollover-thumb">
+</span>
+</button>
+</div>
+</div>
+<!-- Aktionsleiste unten -->
+<div class="flex items-center justify-end gap-3 pt-2">
+<button class="px-5 py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-body-md text-body-md transition-colors" id="cancel-btn" type="button">
+            Abbrechen
+          </button>
+<button class="px-6 py-2.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary-container font-headline-sm text-body-md shadow-lg shadow-teal-500/20 hover:shadow-teal-500/35 transition-all" type="submit">
+            Übernehmen
+          </button>
+</div>
+</form>
+</div>
+</div>
+<!-- INTERAKTIVE CLIENT-LOGIK FÜR DEN DIALOG -->
+<script>
+    (function initBudgetModal() {
+      // 1. Schieberegler synchronisieren
+      const thresholdSlider = document.getElementById('warning-threshold');
+      const thresholdDisplay = document.getElementById('threshold-display');
+      if (thresholdSlider && thresholdDisplay) {
+        thresholdSlider.addEventListener('input', (e) => {
+          thresholdDisplay.textContent = e.target.value + ' %';
+        });
+      }
+
+      // 2. Roll-Over Switch Toggle Logik
+      const toggleBtn = document.getElementById('rollover-toggle');
+      const toggleThumb = document.getElementById('rollover-thumb');
+      if (toggleBtn && toggleThumb) {
+        toggleBtn.addEventListener('click', () => {
+          const isChecked = toggleBtn.getAttribute('aria-checked') === 'true';
+          const nextState = !isChecked;
+          toggleBtn.setAttribute('aria-checked', String(nextState));
+          if (nextState) {
+            toggleBtn.className = 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full bg-primary-container transition-colors duration-200 ease-in-out focus:outline-none shadow-sm';
+            toggleThumb.className = 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface-container-lowest shadow ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5';
+          } else {
+            toggleBtn.className = 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full bg-surface-variant transition-colors duration-200 ease-in-out focus:outline-none shadow-sm';
+            toggleThumb.className = 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-on-surface-variant shadow ring-0 transition duration-200 ease-in-out translate-x-0.5 mt-0.5';
+          }
+        });
+      }
+
+      // 3. Segmented Picker (Monatlich, Quartal, Jahr)
+      const intervalButtons = document.querySelectorAll('.interval-btn');
+      intervalButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          intervalButtons.forEach(b => {
+            b.className = 'interval-btn py-2 px-3 rounded-md text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-all text-center';
+          });
+          btn.className = 'interval-btn py-2 px-3 rounded-md bg-surface-container-high text-primary font-body-sm text-body-sm shadow-sm transition-all text-center';
+        });
+      });
+
+      // 4. Modal Schließen Aktionen (Close, Cancel, Backdrop)
+      const closeModal = () => {
+        const modal = document.getElementById('budget-modal-container');
+        if (modal) {
+          modal.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+          modal.style.opacity = '0';
+          setTimeout(() => {
+            modal.style.display = 'none';
+            // Unblur Hintergrund falls geschlossen
+            const bgReport = document.querySelector('.filter.blur-\\[2px\\]');
+            if (bgReport) {
+              bgReport.classList.remove('blur-[2px]', 'opacity-40', 'pointer-events-none');
+            }
+          }, 200);
+        }
+      };
+
+      const closeBtn = document.getElementById('close-modal-btn');
+      const cancelBtn = document.getElementById('cancel-btn');
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+      // Submit Rückmeldung
+      const form = document.getElementById('budget-settings-form');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          closeModal();
+        });
+      }
+    })();
+  </script>
+</div></main>
+</body></html>

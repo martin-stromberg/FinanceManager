@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#00354a","surface":"#111319","on-primary":"#003731","secondary":"#d0bcff","on-error-container":"#ffdad6","surface-dim":"#111319","tertiary-fixed-dim":"#7bd0ff","on-secondary-fixed-variant":"#5516be","background":"#111319","primary-container":"#2dd4bf","on-primary-fixed-variant":"#005047","inverse-primary":"#006b5f","surface-tint":"#3cddc7","on-tertiary-fixed-variant":"#004c69","primary-fixed":"#62fae3","on-primary-container":"#00574d","on-secondary-fixed":"#23005c","on-secondary":"#3c0091","secondary-fixed":"#e9ddff","inverse-on-surface":"#2e3036","on-tertiary-container":"#005371","surface-container-lowest":"#0b0e13","surface-container-high":"#272a30","on-secondary-container":"#c4abff","on-surface":"#e1e2ea","on-primary-fixed":"#00201c","error-container":"#93000a","surface-variant":"#32353b","on-background":"#e1e2ea","primary":"#57f1db","surface-bright":"#36393f","secondary-fixed-dim":"#d0bcff","surface-container-highest":"#32353b","outline-variant":"#3c4a46","primary-fixed-dim":"#3cddc7","on-surface-variant":"#bacac5","surface-container-low":"#191c21","tertiary-container":"#5ec9ff","tertiary-fixed":"#c4e7ff","surface-container":"#1d2025","secondary-container":"#571bc1","tertiary":"#afe0ff","error":"#ffb4ab","on-tertiary-fixed":"#001e2c","on-error":"#690005","inverse-surface":"#e1e2ea","outline":"#859490"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"gutter":"1rem","margin-tablet":"1.5rem","space-md":"1rem","space-xs":"0.25rem","space-xl":"2.5rem","space-lg":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem","margin":"1rem","gutter-desktop":"1.5rem"},fontFamily:{"display-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"]},fontSize:{"display-lg":["3.5rem",{lineHeight:"4rem",letterSpacing:"-0.03em",fontWeight:"700"}],"headline-lg-mobile":["1.5rem",{lineHeight:"2rem",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-lg":["2rem",{lineHeight:"2.5rem",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["1.25rem",{lineHeight:"1.75rem",letterSpacing:"-0.01em",fontWeight:"600"}],"body-lg":["1rem",{lineHeight:"1.5rem",fontWeight:"400"}],"headline-sm":["1.125rem",{lineHeight:"1.5rem",fontWeight:"600"}],"label-sm":["0.6875rem",{lineHeight:"0.875rem",letterSpacing:"0.04em",fontWeight:"500"}],"label-lg":["0.875rem",{lineHeight:"1.25rem",letterSpacing:"0.01em",fontWeight:"600"}],"body-md":["0.875rem",{lineHeight:"1.25rem",fontWeight:"400"}],"display-lg-mobile":["2.25rem",{lineHeight:"2.75rem",letterSpacing:"-0.02em",fontWeight:"700"}],"label-md":["0.75rem",{lineHeight:"1rem",letterSpacing:"0.02em",fontWeight:"600"}],"body-sm":["0.75rem",{lineHeight:"1rem",fontWeight:"400"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-16 bg-surface-container-lowest/85 backdrop-blur-xl z-50 flex flex-col items-center justify-between py-space-sm shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col items-center w-full gap-space-sm"><div class="h-12 w-12 rounded-xl bg-surface-container flex items-center justify-center text-primary shadow-[0_0_16px_rgba(45,212,191,0.2)]" title="FinanceManager"><span class="material-symbols-outlined text-[24px]">account_balance</span></div><nav class="flex flex-col items-center w-full gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-headline-sm"><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="start" href="#" title="Start"><span class="material-symbols-outlined text-[20px]">home</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined text-[20px]">wallet</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined text-[20px]">contacts</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined text-[20px]">savings</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined text-[20px]">trending_up</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined text-[20px]">receipt_long</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined text-[20px]">pie_chart</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined text-[20px]">analytics</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined text-[20px]">group</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined text-[20px]">smart_toy</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined text-[20px]">settings</span></a><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined text-[20px]">help</span></a></nav></div><div class="flex flex-col items-center w-full gap-space-xs"><a class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined text-[20px]">logout</span></a></div></aside><div class="pl-16"><header class="fixed top-0 left-16 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl z-40 flex items-center justify-between px-gutter-desktop shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-md text-label-md"><span class="text-on-surface-variant tracking-wider uppercase">VERWALTUNG</span><span class="text-on-surface-variant">›</span><span class="text-primary font-headline-sm text-headline-sm tracking-normal">KI-Zugänge</span></div><div class="hidden md:flex items-center ml-space-lg"><button class="flex items-center gap-space-xs bg-primary-container text-on-primary-container font-label-lg text-label-lg px-space-md py-space-xs rounded-lg shadow-[0_0_16px_rgba(45,212,191,0.25)] hover:bg-primary transition-all"><span class="material-symbols-outlined text-[18px]">add</span><span>Neu</span></button></div></div><div class="flex items-center gap-space-md"><button class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface relative transition-all"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden sm:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface">Max Mustermann</span><span class="font-label-sm text-label-sm text-on-surface-variant">Quant Desk DE</span></div></div></div></header><main class="relative pt-16 bg-background w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-space-xl">
+<!-- Glowing subtle ambient background blobs (contained) -->
+<div class="relative w-full">
+<div class="absolute -top-12 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-48 right-12 w-80 h-80 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+</div>
+<!-- Breadcrumb & Top Context Ribbon (Variante B Ribbon Header) -->
+<div class="relative z-10 w-full mb-space-lg">
+<!-- Breadcrumb Line -->
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
+<span>Verwaltung</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Budgetverwaltung</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Zwecke &amp; Zuordnungen</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-label-md text-label-md">Detail</span>
+</div>
+<!-- Header Title Banner with Metadata -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md mb-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm flex-wrap">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Haushalt &amp; Lebenshaltung</h1>
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-primary-container/15 text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide uppercase">Aktiv • Strategischer Budgetzweck</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md text-on-surface-variant font-label-sm text-label-sm">
+<span class="font-mono bg-surface-container-high px-space-xs py-0.5 rounded text-primary-fixed-dim">ZWECK-ID: BZ-01-HAUSH</span>
+<span>•</span>
+<span>Gültig für Kostenstelle <strong>#DE-PRIV-01</strong></span>
+<span>•</span>
+<span>Letzter Sync: <strong>Heute, 09:45 Uhr</strong></span>
+</div>
+</div>
+<!-- Quick Action Group (Top Ribbon Variant B) -->
+<div class="flex items-center gap-space-xs bg-surface-container-low/90 backdrop-blur-xl p-1.5 rounded-xl shadow-lg">
+<!-- 1. Navigation Group -->
+<button class="flex items-center gap-space-xs px-space-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all font-label-md text-label-md" title="Zurück zur Übersicht" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span class="hidden sm:inline">Zurück</span>
+</button>
+<div class="h-5 w-px bg-surface-container-highest mx-0.5"></div>
+<!-- 2. Verwalten Group -->
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-primary-container text-on-primary-container font-label-lg text-label-lg shadow-[0_0_14px_rgba(45,212,191,0.3)] hover:bg-primary transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Speichern</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-2 rounded-lg text-on-surface hover:bg-surface-container font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">history</span>
+<span class="hidden md:inline">Zurücksetzen</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-2 rounded-lg text-error hover:bg-error-container/20 font-label-md text-label-md transition-all" title="Diesen Budgetzweck entfernen" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span class="hidden xl:inline">Löschen</span>
+</button>
+<div class="h-5 w-px bg-surface-container-highest mx-0.5 hidden sm:block"></div>
+<!-- 3. Sprungmarken / Verknüpfte Informationen -->
+<div class="hidden sm:flex items-center gap-1">
+<a class="px-space-sm py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container text-body-sm font-label-md transition-all" href="#kategorien-sektion">Kategorien (4)</a>
+<a class="px-space-sm py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container text-body-sm font-label-md transition-all" href="#regeln-sektion">Regeln &amp; Schwellen</a>
+<a class="px-space-sm py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container text-body-sm font-label-md transition-all" href="#kpi-sektion">KPIs &amp; Salden</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Grid Layout (12 Columns: 8 Main, 4 Sidebar) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start">
+<!-- LEFT / MAIN COLUMN (8 Columns) -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg min-w-0">
+<!-- CARD 1: Zweckdetails & Stammdaten -->
+<section class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-md relative overflow-hidden">
+<div class="flex items-center justify-between pb-space-md mb-space-md border-b border-surface-container-highest/60">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Zweckdetails &amp; Stammdaten</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Konfiguration der semantischen Zuordnungsmerkmale und Lebenszyklusparameter</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-primary bg-primary/10 px-space-sm py-1 rounded-full uppercase tracking-wider font-semibold">Geprüft &amp; Aktiv</span>
+</div>
+<form class="flex flex-col gap-space-md" onsubmit="event.preventDefault();">
+<!-- Row 1: Zweckname & Kennung -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1" for="zweckname">
+                Zweckname <span class="text-primary">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest text-on-surface px-space-md py-2.5 rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" id="zweckname" type="text" value="Haushalt &amp; Lebenshaltung"/>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-on-surface-variant text-[18px]">label</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" for="kurzcode">
+                Kennung / Kurzcode
+              </label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest text-primary-fixed-dim px-space-md py-2.5 rounded-lg font-mono font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" id="kurzcode" type="text" value="haushalt-lebenshaltung"/>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-on-surface-variant text-[18px]">tag</span>
+</div>
+</div>
+</div>
+<!-- Row 2: Gültigkeit & Zyklus -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md items-start">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" for="zyklus">
+                Gültigkeit &amp; Verrechnungszyklus
+              </label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest text-on-surface px-space-md py-2.5 rounded-lg font-body-md text-body-md appearance-none focus:outline-none focus:ring-1 focus:ring-primary shadow-inner pr-10" id="zyklus">
+<option selected="">Unbefristet gültig (Monatlicher Zyklus)</option>
+<option>Quartalsweiser Zyklus (Rollierend)</option>
+<option>Projektgebunden (Befristet bis 31.12.2025)</option>
+<option>Jahresgesamtbudget</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                Aktivierungsstatus
+              </label>
+<div class="flex items-center gap-space-sm h-[42px] px-space-md bg-surface-container-lowest rounded-lg">
+<span class="material-symbols-outlined text-primary text-[20px]">verified</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Laufend aktiv seit 01.01.2023</span>
+<span class="ml-auto text-on-surface-variant font-label-sm text-label-sm">824 Tage</span>
+</div>
+</div>
+</div>
+<!-- Row 3: Beschreibung -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" for="beschreibung">
+                Beschreibung &amp; Verwendungszweck
+              </label>
+<span class="font-label-sm text-label-sm text-on-surface-variant">234 / 500 Zeichen</span>
+</div>
+<textarea class="w-full bg-surface-container-lowest text-on-surface px-space-md py-2 rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner resize-none leading-relaxed" id="beschreibung" rows="3">Bündelt alle fundamentalen Lebenshaltungskosten zur Deckung der Grundbedürfnisse. Beinhaltet Lebensmittel, Verbrauchsgüter des täglichen Bedarfs, Drogerieartikel sowie lokale Markteinkäufe.</textarea>
+</div>
+<!-- Row 4: Status-Schalter & Priorität -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
+<!-- Tracking Toggle -->
+<div class="flex items-center justify-between p-space-md bg-surface-container rounded-lg">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">radar</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">Aktiv im Tracking</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">In automatischen Monatsabschluss einbinden</div>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-primary-container after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<!-- Priorität -->
+<div class="flex items-center justify-between p-space-md bg-surface-container rounded-lg">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[22px]">flag</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">Prioritätsstufe</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Hohe Priorität (Fixe &amp; vitale Aufwände)</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm px-space-sm py-1 rounded bg-secondary-container/20 text-secondary font-semibold">Stufe 1</span>
+</div>
+</div>
+</form>
+</section>
+<!-- CARD 2: Zugeordnete Kategorien Card -->
+<section class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-md flex flex-col gap-space-md" id="kategorien-sektion">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Zugeordnete Kategorien</h2>
+<span class="font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full">4 aktiv</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Diese Kontobuchungen werden diesem Zweck aggregiert zugerechnet</p>
+</div>
+<button class="inline-flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-label-md text-label-md transition-all self-start sm:self-auto" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Kategorie zuordnen</span>
+</button>
+</div>
+<!-- List of Categories -->
+<div class="flex flex-col gap-space-xs">
+<!-- Item 1: Lebensmittel -->
+<div class="group flex flex-col md:flex-row md:items-center justify-between p-space-md bg-surface-container hover:bg-surface-container-high/90 rounded-lg transition-all gap-space-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-lg bg-primary-container/15 flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">restaurant</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Lebensmittel</span>
+<span class="font-label-sm text-label-sm bg-surface-container-lowest px-2 py-0.5 rounded text-on-surface-variant">Ausgabe</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-sm">
+<span>Ø 450,00 € / Mt.</span>
+<span>•</span>
+<span>36 % Zweck-Anteil</span>
+<span>•</span>
+<span class="text-primary font-medium">Aktiv verknüpft</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<!-- Visual Mini bar -->
+<div class="w-24 bg-surface-container-lowest h-2 rounded-full overflow-hidden hidden sm:block">
+<div class="bg-primary h-full rounded-full" style="width: 36%"></div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-highest transition-all" title="Kategorie bearbeiten" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-error p-1 rounded hover:bg-surface-container-highest transition-all" title="Zuordnung lösen" type="button">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Supermarkt -->
+<div class="group flex flex-col md:flex-row md:items-center justify-between p-space-md bg-surface-container hover:bg-surface-container-high/90 rounded-lg transition-all gap-space-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-lg bg-primary-container/15 flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Supermarkt &amp; Discounter</span>
+<span class="font-label-sm text-label-sm bg-surface-container-lowest px-2 py-0.5 rounded text-on-surface-variant">Ausgabe</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-sm">
+<span>Ø 320,00 € / Mt.</span>
+<span>•</span>
+<span>26 % Zweck-Anteil</span>
+<span>•</span>
+<span class="text-primary font-medium">Aktiv verknüpft</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<div class="w-24 bg-surface-container-lowest h-2 rounded-full overflow-hidden hidden sm:block">
+<div class="bg-primary h-full rounded-full" style="width: 26%"></div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-highest transition-all" title="Kategorie bearbeiten" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-error p-1 rounded hover:bg-surface-container-highest transition-all" title="Zuordnung lösen" type="button">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+</div>
+</div>
+<!-- Item 3: Drogerie -->
+<div class="group flex flex-col md:flex-row md:items-center justify-between p-space-md bg-surface-container hover:bg-surface-container-high/90 rounded-lg transition-all gap-space-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-lg bg-secondary-container/20 flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">cleaning_services</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Drogerie &amp; Hygiene</span>
+<span class="font-label-sm text-label-sm bg-surface-container-lowest px-2 py-0.5 rounded text-on-surface-variant">Ausgabe</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-sm">
+<span>Ø 180,00 € / Mt.</span>
+<span>•</span>
+<span>14 % Zweck-Anteil</span>
+<span>•</span>
+<span class="text-secondary font-medium">Aktiv verknüpft</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<div class="w-24 bg-surface-container-lowest h-2 rounded-full overflow-hidden hidden sm:block">
+<div class="bg-secondary h-full rounded-full" style="width: 14%"></div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-highest transition-all" title="Kategorie bearbeiten" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-error p-1 rounded hover:bg-surface-container-highest transition-all" title="Zuordnung lösen" type="button">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+</div>
+</div>
+<!-- Item 4: Bäcker & Wochenmarkt -->
+<div class="group flex flex-col md:flex-row md:items-center justify-between p-space-md bg-surface-container hover:bg-surface-container-high/90 rounded-lg transition-all gap-space-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container/20 flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">bakery_dining</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Bäcker &amp; Wochenmarkt</span>
+<span class="font-label-sm text-label-sm bg-surface-container-lowest px-2 py-0.5 rounded text-on-surface-variant">Ausgabe</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-sm">
+<span>Ø 110,00 € / Mt.</span>
+<span>•</span>
+<span>9 % Zweck-Anteil</span>
+<span>•</span>
+<span class="text-tertiary font-medium">Aktiv verknüpft</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-md self-end md:self-auto">
+<div class="w-24 bg-surface-container-lowest h-2 rounded-full overflow-hidden hidden sm:block">
+<div class="bg-tertiary h-full rounded-full" style="width: 9%"></div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-highest transition-all" title="Kategorie bearbeiten" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-error p-1 rounded hover:bg-surface-container-highest transition-all" title="Zuordnung lösen" type="button">
+<span class="material-symbols-outlined text-[18px]">link_off</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Buffer notice box -->
+<div class="flex items-center justify-between p-space-md bg-surface-container-lowest/60 rounded-lg border-l-2 border-primary">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">savings</span>
+<span class="font-body-sm text-body-sm text-on-surface">Unzugeordnete Puffer-Reserve im Zweck:</span>
+</div>
+<span class="font-mono font-headline-sm text-headline-sm text-primary">180,00 € <span class="text-body-sm font-body-sm text-on-surface-variant font-normal">(15 %)</span></span>
+</div>
+</section>
+<!-- CARD 3: Budgetregeln & Automatisierungs-Logik Card -->
+<section class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-md flex flex-col gap-space-md" id="regeln-sektion">
+<div class="flex items-center justify-between pb-space-sm border-b border-surface-container-highest/60">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-secondary-container/15 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Budgetregeln &amp; Allokations-Vorgaben</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Automatisierte Grenzwerte, Eskalationspfade und Restbudget-Überträge</p>
+</div>
+</div>
+<span class="hidden sm:inline-flex items-center gap-1 font-label-sm text-label-sm text-primary bg-primary/10 px-space-sm py-1 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            Regelsatz aktiv
+          </span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Rule 1 -->
+<div class="flex items-start gap-space-md p-space-md bg-surface-container rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary-fixed flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">notification_important</span>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Schwellenwert-Warnung bei 85 % Erreichung</span>
+<span class="font-label-sm text-label-sm text-primary-fixed bg-surface-container-lowest px-2 py-0.5 rounded font-mono">85 % LIMIT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Push-Benachrichtigung an Max Mustermann und Warnbadge im Dashboard aktivieren, sobald das kumulierte Ausgabenniveau 1.062,50 € überschreitet.</p>
+</div>
+</div>
+<!-- Rule 2 -->
+<div class="flex items-start gap-space-md p-space-md bg-surface-container rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">account_tree</span>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Dynamische Auto-Allokation</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-2 py-0.5 rounded">ECHTZEIT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Eingehende und ausgehende Buchungen der verknüpften 4 Kategorien fließen automatisch ohne manuelle Freigabe in die übergeordnete Budgetüberwachung ein.</p>
+</div>
+</div>
+<!-- Rule 3 -->
+<div class="flex items-start gap-space-md p-space-md bg-surface-container rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">sync_alt</span>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Übertrag von Restbudgets (Rollover)</span>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Aktiviert</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Nicht ausgeschöpfte Beträge werden automatisch als Spar-Bonus in den Puffer des direkten Folgemonats übertragen.</p>
+</div>
+</div>
+</div>
+<!-- Validation state status banner -->
+<div class="flex items-center gap-space-sm p-space-sm px-space-md bg-surface-container-high/60 rounded-lg text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">task_alt</span>
+<span class="font-body-sm text-body-sm">Regelsatz konsistent • Keine Konflikte mit anderen Zwecken</span>
+<span class="ml-auto font-label-sm text-label-sm text-on-surface-variant font-mono">0 WARNUNGEN</span>
+</div>
+</section>
+</div>
+<!-- RIGHT / SIDEBAR COLUMN (4 Columns) -->
+<div class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- CARD 4: Zweck-KPIs & Budgetstatus -->
+<section class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-md flex flex-col gap-space-lg" id="kpi-sektion">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block mb-1">Status Laufender Monat (April 2025)</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Zweck-KPIs &amp; Auslastung</h3>
+</div>
+<!-- Big KPI Target -->
+<div class="p-space-md bg-surface-container-lowest rounded-xl flex flex-col gap-1 shadow-inner">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gesamtziel / Limit</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-display-lg text-display-lg text-on-surface font-bold tracking-tight">1.250,00</span>
+<span class="font-headline-md text-headline-md text-primary font-medium">€ / Mt.</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Festgelegt via Jahresfinanzplan 2025</span>
+</div>
+<!-- Spend Progress -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface">960,00 € verausgabt</span>
+<span class="text-primary font-semibold font-mono">76,8 %</span>
+</div>
+<!-- Progress bar -->
+<div class="h-3 w-full bg-surface-container-lowest rounded-full overflow-hidden p-0.5 shadow-inner">
+<div class="h-full rounded-full bg-gradient-to-r from-primary via-primary-fixed to-secondary transition-all" style="width: 76.8%"></div>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant pt-1">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+              290,00 € Puffer verbleibend
+            </span>
+<span class="font-medium text-on-surface">Noch 12 Tage</span>
+</div>
+</div>
+<!-- 6-Monats-Trend Inline Chart -->
+<div class="flex flex-col gap-space-xs pt-space-xs border-t border-surface-container-highest/60">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">6-Monats-Historie</span>
+<span class="font-label-sm text-label-sm text-primary font-mono">Ø 1.060 €</span>
+</div>
+<!-- Sparkline SVG -->
+<div class="w-full h-24 bg-surface-container-lowest/70 rounded-lg p-2 flex flex-col justify-end relative overflow-hidden">
+<svg class="w-full h-16 overflow-visible" preserveaspectratio="none" viewbox="0 0 240 60">
+<!-- Gradient fill -->
+<defs>
+<lineargradient id="tealGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Baseline guideline -->
+<line stroke="#32353b" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="240" y1="18" y2="18"></line>
+<!-- Area -->
+<polygon fill="url(#tealGrad)" points="0,45 48,32 96,38 144,24 192,28 240,16 240,60 0,60"></polygon>
+<!-- Line -->
+<polyline fill="none" points="0,45 48,32 96,38 144,24 192,28 240,16" stroke="#57f1db" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></polyline>
+<!-- Sparkline points -->
+<circle class="animate-ping" cx="240" cy="16" fill="#57f1db" r="3.5" style="animation-duration: 2.5s; opacity: 0.75;"></circle>
+<circle cx="240" cy="16" fill="#0b0e13" r="3" stroke="#57f1db" stroke-width="2"></circle>
+</svg>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant px-1 font-mono pt-1">
+<span>NOV</span>
+<span>DEZ</span>
+<span>JAN</span>
+<span>FEB</span>
+<span>MRZ</span>
+<span class="text-primary font-bold">AKT</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center">Stabile Auslastung im Zielkorridor ohne Überschreitung.</p>
+</div>
+</section>
+<!-- CARD 5: Verknüpfte Informationen & Metadaten -->
+<section class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-md flex flex-col gap-space-md">
+<div class="flex items-center gap-space-sm pb-space-sm border-b border-surface-container-highest/60">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">dataset</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Verknüpfungen &amp; Audit</h3>
+</div>
+<div class="flex flex-col gap-space-sm font-body-sm text-body-sm">
+<!-- Item A: Erstellt -->
+<div class="flex items-center justify-between p-2 rounded bg-surface-container">
+<span class="text-on-surface-variant">Erstellt am</span>
+<span class="font-mono text-on-surface">14.01.2023, 10:14</span>
+</div>
+<!-- Item B: Letzte Änderung -->
+<div class="flex items-center justify-between p-2 rounded bg-surface-container">
+<span class="text-on-surface-variant">Letzte Änderung</span>
+<div class="text-right">
+<span class="font-mono text-primary block">Heute, 09:45</span>
+<span class="text-[11px] text-on-surface-variant">M. Mustermann</span>
+</div>
+</div>
+<!-- Item C: Verknüpfte Konten -->
+<div class="flex flex-col gap-1.5 p-2 rounded bg-surface-container">
+<span class="text-on-surface-variant">Verknüpfte Konten (2)</span>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-primary">account_balance</span>
+<span>Girokonto Hauptkonto (DE89 … 4400)</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-secondary">credit_card</span>
+<span>Kreditkarte Business (Mastercard)</span>
+</div>
+</div>
+</div>
+<!-- Item D: Budgetplanung -->
+<div class="flex items-center justify-between p-2 rounded bg-surface-container">
+<span class="text-on-surface-variant">Aktive Budgetplanung</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold bg-surface-container-lowest px-2 py-0.5 rounded">Q2 2025 / April 2025</span>
+</div>
+</div>
+<!-- Quick audit download -->
+<button class="w-full flex items-center justify-center gap-space-xs py-2 px-space-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">history_edu</span>
+<span>Änderungshistorie anzeigen</span>
+</button>
+</section>
+</div>
+</div>
+</div></main></div></body></html>

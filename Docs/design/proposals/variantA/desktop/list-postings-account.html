@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Konten - FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            page: '#0b0e13',
+            surface: {
+              DEFAULT: '#10131a',
+              dim: '#10131a',
+              bright: '#1a1f2c',
+              container: '#151922',
+              card: '#131720',
+              subtle: '#181d28',
+            },
+            border: {
+              DEFAULT: '#232a36',
+              light: '#2d3545',
+            },
+            primary: {
+              DEFAULT: '#6d8dff',
+              hover: '#5877f5',
+              soft: 'rgba(109, 141, 255, 0.12)',
+            },
+            muted: '#8e9aa8',
+            danger: '#f87171',
+            success: '#34d399',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b0e13;
+      color: #e2e8f0;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0e13;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #232a36;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2d3545;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"/></head>
+<body class="bg-[#0b0e13] text-[#e2e8f0] h-screen flex overflow-hidden antialiased text-sm">
+<!-- LEFT SIDEBAR (Fixed layout structure with all required items) -->
+<aside class="w-64 bg-[#10131a] border-r border-[#232a36] flex flex-col shrink-0 select-none z-20">
+<!-- Brand Logo & Header -->
+<div class="h-16 px-5 border-b border-[#232a36] flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#6d8dff]/15 border border-[#6d8dff]/30 flex items-center justify-center text-[#6d8dff]">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+</svg>
+</div>
+<div class="flex flex-col">
+<span class="font-semibold text-white tracking-tight text-base leading-tight">FinanceManager</span>
+<span class="text-[11px] text-[#8e9aa8] leading-tight">Finanzübersicht</span>
+</div>
+</div>
+<!-- Navigation Items -->
+<nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Start</span>
+</a>
+<!-- Active Menu Item: Konten -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#6d8dff] text-white font-medium shadow-sm transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-xs">Konten</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Kontakte</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Sparpläne</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Wertpapiere</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Kontoauszüge</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Budget</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Berichte</span>
+</a>
+<div class="pt-3 pb-1">
+<div class="h-px bg-[#232a36] mx-2"></div>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Benutzerverwaltung</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">KI-Zugänge</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Einstellungen</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Hilfe</span>
+</a>
+</nav>
+<!-- Bottom Logout -->
+<div class="p-3 border-t border-[#232a36]">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="font-medium text-xs">Abmelden</span>
+</a>
+</div>
+</aside>
+<!-- MAIN WRAPPER (Top Header + Ribbon Toolbar + Scrollable Content) -->
+<div class="flex-1 flex flex-col min-w-0 bg-[#0b0e13]">
+<!-- TOP HEADER BAR (Global context & quick actions) -->
+<header class="h-14 bg-[#10131a] border-b border-[#232a36] px-6 flex items-center justify-between shrink-0">
+<!-- Breadcrumb / View info & Hamburger for mobile concept -->
+<div class="flex items-center gap-3">
+<button class="md:hidden text-[#8e9aa8] hover:text-white p-1 -ml-1">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<div class="flex items-center gap-2 text-xs">
+<span class="text-[#8e9aa8]">Buchhaltung</span>
+<span class="text-[#232a36]">/</span>
+<span class="text-white font-medium">Konten</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Status Indicator -->
+<div class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#151922] border border-[#232a36] text-[11px] text-[#8e9aa8]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34d399]"></span>
+<span>Online synchronisiert</span>
+</div>
+<!-- User avatar badge -->
+<div class="w-8 h-8 rounded-full bg-[#181d28] border border-[#232a36] flex items-center justify-center text-xs font-semibold text-[#6d8dff]">
+          FM
+        </div>
+</div>
+</header>
+<!-- CLASSIC RIBBON TOOLBAR (Modernized dark-mode evolution) -->
+<div class="bg-[#10131a] border-b border-[#232a36] px-6 py-2.5 flex items-center gap-6 shrink-0 overflow-x-auto">
+<!-- Group: Verwaltung -->
+<div class="flex items-center gap-3">
+<div class="flex flex-col gap-0.5">
+<span class="text-[10px] uppercase tracking-wider text-[#8e9aa8] font-semibold">Verwaltung</span>
+<div class="flex items-center gap-2 mt-0.5">
+<!-- Neu Button -->
+<button class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#6d8dff] hover:bg-[#5877f5] text-white text-xs font-medium transition shadow-sm">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M12 4.5v15m7.5-7.5h-15" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Neues Konto</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Ribbon Divider -->
+<div class="h-8 w-px bg-[#232a36] shrink-0"></div>
+<!-- Quick Summary inside Ribbon -->
+<div class="hidden sm:flex items-center gap-6 text-xs">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-[#8e9aa8] font-medium">Gesamtsaldo</span>
+<span class="text-sm font-semibold text-white tracking-tight">58.420,50 €</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-[#8e9aa8] font-medium">Aktive Konten</span>
+<span class="text-sm font-semibold text-[#8e9aa8]">6 Konten</span>
+</div>
+</div>
+</div>
+<!-- SCROLLABLE CONTENT AREA (Max-width ~1200px) -->
+<main class="flex-1 overflow-y-auto px-6 py-6"><div class="flex flex-col w-full">
+<!-- Dynamic Atmospheric Glow -->
+<div class="relative w-full">
+<div class="absolute -top-6 left-1/4 w-96 h-28 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+</div>
+<!-- In-Page Ribbon Sub-Toolbar (Secondary Functional Strip) -->
+<div class="bg-surface-container-low rounded-xl p-3 shadow-md mb-4 flex flex-wrap items-center justify-between gap-4">
+<!-- Group: Account Identification & High-Precision Telemetry -->
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Girokonto Hauptkonto (ING)</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-sm text-label-sm">Aktiv</span>
+</div>
+<div class="flex items-center gap-2 font-body-sm text-body-sm text-outline truncate">
+<span class="font-mono tracking-tight">DE45 5001 0517 5412 8901 00</span>
+<span>•</span>
+<span>BIC: INGDDEFFXXX</span>
+</div>
+</div>
+</div>
+<!-- Group: Ribbon Action Clusters -->
+<div class="flex flex-wrap items-center gap-3">
+<!-- Verwaltung Actions -->
+<div class="flex items-center gap-1.5 bg-surface-container p-1 rounded-lg">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary-container text-on-primary-container font-label-md text-label-md hover:brightness-110 active:brightness-95 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Neue Buchung</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-[16px] text-outline">swap_horiz</span>
+<span class="hidden sm:inline">Umbuchung</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-[16px] text-outline">file_download</span>
+<span class="hidden sm:inline">Import</span>
+</button>
+</div>
+<!-- Live Saldo Telemetry Pill -->
+<div class="flex items-center gap-3 px-3.5 py-1.5 rounded-lg bg-surface-container text-right">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Aktueller Saldo</span>
+<span class="font-headline-sm text-headline-sm text-on-surface tabular-nums">3.450,20 €</span>
+</div>
+<div class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></div>
+</div>
+</div>
+</div>
+<!-- Bento Telemetry Row: Key Visual Indicators -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Saldo im Zeitraum</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary">trending_up</span>
+</div>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="font-data-metric text-data-metric text-tertiary tabular-nums">+1.240,50 €</span>
+<span class="font-body-sm text-body-sm text-tertiary bg-tertiary/10 px-1.5 py-0.2 rounded">+55,1%</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline mt-1">1. Okt – 31. Okt 2024</span>
+</div>
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Gesamteinnahmen</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary">arrow_downward_alt</span>
+</div>
+<div class="mt-2">
+<span class="font-data-metric text-data-metric text-on-surface tabular-nums">+3.500,00 €</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline mt-1">1 Gutschrift (Gehalt)</span>
+</div>
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Gesamtausgaben</span>
+<span class="material-symbols-outlined text-[18px] text-error">arrow_upward_alt</span>
+</div>
+<div class="mt-2">
+<span class="font-data-metric text-data-metric text-on-surface tabular-nums">-2.259,50 €</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline mt-1">17 Abbuchungen</span>
+</div>
+<!-- Visual Cashflow Progress / Sparkline Mini-Widget -->
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Sparquote Zeitraum</span>
+<span class="font-label-md text-label-md text-primary font-mono">35,4%</span>
+</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="flex-1 bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 35.4%"></div>
+</div>
+</div>
+<div class="flex justify-between items-center text-outline font-body-sm text-body-sm mt-1">
+<span>Sparziel: 25,0%</span>
+<span class="text-tertiary font-label-sm text-label-sm">+10,4% Überhang</span>
+</div>
+</div>
+</div>
+<!-- Filter & Search Toolbar Strip -->
+<div class="bg-surface-container-low rounded-xl p-3 mb-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+<!-- Left: Search input & Direct Filter Pills -->
+<div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+<!-- Search Input with Leading Icon -->
+<div class="relative flex-1 min-w-[240px] max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">search</span>
+<input class="w-full h-9 pl-9 pr-3 rounded-lg bg-surface-container text-on-surface placeholder:text-outline/70 font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary-container shadow-inner" id="bookingSearchInput" placeholder="Buchungen durchsuchen (Empfänger, Beschreibung, Betrag)..." type="text"/>
+</div>
+<!-- Quick Segment Selector (Alle / Einnahmen / Ausgaben) -->
+<div class="inline-flex p-0.5 rounded-lg bg-surface-container text-outline text-label-md font-label-md">
+<button class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface shadow-xs transition-colors">Alle</button>
+<button class="px-2.5 py-1 rounded-md hover:text-on-surface transition-colors">Einnahmen</button>
+<button class="px-2.5 py-1 rounded-md hover:text-on-surface transition-colors">Ausgaben</button>
+</div>
+<!-- Category / Postenart Dropdown Pill -->
+<div class="relative">
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-outline">category</span>
+<span>Alle Postenarten</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</button>
+</div>
+<!-- Date Range Dropdown Pill -->
+<div class="relative">
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-outline">calendar_today</span>
+<span>Letzte 30 Tage (Okt 2024)</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Right: Telemetry Count & Export -->
+<div class="flex items-center justify-between lg:justify-end gap-3 shrink-0">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container text-outline font-body-sm text-body-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span class="text-on-surface font-medium">18 Buchungen</span>
+<span>•</span>
+<span>Saldo: <strong class="text-tertiary tabular-nums font-semibold">+1.240,50 €</strong></span>
+</div>
+<button class="w-9 h-9 rounded-lg bg-surface-container hover:bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-colors" title="Buchungsliste exportieren (CSV/MT940)">
+<span class="material-symbols-outlined text-[18px]">ios_share</span>
+</button>
+</div>
+</div>
+<!-- Main Ledger Data Table Container -->
+<div class="bg-surface-container-low rounded-xl shadow-lg overflow-hidden flex flex-col">
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<!-- Table Header -->
+<thead>
+<tr class="bg-surface-container text-outline font-label-sm text-label-sm uppercase tracking-wider select-none">
+<th class="py-3 px-4 w-32">Datum</th>
+<th class="py-3 px-4 min-w-[220px]">Beschreibung / Verwendungszweck</th>
+<th class="py-3 px-4 min-w-[200px]">Empfänger / Absender</th>
+<th class="py-3 px-4 w-44">Postenart</th>
+<th class="py-3 px-4 w-36 text-right">Betrag</th>
+<th class="py-3 pr-4 pl-1 w-10 text-center"><span class="sr-only">Details</span></th>
+</tr>
+</thead>
+<!-- Table Rows -->
+<tbody class="divide-y divide-surface-container font-data-table text-data-table text-on-surface">
+<!-- Row 1: Positive Gehalt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-28-01')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">28.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Gehalt Oktober 2024</span>
+<span class="font-body-sm text-body-sm text-outline">Entgeltabrechnung Ref. 883921</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-tertiary-container/30 text-tertiary flex items-center justify-center font-bold text-[10px]">T</div>
+<span class="text-on-surface">Tech AG</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-tertiary/10 text-tertiary font-label-sm text-label-sm inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                Gehalt
+              </span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-tertiary tabular-nums whitespace-nowrap">
+              + 3.500,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 2: REWE Supermarkt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-27-02')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">27.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Supermarkt REWE</span>
+<span class="font-body-sm text-body-sm text-outline">Kartenzahlung Terminal 44021</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">R</div>
+<span class="text-on-surface">REWE Markt GmbH</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 84,50 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 3: Miete -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-25-03')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">25.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Miete November 2024</span>
+<span class="font-body-sm text-body-sm text-outline">Dauerauftrag Whg. 4B / Nebenkosten</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">H</div>
+<span class="text-on-surface">Hausverwaltung Müller</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Wohnen &amp; Miete</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 1.200,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 4: Trade Republic Sparplan -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-22-04')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">22.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Trade Republic Sparplan</span>
+<span class="font-body-sm text-body-sm text-outline">MSCI World ETF Core (Acc)</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-primary-container/20 text-primary flex items-center justify-center text-[11px]">TR</div>
+<span class="text-on-surface">Trade Republic Bank</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-primary-container/15 text-primary-fixed font-label-sm text-label-sm">Investition / Sparplan</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 500,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 5: Stadtwerke Strom -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-18-05')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">18.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Stadtwerke Strom Abschlag</span>
+<span class="font-body-sm text-body-sm text-outline">Kdnr. 90421 Abschlag Okt 24</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">S</div>
+<span class="text-on-surface">Stadtwerke München</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Energie &amp; Nebenkosten</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 112,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 6: Restaurant Bella Italia -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-15-06')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">15.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Restaurant Bella Italia</span>
+<span class="font-body-sm text-body-sm text-outline">Bewirtung / Abendessen</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">B</div>
+<span class="text-on-surface">Bella Italia GbR</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 68,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 7: Netflix Abo -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-12-07')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">12.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Netflix Premium Abo</span>
+<span class="font-body-sm text-body-sm text-outline">Monatsbeitrag 4K UHD</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">N</div>
+<span class="text-on-surface">Netflix Services Germany</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Unterhaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 19,99 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 8: DB Ticket Fahrt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-08-08')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">08.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Deutsche Bahn Fahrkarte</span>
+<span class="font-body-sm text-body-sm text-outline">ICE München - Frankfurt Hbf</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">DB</div>
+<span class="text-on-surface">DB Fernverkehr AG</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Mobilität</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 74,90 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 9: Apotheke am Markt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-04-09')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">04.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Apotheke am Markt</span>
+<span class="font-body-sm text-body-sm text-outline">Rezeptzuzahlung &amp; Vitamine</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">A</div>
+<span class="text-on-surface">Markt-Apotheke OHG</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Gesundheit</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 32,40 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 10: Drogerie dm -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-02-10')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">02.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">dm-drogerie markt</span>
+<span class="font-body-sm text-body-sm text-outline">Haushaltsbedarf Filiale 512</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">DM</div>
+<span class="text-on-surface">dm-drogerie markt GmbH</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 43,80 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 11: Spotify Streaming -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-01-11')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">01.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Spotify Individual</span>
+<span class="font-body-sm text-body-sm text-outline">Monatliches Musik-Abonnement</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">S</div>
+<span class="text-on-surface">Spotify AB Stockholm</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Unterhaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 10,99 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 12: Bäckerei Frühaufsteher -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-01-12')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">01.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Bäckerei Frühaufsteher</span>
+<span class="font-body-sm text-body-sm text-outline">Kontaktlos Mobile Payment</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">B</div>
+<span class="text-on-surface">Bäckerei Frühaufsteher e.K.</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 8,70 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 13: Amazon Marketplace -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-01-13')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">01.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Amazon Marketplace Bestellung</span>
+<span class="font-body-sm text-body-sm text-outline">Bestellnr. 302-8819203-1120</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">A</div>
+<span class="text-on-surface">Amazon EU S.a.r.l.</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Wohnen &amp; Miete</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 84,22 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+</tbody>
+<!-- Rigorous Accounting Table Footer (Gesamtsummen) -->
+<tfoot>
+<tr class="bg-surface-container font-headline-sm text-headline-sm text-on-surface">
+<td class="py-3 px-4" colspan="3">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface uppercase tracking-wide">Summe / Saldo im gewählten Zeitraum</span>
+<span class="font-body-sm text-body-sm text-outline font-normal">Rechnerischer Nettoüberhang (18 Posten geprüft)</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex flex-col text-outline font-body-sm text-body-sm">
+<span>Einnahmen: <strong class="text-tertiary tabular-nums font-mono">+3.500,00 €</strong></span>
+<span>Ausgaben: <strong class="text-error tabular-nums font-mono">-2.259,50 €</strong></span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="font-data-metric text-data-metric text-tertiary tabular-nums">+1.240,50 €</span>
+</td>
+<td></td>
+</tr>
+</tfoot>
+</table>
+</div>
+<!-- Interactive Navigation Hint / Pagination Ribbon -->
+<div class="bg-surface-container p-3 flex flex-wrap items-center justify-between gap-3 text-outline font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">touch_app</span>
+<span>Zeilenklick öffnet detaillierten Buchungsbeleg mit Split-Kategorisierung und Steuerkennzeichnung</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded bg-surface-container-high text-outline hover:text-on-surface text-label-sm font-label-sm disabled:opacity-40" disabled="">Zurück</button>
+<span class="px-2 text-on-surface font-medium font-mono text-label-sm">Seite 1 von 1</span>
+<button class="px-2.5 py-1 rounded bg-surface-container-high text-outline hover:text-on-surface text-label-sm font-label-sm disabled:opacity-40" disabled="">Weiter</button>
+</div>
+</div>
+</div>
+<!-- Detail Slide-Over Modal / Off-Canvas Preview Container -->
+<div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-end transition-opacity" id="bookingDetailModal">
+<div class="w-full max-w-md h-full bg-surface-container-low shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+<div>
+<div class="flex items-center justify-between pb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">receipt_long</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Buchungsdetails</span>
+</div>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center" onclick="closeDetail()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="mt-4 p-4 rounded-xl bg-surface-container space-y-4">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase">Betrag</span>
+<div class="font-data-metric text-data-metric text-tertiary tabular-nums mt-0.5" id="modalAmount">+ 3.500,00 €</div>
+</div>
+<span class="px-2.5 py-1 rounded-md bg-tertiary/10 text-tertiary font-label-sm text-label-sm" id="modalCategory">Gehalt</span>
+</div>
+<div class="space-y-2 pt-2">
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase">Verwendungszweck</span>
+<p class="font-body-md text-body-md text-on-surface font-medium" id="modalPurpose">Gehalt Oktober 2024</p>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase">Auftraggeber / Empfänger</span>
+<p class="font-body-md text-body-md text-on-surface" id="modalPartner">Tech AG</p>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase">Valutadatum</span>
+<p class="font-body-md text-body-md text-on-surface font-mono" id="modalDate">28.10.2024</p>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase">Konto / IBAN</span>
+<p class="font-body-sm text-body-sm text-outline font-mono">DE45 5001 0517 5412 8901 00 (ING)</p>
+</div>
+</div>
+</div>
+<!-- Split / Tax metadata block -->
+<div class="mt-4 p-4 rounded-xl bg-surface-container space-y-3">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wide">Steuerliche Zuordnung</span>
+<div class="flex items-center justify-between text-on-surface font-body-sm text-body-sm">
+<span>Umsatzsteuer-Satz:</span>
+<span class="font-mono">Nicht steuerbar (0%)</span>
+</div>
+<div class="flex items-center justify-between text-on-surface font-body-sm text-body-sm">
+<span>Kategorie-Status:</span>
+<span class="text-tertiary flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px]">verified</span> Automatisch kategorisiert
+            </span>
+</div>
+</div>
+</div>
+<!-- Detail Actions -->
+<div class="pt-6 flex gap-3">
+<button class="flex-1 py-2 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" onclick="closeDetail()">
+          Schließen
+        </button>
+<button class="flex-1 py-2 px-3 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:brightness-110 transition-all flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Bearbeiten</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Inline Script for Interactive Micro-Interactions -->
+<script>
+    function openDetail(id) {
+      const modal = document.getElementById('bookingDetailModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeDetail() {
+      const modal = document.getElementById('bookingDetailModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    // Fast client-side filter simulation
+    const searchInput = document.getElementById('bookingSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+    }
+  </script>
+</div></main>
+</div>
+</body></html>

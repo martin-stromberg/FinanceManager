@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-dim": "#111319",
+          "on-tertiary-container": "#003422",
+          "primary-container": "#6d8dff",
+          "inverse-surface": "#e1e2ea",
+          "error": "#ffb4ab",
+          "on-primary-fixed-variant": "#0d3bac",
+          "on-primary-container": "#002477",
+          "outline-variant": "#444653",
+          "on-surface-variant": "#c4c5d5",
+          "outline": "#8e909f",
+          "primary-fixed-dim": "#b6c4ff",
+          "on-tertiary-fixed-variant": "#005236",
+          "on-secondary": "#2a313d",
+          "tertiary": "#4edea3",
+          "tertiary-fixed": "#6ffbbe",
+          "on-tertiary": "#003824",
+          "primary-fixed": "#dce1ff",
+          "secondary-fixed-dim": "#c0c7d6",
+          "inverse-primary": "#3255c5",
+          "on-primary-fixed": "#001550",
+          "on-secondary-fixed-variant": "#404754",
+          "surface-container-low": "#191c21",
+          "on-error": "#690005",
+          "surface-bright": "#36393f",
+          "tertiary-container": "#00a975",
+          "on-surface": "#e1e2ea",
+          "surface-variant": "#32353b",
+          "surface": "#111319",
+          "on-error-container": "#ffdad6",
+          "on-secondary-container": "#aeb5c5",
+          "surface-tint": "#b6c4ff",
+          "error-container": "#93000a",
+          "tertiary-fixed-dim": "#4edea3",
+          "on-background": "#e1e2ea",
+          "surface-container": "#1d2025",
+          "on-primary": "#002780",
+          "secondary-container": "#404754",
+          "secondary-fixed": "#dce2f3",
+          "secondary": "#c0c7d6",
+          "surface-container-lowest": "#0b0e13",
+          "surface-container-high": "#272a30",
+          "inverse-on-surface": "#2e3036",
+          "surface-container-highest": "#32353b",
+          "primary": "#b6c4ff",
+          "on-secondary-fixed": "#151c27",
+          "background": "#111319",
+          "on-tertiary-fixed": "#002113"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "gutter-tablet": "0.75rem",
+          "gutter-desktop": "1rem",
+          "space-sm": "0.5rem",
+          "margin-mobile": "1rem",
+          "space-lg": "1rem",
+          "space-xl": "1.5rem",
+          "space-md": "0.75rem",
+          "margin-desktop": "2rem",
+          "space-xs": "0.25rem",
+          "margin": "1.5rem"
+        },
+        "fontFamily": {
+          "headline-xl": ["Inter"],
+          "label-sm": ["Inter"],
+          "headline-xl-mobile": ["Inter"],
+          "body-sm": ["Inter"],
+          "data-metric": ["Inter"],
+          "body-md": ["Inter"],
+          "label-md": ["Inter"],
+          "headline-sm": ["Inter"],
+          "data-table": ["Inter"],
+          "headline-lg": ["Inter"],
+          "body-lg": ["Inter"],
+          "headline-md": ["Inter"]
+        },
+        "fontSize": {
+          "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+          "headline-xl-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+          "body-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "400"}],
+          "data-metric": ["24px", {"lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+          "headline-sm": ["16px", {"lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600"}],
+          "data-table": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+          "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  @layer base {
+    html {
+      color-scheme: dark;
+      overscroll-behavior-y: none;
+    }
+    body {
+      background-color: #0b0e13;
+      color: #e1e2ea;
+      -webkit-font-smoothing: antialiased;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0b0e13;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #232a36;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2d3545;
+  }
+</style>
+<meta content="web_dashboard" name="shell-type"/>
+</head>
+<body class="bg-[#0b0e13] text-[#e1e2ea] antialiased min-h-screen">
+<aside class="fixed inset-y-0 left-0 w-64 bg-[#10131a] border-r border-[#232a36] flex flex-col shrink-0 select-none z-30">
+<div class="h-14 px-5 border-b border-[#232a36] flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#6d8dff]/15 border border-[#6d8dff]/30 flex items-center justify-center text-[#6d8dff]">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+</svg>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-white tracking-tight leading-tight">FinanceManager</span>
+<span class="font-label-sm text-[#8e9aa8] leading-tight text-[11px]">Finanzübersicht</span>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1" data-active-classes="bg-[#6d8dff] text-white shadow-sm font-medium">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="start" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Start</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="konten" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75v10.5A2.25 2.25 0 0 0 4.5 19.5Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Konten</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="kontakte" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Kontakte</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="sparplaene" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Sparpläne</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="wertpapiere" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Wertpapiere</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="kontoauszuege" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Kontoauszüge</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="budget" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Budget</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="berichte" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Berichte</span>
+</a>
+<div class="pt-3 pb-1">
+<div class="h-px bg-[#232a36] mx-2"></div>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="benutzerverwaltung" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Benutzerverwaltung</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="ki-zugaenge" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>KI-Zugänge</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="einstellungen" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Einstellungen</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="hilfe" href="#">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Hilfe</span>
+</a>
+</nav>
+<div class="p-3 border-t border-[#232a36]">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#8e9aa8] hover:text-white hover:bg-[#151922] transition-colors font-label-md" data-path="abmelden" href="#">
+<svg class="w-4 h-4 shrink-0 text-[#8e9aa8]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Abmelden</span>
+</a>
+</div>
+</aside>
+<div class="pl-64 flex flex-col min-w-0 min-h-screen bg-[#0b0e13]">
+<header class="fixed top-0 right-0 left-64 h-14 bg-[#10131a] border-b border-[#232a36] px-6 flex items-center justify-between shrink-0 z-20">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 font-label-sm text-[#8e9aa8]">
+<span class="hover:text-[#e1e2ea] transition-colors cursor-pointer">Buchhaltung</span>
+<span class="text-[#444653]">/</span>
+<span class="text-white font-medium">Kontakte</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#191c21] border border-[#232a36] font-label-sm text-[#8e9aa8] text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span>
+<span>Online synchronisiert</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-[#1d2025] border border-[#232a36] flex items-center justify-center font-label-sm font-semibold text-[#b6c4ff] select-none">
+FM
+</div>
+</div>
+</header>
+<main class="pt-14 flex-1 px-6 py-6 max-w-[1600px] w-full mx-auto"><div class="flex flex-col w-full">
+<!-- Ribbon Toolbar -->
+<section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
+<div class="flex items-center gap-3">
+<!-- Action Group -->
+<button class="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-primary-container text-white font-label-md hover:bg-primary-container/90 transition-all shadow-sm active:scale-[0.98]" id="btn-new-category">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Neue Kategorie</span>
+</button>
+<div class="h-4 w-px bg-surface-variant"></div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container font-label-sm text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span id="active-badge-count">8 Kategorien aktiv</span>
+</span>
+</div>
+<!-- Quick Telemetry / Metadata -->
+<div class="flex items-center gap-2 font-label-sm text-secondary">
+<span class="material-symbols-outlined text-[16px] text-tertiary">tune</span>
+<span>Katalog-Version: 2025.1</span>
+</div>
+</section>
+<!-- Filter & Search Panel -->
+<section class="p-4 rounded-xl bg-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 shadow-sm">
+<!-- Search Bar -->
+<div class="relative flex-1 max-w-xl">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-9 pl-9 pr-9 bg-surface rounded-lg text-on-surface font-body-md placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary-container transition-all" id="search-input" placeholder="Kategorie suchen (z. B. Arbeitgeber, Vermieter, Familie)..." type="text"/>
+<button class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors" id="clear-search">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+</button>
+</div>
+<!-- Filter Pills & Summary Counter -->
+<div class="flex flex-wrap items-center gap-2 sm:gap-3">
+<div class="flex items-center rounded-lg bg-surface p-0.5">
+<button class="filter-btn active-filter px-3 py-1 rounded-[6px] font-label-sm bg-surface-container-high text-on-surface transition-colors" data-filter="all">
+          Alle (8)
+        </button>
+<button class="filter-btn px-3 py-1 rounded-[6px] font-label-sm text-secondary hover:text-on-surface transition-colors" data-filter="standard">
+          Standard (5)
+        </button>
+<button class="filter-btn px-3 py-1 rounded-[6px] font-label-sm text-secondary hover:text-on-surface transition-colors" data-filter="custom">
+          Benutzerdefiniert (3)
+        </button>
+</div>
+<div class="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface font-label-sm text-secondary">
+<span class="text-on-surface font-medium" id="stat-categories">8</span> Kategorien
+        <span class="text-outline-variant">•</span>
+<span class="text-on-surface font-medium" id="stat-contacts">18</span> Kontakte
+      </div>
+</div>
+</section>
+<!-- Data Display: Desktop Table & Mobile Stack -->
+<div class="rounded-xl bg-surface-container-low overflow-hidden shadow-sm">
+<!-- Desktop Table View -->
+<div class="hidden md:block overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-secondary font-label-sm uppercase tracking-wider">
+<th class="py-3 px-4 font-semibold text-left" scope="col">Name &amp; Klassifizierung</th>
+<th class="py-3 px-4 font-semibold text-left" scope="col">Zugeordnete Kontakte</th>
+<th class="py-3 px-4 w-12 text-right" scope="col"></th>
+</tr>
+</thead>
+<tbody class="font-data-table text-on-surface" id="categories-table-body">
+<!-- Row 1 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="arbeitgeber einkommen lohn tech ag" data-type="standard">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary-container shrink-0">
+<span class="material-symbols-outlined text-[18px]">corporate_fare</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Arbeitgeber &amp; Einkommen</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Lohnabrechnungen, HR, Arbeitgeberkontakte</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  1 Kontakt
+                </span>
+<span class="font-body-sm text-secondary truncate">Arbeitgeber Tech AG</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="gesundheit aerzte praxis dr michael schneider" data-type="standard">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[18px]">medical_services</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Gesundheit &amp; Ärzte</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Hausärzte, Fachärzte, Zahnmedizin, Apotheken</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  1 Kontakt
+                </span>
+<span class="font-body-sm text-secondary truncate">Dr. Michael Schneider</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="versicherungen allianz huk coburg haftpflicht hausrat" data-type="standard">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary-container shrink-0">
+<span class="material-symbols-outlined text-[18px]">shield</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Versicherungen</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Haftpflicht-, Hausrat-, Kranken- und Rentenversicherungen</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  2 Kontakte
+                </span>
+<span class="font-body-sm text-secondary truncate">Allianz Versicherungs-AG, HUK-Coburg</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="vermieter wohnen miete hausverwaltung mueller partner" data-type="standard">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-secondary-container flex items-center justify-center text-secondary-fixed shrink-0">
+<span class="material-symbols-outlined text-[18px]">apartment</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Vermieter &amp; Wohnen</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Hausverwaltung, Nebenkostenabrechnung, Mietverträge</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  1 Kontakt
+                </span>
+<span class="font-body-sm text-secondary truncate">Hausverwaltung Müller &amp; Partner</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="banken broker trade republic dkb girokonto tagesgeld depot" data-type="standard">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-tertiary-container/20 flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[18px]">account_balance</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Banken &amp; Broker</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Girokonten, Tagesgeld, Wertpapierdepots, Kreditkarten</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  2 Kontakte
+                </span>
+<span class="font-body-sm text-secondary truncate">Trade Republic Bank GmbH, DKB</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="familie privat haushalt anna weber sarah lehmann" data-type="custom">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary-fixed-dim shrink-0">
+<span class="material-symbols-outlined text-[18px]">family_restroom</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Familie &amp; Privat</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-primary-container/20 text-primary-fixed">Benutzerdefiniert</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Private Kontakte, geteilte Haushaltsausgaben, Daueraufträge</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  3 Kontakte
+                </span>
+<span class="font-body-sm text-secondary truncate">Anna Weber, Sarah Lehmann, Jonas B.</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="energie versorgung stadtwerke muenchen swm strom gas wasser" data-type="custom">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant shrink-0">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Energie &amp; Versorgung</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-primary-container/20 text-primary-fixed">Benutzerdefiniert</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Strom, Gas, Wasser, Müllabfuhr, Heizkosten</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  1 Kontakt
+                </span>
+<span class="font-body-sm text-secondary truncate">Stadtwerke München (SWM)</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="category-row group hover:bg-surface-container transition-colors cursor-pointer" data-name="beratung recht steuerberater thomas fischer notar anwalt" data-type="custom">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant shrink-0">
+<span class="material-symbols-outlined text-[18px]">gavel</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-on-surface group-hover:text-primary-container transition-colors">Beratung &amp; Recht</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-primary-container/20 text-primary-fixed">Benutzerdefiniert</span>
+</div>
+<span class="font-body-sm text-secondary truncate">Steuerberater, Notar, Rechtsberatung</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed-dim font-label-sm shrink-0">
+                  1 Kontakt
+                </span>
+<span class="font-body-sm text-secondary truncate">Steuerberater Thomas Fischer</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface transition-colors text-[18px]">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Mobile Stack View (< 768px) -->
+<div class="divide-y divide-surface-container block md:hidden" id="categories-mobile-list">
+<!-- Mobile item 1 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="arbeitgeber einkommen lohn tech ag" data-type="standard">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary-container">corporate_fare</span>
+<span class="font-headline-sm text-on-surface">Arbeitgeber &amp; Einkommen</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Lohnabrechnungen, HR, Arbeitgeberkontakte</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">1 Kontakt</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">Arbeitgeber Tech AG</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Mobile item 2 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="gesundheit aerzte praxis dr michael schneider" data-type="standard">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">medical_services</span>
+<span class="font-headline-sm text-on-surface">Gesundheit &amp; Ärzte</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Hausärzte, Fachärzte, Zahnmedizin, Apotheken</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">1 Kontakt</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">Dr. Michael Schneider</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Mobile item 3 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="versicherungen allianz huk coburg haftpflicht hausrat" data-type="standard">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary-container">shield</span>
+<span class="font-headline-sm text-on-surface">Versicherungen</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Haftpflicht-, Hausrat-, Kranken- und Rentenversicherungen</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">2 Kontakte</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">Allianz, HUK-Coburg</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Mobile item 4 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="vermieter wohnen miete hausverwaltung mueller partner" data-type="standard">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed">apartment</span>
+<span class="font-headline-sm text-on-surface">Vermieter &amp; Wohnen</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Hausverwaltung, Nebenkostenabrechnung, Mietverträge</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">1 Kontakt</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">Hausverwaltung Müller</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Mobile item 5 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="banken broker trade republic dkb girokonto tagesgeld depot" data-type="standard">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">account_balance</span>
+<span class="font-headline-sm text-on-surface">Banken &amp; Broker</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container-highest text-secondary">Standard</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Girokonten, Tagesgeld, Wertpapierdepots</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">2 Kontakte</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">Trade Republic, DKB</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Mobile item 6 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="familie privat haushalt anna weber sarah lehmann" data-type="custom">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed-dim">family_restroom</span>
+<span class="font-headline-sm text-on-surface">Familie &amp; Privat</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-primary-container/20 text-primary-fixed">Benutzerdefiniert</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Private Kontakte, Daueraufträge</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">3 Kontakte</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">Anna Weber, Sarah L.</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Mobile item 7 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="energie versorgung stadtwerke muenchen swm strom gas wasser" data-type="custom">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">bolt</span>
+<span class="font-headline-sm text-on-surface">Energie &amp; Versorgung</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-primary-container/20 text-primary-fixed">Benutzerdefiniert</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Strom, Gas, Wasser, Müllabfuhr</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">1 Kontakt</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">SWM München</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Mobile item 8 -->
+<div class="category-card p-4 hover:bg-surface-container transition-colors cursor-pointer" data-name="beratung recht steuerberater thomas fischer notar anwalt" data-type="custom">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">gavel</span>
+<span class="font-headline-sm text-on-surface">Beratung &amp; Recht</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-primary-container/20 text-primary-fixed">Benutzerdefiniert</span>
+</div>
+<p class="font-body-sm text-secondary mb-3">Steuerberater, Notar, Rechtsberatung</p>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-primary-fixed-dim font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container">1 Kontakt</span>
+<span class="text-secondary font-body-sm truncate max-w-[160px]">StB. Thomas Fischer</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Empty State (Hidden by default) -->
+<div class="hidden py-12 px-4 text-center" id="no-results-state">
+<div class="w-12 h-12 mx-auto rounded-full bg-surface-container flex items-center justify-center text-outline mb-3">
+<span class="material-symbols-outlined text-[24px]">folder_off</span>
+</div>
+<h3 class="font-headline-sm text-on-surface mb-1">Keine Kontaktkategorien gefunden</h3>
+<p class="font-body-sm text-secondary max-w-sm mx-auto mb-4">Für Ihre aktuelle Suche oder den ausgewählten Filter liegen keine passenden Einträge vor.</p>
+<button class="inline-flex items-center gap-2 h-8 px-3 rounded-lg bg-surface-container text-on-surface font-label-sm hover:bg-surface-container-high transition-colors" id="reset-filter-btn">
+        Filter zurücksetzen
+      </button>
+</div>
+<!-- Table Footer / Telemetry Summary -->
+<div class="p-3 bg-surface-container-lowest flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-label-sm text-secondary">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Hinweis: Zeilenklick führt zur Detailseite</span>
+<span class="text-outline-variant">•</span>
+<span id="footer-count">Gesamtanzahl: 8 Kategorien (18 zugeordnete Kontakte)</span>
+</div>
+<div class="flex items-center gap-1.5 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="text-secondary">Alle Daten aktuell</span>
+</div>
+</div>
+</div>
+<!-- Inline Micro-interactions Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('search-input');
+      const clearSearchBtn = document.getElementById('clear-search');
+      const filterBtns = document.querySelectorAll('.filter-btn');
+      const tableRows = document.querySelectorAll('.category-row');
+      const mobileCards = document.querySelectorAll('.category-card');
+      const noResults = document.getElementById('no-results-state');
+      const resetBtn = document.getElementById('reset-filter-btn');
+      const footerCount = document.getElementById('footer-count');
+      const activeBadge = document.getElementById('active-badge-count');
+
+      let currentFilter = 'all';
+      let currentQuery = '';
+
+      function applyFiltering() {
+        let visibleCount = 0;
+        let visibleContacts = 0;
+
+        const evaluateElement = (el) => {
+          const name = el.getAttribute('data-name') || '';
+          const type = el.getAttribute('data-type') || '';
+
+          const matchesQuery = currentQuery === '' || name.toLowerCase().includes(currentQuery.toLowerCase());
+          const matchesFilter = currentFilter === 'all' || type === currentFilter;
+
+          if (matchesQuery && matchesFilter) {
+            el.classList.remove('hidden');
+            return true;
+          } else {
+            el.classList.add('hidden');
+            return false;
+          }
+        };
+
+        tableRows.forEach(row => {
+          const isVisible = evaluateElement(row);
+          if (isVisible) {
+            visibleCount++;
+            // Calculate approximate contacts
+            const contactText = row.querySelector('td:nth-child(2) span')?.textContent || '';
+            const countMatch = contactText.match(/\d+/);
+            if (countMatch) visibleContacts += parseInt(countMatch[0], 10);
+          }
+        });
+
+        mobileCards.forEach(card => evaluateElement(card));
+
+        if (visibleCount === 0) {
+          noResults.classList.remove('hidden');
+        } else {
+          noResults.classList.add('hidden');
+        }
+
+        if (footerCount) {
+          footerCount.textContent = `Gefiltert: ${visibleCount} Kategorien (${visibleContacts} zugeordnete Kontakte)`;
+        }
+        if (activeBadge) {
+          activeBadge.textContent = `${visibleCount} Kategorien aktiv`;
+        }
+      }
+
+      // Search Handler
+      searchInput?.addEventListener('input', (e) => {
+        currentQuery = e.target.value.trim();
+        if (currentQuery.length > 0) {
+          clearSearchBtn?.classList.remove('hidden');
+        } else {
+          clearSearchBtn?.classList.add('hidden');
+        }
+        applyFiltering();
+      });
+
+      // Clear button
+      clearSearchBtn?.addEventListener('click', () => {
+        searchInput.value = '';
+        currentQuery = '';
+        clearSearchBtn.classList.add('hidden');
+        searchInput.focus();
+        applyFiltering();
+      });
+
+      // Filter Pill buttons
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach(b => {
+            b.classList.remove('bg-surface-container-high', 'text-on-surface');
+            b.classList.add('text-secondary');
+          });
+          btn.classList.add('bg-surface-container-high', 'text-on-surface');
+          btn.classList.remove('text-secondary');
+
+          currentFilter = btn.getAttribute('data-filter') || 'all';
+          applyFiltering();
+        });
+      });
+
+      // Reset Button on empty state
+      resetBtn?.addEventListener('click', () => {
+        searchInput.value = '';
+        currentQuery = '';
+        currentFilter = 'all';
+        clearSearchBtn?.classList.add('hidden');
+        filterBtns.forEach((b, idx) => {
+          if (idx === 0) {
+            b.classList.add('bg-surface-container-high', 'text-on-surface');
+            b.classList.remove('text-secondary');
+          } else {
+            b.classList.remove('bg-surface-container-high', 'text-on-surface');
+            b.classList.add('text-secondary');
+          }
+        });
+        applyFiltering();
+      });
+
+      // Row Interaction (subtle ripple/focus)
+      [...tableRows, ...mobileCards].forEach(row => {
+        row.addEventListener('click', () => {
+          // Row details route hook simulation
+          const categoryName = row.querySelector('.font-headline-sm')?.textContent;
+          if (categoryName) {
+            console.log(`Navigiere zu Kategorie: ${categoryName}`);
+          }
+        });
+      });
+    });
+  </script>
+</div></main>
+</div>
+</body></html>

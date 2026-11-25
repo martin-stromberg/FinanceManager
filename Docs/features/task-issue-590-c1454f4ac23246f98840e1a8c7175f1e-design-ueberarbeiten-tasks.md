@@ -18,7 +18,7 @@
 | 14 | Designentwurf | Stitch-Client einrichten (`@google/stitch-sdk` bevorzugt, Fallback MCP-Endpunkt `stitch.googleapis.com/mcp` via `fetch`; Key ausschließlich aus Prozess-Env `GOOGLE_STITCH`) und mit Minimalaufruf verifizieren | Erledigt | @google/stitch-sdk, Minimalaufruf a/desktop/login ok |
 | 15 | Designentwurf | Prompt-/Eingabepaket Variante A (modernisierte Weiterentwicklung) erstellen — keine neuen Funktionen, Dark-only, Desktop+Mobile | Erledigt | Variante A-Prompt in generate-proposals.mjs (VARIANTS.a) |
 | 16 | Designentwurf | Prompt-/Eingabepaket Variante B (vollständig neu gedacht) erstellen — keine neuen Funktionen, Dark-only, Desktop+Mobile | Erledigt | Variante B-Prompt in generate-proposals.mjs (VARIANTS.b) |
-| 17 | Designentwurf | Beide Varianten für alle inventarisierten Ansichten generieren und unter `Docs/design/proposals/` ablegen | Offen | — |
+| 17 | Designentwurf | Beide Varianten für alle inventarisierten Ansichten generieren und unter `Docs/design/proposals/` ablegen | Erledigt | 136 Artefakte (2×68), 0 Fehler, manifest.json vollständig |
 | 18 | Abnahme | Abnahme-Gate: beide Varianten im GitHub-Issue #590 mit Anhängen (Bilder/Artefakte) vorlegen und schriftliche Freigabe einer Variante abwarten (keine Umsetzung vorher) | Offen | — |
 | 19 | Umsetzung Styles | Token-/Variablenmodell einführen (Dark-ausgeprägt, theme-fähig) und `app.css`/`app.*.css`/`theme.Dark.*.css` gemäß freigegebenem Entwurf konsolidieren/überarbeiten | Offen | — |
 | 20 | Umsetzung Styles | `wwwroot/help/css/help-page.css` an neue Designsprache anpassen | Offen | — |

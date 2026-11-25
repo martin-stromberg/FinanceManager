@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "primary-container": "#6d8dff", "surface-tint": "#b6c4ff", "surface": "#111319", "inverse-primary": "#3255c5", "surface-container-high": "#272a30", "secondary-container": "#404754", "on-primary": "#002780", "outline": "#8e909f", "inverse-surface": "#e1e2ea", "on-secondary-fixed": "#151c27", "on-surface-variant": "#c4c5d5", "tertiary": "#4edea3", "on-background": "#e1e2ea", "outline-variant": "#444653", "tertiary-container": "#00a975", "secondary": "#c0c7d6", "error": "#ffb4ab", "on-error-container": "#ffdad6", "on-tertiary-fixed-variant": "#005236", "on-primary-container": "#002477", "surface-bright": "#36393f", "on-secondary-container": "#aeb5c5", "on-primary-fixed-variant": "#0d3bac", "secondary-fixed-dim": "#c0c7d6", "background": "#111319", "tertiary-fixed": "#6ffbbe", "tertiary-fixed-dim": "#4edea3", "surface-variant": "#32353b", "inverse-on-surface": "#2e3036", "primary": "#b6c4ff", "surface-container": "#1d2025", "secondary-fixed": "#dce2f3", "error-container": "#93000a", "on-error": "#690005", "on-primary-fixed": "#001550", "primary-fixed-dim": "#b6c4ff", "surface-container-highest": "#32353b", "on-tertiary-container": "#003422", "primary-fixed": "#dce1ff", "on-surface": "#e1e2ea", "surface-container-lowest": "#0b0e13", "on-tertiary-fixed": "#002113", "surface-dim": "#111319", "surface-container-low": "#191c21", "on-tertiary": "#003824", "on-secondary-fixed-variant": "#404754", "on-secondary": "#2a313d" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xs": "0.25rem", "margin": "1.5rem", "space-xl": "1.5rem", "margin-mobile": "1rem", "space-lg": "1rem", "gutter": "1rem", "space-sm": "0.5rem", "margin-desktop": "2rem", "space-md": "0.75rem", "gutter-tablet": "0.75rem", "gutter-desktop": "1rem" }, "fontFamily": { "label-sm": ["Inter"], "data-table": ["Inter"], "headline-lg": ["Inter"], "headline-md": ["Inter"], "body-sm": ["Inter"], "headline-xl": ["Inter"], "body-lg": ["Inter"], "headline-xl-mobile": ["Inter"], "data-metric": ["Inter"], "body-md": ["Inter"], "headline-sm": ["Inter"], "label-md": ["Inter"] }, "fontSize": { "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "data-table": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "400" }], "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "data-metric": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface-container-lowest font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-64 bg-surface-container-low border-r border-outline-variant/30 z-50 flex flex-col justify-between select-none"><div class="flex flex-col flex-1 min-h-0"><div class="h-16 px-space-lg flex flex-col justify-center border-b border-outline-variant/30"><div class="flex items-center gap-space-sm"><div class="w-6 h-6 rounded bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-[18px]">account_balance</span></div><span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">FinanceManager</span></div><span class="font-label-sm text-label-sm text-on-surface-variant font-medium tracking-wider uppercase pl-space-xs mt-0.5">Finanzübersicht</span></div><div class="flex-1 overflow-y-auto py-space-sm px-space-sm"><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="start" href="#"><span class="material-symbols-outlined text-[18px]">home</span><span>Start</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="konten" href="#"><span class="material-symbols-outlined text-[18px]">account_balance_wallet</span><span>Konten</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="kontakte" href="#"><span class="material-symbols-outlined text-[18px]">contacts</span><span>Kontakte</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="sparplaene" href="#"><span class="material-symbols-outlined text-[18px]">savings</span><span>Sparpläne</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="wertpapiere" href="#"><span class="material-symbols-outlined text-[18px]">trending_up</span><span>Wertpapiere</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="kontoauszuege" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span>Kontoauszüge</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="budget" href="#"><span class="material-symbols-outlined text-[18px]">pie_chart</span><span>Budget</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="berichte" href="#"><span class="material-symbols-outlined text-[18px]">insert_chart</span><span>Berichte</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="benutzerverwaltung" href="#"><span class="material-symbols-outlined text-[18px]">group</span><span>Benutzerverwaltung</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="ki-zugaenge" href="#"><span class="material-symbols-outlined text-[18px]">psychology</span><span>KI-Zugänge</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="einstellungen" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>Einstellungen</span></a><a class="flex items-center gap-space-md px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="hilfe" href="#"><span class="material-symbols-outlined text-[18px]">help_outline</span><span>Hilfe</span></a></nav></div></div><div class="p-space-sm border-t border-outline-variant/30"><a class="flex items-center gap-space-md px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-error transition-colors font-body-md text-body-md" data-path="login" href="#"><span class="material-symbols-outlined text-[18px]">logout</span><span>Abmelden</span></a></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-low/95 backdrop-blur border-b border-outline-variant/30 z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-sm min-w-0 font-body-sm text-body-sm text-on-surface-variant"><a class="hover:text-on-surface transition-colors truncate" data-path="wertpapiere" href="#">Wertpapiere &amp; Depots</a><span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span><span class="text-on-surface-variant truncate">Wertpapier-Performance</span><span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span><span class="text-on-surface font-medium truncate">iShares Core MSCI World UCITS ETF (IE00B4L5Y983 / A0RPWH)</span></div><div class="flex items-center gap-space-md shrink-0"><div class="flex items-center bg-surface-container-lowest border border-outline-variant/40 rounded px-space-sm py-1 gap-space-xs text-on-surface text-body-sm font-body-sm cursor-pointer hover:border-outline transition-colors"><span class="material-symbols-outlined text-[16px] text-outline">calendar_today</span><span class="font-medium tracking-tight">01.01.2024 – 31.12.2024</span><span class="material-symbols-outlined text-[16px] text-outline">arrow_drop_down</span></div><div class="flex items-center gap-space-xs"><button class="flex items-center gap-space-xs px-2.5 py-1 rounded bg-surface-container border border-outline-variant/40 text-on-surface hover:bg-surface-container-high hover:border-outline text-label-md font-label-md transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">print</span><span>Drucken</span></button><button class="flex items-center gap-space-xs px-2.5 py-1 rounded bg-surface-container border border-outline-variant/40 text-on-surface hover:bg-surface-container-high hover:border-outline text-label-md font-label-md transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">download</span><span>Exportieren</span></button></div><div class="h-4 w-px bg-outline-variant/40 mx-space-xs"></div><button class="w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors relative" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary-container"></span></button><div class="flex items-center gap-space-sm pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-surface-container-lowest min-h-screen"><div class="flex flex-col w-full">
+<!-- Sub-Navigation Ribbon & View Context -->
+<div class="w-full bg-surface-container-low px-space-xl border-b border-outline-variant/30">
+<div class="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-md pt-space-md">
+<!-- Sub-Tabs Navigation -->
+<nav aria-label="Wertpapier-Navigation" class="flex items-center gap-space-lg overflow-x-auto text-label-md font-label-md">
+<a class="pb-3 text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[16px]">pie_chart</span>
+<span>Übersicht</span>
+</a>
+<a aria-current="page" class="pb-3 text-primary border-b-2 border-primary font-semibold flex items-center gap-1.5 whitespace-nowrap" href="#">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">show_chart</span>
+<span>Zeitreihe</span>
+</a>
+<a class="pb-3 text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Cashflows</span>
+</a>
+<a class="pb-3 text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[16px]">analytics</span>
+<span>Kennzahlen</span>
+</a>
+<a class="pb-3 text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[16px]">compare_arrows</span>
+<span>Benchmark</span>
+</a>
+</nav>
+<!-- Action Secondary Bar -->
+<div class="flex items-center gap-space-xs pb-3">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>+ Buchung erfassen</span>
+</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Daten aktualisieren" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Main Content Body -->
+<div class="w-full max-w-[1400px] mx-auto px-space-lg md:px-space-xl py-space-lg space-y-space-lg">
+<!-- SECURITY HEADER SUMMARY CARD -->
+<div class="bg-surface-container-low rounded-xl p-space-lg border border-outline-variant/30 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-space-lg">
+<!-- Title & Security Metadata -->
+<div class="space-y-space-xs min-w-0">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant border border-outline-variant/40">ETF / Aktien Welt</span>
+<span class="text-xs font-medium px-2 py-0.5 rounded bg-tertiary-container/20 text-tertiary flex items-center gap-1 border border-tertiary/30">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+            XETRA Live
+          </span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Schlusskurs 31.12.2024 · 17:35 Uhr</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight truncate">
+          iShares Core MSCI World UCITS ETF USD (Acc)
+        </h1>
+<div class="flex flex-wrap items-center gap-y-1 gap-x-space-md text-body-sm font-body-sm text-on-surface-variant">
+<span>WKN: <strong class="text-on-surface font-medium">A0RPWH</strong></span>
+<span class="text-outline-variant">·</span>
+<span>ISIN: <strong class="text-on-surface font-medium">IE00B4L5Y983</strong></span>
+<span class="text-outline-variant">·</span>
+<span>Ticker: <strong class="text-on-surface font-medium">EUNL.DE</strong></span>
+<span class="text-outline-variant">·</span>
+<span>Börse: <strong class="text-on-surface font-medium">XETRA (EUR)</strong></span>
+</div>
+</div>
+<!-- Financial Metrics Ribbon -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-md xl:gap-space-lg pt-space-xs xl:pt-0 xl:border-l xl:border-outline-variant/30 xl:pl-space-lg">
+<!-- Metric 1: Aktueller Kurs -->
+<div>
+<span class="block text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-0.5">Aktueller Kurs</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold tracking-tight">98,40 €</div>
+<div class="text-body-sm font-body-sm text-tertiary flex items-center gap-0.5 font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+            +0,85 € (+0,87 %)
+          </div>
+</div>
+<!-- Metric 2: Kurswert / Marktwert -->
+<div>
+<span class="block text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-0.5">Marktwert (420 Stk.)</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold tracking-tight">41.328,00 €</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">
+            Ø 82,10 € Kaufpreis
+          </div>
+</div>
+<!-- Metric 3: Einstandswert -->
+<div>
+<span class="block text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-0.5">Einstandswert</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold tracking-tight">34.482,00 €</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">
+            Investiertes Kapital
+          </div>
+</div>
+<!-- Metric 4: Gesamtertrag -->
+<div>
+<span class="block text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-0.5">Gesamtertrag (G/V)</span>
+<div class="text-headline-sm font-headline-sm text-tertiary font-semibold tracking-tight">+6.846,00 €</div>
+<div class="text-body-sm font-body-sm text-tertiary font-medium">
+            +19,85 % Zeitrendite
+          </div>
+</div>
+</div>
+</div>
+<!-- 1. ZEITREIHE FILTER- UND INTERAKTIONSLEISTE -->
+<div class="bg-surface-container-low rounded-xl px-space-md py-space-sm border border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-md">
+<!-- Timeframe Range Pills -->
+<div class="flex items-center gap-1 overflow-x-auto py-0.5">
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">YTD</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">1M</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">3M</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">6M</button>
+<button aria-pressed="true" class="px-2.5 py-1 text-label-sm font-label-sm rounded-md bg-primary/15 text-primary border border-primary/30 font-semibold" type="button">1 Jahr</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">3 Jahre</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">5 Jahre</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">Max</button>
+</div>
+<!-- Separation Line (Desktop) -->
+<div class="hidden lg:block h-5 w-px bg-outline-variant/30"></div>
+<!-- Intervall Selection -->
+<div class="flex items-center gap-space-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant mr-1">Intervall:</span>
+<div class="inline-flex rounded-lg bg-surface-container p-0.5 border border-outline-variant/30 text-label-sm font-label-sm">
+<button class="px-2 py-0.5 rounded bg-primary text-on-primary font-semibold" type="button">Täglich</button>
+<button class="px-2 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">Wöchentlich</button>
+<button class="px-2 py-0.5 rounded text-on-surface-variant hover:text-on-surface" type="button">Monatlich</button>
+</div>
+</div>
+<!-- Separation Line (Desktop) -->
+<div class="hidden lg:block h-5 w-px bg-outline-variant/30"></div>
+<!-- Toggles & Mode Selection -->
+<div class="flex flex-wrap items-center gap-space-md text-body-sm font-body-sm">
+<!-- Yield Mode Switcher -->
+<div class="flex items-center bg-surface-container rounded-lg p-0.5 border border-outline-variant/30">
+<button class="px-2.5 py-0.5 rounded text-label-sm font-semibold bg-surface-container-high text-primary" type="button">Rendite (%)</button>
+<button class="px-2.5 py-0.5 rounded text-label-sm font-medium text-on-surface-variant hover:text-on-surface" type="button">Kurswert (€)</button>
+</div>
+<!-- Benchmark Checkbox -->
+<label class="inline-flex items-center gap-2 cursor-pointer select-none text-label-md font-label-md text-on-surface">
+<input checked="" class="w-4 h-4 rounded bg-surface-container border border-outline-variant/50 text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer accent-primary" type="checkbox"/>
+<span>Benchmark: MSCI World NR</span>
+</label>
+<!-- Sparplan Transactions Toggle -->
+<label class="inline-flex items-center gap-2 cursor-pointer select-none text-label-md font-label-md text-on-surface">
+<input checked="" class="w-4 h-4 rounded bg-surface-container border border-outline-variant/50 text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer accent-primary" type="checkbox"/>
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+            Kaufpunkte
+          </span>
+</label>
+</div>
+</div>
+<!-- 2. GROSSES HOCHPRÄZISES LINIENDIAGRAMM (ZEITREIHE) -->
+<div class="bg-surface-container-low rounded-xl p-space-lg border border-outline-variant/30 relative overflow-hidden shadow-sm">
+<!-- Chart Top Legend & Metadata -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm mb-space-md pb-space-sm border-b border-outline-variant/20">
+<div class="flex flex-wrap items-center gap-space-lg text-body-sm font-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-1 rounded bg-[#6d8dff]"></span>
+<span class="text-on-surface font-medium">Eigene Position / iShares Core MSCI World</span>
+<span class="text-primary font-semibold">+19,85 %</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-0.5 border-t border-dashed border-[#8e909f]"></span>
+<span class="text-on-surface-variant">Benchmark MSCI World NR EUR</span>
+<span class="text-on-surface-variant font-medium">+16,70 %</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-on-surface-variant">Sparplan-Ausführungen (100 € monatl.)</span>
+</div>
+</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+          Basis: 01.01.2024 = 0,00 % (82,10 €)
+        </div>
+</div>
+<!-- Vector SVG Chart Canvas -->
+<div class="w-full relative h-[380px] select-none">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 340">
+<defs>
+<!-- Primary Line Gradient Glow Fill -->
+<lineargradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#6d8dff" stop-opacity="0.28"></stop>
+<stop offset="60%" stop-color="#6d8dff" stop-opacity="0.06"></stop>
+<stop offset="100%" stop-color="#6d8dff" stop-opacity="0.00"></stop>
+</lineargradient>
+<lineargradient id="lineAccent" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#6d8dff"></stop>
+<stop offset="70%" stop-color="#8ba5ff"></stop>
+<stop offset="100%" stop-color="#b6c4ff"></stop>
+</lineargradient>
+<filter height="120%" id="glowEffect" width="120%" x="-10%" y="-10%">
+<fedropshadow dx="0" dy="2" flood-color="#6d8dff" flood-opacity="0.45" stddeviation="3"></fedropshadow>
+</filter>
+</defs>
+<!-- Horizontal Grid Lines & Y-Axis Reference Labels -->
+<!-- +20% -->
+<line opacity="0.45" stroke="#444653" stroke-dasharray="3 3" stroke-width="0.75" x1="50" x2="980" y1="20" y2="20"></line>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="end" x="42" y="24">+20 %</text>
+<!-- +15% -->
+<line opacity="0.45" stroke="#444653" stroke-dasharray="3 3" stroke-width="0.75" x1="50" x2="980" y1="85" y2="85"></line>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="end" x="42" y="89">+15 %</text>
+<!-- +10% -->
+<line opacity="0.45" stroke="#444653" stroke-dasharray="3 3" stroke-width="0.75" x1="50" x2="980" y1="150" y2="150"></line>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="end" x="42" y="154">+10 %</text>
+<!-- +5% -->
+<line opacity="0.45" stroke="#444653" stroke-dasharray="3 3" stroke-width="0.75" x1="50" x2="980" y1="215" y2="215"></line>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="end" x="42" y="219">+5 %</text>
+<!-- 0% Baseline -->
+<line opacity="0.6" stroke="#8e909f" stroke-width="1" x1="50" x2="980" y1="280" y2="280"></line>
+<text fill="#e1e2ea" font-family="Inter, sans-serif" font-size="11" font-weight="600" text-anchor="end" x="42" y="284">0 %</text>
+<!-- Vertical Month Grid Guidelines -->
+<!-- Jan(70), Feb(150), Mar(230), Apr(310), Mai(390), Jun(470), Jul(550), Aug(630), Sep(710), Okt(790), Nov(870), Dez(950) -->
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="70" x2="70" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="150" x2="150" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="230" x2="230" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="310" x2="310" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="390" x2="390" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="470" x2="470" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="550" x2="550" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="630" x2="630" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="710" x2="710" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="790" x2="790" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="870" x2="870" y1="20" y2="280"></line>
+<line opacity="0.25" stroke="#444653" stroke-dasharray="2 4" stroke-width="0.5" x1="950" x2="950" y1="20" y2="280"></line>
+<!-- 1. SECONDARY BENCHMARK CURVE (Dashed grey line #8a94a6) -->
+<!-- Coordinates benchmark path: Jan 0% -> Mar 6% -> Jul 11% -> Dez 16.7% -->
+<path d="M 70 280 
+                   C 110 274, 130 252, 150 248
+                   C 190 240, 210 205, 230 198
+                   C 270 192, 290 220, 310 216
+                   C 350 210, 370 180, 390 172
+                   C 430 165, 450 148, 470 142
+                   C 510 138, 530 152, 550 144
+                   C 590 136, 610 182, 630 176
+                   C 670 168, 690 150, 710 142
+                   C 750 134, 770 140, 790 135
+                   C 830 128, 850 95, 870 88
+                   C 910 82, 930 70, 950 63" fill="none" opacity="0.85" stroke="#8e909f" stroke-dasharray="5 4" stroke-width="1.8"></path>
+<!-- 2. PRIMARY POSITION CURVE AREA FILL (Glow gradient) -->
+<path d="M 70 280 
+                   C 110 270, 130 242, 150 236
+                   C 190 226, 210 186, 230 176
+                   C 270 166, 290 202, 310 196
+                   C 350 188, 370 156, 390 145
+                   C 430 136, 450 122, 470 114
+                   C 510 106, 530 125, 550 118
+                   C 590 112, 610 162, 630 152
+                   C 670 142, 690 122, 710 112
+                   C 750 104, 770 114, 790 106
+                   C 830 96, 850 54, 870 42
+                   C 910 32, 930 26, 950 22 
+                   L 950 280 L 70 280 Z" fill="url(#chartGradient)"></path>
+<!-- PRIMARY CURVE LINE -->
+<path d="M 70 280 
+                   C 110 270, 130 242, 150 236
+                   C 190 226, 210 186, 230 176
+                   C 270 166, 290 202, 310 196
+                   C 350 188, 370 156, 390 145
+                   C 430 136, 450 122, 470 114
+                   C 510 106, 530 125, 550 118
+                   C 590 112, 610 162, 630 152
+                   C 670 142, 690 122, 710 112
+                   C 750 104, 770 114, 790 106
+                   C 830 96, 850 54, 870 42
+                   C 910 32, 930 26, 950 22" fill="none" filter="url(#glowEffect)" stroke="url(#lineAccent)" stroke-width="2.75"></path>
+<!-- 3. SPARPLAN EXECUTION POINTS (Monthly green dots) -->
+<!-- Jan, Feb, Mar, Apr, Mai, Jun, Jul, Aug, Sep, Okt, Nov, Dez -->
+<circle cx="70" cy="280" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="150" cy="236" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="230" cy="176" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="310" cy="196" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="390" cy="145" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="470" cy="114" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="550" cy="118" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="630" cy="152" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="710" cy="112" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="790" cy="106" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="870" cy="42" fill="#4edea3" r="3.5" stroke="#111319" stroke-width="1.5"></circle>
+<circle cx="950" cy="22" fill="#4edea3" r="4.5" stroke="#111319" stroke-width="2"></circle>
+<!-- Active Crosshair / Indicator Line on Dec 31 -->
+<line opacity="0.8" stroke="#6d8dff" stroke-dasharray="2 2" stroke-width="1.25" x1="950" x2="950" y1="15" y2="280"></line>
+<circle cx="950" cy="22" fill="#6d8dff" fill-opacity="0.2" r="6.5"></circle>
+<circle cx="950" cy="22" fill="#ffffff" r="3.5"></circle>
+<circle cx="950" cy="63" fill="#8e909f" r="3"></circle>
+<!-- X-Axis Labels (Months) -->
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="70" y="308">Jan</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="150" y="308">Feb</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="230" y="308">Mär</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="310" y="308">Apr</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="390" y="308">Mai</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="470" y="308">Jun</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="550" y="308">Jul</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="630" y="308">Aug</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="710" y="308">Sep</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="790" y="308">Okt</text>
+<text fill="#8e909f" font-family="Inter, sans-serif" font-size="11" text-anchor="middle" x="870" y="308">Nov</text>
+<text fill="#b6c4ff" font-family="Inter, sans-serif" font-size="11" font-weight="600" text-anchor="middle" x="950" y="308">Dez</text>
+</svg>
+<!-- Hover-State Callout / Tooltip Card over Dec 2024 (Anchored visually) -->
+<div class="absolute top-2 right-4 md:right-16 bg-[#161b24] border border-[#2e3747] rounded-lg p-3 shadow-xl backdrop-blur-sm w-64 pointer-events-auto">
+<div class="flex items-center justify-between border-b border-outline-variant/30 pb-1.5 mb-2">
+<span class="text-label-sm font-label-sm font-semibold text-on-surface">Stichtag: 31.12.2024</span>
+<span class="text-xs px-1.5 py-0.2 rounded bg-tertiary-container/30 text-tertiary font-medium">Jahresschluss</span>
+</div>
+<div class="space-y-1.5 text-body-sm font-body-sm">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Schlusskurs:</span>
+<span class="font-semibold text-on-surface">98,40 €</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Rendite (Zeitreihe):</span>
+<span class="font-semibold text-tertiary">+19,85 %</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Benchmark (MSCI):</span>
+<span class="font-medium text-on-surface-variant">+16,70 %</span>
+</div>
+<div class="pt-1 border-t border-outline-variant/20 flex items-center justify-between text-xs">
+<span class="text-primary font-medium">Alpha / Outperf.:</span>
+<span class="text-primary font-bold">+3,15 %</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. KOMPAKTE ZEITREIHEN-KENNZAHLENLEISTE -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-space-md">
+<!-- 52W High -->
+<div class="bg-surface-container-low rounded-xl p-space-md border border-outline-variant/30">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider block mb-1">Höchststand (52W)</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold">99,10 €</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">18.12.2024</div>
+</div>
+<!-- 52W Low -->
+<div class="bg-surface-container-low rounded-xl p-space-md border border-outline-variant/30">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider block mb-1">Tiefststand (52W)</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold">81,06 €</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">02.01.2024</div>
+</div>
+<!-- Average Price -->
+<div class="bg-surface-container-low rounded-xl p-space-md border border-outline-variant/30">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider block mb-1">Durchschnittskurs</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold">89,45 €</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Zeitraum: 12 Monate</div>
+</div>
+<!-- Volatility -->
+<div class="bg-surface-container-low rounded-xl p-space-md border border-outline-variant/30">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider block mb-1">Volatilität (ann.)</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold">12,40 %</div>
+<div class="text-body-sm font-body-sm text-tertiary mt-0.5 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[13px]">shield</span> Moderat
+        </div>
+</div>
+<!-- Trading Volume -->
+<div class="bg-surface-container-low rounded-xl p-space-md border border-outline-variant/30 col-span-2 md:col-span-1">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider block mb-1">Handelsvolumen</span>
+<div class="text-headline-sm font-headline-sm text-on-surface font-semibold">14,2 Mio. €</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Ø Xetra pro Tag</div>
+</div>
+</div>
+<!-- 4. DATENPUNKTE-TABELLE DER ZEITREIHE -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-hidden shadow-sm">
+<div class="px-space-lg py-space-md border-b border-outline-variant/30 flex items-center justify-between flex-wrap gap-space-sm">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-semibold">Historische Stichtagswerte der Zeitreihe</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Monatsschlusskurse, Portfoliobewertung und relative Ertragsentwicklung</p>
+</div>
+<div class="flex items-center gap-space-xs text-label-md font-label-md">
+<span class="text-on-surface-variant">Anzeige:</span>
+<span class="text-primary font-medium">Monatsende (2024)</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse font-data-table text-data-table">
+<thead>
+<tr class="bg-surface-container text-label-sm font-label-sm text-on-surface-variant border-b border-outline-variant/30 uppercase tracking-wider">
+<th class="py-2.5 px-space-lg font-semibold" scope="col">Datum / Stichtag</th>
+<th class="py-2.5 px-space-md font-semibold text-right" scope="col">Schlusskurs (€)</th>
+<th class="py-2.5 px-space-md font-semibold text-right" scope="col">Tagesveränderung</th>
+<th class="py-2.5 px-space-md font-semibold text-right" scope="col">Portfoliowert (€)</th>
+<th class="py-2.5 px-space-lg font-semibold text-right" scope="col">Kumulierte Rendite</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#161b24]">
+<!-- Row 1: Dezember 2024 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-space-lg font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                31.12.2024
+                <span class="text-xs text-on-surface-variant font-normal">(Schluss)</span>
+</td>
+<td class="py-2.5 px-space-md text-right font-medium text-on-surface tabular-nums">98,40 €</td>
+<td class="py-2.5 px-space-md text-right tabular-nums text-tertiary">+0,85 € (+0,87 %)</td>
+<td class="py-2.5 px-space-md text-right tabular-nums font-medium text-on-surface">41.328,00 €</td>
+<td class="py-2.5 px-space-lg text-right tabular-nums font-semibold text-tertiary">+19,85 %</td>
+</tr>
+<!-- Row 2: November 2024 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-space-lg font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                29.11.2024
+              </td>
+<td class="py-2.5 px-space-md text-right font-medium text-on-surface tabular-nums">96,80 €</td>
+<td class="py-2.5 px-space-md text-right tabular-nums text-tertiary">+1,10 € (+1,15 %)</td>
+<td class="py-2.5 px-space-md text-right tabular-nums font-medium text-on-surface">40.656,00 €</td>
+<td class="py-2.5 px-space-lg text-right tabular-nums font-semibold text-tertiary">+17,91 %</td>
+</tr>
+<!-- Row 3: Oktober 2024 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-space-lg font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                31.10.2024
+              </td>
+<td class="py-2.5 px-space-md text-right font-medium text-on-surface tabular-nums">92,45 €</td>
+<td class="py-2.5 px-space-md text-right tabular-nums text-error">-0,42 € (-0,45 %)</td>
+<td class="py-2.5 px-space-md text-right tabular-nums font-medium text-on-surface">38.829,00 €</td>
+<td class="py-2.5 px-space-lg text-right tabular-nums font-semibold text-tertiary">+12,61 %</td>
+</tr>
+<!-- Row 4: September 2024 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-space-lg font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                30.09.2024
+              </td>
+<td class="py-2.5 px-space-md text-right font-medium text-on-surface tabular-nums">91,80 €</td>
+<td class="py-2.5 px-space-md text-right tabular-nums text-tertiary">+0,35 € (+0,38 %)</td>
+<td class="py-2.5 px-space-md text-right tabular-nums font-medium text-on-surface">38.556,00 €</td>
+<td class="py-2.5 px-space-lg text-right tabular-nums font-semibold text-tertiary">+11,81 %</td>
+</tr>
+<!-- Row 5: Juni 2024 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-space-lg font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                28.06.2024
+              </td>
+<td class="py-2.5 px-space-md text-right font-medium text-on-surface tabular-nums">90,12 €</td>
+<td class="py-2.5 px-space-md text-right tabular-nums text-tertiary">+0,24 € (+0,27 %)</td>
+<td class="py-2.5 px-space-md text-right tabular-nums font-medium text-on-surface">37.850,40 €</td>
+<td class="py-2.5 px-space-lg text-right tabular-nums font-semibold text-tertiary">+9,77 %</td>
+</tr>
+<!-- Row 6: März 2024 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-space-lg font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                28.03.2024
+              </td>
+<td class="py-2.5 px-space-md text-right font-medium text-on-surface tabular-nums">87,60 €</td>
+<td class="py-2.5 px-space-md text-right tabular-nums text-tertiary">+0,50 € (+0,57 %)</td>
+<td class="py-2.5 px-space-md text-right tabular-nums font-medium text-on-surface">36.792,00 €</td>
+<td class="py-2.5 px-space-lg text-right tabular-nums font-semibold text-tertiary">+6,70 %</td>
+</tr>
+<!-- Row 7: Januar 2024 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-space-lg font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                31.01.2024
+              </td>
+<td class="py-2.5 px-space-md text-right font-medium text-on-surface tabular-nums">83,40 €</td>
+<td class="py-2.5 px-space-md text-right tabular-nums text-tertiary">+0,20 € (+0,24 %)</td>
+<td class="py-2.5 px-space-md text-right tabular-nums font-medium text-on-surface">35.028,00 €</td>
+<td class="py-2.5 px-space-lg text-right tabular-nums font-semibold text-tertiary">+1,58 %</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Compact Footer Pagination Info -->
+<div class="px-space-lg py-space-sm bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>7 Stichtage angezeigt (Intervall: Monatsultimobetrachtung 2024)</span>
+<button class="text-primary hover:underline font-label-md text-label-md flex items-center gap-1" type="button">
+<span>Alle 252 Handelstage laden</span>
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+</button>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hilfe-Artikel | FinanceManager Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            bgDark: '#080a0f',
+            bgSurface: '#0f131c',
+            bgElevated: '#161b26',
+            bgGlass: 'rgba(18, 24, 38, 0.72)',
+            tealAccent: '#2dd4bf',
+            violetAccent: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #080a0f;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .glow-teal {
+      background: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12) 0%, transparent 40%);
+    }
+    .glow-violet {
+      background: radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.13) 0%, transparent 45%);
+    }
+    .glass-panel {
+      background: rgba(15, 19, 28, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(22, 27, 38, 0.6) 0%, rgba(15, 19, 28, 0.8) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .active-nav-glow {
+      box-shadow: 0 0 20px -3px rgba(45, 212, 191, 0.4);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e2638;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"/></head>
+<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative">
+<!-- Ambient Light Overlays -->
+<div class="fixed inset-0 pointer-events-none z-0 glow-teal"></div>
+<div class="fixed inset-0 pointer-events-none z-0 glow-violet"></div>
+<div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
+<!-- ==================== LEFT SIDEBAR (SLIM ICON-RAIL VARIANT B) ==================== -->
+<aside class="w-full md:w-20 md:min-h-screen glass-panel flex-shrink-0 z-30 flex md:flex-col items-center justify-between py-3 px-4 md:py-6 md:px-0 border-b md:border-b-0 md:border-r border-white/10 sticky top-0 md:h-screen">
+<!-- Logo & Brand Header -->
+<div class="flex items-center gap-3 md:flex-col md:gap-6">
+<div class="relative group cursor-pointer" title="FinanceManager">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 via-teal-400 to-violet-500 p-[1.5px] transition-transform duration-300 group-hover:scale-105 active-nav-glow">
+<div class="w-full h-full bg-[#090d15] rounded-[14px] flex items-center justify-center">
+<svg class="w-6 h-6 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<rect height="16" rx="4" width="20" x="2" y="4"></rect>
+<path d="M7 15h0M2 10h20M7 15l2-2 3 3 5-5"></path>
+</svg>
+</div>
+</div>
+<span class="absolute -bottom-1 -right-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500 border-2 border-[#090d15]"></span>
+</span>
+</div>
+<!-- Mobile Hamburger Button (conceptual small screens support) -->
+<button aria-label="Menü öffnen" class="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<!-- Navigation Entries (Strictly preserving the 13 required items) -->
+<nav class="hidden md:flex flex-col items-center gap-1.5 w-full px-2 overflow-y-auto no-scrollbar py-2">
+<!-- Start -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Start">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Start</span>
+</a>
+<!-- Konten -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Konten">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Konten</span>
+</a>
+<!-- Kontakte -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Kontakte">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontakte</span>
+</a>
+<!-- Sparpläne -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Sparpläne">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Sparpläne</span>
+</a>
+<!-- Wertpapiere -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Wertpapiere">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Wertpapiere</span>
+</a>
+<!-- Kontoauszüge -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Kontoauszüge">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontoauszüge</span>
+</a>
+<!-- Budget -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Budget">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Budget</span>
+</a>
+<!-- Berichte -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Berichte">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Berichte</span>
+</a>
+<!-- Benutzerverwaltung -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Benutzerverwaltung">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Benutzerverwaltung</span>
+</a>
+<!-- KI-Zugänge -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="KI-Zugänge">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">KI-Zugänge</span>
+</a>
+<!-- Einstellungen -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Einstellungen">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Einstellungen</span>
+</a>
+<!-- Hilfe (ACTIVE) -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl bg-gradient-to-r from-teal-500/20 to-teal-400/10 text-teal-300 border border-teal-500/30 transition-all active-nav-glow" href="#" title="Hilfe">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute -left-1 w-1.5 h-6 bg-teal-400 rounded-r-full"></span>
+<span class="absolute left-16 bg-[#181f2f] text-teal-300 text-xs font-semibold px-2.5 py-1 rounded-md shadow-xl border border-teal-500/30 whitespace-nowrap z-50">Hilfe (Aktiv)</span>
+</a>
+</nav>
+<!-- Bottom Action (Abmelden) -->
+<div class="hidden md:flex flex-col items-center gap-2 w-full pt-4 border-t border-white/10">
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all" href="#" title="Abmelden">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#1f1722] text-rose-300 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-rose-500/20 whitespace-nowrap z-50">Abmelden</span>
+</a>
+</div>
+</aside>
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="flex-1 flex flex-col min-w-0 z-10">
+<!-- TOP CONTEXTUAL ACTION BAR (Variant B rethink of classic ribbon toolbar) -->
+<header class="h-18 px-6 py-3.5 glass-panel border-b border-white/10 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
+<!-- Search & Context status -->
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<div class="relative w-full">
+<svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<input class="w-full bg-slate-900/70 border border-white/10 text-xs text-slate-200 placeholder-slate-500 rounded-xl pl-10 pr-12 py-2 focus:outline-none focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 transition-all font-sans" placeholder="In Finanzwissen, APIs und Hilfe suchen..." type="text"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">⌘K</span>
+</div>
+</div>
+<!-- Grouped Actions (Identical functionality: Buchung, Übertrag, Export + notifications + user) -->
+<div class="flex items-center gap-2.5">
+<!-- Action Group: Transaktionen -->
+<div class="flex items-center bg-white/5 p-1 rounded-xl border border-white/10 backdrop-blur-md">
+<button class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-900 bg-gradient-to-r from-teal-400 to-teal-300 hover:from-teal-300 hover:to-teal-200 rounded-lg shadow-sm shadow-teal-500/20 transition-all">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Buchung</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+<svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Übertrag</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Export</span>
+</button>
+</div>
+<!-- Notification & Status Pill -->
+<button class="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all" title="Mitteilungen">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-400"></span>
+</button>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2 pl-1.5">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-violet-500/20">
+            FM
+          </div>
+</div>
+</div>
+</header>
+<!-- ==================== SCROLLABLE CONTENT AREA ==================== -->
+<main class="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-10"><div class="flex flex-col w-full">
+<!-- BREADCRUMB & HEADER CONTEXT -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6">
+<div class="flex flex-col gap-1">
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 font-label-md text-on-surface-variant">
+<span class="hover:text-primary transition-colors cursor-pointer">Wertpapiere</span>
+<span class="material-symbols-outlined text-outline text-xs">chevron_right</span>
+<span class="hover:text-primary transition-colors cursor-pointer">Performance</span>
+<span class="material-symbols-outlined text-outline text-xs">chevron_right</span>
+<span class="text-primary font-semibold">Benchmark</span>
+</nav>
+<div class="flex items-center gap-3">
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight">Referenzindex-Abgleich</h1>
+<span class="bg-surface-container-high px-2.5 py-0.5 rounded-full text-primary font-label-sm uppercase tracking-wider">
+          Aktiv: MSCI World Net TR
+        </span>
+</div>
+</div>
+<!-- GLOBAL FILTER / ACTION BAR -->
+<div class="flex flex-wrap items-center gap-2.5">
+<!-- Benchmark Picker Dropdown -->
+<div class="relative inline-block text-left">
+<button class="flex items-center gap-2 bg-surface-container-high hover:bg-surface-bright text-on-surface px-3.5 py-1.5 rounded-xl text-label-md font-label-md transition-all shadow-sm" id="benchmarkDropdownBtn">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-medium">MSCI World Net TR</span>
+<span class="material-symbols-outlined text-outline text-sm">expand_more</span>
+</button>
+</div>
+<!-- Timeframe Selector -->
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-xl shadow-inner">
+<button class="px-2.5 py-1 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors">1M</button>
+<button class="px-2.5 py-1 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors">6M</button>
+<button class="px-2.5 py-1 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors">YTD</button>
+<button class="px-2.5 py-1 rounded-lg text-label-md font-label-md bg-surface-container-high text-primary font-semibold shadow-sm">1J</button>
+<button class="px-2.5 py-1 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors">3J</button>
+<button class="px-2.5 py-1 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors">5J</button>
+<button class="px-2.5 py-1 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface transition-colors">Max</button>
+</div>
+<!-- Secondary Export / Utilities -->
+<button class="flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded-xl text-label-md font-label-md transition-all" title="Bericht exportieren">
+<span class="material-symbols-outlined text-sm">download</span>
+<span>Export</span>
+</button>
+</div>
+</div>
+<!-- SUB-NAVIGATION / PERFORMANCE TABS -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-1 mb-8">
+<nav class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+<button class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all whitespace-nowrap">
+<span>Übersicht</span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all whitespace-nowrap">
+<span>Zeitreihe</span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all whitespace-nowrap">
+<span>Cashflows</span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all whitespace-nowrap">
+<span>Kennzahlen</span>
+</button>
+<!-- Benchmark TAB ACTIVE -->
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-high text-primary font-label-md text-label-md font-semibold relative shadow-sm whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>Benchmark</span>
+<span class="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"></span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all whitespace-nowrap">
+<span>Rendite-Treiber</span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-label-md font-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all whitespace-nowrap">
+<span>Asset-Klassen</span>
+</button>
+</nav>
+</div>
+<!-- SECTION 1: KPI SUMMARY CARDS -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<!-- Card 1: Portfolio Return -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between shadow-lg relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Portfolio-Rendite</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high font-mono text-label-sm text-primary">TWROR</span>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight font-mono">+16,84 %</span>
+<span class="material-symbols-outlined text-primary text-xl">arrow_upward</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+          Depotwert: <span class="font-mono text-on-surface font-medium">128.450,00 €</span>
+</p>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Rollierend 1 Jahr</span>
+<span class="text-primary font-mono">+24.310,00 €</span>
+</div>
+</div>
+<!-- Card 2: Benchmark Return -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between shadow-lg relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-secondary/10 rounded-full blur-2xl group-hover:bg-secondary/20 transition-all pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Benchmark-Rendite</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high font-label-sm text-secondary">MSCI World</span>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-secondary font-bold tracking-tight font-mono">+12,64 %</span>
+<span class="material-symbols-outlined text-secondary text-xl">trending_up</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+          Index: <span class="text-on-surface font-medium">Net Total Return (EUR)</span>
+</p>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Äquivalent</span>
+<span class="text-secondary font-mono">+17.850,00 €</span>
+</div>
+</div>
+<!-- Card 3: Alpha / Outperformance (HERO KPI) -->
+<div class="bg-gradient-to-br from-surface-container to-surface-container-high p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden">
+<div class="absolute -top-10 -right-10 w-28 h-28 bg-primary/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-primary font-semibold uppercase tracking-wider">Alpha (Spread)</span>
+<span class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/20 text-primary font-mono text-label-sm font-bold">
+<span class="material-symbols-outlined text-xs">stars</span> Outperf.
+        </span>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-display-xl-mobile text-display-xl-mobile text-primary font-extrabold tracking-tight font-mono">+4,20 %</span>
+<span class="material-symbols-outlined text-primary text-2xl">insights</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface mt-1">
+          Überrendite generiert: <span class="text-primary font-mono font-bold">+6.460,00 €</span>
+</p>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Konsistenzgrad</span>
+<span class="text-primary font-mono font-medium">94,2 % d. Zyklen</span>
+</div>
+</div>
+<!-- Card 4: Correlation, Beta & Tracking Error -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between shadow-lg relative overflow-hidden">
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Sensitivität &amp; Risiko</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-mono text-label-sm">12M Daten</span>
+</div>
+<div class="mt-4 grid grid-cols-2 gap-3">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Beta</span>
+<span class="font-title-lg text-title-lg text-on-surface font-mono font-bold">0,82</span>
+<span class="font-legal-disclaimer text-legal-disclaimer text-outline block">Defensiver Hebel</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Korrelation</span>
+<span class="font-title-lg text-title-lg text-on-surface font-mono font-bold">0,91</span>
+<span class="font-legal-disclaimer text-legal-disclaimer text-outline block">Hohe Kopplung</span>
+</div>
+</div>
+<div class="mt-3 pt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Tracking Error</span>
+<span class="font-mono text-on-surface font-semibold">4,47 %</span>
+</div>
+</div>
+</div>
+<!-- SECTION 2: CENTRAL COMPARISON CHART WITH REFERENCE INDEX -->
+<div class="bg-surface-container p-6 rounded-3xl shadow-xl mb-8 flex flex-col gap-6 relative">
+<!-- Chart Header & Interactive Controls -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface font-bold">
+          Relative Wertentwicklung vs. Referenzindex (1J rollierend)
+        </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          Tägliche Performance-Berechnung nach Time-Weighted Rate of Return (TWROR) bereinigt um Nettozuflüsse
+        </p>
+</div>
+<!-- Legend & Toggle Buttons -->
+<div class="flex flex-wrap items-center gap-3">
+<button class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-xl text-label-md font-label-md text-on-surface hover:bg-surface-container-high transition-all" id="togglePortfolio">
+<span class="w-3.5 h-1 bg-primary rounded-full shadow-[0_0_8px_rgba(87,241,219,0.8)]"></span>
+<span>Gesamtportfolio</span>
+<span class="font-mono font-bold text-primary ml-1">+16,84 %</span>
+</button>
+<button class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-xl text-label-md font-label-md text-on-surface hover:bg-surface-container-high transition-all" id="toggleBenchmark">
+<span class="w-3.5 h-1 bg-secondary rounded-full"></span>
+<span>MSCI World Net TR</span>
+<span class="font-mono font-bold text-secondary ml-1">+12,64 %</span>
+</button>
+<div class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl text-label-md font-label-md text-on-surface-variant">
+<span class="w-2.5 h-2.5 bg-primary/20 rounded-sm"></span>
+<span>Alpha-Spanne (+4,20 %)</span>
+</div>
+</div>
+</div>
+<!-- Chart Visualization (High-Precision Responsive SVG) -->
+<div class="relative w-full h-80 md:h-96 rounded-2xl bg-surface-container-lowest p-4 overflow-hidden flex flex-col justify-between">
+<!-- Background Ambient Glow behind latest performance surge -->
+<div class="absolute right-12 top-10 w-44 h-44 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Main SVG Canvas -->
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 320">
+<defs>
+<!-- Gradient for Portfolio Area -->
+<lineargradient id="portfolioAreaGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#57f1db" stop-opacity="0.22"></stop>
+<stop offset="60%" stop-color="#57f1db" stop-opacity="0.05"></stop>
+<stop offset="100%" stop-color="#57f1db" stop-opacity="0.0"></stop>
+</lineargradient>
+<!-- Gradient for Benchmark Line -->
+<lineargradient id="benchmarkGrad" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#a78bfa"></stop>
+<stop offset="100%" stop-color="#d0bcff"></stop>
+</lineargradient>
+<!-- Alpha Fill Pattern / Shading Between Curves -->
+<lineargradient id="alphaFill" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#57f1db" stop-opacity="0.18"></stop>
+<stop offset="100%" stop-color="#3cddc7" stop-opacity="0.02"></stop>
+</lineargradient>
+</defs>
+<!-- Y-Axis Grid Lines & Labels -->
+<!-- +20.0% -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.8" x1="60" x2="980" y1="30" y2="30"></line>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="11" text-anchor="end" x="50" y="34">+20,0%</text>
+<!-- +15.0% -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.8" x1="60" x2="980" y1="85" y2="85"></line>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="11" text-anchor="end" x="50" y="89">+15,0%</text>
+<!-- +10.0% -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.8" x1="60" x2="980" y1="140" y2="140"></line>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="11" text-anchor="end" x="50" y="144">+10,0%</text>
+<!-- +5.0% -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.8" x1="60" x2="980" y1="195" y2="195"></line>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="11" text-anchor="end" x="50" y="199">+5,0%</text>
+<!-- 0.0% (Baseline) -->
+<line opacity="0.4" stroke="#859490" stroke-width="1.2" x1="60" x2="980" y1="250" y2="250"></line>
+<text fill="#e1e2ea" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" text-anchor="end" x="50" y="254">0,0%</text>
+<!-- -5.0% -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.8" x1="60" x2="980" y1="300" y2="300"></line>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="11" text-anchor="end" x="50" y="304">-5,0%</text>
+<!-- ALPHA SPREAD AREA (Polygon connecting Portfolio and Benchmark curves) -->
+<!-- Portfolio coordinates forward, Benchmark coordinates backward -->
+<polygon fill="url(#alphaFill)" points="
+          80,250 
+          210,215 
+          360,178 
+          500,122 
+          640,138 
+          780,95 
+          920,64 
+          920,111 
+          780,128 
+          640,154 
+          500,138 
+          360,190 
+          210,222 
+          80,250
+        "></polygon>
+<!-- PORTFOLIO AREA FILL TO BASELINE -->
+<polygon fill="url(#portfolioAreaGrad)" points="
+          80,250 
+          210,215 
+          360,178 
+          500,122 
+          640,138 
+          780,95 
+          920,64 
+          920,250 
+          80,250
+        "></polygon>
+<!-- BENCHMARK LINE (MSCI World, dashed violet) -->
+<path d="M 80,250 C 140,245 170,228 210,222 C 270,210 320,195 360,190 C 420,180 460,145 500,138 C 560,145 600,158 640,154 C 700,148 740,135 780,128 C 840,122 880,115 920,111" fill="none" stroke="url(#benchmarkGrad)" stroke-dasharray="6 4" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- PORTFOLIO LINE (Teal Luminous Line) -->
+<path d="M 80,250 C 140,240 170,220 210,215 C 270,205 320,185 360,178 C 420,165 460,130 500,122 C 560,130 600,145 640,138 C 700,120 740,102 780,95 C 840,82 880,68 920,64" fill="none" filter="drop-shadow(0 0 6px rgba(87,241,219,0.5))" stroke="#57f1db" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- INTERACTIVE ACTIVE DATA POINT (At Oct 2024 / Position 920) -->
+<!-- Vertical Guideline -->
+<line opacity="0.6" stroke="#57f1db" stroke-dasharray="3 3" stroke-width="1.5" x1="920" x2="920" y1="30" y2="250"></line>
+<!-- Point on Benchmark -->
+<circle cx="920" cy="111" fill="#111319" r="5" stroke="#d0bcff" stroke-width="2.5"></circle>
+<!-- Point on Portfolio -->
+<circle cx="920" cy="64" fill="#57f1db" r="7" stroke="#0b0e13" stroke-width="3"></circle>
+<circle class="animate-ping" cx="920" cy="64" fill="none" opacity="0.5" r="11" stroke="#57f1db" stroke-width="1.5" style="animation-duration: 3s;"></circle>
+<!-- Embedded Interactive Callout Box / Tooltip Pinning -->
+<g transform="translate(680, 20)">
+<!-- Glass Tooltip Box -->
+<rect fill="#1d2025" fill-opacity="0.95" filter="drop-shadow(0 10px 20px rgba(0,0,0,0.5))" height="92" rx="12" stroke="#32353b" stroke-width="1" width="220"></rect>
+<!-- Tooltip Header -->
+<text fill="#bacac5" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="600" x="14" y="22">STICHTAG 18. OKT 2024</text>
+<text fill="#57f1db" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" text-anchor="end" x="206" y="22">AKTUELL</text>
+<line stroke="#32353b" stroke-width="0.8" x1="14" x2="206" y1="30" y2="30"></line>
+<!-- Tooltip Portfolio Metric -->
+<circle cx="20" cy="45" fill="#57f1db" r="3.5"></circle>
+<text fill="#e1e2ea" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" x="30" y="48">Portfolio:</text>
+<text fill="#57f1db" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" text-anchor="end" x="206" y="48">+16,84% (+24.310 €)</text>
+<!-- Tooltip Benchmark Metric -->
+<circle cx="20" cy="64" fill="#d0bcff" r="3.5"></circle>
+<text fill="#bacac5" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" x="30" y="67">MSCI World:</text>
+<text fill="#d0bcff" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" text-anchor="end" x="206" y="67">+12,64% (+17.850 €)</text>
+<!-- Tooltip Spread Metric -->
+<text fill="#57f1db" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="600" x="30" y="83">Alpha-Vorteil:</text>
+<text fill="#57f1db" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="800" text-anchor="end" x="206" y="83">+4,20% Spread</text>
+</g>
+</svg>
+<!-- X-Axis Labels (Timeline Nov 23 -> Okt 24) -->
+<div class="flex justify-between pl-14 pr-4 pt-2 font-mono text-label-sm text-on-surface-variant">
+<span>Nov 23</span>
+<span>Jan 24</span>
+<span>Mär 24</span>
+<span>Mai 24</span>
+<span>Jul 24</span>
+<span>Sep 24</span>
+<span class="text-primary font-bold">Okt 24</span>
+</div>
+</div>
+</div>
+<!-- SECTION 3: DETAILED PERFORMANCE DIVERGENCE & ALPHA ATTRIBUTION -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Divergence Table by Quarters (8 Cols) -->
+<div class="lg:col-span-8 bg-surface-container p-6 rounded-3xl shadow-lg">
+<div class="flex items-center justify-between mb-5">
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface font-bold">Quartals-Divergenz &amp; Marktphasen</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Spread-Analyse der letzten 4 Berichtszeiträume</p>
+</div>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-label-sm font-label-sm text-on-surface-variant font-mono">
+          4 Quartale rollierend
+        </span>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+<th class="py-3 px-4 rounded-l-xl">Periode / Phase</th>
+<th class="py-3 px-4 text-right">Portfolio</th>
+<th class="py-3 px-4 text-right">MSCI World</th>
+<th class="py-3 px-4 text-right">Spread (Alpha)</th>
+<th class="py-3 px-4 text-right rounded-r-xl">Tendenz</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant/40 font-body-md text-body-md">
+<!-- Q4 2023 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Q4 2023</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(Jahresendrallye)</span>
+</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium text-primary">+4,10 %</td>
+<td class="py-3.5 px-4 text-right font-mono text-on-surface-variant">+3,80 %</td>
+<td class="py-3.5 px-4 text-right font-mono font-bold text-primary">+0,30 %</td>
+<td class="py-3.5 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded text-label-sm font-mono font-medium">
+<span class="material-symbols-outlined text-xs">arrow_drop_up</span> Outperf.
+                </span>
+</td>
+</tr>
+<!-- Q1 2024 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Q1 2024</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(Tech-Expansionsphase)</span>
+</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium text-primary">+6,80 %</td>
+<td class="py-3.5 px-4 text-right font-mono text-on-surface-variant">+5,40 %</td>
+<td class="py-3.5 px-4 text-right font-mono font-bold text-primary">+1,40 %</td>
+<td class="py-3.5 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded text-label-sm font-mono font-medium">
+<span class="material-symbols-outlined text-xs">arrow_drop_up</span> Outperf.
+                </span>
+</td>
+</tr>
+<!-- Q2 2024 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Q2 2024</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(Zinskonsolidierung)</span>
+</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium text-primary">+2,40 %</td>
+<td class="py-3.5 px-4 text-right font-mono text-on-surface-variant">+1,90 %</td>
+<td class="py-3.5 px-4 text-right font-mono font-bold text-primary">+0,50 %</td>
+<td class="py-3.5 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded text-label-sm font-mono font-medium">
+<span class="material-symbols-outlined text-xs">arrow_drop_up</span> Outperf.
+                </span>
+</td>
+</tr>
+<!-- Q3 2024 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 font-medium text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-fixed"></span>
+<span>Q3 2024</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">(Breitenrotation)</span>
+</td>
+<td class="py-3.5 px-4 text-right font-mono font-medium text-primary">+3,54 %</td>
+<td class="py-3.5 px-4 text-right font-mono text-on-surface-variant">+1,54 %</td>
+<td class="py-3.5 px-4 text-right font-mono font-bold text-primary">+2,00 %</td>
+<td class="py-3.5 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-primary bg-primary/20 px-2 py-0.5 rounded text-label-sm font-mono font-bold">
+<span class="material-symbols-outlined text-xs">bolt</span> Top Alpha
+                </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footnote / Methodology hint -->
+<div class="mt-4 pt-3 flex items-center justify-between text-on-surface-variant font-legal-disclaimer text-legal-disclaimer">
+<span>Berechnungsgrundlage: Brutto-Divergenz vor Steuern und Transaktionsentgelten</span>
+<span class="font-mono">TWROR Algorithmus v2.4</span>
+</div>
+</div>
+<!-- Alpha Drivers & Consistency Matrix (4 Cols) -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<!-- Information Ratio Panel -->
+<div class="bg-surface-container p-6 rounded-3xl shadow-lg relative overflow-hidden">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Qualitätskennzahl</span>
+<span class="material-symbols-outlined text-primary text-lg">verified</span>
+</div>
+<div class="flex items-baseline justify-between">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Information Ratio</span>
+<span class="font-headline-lg text-headline-lg font-bold font-mono text-primary">0,94</span>
+</div>
+<span class="bg-primary/10 text-primary px-2.5 py-1 rounded-full text-label-sm font-label-sm font-semibold">
+            Exzellent (&gt;0,75)
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-3">
+          Bestätigt eine konsistente Mehrrendite bei kontrolliertem aktivem Risiko ggü. dem MSCI World.
+        </p>
+<!-- Extremwerte Mini-Cards -->
+<div class="mt-6 pt-4 space-y-3 bg-surface-container-lowest p-3.5 rounded-2xl">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+              Max. Outperformance:
+            </span>
+<span class="font-mono font-bold text-primary">+5,10 % <span class="font-normal text-on-surface-variant text-xs">(Mai 24)</span></span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+              Max. Underperformance:
+            </span>
+<span class="font-mono font-bold text-error">-0,80 % <span class="font-normal text-on-surface-variant text-xs">(Apr 24)</span></span>
+</div>
+</div>
+</div>
+<!-- Alternative Benchmarks Comparison Teaser -->
+<div class="bg-surface-container p-6 rounded-3xl shadow-lg flex flex-col justify-between">
+<div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider block mb-3">Schnellvergleich Indizes (1J)</span>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="font-label-md text-label-md text-on-surface font-medium">S&amp;P 500 NTR</span>
+</div>
+<div class="text-right">
+<span class="font-mono font-bold text-body-md text-on-surface">+18,10 %</span>
+<span class="block font-mono text-error font-label-sm">-1,26 % Spread</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+<span class="font-label-md text-label-md text-on-surface font-medium">DAX 40 TR</span>
+</div>
+<div class="text-right">
+<span class="font-mono font-bold text-body-md text-on-surface">+14,20 %</span>
+<span class="block font-mono text-primary font-label-sm">+2,64 % Spread</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md text-on-surface font-medium">Stoxx Europe 600</span>
+</div>
+<div class="text-right">
+<span class="font-mono font-bold text-body-md text-on-surface">+10,45 %</span>
+<span class="block font-mono text-primary font-label-sm">+6,39 % Spread</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex justify-end">
+<button class="font-label-md text-label-md text-primary hover:text-primary-fixed flex items-center gap-1 transition-colors">
+<span>Alle 14 Indizes anzeigen</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- INTERACTIVE CLIENT SCRIPT -->
+<script>
+    (function() {
+      // Benchmark dropdown interactive trigger mockup
+      const btn = document.getElementById('benchmarkDropdownBtn');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          const names = ['MSCI World Net TR', 'S&P 500 NTR', 'DAX 40 TR', 'Stoxx Europe 600'];
+          const currentText = btn.querySelector('.font-medium').innerText;
+          const currentIndex = names.indexOf(currentText);
+          const nextIndex = (currentIndex + 1) % names.length;
+          btn.querySelector('.font-medium').innerText = names[nextIndex];
+        });
+      }
+
+      // Legend Toggles for interactive feedback
+      const toggleP = document.getElementById('togglePortfolio');
+      const toggleB = document.getElementById('toggleBenchmark');
+      if (toggleP) {
+        toggleP.addEventListener('click', () => {
+          toggleP.classList.toggle('opacity-50');
+        });
+      }
+      if (toggleB) {
+        toggleB.addEventListener('click', () => {
+          toggleB.classList.toggle('opacity-50');
+        });
+      }
+    })();
+  </script>
+</div></main>
+</div>
+</body></html>

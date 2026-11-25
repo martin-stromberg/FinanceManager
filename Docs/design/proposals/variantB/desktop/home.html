@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hilfe-Artikel | FinanceManager Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            bgDark: '#080a0f',
+            bgSurface: '#0f131c',
+            bgElevated: '#161b26',
+            bgGlass: 'rgba(18, 24, 38, 0.72)',
+            tealAccent: '#2dd4bf',
+            violetAccent: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #080a0f;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .glow-teal {
+      background: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12) 0%, transparent 40%);
+    }
+    .glow-violet {
+      background: radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.13) 0%, transparent 45%);
+    }
+    .glass-panel {
+      background: rgba(15, 19, 28, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(22, 27, 38, 0.6) 0%, rgba(15, 19, 28, 0.8) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .active-nav-glow {
+      box-shadow: 0 0 20px -3px rgba(45, 212, 191, 0.4);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e2638;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"/></head>
+<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative">
+<!-- Ambient Light Overlays -->
+<div class="fixed inset-0 pointer-events-none z-0 glow-teal"></div>
+<div class="fixed inset-0 pointer-events-none z-0 glow-violet"></div>
+<div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
+<!-- ==================== LEFT SIDEBAR (SLIM ICON-RAIL VARIANT B) ==================== -->
+<aside class="w-full md:w-20 md:min-h-screen glass-panel flex-shrink-0 z-30 flex md:flex-col items-center justify-between py-3 px-4 md:py-6 md:px-0 border-b md:border-b-0 md:border-r border-white/10 sticky top-0 md:h-screen">
+<!-- Logo & Brand Header -->
+<div class="flex items-center gap-3 md:flex-col md:gap-6">
+<div class="relative group cursor-pointer" title="FinanceManager">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 via-teal-400 to-violet-500 p-[1.5px] transition-transform duration-300 group-hover:scale-105 active-nav-glow">
+<div class="w-full h-full bg-[#090d15] rounded-[14px] flex items-center justify-center">
+<svg class="w-6 h-6 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<rect height="16" rx="4" width="20" x="2" y="4"></rect>
+<path d="M7 15h0M2 10h20M7 15l2-2 3 3 5-5"></path>
+</svg>
+</div>
+</div>
+<span class="absolute -bottom-1 -right-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500 border-2 border-[#090d15]"></span>
+</span>
+</div>
+<!-- Mobile Hamburger Button (conceptual small screens support) -->
+<button aria-label="Menü öffnen" class="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<!-- Navigation Entries (Strictly preserving the 13 required items) -->
+<nav class="hidden md:flex flex-col items-center gap-1.5 w-full px-2 overflow-y-auto no-scrollbar py-2">
+<!-- Start -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Start">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Start</span>
+</a>
+<!-- Konten -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Konten">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Konten</span>
+</a>
+<!-- Kontakte -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Kontakte">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontakte</span>
+</a>
+<!-- Sparpläne -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Sparpläne">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Sparpläne</span>
+</a>
+<!-- Wertpapiere -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Wertpapiere">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Wertpapiere</span>
+</a>
+<!-- Kontoauszüge -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Kontoauszüge">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Kontoauszüge</span>
+</a>
+<!-- Budget -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Budget">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Budget</span>
+</a>
+<!-- Berichte -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Berichte">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Berichte</span>
+</a>
+<!-- Benutzerverwaltung -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Benutzerverwaltung">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Benutzerverwaltung</span>
+</a>
+<!-- KI-Zugänge -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="KI-Zugänge">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">KI-Zugänge</span>
+</a>
+<!-- Einstellungen -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all" href="#" title="Einstellungen">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#181f2f] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 whitespace-nowrap z-50">Einstellungen</span>
+</a>
+<!-- Hilfe (ACTIVE) -->
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl bg-gradient-to-r from-teal-500/20 to-teal-400/10 text-teal-300 border border-teal-500/30 transition-all active-nav-glow" href="#" title="Hilfe">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute -left-1 w-1.5 h-6 bg-teal-400 rounded-r-full"></span>
+<span class="absolute left-16 bg-[#181f2f] text-teal-300 text-xs font-semibold px-2.5 py-1 rounded-md shadow-xl border border-teal-500/30 whitespace-nowrap z-50">Hilfe (Aktiv)</span>
+</a>
+</nav>
+<!-- Bottom Action (Abmelden) -->
+<div class="hidden md:flex flex-col items-center gap-2 w-full pt-4 border-t border-white/10">
+<a class="group relative flex items-center justify-center w-12 h-11 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all" href="#" title="Abmelden">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute left-16 bg-[#1f1722] text-rose-300 text-xs font-medium px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-xl border border-rose-500/20 whitespace-nowrap z-50">Abmelden</span>
+</a>
+</div>
+</aside>
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="flex-1 flex flex-col min-w-0 z-10">
+<!-- TOP CONTEXTUAL ACTION BAR (Variant B rethink of classic ribbon toolbar) -->
+<header class="h-18 px-6 py-3.5 glass-panel border-b border-white/10 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
+<!-- Search & Context status -->
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<div class="relative w-full">
+<svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<input class="w-full bg-slate-900/70 border border-white/10 text-xs text-slate-200 placeholder-slate-500 rounded-xl pl-10 pr-12 py-2 focus:outline-none focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 transition-all font-sans" placeholder="In Finanzwissen, APIs und Hilfe suchen..." type="text"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">⌘K</span>
+</div>
+</div>
+<!-- Grouped Actions (Identical functionality: Buchung, Übertrag, Export + notifications + user) -->
+<div class="flex items-center gap-2.5">
+<!-- Action Group: Transaktionen -->
+<div class="flex items-center bg-white/5 p-1 rounded-xl border border-white/10 backdrop-blur-md">
+<button class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-900 bg-gradient-to-r from-teal-400 to-teal-300 hover:from-teal-300 hover:to-teal-200 rounded-lg shadow-sm shadow-teal-500/20 transition-all">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Buchung</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+<svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Übertrag</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Export</span>
+</button>
+</div>
+<!-- Notification & Status Pill -->
+<button class="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all" title="Mitteilungen">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-400"></span>
+</button>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2 pl-1.5">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-violet-500/20">
+            FM
+          </div>
+</div>
+</div>
+</header>
+<!-- ==================== SCROLLABLE CONTENT AREA ==================== -->
+<main class="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-10"><div class="flex flex-col w-full">
+<!-- Dynamic Top Ambient Accent Line -->
+<div class="relative w-full overflow-hidden mb-8">
+<div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 pb-2">
+<!-- Cockpit Overview Title & Realtime Health Ping -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center gap-3">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary font-semibold px-2 py-0.5 rounded-full bg-surface-container-high">Live Mandant</span>
+<span class="flex items-center gap-1.5 text-on-surface-variant font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            Finanz-Cockpit aktiv • Synchronisiert vor 2 Min.
+          </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
+          Vermögens- &amp; Liquiditätsübersicht
+        </h1>
+</div>
+<!-- Contextual Action Bar: Massenimport Special Control Center -->
+<div class="flex flex-wrap items-center gap-3 bg-surface-container-low p-2 rounded-xl shadow-xl">
+<div class="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-surface-container rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">Formate:</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-mono text-[11px] font-semibold">CAMT.053</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-secondary font-mono text-[11px] font-semibold">MT940</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-tertiary font-mono text-[11px] font-semibold">CSV</span>
+</div>
+<div class="relative">
+<button class="group relative flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-primary-container text-on-primary-fixed font-label-lg text-label-lg transition-transform hover:scale-[1.01] active:scale-[0.99] shadow-md shadow-primary-container/20" id="importDropdownBtn" onclick="document.getElementById('importMenu').classList.toggle('hidden')">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span class="font-bold tracking-tight">Massenimport starten</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-y-0.5">expand_more</span>
+</button>
+<!-- Dropdown Options Panel -->
+<div class="hidden absolute right-0 mt-2 w-72 bg-surface-container-high rounded-xl p-2.5 shadow-2xl z-30 flex flex-col gap-1.5 backdrop-blur-xl" id="importMenu">
+<div class="px-2.5 py-1.5 border-b border-surface-container-highest/60 pb-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Import Pipeline</span>
+</div>
+<a class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface-container transition-all group" href="#">
+<span class="material-symbols-outlined text-primary text-[20px] mt-0.5">account_balance</span>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface text-[13px] font-semibold group-hover:text-primary">EBICS / Bankenschnittstelle</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Direkter Batch-Abruf (6 Bankhäuser)</span>
+</div>
+</a>
+<a class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface-container transition-all group" href="#">
+<span class="material-symbols-outlined text-secondary text-[20px] mt-0.5">description</span>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface text-[13px] font-semibold group-hover:text-secondary">CAMT / MT940 Datei hochladen</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Automatische Duplikaterkennung</span>
+</div>
+</a>
+<a class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface-container transition-all group" href="#">
+<span class="material-symbols-outlined text-tertiary text-[20px] mt-0.5">table_rows</span>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface text-[13px] font-semibold group-hover:text-tertiary">Buchungs-CSV mit Mappings</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Kundenspezifischer Spaltenabgleich</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- KPI-KACHELN-REIHE (Exactly 4 Core Metrics) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-10">
+<!-- 1. Gesamtsaldo -->
+<div class="relative bg-surface-container-low rounded-xl p-5 shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Gesamtsaldo</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant/80">Konsolidiert über alle Konten</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+</div>
+</div>
+<div class="my-3">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-extrabold font-mono">142.850,40</span>
+<span class="font-title-lg text-title-lg text-primary font-mono font-semibold">€</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+3,4%</span>
+<span class="text-on-surface-variant text-[11px] font-normal">vs. Vormonat</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant/60 font-mono">Stichtag: Heute</span>
+</div>
+</div>
+<!-- 2. Konten -->
+<div class="relative bg-surface-container-low rounded-xl p-5 shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Konten</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant/80">6 aktive Konten im Sync</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">lan</span>
+</div>
+</div>
+<div class="my-2.5 flex items-center gap-3">
+<span class="font-headline-md text-headline-md text-on-surface font-extrabold font-mono">6 / 6</span>
+<div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Online &amp; Gesichert</span>
+</div>
+</div>
+<!-- Quick account icons rail -->
+<div class="flex items-center justify-between pt-2 bg-surface-container/60 p-2 rounded-lg">
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-[10px] font-mono text-on-surface-variant" title="Girokonto Sparkasse">GIRO</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-[10px] font-mono text-on-surface-variant" title="Geschäftskonto Commerzbank">GESCH.</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-[10px] font-mono text-on-surface-variant" title="Depot Scalable">DEPOT</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-[10px] font-mono text-on-surface-variant" title="Tagesgeld">TAGESG.</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-semibold cursor-pointer hover:underline">Details →</span>
+</div>
+</div>
+<!-- 3. Offene Entwürfe -->
+<div class="relative bg-surface-container-low rounded-xl p-5 shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Offene Entwürfe</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant/80">Wartet auf Zweitfreigabe</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">pending_actions</span>
+</div>
+</div>
+<div class="my-3 flex items-baseline justify-between">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-extrabold font-mono">4</span>
+<span class="font-title-md text-title-md text-on-surface-variant">Posten</span>
+</div>
+<span class="font-title-lg text-title-lg text-secondary font-mono font-bold">2.340,00 €</span>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-secondary">verified_user</span>
+<span>4-Augen-Prinzip aktiv</span>
+</div>
+<button class="px-2.5 py-1 rounded-md bg-secondary-container/40 text-secondary hover:bg-secondary-container transition-all font-label-sm text-label-sm font-semibold">
+          Freigeben
+        </button>
+</div>
+</div>
+<!-- 4. Budgetstatus -->
+<div class="relative bg-surface-container-low rounded-xl p-5 shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">Budgetstatus (Monat)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant/80">Soll-Ist Monatszyklus</span>
+</div>
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span>
+</div>
+</div>
+<div class="my-2">
+<div class="flex items-baseline justify-between mb-1.5">
+<span class="font-headline-md text-headline-md text-on-surface font-extrabold font-mono">74%</span>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-bold uppercase tracking-wider">Im Plan</span>
+</div>
+<!-- Progress Bar Gauge -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-gradient-to-r from-primary via-primary-container to-secondary h-full rounded-full transition-all duration-500" style="width: 74%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2 font-body-sm text-body-sm text-on-surface-variant">
+<span>Restpuffer: <strong class="text-on-surface font-mono">1.820,00 €</strong></span>
+<span>Noch 8 Tage</span>
+</div>
+</div>
+</div>
+<!-- AKTIVITÄTS- & BUCHUNGSVERLAUF CONTAINER -->
+<div class="bg-surface-container-low rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+<!-- Header with Smart Filter Bar -->
+<div class="p-6 bg-surface-container flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<h2 class="font-title-lg text-title-lg text-on-surface font-bold">Buchungsverlauf &amp; Ledger-Aktivität</h2>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-highest font-mono text-[11px] text-on-surface-variant font-medium">Echtzeitdaten</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Vollständiges Journal mit automatischer Salden- und Kategorienzuweisung.</p>
+</div>
+<!-- Segmented Category Filters -->
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-xl">
+<button class="filter-tab px-3.5 py-1.5 rounded-lg bg-surface-container-high text-primary font-label-md text-label-md font-semibold transition-all shadow-sm" id="filter-alle" onclick="setFilter('alle')">
+          Alle Buchungen
+        </button>
+<button class="filter-tab px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-medium transition-all" id="filter-einnahmen" onclick="setFilter('einnahmen')">
+          Einnahmen
+        </button>
+<button class="filter-tab px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-medium transition-all" id="filter-ausgaben" onclick="setFilter('ausgaben')">
+          Ausgaben
+        </button>
+<button class="filter-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-medium transition-all" id="filter-sync" onclick="setFilter('sync')">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          Synchronisiert
+        </button>
+</div>
+</div>
+<!-- Search & Micro-Selectors Ribbon -->
+<div class="px-6 py-3 bg-surface-container-low/80 flex flex-wrap items-center justify-between gap-4 text-on-surface-variant">
+<div class="flex items-center gap-2 text-label-md font-label-md">
+<span>Sortierung:</span>
+<button class="flex items-center gap-1 text-on-surface font-semibold hover:text-primary transition-colors">
+          Buchungsdatum absteigend
+          <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+</div>
+<div class="flex items-center gap-4 text-label-sm font-label-sm font-mono">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+          98,4% Auto-Abgleich Quote
+        </span>
+<span class="hidden sm:inline-block text-surface-container-highest">|</span>
+<span class="hidden sm:inline-block">6 Einträge angezeigt</span>
+</div>
+</div>
+<!-- Financial Transactions Table -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest/60 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider font-mono">
+<th class="py-3 px-6">Datum / Valuta</th>
+<th class="py-3 px-6">Begünstigter / Verwendungszweck</th>
+<th class="py-3 px-6">Kategorie</th>
+<th class="py-3 px-6">Konto &amp; Mandat</th>
+<th class="py-3 px-6">Status</th>
+<th class="py-3 px-6 text-right">Betrag</th>
+<th class="py-3 px-4 text-center">Aktion</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-highest/20 font-body-md text-body-md" id="transactionTableBody">
+<!-- Transaction 1: Ausgehend Software-Lizenz -->
+<tr class="hover:bg-surface-container/50 transition-colors group" data-type="ausgaben">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-mono text-on-surface font-semibold text-[13px]">24.10.2024</span>
+<span class="font-mono text-[11px] text-on-surface-variant/70">14:32 Uhr</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface font-mono font-bold text-xs shrink-0">
+                  AWS
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold truncate">Amazon Web Services EMEA</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Cloud Infrastructure DE-South • Inv-940212</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-md bg-secondary/10 text-secondary font-label-sm text-label-sm font-semibold">IT-Infrastruktur</span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-on-surface text-[13px] font-medium">Geschäftskonto</span>
+<span class="text-on-surface-variant text-[11px] font-mono">(Commerzbank)</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">sync_saved_locally</span>
+<span>Automatisch abgeglichen</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap text-right">
+<span class="font-mono font-bold text-[15px] text-on-surface tracking-tight">-1.284,50 €</span>
+</td>
+<td class="py-4 px-4 text-center whitespace-nowrap">
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors" title="Beleg einsehen">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</td>
+</tr>
+<!-- Transaction 2: Eingehend Kundenüberweisung -->
+<tr class="hover:bg-surface-container/50 transition-colors group" data-type="einnahmen">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-mono text-on-surface font-semibold text-[13px]">24.10.2024</span>
+<span class="font-mono text-[11px] text-on-surface-variant/70">10:15 Uhr</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                  NH
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold truncate">NordHanse Logistik GmbH</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Schlussrechnung Q3 Consulting Mandat 8831</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-md bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">Umsatzerlöse</span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface text-[13px] font-medium">Hauptgirokonto</span>
+<span class="text-on-surface-variant text-[11px] font-mono">(Sparkasse)</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Gebucht</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap text-right">
+<span class="font-mono font-bold text-[15px] text-primary tracking-tight">+8.750,00 €</span>
+</td>
+<td class="py-4 px-4 text-center whitespace-nowrap">
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors" title="Beleg einsehen">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</td>
+</tr>
+<!-- Transaction 3: Dividendengutschrift Depot -->
+<tr class="hover:bg-surface-container/50 transition-colors group" data-type="einnahmen">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-mono text-on-surface font-semibold text-[13px]">23.10.2024</span>
+<span class="font-mono text-[11px] text-on-surface-variant/70">18:04 Uhr</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-tertiary/20 text-tertiary flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                  ASML
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold truncate">ASML Holding N.V.</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Zwischendividende NL0010273215 • 45 Stk.</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-md bg-tertiary/10 text-tertiary font-label-sm text-label-sm font-semibold">Kapitalertrag</span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-on-surface text-[13px] font-medium">Wertpapierdepot</span>
+<span class="text-on-surface-variant text-[11px] font-mono">(Scalable)</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">sync_saved_locally</span>
+<span>Automatisch abgeglichen</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap text-right">
+<span class="font-mono font-bold text-[15px] text-primary tracking-tight">+68,40 €</span>
+</td>
+<td class="py-4 px-4 text-center whitespace-nowrap">
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors" title="Beleg einsehen">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</td>
+</tr>
+<!-- Transaction 4: Ausgehend Büroausstattung -->
+<tr class="hover:bg-surface-container/50 transition-colors group" data-type="ausgaben">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-mono text-on-surface font-semibold text-[13px]">22.10.2024</span>
+<span class="font-mono text-[11px] text-on-surface-variant/70">09:41 Uhr</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface font-mono font-bold text-xs shrink-0">
+                  VT
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold truncate">Vitra Design Studio</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Ergonomische Arbeitsplätze München • AN-4920</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-md bg-secondary/10 text-secondary font-label-sm text-label-sm font-semibold">Büroausstattung</span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-on-surface text-[13px] font-medium">Geschäftskonto</span>
+<span class="text-on-surface-variant text-[11px] font-mono">(Commerzbank)</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Gebucht</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap text-right">
+<span class="font-mono font-bold text-[15px] text-on-surface tracking-tight">-2.450,00 €</span>
+</td>
+<td class="py-4 px-4 text-center whitespace-nowrap">
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors" title="Beleg einsehen">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</td>
+</tr>
+<!-- Transaction 5: Zinsgutschrift Tagesgeld -->
+<tr class="hover:bg-surface-container/50 transition-colors group" data-type="einnahmen">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-mono text-on-surface font-semibold text-[13px]">21.10.2024</span>
+<span class="font-mono text-[11px] text-on-surface-variant/70">00:01 Uhr</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface font-mono font-bold text-xs shrink-0">
+                  DB
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold truncate">Deutsche Bank Festzins</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Quartalszinsabrechnung 3,65% p.a.</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-md bg-tertiary/10 text-tertiary font-label-sm text-label-sm font-semibold">Zinsertrag</span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-fixed-dim"></span>
+<span class="text-on-surface text-[13px] font-medium">Tagesgeldkonto</span>
+<span class="text-on-surface-variant text-[11px] font-mono">(Deutsche Bank)</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">sync_saved_locally</span>
+<span>Automatisch abgeglichen</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap text-right">
+<span class="font-mono font-bold text-[15px] text-primary tracking-tight">+412,80 €</span>
+</td>
+<td class="py-4 px-4 text-center whitespace-nowrap">
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors" title="Beleg einsehen">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</td>
+</tr>
+<!-- Transaction 6: Ausgehend Steuerberater / Buchhaltung -->
+<tr class="hover:bg-surface-container/50 transition-colors group" data-type="ausgaben">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-mono text-on-surface font-semibold text-[13px]">19.10.2024</span>
+<span class="font-mono text-[11px] text-on-surface-variant/70">16:55 Uhr</span>
+</div>
+</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface font-mono font-bold text-xs shrink-0">
+                  K&amp;P
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface font-semibold truncate">Kanzlei Klein &amp; Partner StB</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">USt-Voranmeldung &amp; Monatsabschluss September</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-md bg-secondary/10 text-secondary font-label-sm text-label-sm font-semibold">Beratung &amp; Steuern</span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-on-surface text-[13px] font-medium">Geschäftskonto</span>
+<span class="text-on-surface-variant text-[11px] font-mono">(Commerzbank)</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Gebucht</span>
+</div>
+</td>
+<td class="py-4 px-6 whitespace-nowrap text-right">
+<span class="font-mono font-bold text-[15px] text-on-surface tracking-tight">-890,00 €</span>
+</td>
+<td class="py-4 px-4 text-center whitespace-nowrap">
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors" title="Beleg einsehen">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Ledger Table Pagination & Batch Trigger Footer -->
+<div class="px-6 py-4 bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant">
+<div class="flex items-center gap-2 font-body-sm text-body-sm">
+<span>Zeige <strong>1-6</strong> von <strong>1.482</strong> Datensätzen</span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-all font-label-md text-label-md disabled:opacity-40" disabled="">
+          Vorherige
+        </button>
+<span class="px-3 py-1 font-mono text-label-sm font-semibold text-primary bg-surface-container-high rounded-md">1</span>
+<button class="px-3 py-1 font-mono text-label-sm text-on-surface-variant hover:text-on-surface">2</button>
+<button class="px-3 py-1 font-mono text-label-sm text-on-surface-variant hover:text-on-surface">3</button>
+<span class="px-1 text-on-surface-variant">...</span>
+<button class="px-3 py-1 font-mono text-label-sm text-on-surface-variant hover:text-on-surface">148</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-all font-label-md text-label-md">
+          Nächste
+        </button>
+</div>
+</div>
+</div>
+<script>
+    function setFilter(type) {
+      const tabs = document.querySelectorAll('.filter-tab');
+      tabs.forEach(tab => {
+        tab.classList.remove('bg-surface-container-high', 'text-primary', 'shadow-sm');
+        tab.classList.add('text-on-surface-variant');
+      });
+
+      const activeTab = document.getElementById('filter-' + type);
+      if (activeTab) {
+        activeTab.classList.add('bg-surface-container-high', 'text-primary', 'shadow-sm');
+        activeTab.classList.remove('text-on-surface-variant');
+      }
+
+      const rows = document.querySelectorAll('#transactionTableBody tr');
+      rows.forEach(row => {
+        if (type === 'alle') {
+          row.style.display = '';
+        } else if (type === 'sync') {
+          row.style.display = '';
+        } else {
+          if (row.getAttribute('data-type') === type) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('importMenu');
+      const btn = document.getElementById('importDropdownBtn');
+      if (dropdown && !dropdown.contains(event.target) && !btn.contains(event.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  </script>
+</div></main>
+</div>
+</body></html>

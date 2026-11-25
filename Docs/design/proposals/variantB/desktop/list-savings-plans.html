@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type"/>
+</head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen">
+<!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<header class="md:hidden fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 bg-[#0c1017]/90 border-b border-white/5 z-40 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-500 flex items-center justify-center p-0.5 shadow-md shadow-teal-500/20">
+<div class="w-full h-full bg-[#0a0d12] rounded-[10px] flex items-center justify-center">
+<svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 2v20m9-9H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<span class="font-bold tracking-tight text-white text-base">FinanceManager</span>
+</div>
+<button aria-label="Menü öffnen" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</header>
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<aside class="fixed top-0 bottom-0 left-0 hidden md:flex flex-col w-20 lg:w-64 bg-[#080b0f]/90 border-r border-white/5 z-30 flex-shrink-0 backdrop-blur-xl transition-all duration-300">
+<!-- Brand / Logo Area -->
+<div class="h-20 flex items-center px-4 lg:px-6 border-b border-white/5 gap-3.5">
+<div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 via-teal-500 to-violet-600 p-[1.5px] shadow-lg shadow-teal-500/20 flex-shrink-0">
+<div class="w-full h-full bg-[#0a0d12] rounded-[14px] flex items-center justify-center">
+<svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+<polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+<line x1="12" x2="12" y1="22.08" y2="12"></line>
+</svg>
+</div>
+</div>
+<div class="hidden lg:flex flex-col">
+<span class="font-extrabold tracking-tight text-white text-base leading-tight">Finance<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-violet-400">Manager</span></span>
+<span class="text-[11px] font-mono text-slate-500 tracking-wider uppercase">SPA Portal</span>
+</div>
+</div>
+<!-- Navigation Entries -->
+<nav class="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-1" data-active-classes="bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 font-semibold shadow-sm glow-active-pill">
+<!-- 1. Start -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="start" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Start</span>
+</a>
+<!-- 2. Konten -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="konten" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="5"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Konten</span>
+</a>
+<!-- 3. Kontakte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontakte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Kontakte</span>
+</a>
+<!-- 4. Sparpläne (AKTIV) -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 glow-active-pill font-semibold group relative" data-path="sparplaene" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-to-b from-teal-400 to-violet-400 rounded-r-full shadow-sm shadow-teal-400/50"></div>
+<svg class="w-5 h-5 flex-shrink-0 text-teal-300 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-teal-300 to-violet-200">Sparpläne</span>
+</a>
+<!-- 5. Wertpapiere -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="wertpapiere" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Wertpapiere</span>
+</a>
+<!-- 6. Kontoauszüge -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontoauszuege" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Kontoauszüge</span>
+</a>
+<!-- 7. Budget -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="budget" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Budget</span>
+</a>
+<!-- 8. Berichte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="berichte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Berichte</span>
+</a>
+<div class="pt-3 pb-1">
+<div class="h-px bg-white/5 mx-2"></div>
+</div>
+<!-- 9. Benutzerverwaltung -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="benutzerverwaltung" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Benutzerverwaltung</span>
+</a>
+<!-- 10. KI-Zugänge -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="ki-zugaenge" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">KI-Zugänge</span>
+</a>
+<!-- 11. Einstellungen -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="einstellungen" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Einstellungen</span>
+</a>
+<!-- 12. Hilfe -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="hilfe" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke-linecap="round" stroke-linejoin="round"></path><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Hilfe</span>
+</a>
+<!-- 13. Abmelden -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all group" data-path="abmelden" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-red-400/70 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Abmelden</span>
+</a>
+</nav>
+</aside>
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full">
+<div class="px-6 lg:px-10 py-8 max-w-[1600px] w-full mx-auto space-y-6">
+<!-- BREADCRUMB & CONTEXT HEADER -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="space-y-1">
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-on-surface-variant font-label-caps text-label-caps">
+<span class="hover:text-primary transition-colors cursor-pointer tracking-wider">FINANCEMANAGER</span>
+<span class="text-outline text-[10px]">/</span>
+<span class="text-primary font-semibold tracking-wider">SPARPLÄNE</span>
+</nav>
+<div class="flex items-baseline gap-3 pt-1">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
+            Sparpläne
+          </h1>
+<span class="font-label-numeric-sm text-label-numeric-sm text-primary bg-primary/10 px-2.5 py-0.5 rounded-full font-medium">
+            Variante B • Kontoführung
+          </span>
+</div>
+</div>
+<!-- Context Ribbon & Actions -->
+<div class="flex items-center gap-3 self-start md:self-auto">
+<div class="hidden sm:flex items-center gap-2.5 bg-surface-container-low/80 backdrop-blur-md px-3.5 py-2 rounded-lg">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+            Status: <span class="text-on-surface font-medium">6 Sparpläne aktiv</span>
+</span>
+</div>
+<button class="group relative flex items-center gap-2 bg-primary-container text-on-primary-container hover:bg-primary font-headline-sm text-body-md font-semibold px-4 py-2.5 rounded-lg shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200" id="btn-create-sparplan">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:rotate-90 duration-300">add</span>
+<span>Neuer Sparplan</span>
+</button>
+</div>
+</div>
+<!-- KPI STRIP (ATMOSPHERIC BENTO SUMMARY) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-surface-container-low/60 backdrop-blur-md p-4 rounded-xl flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider block">Monatlich gesamt</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-on-surface font-semibold tracking-tight mt-0.5 block">1.025,00 €</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">auto_graph</span>
+</div>
+</div>
+<div class="bg-surface-container-low/60 backdrop-blur-md p-4 rounded-xl flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider block">Aktiv / Pausiert</span>
+<div class="flex items-baseline gap-1.5 mt-0.5">
+<span class="font-label-numeric-lg text-label-numeric-lg text-primary font-semibold">5</span>
+<span class="font-body-sm text-body-sm text-outline">/</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-tertiary-container font-semibold">1</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[22px]">published_with_changes</span>
+</div>
+</div>
+<div class="bg-surface-container-low/60 backdrop-blur-md p-4 rounded-xl flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider block">Nächste Ausführung</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-on-surface font-semibold tracking-tight mt-0.5 block">01.04.2025</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">event</span>
+</div>
+</div>
+<div class="bg-surface-container-low/60 backdrop-blur-md p-4 rounded-xl flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider block">Sparquote (Liquidität)</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-primary font-semibold tracking-tight mt-0.5 block">28,4 %</span>
+</div>
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">pie_chart</span>
+</div>
+</div>
+</div>
+<!-- FILTER & SEARCH CONTROL BAR -->
+<div class="bg-surface-container-low/75 backdrop-blur-lg p-3 rounded-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-md">
+<!-- Search Input -->
+<div class="relative flex-1 max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px] pointer-events-none">search</span>
+<input class="w-full bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md text-body-md pl-10 pr-4 py-2 rounded-lg outline-none focus:ring-1 focus:ring-primary transition-all duration-200" id="sparplan-search" placeholder="Sparpläne durchsuchen (Name, Zielkonto)..." type="text"/>
+</div>
+<!-- Segmented Status & Interval Filters -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- Status Tabs -->
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-lg">
+<button class="filter-tab px-3 py-1.5 rounded-md font-body-sm text-body-sm font-medium transition-all text-on-primary bg-primary-container/20 text-primary" data-filter="all">
+            Alle (6)
+          </button>
+<button class="filter-tab px-3 py-1.5 rounded-md font-body-sm text-body-sm font-medium text-on-surface-variant hover:text-on-surface transition-all" data-filter="active">
+            Aktiv (5)
+          </button>
+<button class="filter-tab px-3 py-1.5 rounded-md font-body-sm text-body-sm font-medium text-on-surface-variant hover:text-on-surface transition-all" data-filter="paused">
+            Pausiert (1)
+          </button>
+</div>
+<!-- Interval Dropdown Filter -->
+<div class="relative">
+<select class="appearance-none bg-surface-container-lowest text-on-surface-variant font-body-sm text-body-sm pl-3 pr-8 py-2 rounded-lg outline-none cursor-pointer hover:text-on-surface focus:ring-1 focus:ring-primary transition-all" id="interval-select">
+<option value="all">Alle Intervalle</option>
+<option value="monatlich">Monatlich</option>
+<option value="quartal">Quartalsweise</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- MAIN DATA TABLE CONTAINER -->
+<div class="bg-surface-container-low/75 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden flex flex-col">
+<!-- Scroll Wrapper -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse" id="sparplan-table">
+<thead>
+<tr class="bg-surface-container-lowest/80 text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase">
+<th class="py-3.5 px-6 font-semibold" scope="col">Name</th>
+<th class="py-3.5 px-6 font-semibold" scope="col">Intervall</th>
+<th class="py-3.5 px-6 font-semibold text-right" scope="col">Betrag</th>
+<th class="py-3.5 px-6 font-semibold" scope="col">Zielkonto</th>
+<th class="py-3.5 px-6 font-semibold text-center" scope="col">Aktiv</th>
+<th class="py-3.5 pr-6 pl-2 w-10 text-right" scope="col"><span class="sr-only">Details</span></th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<!-- ROW 1: MSCI World Core ETF -->
+<tr class="sparplan-row group hover:bg-surface-container/60 transition-colors cursor-pointer" data-interval="monatlich" data-status="active">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                      MSCI World Core ETF
+                    </div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-outline">
+                      ISIN: IE00B4L5Y983 • Sparplan #SP-01
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_today</span>
+<span>Monatlich (1. des Monats)</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-lg text-label-numeric-md font-bold text-primary tracking-tight">
+                  +450,00 €
+                </span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase bg-secondary-container/20 text-secondary">Depot</span>
+<span class="text-on-surface font-medium">Trade Republic Depot</span>
+</div>
+</td>
+<td class="py-4 px-6 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-caps font-semibold uppercase bg-primary/15 text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  Aktiv
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-outline group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 2: S&P 500 Information Tech -->
+<tr class="sparplan-row group hover:bg-surface-container/60 transition-colors cursor-pointer" data-interval="monatlich" data-status="active">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary/15 flex items-center justify-center flex-shrink-0 text-secondary">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                      S&amp;P 500 Information Tech
+                    </div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-outline">
+                      ISIN: IE00B3WJKG14 • Sparplan #SP-02
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_today</span>
+<span>Monatlich (15. des Monats)</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-lg text-label-numeric-md font-bold text-primary tracking-tight">
+                  +150,00 €
+                </span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase bg-secondary-container/20 text-secondary">Depot</span>
+<span class="text-on-surface font-medium">Scalable Capital Broker</span>
+</div>
+</td>
+<td class="py-4 px-6 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-caps font-semibold uppercase bg-primary/15 text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  Aktiv
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-outline group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 3: Notgroschen Tagesgeld-Sparplan -->
+<tr class="sparplan-row group hover:bg-surface-container/60 transition-colors cursor-pointer" data-interval="monatlich" data-status="active">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                      Notgroschen Tagesgeld-Sparplan
+                    </div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-outline">
+                      Ref: DKB-TG-88192 • Sparplan #SP-03
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_today</span>
+<span>Monatlich (1. des Monats)</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-lg text-label-numeric-md font-bold text-primary tracking-tight">
+                  +200,00 €
+                </span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase bg-surface-container-highest text-on-surface-variant">Tagesgeld</span>
+<span class="text-on-surface font-medium">DKB Tagesgeldkonto</span>
+</div>
+</td>
+<td class="py-4 px-6 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-caps font-semibold uppercase bg-primary/15 text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  Aktiv
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-outline group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 4: BTC Krypto-Sparplan -->
+<tr class="sparplan-row group hover:bg-surface-container/60 transition-colors cursor-pointer" data-interval="monatlich" data-status="active">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-tertiary-container/15 flex items-center justify-center flex-shrink-0 text-tertiary">
+<span class="material-symbols-outlined text-[20px]">currency_bitcoin</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                      BTC Krypto-Sparplan
+                    </div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-outline">
+                      Asset: BTC • Sparplan #SP-04
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">update</span>
+<span>Zweimal monatlich</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-lg text-label-numeric-md font-bold text-primary tracking-tight">
+                  +50,00 €
+                </span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase bg-tertiary-container/20 text-tertiary">Krypto</span>
+<span class="text-on-surface font-medium">Bitpanda Crypto Custody</span>
+</div>
+</td>
+<td class="py-4 px-6 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-caps font-semibold uppercase bg-primary/15 text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  Aktiv
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-outline group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 5: Emerging Markets ETF -->
+<tr class="sparplan-row group hover:bg-surface-container/60 transition-colors cursor-pointer bg-surface-container-lowest/30" data-interval="quartal" data-status="paused">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 text-outline">
+<span class="material-symbols-outlined text-[20px]">public</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                      Emerging Markets ETF
+                    </div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-outline">
+                      ISIN: IE00BKM4GZ66 • Sparplan #SP-05
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_view_month</span>
+<span>Quartalsweise</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-lg text-label-numeric-md font-bold text-outline tracking-tight">
+                  +100,00 €
+                </span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase bg-secondary-container/20 text-secondary">Depot</span>
+<span class="text-on-surface font-medium">Trade Republic Depot</span>
+</div>
+</td>
+<td class="py-4 px-6 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-caps font-semibold uppercase bg-surface-variant text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Pausiert
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-outline group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 6: Kinderdepot Ausbildungsfonds -->
+<tr class="sparplan-row group hover:bg-surface-container/60 transition-colors cursor-pointer" data-interval="monatlich" data-status="active">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary/15 flex items-center justify-center flex-shrink-0 text-secondary">
+<span class="material-symbols-outlined text-[20px]">school</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                      Kinderdepot Ausbildungsfonds
+                    </div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-outline">
+                      Ref: ING-KD-44021 • Sparplan #SP-06
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 text-on-surface-variant whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_today</span>
+<span>Monatlich (1. des Monats)</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-lg text-label-numeric-md font-bold text-primary tracking-tight">
+                  +75,00 €
+                </span>
+</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase bg-secondary-container/20 text-secondary">Depot</span>
+<span class="text-on-surface font-medium">ING Wertpapierdepot</span>
+</div>
+</td>
+<td class="py-4 px-6 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-caps font-semibold uppercase bg-primary/15 text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  Aktiv
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-outline group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- AGGREGATE SUMMARY FOOTER & PAGINATION -->
+<div class="bg-surface-container-lowest/90 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+<!-- Aggregation Strip -->
+<div class="flex items-center gap-3">
+<div class="w-2.5 h-2.5 rounded-full bg-primary shadow-sm shadow-primary/50"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">
+            Monatliches Sparvolumen gesamt: 
+            <span class="font-label-numeric-md text-label-numeric-md font-bold text-primary ml-1">1.025,00 €</span>
+</span>
+</div>
+<!-- Pagination Controls -->
+<div class="flex items-center gap-4">
+<span class="font-body-sm text-body-sm text-outline">
+            Zeige <span class="text-on-surface font-medium">1–6</span> von <span class="text-on-surface font-medium">6</span> Sparplänen
+          </span>
+<div class="flex items-center gap-1">
+<button aria-label="Vorherige Seite" class="p-1.5 rounded-lg bg-surface-container text-outline opacity-40 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="px-2.5 py-1 rounded-lg bg-primary-container/20 text-primary font-label-numeric-sm text-label-numeric-sm font-semibold">
+              1
+            </button>
+<button aria-label="Nächste Seite" class="p-1.5 rounded-lg bg-surface-container text-outline opacity-40 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- DETAIL DRAWER MODAL OVERLAY (Vanilla JS Toggleable) -->
+<div class="fixed inset-0 z-50 pointer-events-none opacity-0 transition-opacity duration-300 flex justify-end" id="detail-drawer">
+<!-- Scrim -->
+<div class="absolute inset-0 bg-[#0a0d12]/75 backdrop-blur-sm transition-opacity" id="drawer-scrim"></div>
+<!-- Panel Content -->
+<div class="relative w-full max-w-lg bg-surface-container-lowest h-full shadow-2xl p-6 lg:p-8 flex flex-col justify-between transform translate-x-full transition-transform duration-300 pointer-events-auto overflow-y-auto" id="drawer-panel">
+<div class="space-y-6">
+<div class="flex items-center justify-between pb-4">
+<div>
+<span class="font-label-caps text-label-caps text-primary uppercase">Detailansicht</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-bold" id="drawer-title">MSCI World Core ETF</h2>
+</div>
+<button aria-label="Schließen" class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" id="drawer-close">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Drawer Quick Info Bento -->
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container p-3.5 rounded-xl">
+<span class="font-label-caps text-label-caps text-outline block">Status</span>
+<span class="font-headline-sm text-body-lg text-primary font-semibold mt-1 block" id="drawer-status">Aktiv</span>
+</div>
+<div class="bg-surface-container p-3.5 rounded-xl">
+<span class="font-label-caps text-label-caps text-outline block">Ausführungssumme</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-primary font-bold mt-1 block" id="drawer-amount">+450,00 €</span>
+</div>
+</div>
+<!-- Attributes List -->
+<div class="space-y-3.5 pt-2">
+<div class="flex justify-between py-2 text-body-md font-body-md">
+<span class="text-on-surface-variant">Intervall</span>
+<span class="text-on-surface font-medium" id="drawer-interval">Monatlich (1. des Monats)</span>
+</div>
+<div class="flex justify-between py-2 text-body-md font-body-md">
+<span class="text-on-surface-variant">Zielkonto</span>
+<span class="text-on-surface font-medium" id="drawer-target">Trade Republic Depot</span>
+</div>
+<div class="flex justify-between py-2 text-body-md font-body-md">
+<span class="text-on-surface-variant">Nächste Abbuchung</span>
+<span class="text-on-surface font-medium">01.04.2025</span>
+</div>
+<div class="flex justify-between py-2 text-body-md font-body-md">
+<span class="text-on-surface-variant">Einzugskonto</span>
+<span class="text-on-surface font-medium">Hauptkonto (DE89 5001 ••••)</span>
+</div>
+<div class="flex justify-between py-2 text-body-md font-body-md">
+<span class="text-on-surface-variant">Automatische Dynamisierung</span>
+<span class="text-on-surface font-medium">2,5 % jährlich</span>
+</div>
+</div>
+<!-- Visual Growth Sparkline preview inside drawer -->
+<div class="bg-surface-container-low p-4 rounded-xl space-y-2">
+<div class="flex justify-between items-center text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Bisher eingezahlt (14 Monate)</span>
+<span class="font-label-numeric-sm text-on-surface font-semibold">6.300,00 €</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 72%;"></div>
+</div>
+<span class="text-[11px] font-body-sm text-outline block text-right">Ziel: 10.000,00 € (72%)</span>
+</div>
+</div>
+<!-- Drawer Action Controls -->
+<div class="pt-6 space-y-2.5">
+<button class="w-full py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-headline-sm text-body-md font-semibold transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">pause_circle</span>
+<span>Sparplan pausieren</span>
+</button>
+<button class="w-full py-2.5 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary font-headline-sm text-body-md font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/10">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+<span>Sparplan anpassen</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+    (function initSparplanTable() {
+      const searchInput = document.getElementById('sparplan-search');
+      const filterTabs = document.querySelectorAll('.filter-tab');
+      const intervalSelect = document.getElementById('interval-select');
+      const rows = document.querySelectorAll('.sparplan-row');
+
+      let currentFilter = 'all';
+      let currentInterval = 'all';
+      let searchQuery = '';
+
+      function applyFilters() {
+        rows.forEach(row => {
+          const status = row.getAttribute('data-status');
+          const interval = row.getAttribute('data-interval');
+          const rowText = row.innerText.toLowerCase();
+
+          const matchesSearch = !searchQuery || rowText.includes(searchQuery);
+          const matchesStatus = (currentFilter === 'all') || (status === currentFilter);
+          const matchesInterval = (currentInterval === 'all') || (interval === currentInterval);
+
+          if (matchesSearch && matchesStatus && matchesInterval) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          searchQuery = e.target.value.toLowerCase().trim();
+          applyFilters();
+        });
+      }
+
+      filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          filterTabs.forEach(t => {
+            t.classList.remove('bg-primary-container/20', 'text-primary');
+            t.classList.add('text-on-surface-variant');
+          });
+          tab.classList.add('bg-primary-container/20', 'text-primary');
+          tab.classList.remove('text-on-surface-variant');
+
+          currentFilter = tab.getAttribute('data-filter');
+          applyFilters();
+        });
+      });
+
+      if (intervalSelect) {
+        intervalSelect.addEventListener('change', (e) => {
+          currentInterval = e.target.value;
+          applyFilters();
+        });
+      }
+
+      // Row Click to Detail Drawer
+      const drawer = document.getElementById('detail-drawer');
+      const drawerPanel = document.getElementById('drawer-panel');
+      const drawerClose = document.getElementById('drawer-close');
+      const drawerScrim = document.getElementById('drawer-scrim');
+
+      const drawerTitle = document.getElementById('drawer-title');
+      const drawerAmount = document.getElementById('drawer-amount');
+      const drawerInterval = document.getElementById('drawer-interval');
+      const drawerTarget = document.getElementById('drawer-target');
+      const drawerStatus = document.getElementById('drawer-status');
+
+      function openDrawer(name, amount, interval, target, status) {
+        drawerTitle.textContent = name;
+        drawerAmount.textContent = amount;
+        drawerInterval.textContent = interval;
+        drawerTarget.textContent = target;
+        drawerStatus.textContent = status;
+
+        drawer.classList.remove('opacity-0', 'pointer-events-none');
+        drawer.classList.add('opacity-100');
+        drawerPanel.classList.remove('translate-x-full');
+      }
+
+      function closeDrawer() {
+        drawerPanel.classList.add('translate-x-full');
+        drawer.classList.remove('opacity-100');
+        drawer.classList.add('opacity-0', 'pointer-events-none');
+      }
+
+      rows.forEach(row => {
+        row.addEventListener('click', () => {
+          const name = row.querySelector('.text-on-surface.font-semibold').textContent.trim();
+          const amount = row.querySelector('.font-label-numeric-lg').textContent.trim();
+          const interval = row.querySelectorAll('td')[1].textContent.trim();
+          const target = row.querySelectorAll('td')[3].querySelector('.text-on-surface').textContent.trim();
+          const status = row.getAttribute('data-status') === 'active' ? 'Aktiv' : 'Pausiert';
+
+          openDrawer(name, amount, interval, target, status);
+        });
+      });
+
+      if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+      if (drawerScrim) drawerScrim.addEventListener('click', closeDrawer);
+    })();
+  </script>
+</div></main>
+</body></html>

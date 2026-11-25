@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type"/>
+</head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen">
+<!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<header class="md:hidden fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 bg-[#0c1017]/90 border-b border-white/5 z-40 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-500 flex items-center justify-center p-0.5 shadow-md shadow-teal-500/20">
+<div class="w-full h-full bg-[#0a0d12] rounded-[10px] flex items-center justify-center">
+<svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 2v20m9-9H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<span class="font-bold tracking-tight text-white text-base">FinanceManager</span>
+</div>
+<button aria-label="Menü öffnen" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</header>
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<aside class="fixed top-0 bottom-0 left-0 hidden md:flex flex-col w-20 lg:w-64 bg-[#080b0f]/90 border-r border-white/5 z-30 flex-shrink-0 backdrop-blur-xl transition-all duration-300">
+<!-- Brand / Logo Area -->
+<div class="h-20 flex items-center px-4 lg:px-6 border-b border-white/5 gap-3.5">
+<div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 via-teal-500 to-violet-600 p-[1.5px] shadow-lg shadow-teal-500/20 flex-shrink-0">
+<div class="w-full h-full bg-[#0a0d12] rounded-[14px] flex items-center justify-center">
+<svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+<polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+<line x1="12" x2="12" y1="22.08" y2="12"></line>
+</svg>
+</div>
+</div>
+<div class="hidden lg:flex flex-col">
+<span class="font-extrabold tracking-tight text-white text-base leading-tight">Finance<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-violet-400">Manager</span></span>
+<span class="text-[11px] font-mono text-slate-500 tracking-wider uppercase">SPA Portal</span>
+</div>
+</div>
+<!-- Navigation Entries -->
+<nav class="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-1" data-active-classes="bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 font-semibold shadow-sm glow-active-pill">
+<!-- 1. Start -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="start" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Start</span>
+</a>
+<!-- 2. Konten -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="konten" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="5"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Konten</span>
+</a>
+<!-- 3. Kontakte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontakte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Kontakte</span>
+</a>
+<!-- 4. Sparpläne (AKTIV) -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 glow-active-pill font-semibold group relative" data-path="sparplaene" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-to-b from-teal-400 to-violet-400 rounded-r-full shadow-sm shadow-teal-400/50"></div>
+<svg class="w-5 h-5 flex-shrink-0 text-teal-300 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-teal-300 to-violet-200">Sparpläne</span>
+</a>
+<!-- 5. Wertpapiere -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="wertpapiere" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Wertpapiere</span>
+</a>
+<!-- 6. Kontoauszüge -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="kontoauszuege" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Kontoauszüge</span>
+</a>
+<!-- 7. Budget -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="budget" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Budget</span>
+</a>
+<!-- 8. Berichte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="berichte" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Berichte</span>
+</a>
+<div class="pt-3 pb-1">
+<div class="h-px bg-white/5 mx-2"></div>
+</div>
+<!-- 9. Benutzerverwaltung -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="benutzerverwaltung" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Benutzerverwaltung</span>
+</a>
+<!-- 10. KI-Zugänge -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="ki-zugaenge" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">KI-Zugänge</span>
+</a>
+<!-- 11. Einstellungen -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="einstellungen" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Einstellungen</span>
+</a>
+<!-- 12. Hilfe -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" data-path="hilfe" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke-linecap="round" stroke-linejoin="round"></path><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Hilfe</span>
+</a>
+<!-- 13. Abmelden -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all group" data-path="abmelden" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-red-400/70 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Abmelden</span>
+</a>
+</nav>
+</aside>
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full">
+<!-- Top Contextual Modern Action Bar (Variante B) -->
+<section class="w-full px-4 lg:px-8 py-6 bg-surface-container-low shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<!-- Breadcrumb, Title & Meta Badge -->
+<div class="flex flex-col gap-1.5 min-w-0">
+<div class="flex items-center gap-2 font-label-caps text-label-caps text-outline uppercase tracking-wider">
+<span>FINANCEMANAGER</span>
+<span class="text-outline-variant">/</span>
+<span>KONTOAUSZÜGE</span>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-medium">ENTWÜRFE</span>
+</div>
+<div class="flex items-center flex-wrap gap-3">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Kontoauszugs-Entwürfe</h1>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-label-numeric-sm text-label-numeric-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+            4 Entwürfe ausstehend
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Prüfen, verifizieren und verbuchen Sie importierte Auszüge vor der endgültigen Übernahme in das Hauptbuch.
+        </p>
+</div>
+<!-- Action Button Group -->
+<div class="flex items-center gap-3 shrink-0">
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface text-body-md font-body-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-outline">tune</span>
+<span class="hidden sm:inline">Spalten</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-fixed text-on-primary-fixed font-headline-sm text-body-md shadow-md hover:shadow-lg transition-all duration-200" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Neuer Entwurf</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Main Viewport Content Area -->
+<div class="w-full px-4 lg:px-8 py-6 space-y-6">
+<!-- KPI / Status Overview Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-caps text-label-caps uppercase">Gesamtentwürfe</span>
+<span class="material-symbols-outlined text-primary text-[20px]">drafts</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface font-label-numeric-lg">4</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Auszugsdateien</span>
+</div>
+</div>
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-caps text-label-caps uppercase">Zu Prüfende Posten</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">checklist</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-secondary font-label-numeric-lg">193</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Buchungen</span>
+</div>
+</div>
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-caps text-label-caps uppercase">Bereit zur Buchung</span>
+<span class="material-symbols-outlined text-primary text-[20px]">verified</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-primary font-label-numeric-lg">2</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Entwürfe validiert</span>
+</div>
+</div>
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-caps text-label-caps uppercase">Offene Klärfälle</span>
+<span class="material-symbols-outlined text-tertiary text-[20px]">pending_actions</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-tertiary-container font-label-numeric-lg">1</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Unvollständig</span>
+</div>
+</div>
+</div>
+<!-- Filter- und Suchleiste -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm space-y-4">
+<div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+<!-- Volltext-Suche -->
+<div class="relative flex-1 min-w-0">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" placeholder="Entwürfe nach Konto oder Dateiname durchsuchen..." type="text"/>
+</div>
+<!-- Filter-Aktionen & Zeitfilter -->
+<div class="flex flex-wrap items-center gap-3">
+<!-- Zeitfilter Dropdown Trigger -->
+<div class="relative">
+<button class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-md text-body-md shadow-sm" type="button">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_month</span>
+<span>Zeitraum: Alle (2024)</span>
+<span class="material-symbols-outlined text-outline text-[18px]">expand_more</span>
+</button>
+</div>
+<!-- Sortierung Dropdown Trigger -->
+<div class="relative">
+<button class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-md text-body-md shadow-sm" type="button">
+<span class="material-symbols-outlined text-outline text-[18px]">sort</span>
+<span>Neueste zuerst</span>
+<span class="material-symbols-outlined text-outline text-[18px]">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Filter-Pills / Schnellfilter -->
+<div class="flex flex-wrap items-center gap-2 pt-1">
+<span class="font-label-caps text-label-caps text-outline uppercase mr-1">Status:</span>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary text-on-primary-fixed font-headline-sm text-body-sm shadow-sm" type="button">
+<span>Alle</span>
+<span class="font-label-numeric-sm opacity-90">(4)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm shadow-sm transition-colors" type="button">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>In Bearbeitung</span>
+<span class="font-label-numeric-sm text-outline">(1)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm shadow-sm transition-colors" type="button">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Bereit zur Übernahme</span>
+<span class="font-label-numeric-sm text-outline">(2)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm shadow-sm transition-colors" type="button">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span>Unvollständig</span>
+<span class="font-label-numeric-sm text-outline">(1)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm shadow-sm transition-colors" type="button">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span>Fehlerhaft</span>
+<span class="font-label-numeric-sm text-outline">(0)</span>
+</button>
+</div>
+</div>
+<!-- Datentabelle Container (Desktop & Tablet) -->
+<div class="hidden md:block rounded-xl bg-surface-container-low shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high text-outline font-label-caps text-label-caps uppercase tracking-wider">
+<th class="py-3.5 px-6 font-medium" scope="col">1. Zeitraum</th>
+<th class="py-3.5 px-6 font-medium" scope="col">2. Konto</th>
+<th class="py-3.5 px-6 font-medium" scope="col">3. Anzahl Einträge</th>
+<th class="py-3.5 px-6 font-medium" scope="col">4. Status</th>
+<th class="py-3.5 px-6 font-medium text-right" scope="col">Aktion</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Row 1: Hauptgirokonto (DKB) -->
+<tr class="group hover:bg-surface-container transition-colors cursor-pointer">
+<!-- Spalte 1: Zeitraum -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col">
+<span class="font-headline-sm text-body-md text-on-surface font-label-numeric-md">01.05.2024 – 31.05.2024</span>
+<span class="font-body-sm text-body-sm text-outline">Mai 2024 • Importiert am 02.06.2024</span>
+</div>
+</td>
+<!-- Spalte 2: Konto -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface font-medium">Hauptgirokonto (DKB)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-caps text-label-caps uppercase">Girokonto</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">DE44 1203 0000 1145 8890 12</span>
+</div>
+</td>
+<!-- Spalte 3: Anzahl Einträge -->
+<td class="py-4 px-6 align-middle">
+<div class="flex items-center gap-2">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold">42 Buchungen</span>
+<span class="w-1.5 h-1.5 rounded-full bg-surface-variant"></span>
+<span class="font-body-sm text-body-sm text-outline">100% zugeordnet</span>
+</div>
+</td>
+<!-- Spalte 4: Status -->
+<td class="py-4 px-6 align-middle">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-primary font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  Bereit zur Übernahme
+                </span>
+</td>
+<!-- Aktion / Chevron -->
+<td class="py-4 px-6 align-middle text-right">
+<div class="inline-flex items-center gap-1 text-primary group-hover:translate-x-1 transition-transform">
+<span class="font-body-sm text-body-sm">Prüfen</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</div>
+</td>
+</tr>
+<!-- Row 2: Tagesgeld Notgroschen (ING) -->
+<tr class="group hover:bg-surface-container transition-colors cursor-pointer bg-surface-container-lowest/30">
+<!-- Spalte 1: Zeitraum -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col">
+<span class="font-headline-sm text-body-md text-on-surface font-label-numeric-md">01.05.2024 – 31.05.2024</span>
+<span class="font-body-sm text-body-sm text-outline">Mai 2024 • Importiert am 01.06.2024</span>
+</div>
+</td>
+<!-- Spalte 2: Konto -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface font-medium">Tagesgeld Notgroschen (ING)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-outline font-label-caps text-label-caps uppercase">Tagesgeld</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">DE89 5001 0517 5589 2311 00</span>
+</div>
+</td>
+<!-- Spalte 3: Anzahl Einträge -->
+<td class="py-4 px-6 align-middle">
+<div class="flex items-center gap-2">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold">18 Buchungen</span>
+<span class="w-1.5 h-1.5 rounded-full bg-surface-variant"></span>
+<span class="font-body-sm text-body-sm text-outline">Zinsgutschrift aktiv</span>
+</div>
+</td>
+<!-- Spalte 4: Status -->
+<td class="py-4 px-6 align-middle">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-primary font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  Bereit zur Übernahme
+                </span>
+</td>
+<!-- Aktion / Chevron -->
+<td class="py-4 px-6 align-middle text-right">
+<div class="inline-flex items-center gap-1 text-primary group-hover:translate-x-1 transition-transform">
+<span class="font-body-sm text-body-sm">Prüfen</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</div>
+</td>
+</tr>
+<!-- Row 3: ETF-Investmentdepot (Trade Republic) -->
+<tr class="group hover:bg-surface-container transition-colors cursor-pointer">
+<!-- Spalte 1: Zeitraum -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col">
+<span class="font-headline-sm text-body-md text-on-surface font-label-numeric-md">01.04.2024 – 30.04.2024</span>
+<span class="font-body-sm text-body-sm text-outline">April 2024 • Importiert am 04.05.2024</span>
+</div>
+</td>
+<!-- Spalte 2: Konto -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface font-medium">ETF-Investmentdepot (Trade Republic)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-secondary font-label-caps text-label-caps uppercase">Depot</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">DE12 1001 1001 2948 1029 33</span>
+</div>
+</td>
+<!-- Spalte 3: Anzahl Einträge -->
+<td class="py-4 px-6 align-middle">
+<div class="flex items-center gap-2">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold">125 Buchungen</span>
+<span class="w-1.5 h-1.5 rounded-full bg-surface-variant"></span>
+<span class="font-body-sm text-body-sm text-secondary">Sparpläne &amp; Dividenden</span>
+</div>
+</td>
+<!-- Spalte 4: Status -->
+<td class="py-4 px-6 align-middle">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-secondary font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                  In Prüfung
+                </span>
+</td>
+<!-- Aktion / Chevron -->
+<td class="py-4 px-6 align-middle text-right">
+<div class="inline-flex items-center gap-1 text-primary group-hover:translate-x-1 transition-transform">
+<span class="font-body-sm text-body-sm">Fortsetzen</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</div>
+</td>
+</tr>
+<!-- Row 4: Reisekreditkarte (Barclays) -->
+<tr class="group hover:bg-surface-container transition-colors cursor-pointer bg-surface-container-lowest/30">
+<!-- Spalte 1: Zeitraum -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col">
+<span class="font-headline-sm text-body-md text-on-surface font-label-numeric-md">01.04.2024 – 30.04.2024</span>
+<span class="font-body-sm text-body-sm text-outline">April 2024 • Importiert am 02.05.2024</span>
+</div>
+</td>
+<!-- Spalte 2: Konto -->
+<td class="py-4 px-6 align-middle">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface font-medium">Reisekreditkarte (Barclays)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-tertiary-container font-label-caps text-label-caps uppercase">Kreditkarte</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">DE91 2007 0000 0019 4432 90</span>
+</div>
+</td>
+<!-- Spalte 3: Anzahl Einträge -->
+<td class="py-4 px-6 align-middle">
+<div class="flex items-center gap-2">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold">8 Buchungen</span>
+<span class="w-1.5 h-1.5 rounded-full bg-surface-variant"></span>
+<span class="font-body-sm text-body-sm text-tertiary-container">2 Fremdwährungen unklar</span>
+</div>
+</td>
+<!-- Spalte 4: Status -->
+<td class="py-4 px-6 align-middle">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-tertiary-container font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+                  Unvollständig
+                </span>
+</td>
+<!-- Aktion / Chevron -->
+<td class="py-4 px-6 align-middle text-right">
+<div class="inline-flex items-center gap-1 text-primary group-hover:translate-x-1 transition-transform">
+<span class="font-body-sm text-body-sm">Klären</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Tabellen-Footer mit Paginierung & System-Hinweis -->
+<div class="px-6 py-4 bg-surface-container-high flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">info</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+            Hinweis: Ein Klick auf einen Entwurf öffnet die Detailprüfung und Zuordnung der Buchungsposten.
+          </span>
+</div>
+<div class="flex items-center gap-4 shrink-0">
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">
+            Zeige 1–4 von 4 Entwürfen
+          </span>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-lg bg-surface-container text-outline opacity-40 cursor-not-allowed flex items-center justify-center" disabled="" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container text-outline opacity-40 cursor-not-allowed flex items-center justify-center" disabled="" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Mobile Responsive Kartenansicht (< md screens) -->
+<div class="md:hidden space-y-4">
+<!-- Card 1: DKB -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm space-y-3 cursor-pointer hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between gap-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">Hauptgirokonto (DKB)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-caps text-label-caps uppercase">Giro</span>
+</div>
+<p class="font-label-numeric-sm text-label-numeric-sm text-outline">DE44 1203 0000 1145 8890 12</p>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-body-sm text-body-sm shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            Bereit
+          </span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest/50 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-outline uppercase">Zeitraum</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">01.05. – 31.05.2024</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="font-label-caps text-label-caps text-outline uppercase">Anzahl Einträge</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-primary font-medium">42 Buchungen</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-outline">Mai 2024</span>
+<div class="inline-flex items-center gap-1 text-primary">
+<span class="font-body-sm text-body-sm">Prüfen &amp; Importieren</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 2: ING -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm space-y-3 cursor-pointer hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between gap-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">Tagesgeld Notgroschen (ING)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-outline font-label-caps text-label-caps uppercase">Tagesgeld</span>
+</div>
+<p class="font-label-numeric-sm text-label-numeric-sm text-outline">DE89 5001 0517 5589 2311 00</p>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-body-sm text-body-sm shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            Bereit
+          </span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest/50 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-outline uppercase">Zeitraum</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">01.05. – 31.05.2024</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="font-label-caps text-label-caps text-outline uppercase">Anzahl Einträge</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-primary font-medium">18 Buchungen</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-outline">Mai 2024</span>
+<div class="inline-flex items-center gap-1 text-primary">
+<span class="font-body-sm text-body-sm">Prüfen &amp; Importieren</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Trade Republic -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm space-y-3 cursor-pointer hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between gap-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">ETF-Investmentdepot (TR)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-secondary font-label-caps text-label-caps uppercase">Depot</span>
+</div>
+<p class="font-label-numeric-sm text-label-numeric-sm text-outline">DE12 1001 1001 2948 1029 33</p>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-secondary font-body-sm text-body-sm shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            In Prüfung
+          </span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest/50 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-outline uppercase">Zeitraum</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">01.04. – 30.04.2024</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="font-label-caps text-label-caps text-outline uppercase">Anzahl Einträge</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-secondary font-medium">125 Buchungen</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-outline">April 2024</span>
+<div class="inline-flex items-center gap-1 text-primary">
+<span class="font-body-sm text-body-sm">Bearbeitung fortsetzen</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Barclays -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm space-y-3 cursor-pointer hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between gap-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-body-md text-on-surface font-medium">Reisekreditkarte (Barclays)</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-tertiary-container font-label-caps text-label-caps uppercase">Kreditkarte</span>
+</div>
+<p class="font-label-numeric-sm text-label-numeric-sm text-outline">DE91 2007 0000 0019 4432 90</p>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-tertiary-container font-body-sm text-body-sm shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>
+            Unvollständig
+          </span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest/50 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-outline uppercase">Zeitraum</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">01.04. – 30.04.2024</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="font-label-caps text-label-caps text-outline uppercase">Anzahl Einträge</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-tertiary font-medium">8 Buchungen</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-outline">April 2024</span>
+<div class="inline-flex items-center gap-1 text-primary">
+<span class="font-body-sm text-body-sm">Posten klären</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Mobile Pagination & Helper -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm flex flex-col gap-3">
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-start gap-2">
+<span class="material-symbols-outlined text-outline text-[16px] shrink-0 mt-0.5">info</span>
+<span>Tippen Sie auf einen Entwurf zur Prüfung &amp; Zuweisung.</span>
+</p>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">Zeige 1–4 von 4 Entwürfen</span>
+<span class="px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-label-numeric-sm text-label-numeric-sm">Seite 1/1</span>
+</div>
+</div>
+</div>
+<!-- Quick Info Strip: German Financial Import Compliance & Sync Info -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-body-md text-on-surface font-medium">Automatischer Bankabgleich (PSD2 / FinTS)</h4>
+<p class="font-body-sm text-body-sm text-outline">Letzte Synchronisation vor 24 Minuten mit Deutsche Bundesbank Zertifizierung.</p>
+</div>
+</div>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm transition-colors shrink-0" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>Jetzt synchronisieren</span>
+</button>
+</div>
+</div>
+</div></main>
+</body></html>

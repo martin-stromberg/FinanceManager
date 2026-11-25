@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"background":"#051424","on-tertiary-fixed-variant":"#004c69","on-primary":"#002780","on-surface":"#d4e4fa","tertiary":"#7bd0ff","inverse-surface":"#d4e4fa","surface-dim":"#051424","surface-container-lowest":"#010f1f","on-secondary-container":"#a3b5ff","surface-tint":"#b6c4ff","tertiary-fixed":"#c4e7ff","secondary-container":"#133eaf","on-error-container":"#ffdad6","tertiary-fixed-dim":"#7bd0ff","on-secondary-fixed-variant":"#0f3bac","surface-container":"#122131","primary-container":"#6d8dff","inverse-primary":"#3255c5","surface-variant":"#273647","surface-container-low":"#0d1c2d","error":"#ffb4ab","inverse-on-surface":"#233143","surface-bright":"#2c3a4c","error-container":"#93000a","primary-fixed-dim":"#b6c4ff","on-tertiary":"#00354a","on-secondary":"#002780","surface-container-high":"#1c2b3c","on-background":"#d4e4fa","on-secondary-fixed":"#001551","outline-variant":"#444653","primary":"#b6c4ff","surface-container-highest":"#273647","on-primary-fixed-variant":"#0d3bac","tertiary-container":"#009fd6","on-primary-fixed":"#001550","on-surface-variant":"#c4c5d5","outline":"#8e909f","secondary-fixed-dim":"#b6c4ff","on-error":"#690005","surface":"#051424","secondary":"#b6c4ff","primary-fixed":"#dce1ff","secondary-fixed":"#dce1ff","on-primary-container":"#002477","on-tertiary-container":"#003145","on-tertiary-fixed":"#001e2c"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","gutter":"1rem","space-xl":"1.75rem","margin-tablet":"1.5rem","gutter-desktop":"1.25rem","margin":"1rem","space-lg":"1.25rem","margin-desktop":"2rem","space-sm":"0.5rem","space-md":"0.75rem"},"fontFamily":{"metric-lg":["Inter"],"label-md":["Inter"],"headline-xl":["Inter"],"body-lg":["Inter"],"headline-sm":["Inter"],"label-sm":["Inter"],"body-sm":["Inter"],"headline-md":["Inter"],"headline-lg":["Inter"],"body-md":["Inter"],"metric-md":["Inter"]},"fontSize":{"metric-lg":["1.75rem",{"lineHeight":"2rem","letterSpacing":"-0.03em","fontWeight":"600"}],"label-md":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.01em","fontWeight":"500"}],"headline-xl":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.025em","fontWeight":"600"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.005em","fontWeight":"400"}],"headline-sm":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"600"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0em","fontWeight":"400"}],"headline-md":["1.125rem",{"lineHeight":"1.5rem","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0em","fontWeight":"400"}],"metric-md":["1.25rem",{"lineHeight":"1.5rem","letterSpacing":"-0.02em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex flex-col flex-1 min-h-0"><div class="h-14 px-gutter flex items-center gap-space-sm bg-surface-container-low shrink-0"><span class="material-symbols-outlined text-primary text-[22px]">account_balance_wallet</span><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-semibold">FinanceManager</span><span class="font-label-sm text-label-sm tracking-widest text-primary uppercase">LEDGER OS</span></div></div><div class="overflow-y-auto flex-1 px-space-sm py-space-md"><div class="px-space-sm py-space-xs mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Hauptmenü</span></div><nav class="flex flex-col gap-0.5 mb-space-md" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="start" href="#"><span class="material-symbols-outlined text-[18px]">space_dashboard</span><span class="font-body-sm text-body-sm">Start</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="konten" href="#"><span class="material-symbols-outlined text-[18px]">wallet</span><span class="font-body-sm text-body-sm">Konten</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="kontakte" href="#"><span class="material-symbols-outlined text-[18px]">group</span><span class="font-body-sm text-body-sm">Kontakte</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="sparplaene" href="#"><span class="material-symbols-outlined text-[18px]">savings</span><span class="font-body-sm text-body-sm">Sparpläne</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="wertpapiere" href="#"><span class="material-symbols-outlined text-[18px]">monitoring</span><span class="font-body-sm text-body-sm">Wertpapiere</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="kontoauszuege" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-body-sm text-body-sm">Kontoauszüge</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="budget" href="#"><span class="material-symbols-outlined text-[18px]">pie_chart</span><span class="font-body-sm text-body-sm">Budget</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="berichte" href="#"><span class="material-symbols-outlined text-[18px]">assessment</span><span class="font-body-sm text-body-sm">Berichte</span></a></nav><div class="px-space-sm py-space-xs mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">System</span></div><nav class="flex flex-col gap-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="benutzerverwaltung" href="#"><span class="material-symbols-outlined text-[18px]">manage_accounts</span><span class="font-body-sm text-body-sm">Benutzerverwaltung</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="ki-zugaenge" href="#"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span class="font-body-sm text-body-sm">KI-Zugänge</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-space-xs transition-colors bg-primary-container text-on-primary-container font-semibold rounded-lg" data-path="einstellungen" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-sm text-body-sm">Einstellungen</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="hilfe" href="#"><span class="material-symbols-outlined text-[18px]">help</span><span class="font-body-sm text-body-sm">Hilfe</span></a></nav></div></div><div class="p-space-sm bg-surface-container-low shrink-0"><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-error hover:bg-surface-container transition-colors" data-path="login" href="#"><span class="material-symbols-outlined text-[18px]">logout</span><span class="font-body-sm text-body-sm">Abmelden</span></a></div></aside><div class="pl-64 flex flex-col min-h-screen"><header class="fixed top-0 left-64 right-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.3)]"><div class="h-28 flex flex-col justify-between w-full"><div class="h-14 px-gutter flex items-center justify-between gap-space-md bg-surface-container-low/50"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-1 rounded-lg"><span class="material-symbols-outlined text-outline text-[16px]">domain</span><select aria-label="Mandantenauswahl" class="bg-transparent font-label-md text-label-md text-on-surface focus:outline-none cursor-pointer pr-space-xs"><option class="bg-surface-container text-on-surface" selected="" value="DE-EUR">DE-EUR (Hauptmandant)</option><option class="bg-surface-container text-on-surface" value="AT-EUR">AT-EUR (Holding Wien)</option><option class="bg-surface-container text-on-surface" value="CH-CHF">CH-CHF (Zürich Depot)</option></select></div><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-space-xs text-outline text-[18px]">search</span><input class="bg-surface-container-lowest font-body-sm text-body-sm text-on-surface placeholder:text-outline pl-8 pr-space-md py-1 rounded-lg w-72 focus:outline-none focus:ring-1 focus:ring-primary-container" placeholder="Globale Suche in Ledger, Konten, ISIN..." type="text"/></div></div><div class="flex items-center gap-space-md"><button aria-label="Benachrichtigungen" class="relative p-space-xs text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="flex flex-col text-right"><span class="font-label-md text-label-md text-on-surface font-medium">Dr. S. Meier</span><span class="font-label-sm text-label-sm text-tertiary bg-surface-container px-space-xs py-0.5 rounded">Finanzprüfer / Auditor Level 2</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div><div class="h-14 px-gutter flex items-center justify-between bg-surface-container-lowest"><div class="flex items-center gap-space-xs"><button class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">arrow_back</span><span>Zurück</span></button><button class="flex items-center gap-1 px-space-sm py-1 rounded bg-primary-container text-on-primary-container hover:bg-primary transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">save</span><span>Speichern</span></button><button class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">restart_alt</span><span>Zurücksetzen</span></button><button class="flex items-center gap-1 px-space-sm py-1 rounded bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">delete</span><span>Löschen</span></button></div><div class="flex items-center gap-space-xs"><button class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">verified</span><span>Konfiguration prüfen</span></button><button class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">download</span><span>Exportieren (JSON)</span></button></div></div></div></header><main class="w-full pt-28 px-gutter flex-1 bg-background"><div class="flex flex-col w-full pb-16">
+<!-- Top Meta / Breadcrumb & System Status Header -->
+<div class="flex flex-col gap-space-sm pt-space-md pb-space-lg">
+<!-- Breadcrumb Line -->
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm uppercase tracking-wider text-outline">
+<span>FinanceManager</span>
+<span class="material-symbols-outlined text-[13px] text-outline">chevron_right</span>
+<span>System</span>
+<span class="material-symbols-outlined text-[13px] text-outline">chevron_right</span>
+<span>Einstellungen</span>
+<span class="material-symbols-outlined text-[13px] text-outline">chevron_right</span>
+<span class="text-primary font-semibold">Einrichtung & Systemkonfiguration</span>
+</div>
+<!-- Title, Context & Real-Time Status Capsule Bar -->
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-md">
+<div class="flex flex-col max-w-4xl">
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-semibold flex items-center gap-space-sm">
+<span>Einrichtung</span>
+<span class="font-label-sm text-label-sm text-primary bg-surface-container-high px-space-xs py-0.5 rounded tracking-normal font-medium">SYS-CONF v4.2</span>
+</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 leading-relaxed">
+          Zentrale Konfigurationsparameter, Mandantenvorgaben, automatisierte Backupläufe und operative Alarmierungsschwellen für den Produktivbetrieb.
+        </p>
+</div>
+<!-- Compact Status Badge Cluster -->
+<div class="flex flex-wrap items-center gap-space-sm shrink-0">
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded-lg bg-surface-container-low border border-surface-container-highest shadow-sm">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-on-surface font-medium">System: Betriebsbereit</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded-lg bg-surface-container-low border border-surface-container-highest shadow-sm">
+<span class="material-symbols-outlined text-outline text-[15px]">corporate_fare</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Mandant: <span class="font-mono text-on-surface">DE-EUR-84920</span></span>
+</div>
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded-lg bg-surface-container-low border border-surface-container-highest shadow-sm">
+<span class="material-symbols-outlined text-outline text-[15px]">schedule</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Letzte Sicherung: <span class="text-on-surface">Heute, 03:00:14 Uhr</span></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Layout Grid: 12-Column Ledger Ergonomics -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start">
+<!-- Left Column (8 of 12 cols): Structured Setup Accordions -->
+<div class="lg:col-span-8 flex flex-col gap-space-md">
+<!-- SECTION 1 (EXPANDED): Systeminformationen & Mandantenparameter -->
+<section class="rounded-xl bg-surface-container-low border border-surface-container-highest shadow-md transition-all overflow-hidden" id="sec-mandant">
+<!-- Accordion Header -->
+<button class="w-full h-14 px-gutter flex items-center justify-between text-left bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none" onclick="toggleAccordion('sec-mandant-body', 'sec-mandant-chevron')" type="button">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">1. Systeminformationen & Mandantenparameter</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">Aktiv</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline hidden sm:inline">Mandantenprofil</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="sec-mandant-chevron">expand_less</span>
+</div>
+</button>
+<!-- Accordion Content Body -->
+<div class="p-gutter pt-space-xs border-t border-surface-container-highest bg-surface-container-lowest/60" id="sec-mandant-body">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md mt-space-sm">
+<!-- Instanz-Bezeichnung -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="instanz-name">Instanz-Bezeichnung</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container" id="instanz-name" type="text" value="FinanceManager Hauptinstanz Production"/>
+<span class="material-symbols-outlined absolute right-3 text-outline text-[18px]">badge</span>
+</div>
+</div>
+<!-- Mandanten-Kennung (ID) - Readonly Lock -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium flex items-center gap-1" for="mandant-id">
+<span>Mandanten-Kennung (ID)</span>
+<span class="material-symbols-outlined text-[13px] text-outline">lock</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container text-on-surface-variant font-mono text-body-md px-3 py-2 rounded-lg border border-surface-container-highest cursor-not-allowed select-all" id="mandant-id" readonly="" type="text" value="DE-EUR-84920"/>
+<span class="material-symbols-outlined absolute right-3 text-outline text-[18px]">verified_user</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline">Nicht veränderbar im laufenden Mandantenbetrieb.</span>
+</div>
+<!-- Server-Zeitzone -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="server-tz">Server-Zeitzone & Referenztakt</label>
+<div class="relative flex items-center">
+<select class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container appearance-none pr-8 cursor-pointer" id="server-tz">
+<option selected="" value="Europe/Berlin">Europe/Berlin (UTC+01:00 / MESZ)</option>
+<option value="Europe/Vienna">Europe/Vienna (UTC+01:00 / MESZ)</option>
+<option value="Europe/Zurich">Europe/Zurich (UTC+01:00 / CEST)</option>
+<option value="UTC">UTC (Koordinierte Weltzeit)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 text-outline text-[18px] pointer-events-none">unfold_more</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline">Synchronisiert alle Valuten auf EZB-Tagesendkurse.</span>
+</div>
+<!-- Basis- & Bilanzierungswährung -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="basis-waehrung">Basis- & Bilanzierungswährung</label>
+<div class="relative flex items-center">
+<select class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container appearance-none pr-8 cursor-pointer" id="basis-waehrung">
+<option selected="" value="EUR">EUR (€) - Euro (Deutschland/EZB Referenzkontenrahmen)</option>
+<option value="CHF">CHF (CHF) - Schweizer Franken</option>
+<option value="USD">USD ($) - US Dollar</option>
+<option value="GBP">GBP (£) - Britisches Pfund</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 text-outline text-[18px] pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<!-- Schema & Datenbank-Statusbox -->
+<div class="md:col-span-2 rounded-lg bg-surface-container p-space-md border border-surface-container-highest flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">database</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">PostgreSQL 16.2 / Ledger Core Schema v4.2</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-mono">SHA-256: 7e2f90a1c905b2df82e666a0d4c944a95e7c81d8</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 font-label-sm text-label-sm">Integrität bestätigt</span>
+</div>
+</div>
+</div>
+<!-- Section Action Footer -->
+<div class="mt-space-lg pt-space-md border-t border-surface-container-highest flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-container-highest font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span>Standardwerte wiederherstellen</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-container-highest font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Mandantenparameter prüfen</span>
+</button>
+</div>
+<button class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary font-headline-sm text-headline-sm font-semibold transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Sektion speichern</span>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION 2 (EXPANDED): Benachrichtigungen, SMTP & Operative Alarme -->
+<section class="rounded-xl bg-surface-container-low border border-surface-container-highest shadow-md transition-all overflow-hidden" id="sec-alerts">
+<!-- Accordion Header -->
+<button class="w-full h-14 px-gutter flex items-center justify-between text-left bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none" onclick="toggleAccordion('sec-alerts-body', 'sec-alerts-chevron')" type="button">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">2. Benachrichtigungen, SMTP & Operative Alarme</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">Aktiv</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline hidden sm:inline">3 Schwellwerte aktiv</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="sec-alerts-chevron">expand_less</span>
+</div>
+</button>
+<!-- Accordion Content Body -->
+<div class="p-gutter pt-space-xs border-t border-surface-container-highest bg-surface-container-lowest/60" id="sec-alerts-body">
+<div class="flex flex-col gap-space-md mt-space-sm">
+<!-- Master Toggle Switch: E-Mail-Dispatching -->
+<div class="flex items-center justify-between p-space-md rounded-lg bg-surface-container border border-surface-container-highest">
+<div class="flex flex-col pr-space-md">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">E-Mail-Dispatching & Event-Signale</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Automatische Übertragung aller Sicherheitswarnungen und Bilanzdifferenzen an operative Empfänger.</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- SMTP Relay -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="smtp-host">SMTP-Relay / Host & Port</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-mono text-body-sm px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container" id="smtp-host" type="text" value="smtp.financemanager.internal:587"/>
+<span class="material-symbols-outlined absolute right-3 text-outline text-[18px]">dns</span>
+</div>
+</div>
+<!-- System-Alarmempfänger -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="alarm-recipient">System-Alarmempfänger</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-sm px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container" id="alarm-recipient" type="email" value="admin-finance@organisation.de"/>
+<span class="material-symbols-outlined absolute right-3 text-outline text-[18px]">mail</span>
+</div>
+</div>
+<!-- Zeiträume & Prüfintervalle -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="interval-check">Alarm-Prüfintervall (Hintergrund-Daemon)</label>
+<div class="relative flex items-center">
+<select class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container appearance-none pr-8 cursor-pointer" id="interval-check">
+<option selected="" value="15">Alarm-Prüfintervall: Alle 15 Minuten (Empfohlen für Produktivkonten)</option>
+<option value="5">Alarm-Prüfintervall: Alle 5 Minuten (Hochfrequent)</option>
+<option value="60">Alarm-Prüfintervall: Stündlich</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 text-outline text-[18px] pointer-events-none">timer</span>
+</div>
+</div>
+</div>
+<!-- Operative Schwellwerte -->
+<div class="flex flex-col gap-2 pt-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">Operative Schwellwerte & Trigger</span>
+<!-- Schwellwert 1 -->
+<label class="flex items-center gap-space-sm p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer border border-surface-container-highest">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline text-primary-container focus:ring-0 focus:ring-offset-0" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">Fehlerhafte Buchungsimporte</span>
+<span class="font-body-sm text-body-sm text-outline">Sofortige Warnmeldung bei Schwellwert: > 0 Fehler pro Batch/Tag</span>
+</div>
+</label>
+<!-- Schwellwert 2 mit Inline Number Input -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors border border-surface-container-highest">
+<label class="flex items-center gap-space-sm cursor-pointer">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline text-primary-container focus:ring-0 focus:ring-offset-0" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">Kursabweichung Schwellwert (Tagesvolatilität)</span>
+<span class="font-body-sm text-body-sm text-outline">Warnung, falls Wertpapier-Spread oder Depotwert stark abweicht</span>
+</div>
+</label>
+<div class="flex items-center gap-2 pl-7 sm:pl-0">
+<span class="font-label-sm text-label-sm text-outline">></span>
+<input class="w-20 bg-surface-container-lowest text-on-surface font-mono font-medium text-body-sm px-2 py-1 rounded border border-surface-container-highest text-right focus:outline-none focus:ring-1 focus:ring-primary-container" step="0.5" type="number" value="5.0"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">%</span>
+</div>
+</div>
+<!-- Schwellwert 3 -->
+<label class="flex items-center gap-space-sm p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer border border-surface-container-highest">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest border-outline text-primary-container focus:ring-0 focus:ring-offset-0" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">Sicherungsbericht täglich versenden</span>
+<span class="font-body-sm text-body-sm text-outline">Statuszusammenfassung nach dem täglichen Snapshot an E-Mail-Empfänger</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Section Action Footer -->
+<div class="mt-space-lg pt-space-md border-t border-surface-container-highest flex flex-wrap items-center justify-between gap-space-sm">
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-container-highest font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">outgoing_mail</span>
+<span>Test-Alarm senden</span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary font-headline-sm text-headline-sm font-semibold transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Alarmeinstellungen sichern</span>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION 3 (EXPANDED): Datensicherung, Replikation & Archivierung -->
+<section class="rounded-xl bg-surface-container-low border border-surface-container-highest shadow-md transition-all overflow-hidden" id="sec-backup">
+<!-- Accordion Header -->
+<button class="w-full h-14 px-gutter flex items-center justify-between text-left bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none" onclick="toggleAccordion('sec-backup-body', 'sec-backup-chevron')" type="button">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">cloud_sync</span>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">3. Datensicherung, Replikation & Archivierung</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/40">Auto-Snapshot Aktiv</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline hidden sm:inline">GoBD konform</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="sec-backup-chevron">expand_less</span>
+</div>
+</button>
+<!-- Accordion Content Body -->
+<div class="p-gutter pt-space-xs border-t border-surface-container-highest bg-surface-container-lowest/60" id="sec-backup-body">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md mt-space-sm">
+<!-- Backup-Intervall -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="backup-interval">Backup-Intervall</label>
+<div class="relative flex items-center">
+<select class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container appearance-none pr-8 cursor-pointer" id="backup-interval">
+<option selected="" value="daily-3am">Täglich um 03:00 Uhr (Vollständiger Snapshot)</option>
+<option value="daily-1am">Täglich um 01:00 Uhr (Vollständiger Snapshot)</option>
+<option value="hourly">Stündlich differentiell (WAL-Archivierung)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 text-outline text-[18px] pointer-events-none">cloud_upload</span>
+</div>
+</div>
+<!-- Aufbewahrungsdauer (Retention) -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="retention-period">Aufbewahrungsdauer (Retention)</label>
+<div class="relative flex items-center">
+<select class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container appearance-none pr-8 cursor-pointer" id="retention-period">
+<option selected="" value="90">90 Tage (DSGVO- und GoBD-konform)</option>
+<option value="180">180 Tage (Erweiterte Revision)</option>
+<option value="365">365 Tage (1 Geschäftsjahr rollierend)</option>
+<option value="3650">10 Jahre (Fiskalisches Langzeitarchiv)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 text-outline text-[18px] pointer-events-none">unfold_more</span>
+</div>
+</div>
+<!-- Speicherziel & Verschlüsselungspfad -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium" for="backup-target">Speicherziel & Verschlüsselungspfad</label>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1 font-mono">
+<span class="material-symbols-outlined text-[13px]">key</span> AES-256 HSM
+                </span>
+</div>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-mono text-body-sm px-3 py-2 rounded-lg border border-surface-container-highest focus:outline-none focus:ring-1 focus:ring-primary-container" id="backup-target" type="text" value="/mnt/backups/ledger/cold-vault-primary"/>
+<span class="material-symbols-outlined absolute right-3 text-outline text-[18px]">folder_special</span>
+</div>
+</div>
+<!-- Schalter: Automatische Prüfsummen-Verifikation -->
+<div class="md:col-span-2 flex items-center justify-between p-3 rounded-lg bg-surface-container border border-surface-container-highest">
+<div class="flex flex-col pr-space-md">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Automatische Prüfsummen-Verifikation nach Snapshot</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Führt nach Erstellung einen Test-Restore der Tabellenstruktur in isoliertem Namespace durch.</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+<!-- Section Action Footer -->
+<div class="mt-space-lg pt-space-md border-t border-surface-container-highest flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-container-highest font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">storage</span>
+<span>Speicherziel testen</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>Archiv-Historie anzeigen</span>
+</button>
+</div>
+<button class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary font-headline-sm text-headline-sm font-semibold transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">backup</span>
+<span>Jetzt manuell sichern</span>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION 4 (COLLAPSED): Wartungsmodus & Betriebszustand -->
+<section class="rounded-xl bg-surface-container-low border border-surface-container-highest transition-all overflow-hidden" id="sec-maint">
+<button class="w-full h-14 px-gutter flex items-center justify-between text-left bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none" onclick="toggleAccordion('sec-maint-body', 'sec-maint-chevron')" type="button">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-outline">
+<span class="material-symbols-outlined text-[20px]">build_circle</span>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">4. Wartungsmodus & Betriebszustand</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-variant text-outline">Inaktiv</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline hidden sm:inline">Schreibzugriff aktiv</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="sec-maint-chevron">expand_more</span>
+</div>
+</button>
+<div class="hidden p-gutter pt-space-xs border-t border-surface-container-highest bg-surface-container-lowest/60" id="sec-maint-body">
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-surface-container-highest">
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Exklusiver Wartungsmodus</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sperrt alle Buchungs-APIs und Nicht-Admin-Sitzungen für Schema-Migrationen.</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- SECTION 5 (COLLAPSED): Dateianhänge & Dokumentenspeicher -->
+<section class="rounded-xl bg-surface-container-low border border-surface-container-highest transition-all overflow-hidden" id="sec-docs">
+<button class="w-full h-14 px-gutter flex items-center justify-between text-left bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none" onclick="toggleAccordion('sec-docs-body', 'sec-docs-chevron')" type="button">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-outline">
+<span class="material-symbols-outlined text-[20px]">attachment</span>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">5. Dateianhänge & Dokumentenspeicher</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-variant text-outline font-mono">AES-256 / 4,2 GB belegt</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline hidden sm:inline">Quotenverwaltung</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="sec-docs-chevron">expand_more</span>
+</div>
+</button>
+<div class="hidden p-gutter pt-space-xs border-t border-surface-container-highest bg-surface-container-lowest/60" id="sec-docs-body">
+<div class="p-3 text-body-sm text-on-surface-variant">
+            Maximales Einzeldatei-Uploadlimit: 25 MB (PDF, TIFF, XML). Verschlüsselung im Ruhezustand via SHA-512 Enklave.
+          </div>
+</div>
+</section>
+<!-- SECTION 6 (COLLAPSED): Sprache & Lokalisierung -->
+<section class="rounded-xl bg-surface-container-low border border-surface-container-highest transition-all overflow-hidden" id="sec-lang">
+<button class="w-full h-14 px-gutter flex items-center justify-between text-left bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer select-none" onclick="toggleAccordion('sec-lang-body', 'sec-lang-chevron')" type="button">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-outline">
+<span class="material-symbols-outlined text-[20px]">translate</span>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap min-w-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">6. Sprache & Lokalisierung</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant">DE-DE (Standard)</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline hidden sm:inline">Zahlenformat: 1.234,56 €</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="sec-lang-chevron">expand_more</span>
+</div>
+</button>
+<div class="hidden p-gutter pt-space-xs border-t border-surface-container-highest bg-surface-container-lowest/60" id="sec-lang-body">
+<div class="p-3 text-body-sm text-on-surface-variant">
+            Gebietsschema DIN 1333 / ISO 8601 Datumsformate (YYYY-MM-DD) für Exporte und Hauptbuchauszüge.
+          </div>
+</div>
+</section>
+</div>
+<!-- Right Column (4 of 12 cols): Persistent Status & GoBD Audit Widget Bar -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<!-- Telemetry Card -->
+<div class="p-space-lg rounded-xl bg-surface-container-low border border-surface-container-highest shadow-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between border-b border-surface-container pb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">monitoring</span>
+<h2 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Operativer Status & Telemetrie</h2>
+</div>
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+</div>
+<!-- Metric Item 1: High-Level System Status -->
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-medium">Systemzustand</span>
+<div class="flex items-baseline justify-between">
+<span class="font-metric-md text-metric-md text-on-surface font-semibold">Betriebsbereit</span>
+<span class="font-mono text-emerald-400 font-label-sm text-label-sm">99.99% Uptime</span>
+</div>
+</div>
+<!-- Metric Item 2: Daemons Count -->
+<div class="p-3 rounded-lg bg-surface-container-lowest flex items-center justify-between border border-surface-container-highest">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">neurology</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Hintergrund-Daemons</span>
+</div>
+<span class="font-mono font-label-md text-label-md text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">6 / 6 Aktiv</span>
+</div>
+<div class="flex flex-col gap-1 pl-1">
+<span class="font-body-sm text-body-sm text-outline flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Cron Job Scheduler: Läuft
+          </span>
+<span class="font-body-sm text-body-sm text-outline flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> EZB Kurs-Sync: Synchronisiert
+          </span>
+<span class="font-body-sm text-body-sm text-outline flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Backup Snapshotter: Bereit
+          </span>
+</div>
+<!-- Metric Item 3: Storage Bar Gauge -->
+<div class="flex flex-col gap-1.5 pt-2 border-t border-surface-container">
+<div class="flex items-center justify-between text-body-sm font-label-sm">
+<span class="text-outline uppercase tracking-wider">Speicherbelegung Belege</span>
+<span class="font-mono text-on-surface">4,2 GB / 25,0 GB</span>
+</div>
+<!-- Visual Progress Bar -->
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 16.8%;"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-outline">
+<span>16.8% Quota verbraucht</span>
+<span class="text-emerald-400">20,8 GB frei</span>
+</div>
+</div>
+</div>
+<!-- GoBD & Audit Log Card -->
+<div class="p-space-lg rounded-xl bg-surface-container-low border border-surface-container-highest shadow-md flex flex-col gap-space-md">
+<div class="flex items-center gap-2 border-b border-surface-container pb-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[20px]">verified</span>
+<h2 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Revisionsprotokoll & GoBD</h2>
+</div>
+<div class="flex flex-col gap-space-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-medium">Letzte Konfigurationsänderung</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">Gestern, 18:22:04 Uhr</span>
+<span class="font-body-sm text-body-sm text-tertiary">durch Finanzprüfer / Auditor Level 2</span>
+</div>
+<div class="flex flex-col gap-1 p-2.5 rounded bg-surface-container-lowest border border-surface-container-highest">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">Aktuelle Setup-Prüfsumme</span>
+<span class="font-mono text-body-sm text-on-surface-variant break-all select-all">7e2f90a1c905b2df...944a</span>
+</div>
+</div>
+<!-- Compliance Note -->
+<div class="p-space-md rounded-lg bg-surface-container border-l-2 border-primary flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">policy</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+            Änderungen an Mandantenparametern und Intervallen werden revisionssicher im GoBD-Audit-Log dokumentiert und erfordern qualifizierte Zertifizierung.
+          </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function toggleAccordion(bodyId, chevronId) {
+    var body = document.getElementById(bodyId);
+    var chevron = document.getElementById(chevronId);
+    if (!body || !chevron) return;
+    
+    if (body.classList.contains('hidden')) {
+      body.classList.remove('hidden');
+      chevron.textContent = 'expand_less';
+    } else {
+      body.classList.add('hidden');
+      chevron.textContent = 'expand_more';
+    }
+  }
+</script></main></div></body></html>

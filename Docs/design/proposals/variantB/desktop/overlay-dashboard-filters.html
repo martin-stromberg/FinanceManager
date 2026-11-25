@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-primary-container": "#00574d", "primary-fixed": "#62fae3", "primary-fixed-dim": "#3cddc7", "tertiary-container": "#ffac5a", "secondary-container": "#571bc1", "primary-container": "#2dd4bf", "on-primary-fixed": "#00201c", "error": "#ffb4ab", "tertiary": "#ffd1aa", "on-secondary": "#3c0091", "outline": "#859490", "on-tertiary-fixed": "#2d1600", "on-primary-fixed-variant": "#005047", "surface-container-low": "#191c21", "background": "#111319", "surface": "#111319", "on-primary": "#003731", "on-surface": "#e1e2ea", "tertiary-fixed": "#ffdcc0", "primary": "#57f1db", "on-secondary-fixed": "#23005c", "on-secondary-container": "#c4abff", "on-background": "#e1e2ea", "surface-dim": "#111319", "inverse-primary": "#006b5f", "surface-tint": "#3cddc7", "surface-container-lowest": "#0b0e13", "surface-container": "#1d2025", "on-surface-variant": "#bacac5", "secondary-fixed": "#e9ddff", "on-error": "#690005", "on-tertiary-fixed-variant": "#6b3b00", "outline-variant": "#3c4a46", "on-error-container": "#ffdad6", "on-secondary-fixed-variant": "#5516be", "secondary-fixed-dim": "#d0bcff", "surface-variant": "#32353b", "inverse-surface": "#e1e2ea", "secondary": "#d0bcff", "surface-container-highest": "#32353b", "inverse-on-surface": "#2e3036", "tertiary-fixed-dim": "#ffb875", "error-container": "#93000a", "on-tertiary": "#4b2800", "surface-container-high": "#272a30", "on-tertiary-container": "#744000", "surface-bright": "#36393f" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "gutter-sm": "1rem", "space-xl": "2.5rem", "space-lg": "1.5rem", "gutter": "1.5rem", "margin-sm": "1rem", "margin": "2rem" }, "fontFamily": { "label-numeric-sm": [ "JetBrains Mono" ], "headline-xl-mobile": [ "Inter" ], "headline-xl": [ "Inter" ], "body-sm": [ "Inter" ], "body-lg": [ "Inter" ], "label-numeric-lg": [ "JetBrains Mono" ], "label-numeric-md": [ "JetBrains Mono" ], "headline-md": [ "Inter" ], "headline-lg": [ "Inter" ], "body-md": [ "Inter" ], "label-caps": [ "Inter" ], "headline-sm": [ "Inter" ], "headline-lg-mobile": [ "Inter" ] }, "fontSize": { "label-numeric-sm": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" } ], "headline-xl-mobile": [ "30px", { "lineHeight": "38px", "letterSpacing": "-0.015em", "fontWeight": "600" } ], "headline-xl": [ "40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600" } ], "body-sm": [ "12px", { "lineHeight": "16px", "fontWeight": "400" } ], "body-lg": [ "16px", { "lineHeight": "24px", "fontWeight": "400" } ], "label-numeric-lg": [ "20px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "500" } ], "label-numeric-md": [ "14px", { "lineHeight": "20px", "fontWeight": "500" } ], "headline-md": [ "22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "500" } ], "headline-lg": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" } ], "body-md": [ "14px", { "lineHeight": "20px", "fontWeight": "400" } ], "label-caps": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "600" } ], "headline-sm": [ "18px", { "lineHeight": "24px", "fontWeight": "500" } ], "headline-lg-mobile": [ "24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" } ] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container relative min-h-screen overflow-x-hidden"><div class="pointer-events-none fixed inset-0 z-0 overflow-hidden"><div class="absolute -left-48 -top-48 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl"></div><div class="absolute top-1/3 -right-32 w-80 h-80 bg-secondary-container/15 rounded-full blur-3xl"></div></div><aside class="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest/80 backdrop-blur-2xl z-50 flex flex-col justify-between py-5 px-3 select-none shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex flex-col gap-5"><div class="flex items-center gap-3 px-3 py-2"><div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shadow-[0_0_16px_rgba(45,212,191,0.2)]"><span class="material-symbols-outlined text-[20px]">account_balance_wallet</span></div><div class="flex flex-col"><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-semibold">Finance</span><span class="font-headline-sm text-headline-sm tracking-tight text-primary font-semibold">Manager</span></div><span class="font-label-caps text-label-caps text-on-surface-variant/80 uppercase">Variante B • SPA</span></div></div><div class="px-3"><div class="h-px w-full bg-surface-variant/40"></div></div><nav class="flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-220px)] pr-1" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_24px_rgba(45,212,191,0.25)]"><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="start" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">home</span><span>Start</span></div></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="konten" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">credit_card</span><span>Konten</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">4</span></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="kontakte" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">contacts</span><span>Kontakte</span></div></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="sparplaene" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">savings</span><span>Sparpläne</span></div></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="wertpapiere" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">candlestick_chart</span><span>Wertpapiere</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-secondary-container/30 text-secondary">Depot</span></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="kontoauszuege" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">receipt_long</span><span>Kontoauszüge</span></div></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="budget" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">pie_chart</span><span>Budget</span></div></a><a aria-current="page" class="flex items-center justify-between px-3 py-2 transition-colors bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_24px_rgba(45,212,191,0.25)]" data-path="berichte" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">analytics</span><span>Berichte</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">LIVE</span></a><div class="my-2 px-3"><span class="font-label-caps text-label-caps tracking-wider text-outline/60 uppercase font-semibold">Verwaltung</span></div><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="benutzerverwaltung" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">group</span><span>Benutzerverwaltung</span></div></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="ki-zugaenge" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">auto_awesome</span><span>KI-Zugänge</span></div><span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-semibold">NEU</span></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="einstellungen" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">settings</span><span>Einstellungen</span></div></a><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="hilfe" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-[19px]">help</span><span>Hilfe</span></div></a></nav></div><div class="flex flex-col gap-2 pt-3"><div class="px-3"><div class="h-px w-full bg-surface-variant/30"></div></div><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-error hover:bg-error-container/20 hover:text-on-surface transition-colors" data-path="abmelden" href="#"><span class="material-symbols-outlined text-[19px]">logout</span><span class="font-body-md text-body-md font-medium">Abmelden</span></a></div></aside><div class="pl-64 min-h-screen flex flex-col relative z-10"><header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.3)]"><div class="h-16 w-full px-gutter flex items-center justify-between gap-4"><div class="flex items-center gap-4 min-w-0"><div class="flex items-center gap-2 text-outline font-body-sm text-body-sm shrink-0"><span>FinanceManager</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-on-surface font-medium">Berichte &amp; Analysen</span></div><div class="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-caps text-label-caps"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span>PSD2 Sync: Live (Deutsche Bank • Commerzbank)</span></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden md:flex items-center bg-surface-container px-3 py-1.5 rounded-lg text-on-surface-variant gap-2"><span class="material-symbols-outlined text-[18px] text-outline">calendar_today</span><span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">01.01.2024 – 31.12.2024</span><span class="material-symbols-outlined text-[16px] text-outline cursor-pointer hover:text-on-surface">expand_more</span></div><div class="h-6 w-px bg-surface-variant/40 hidden sm:block"></div><button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm flex items-center gap-2 transition-colors" type="button"><span class="material-symbols-outlined text-[18px] text-primary">file_download</span><span class="hidden lg:inline">Kontoauszug (PDF)</span></button><button class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-body-sm text-body-sm font-semibold flex items-center gap-2 shadow-[0_0_16px_rgba(45,212,191,0.25)] hover:bg-primary-fixed-dim transition-all" type="button"><span class="material-symbols-outlined text-[18px]">add</span><span>Bericht konfigurieren</span></button><div class="h-6 w-px bg-surface-variant/40"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-surface/40 flex-1 px-gutter py-gutter"><div class="flex flex-col w-full relative">
+<!-- BACKGROUND DASHBOARD (Dimmed and blurred context representing "Berichte") -->
+<div class="w-full filter blur-[6px] opacity-35 select-none pointer-events-none transition-all duration-300">
+<!-- Top Status & Sub-bar -->
+<div class="flex items-center justify-between mb-space-lg">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-primary tracking-widest uppercase">Finanzanalyse • Mandant Privat</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">Q2-2024</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Finanzstatus &amp; Performance-Cockpit</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="px-3.5 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-numeric-md text-label-numeric-md">
+          Gesamtnetto: 284.450,80 €
+        </div>
+<div class="p-2 rounded-lg bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</div>
+</div>
+</div>
+<!-- KPI Metric Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-gutter">
+<div class="bg-surface-container-low/80 p-5 rounded-xl flex flex-col gap-2">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase">Netto-Cashflow YTD</span>
+<span class="material-symbols-outlined text-primary text-[18px]">trending_up</span>
+</div>
+<div class="font-label-numeric-lg text-label-numeric-lg font-semibold text-on-surface">+18.420,00 €</div>
+<div class="font-body-sm text-body-sm text-primary">+12,4% ggü. Vorjahr</div>
+</div>
+<div class="bg-surface-container-low/80 p-5 rounded-xl flex flex-col gap-2">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase">Sparquote Realisiert</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">savings</span>
+</div>
+<div class="font-label-numeric-lg text-label-numeric-lg font-semibold text-on-surface">34,8 %</div>
+<div class="font-body-sm text-body-sm text-secondary font-medium">Ziel: 30,0 % • Übererfüllt</div>
+</div>
+<div class="bg-surface-container-low/80 p-5 rounded-xl flex flex-col gap-2">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase">Depotrendite TWR</span>
+<span class="material-symbols-outlined text-primary text-[18px]">query_stats</span>
+</div>
+<div class="font-label-numeric-lg text-label-numeric-lg font-semibold text-on-surface">+9,34 %</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Benchmark MSCI World: +8,10 %</div>
+</div>
+<div class="bg-surface-container-low/80 p-5 rounded-xl flex flex-col gap-2">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase">Liquiditätspuffer</span>
+<span class="material-symbols-outlined text-tertiary text-[18px]">shield</span>
+</div>
+<div class="font-label-numeric-lg text-label-numeric-lg font-semibold text-on-surface">4,8 Monate</div>
+<div class="font-body-sm text-body-sm text-tertiary">38.500 € Tagesgeld/Sichteinlagen</div>
+</div>
+</div>
+<!-- Synthetic Charts Grid Behind Scrim -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Chart Placeholder 1 -->
+<div class="lg:col-span-2 bg-surface-container-low/90 p-space-lg rounded-xl flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm font-medium text-on-surface">Einnahmen- &amp; Ausgaben-Verlauf</span>
+<span class="font-label-caps text-label-caps text-outline uppercase">Monatlicher Saldo</span>
+</div>
+<div class="h-44 w-full flex items-end gap-3 pt-4">
+<div class="h-[60%] flex-1 bg-primary/20 rounded-t"></div>
+<div class="h-[80%] flex-1 bg-primary/25 rounded-t"></div>
+<div class="h-[45%] flex-1 bg-primary/20 rounded-t"></div>
+<div class="h-[90%] flex-1 bg-primary/40 rounded-t"></div>
+<div class="h-[75%] flex-1 bg-primary/30 rounded-t"></div>
+<div class="h-[100%] flex-1 bg-primary rounded-t"></div>
+</div>
+</div>
+<!-- Chart Placeholder 2 -->
+<div class="bg-surface-container-low/90 p-space-lg rounded-xl flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm font-medium text-on-surface">Ausgabenverteilung</span>
+<span class="font-label-caps text-label-caps text-outline uppercase">Top-Sektoren</span>
+</div>
+<div class="h-44 w-full flex items-center justify-center">
+<div class="w-32 h-32 rounded-full border-8 border-primary/40 border-t-secondary border-r-tertiary"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- MODAL DIALOG OVERLAY (Obsidian Glass Scrim with Centered Dialog) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-surface-container-lowest/75 backdrop-blur-md" id="filter-modal-backdrop">
+<!-- Modal Card (Elevation Layer 3 with subtle Teal ambient highlight) -->
+<div aria-labelledby="modal-title" aria-modal="true" class="relative w-full max-w-2xl bg-surface-container-low/95 backdrop-blur-2xl rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.08)] flex flex-col max-h-[942px] overflow-hidden" role="dialog">
+<!-- Top Decorative Ambient Glow -->
+<div class="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary-container/40 to-transparent"></div>
+<!-- 1. MODAL HEADER -->
+<div class="px-space-lg pt-space-lg pb-space-md flex items-start justify-between gap-4 bg-surface-container-low/50">
+<div class="flex items-start gap-3.5">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shadow-[0_0_12px_rgba(45,212,191,0.15)] shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface tracking-tight" id="modal-title">Dashboard-Filter</h2>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded-full bg-primary-container/15 text-primary font-semibold">Live-Analyse</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Filtereinstellungen für Diagramme, Widgets und individuellen Analysezeitraum</p>
+</div>
+</div>
+<button aria-label="Dialog schließen" class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" id="btn-close-modal" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- 2. SCROLLABLE DIALOG BODY -->
+<div class="px-space-lg py-space-md overflow-y-auto space-y-space-xl pr-3">
+<!-- SECTION 1: DATUMSBEREICH (Time Range Presets & Inputs) -->
+<div class="flex flex-col gap-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">date_range</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Analysezeitraum festlegen</span>
+</div>
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Basis: Wertstellung</span>
+</div>
+<!-- Schnellauswahl / Preset Buttons -->
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 rounded-xl bg-surface-container-lowest/60">
+<button class="preset-btn px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-center" data-preset="30d" type="button">
+              Letzte 30 Tage
+            </button>
+<button class="preset-btn px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-center" data-preset="quarter" type="button">
+              Akt. Quartal
+            </button>
+<button class="preset-btn px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm bg-primary/15 text-primary font-medium text-center shadow-[0_0_12px_rgba(45,212,191,0.1)]" data-preset="ytd" type="button">
+              Laufendes Jahr (YTD)
+            </button>
+<button class="preset-btn px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-center" data-preset="12m" type="button">
+              Letzte 12 M.
+            </button>
+<button class="preset-btn col-span-2 sm:col-span-1 px-2.5 py-1.5 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-center" data-preset="custom" type="button">
+              Benutzerdefiniert
+            </button>
+</div>
+<!-- Datumsbereich-Eingabefelder (Von & Bis) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md pt-1">
+<!-- Von Input -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant flex items-center justify-between" for="date-from">
+<span>Startdatum (Von)</span>
+<span class="text-outline font-normal">TT.MM.JJJJ</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-11 bg-surface-container-lowest/90 px-3.5 pr-10 rounded-lg font-label-numeric-md text-label-numeric-md text-on-surface focus:outline-none focus:bg-surface-container transition-colors shadow-inner" id="date-from" type="text" value="01.01.2024"/>
+<span class="material-symbols-outlined text-outline absolute right-3 pointer-events-none text-[18px]">calendar_today</span>
+</div>
+</div>
+<!-- Bis Input -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant flex items-center justify-between" for="date-to">
+<span>Enddatum (Bis)</span>
+<span class="text-primary font-normal">HEUTE</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-11 bg-surface-container-lowest/90 px-3.5 pr-10 rounded-lg font-label-numeric-md text-label-numeric-md text-on-surface focus:outline-none focus:bg-surface-container transition-colors shadow-inner" id="date-to" type="text" value="31.05.2024"/>
+<span class="material-symbols-outlined text-outline absolute right-3 pointer-events-none text-[18px]">event</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container/60 text-outline">
+<span class="material-symbols-outlined text-[16px] text-primary">info</span>
+<span class="font-body-sm text-body-sm">Datenabdeckung: Vollständige Buchungen von 4 Konten &amp; 1 Wertpapierdepot synchronisiert.</span>
+</div>
+</div>
+<!-- DIVIDER -->
+<div class="h-px w-full bg-surface-variant/30"></div>
+<!-- SECTION 2: BERICHTSKARTEN (Diagramm-Auswahl Checkbox-Liste) -->
+<div class="flex flex-col gap-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">grid_view</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Aktive Berichtskarten</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="font-label-caps text-label-caps text-primary hover:underline uppercase" id="btn-select-all" type="button">Alle markieren</button>
+<span class="text-outline/40">•</span>
+<span class="font-label-numeric-sm text-label-numeric-sm px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant" id="selected-counter">6 / 7 aktiv</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant -mt-1.5">Wählen Sie aus, welche Analysen und Diagramm-Widgets auf Ihrem Dashboard gerendert werden.</p>
+<!-- Checkbox Cards List -->
+<div class="flex flex-col gap-2">
+<!-- Item 1: Einnahmen & Ausgaben (Aktiviert) -->
+<label class="group flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest/70 hover:bg-surface-container/80 cursor-pointer transition-all">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">ssid_chart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md font-medium text-on-surface truncate">Einnahmen- &amp; Ausgaben-Verlauf</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Gegenüberstellung der Monatsflüsse inkl. kumulierter Überschüsse</span>
+</div>
+</div>
+<div class="relative flex items-center shrink-0 ml-3">
+<input checked="" class="report-checkbox sr-only peer" type="checkbox"/>
+<div class="w-6 h-6 rounded-md bg-surface-container-high peer-checked:bg-primary-container peer-checked:shadow-[0_0_12px_rgba(45,212,191,0.3)] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+</label>
+<!-- Item 2: Vermögensentwicklung & Nettovermögen (Aktiviert) -->
+<label class="group flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest/70 hover:bg-surface-container/80 cursor-pointer transition-all">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-on-surface truncate">Vermögensentwicklung &amp; Nettovermögen</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-secondary-container/20 text-secondary">Kernindikator</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Aggregiertes Saldo aller Giro-, Tagesgeld- und Depotkonten</span>
+</div>
+</div>
+<div class="relative flex items-center shrink-0 ml-3">
+<input checked="" class="report-checkbox sr-only peer" type="checkbox"/>
+<div class="w-6 h-6 rounded-md bg-surface-container-high peer-checked:bg-primary-container peer-checked:shadow-[0_0_12px_rgba(45,212,191,0.3)] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+</label>
+<!-- Item 3: Ausgaben nach Kategorien (Aktiviert) -->
+<label class="group flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest/70 hover:bg-surface-container/80 cursor-pointer transition-all">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-tertiary-container/20 text-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md font-medium text-on-surface truncate">Ausgaben nach Kategorien (Donut-Verteilung)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Automatische DIN-Finanzanalyse-Klassifizierung mit Drilldown</span>
+</div>
+</div>
+<div class="relative flex items-center shrink-0 ml-3">
+<input checked="" class="report-checkbox sr-only peer" type="checkbox"/>
+<div class="w-6 h-6 rounded-md bg-surface-container-high peer-checked:bg-primary-container peer-checked:shadow-[0_0_12px_rgba(45,212,191,0.3)] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+</label>
+<!-- Item 4: Sparraten- & Sparplan-Performance (Aktiviert) -->
+<label class="group flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest/70 hover:bg-surface-container/80 cursor-pointer transition-all">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">savings</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md font-medium text-on-surface truncate">Sparraten- &amp; Sparplan-Performance</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Ausführungsquoten monatlicher Daueraufträge und ETF-Sparpläne</span>
+</div>
+</div>
+<div class="relative flex items-center shrink-0 ml-3">
+<input checked="" class="report-checkbox sr-only peer" type="checkbox"/>
+<div class="w-6 h-6 rounded-md bg-surface-container-high peer-checked:bg-primary-container peer-checked:shadow-[0_0_12px_rgba(45,212,191,0.3)] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+</label>
+<!-- Item 5: Wertpapier-Depotrendite & Benchmark-Vergleich (Aktiviert) -->
+<label class="group flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest/70 hover:bg-surface-container/80 cursor-pointer transition-all">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-on-surface truncate">Wertpapier-Depotrendite &amp; Benchmark</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">TWR • IZF</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Zeitgewichtete Rendite gegenüber MSCI World &amp; DAX</span>
+</div>
+</div>
+<div class="relative flex items-center shrink-0 ml-3">
+<input checked="" class="report-checkbox sr-only peer" type="checkbox"/>
+<div class="w-6 h-6 rounded-md bg-surface-container-high peer-checked:bg-primary-container peer-checked:shadow-[0_0_12px_rgba(45,212,191,0.3)] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+</label>
+<!-- Item 6: Liquiditätsprognose & Cashflow-Trend (Optional / Deaktiviert) -->
+<label class="group flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest/40 hover:bg-surface-container/60 cursor-pointer transition-all opacity-85">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high text-outline flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">insights</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-on-surface truncate">Liquiditätsprognose &amp; Cashflow-Trend</span>
+<span class="font-label-caps text-label-caps px-1.5 py-0.5 rounded bg-tertiary-container/15 text-tertiary">KI-Modell</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline truncate">Prädiktive Simulation künftiger Fixkosten bis zu 90 Tage im Voraus</span>
+</div>
+</div>
+<div class="relative flex items-center shrink-0 ml-3">
+<input class="report-checkbox sr-only peer" type="checkbox"/>
+<div class="w-6 h-6 rounded-md bg-surface-container-high peer-checked:bg-primary-container peer-checked:shadow-[0_0_12px_rgba(45,212,191,0.3)] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+</label>
+<!-- Item 7: Budgetauslastung & Soll/Ist-Vergleich (Aktiviert) -->
+<label class="group flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest/70 hover:bg-surface-container/80 cursor-pointer transition-all">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">track_changes</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md font-medium text-on-surface truncate">Budgetauslastung &amp; Soll/Ist-Vergleich</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Echtzeit-Gegenüberstellung festgelegter Monatsbudgets</span>
+</div>
+</div>
+<div class="relative flex items-center shrink-0 ml-3">
+<input checked="" class="report-checkbox sr-only peer" type="checkbox"/>
+<div class="w-6 h-6 rounded-md bg-surface-container-high peer-checked:bg-primary-container peer-checked:shadow-[0_0_12px_rgba(45,212,191,0.3)] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container font-bold opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+</div>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- 3. MODAL FOOTER ACTIONS -->
+<div class="px-space-lg py-space-md bg-surface-container-lowest/80 flex items-center justify-between gap-4">
+<!-- Secondary / Reset Trigger -->
+<button class="font-body-sm text-body-sm text-outline hover:text-on-surface flex items-center gap-1.5 transition-colors" id="btn-reset-filters" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span>Auf Standard zurücksetzen</span>
+</button>
+<!-- Right Action Button Group -->
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium transition-colors" id="btn-cancel" type="button">
+            Abbrechen
+          </button>
+<button class="px-5 py-2 rounded-lg bg-primary text-on-primary font-body-sm text-body-sm font-semibold flex items-center gap-2 shadow-[0_0_20px_rgba(45,212,191,0.3)] hover:shadow-[0_0_28px_rgba(45,212,191,0.5)] hover:bg-primary-fixed-dim transition-all active:scale-[0.98]" id="btn-apply-filters" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Filter anwenden &amp; Übernehmen</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function () {
+    // Quick Preset Handlers
+    const presetButtons = document.querySelectorAll('.preset-btn');
+    const dateFromInput = document.getElementById('date-from');
+    const dateToInput = document.getElementById('date-to');
+
+    const presets = {
+      '30d': { from: '01.05.2024', to: '31.05.2024' },
+      'quarter': { from: '01.04.2024', to: '30.06.2024' },
+      'ytd': { from: '01.01.2024', to: '31.05.2024' },
+      '12m': { from: '01.06.2023', to: '31.05.2024' },
+      'custom': null
+    };
+
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', function () {
+        presetButtons.forEach(b => {
+          b.classList.remove('bg-primary/15', 'text-primary', 'font-medium', 'shadow-[0_0_12px_rgba(45,212,191,0.1)]');
+          b.classList.add('text-on-surface-variant');
+        });
+        this.classList.remove('text-on-surface-variant');
+        this.classList.add('bg-primary/15', 'text-primary', 'font-medium', 'shadow-[0_0_12px_rgba(45,212,191,0.1)]');
+
+        const key = this.dataset.preset;
+        if (presets[key] && dateFromInput && dateToInput) {
+          dateFromInput.value = presets[key].from;
+          dateToInput.value = presets[key].to;
+        }
+      });
+    });
+
+    // Checkbox Counter Handler
+    const checkboxes = document.querySelectorAll('.report-checkbox');
+    const counterDisplay = document.getElementById('selected-counter');
+    const selectAllBtn = document.getElementById('btn-select-all');
+
+    function updateCounter() {
+      const activeCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+      if (counterDisplay) {
+        counterDisplay.textContent = `${activeCount} / ${checkboxes.length} aktiv`;
+      }
+    }
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', updateCounter);
+    });
+
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener('click', function () {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        this.textContent = allChecked ? 'Alle markieren' : 'Alle abw&auml;hlen';
+        updateCounter();
+      });
+    }
+
+    // Modal action mock interactions
+    const closeTrigger = document.getElementById('btn-close-modal');
+    const cancelTrigger = document.getElementById('btn-cancel');
+    const applyTrigger = document.getElementById('btn-apply-filters');
+    const modalBackdrop = document.getElementById('filter-modal-backdrop');
+
+    function notifyAndFade(actionText) {
+      if (applyTrigger) {
+        applyTrigger.disabled = true;
+        applyTrigger.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span><span>Aktualisiere Cockpit...</span>';
+      }
+      setTimeout(() => {
+        if (modalBackdrop) {
+          modalBackdrop.style.transition = 'opacity 0.25s ease';
+          modalBackdrop.style.opacity = '0';
+          setTimeout(() => {
+            modalBackdrop.classList.add('hidden');
+            const bgDashboard = document.querySelector('.filter.blur-\\[6px\\]');
+            if (bgDashboard) {
+              bgDashboard.classList.remove('blur-[6px]', 'opacity-35', 'pointer-events-none');
+              bgDashboard.classList.add('opacity-100');
+            }
+          }, 250);
+        }
+      }, 600);
+    }
+
+    if (applyTrigger) applyTrigger.addEventListener('click', () => notifyAndFade('&Uuml;bernommen'));
+    if (closeTrigger) closeTrigger.addEventListener('click', () => notifyAndFade('Geschlossen'));
+    if (cancelTrigger) cancelTrigger.addEventListener('click', () => notifyAndFade('Abgebrochen'));
+  })();
+</script></main></div></body></html>

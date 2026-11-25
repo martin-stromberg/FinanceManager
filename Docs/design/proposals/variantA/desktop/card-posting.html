@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary": "#00354a", "secondary-container": "#23429c", "primary-fixed": "#dce1ff", "on-tertiary-fixed-variant": "#004c69", "on-primary-fixed-variant": "#0d3bac", "inverse-on-surface": "#2e3036", "inverse-primary": "#3255c5", "on-surface": "#e1e2ea", "error": "#ffb4ab", "primary": "#b6c4ff", "on-tertiary-container": "#003145", "tertiary-fixed": "#c4e7ff", "surface-container-lowest": "#0b0e13", "on-error": "#690005", "surface": "#111319", "tertiary-fixed-dim": "#7bd0ff", "surface-container-high": "#272a30", "on-tertiary-fixed": "#001e2c", "on-secondary": "#00287d", "on-primary-fixed": "#001550", "on-secondary-fixed": "#00164f", "secondary-fixed-dim": "#b6c4ff", "surface-bright": "#36393f", "surface-tint": "#b6c4ff", "background": "#111319", "surface-variant": "#32353b", "surface-dim": "#111319", "surface-container-highest": "#32353b", "outline-variant": "#444653", "on-surface-variant": "#c4c5d5", "surface-container-low": "#191c21", "surface-container": "#1d2025", "on-secondary-container": "#a2b5ff", "on-background": "#e1e2ea", "error-container": "#93000a", "tertiary": "#7bd0ff", "primary-container": "#6d8dff", "tertiary-container": "#009fd6", "on-secondary-fixed-variant": "#204099", "secondary": "#b6c4ff", "secondary-fixed": "#dce1ff", "on-primary-container": "#002477", "outline": "#8e909f", "inverse-surface": "#e1e2ea", "on-error-container": "#ffdad6", "primary-fixed-dim": "#b6c4ff", "on-primary": "#002780" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1.5rem", "space-lg": "1.25rem", "space-sm": "0.5rem", "margin-mobile": "1rem", "gutter-mobile": "0.75rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-md": "0.75rem", "gutter": "1rem" }, "fontFamily": { "label-md": ["Inter"], "headline-sm": ["Inter"], "headline-xl": ["Inter"], "headline-md": ["Inter"], "body-sm": ["Inter"], "headline-xl-mobile": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "currency-display": ["Inter"], "label-lg": ["Inter"] }, "fontSize": { "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "currency-display": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface-container-lowest font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-60 bg-surface z-50 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex flex-col"><div class="h-14 px-margin flex items-center gap-space-md"><img alt="FinanceManager Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCCMAsHTVZIaQ-vf26ZvyDfhzlfZ_0IGRs-GDYNf2yJY4ifMJofcZe5RKCEkP1s4wT07GwmPOg3hkLuaxSqkYiauJf5pzp6Sb30rCbWJbKYHt2hDtP_gN5MVyfa0r6zo7-myIwZ3Uz9wbgFcAir0wreYCamYnZh9oNiSillu7JbCTvX_dxGGUHy7DVKgNEOuGhCaGkQAsa6wbVH11IFqY4WGIvOXC-KQpFuxcc-WkKA"/><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-semibold">FinanceManager</span></div><nav class="flex flex-col gap-space-xs px-space-sm mt-space-md" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg"><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="start" href="#">Start</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="konten" href="#">Konten</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="kontakte" href="#">Kontakte</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="sparplaene" href="#">Sparpläne</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="wertpapiere" href="#">Wertpapiere</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="kontoauszuege" href="#">Kontoauszüge</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="budgetkategorien" href="#">Budget</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="berichte" href="#">Berichte</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="benutzerverwaltung" href="#">Benutzerverwaltung</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="ki-zugaenge" href="#">KI-Zugänge</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="einstellungen" href="#">Einstellungen</a><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-lg text-label-lg" data-path="hilfe" href="#">Hilfe</a></nav></div><div class="px-space-sm"><a class="flex items-center px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-error transition-colors font-label-lg text-label-lg" data-path="abmelden" href="#">Abmelden</a></div></aside><div class="pl-60"><header class="fixed top-0 left-60 right-0 h-14 bg-surface/90 backdrop-blur-md z-40 px-margin flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.3)]"><div class="flex items-center gap-space-md"><img alt="FinanceManager Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCCMAsHTVZIaQ-vf26ZvyDfhzlfZ_0IGRs-GDYNf2yJY4ifMJofcZe5RKCEkP1s4wT07GwmPOg3hkLuaxSqkYiauJf5pzp6Sb30rCbWJbKYHt2hDtP_gN5MVyfa0r6zo7-myIwZ3Uz9wbgFcAir0wreYCamYnZh9oNiSillu7JbCTvX_dxGGUHy7DVKgNEOuGhCaGkQAsa6wbVH11IFqY4WGIvOXC-KQpFuxcc-WkKA"/><span class="font-headline-sm text-headline-sm text-on-surface font-semibold">FinanceManager</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider px-space-xs py-0.5 rounded bg-surface-container-high">Blazor Core</span></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-space-xs rounded-lg text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">dns</span><span class="font-label-sm text-label-sm">Lokal / Synchronisiert</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><div class="pt-14 px-margin bg-surface-container-lowest"><div class="flex items-center gap-space-xs py-space-sm text-on-surface-variant font-label-sm text-label-sm"><span class="hover:text-on-surface transition-colors cursor-pointer">FinanceManager</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="hover:text-on-surface transition-colors cursor-pointer">Blazor SPA</span><span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-primary font-medium">Kontenverwaltung</span></div><div class="mt-space-xs rounded-xl bg-surface p-space-sm shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="flex items-center justify-between gap-space-md overflow-x-auto"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs"><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">add</span>Neu</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">edit</span>Bearbeiten</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">delete</span>Löschen</button></div><div class="h-6 w-px bg-surface-container-highest"></div><div class="flex items-center gap-space-xs"><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">sync</span>Synchronisieren</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span>Exportieren</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">filter_alt</span>Filter</button></div></div><div class="flex items-center gap-space-xs"><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">security</span>Rollen prüfen</button><button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-colors font-label-md text-label-md" type="button"><span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>Berechtigungen</button></div></div></div></div><main class="w-full max-w-[1200px] px-margin py-space-lg bg-surface-container-lowest"><div class="flex flex-col w-full">
+<!-- Status & Breadcrumb Micro-Bar -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-sm">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
+<span class="hover:text-primary cursor-pointer transition-colors">Konten</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Girokonto</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-medium">Buchungs-Detailkarte</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1.5 px-space-sm py-0.5 rounded-full bg-surface-container-high text-on-surface text-label-sm font-label-sm shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="tracking-wide">Gebucht (Valuta bestätigt)</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-mono tracking-wider">
+        ID: BU-8492-2025
+      </span>
+</div>
+</div>
+<!-- Ribbon Toolbar Section -->
+<div class="mt-space-xs rounded-xl bg-surface-container-low p-space-sm shadow-sm flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex flex-wrap items-center gap-space-md">
+<!-- Navigation Group -->
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline pr-1">Navigation</span>
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+<span>Zurück</span>
+</button>
+</div>
+<div class="h-5 w-px bg-surface-container-highest"></div>
+<!-- Verwalten Group -->
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline pr-1">Verwalten</span>
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-all font-semibold" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Speichern</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span>Zurücksetzen</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-error-container/20 text-error hover:bg-error-container hover:text-on-error transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+<span>Löschen</span>
+</button>
+</div>
+<div class="h-5 w-px bg-surface-container-highest"></div>
+<!-- Aktionen Group -->
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline pr-1">Aktionen</span>
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">attach_file</span>
+<span>Beleg anheften</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">bookmark_add</span>
+<span>Als Vorlage merken</span>
+</button>
+</div>
+</div>
+<!-- Verknüpfte Informationen Group -->
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline pr-1">Verknüpft</span>
+<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high hover:text-primary transition-colors font-label-md text-label-md" title="Konto anzeigen" type="button">
+<span class="material-symbols-outlined text-[16px]">account_balance_wallet</span>
+<span>Konto</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high hover:text-primary transition-colors font-label-md text-label-md" title="Empfänger-Details" type="button">
+<span class="material-symbols-outlined text-[16px]">domain</span>
+<span>Empfänger</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high hover:text-primary transition-colors font-label-md text-label-md" title="Kategorie und Budget prüfen" type="button">
+<span class="material-symbols-outlined text-[16px]">pie_chart</span>
+<span>Budget prüfen</span>
+</button>
+</div>
+</div>
+<!-- Header Card with High Impact Telemetry -->
+<div class="mt-space-md rounded-xl bg-surface-container-low p-space-lg shadow-md relative overflow-hidden">
+<div class="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg relative z-10">
+<div>
+<div class="flex items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase tracking-widest font-semibold">
+            Detailansicht
+          </span>
+<span class="text-on-surface-variant font-label-sm text-label-sm font-mono">TX-2025-08492</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">
+          Buchungs-Detailkarte
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+          Buchungsdetails, Kontierung und Valuta-Abgleich
+        </p>
+</div>
+<!-- Quick Metrics Strip -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-md bg-surface-container-lowest p-space-md rounded-xl shadow-inner min-w-full sm:min-w-fit">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Betrag</span>
+<span class="font-currency-display text-currency-display text-error font-semibold tracking-tight tabular-nums mt-0.5">
+            -148,50 €
+          </span>
+<span class="font-label-sm text-label-sm text-error/80 mt-0.5 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+            Ausgabe / Belastung
+          </span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Buchungsdatum</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight tabular-nums mt-1.5">
+            14.03.2025
+          </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ausführungszeit 08:24</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Valutadatum</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight tabular-nums mt-1.5">
+            15.03.2025
+          </span>
+<span class="font-label-sm text-label-sm text-tertiary mt-0.5 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+            Wertstellung erfolgt
+          </span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Status</span>
+<div class="flex items-center gap-1.5 mt-2">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-label-md text-label-md text-on-surface font-medium">Ausgeführt</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Revisionssicher</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Content Form / Bento Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg mt-space-lg">
+<!-- Section 1: Buchungsdetails & Stammdaten (8 Columns) -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<div class="bg-surface-container-low rounded-xl p-space-lg shadow-sm">
+<div class="flex items-center justify-between pb-space-md mb-space-md bg-surface-container-high/20 px-space-sm py-space-xs rounded-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">
+                Buchungsdetails &amp; Stammdaten
+              </h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Stammdaten zur primären Buchungszuweisung</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline font-mono">SEKTION 01</span>
+</div>
+<form class="flex flex-col gap-space-md" onsubmit="return false;">
+<!-- 2-Column Row: Datum & Betrag -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Datum -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium">
+                Buchungsdatum <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-9 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:bg-surface-container-high transition-colors" type="date" value="2025-03-14"/>
+<span class="material-symbols-outlined text-outline text-[18px] absolute right-3 pointer-events-none">calendar_today</span>
+</div>
+</div>
+<!-- Betrag & Saldenart -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium flex justify-between">
+<span>Betrag (EUR) <span class="text-error">*</span></span>
+<span class="text-error font-semibold text-label-sm">Belastung (-)</span>
+</label>
+<div class="flex items-center gap-space-xs">
+<div class="relative flex-1 flex items-center">
+<input class="w-full h-9 px-space-md bg-surface-container-lowest text-error font-headline-sm text-headline-sm font-semibold tabular-nums rounded-lg focus:outline-none focus:bg-surface-container-high transition-colors" type="text" value="-148,50"/>
+<span class="font-label-md text-label-md text-outline absolute right-3 pointer-events-none">EUR</span>
+</div>
+<div class="flex items-center h-9 bg-surface-container-lowest p-0.5 rounded-lg">
+<button class="h-full px-space-sm rounded bg-error-container/40 text-on-error-container text-label-sm font-label-sm font-semibold" type="button">
+                    - Ausgabe
+                  </button>
+<button class="h-full px-space-sm rounded text-outline hover:text-on-surface text-label-sm font-label-sm transition-colors" type="button">
+                    + Einnahme
+                  </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Empfänger / Zahlungspflichtiger -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium">
+                Empfänger / Zahlungspflichtiger <span class="text-error">*</span>
+</label>
+<div class="flex items-center gap-1 text-primary hover:text-primary-fixed cursor-pointer">
+<span class="material-symbols-outlined text-[14px]">link</span>
+<span class="font-label-sm text-label-sm">Partnerprofil verknüpft</span>
+</div>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-9 pl-space-md pr-24 bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:bg-surface-container-high transition-colors" type="text" value="Stadtwerke München GmbH"/>
+<span class="absolute right-2 px-space-xs py-0.5 bg-surface-container-high rounded text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-tertiary">check_circle</span>
+                SWM-DE
+              </span>
+</div>
+</div>
+<!-- Verwendungszweck / Beschreibung -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium">
+              Verwendungszweck / Beschreibung
+            </label>
+<textarea class="w-full p-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg focus:outline-none focus:bg-surface-container-high transition-colors resize-none leading-relaxed" rows="3">Abschlag Strom &amp; Fernwärme Kunden-Nr. 492019-DE für Monat März 2025</textarea>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm px-1">
+<span>Automatisch erkannt aus elektronischem Kontoauszug</span>
+<span class="font-mono">68 / 140 Zeichen</span>
+</div>
+</div>
+<!-- Kontoauswahl & Postenart -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Konto -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium">
+                Zugeordnetes Bankkonto
+              </label>
+<div class="relative flex items-center">
+<select class="w-full h-9 pl-space-md pr-8 bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg appearance-none focus:outline-none focus:bg-surface-container-high transition-colors cursor-pointer">
+<option selected="">Hauptgirokonto Gehalt &amp; Fixkosten (DE89 3705 0198 0001 2345 67)</option>
+<option>Tagesgeld Rücklage (DE12 3705 0198 0002 9876 54)</option>
+<option>Gemeinschaftskonto Mietkonto (DE45 7001 0080 0003 4567 89)</option>
+</select>
+<span class="material-symbols-outlined text-outline text-[18px] absolute right-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Postenart -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium">
+                Postenart / Buchungsweg
+              </label>
+<div class="relative flex items-center">
+<select class="w-full h-9 pl-space-md pr-8 bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg appearance-none focus:outline-none focus:bg-surface-container-high transition-colors cursor-pointer">
+<option selected="">Ausgabe / Lastschrift</option>
+<option>Ausgabe / SEPA-Überweisung</option>
+<option>Kartenzahlung / POS</option>
+<option>Dauerauftrag</option>
+</select>
+<span class="material-symbols-outlined text-outline text-[18px] absolute right-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Rückbuchung / Storno Toggle -->
+<div class="mt-space-xs p-space-md rounded-lg bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<div class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[16px]">published_with_changes</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">
+                  Als Rückbuchung kennzeichnen / Storno markieren
+                </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+                  Aktueller Status: <span class="text-tertiary">Nein - Reguläre Buchung</span> (Wird im Monatsabschluss regulär verrechnet)
+                </span>
+</div>
+</div>
+<!-- Toggle Switch (Unchecked) -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</form>
+</div>
+</div>
+<!-- Section 2: Zusätzliche Transaktionsinformationen & Kontierung (4 Columns Bento) -->
+<div class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- Transaktions-Metadaten Karte -->
+<div class="bg-surface-container-low rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">
+                Transaktionsdaten
+              </h3>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+              SEPA CORE
+            </span>
+</div>
+<!-- Parameter List -->
+<div class="flex flex-col gap-space-md">
+<!-- IBAN -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">
+                IBAN des Empfängers
+              </span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-body-md text-body-md font-mono text-on-surface font-semibold tracking-wide select-all">
+                  DE44 7001 0080 0987 6543 21
+                </span>
+<button class="text-outline hover:text-primary transition-colors p-1" title="Kopieren" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+</div>
+<!-- BIC & Bank -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">
+                BIC / Institut
+              </span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-body-md text-body-md font-mono text-on-surface font-semibold">
+                  MBNKDEFFXXX
+                </span>
+<span class="font-label-sm text-label-sm text-outline">München</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block mt-0.5">
+                Stadtsparkasse München
+              </span>
+</div>
+<!-- SEPA Mandat & Gläubiger-ID -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg space-y-space-xs">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">
+                  Mandatsreferenz
+                </span>
+<span class="font-body-md text-body-md font-mono text-primary font-semibold block mt-0.5 select-all">
+                  SWM-2023-88219
+                </span>
+</div>
+<div class="pt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">
+                  Gläubiger-ID
+                </span>
+<span class="font-body-md text-body-md font-mono text-on-surface block mt-0.5 select-all">
+                  DE98ZZZ09999999999
+                </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Budget & Kontierung Category Pill -->
+<div class="mt-space-lg pt-space-md bg-surface-container-high/30 p-space-md rounded-xl">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+              Budgetkategorie
+            </span>
+<span class="font-label-sm text-label-sm text-primary font-medium cursor-pointer hover:underline">
+              Anpassen
+            </span>
+</div>
+<div class="flex items-center gap-space-sm mt-1">
+<div class="w-3.5 h-3.5 rounded-full bg-tertiary shadow-sm"></div>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">
+              Wohnnebenkosten &amp; Fixausgaben
+            </span>
+</div>
+<!-- Budget Progress Mini-Widget -->
+<div class="mt-space-md space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>Monatsbudget (März)</span>
+<span class="font-medium text-on-surface tabular-nums">480,00 € / 600,00 € (80%)</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 80%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-outline block text-right">Noch 120,00 € verfügbar</span>
+</div>
+</div>
+</div>
+<!-- Quick Receipt Attachment Mini-Widget -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</div>
+<div>
+<span class="font-body-md text-body-md text-on-surface font-medium block">
+              Digitaler Beleg / PDF
+            </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">
+              Kein Beleg angehängt
+            </span>
+</div>
+</div>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high hover:text-primary transition-colors font-label-md text-label-md" type="button">
+          Hochladen
+        </button>
+</div>
+</div>
+</div>
+<!-- Revisionssicherer Audit-Trail / Fußzeile -->
+<div class="mt-space-lg rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col md:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
+<div class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+</div>
+<div>
+<span class="text-on-surface font-medium">Revisionssicher protokolliert:</span>
+<span class="ml-1 text-on-surface-variant">
+          Letzte Synchronisation am 14.03.2025 um 16:40 Uhr via FinTS/HBCI • Bankserver-Prüfsumme SHA-256 verifiziert
+        </span>
+</div>
+</div>
+<!-- Footer Action Buttons -->
+<div class="flex items-center gap-space-xs w-full md:w-auto justify-end">
+<button class="px-space-lg py-2 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md" type="button">
+        Abbrechen
+      </button>
+<button class="flex items-center gap-space-xs px-space-xl py-2 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary font-semibold transition-all shadow-md font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span>Änderungen übernehmen</span>
+</button>
+</div>
+</div>
+</div></main></div></body></html>

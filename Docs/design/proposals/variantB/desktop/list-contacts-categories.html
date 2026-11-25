@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kontakte - FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            base: {
+              950: '#06080c',
+              900: '#0a0d12',
+              850: '#0f131a',
+              800: '#151b24',
+              700: '#1f2836',
+              600: '#2d3748',
+            },
+            teal: {
+              DEFAULT: '#2dd4bf',
+              glow: 'rgba(45, 212, 191, 0.15)',
+              bright: '#5eead4',
+            },
+            violet: {
+              DEFAULT: '#8b5cf6',
+              glow: 'rgba(139, 92, 246, 0.15)',
+              bright: '#a78bfa',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Custom scrollbar & glass surface */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0d12;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2836;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+    .glass-panel {
+      background: rgba(15, 19, 26, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glass-card {
+      background: rgba(21, 27, 36, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glow-teal {
+      box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"/></head>
+<body class="bg-[#0a0d12] text-slate-200 font-sans antialiased h-screen flex flex-col md:flex-row overflow-hidden selection:bg-teal-500/30 selection:text-teal-200 relative">
+<!-- Background Ambient Glows -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR (Sidebar Collapses on small screens) -->
+<header class="md:hidden flex items-center justify-between px-4 py-3 bg-[#0c1017]/90 border-b border-white/5 z-40 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-violet-500 flex items-center justify-center p-0.5 shadow-md shadow-teal-500/20">
+<div class="w-full h-full bg-[#0a0d12] rounded-[10px] flex items-center justify-center">
+<svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M12 2v20m9-9H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+<span class="font-bold tracking-tight text-white text-base">FinanceManager</span>
+</div>
+<button aria-label="Menü öffnen" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</header>
+<!-- LEFT SIDEBAR: Slim Modern Icon-Rail with Tooltips & Popout Labels (Desktop) -->
+<aside class="hidden md:flex flex-col w-20 lg:w-64 bg-[#080b0f]/90 border-r border-white/5 z-30 flex-shrink-0 backdrop-blur-xl transition-all duration-300">
+<!-- Brand / Logo Area -->
+<div class="h-20 flex items-center px-4 lg:px-6 border-b border-white/5 gap-3.5">
+<div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 via-teal-500 to-violet-600 p-[1.5px] shadow-lg shadow-teal-500/20 flex-shrink-0">
+<div class="w-full h-full bg-[#0a0d12] rounded-[14px] flex items-center justify-center">
+<svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+<polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+<line x1="12" x2="12" y1="22.08" y2="12"></line>
+</svg>
+</div>
+</div>
+<div class="hidden lg:flex flex-col">
+<span class="font-extrabold tracking-tight text-white text-base leading-tight">Finance<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-violet-400">Manager</span></span>
+<span class="text-[11px] font-mono text-slate-500 tracking-wider uppercase">SPA Portal</span>
+</div>
+</div>
+<!-- Navigation Entries: EXACT required list -->
+<nav class="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-1">
+<!-- 1. Start -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Start</span>
+</a>
+<!-- 2. Konten -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="5"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Konten</span>
+</a>
+<!-- 3. Kontakte (ACTIVE SCREEN) -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 shadow-sm shadow-teal-500/10 font-semibold group relative" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-teal-400 rounded-r-full"></div>
+<svg class="w-5 h-5 flex-shrink-0 text-teal-300" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm tracking-wide">Kontakte</span>
+</a>
+<!-- 4. Sparpläne -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Sparpläne</span>
+</a>
+<!-- 5. Wertpapiere -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+<span class="hidden lg:block text-sm font-medium">Wertpapiere</span>
+</a>
+<!-- 6. Kontoauszüge -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Kontoauszüge</span>
+</a>
+<!-- 7. Budget -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-sm font-medium">Budget</span>
+</a>
+<!-- 8. Berichte -->
+<a class="flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-teal-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+<span class="hidden lg:block text-sm font-medium">Berichte</span>
+</a>
+<div class="pt-3 pb-1">
+<div class="h-px bg-white/5 mx-2"></div>
+</div>
+<!-- 9. Benutzerverwaltung -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Benutzerverwaltung</span>
+</a>
+<!-- 10. KI-Zugänge -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">KI-Zugänge</span>
+</a>
+<!-- 11. Einstellungen -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="hidden lg:block text-xs font-medium">Einstellungen</span>
+</a>
+<!-- 12. Hilfe -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-slate-400 group-hover:text-slate-200 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke-linecap="round" stroke-linejoin="round"></path><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Hilfe</span>
+</a>
+<!-- 13. Abmelden -->
+<a class="flex items-center gap-3.5 px-3 py-2 rounded-xl text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all group" href="#">
+<svg class="w-5 h-5 flex-shrink-0 text-red-400/70 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+<span class="hidden lg:block text-xs font-medium">Abmelden</span>
+</a>
+</nav>
+</aside>
+<!-- MAIN VIEWPORT AREA -->
+<main class="flex-1 flex flex-col min-w-0 bg-[#0a0d12] z-10 relative overflow-hidden"><div class="flex flex-col w-full h-full overflow-y-auto">
+<!-- Top Context Ribbon / Header Area -->
+<header class="sticky top-0 z-20 backdrop-blur-md bg-surface-container-lowest/85 px-4 lg:px-8 py-4">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-w-7xl mx-auto w-full">
+<!-- Breadcrumbs & Screen Title -->
+<div class="flex flex-col space-y-1">
+<nav aria-label="Breadcrumb" class="flex items-center gap-1.5 text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase">
+<span>FinanceManager</span>
+<span class="text-outline">/</span>
+<span>Kontakte</span>
+<span class="text-outline">/</span>
+<span class="text-primary font-semibold">Kontaktkategorien</span>
+</nav>
+<div class="flex items-center gap-3">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Kontaktkategorien</h1>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-label-numeric-sm text-label-numeric-sm">
+            6 aktiv
+          </span>
+</div>
+</div>
+<!-- Action Ribbon (Gruppe Verwaltung) -->
+<div class="flex items-center gap-3 self-start sm:self-auto">
+<button class="group inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-body-md text-body-md font-semibold shadow-lg shadow-primary/20 hover:bg-primary-fixed hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[20px] transition-transform duration-200 group-hover:rotate-90">add</span>
+<span>+ Neue Kategorie</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Work Surface -->
+<div class="flex-1 px-4 lg:px-8 py-6 max-w-7xl mx-auto w-full flex flex-col gap-6">
+<!-- Filter & Search Bar Section -->
+<section class="bg-surface-container-low rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+<!-- Search Input -->
+<div class="relative w-full md:w-80">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md text-body-md rounded-lg pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-high transition-all" id="categorySearch" placeholder="Kategorien durchsuchen..." type="search"/>
+</div>
+<!-- Quick Filter Pills -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+<button class="px-3.5 py-1.5 rounded-full font-label-caps text-label-caps tracking-wider uppercase bg-primary/15 text-primary shadow-sm hover:bg-primary/25 transition-colors whitespace-nowrap" type="button">
+          Alle (6)
+        </button>
+<button class="px-3.5 py-1.5 rounded-full font-label-caps text-label-caps tracking-wider uppercase bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors whitespace-nowrap" type="button">
+          Personenbezogen
+        </button>
+<button class="px-3.5 py-1.5 rounded-full font-label-caps text-label-caps tracking-wider uppercase bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors whitespace-nowrap" type="button">
+          Geschäftlich / Unternehmen
+        </button>
+</div>
+</section>
+<!-- Data Presentation: Desktop Table & Mobile Card List -->
+<section class="bg-surface-container-low rounded-xl shadow-md overflow-hidden flex flex-col flex-1">
+<!-- Table Header (Desktop) -->
+<div class="hidden md:grid grid-cols-12 px-6 py-3.5 bg-surface-container font-label-caps text-label-caps text-outline tracking-wider uppercase select-none">
+<div class="col-span-6 flex items-center gap-2">
+<span>Name &amp; Klassifizierung</span>
+</div>
+<div class="col-span-5 flex items-center gap-2">
+<span>Zugeordnete Kontakte</span>
+</div>
+<div class="col-span-1 text-right">
+<span>Aktion</span>
+</div>
+</div>
+<!-- Table Rows Container -->
+<div class="flex flex-col divide-y-0" id="categoriesContainer">
+<!-- Row 1: Familie & Privat -->
+<div class="group relative px-5 py-4 md:px-6 md:py-4 bg-surface-container-low hover:bg-surface-container transition-all duration-150 cursor-pointer flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 md:items-center" role="button" tabindex="0">
+<div class="col-span-6 flex items-start sm:items-center gap-3.5 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-teal-DEFAULT/10 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">group</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">Familie &amp; Privat</span>
+<span class="px-2 py-0.5 rounded-full font-label-caps text-label-caps bg-primary/10 text-primary border-none">Privat</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Private Überweisungen, Angehörige &amp; Familie</span>
+</div>
+</div>
+<div class="col-span-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-on-surface-variant">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface font-label-numeric-md text-label-numeric-md w-fit">
+              4 Kontakte
+            </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              Max Mustermann, Sarah Klein, Jonas Becker (+2)
+            </span>
+</div>
+<div class="col-span-1 flex items-center justify-end text-primary group-hover:translate-x-1 transition-transform">
+<span class="hidden md:inline font-body-sm text-body-sm font-medium mr-1 text-on-surface-variant group-hover:text-primary">Details</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+<!-- Row 2: Finanzdienstleister / Broker -->
+<div class="group relative px-5 py-4 md:px-6 md:py-4 bg-surface-container-low hover:bg-surface-container transition-all duration-150 cursor-pointer flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 md:items-center" role="button" tabindex="0">
+<div class="col-span-6 flex items-start sm:items-center gap-3.5 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-secondary-container/20 flex items-center justify-center flex-shrink-0 text-secondary">
+<span class="material-symbols-outlined text-[22px]">show_chart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">Finanzdienstleister / Broker</span>
+<span class="px-2 py-0.5 rounded-full font-label-caps text-label-caps bg-secondary-container/30 text-secondary border-none">Depot</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Wertpapierabwicklung, Sparpläne &amp; Krypto-Custody</span>
+</div>
+</div>
+<div class="col-span-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-on-surface-variant">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface font-label-numeric-md text-label-numeric-md w-fit">
+              3 Kontakte
+            </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              Trade Republic Bank GmbH, Scalable Capital, Bitpanda
+            </span>
+</div>
+<div class="col-span-1 flex items-center justify-end text-primary group-hover:translate-x-1 transition-transform">
+<span class="hidden md:inline font-body-sm text-body-sm font-medium mr-1 text-on-surface-variant group-hover:text-primary">Details</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+<!-- Row 3: Hausbank / Giro -->
+<div class="group relative px-5 py-4 md:px-6 md:py-4 bg-surface-container-low hover:bg-surface-container transition-all duration-150 cursor-pointer flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 md:items-center" role="button" tabindex="0">
+<div class="col-span-6 flex items-start sm:items-center gap-3.5 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">account_balance</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">Hausbank / Giro</span>
+<span class="px-2 py-0.5 rounded-full font-label-caps text-label-caps bg-primary/10 text-primary border-none">Giro</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Gehaltskonten, Dispo &amp; Kern-Bankverbindungen</span>
+</div>
+</div>
+<div class="col-span-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-on-surface-variant">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface font-label-numeric-md text-label-numeric-md w-fit">
+              2 Kontakte
+            </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              DKB Deutsche Kreditbank AG, ING-DiBa AG
+            </span>
+</div>
+<div class="col-span-1 flex items-center justify-end text-primary group-hover:translate-x-1 transition-transform">
+<span class="hidden md:inline font-body-sm text-body-sm font-medium mr-1 text-on-surface-variant group-hover:text-primary">Details</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+<!-- Row 4: Vermieter & Immobilien -->
+<div class="group relative px-5 py-4 md:px-6 md:py-4 bg-surface-container-low hover:bg-surface-container transition-all duration-150 cursor-pointer flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 md:items-center" role="button" tabindex="0">
+<div class="col-span-6 flex items-start sm:items-center gap-3.5 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 text-outline">
+<span class="material-symbols-outlined text-[22px]">real_estate_agent</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">Vermieter &amp; Immobilien</span>
+<span class="px-2 py-0.5 rounded-full font-label-caps text-label-caps bg-surface-container-highest text-on-surface-variant border-none">Fixkosten</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Mietzahlung, Mietkaution &amp; Hausverwaltung</span>
+</div>
+</div>
+<div class="col-span-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-on-surface-variant">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface font-label-numeric-md text-label-numeric-md w-fit">
+              1 Kontakt
+            </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              Erika Schmidt (Hausverwaltung Berlin)
+            </span>
+</div>
+<div class="col-span-1 flex items-center justify-end text-primary group-hover:translate-x-1 transition-transform">
+<span class="hidden md:inline font-body-sm text-body-sm font-medium mr-1 text-on-surface-variant group-hover:text-primary">Details</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+<!-- Row 5: Energie & Wohnen -->
+<div class="group relative px-5 py-4 md:px-6 md:py-4 bg-surface-container-low hover:bg-surface-container transition-all duration-150 cursor-pointer flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 md:items-center" role="button" tabindex="0">
+<div class="col-span-6 flex items-start sm:items-center gap-3.5 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container/20 flex items-center justify-center flex-shrink-0 text-tertiary">
+<span class="material-symbols-outlined text-[22px]">bolt</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">Energie &amp; Wohnen</span>
+<span class="px-2 py-0.5 rounded-full font-label-caps text-label-caps bg-tertiary-container/30 text-tertiary border-none">Versorger</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Strom, Erdgas, Internet &amp; städtische Gebühren</span>
+</div>
+</div>
+<div class="col-span-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-on-surface-variant">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface font-label-numeric-md text-label-numeric-md w-fit">
+              2 Kontakte
+            </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              Stadtwerke München GmbH, Telekom Deutschland
+            </span>
+</div>
+<div class="col-span-1 flex items-center justify-end text-primary group-hover:translate-x-1 transition-transform">
+<span class="hidden md:inline font-body-sm text-body-sm font-medium mr-1 text-on-surface-variant group-hover:text-primary">Details</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+<!-- Row 6: Steuerberatung & Recht -->
+<div class="group relative px-5 py-4 md:px-6 md:py-4 bg-surface-container-low hover:bg-surface-container transition-all duration-150 cursor-pointer flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 md:items-center" role="button" tabindex="0">
+<div class="col-span-6 flex items-start sm:items-center gap-3.5 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-secondary-container/20 flex items-center justify-center flex-shrink-0 text-secondary">
+<span class="material-symbols-outlined text-[22px]">gavel</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">Steuerberatung &amp; Recht</span>
+<span class="px-2 py-0.5 rounded-full font-label-caps text-label-caps bg-secondary-container/30 text-secondary border-none">Kanzlei</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Einkommensteuererklärung, Notariat &amp; Vertretung</span>
+</div>
+</div>
+<div class="col-span-5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-on-surface-variant">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-container-high text-on-surface font-label-numeric-md text-label-numeric-md w-fit">
+              1 Kontakt
+            </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              Dr. Lukas Weber (StB &amp; Fachanwalt für Steuerrecht)
+            </span>
+</div>
+<div class="col-span-1 flex items-center justify-end text-primary group-hover:translate-x-1 transition-transform">
+<span class="hidden md:inline font-body-sm text-body-sm font-medium mr-1 text-on-surface-variant group-hover:text-primary">Details</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Footer / Pagination & Count Bar -->
+<footer class="mt-auto px-6 py-4 bg-surface-container-lowest flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant">
+<span class="font-body-sm text-body-sm">
+          Zeige <span class="font-label-numeric-sm text-label-numeric-sm font-semibold text-on-surface">1–6</span> von <span class="font-label-numeric-sm text-label-numeric-sm font-semibold text-on-surface">6</span> Kontaktkategorien
+        </span>
+<div class="flex items-center gap-1.5 font-label-numeric-sm text-label-numeric-sm">
+<button class="px-2.5 py-1 rounded bg-surface-container text-outline opacity-40 cursor-not-allowed" disabled="" type="button">Zurück</button>
+<span class="px-3 py-1 rounded bg-primary text-on-primary font-semibold">1</span>
+<button class="px-2.5 py-1 rounded bg-surface-container text-outline opacity-40 cursor-not-allowed" disabled="" type="button">Weiter</button>
+</div>
+</footer>
+</section>
+</div>
+<script>
+    // Live filter search for instant desktop feedback
+    const searchInput = document.getElementById('categorySearch');
+    const container = document.getElementById('categoriesContainer');
+    if (searchInput && container) {
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const rows = container.children;
+        Array.from(rows).forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+    }
+  </script>
+</div></main>
+</body></html>
