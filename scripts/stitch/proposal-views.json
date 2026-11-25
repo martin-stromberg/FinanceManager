@@ -1,0 +1,314 @@
+{
+  "views": [
+    {
+      "id": "login",
+      "title": "Anmeldung",
+      "description": "Oeffentliche Anmeldeseite: zentrierte Karte mit Logo, E-Mail- und Passwortfeld, Anmelden-Button, Link zur Registrierung. KEINE Seitennavigation und KEIN Ribbon auf dieser Seite."
+    },
+    {
+      "id": "register",
+      "title": "Registrierung",
+      "description": "Oeffentliche Registrierungsseite: zentrierte Karte mit Feldern (Name, E-Mail, Passwort, Passwort bestaetigen), Registrieren-Button, Link zur Anmeldung. KEINE Seitennavigation und KEIN Ribbon."
+    },
+    {
+      "id": "error",
+      "title": "Fehlerseite",
+      "description": "Fehlerseite: zentrierte Fehlermeldung (Fehler aufgetreten), Link zur Startseite. KEINE Seitennavigation und KEIN Ribbon."
+    },
+    {
+      "id": "legal",
+      "title": "Impressum / Rechtliches",
+      "description": "Impressumsseite: schmaler Textbereich mit rechtlichen Angaben, Zurueck-Link. Schlichte oeffentliche Seite ohne Ribbon."
+    },
+    {
+      "id": "help-hub",
+      "title": "Hilfe-Uebersicht",
+      "description": "Hilfe-Uebersicht (oeffentlich): Suchfeld oben, Kartenliste der Hilfethemen (Konten und Buchungen, Kontakte, Sparplaene, Wertpapiere, Import, Budget, Berichte, Einrichtung)."
+    },
+    {
+      "id": "help-view",
+      "title": "Hilfe-Artikel",
+      "description": "Hilfe-Artikel (oeffentlich): Artikeltitel, Brotkruemel, Fliesstext mit Zwischenueberschriften und Screenshot-Platzhaltern; links ein Inhaltsverzeichnis der Hilfethemen."
+    },
+    {
+      "id": "home",
+      "title": "Start / Dashboard",
+      "description": "Startseite/Dashboard: Ribbon mit einer Gruppe (Massenimport starten). Content: KPI-Kacheln-Reihe (Gesamtsaldo, Konten, offene Entwuerfe, Budgetstatus), darunter Aktivitaets-/Buchungsverlauf-Listenbereich."
+    },
+    {
+      "id": "change-password",
+      "title": "Passwort aendern",
+      "description": "Passwort-aendern-Seite im Standard-Layout: schmales Formular (aktuelles Passwort, neues Passwort, bestaetigen), Speichern-Button."
+    },
+    {
+      "id": "reports",
+      "title": "Berichte-Uebersicht",
+      "description": "Berichte-Uebersicht: Kartenliste der verfuegbaren Berichte (Dashboard, Budgetbericht, Portfolio-Analyse) mit Kurzbeschreibung; Klick oeffnet den Bericht."
+    },
+    {
+      "id": "reports-dashboard",
+      "title": "Berichts-Dashboard",
+      "description": "Berichts-Dashboard: Ribbon mit Filter-Button (oeffnet Filterdialog). Content: mehrere Chart-Karten (Ausgaben/Einnahmen ueber Zeit, Top-Kategorien Donut, Kontoentwicklung Linie) im Raster."
+    },
+    {
+      "id": "reports-budget",
+      "title": "Budgetbericht",
+      "description": "Budgetbericht: Ribbon mit Einstellungen-Button. Content: Budgetuebersicht mit Fortschrittsbalken pro Kategorie/Zweck, Soll-/Ist-Werte, Gesamtsummen."
+    },
+    {
+      "id": "portfolio-analysis-report",
+      "title": "Portfolio-Analysebericht",
+      "description": "Portfolio-Analysebericht: Kennzahlen-Zeile (Gesamtwert, Rendite, Volatilitaet), Allokations-Donut nach Kategorien, Performance-Liniendiagramm, Tabelle der Positionen."
+    },
+    {
+      "id": "security-performance",
+      "title": "Wertpapier-Performance",
+      "description": "Performance-Ansicht eines Wertpapiers mit Sub-Tabs (Uebersicht, Zeitreihe, Cashflows, Kennzahlen, Benchmark)."
+    },
+    {
+      "id": "security-performance-overview",
+      "title": "Performance > Uebersicht",
+      "description": "Sub-Tab Uebersicht: Kennzahlen-Kacheln und Diagramm."
+    },
+    {
+      "id": "security-performance-timeseries",
+      "title": "Performance > Zeitreihe",
+      "description": "Sub-Tab Zeitreihe: Liniendiagramm der Entwicklung."
+    },
+    {
+      "id": "security-performance-cashflows",
+      "title": "Performance > Cashflows",
+      "description": "Sub-Tab Cashflows: Tabelle/Diagramm der Ein- und Auszahlungen."
+    },
+    {
+      "id": "security-performance-metrics",
+      "title": "Performance > Kennzahlen",
+      "description": "Sub-Tab Kennzahlen: Tabelle mit Metriken (IRR, TWR u. a.)."
+    },
+    {
+      "id": "security-performance-benchmark",
+      "title": "Performance > Benchmark",
+      "description": "Sub-Tab Benchmark: Vergleichsdiagramm mit Referenzindex."
+    },
+    {
+      "id": "list-accounts",
+      "title": "Konten",
+      "description": "Listenansicht (Kontoliste: Name, Typ, IBAN, aktueller Saldo). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-contacts",
+      "title": "Kontakte",
+      "description": "Listenansicht (Kontaktliste: Name, Art (Person/Unternehmen), Gruppe/Kategorie). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-contacts-categories",
+      "title": "Kontaktkategorien",
+      "description": "Listenansicht (Kategorieliste fuer Kontakte: Name, zugeordnete Kontakte). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-postings-account",
+      "title": "Buchungen eines Kontos",
+      "description": "Listenansicht (Buchungsliste: Datum, Beschreibung, Betrag, Empfaenger, Postenart; Summenzeile). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-postings-contact",
+      "title": "Buchungen eines Kontakts",
+      "description": "Listenansicht (Buchungsliste eines Kontakts: Datum, Beschreibung, Betrag, Konto). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-postings-savings-plan",
+      "title": "Buchungen eines Sparplans",
+      "description": "Listenansicht (Buchungsliste eines Sparplans: Datum, Beschreibung, Betrag). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-postings-security",
+      "title": "Buchungen eines Wertpapiers",
+      "description": "Listenansicht (Wertpapier-Buchungen: Datum, Art (Kauf/Verkauf/Dividende), Stueckzahl, Betrag). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-savings-plans",
+      "title": "Sparplaene",
+      "description": "Listenansicht (Sparplanliste: Name, Intervall, Betrag, Zielkonto, aktiv). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-savings-plans-categories",
+      "title": "Sparplankategorien",
+      "description": "Listenansicht (Kategorieliste fuer Sparplaene). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-securities",
+      "title": "Wertpapiere",
+      "description": "Listenansicht (Wertpapierliste: Name, ISIN/WKN, Symbol, aktueller Kurs). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-securities-categories",
+      "title": "Wertpapierkategorien",
+      "description": "Listenansicht (Kategorieliste fuer Wertpapiere). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-securities-prices",
+      "title": "Kurshistorie",
+      "description": "Listenansicht (Kursliste eines Wertpapiers: Datum, Schlusskurs). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-statement-drafts",
+      "title": "Kontoauszugs-Entwuerfe",
+      "description": "Listenansicht (Importierte Kontoauszuege als Entwuerfe: Zeitraum, Konto, Anzahl Eintraege, Status). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-users",
+      "title": "Benutzerverwaltung",
+      "description": "Listenansicht (Benutzerliste (Admin): Name, E-Mail, Rolle, aktiv/gesperrt). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-mcp-accesses",
+      "title": "KI-Zugaenge",
+      "description": "Listenansicht (Liste der KI/MCP-Zugaenge: Name, Stufe, Freigabemodus, Gueltigkeit). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-budget",
+      "title": "Budgetplanung",
+      "description": "Listenansicht (Budgetliste: Zeitraum, Zweck, Kategorien, geplant/ist). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-budget-purposes",
+      "title": "Budgetzwecke",
+      "description": "Listenansicht (Budgetzwecke: Name, Beschreibung, zugeordnete Kategorien). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "list-budget-categories",
+      "title": "Budgetkategorien",
+      "description": "Listenansicht (Budgetkategorien: Name, Postenart, Zweck-Zuordnung). Aufbau: Filter-/Suchleiste oben, darunter Datentabelle mit genau diesen Spalten; Zeilenklick fuehrt zur Detailseite. Auf kleinen Screens wird die Tabelle als Kartenliste dargestellt. Ribbon: \"Neu\"-Aktion (Gruppe Verwaltung); bei Buchungslisten zusaetzlich eine Filtergruppe."
+    },
+    {
+      "id": "card-account",
+      "title": "Konto-Detailkarte",
+      "description": "Kontodetails: Name, IBAN, Typ, Saldo, Symbol, Bankkontakt, Sparplanangabe, Flags (Wertpapierabwicklung, Sammelkonto); darunter Ergebnisdiagramm (Balken pro Monat). Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-budget-category",
+      "title": "Budgetkategorie-Detailkarte",
+      "description": "Kategoriedetails: Name, Postenart, Zweck. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-budget-purpose",
+      "title": "Budgetzweck-Detailkarte",
+      "description": "Zweckdetails: Name, Beschreibung, Gueltigkeit, zugeordnete Kategorien, Budgetregeln. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-budget-rule",
+      "title": "Budgetregel-Detailkarte",
+      "description": "Budgetregel: Betrag, Intervall, Gueltigkeit ab/bis. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-contact",
+      "title": "Kontakt-Detailkarte",
+      "description": "Kontaktdetails: Name, Art, Gruppe, Beschreibung, Symbol, Zahlungsdaten; alternative Namen (Alias-Liste); darunter Bewegungsdiagramm. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-contact-category",
+      "title": "Kontaktkategorie-Detailkarte",
+      "description": "Kategoriedetails: Name, zugeordnete Kontakte. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-mcp-access",
+      "title": "KI-Zugang-Detailkarte",
+      "description": "KI-Zugang: Name, Stufe, Freigabemodus, Ablaufdatum, API-Schluessel (maskiert/anzeigbar), Widerrufen. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-mcp-access-new",
+      "title": "Neuen KI-Zugang anlegen",
+      "description": "Formular: Name, Stufe, Freigabemodus, Gueltigkeit. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-mcp-approvals",
+      "title": "KI-Freigaben",
+      "description": "Offene Freigabeanfragen des KI-Zugangs: Liste mit Anfrage, Zeitpunkt, Genehmigen/Ablehnen. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-mcp-audit",
+      "title": "KI-Auditprotokoll",
+      "description": "Audit-Liste: Zeitpunkt, Aktion, Ergebnis, eingeloggter Zugang. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-mcp-security",
+      "title": "KI-Sicherheit",
+      "description": "Sicherheitsuebersicht der KI-Zugaenge: Status-Kacheln, Hinweise. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-posting",
+      "title": "Buchungs-Detailkarte",
+      "description": "Buchungsdetails: Datum, Betrag, Empfaenger/Zahlungspflichtiger, Beschreibung, Konto, Postenart, Rueckbuchung. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-savings-plan",
+      "title": "Sparplan-Detailkarte",
+      "description": "Sparplandetails: Name, Intervall, Betrag, Zielkonto, Kategorie, aktiv; darunter Bewegungsdiagramm. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-savings-plan-category",
+      "title": "Sparplankategorie-Detailkarte",
+      "description": "Kategoriedetails: Name. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-security",
+      "title": "Wertpapier-Detailkarte",
+      "description": "Wertpapierdetails: Name, ISIN/WKN, Symbol, Kategorie, Waehrung; Kurshistorie-Diagramm. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-security-category",
+      "title": "Wertpapierkategorie-Detailkarte",
+      "description": "Kategoriedetails: Name. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-setup",
+      "title": "Einrichtung",
+      "description": "Setup-Seite: Akkordeon-Sektionen (Systeminformationen, Benachrichtigungen, Sicherungen, Wartungsmodus, Anhaenge, Sprache u. a.), jeweils mit eigenen Formularinhalten. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-user",
+      "title": "Benutzer-Detailkarte",
+      "description": "Benutzerdetails (Admin): Name, E-Mail, Rolle, aktiv; zusaetzlich Liste der Konten des Benutzers. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-statement-draft",
+      "title": "Kontoauszug-Entwurf",
+      "description": "Import-Entwurf: Metadaten (Zeitraum, Konto, Status) und Tabelle der Auszugseintraege. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "card-statement-draft-entry",
+      "title": "Auszugseintrag-Detail",
+      "description": "Einzeleintrag des Auszugs: Datum, Betrag, Buchungstext, Postenart-Zuordnung, Klassifikation. Aufbau: Ribbon mit Gruppen in dieser Reihenfolge — Navigation (Zurueck), Verwalten (Speichern, Zuruecksetzen, Loeschen), evtl. weitere Aktionsgruppen, Verknuepfte Informationen. Content: Formularfelder in Label/Wert-Zeilen."
+    },
+    {
+      "id": "setup-sections",
+      "title": "Einrichtung (Setup-Sektionen)",
+      "description": "Setup-Seite mit aufgeklappter Akkordeon-Sektion: Sektionstitel als aufklappbare Header, darin Formularfelder (Zeitraeume, Schwellwerte, Schalter) und Sektions-Aktionsbuttons."
+    },
+    {
+      "id": "overlay-home-mass-import",
+      "title": "Massenimport-Dialog",
+      "description": "Modaler Dialog ueber der Startseite: Massenimport von Kontoauszuegen — Dateiauswahl/Dropzone, Hinweis auf Dateiformate, Abbrechen/Importieren-Buttons; Seite dahinter abgedunkelt."
+    },
+    {
+      "id": "overlay-budget-settings",
+      "title": "Budgeteinstellungen-Dialog",
+      "description": "Modaler Dialog ueber dem Budgetbericht: Budgeteinstellungen — Eingabefelder fuer Betragsgrenzen/Zeitraum, Abbrechen/Uebernehmen-Buttons."
+    },
+    {
+      "id": "overlay-dashboard-filters",
+      "title": "Dashboard-Filter-Dialog",
+      "description": "Modaler Dialog ueber dem Berichts-Dashboard: Filtereinstellungen — Kontrollkaestchen pro Berichtskarte (welche Diagramme angezeigt werden), Datumsbereich; Abbrechen/Uebernehmen."
+    },
+    {
+      "id": "overlay-mcp-access-wizard",
+      "title": "KI-Zugang-Assistent",
+      "description": "Modaler Mehrschritt-Assistent ueber der KI-Zugangsliste: Schritt-Anzeige, Formularfelder (Name, Stufe, Freigabemodus, Gueltigkeit), Zurueck/Weiter/Abbrechen-Buttons."
+    },
+    {
+      "id": "overlay-confirm-dialog",
+      "title": "Bestaetigungsdialog",
+      "description": "Kleiner modaler Bestaetigungsdialog ueber einer Detailkarte: Titel \"Loeschen bestaetigen\", Hinweistext, Abbrechen- und Bestaetigen-Button (primaer)."
+    }
+  ]
+}
