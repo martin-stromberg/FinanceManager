@@ -98,33 +98,6 @@ async function startApp({ tempPrefix = 'financemanager-screenshots-' } = {}) {
   return { baseUrl, port, tempDbDir, tempDb, appLogPath, appProcess, stop, cleanupTempDir };
 }
 
-// The app imports "js/profile.js" as a bare module specifier; browsers cannot
-// resolve that without an import map, which crashes the Blazor circuit on the
-// register page. Inject an importmap into served HTML documents (same
-// workaround as mcp-granular-shots.js).
-async function installImportmap(context) {
-  const importmap = JSON.stringify({ imports: {
-    'js/profile.js': '/js/profile.js',
-    'js/financeManager.js': '/js/financeManager.js',
-    'js/attachments.js': '/js/attachments.js'
-  }});
-  await context.route('**/*', async (route) => {
-    const req = route.request();
-    if (req.resourceType() === 'document') {
-      try {
-        const resp = await route.fetch();
-        let body = await resp.text();
-        body = body.replace(/<head([^>]*)>/i, `<head$1><script type="importmap">${importmap}</script>`);
-        await route.fulfill({ response: resp, body });
-      } catch {
-        // Server shutting down mid-request — fail the navigation quietly.
-        await route.abort().catch(() => {});
-      }
-    } else {
-      await route.continue().catch(() => {});
-    }
-  });
-}
 
 // Registers the first user through the real UI. With createDemoData=true the
 // #create-demo-data checkbox (visible only for the first user) is checked so the
@@ -323,7 +296,6 @@ module.exports = {
   getFreePort,
   waitFor,
   startApp,
-  installImportmap,
   registerFirstUser,
   login,
   isAdminToken,

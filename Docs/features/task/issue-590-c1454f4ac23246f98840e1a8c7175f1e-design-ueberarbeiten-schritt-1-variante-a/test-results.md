@@ -66,3 +66,79 @@ Integrationssuiten vollständig grün; E2E-Fehlschläge decken sich exakt mit de
 dokumentierten Baseline; die zwei neuen Erstbefunde waren ein Flaky-Test bzw.
 ein selbst verursachtes Manifest-Alterungsartefakt — beide per Wiederholungslauf
 verifiziert bestanden.
+
+## Iteration 2: Review-Feedback PR #592 (lokale Abnahme durch Anwender)
+
+Der Anwender meldete auf dem PR drei Befundgruppen aus einem lokalen
+Debugger-Lauf:
+
+1. **JSException `Failed to resolve module specifier 'js/profile.js'`** beim
+   Start/Register (`Register.razor` `OnAfterRenderAsync`). Ursache: Commit
+   `23898593` (PathBase-Umstellung auf staging) hatte `import("/js/profile.js")`
+   in `import("js/profile.js")` geändert — ein Bare-Module-Specifier, den
+   Browser nicht auflösen können. Die Screenshot-Werkzeuge hatten den Fehler
+   durch eine injizierte Importmap kaschiert, daher fiel er bei der Abnahme
+   nicht auf. **Fix:** `./js/profile.js` bzw. `./js/attachments.js` — ein
+   relativer Specifier, der gegen `<base href>` aufgelöst wird und damit
+   PathBase-sicher bleibt (3 Stellen: `Register.razor`,
+   `SetupProfileTab.razor`, `AttachmentsPanel.razor`).
+2. **`The POST request does not specify which form is being submitted`** beim
+   Registrieren des ersten Anwenders. Ursache war dieselbe: Die JSException in
+   `OnAfterRenderAsync` tötete den Blazor-Circuit, das Formular fiel auf einen
+   plain HTTP-POST zurück (fehlender `formname`-Handler). Nach dem Import-Fix
+   läuft der Submit wieder über den Circuit — der Fehler tritt nicht mehr auf.
+   Zusätzlich wurde der Modul-Import defensiv abgesichert (Fehler beim Laden
+   des optionalen Locale-/Zeitzonen-Moduls darf die Registrierung nicht mehr
+   lahmlegen).
+3. **E2E-Fehlschläge (5 gemeldete, 8 dokumentierte Baseline):**
+   - `button#Save:enabled`-Timeout (`KpiLocalStorageE2ETests`) — Folge des
+     toten Circuits auf `/card/setup` (gleicher Import-Fehler in
+     `SetupProfileTab.razor`). Mit dem Fix aktiviert der Dirty-State das
+     Ribbon-Speichern wieder.
+   - `a[href='/list/accounts']`/`nav.sidebar a[href='/list/accounts']`-
+     Timeouts (`SessionExpiryPlaywrightTests`, `LoadingBarPlaywrightTests`)
+     — seit der PathBase-Umstellung rendert die Sidebar relative hrefs
+     (`list/accounts`, Home: `href=""`, aufgelöst via `<base href>`); die
+     Testselektoren verlangten noch `/`-präfigierte Attribute. Selektoren an
+     die reale Auszeichnung angepasst; `InitializationVisibilityProbe`
+     ebenso (die Sichtbarkeitsprüfung war dadurch zuvor wirkungslos).
+   - `href`-Assertion `/card/statement-drafts/`
+     (`HomeMassImportPlaywrightTests`) — die App liefert bewusst relative
+     URLs; Erwartung auf `card/statement-drafts/` korrigiert.
+   - `BudgetReportDemoDataE2ETests`-Timeout beim Registrierungs-Submit —
+     gleiche Circuit-Kaskade wie Befund 2.
+
+### Verifikation Iteration 2
+
+| Suite | Ergebnis |
+|-------|----------|
+| `KpiLocalStorageE2ETests.DisableCache_RemovesKpiDataFromLocalStorage` | **bestanden** (21 s, zuvor Timeout) |
+| `LoadingBarPlaywrightTests.InternalLinkClick_ShouldStartLoadingBarAutomatically` | **bestanden** |
+| `HomeMassImportPlaywrightTests.UploadIngCsvNewFormat_ViaUi_ShouldImportWithoutReviewDialog` | **bestanden** |
+| `SessionExpiryPlaywrightTests` (alle 5, inkl. der 2 gemeldeten) | **bestanden** (74 s) |
+| `SessionExpiryPlaywrightTests` + `BudgetReportDemoDataE2ETests` (Restlauf, 10 Tests) | **bestanden** (15 m 56 s) |
+
+### Reale End-to-End-Abnahme (Iteration 2)
+
+Die Anwendung wurde real betrieben (Debug-Build, frische SQLite-DB, Playwright
+ohne Importmap-Workaround):
+
+- `/register`: Rendern ohne Circuit-Fehler, Submit-Button aktiv erst bei
+  Interaktivität; Erstanwender-Registrierung inkl. Demodaten-Checkbox
+  übermittelt erfolgreich → Redirect `/` → `/login`.
+- `/login`: Form-Login funktioniert → `/` authentifiziert.
+- Sidebar: `nav.sidebar a[href='list/accounts']` vorhanden und klickbar →
+  `/list/accounts` mit Tabelle.
+- `/card/setup`: kein Circuit-Fehler, Ribbon/Sections rendern.
+- Browser-Konsole: kein `Failed to resolve module specifier` mehr.
+
+Screenshots: `01-register-page.png`, `02-after-registration.png`,
+`03-accounts-list.png`, `04-setup.png`, `05-home-after-login.png`
+(Nachweis-Ablage des Versuchs).
+
+### Sichtprüfung der Abnahme-Screenshots
+
+Alle 5 Screenshots einzeln gesichtet — keine Layout-Defekte: Signed-out-Shell
+(Brand-Leiste + Karte) und App-Chrome (Label-Sidebar 13er-Nav, Topbar,
+Ribbon-Gruppen) überdeckungsfrei, Texte unbeschnitten, Tabellen/Statistik-
+Karten korrekt breitengefüllt.

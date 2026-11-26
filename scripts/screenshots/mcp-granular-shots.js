@@ -54,24 +54,6 @@ function getFreePort() {
 
     const browser = await chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks,BlockInsecurePrivateNetworkRequests', '--allow-insecure-localhost'] });
     const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
-    // The app imports "js/profile.js" as a bare specifier; inject an importmap into
-    // the served HTML (deterministic, before any module resolution).
-    const importmap = JSON.stringify({ imports: {
-      'js/profile.js': '/js/profile.js',
-      'js/financeManager.js': '/js/financeManager.js',
-      'js/attachments.js': '/js/attachments.js'
-    }});
-    await context.route('**/*', async (route) => {
-      const req = route.request();
-      if (req.resourceType() === 'document') {
-        const resp = await route.fetch();
-        let body = await resp.text();
-        body = body.replace(/<head([^>]*)>/i, `<head$1><script type="importmap">${importmap}</script>`);
-        await route.fulfill({ response: resp, body });
-      } else {
-        await route.continue();
-      }
-    });
     const page = await context.newPage();
     page.on('console', m => { if (m.type() === 'error') console.log('PAGE-ERR:', m.text()); });
     const shot = (name) => page.screenshot({ path: path.join(outputDir, `${name}.png`), fullPage: false });

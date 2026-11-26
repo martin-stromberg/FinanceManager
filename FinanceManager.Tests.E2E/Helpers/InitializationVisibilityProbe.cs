@@ -13,7 +13,7 @@ public static class InitializationVisibilityProbe
                 if (path !== location.pathname) { path = location.pathname; seen.clear(); }
                 const selectors = path === '/login'
                     ? ['#login-user', '#login-pass', 'button[type=submit]']
-                    : ['.app-shell', '.content h1', "a[href='/list/accounts']", ...Array.from(document.querySelectorAll('[id^=qe_subject_]')).map(e => '#' + e.id)];
+                    : ['.app-shell', '.content h1', "a[href='list/accounts']", ...Array.from(document.querySelectorAll('[id^=qe_subject_]')).map(e => '#' + e.id)];
                 for (const selector of selectors) {
                     const el = document.querySelector(selector);
                     const style = el && getComputedStyle(el);

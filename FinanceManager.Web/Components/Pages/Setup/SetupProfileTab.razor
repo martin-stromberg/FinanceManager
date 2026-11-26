@@ -115,7 +115,14 @@
     {
         if (firstRender)
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", "js/profile.js");
+            try
+            {
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/profile.js");
+            }
+            catch
+            {
+                // Module only provides browser locale/timezone detection; the tab stays usable without it.
+            }
         }
     }
 

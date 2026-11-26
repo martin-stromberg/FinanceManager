@@ -33,8 +33,7 @@ const {
   isAdminToken,
   waitForDemoData,
   apiGet,
-  resolveFirstId,
-  installImportmap
+  resolveFirstId
 } = require('./lib/app-harness');
 
 const outputRoot = path.join(repoRoot, 'Docs', 'design', 'inventory');
@@ -554,7 +553,6 @@ function writeIndexAndGaps() {
         isMobile,
         hasTouch: isMobile
       });
-      await installImportmap(context);
       // Per-view circuit blocker (see needsCircuit): when blockBlazorJs is set,
       // the Blazor bootstrap script is refused so the page stays at the
       // authenticated SSR prerender — no circuit, no unauthenticated re-render.

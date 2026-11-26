@@ -1,14 +1,13 @@
 // Probe v4: with blazor.web.js blocked, do /list/statement-drafts and
 // /list/securities/categories render .fm-table visible?
 const { chromium } = require('playwright');
-const { startApp, registerFirstUser, login, installImportmap, waitForDemoData } = require('./lib/app-harness');
+const { startApp, registerFirstUser, login, waitForDemoData } = require('./lib/app-harness');
 
 (async () => {
   const app = await startApp({ tempPrefix: 'financemanager-probe-' });
   try {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'de-DE' });
-    await installImportmap(context);
     let blockBlazor = false;
     await context.route('**/_framework/blazor.web.js*', r => blockBlazor ? r.abort('blockedbyclient') : r.continue());
     const page = await context.newPage();

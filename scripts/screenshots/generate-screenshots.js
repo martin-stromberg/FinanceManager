@@ -7,8 +7,7 @@ const {
   startApp,
   registerFirstUser,
   login,
-  waitForDemoData,
-  installImportmap
+  waitForDemoData
 } = require('./lib/app-harness');
 
 const outputDir = path.join(repoRoot, 'Docs', 'screenshots');
@@ -26,7 +25,6 @@ fs.mkdirSync(outputDir, { recursive: true });
       locale: 'de-DE',
       timezoneId: 'Europe/Berlin'
     });
-    await installImportmap(context);
     const page = await context.newPage();
 
     const screenshot = (name) => page.screenshot({ path: path.join(outputDir, `${name}.png`), fullPage: false });

@@ -95,7 +95,14 @@
     {
         if (firstRender)
         {
-            _profileModule = await JS.InvokeAsync<IJSObjectReference>("import", "js/profile.js");
+            try
+            {
+                _profileModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/profile.js");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Profile JS module unavailable; locale/timezone detection skipped.");
+            }
         }
     }
 

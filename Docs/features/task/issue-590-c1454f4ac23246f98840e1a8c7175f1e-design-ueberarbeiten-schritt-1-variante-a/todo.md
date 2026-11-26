@@ -25,3 +25,4 @@ Verfügung — alle Lifecycle-Phasen werden vom Hauptagenten selbst ausgeführt.
 | [x] | 9b | README/Release-Notes aktualisieren (selbst ausgeführt) | `docs/RELEASE_NOTES.md`, `Docs/screenshots/*` (PNG-Frames + `demo.gif` neu, via SSR-Inventory-Captures) |
 | [x] | – | Feature-Verzeichnis löschen | entfällt — Artefakte bleiben als Nachweis im Repo (Konsistenz mit bisherigen Features) |
 | [x] | – | Commit durchführen | `d433795c` |
+| [x] | – | Review-Feedback PR #592 (Iteration 2, selbst ausgeführt) | Fix Bare-Module-Specifier `js/profile.js`/`js/attachments.js` → `./js/…`; E2E-Selektoren an relative href-Konvention angepasst; `test-results.md` aktualisiert |
