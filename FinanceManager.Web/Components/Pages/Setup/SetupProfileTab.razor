@@ -115,7 +115,14 @@
     {
         if (firstRender)
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", "js/profile.js");
+            try
+            {
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/profile.js");
+            }
+            catch
+            {
+                // Optional locale/timezone detection only; a failed module load must not kill the circuit.
+            }
         }
     }
 

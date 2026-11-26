@@ -7,7 +7,7 @@
 .fm-ribbon {
     font-size: .75rem;
     margin: 0 0 .75rem;
-    overflow-x: auto;
+    container-type: inline-size;
     padding-bottom: .15rem;
 }
 
@@ -40,9 +40,10 @@
 
 .fm-ribbon-groups {
     display: flex;
+    flex-wrap: wrap;
     gap: .6rem;
     align-items: stretch;
-    min-width: min-content;
+    min-width: 0;
 }
 
 /* Gruppe = Glaspille */
@@ -74,30 +75,35 @@
     text-transform: uppercase;
 }
 
-/* Unified row for items (Variante B: eine Reihe Kacheln je Gruppe) */
+/* Unified grid for items (Issue #586): Small-Aktionen als kompakte
+   Zeilen-Pills in bis zu drei Reihen, Large-Aktionen als Kachel
+   ueber die volle Gruppenhoehe. Spart Breite gegenueber
+   einheitlichen Kacheln und vermeidet den Horizontal-Scroll. */
 .ribbon-items-grid {
-    display: flex;
-    flex-direction: row;
-    gap: .3rem;
-    align-items: stretch;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(3, auto);
+    gap: .3rem .45rem;
+    align-content: start;
 }
 
 /* Base Button Styling (size via CSS vars)
-   Variante B: vertikale Icon-Kacheln im Pill-Stil. */
+   Variante B: zwei Groessen — kompakte Zeilen-Pills (small) und
+   vertikale Kacheln (large). */
 .fm-ribbon-btn {
-    --rb-icon-size: 18px;
-    --rb-font-size: .62rem;
-    --rb-gap: .3rem;
-    --rb-pad-y: .35rem;
+    --rb-icon-size: 15px;
+    --rb-font-size: .68rem;
+    --rb-gap: .35rem;
+    --rb-pad-y: .28rem;
     --rb-pad-x: .5rem;
-    --rb-flex-dir: column;
+    --rb-flex-dir: row;
     --rb-width: auto;
     --rb-min-h: auto;
     --rb-text-wrap: nowrap;
     --rb-align: center;
     --rb-grid-row: auto;
-    --rb-justify: center;
-    --rb-text-align: center;
+    --rb-justify: flex-start;
+    --rb-text-align: left;
     border-radius: 10px;
     cursor: pointer;
     display: inline-flex;
@@ -139,28 +145,61 @@
     white-space: var(--rb-text-wrap);
 }
 
-/* Large Variant - groessere Kachel in derselben Reihe */
+/* Large Variant - Kachel ueber die volle Gruppenhoehe */
 .fm-ribbon-btn.large {
     --rb-icon-size: 22px;
+    --rb-font-size: .62rem;
     --rb-pad-y: .45rem;
     --rb-pad-x: .55rem;
     --rb-flex-dir: column;
     --rb-width: 76px;
-    --rb-min-h: 56px;
     --rb-text-wrap: normal;
     --rb-align: center;
     --rb-justify: center;
     --rb-text-align: center;
+    --rb-grid-row: span 3;
+    grid-row: var(--rb-grid-row);
 }
 
 .fm-ribbon-btn.large .text {
     line-height: 1.1;
 }
 
-/* Small Variant - kompakte vertikale Kachel */
+/* Small Variant - kompakte Zeilen-Pille (icon + text nebeneinander) */
 .fm-ribbon-btn.small {
-    --rb-icon-size: 18px;
-    --rb-min-h: 56px;
+    --rb-icon-size: 15px;
+}
+
+/* ---------------------------------------------------------------
+   Container-basierte Verdichtung (Issue #586):
+   Reagiert auf die tatsaechliche Breite des Menuebands, nicht auf
+   den Viewport. Statt horizontal zu scrollen, wird zuerst der
+   Text der Small-Aktionen, dann auch der Large-Aktionen
+   ausgeblendet (Titel/aria-label bleiben erhalten).
+   --------------------------------------------------------------- */
+@container (max-width: 1100px) {
+    .fm-ribbon-btn .text-inline {
+        display: none;
+    }
+
+    .fm-ribbon-btn.small {
+        --rb-pad-x: .4rem;
+        --rb-justify: center;
+        --rb-icon-size: 18px;
+        --rb-min-h: 34px;
+        --rb-width: 40px;
+    }
+}
+
+@container (max-width: 780px) {
+    .fm-ribbon-btn .text {
+        display: none;
+    }
+
+    .fm-ribbon-btn.large {
+        --rb-width: 44px;
+        --rb-pad-x: .35rem;
+    }
 }
 
 @media (max-width: 900px) {
@@ -298,6 +337,7 @@
     }
 
     .ribbon-items-grid {
+        display: flex;
         flex-wrap: wrap;
     }
 

@@ -97,6 +97,12 @@
                     <LogoutNavButton />
                 </li>
             </ul>
+            <button type="button" class="nav-collapse-toggle" aria-expanded="false"
+                    data-label-expand="@L["Nav_Menu_Expand"]" data-label-collapse="@L["Nav_Menu_Collapse"]"
+                    title="@L["Nav_Menu_Expand"]">
+                <svg aria-hidden="true"><use href="icons/sprite.svg#chevron-right" /></svg>
+                <span class="nav-collapse-label">@L["Nav_Menu_Expand"]</span>
+            </button>
             <div class="user-area">
                 <NavLink href="/legal" class="user-area-link" title="@L["Nav_Legal"]">@L["Nav_Legal"]</NavLink>
                 <LoginStatus />
@@ -194,6 +200,9 @@
         {
             // Keepalive must not affect page rendering when JavaScript is unavailable during prerender/disconnect.
         }
+
+        // The nav rail collapse state is client-side only (localStorage + html class),
+        // handled entirely by financeManager.nav in financeManager.js.
     }
 
     private async Task PingKeepaliveAsync()

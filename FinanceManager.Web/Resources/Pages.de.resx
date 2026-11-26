@@ -3484,4 +3484,6 @@
   <data name="Nav_Settings" xml:space="preserve"><value>Einstellungen</value></data>
   <data name="Nav_Rail_AriaLabel" xml:space="preserve"><value>Hauptnavigation</value></data>
   <data name="LoginStatus_VersionUnknown" xml:space="preserve"><value>Version unbekannt</value></data>
+  <data name="Nav_Menu_Expand" xml:space="preserve"><value>Menü ausklappen</value></data>
+  <data name="Nav_Menu_Collapse" xml:space="preserve"><value>Menü einklappen</value></data>
 </root>

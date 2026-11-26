@@ -343,6 +343,70 @@ window.financeManager = window.financeManager || {};
     unregister: unregisterKeepalive
   };
 
+  // Navigation rail expand/collapse state, persisted in localStorage.
+  // The expanded flag is mirrored as a class on <html> so pure CSS can react;
+  // initializing it here (script loads in <head>) avoids a flash of the wrong mode.
+  var navStorageKey = "fm.nav.expanded";
+  var navExpandedClass = "fm-nav-expanded";
+
+  function navIsExpanded() {
+    try { return window.localStorage.getItem(navStorageKey) === "1"; }
+    catch { return false; }
+  }
+
+  function navSetExpanded(expanded) {
+    try { window.localStorage.setItem(navStorageKey, expanded ? "1" : "0"); }
+    catch { }
+    document.documentElement.classList.toggle(navExpandedClass, !!expanded);
+  }
+
+  function navSyncToggle() {
+    var btn = document.querySelector(".nav-collapse-toggle");
+    if (!btn) { return; }
+    var expanded = navIsExpanded();
+    btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+    var label = expanded ? btn.getAttribute("data-label-collapse") : btn.getAttribute("data-label-expand");
+    if (label) {
+      btn.setAttribute("title", label);
+      var span = btn.querySelector(".nav-collapse-label");
+      if (span) { span.textContent = label; }
+    }
+  }
+
+  fm.nav = {
+    isExpanded: navIsExpanded,
+    setExpanded: function (expanded) { navSetExpanded(expanded); navSyncToggle(); },
+    toggleExpanded: function () { fm.nav.setExpanded(!navIsExpanded()); }
+  };
+
+  function navApply() {
+    document.documentElement.classList.toggle(navExpandedClass, navIsExpanded());
+    navSyncToggle();
+  }
+
+  navApply();
+
+  // Blazor page transitions may rewrite attributes on <html>, dropping the
+  // expanded class. Re-apply it whenever it disappears while the stored
+  // preference still says expanded.
+  new MutationObserver(navApply).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest(".nav-collapse-toggle")) {
+      fm.nav.toggleExpanded();
+    }
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", navSyncToggle);
+  } else {
+    navSyncToggle();
+  }
+  document.addEventListener("enhancedload", navApply);
+
   fm.loadingBar = {
     start: startLoadingBar,
     restart: startLoadingBar,

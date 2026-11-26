@@ -148,6 +148,116 @@ html, body { margin: 0; padding: 0; }
 }
 
 /* -----------------------------------------------------
+   Auf-/zuklappbare Navigation (Desktop)
+   html.fm-nav-expanded wird via financeManager.nav gesetzt
+   und im localStorage persistiert.
+   ----------------------------------------------------- */
+.nav-collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin-top: 4px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.nav-collapse-toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    flex-shrink: 0;
+    transition: transform .2s;
+}
+
+.nav-collapse-toggle .nav-collapse-label {
+    display: none;
+    white-space: nowrap;
+    font-size: .9rem;
+}
+
+@media (min-width: 901px) {
+    html.fm-nav-expanded .app-shell {
+        --rail-width: 224px;
+    }
+
+    html.fm-nav-expanded .sidebar {
+        align-items: stretch;
+        padding: 12px .75rem 10px;
+    }
+
+    html.fm-nav-expanded .brand {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: .6rem;
+        padding: 2px .4rem 12px;
+    }
+
+    html.fm-nav-expanded .brand .brand-text {
+        display: block;
+    }
+
+    html.fm-nav-expanded .nav-links {
+        align-items: stretch;
+        gap: 1px;
+        padding: 0;
+    }
+
+    html.fm-nav-expanded .nav-links li {
+        justify-content: stretch;
+    }
+
+    html.fm-nav-expanded .nav-links li.nav-sep {
+        width: auto;
+        margin: 8px 10px;
+    }
+
+    html.fm-nav-expanded .nav-links a,
+    html.fm-nav-expanded .nav-links .nav-action {
+        width: auto;
+        height: auto;
+        justify-content: flex-start;
+        gap: .75rem;
+        padding: .6rem .7rem;
+    }
+
+    html.fm-nav-expanded .nav-links .nav-label {
+        display: inline;
+    }
+
+    html.fm-nav-expanded .user-area {
+        align-items: flex-start;
+        text-align: left;
+        padding: 0 .4rem;
+        gap: .45rem;
+    }
+
+    html.fm-nav-expanded .nav-collapse-toggle {
+        width: 100%;
+        height: auto;
+        justify-content: flex-start;
+        gap: .75rem;
+        padding: .6rem .7rem;
+    }
+
+    html.fm-nav-expanded .nav-collapse-toggle svg {
+        transform: rotate(180deg);
+    }
+
+    html.fm-nav-expanded .nav-collapse-toggle .nav-collapse-label {
+        display: inline;
+    }
+}
+
+/* -----------------------------------------------------
    Topbar (kontextuelle Kopfleiste, Desktop)
    ----------------------------------------------------- */
 .topbar {
@@ -262,6 +372,9 @@ html, body { margin: 0; padding: 0; }
 .card-view,
 .card-page-content {
     padding: 1rem 1.25rem;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .accounts-statistics {
@@ -829,6 +942,8 @@ form {
    ----------------------------------------------------- */
 @media (max-width: 900px) {
     .app-shell { position: relative; }
+
+    .nav-collapse-toggle { display: none; }
 
     .sidebar {
         transform: translateX(-100%);
