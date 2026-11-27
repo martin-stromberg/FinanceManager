@@ -114,12 +114,6 @@ body::before {
     color: var(--text);
 }
 
-.topbar-avatar {
-    background: linear-gradient(135deg, var(--accent-soft), var(--accent-soft-2));
-    color: var(--accent);
-    border: 1px solid var(--glass-border);
-}
-
 /* Button Theme */
 button {
     background: var(--accent);

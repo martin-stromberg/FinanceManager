@@ -407,6 +407,109 @@ window.financeManager = window.financeManager || {};
   }
   document.addEventListener("enhancedload", navApply);
 
+  // Ribbon label density (Issue #586 follow-up): labels are hidden only when
+  // hiding them actually saves a wrapped row. The groups wrap via flexbox, so
+  // each level is tried in turn and the level with the most labels that still
+  // reaches the lowest achievable row count wins. Fixed breakpoints proved too
+  // coarse: on pages with few actions labels vanished despite free space.
+  var ribbonLevels = ["", "fm-ribbon--hide-small-labels", "fm-ribbon--hide-labels"];
+  var ribbonObserved = typeof WeakSet === "function" ? new WeakSet() : null;
+  var ribbonScheduled = typeof WeakSet === "function" ? new WeakSet() : null;
+  var ribbonPendingFrame = false;
+
+  function ribbonVisibleDesktopGroups(ribbon) {
+    var groups = ribbon.querySelector(".fm-ribbon-groups");
+    if (!groups) { return []; }
+    return Array.prototype.filter.call(groups.children, function (el) {
+      return el.classList && el.classList.contains("fm-ribbon-group-desktop") && el.offsetParent !== null;
+    });
+  }
+
+  function ribbonRowCount(groupEls) {
+    var tops = [];
+    for (var i = 0; i < groupEls.length; i++) {
+      var t = groupEls[i].offsetTop;
+      if (!tops.some(function (x) { return Math.abs(x - t) <= 2; })) { tops.push(t); }
+    }
+    return tops.length;
+  }
+
+  function ribbonEvaluate(ribbon) {
+    if (!ribbon.isConnected) { return; }
+    var groupEls = ribbonVisibleDesktopGroups(ribbon);
+    if (!groupEls.length) {
+      // Mobile layout or empty ribbon: desktop buttons are hidden anyway.
+      ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
+      return;
+    }
+    var rowsByLevel = [];
+    for (var i = 0; i < ribbonLevels.length; i++) {
+      ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
+      if (ribbonLevels[i]) { ribbon.classList.add(ribbonLevels[i]); }
+      rowsByLevel.push(ribbonRowCount(groupEls));
+    }
+    var minRows = Math.min.apply(Math, rowsByLevel);
+    var best = 0;
+    for (var j = 0; j < rowsByLevel.length; j++) {
+      if (rowsByLevel[j] === minRows) { best = j; break; }
+    }
+    ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
+    if (ribbonLevels[best]) { ribbon.classList.add(ribbonLevels[best]); }
+  }
+
+  function ribbonSchedule(ribbon) {
+    if (ribbonScheduled && ribbonScheduled.has(ribbon)) { return; }
+    if (ribbonScheduled) { ribbonScheduled.add(ribbon); }
+    window.requestAnimationFrame(function () {
+      if (ribbonScheduled) { ribbonScheduled.delete(ribbon); }
+      ribbonEvaluate(ribbon);
+    });
+  }
+
+  function ribbonObserve(ribbon) {
+    if (ribbonObserved && ribbonObserved.has(ribbon)) { return; }
+    if (ribbonObserved) { ribbonObserved.add(ribbon); }
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(function () { ribbonSchedule(ribbon); }).observe(ribbon);
+    }
+    // Blazor re-renders can swap items inside the same ribbon element.
+    new MutationObserver(function () { ribbonSchedule(ribbon); })
+      .observe(ribbon, { childList: true, subtree: true });
+    ribbonSchedule(ribbon);
+  }
+
+  function ribbonScan(root) {
+    var ribbons = root.querySelectorAll ? root.querySelectorAll(".fm-ribbon") : [];
+    Array.prototype.forEach.call(ribbons, ribbonObserve);
+  }
+
+  function ribbonScanAll() {
+    if (document.body) { ribbonScan(document.body); }
+  }
+
+  // Watches for ribbons added by client-side navigation or first render.
+  new MutationObserver(function (mutations) {
+    var needsScan = mutations.some(function (m) {
+      return Array.prototype.some.call(m.addedNodes, function (n) {
+        return n.nodeType === 1 && (n.matches && n.matches(".fm-ribbon") || n.querySelector && n.querySelector(".fm-ribbon"));
+      });
+    });
+    if (needsScan && !ribbonPendingFrame) {
+      ribbonPendingFrame = true;
+      window.requestAnimationFrame(function () {
+        ribbonPendingFrame = false;
+        ribbonScanAll();
+      });
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", ribbonScanAll);
+  } else {
+    ribbonScanAll();
+  }
+  document.addEventListener("enhancedload", ribbonScanAll);
+
   fm.loadingBar = {
     start: startLoadingBar,
     restart: startLoadingBar,

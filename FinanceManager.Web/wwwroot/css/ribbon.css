@@ -7,7 +7,6 @@
 .fm-ribbon {
     font-size: .75rem;
     margin: 0 0 .75rem;
-    container-type: inline-size;
     padding-bottom: .15rem;
 }
 
@@ -171,35 +170,31 @@
 }
 
 /* ---------------------------------------------------------------
-   Container-basierte Verdichtung (Issue #586):
-   Reagiert auf die tatsaechliche Breite des Menuebands, nicht auf
-   den Viewport. Statt horizontal zu scrollen, wird zuerst der
-   Text der Small-Aktionen, dann auch der Large-Aktionen
+   Fit-basierte Verdichtung (Issue #586):
+   financeManager.ribbon misst das tatsaechliche Umbrechen der
+   Gruppen und setzt die Verdichtungsstufen nur, wenn dadurch eine
+   Zeile eingespart wird. Statt horizontal zu scrollen, wird zuerst
+   der Text der Small-Aktionen, dann auch der Large-Aktionen
    ausgeblendet (Titel/aria-label bleiben erhalten).
    --------------------------------------------------------------- */
-@container (max-width: 1100px) {
-    .fm-ribbon-btn .text-inline {
-        display: none;
-    }
-
-    .fm-ribbon-btn.small {
-        --rb-pad-x: .4rem;
-        --rb-justify: center;
-        --rb-icon-size: 18px;
-        --rb-min-h: 34px;
-        --rb-width: 40px;
-    }
+.fm-ribbon.fm-ribbon--hide-small-labels .fm-ribbon-btn .text-inline,
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn .text,
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn .text-inline {
+    display: none;
 }
 
-@container (max-width: 780px) {
-    .fm-ribbon-btn .text {
-        display: none;
-    }
+.fm-ribbon.fm-ribbon--hide-small-labels .fm-ribbon-btn.small,
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn.small {
+    --rb-pad-x: .4rem;
+    --rb-justify: center;
+    --rb-icon-size: 18px;
+    --rb-min-h: 34px;
+    --rb-width: 40px;
+}
 
-    .fm-ribbon-btn.large {
-        --rb-width: 44px;
-        --rb-pad-x: .35rem;
-    }
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn.large {
+    --rb-width: 44px;
+    --rb-pad-x: .35rem;
 }
 
 @media (max-width: 900px) {
