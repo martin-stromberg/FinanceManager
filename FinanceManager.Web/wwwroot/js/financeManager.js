@@ -425,36 +425,49 @@ window.financeManager = window.financeManager || {};
     });
   }
 
-  function ribbonRowCount(groupEls) {
-    var tops = [];
-    for (var i = 0; i < groupEls.length; i++) {
-      var t = groupEls[i].offsetTop;
-      if (!tops.some(function (x) { return Math.abs(x - t) <= 2; })) { tops.push(t); }
-    }
-    return tops.length;
+  function ribbonClearState(ribbon) {
+    ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
+    var collapsed = ribbon.querySelectorAll(".fm-ribbon-group-desktop.desktop-collapsed");
+    Array.prototype.forEach.call(collapsed, function (el) { el.classList.remove("desktop-collapsed"); });
+  }
+
+  // All currently laid-out row items: visible desktop groups plus the
+  // mobile panels shown for collapsed groups.
+  function ribbonRowItems(groups) {
+    return Array.prototype.filter.call(groups.children, function (el) {
+      return el.offsetParent !== null;
+    });
+  }
+
+  function ribbonFitsOneRow(groups) {
+    var items = ribbonRowItems(groups);
+    if (!items.length) { return true; }
+    var bounds = groups.getBoundingClientRect();
+    var last = items[items.length - 1].getBoundingClientRect();
+    return last.right <= bounds.right + 1;
   }
 
   function ribbonEvaluate(ribbon) {
     if (!ribbon.isConnected) { return; }
+    var groups = ribbon.querySelector(".fm-ribbon-groups");
+    ribbonClearState(ribbon);
     var groupEls = ribbonVisibleDesktopGroups(ribbon);
-    if (!groupEls.length) {
+    if (!groups || !groupEls.length) {
       // Mobile layout or empty ribbon: desktop buttons are hidden anyway.
-      ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
       return;
     }
-    var rowsByLevel = [];
+    // Single-row ribbon: pick the richest label level that still fits on one
+    // line. Labels stay visible whenever there is room for them.
     for (var i = 0; i < ribbonLevels.length; i++) {
       ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
       if (ribbonLevels[i]) { ribbon.classList.add(ribbonLevels[i]); }
-      rowsByLevel.push(ribbonRowCount(groupEls));
+      if (ribbonFitsOneRow(groups)) { return; }
     }
-    var minRows = Math.min.apply(Math, rowsByLevel);
-    var best = 0;
-    for (var j = 0; j < rowsByLevel.length; j++) {
-      if (rowsByLevel[j] === minRows) { best = j; break; }
+    // Even icon-only does not fit: collapse rightmost groups into their
+    // popover trigger until the remaining row fits.
+    for (var j = groupEls.length - 1; j >= 0 && !ribbonFitsOneRow(groups); j--) {
+      groupEls[j].classList.add("desktop-collapsed");
     }
-    ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
-    if (ribbonLevels[best]) { ribbon.classList.add(ribbonLevels[best]); }
   }
 
   function ribbonSchedule(ribbon) {
@@ -473,6 +486,8 @@ window.financeManager = window.financeManager || {};
       new ResizeObserver(function () { ribbonSchedule(ribbon); }).observe(ribbon);
     }
     // Blazor re-renders can swap items inside the same ribbon element.
+    // Class attributes are intentionally not observed: ribbonEvaluate
+    // mutates marker classes itself, which would retrigger evaluation.
     new MutationObserver(function () { ribbonSchedule(ribbon); })
       .observe(ribbon, { childList: true, subtree: true });
     ribbonSchedule(ribbon);

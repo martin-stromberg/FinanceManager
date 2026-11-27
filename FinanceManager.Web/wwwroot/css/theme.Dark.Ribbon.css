@@ -81,6 +81,44 @@
     }
 }
 
+/* Eingeklappte Desktop-Gruppen (einzeiliges Menueband): kompakter
+   Popover-Schalter im Glaspillen-Stil + aufgeklapptes Menue als Panel. */
+@media (min-width: 901px) {
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-group-title-toggle {
+        color: var(--text);
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-group-title-toggle:hover:not(:disabled),
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-group-title-toggle:focus-visible {
+        color: var(--accent);
+        outline: none;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu {
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu-item {
+        border-color: var(--glass-border);
+        background: rgba(255, 255, 255, .03);
+        color: var(--text);
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu-item:hover:not(:disabled) {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu-item:disabled {
+        opacity: .45;
+    }
+}
+
 @media (max-width: 900px) {
     .fm-ribbon-mobile-group-panel {
         border: 1px solid var(--glass-border);
