@@ -154,7 +154,7 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
                     RaiseUiActionRequested("NewRule", payload);
                     return Task.CompletedTask;
                 })
-        });
+        }, Sort: 60);
 
         return new List<UiRibbonRegister>
         {

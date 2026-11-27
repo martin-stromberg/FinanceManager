@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1120"/>
+      <stop offset="1" stop-color="#16203a"/>
+    </linearGradient>
+    <linearGradient id="trend" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8b5cf6" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="110" fill="url(#bg)"/>
+  <rect x="9" y="9" width="494" height="494" rx="109" fill="none" stroke="#2dd4bf" stroke-opacity="0.25" stroke-width="2"/>
+  <!-- stylized F: vertical bar reads as chart axis, horizontal bars as grid lines -->
+  <g fill="#64748b">
+    <rect x="140" y="120" width="52" height="272" rx="14"/>
+    <rect x="140" y="120" width="216" height="48" rx="14"/>
+    <rect x="140" y="232" width="168" height="44" rx="14"/>
+  </g>
+  <!-- ascending trend line in the Teal-to-Violet accent gradient -->
+  <polyline points="150,352 232,296 300,318 384,232" fill="none" stroke="url(#trend)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- glowing end node -->
+  <circle cx="384" cy="232" r="52" fill="url(#glow)"/>
+  <circle cx="384" cy="232" r="20" fill="#c4b5fd"/>
+</svg>

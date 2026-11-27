@@ -119,9 +119,10 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
                 null,
                 new Func<Task>(() => { RaiseUiActionRequested("New"); return Task.CompletedTask; })
             )
+            { MobileShortcut = true }
         };
 
-        var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions) };
+        var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions, Sort: 10) };
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 }

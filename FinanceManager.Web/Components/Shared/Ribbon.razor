@@ -217,6 +217,8 @@
         }
 
         var groups = groupOrder.Select(title => groupMap[title]).ToList();
+        // Drop groups whose actions were all filtered out as Hidden so no empty group frame is rendered
+        groups.RemoveAll(g => g.Items.Count == 0);
         foreach (var group in groups)
         {
             if (group.Items.Count == 1 && !group.Items[0].Disabled)

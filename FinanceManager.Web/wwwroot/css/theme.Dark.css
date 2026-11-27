@@ -187,9 +187,23 @@ textarea:focus-visible {
     color: var(--danger);
 }
 
+/* Danger icon buttons keep a red background (button.danger) but must show a
+   black glyph while not hovered for readability in the backups table. */
+button.icon-btn.danger {
+    color: #000;
+}
+
 .icon-btn.danger:hover:not(:disabled) {
     border-color: var(--danger);
     color: var(--danger);
+}
+
+/* On hover the danger icon button keeps its red button.danger background and
+   switches the glyph to the same dark contrast that button.danger itself uses —
+   the red-on-red combination would otherwise be unreadable. */
+button.icon-btn.danger:hover:not(:disabled) {
+    background: var(--danger);
+    color: #2a0606;
 }
 
 /* Login Status Theme */

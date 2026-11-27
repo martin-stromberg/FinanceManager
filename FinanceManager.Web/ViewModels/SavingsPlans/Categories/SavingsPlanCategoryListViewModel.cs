@@ -89,15 +89,15 @@ public sealed class SavingsPlanCategoryListViewModel : BaseListViewModel<Savings
                 nav.NavigateTo("list/savings-plans");
                 return Task.CompletedTask;
             })
-        });
+        }, Sort: 0);
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => {
                 RaiseUiActionRequested("New");
                 return Task.CompletedTask;
-            })
-        });
+            }) { MobileShortcut = true }
+        }, Sort: 10);
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };
     }

@@ -295,21 +295,23 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         var actions = new List<UiRibbonAction>
         {
             new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true },
-            new UiRibbonAction("Categories", localizer["Ribbon_Categories"].Value, "<svg><use href='icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
+            new UiRibbonAction("Categories", localizer["Ribbon_Categories"].Value, "<svg><use href='icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }),
         };
 
-        var filter = new List<UiRibbonAction>
+        var view = new List<UiRibbonAction>
         {
             new UiRibbonAction("ToggleActive", OnlyActive ? localizer["OnlyActive"].Value : localizer["StatusArchived"].Value, "<svg><use href='icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, () => { ToggleActive(); return Task.CompletedTask; })
         };
 
-        var tabsActions = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions) };
-        var tabsFilter = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, filter) };
+        var tabs = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions, Sort: 10),
+            new UiRibbonTab(localizer["Ribbon_Group_View"].Value, view, Sort: 30)
+        };
 
         return new List<UiRibbonRegister>
         {
-            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabsActions),
-            new UiRibbonRegister(UiRibbonRegisterKind.Custom, tabsFilter)
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs)
         };
     }
 

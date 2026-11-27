@@ -241,7 +241,9 @@ namespace FinanceManager.Tests.ViewModels
 
             orderedTabs.Should().NotBeEmpty();
             orderedTabs[0].Title.Should().Be("Ribbon_Group_Manage");
-            orderedTabs[0].Sort.Should().Be(0);
+            orderedTabs[0].Sort.Should().Be(10);
+            orderedTabs[1].Title.Should().Be("Ribbon_Group_Data");
+            orderedTabs[1].Sort.Should().Be(15);
         }
 
         /// <summary>
@@ -259,15 +261,24 @@ namespace FinanceManager.Tests.ViewModels
             localizerMock.Setup(l => l[It.IsAny<string>()])
                 .Returns((string key) => new LocalizedString(key, key));
 
-            var actions = vm.GetRibbonRegisters(localizerMock.Object)!
+            var tabs = vm.GetRibbonRegisters(localizerMock.Object)!
                 .SelectMany(r => r.Tabs ?? new List<UiRibbonTab>())
+                .ToList();
+
+            var manageActions = tabs
                 .Where(t => t.Title == "Ribbon_Group_Manage")
                 .SelectMany(t => t.Items)
                 .ToDictionary(a => a.Id, a => a.Size);
 
-            actions["Save"].Should().Be(UiRibbonItemSize.Large);
-            actions["Reset"].Should().Be(UiRibbonItemSize.Small);
-            actions["RebuildAggregates"].Should().Be(UiRibbonItemSize.Small);
+            var dataActions = tabs
+                .Where(t => t.Title == "Ribbon_Group_Data")
+                .SelectMany(t => t.Items)
+                .ToDictionary(a => a.Id, a => a.Size);
+
+            manageActions["Save"].Should().Be(UiRibbonItemSize.Large);
+            manageActions["Reset"].Should().Be(UiRibbonItemSize.Small);
+            dataActions["RebuildAggregates"].Should().Be(UiRibbonItemSize.Small);
+            dataActions["ResetReportCache"].Should().Be(UiRibbonItemSize.Small);
         }
 
         /// <summary>

@@ -387,13 +387,13 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
 
                     return Task.CompletedTask;
                 })
-        });
+        }, Sort: 0);
 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
-        });
+        }, Sort: 10);
 
         var clearPurposePattern = new UiRibbonAction(
             "ClearPurposePattern",
@@ -408,7 +408,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                 return Task.CompletedTask;
             });
 
-        var pattern = new UiRibbonTab(localizer["Ribbon_Group_Fields"], new List<UiRibbonAction> { clearPurposePattern });
+        var pattern = new UiRibbonTab(localizer["Ribbon_Group_Fields"], new List<UiRibbonAction> { clearPurposePattern }, Sort: 47);
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage, pattern }) };
     }

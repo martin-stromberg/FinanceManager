@@ -549,6 +549,15 @@
   <data name="Ribbon_Group_Analysis" xml:space="preserve">
     <value>Analysis</value>
   </data>
+  <data name="Ribbon_Group_View" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="Ribbon_Group_Data" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="Hint_RebuildAggregates" xml:space="preserve">
+    <value>Recomputes all pre-aggregated sums from postings. May take a while depending on data size.</value>
+  </data>
   <data name="Card_Caption_SavingsPlan_Name" xml:space="preserve">
     <value>Name</value>
   </data>
@@ -1381,7 +1390,7 @@
     <value>Well-Known</value>
   </data>
   <data name="Setup_Section_Update" xml:space="preserve">
-    <value>Updates</value>
+    <value>Program version</value>
   </data>
   <data name="Setup_Section_ReturnAnalysis" xml:space="preserve">
     <value>Return Analysis</value>
@@ -1723,7 +1732,7 @@
     <value>Activate</value>
   </data>
   <data name="Ribbon_SetPassword" xml:space="preserve">
-    <value>Set password</value>
+    <value>Reset password</value>
   </data>
   <data name="User_SetPassword_Placeholder" xml:space="preserve">
     <value>New password</value>

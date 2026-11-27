@@ -37,6 +37,8 @@ Das gilt u. a. für Home, Berichte, Setup und Wertpapier-Performance.
 
 Bei geschlossenen Ribbon-Gruppen können rechts im Gruppen-Header zusätzliche Symbol-Schaltflächen erscheinen. Diese Shortcuts führen die jeweilige Aktion direkt aus, ohne die Gruppe zu öffnen. Wird die Gruppe aufgeklappt, verschwinden die Header-Shortcuts und alle Aktionen stehen wie gewohnt in der geöffneten Gruppe zur Verfügung.
 
+Die Gruppen der Aktionsleiste folgen je Ansicht einer festen Reihenfolge — etwa „Navigieren" (Zurück), „Verwalten" (Neu, Speichern, Löschen) und anschließend fachliche Gruppen wie „Ansicht" oder „Analyse". Auf einigen Ansichten erscheint „Zurück" nur, wenn die Seite aus einem Kontext heraus geöffnet wurde, zu dem eine Rückkehr sinnvoll ist; der reguläre Aufruf über die Hauptnavigation zeigt dann keine Zurück-Schaltfläche.
+
 ### 5. Verhalten bei Anmeldung und aktiver Nutzung
 
 Solange Sie aktiv in der Anwendung navigieren, klicken, tippen oder Eingaben bearbeiten, hält die Anwendung die Anmeldung im Hintergrund aufrecht. Dafür wird bei Bedarf ein stiller Serverkontakt ausgeführt; Sie sehen dabei keine zusätzliche Meldung und die aktuelle Seite wird nicht neu geladen.

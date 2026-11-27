@@ -40,16 +40,21 @@ Beteiligte Komponenten:
 - `FinanceManager.Web/Components/Shared/Ribbon.razor` — filtert sichtbare Aktionen, wendet die Ein-Aktions-Regel an und rendert die mobilen Header-Shortcuts.
 - `FinanceManager.Web/wwwroot/css/ribbon.css` — begrenzt und positioniert Titel, Toggle und Icon-Shortcuts im mobilen Header.
 
-### 4. Gruppenreihenfolge im Ribbon
+### 4. Gruppenreihenfolge und Standardkonfiguration im Ribbon
 
-Jedes `IRibbonProvider`-ViewModel liefert über `GetRibbonRegisters(...)` Register mit geordneten `UiRibbonTab`-Listen; jeder Tab wird zu einer sichtbaren Ribbon-Gruppe. `Ribbon.BuildTabsToRender()` merged Gruppen registerübergreifend nach Titel (`groupMap`) und hält die First-Seen-Reihenfolge in `groupOrder` fest. Die Darstellung sortiert per `Groups.OrderBy(g => g.Sort)` stabil — da die Tabs projektweit den Standardwert `Sort = 0` tragen, entscheidet allein die Reihenfolge der Tab-Liste über die sichtbare Gruppenreihenfolge.
+Jedes `IRibbonProvider`-ViewModel liefert über `GetRibbonRegisters(...)` Register mit geordneten `UiRibbonTab`-Listen; jeder Tab wird zu einer sichtbaren Ribbon-Gruppe. `Ribbon.BuildTabsToRender()` merged Gruppen registerübergreifend nach Titel (`groupMap`) und hält die First-Seen-Reihenfolge in `groupOrder` fest. Die Darstellung sortiert per `Groups.OrderBy(g => g.Sort)` stabil.
 
-Die in `AGENT.md` festgelegte Konvention sieht eine `Navigation`-Gruppe (Zurück-Aktion, `Ribbon_Group_Navigation`) stets an Position 0 vor, danach Entitätsaktionen (`Ribbon_Group_Manage`), weiterführende Aktionen (z. B. `Ribbon_Group_Actions`, `Ribbon_Group_Bookings`, `Ribbon_Group_Analysis`) und abschließend `Ribbon_Group_Linked` als letzte Gruppe. Mit Issue #498 wurden die Tab-Listen von `SavingsPlanCardViewModel`, `BankAccountCardViewModel` und `PostingsCardViewModel` entsprechend korrigiert; die Einhaltung wird durch Reihenfolge-Assertions in ViewModel-Tests, einen bUnit-Test (`RibbonTests.Groups_RenderInTabListOrder`) und den Playwright-Test `RibbonGroupOrderPlaywrightTests` abgesichert.
+Mit der Menüband-Standardkonfiguration (Issue #590, Schritt 2) tragen die Tabs auf rund 19 Ansichten jetzt explizite `Sort`-Werte aus einer festen Skala, sodass die Gruppenreihenfolge unabhängig von der Register-Reihenfolge reproduzierbar ist — relevant insbesondere für die Setup-Ansicht, deren Ribbon aus den Registern mehrerer ViewModels (`SetupCardViewModel`, `SetupProfileViewModel`, `SetupMcpViewModel`, `SetupUpdateViewModel`, `SetupBackupsViewModel`) zusammengesetzt wird. Die Skala: `Navigieren` = 0, `Verwalten` = 10, `Daten` = 15, `Profil` = 20, `Ansicht`/`Filter` = 30, `KI` = 35, `Analyse` = 40, `Felder` = 47, `Verknüpfte Informationen` = 55, `Berichte` = 70, `Export` = 80, `Sicherungen` = `int.MaxValue` (stets letzte Gruppe). Die verbindliche Zuordnung von Gruppen, Aktionen und Symbolgrößen je Ansicht ist in [Business Rules](business-rules.md) dokumentiert.
+
+Jede `UiRibbonAction` trägt außerdem eine vorgegebene `UiRibbonItemSize` (`Large` für die primären Aktionen einer Ansicht, `Small` für ergänzende). Neue resx-Gruppen-Keys sind `Ribbon_Group_View` („Ansicht") und `Ribbon_Group_Data` („Daten"); umbenannt wurden `Setup_Section_Update` („Aktualisierungen" → „Programmversion", zugleich Titel des Setup-Abschnitts und der Ribbon-Gruppe), `SetupBackup_Titel` („Datensicherungen" → „Sicherungen") und `Ribbon_SetPassword` („Passwort zuweisen" → „Passwort zurücksetzen"). Der bislang unübersetzte Tooltip der Aktion `RebuildAggregates` liegt jetzt als `Hint_RebuildAggregates` vor (de + en).
+
+Die Einhaltung der Zielkonfiguration wird durch die neuen `RibbonConfigTests` (Gruppentitel, `Sort`-Werte, `UiRibbonItemSize` je Aktion, bedingte `Navigieren`-Gruppe), bestehende ViewModel-Tests, den bUnit-Test `RibbonTests` sowie den Playwright-Test `RibbonGroupOrderPlaywrightTests` abgesichert. Ergänzend entfernt `Ribbon.BuildTabsToRender()` jetzt Gruppen, deren sämtliche Aktionen als `Hidden` ausgefiltert wurden — ein leerer Gruppenrahmen wird nicht mehr gerendert.
 
 Beteiligte Komponenten:
-- `FinanceManager.Web/ViewModels/Common/RibbonModels.cs` — `UiRibbonTab` mit `Sort`-Eigenschaft (Standard `0`).
-- `FinanceManager.Web/Components/Shared/Ribbon.razor` — `BuildTabsToRender()` merged Gruppen nach Titel und rendert sie in stabiler First-Seen-/Sort-Reihenfolge.
-- `AGENT.md` — dokumentiert die verbindliche Gruppenreihenfolge inklusive der `Navigation`-Position-0-Regel.
+- `FinanceManager.Web/ViewModels/Common/RibbonModels.cs` — `UiRibbonTab` mit `Sort`-Eigenschaft, `UiRibbonAction` mit `Size` (`UiRibbonItemSize`), `Hidden`, `Disabled` und `MobileShortcut`.
+- `FinanceManager.Web/Components/Shared/Ribbon.razor` — `BuildTabsToRender()` merged Gruppen nach Titel, rendert sie in stabiler Sort-/First-Seen-Reihenfolge und verwirft Gruppen ohne sichtbare Aktionen.
+- `AGENT.md` — dokumentiert die fachliche Gruppenkonvention (Navigation an Position 0, dann Entitätsaktionen, weiterführende Aktionen, `Linked` zuletzt).
+- `FinanceManager.Tests/ViewModels/RibbonConfigTests.cs` — pinnt die Standardkonfiguration repräsentativer ViewModels.
 
 ### 5. Aktionsverdrahtung der Gruppe `Ribbon_Group_Linked`
 
@@ -122,6 +127,51 @@ Beteiligte Komponenten:
 - `FinanceManager.Web/wwwroot/css/theme.Dark.css` — definiert nur die Backdrop-Farbe für `.split-center`, keinen eigenen `z-index`; die Schichtung gilt daher auch im dunklen Theme.
 
 > **Hinweis für neue Dialog- oder Overlay-Ebenen:** Künftige Overlay-Container müssen unterhalb von `z-index: 1100` bleiben. Eine weitere Ebene oberhalb der Bestätigung sollte nur eingeführt werden, wenn ein zweiter Dialogtyp dies fachlich erfordert.
+
+### 10. Bedingte „Navigieren"-Gruppe und `?back=`-Navigationskontext
+
+Auf Übersichts- und Berichtsansichten kann die Zurück-Aktion davon abhängen, aus welchem Kontext die Ansicht geöffnet wurde. Dafür wurde `SetBackNavigation(string? backUrl)` von `BaseCardViewModel` nach `BaseViewModel` gehoben; die geerbte Eigenschaft `InitBack` steht damit auch Listen- und Berichts-ViewModels zur Verfügung. `ListPage.razor` bindet den `?back=`-Query-Parameter (`[SupplyParameterFromQuery(Name = "back")]`), validiert ihn und ruft `provider.SetBackNavigation(...)` — `CardPage.razor` tut dies bereits beim Erzeugen des ViewModels.
+
+- `BankAccountListViewModel` erzeugt die Gruppe `Ribbon_Group_Navigation` nur, wenn `InitBack` gesetzt ist — im regulären Aufruf über die Hauptnavigation entsteht gar kein Gruppenrahmen (bedingte Gruppenerzeugung statt `Hidden`-Flag, damit kein leerer Gruppen-Frame sichtbar wird). Mit Kontext enthält die Gruppe eine große `Back`-Aktion (`UiRibbonItemSize.Large`, `Sort: 0`).
+- `BudgetReportViewModel` folgt demselben Muster; die Budgetübersicht öffnet den Bericht in `ListPage` per `case "OpenBudgetReport"` mit `reports/budget?back=<aktuelle URI>` als Rücksprungziel.
+- `BudgetRuleCardViewModel` nutzt `InitBack` für den Rücksprung auf die aufrufende Karte (Fallback: `card/budget/purposes/{BudgetPurposeId}`).
+
+Alle `back`-Ziele werden über die Erweiterung `NavigationManagerExtensions.IsSameOriginUri(...)` validiert, bevor sie dem ViewModel angeboten oder per `NavigateTo` aufgerufen werden — in `ListPage` (Back-Aktion), `CardPage` (Payload-URL, `Back`-Parameter, `Deleted`- und `Saved`-Fälle) und bei der Übergabe an `SetBackNavigation`. Die Prüfung akzeptiert relative Pfade und absolute URIs auf derselben Herkunft (Scheme + Authority der `NavigationManager.BaseUri`) und lehnt fremde Origins, scheme-relative URIs (`//host/...`), Nicht-http(s)-Schemes sowie Eingaben ab, die der WHATWG-URL-Parser des Browsers anders auflöst als `ToAbsoluteUri` — Kontroll-/Whitespace-Zeichen und Scheme-Präfixe ohne `//` werden sowohl im rohen als auch im Prozent-dekodierten Kandidaten zurückgewiesen. Abgelehnte Ziele fallen auf die bisherigen Fallback-Routen zurück.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/Extensions/NavigationManagerExtensions.cs` — `IsSameOriginUri` inkl. `IsSafeNavigationCandidate`/`SchemePrefixRegex`.
+- `FinanceManager.Web/ViewModels/Common/BaseViewModel.cs` — `SetBackNavigation` und `InitBack` (aus `BaseCardViewModel` hochgezogen).
+- `FinanceManager.Web/Components/Pages/ListPage.razor` — `Back`-Query-Parameter, `SetBackNavigation`-Aufruf, `OpenBudgetReport` mit `?back=`, validierte Back-Navigation.
+- `FinanceManager.Web/Components/Pages/CardPage.razor` — `IsSameOriginUri`-Prüfung aller Back-Pfade.
+- `FinanceManager.Web/ViewModels/Accounts/BankAccountListViewModels.cs`, `FinanceManager.Web/ViewModels/Budget/BudgetReportViewModel.cs`, `FinanceManager.Web/ViewModels/Budget/BudgetRuleCardViewModel.cs` — bedingte `Navigieren`-Gruppe bzw. `InitBack`-Verwendung.
+- Tests: `NavigationManagerExtensionsTests` (Same-Origin-Akzeptanz und Ablehnungsfälle inkl. Smuggling), `AccountsBackNavigationPlaywrightTests`, `BudgetReportBackNavigationPlaywrightTests`, `RibbonConfigTests` (bedingte Gruppenerzeugung).
+
+### 11. Inhaltspanel auf Übersichtsseiten
+
+`ListPage.razor` umschließt Ribbon, Seitentitel, Upload-Status, Filter, `GenericListPage` und `EmbeddedPanelHost` wieder mit `<div class="card-page-content">` — demselben Content-Wrapper wie die Kartenansichten. Dadurch stehen Übersicht und Detailansicht an identischer Position mit identischen Abständen; der frühere Layout-Sprung beim Wechsel entfällt. `ConfirmationDialogHost` und die Overlay-Container rendern bewusst **außerhalb** des Panels: Das Panel nutzt `backdrop-filter`, womit es zum Containing Block für `position: fixed`-Nachfahren wird — ein viewport-weiter Abdunkler innerhalb des Panels würde auf die Panel-Grenzen beschnitten und Klicks außerhalb des Panels könnten Overlays nicht mehr schließen.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/Components/Pages/ListPage.razor` — `.card-page-content`-Wrapper; Overlay-/Dialog-Hosts außerhalb.
+- `FinanceManager.Tests.E2E/Tests/Navigation/ListPageContentPanelPlaywrightTests.cs` — E2E-Absicherung des Inhaltspanels.
+
+### 12. Lesbarkeit der Gefahren-Icon-Buttons in der Sicherungs-Tabelle
+
+`button.icon-btn.danger` (Löschen-Aktion in `SetupBackupTab.razor`) trägt einen roten Button-Hintergrund (`button.danger`) und erbt gleichzeitig die rote Textfarbe von `.icon-btn.danger` — die Kombination war unleserlich. In `theme.Dark.css` erhält die Schaltfläche jetzt explizit `color: #000` im Normalzustand; der Hover-Selektor `button.icon-btn.danger:hover:not(:disabled)` behält den roten Hintergrund und schaltet die Symbolfarbe auf dasselbe Dunkelrot (`#2a0606`) wie `button.danger`.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/wwwroot/css/theme.Dark.css` — neue Regeln für `button.icon-btn.danger` und deren Hover.
+- `FinanceManager.Web/Components/Pages/Setup/SetupBackupTab.razor` — Tabelle der Sicherungen mit der Löschen-Aktion.
+- `FinanceManager.Tests.E2E/Tests/Setup/SetupBackupTabPlaywrightTests.cs` — E2E-Absicherung der Kontrastfarben.
+
+### 13. Favicon
+
+Das Programmsymbol wurde für die Design-Variante B neu gestaltet: `wwwroot/icons/finance_manager.svg` (F-Monogramm mit Chart-Trendlinie, Teal→Violett-Verlauf auf dunkler Kachel) wird in `Components/App.razor` als primäres `<link rel="icon" type="image/svg+xml">` eingebunden; `icons/finance_manager-64x64.ico` bleibt als `<link rel="shortcut icon">`-Fallback und wurde zusammen mit `icons/finance_manager.png` im neuen Design regeneriert (`scripts/icons/`). `wwwroot/manifest.json` trägt die dunklen `background_color`/`theme_color`-Werte `#080a0f`.
+
+Beteiligte Komponenten:
+- `FinanceManager.Web/wwwroot/icons/finance_manager.svg`, `finance_manager-64x64.ico`, `finance_manager.png` — Icon-Assets.
+- `FinanceManager.Web/Components/App.razor` — Icon-Einbindung (SVG primär, ICO als Fallback).
+- `FinanceManager.Web/wwwroot/manifest.json` — Theme-Farben der installierbaren App.
+- `scripts/icons/` — Generierungsskripte der Icon-Assets.
 
 ## Fehlerbehandlung
 

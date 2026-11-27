@@ -8,7 +8,7 @@ Der Bereich stellt Betriebs- und Administrationsfunktionen bereit: Benutzer, Rol
 
 ## Funktionsweise
 
-Die Setup-Seite bündelt persönliche Einstellungen, Benachrichtigungen, Importvorgaben, Anhänge, Backups, Updates, Sicherheitsangaben und Berichtseinstellungen. Einige Abschnitte sind nur für Administratoren sichtbar.
+Die Setup-Seite bündelt persönliche Einstellungen, Benachrichtigungen, Importvorgaben, Anhänge, den Abschnitt „Sicherungen" (Backups), „Programmversion" (Update-Prüfung und -Installation), Sicherheitsangaben und Berichtseinstellungen. Einige Abschnitte sind nur für Administratoren sichtbar.
 
 Benutzer können ihr Profil, Spracheinstellungen und Benachrichtigungen pflegen.
 Administratoren können Benutzer verwalten, Backups erstellen oder wiederherstellen,
@@ -49,9 +49,9 @@ wird nicht im Klartext angezeigt. Administratoren können ihren Key weiterhin
 zur gemeinsamen Nutzung freigeben. Andere Benutzer verwenden diesen geteilten
 Key als Fallback für Kursabrufe, ohne den Klartext einsehen zu können.
 
-Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln auf- und zugeklappt werden. Die Ribbon-Aktionsleiste zeigt die wichtigsten Aktionen dauerhaft an, unabhängig davon, welche Sektion gerade geöffnet ist.
+Die Einstellungsseite verwendet ein Akkordeon-Layout: Sektionen können einzeln auf- und zugeklappt werden. Die Ribbon-Aktionsleiste zeigt die wichtigsten Aktionen dauerhaft an, unabhängig davon, welche Sektion gerade geöffnet ist. Die Gruppen der Aktionsleiste folgen einer festen Reihenfolge: „Verwalten" (Speichern, Zurücksetzen), „Daten" (Aggregatposten neu berechnen, Cache zurücksetzen), „Profil" (Zeitzone ermitteln), „KI" (Genehmigungen, Protokoll, KI-Sicherheit), „Programmversion" (Jetzt prüfen, Update installieren) und „Sicherungen" (Backup erstellen, Backup einlesen).
 
-Die `UploadBackup`-Aktion klappt die Backup-Sektion automatisch auf, falls sie beim Klick auf den Ribbon-Button noch geschlossen ist, bevor der Datei-Picker geöffnet wird.
+Die Aktion „Backup einlesen" klappt die Sicherungs-Sektion automatisch auf, falls sie beim Klick auf den Ribbon-Button noch geschlossen ist, bevor der Datei-Picker geöffnet wird.
 
 Aktive Hintergrundtasks werden in der Benutzeroberfläche über ein Statuspanel angezeigt. Dieses Panel fragt laufende und wartende Tasks nur ab, wenn ein authentifizierter Benutzerkontext vorhanden ist. Nicht angemeldete Benutzer starten keine wiederkehrende Statusabfrage gegen `/api/background-tasks/active`. Falls ein bereits gestartetes Panel vom API-Client dennoch `401 Unauthorized` erhält, beendet es seine Polling-Schleife für die aktuelle Komponenteninstanz und blendet die Task-Anzeige aus.
 

@@ -76,7 +76,7 @@ public sealed class BudgetReportDemoDataE2ETests
 
         await page.GotoAsync("/list/budgets");
         await page.Locator("#BudgetReport").ClickAsync();
-        await page.WaitForURLAsync("**/reports/budget");
+        await page.WaitForURLAsync(url => url.Contains("/reports/budget"));
 
         await WaitForBudgetReportReadyAsync(page);
         var previousMonthEnd = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddDays(-1);

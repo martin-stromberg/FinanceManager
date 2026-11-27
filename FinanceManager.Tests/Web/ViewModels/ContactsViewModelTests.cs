@@ -161,9 +161,9 @@ public sealed class ContactsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that the contacts overview exposes its list-level actions in a single "Manage" ribbon
-    /// group and renders every action as a large button, matching the list-page convention used by the
-    /// users overview.
+    /// Verifies that the contacts overview splits its actions into a "Manage" group
+    /// (New and Groups as large buttons) followed by a "View" group (Reload large,
+    /// ClearFilter small) in the configured ribbon target layout.
     /// </summary>
     [Fact]
     public void GetRibbon_UsesManageGroup_WithAllActionsLarge()
@@ -174,12 +174,19 @@ public sealed class ContactsViewModelTests
         var tabs = ribbonRegs
             .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
             .ToList();
-        var actions = tabs.SelectMany(t => t.Items).ToList();
 
-        Assert.Single(tabs);
+        Assert.Equal(2, tabs.Count);
         Assert.Equal("Ribbon_Group_Manage", tabs[0].Title);
-        Assert.Equal(new[] { "New", "Groups", "Reload", "ClearFilter" }, actions.Select(a => a.Id));
-        Assert.All(actions, a => Assert.Equal(UiRibbonItemSize.Large, a.Size));
+        Assert.Equal("Ribbon_Group_View", tabs[1].Title);
+
+        var manageActions = tabs[0].Items.ToList();
+        Assert.Equal(new[] { "New", "Groups" }, manageActions.Select(a => a.Id));
+        Assert.All(manageActions, a => Assert.Equal(UiRibbonItemSize.Large, a.Size));
+
+        var viewActions = tabs[1].Items.ToList();
+        Assert.Equal(new[] { "Reload", "ClearFilter" }, viewActions.Select(a => a.Id));
+        Assert.Equal(UiRibbonItemSize.Large, viewActions[0].Size);
+        Assert.Equal(UiRibbonItemSize.Small, viewActions[1].Size);
     }
 
     /// <summary>

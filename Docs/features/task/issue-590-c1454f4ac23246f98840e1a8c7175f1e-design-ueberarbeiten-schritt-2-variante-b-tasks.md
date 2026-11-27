@@ -1,20 +1,15 @@
-# Tasks: Umsetzung Design-Variante B (Issue #590, Schritt 2)
+# Tasks: Ribbon-Standardgrößen/-reihenfolge je Ansicht + Korrekturen (Issue #590, Schritt 2, Variante B)
 
 | # | Bereich | Aufgabe | Status | Testnachweis |
 |---|---------|---------|--------|--------------|
-| 1 | Texte | Neue resx-Schlüssel (`Nav_Logout`, `Nav_Login`, `Nav_Budget`, `Nav_Topbar_AriaLabel`, `Nav_Rail_AriaLabel`, `Nav_LogoutAriaLabel`) in Pages.resx/.de/.en | Offen | — |
-| 2 | Tokens | `theme.Dark.css` auf Variant-B-Token-Set umprägen (Palette, Glas, Glows, Radien, Rail-/Topbar-Maße) | Offen | — |
-| 3 | Shell | `app.css` Shell-Layout: Rail 72 px, Topbar, Content-Offsets, Mobile-Drawer, Glas-Karten-Basis | Offen | — |
-| 4 | Chrome | `MainLayout.razor`: Icon-Rail mit kanonischer 13er-Navigation (absolute hrefs, Admin-Gate, Abmelden-Aktion), Topbar mit Kontexttitel, Guest-Zustand, Rail-Footer mit `LoginStatus`/`#change-password-link` | Offen | — |
-| 5 | Chrome | `LoginStatus.razor`: hartkodierte Texte auf resx | Offen | — |
-| 6 | Action-Bar | `ribbon.css` + `theme.Dark.Ribbon.css`: Glaspillen-Gruppen, Teal-Primary, Mobile-Restyle | Offen | — |
-| 7 | Komponenten | Alle `theme.Dark.*.css` auf neue Tokens mappen (harte Farben → Variablen, Panels → Glas) | Offen | — |
-| 8 | Komponenten | `app.*.css` Struktur-Feinheiten (Radien, Karten) je Komponente | Offen | — |
-| 9 | Home | `app.Home*.css`/`theme.Dark.Home*.css`: Mitteilungs-Banner, KPI-Expressivität, Fav-Cards | Offen | — |
-| 10 | Help-Surface | `help-page.css` auf Palette heben | Offen | — |
-| 11 | Hygiene | `theme.Dark.SetupNotificationsTab.css.css` löschen; `manifest.json`-Farben fixen; `MainLayout`-Doppel-CSS-Links entfernen; `App.razor`-Link-Manifest prüfen | Offen | — |
-| 12 | Build | `dotnet build` 0 Fehler | Offen | — |
-| 13 | Tests | Unit (2511) + Integration (180) grün | Offen | — |
-| 14 | Tests | E2E (176) gegen Baseline `inventory/tests.md` — keine neuen Fehlschläge | Offen | — |
-| 15 | Abnahme | Nachher-Screenshots aller Ansichten + Sichtprüfung | Offen | — |
-| 16 | Docs | `Docs/help/`, `README.md`, `docs/RELEASE_NOTES.md` anpassen | Offen | — |
+| 1 | Ressourcen | Neue resx-Keys `Ribbon_Group_View`, `Ribbon_Group_Data`, `Hint_RebuildAggregates` (de+en+neutral); Werte `Setup_Section_Update`, `SetupBackup_Titel`, `Ribbon_SetPassword` angeglichen; leere `*.resx.new`-Artefakte entfernt | Erledigt | `RibbonGroupOrderPlaywrightTests.SetupCard_RebuildAggregatesTooltip_IsLocalized`, `SetupCardViewModelTests.GetRibbonRegisters_AfterLoad_UsesExpectedActionSizes` |
+| 2 | Basis-VM | `SetBackNavigation`/`InitBack` von `BaseCardViewModel` nach `BaseViewModel` hochgezogen (`ICardInitializable` weiterhin erfüllt) | Erledigt | `RibbonConfigTests.BankAccountList_BackContext_TogglesNavigationTab` |
+| 3 | Ribbon | Empty-Group-Filter: `groups.RemoveAll(g => g.Items.Count == 0)` in `Ribbon.razor` `BuildTabsToRender` (L221) | Erledigt | `RibbonTests.HiddenOnlyGroup_IsNotRendered` |
+| 4 | ListPage | `?back=`-Parameter, `SetBackNavigation` nach Provider-Erzeugung (mit `IsSameOriginUri`-Sanitizer), `case "Back"` bevorzugt validierten `Back`-Parameter, `OpenBudgetReport` mit `?back=`-Ziel, `.card-page-content`-Wrapper um else-Block (Overlay-Hosts außerhalb) | Erledigt | `AccountsBackNavigationPlaywrightTests` (2 Facts), `ListPageContentPanelPlaywrightTests`, `BudgetReportDemoDataE2ETests` (angepasst), `NavigationManagerExtensionsTests` |
+| 5 | BudgetReport | `?back=`-Parameter, `SetBackNavigation` in `OnParametersSet` (mit `IsSameOriginUri`-Sanitizer), `case "Back"` → `Nav.NavigateTo(Back)` | Erledigt | `BudgetReportBackNavigationPlaywrightTests`, `RibbonConfigTests.BudgetReport_*` (3 Facts) |
+| 6 | ViewModels | Ribbon-Zielkonfiguration aller 20 ViewModels: Gruppen, `Sort`-Konvention, `UiRibbonItemSize`, bedingte Navigieren-Tabs (`BankAccountListViewModels`, `BudgetReportViewModel`), `BudgetRuleListViewModel` Sort=60 | Erledigt | `RibbonConfigTests`, `ContactsViewModelTests.GetRibbon_UsesManageGroup_WithAllActionsLarge`, `UsersViewModelTests.GetRibbon_ShouldComposeGroups_ByState`, `AccountsViewModelTests.SetFilter_AffectsLoad_AndRibbon` |
+| 7 | CSS | `button.icon-btn.danger { color: #000; }` in `theme.Dark.css` (Nicht-Hover) + Hover-Fix `button.icon-btn.danger:hover` → `color: #2a0606` auf `var(--danger)` | Erledigt | `SetupBackupTabPlaywrightTests` |
+| 8 | Favicon | `scripts/icons/generate_favicon.py`, `finance_manager.svg`-Master, `finance_manager-64x64.ico` (Multi-Size), `finance_manager.png` (1024²), Einbindung in `App.razor` + `manifest.json` (`#080a0f`) | Erledigt | Kein direkter Test |
+| 9 | Tests | Betroffene bUnit-Tests angepasst (Accounts, SetupCard, Users, Contacts), `NavigationManagerExtensionsTests` neu, E2E-Fix `BudgetReportDemoDataE2ETests`, Erweiterungen `AccountsOverviewStatisticsPlaywrightTests` + `RibbonGroupOrderPlaywrightTests` (5 neue Facts), neue E2E-Dateien (Accounts/BudgetReport-Back, ListPage-Panel, SetupBackup-Tab mit `ExpandSectionAsync`-Korrektur) | Erledigt | `dotnet build` Web/Tests/Tests.E2E: 0 Fehler; Testausführung in Lifecycle-Schritt 10 |
+| 10 | GitHub-Issues | 16 Issues angelegt: A1–A6 (#593–598) + B1–B10 (#599–608), jeweils mit „Ref #590"; Zusatz #609 | Erledigt | `gh issue list` (verifiziert) |
+| 11 | Screenshots | Gezielte Nachweis-Shots vorhanden: `scripts/screenshots/out-review/` (4 PNGs: Sicherungs-Tab Delete-Icon Nicht-Hover/Hover, Favicon SVG/PNG) via `fm-review-shots.js`; **`Docs/screenshots` nicht neu generiert** — `generate-screenshots.js` nicht gelaufen, kein Diff seit `af8c80d0` (plan.md L290–292 verlangt die Aktualisierung; terminlich deckt sich der Schritt mit Lifecycle-Schritt 10) | Offen | — |

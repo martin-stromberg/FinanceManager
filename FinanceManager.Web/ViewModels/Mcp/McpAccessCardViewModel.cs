@@ -778,8 +778,8 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
 
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navigation),
-            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manage)
+            new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, navigation, Sort: 0),
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manage, Sort: 10)
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

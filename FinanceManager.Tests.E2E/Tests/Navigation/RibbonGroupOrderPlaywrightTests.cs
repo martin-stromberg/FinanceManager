@@ -95,6 +95,112 @@ public sealed class RibbonGroupOrderPlaywrightTests
         await AssertNavigationGroupFirstAndLinkedGroupLastAsync(page);
     }
 
+    /// <summary>
+    /// On the contacts list page the ribbon renders the groups "Verwalten" then "Ansicht" in this
+    /// order — the target split after the ribbon rework.
+    /// </summary>
+    [Fact]
+    public async Task ContactsList_RendersManageThenViewGroup()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await LoginNewUserAsync(page, "ribbon-order-contacts");
+
+        await page.GotoAsync("/list/contacts");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var footers = await GetGroupFooterTextsAsync(page);
+        footers.Count.Should().Be(2);
+        AssertFooter(footers[0], "Verwalten", "Manage");
+        AssertFooter(footers[1], "Ansicht", "View");
+    }
+
+    /// <summary>
+    /// On the securities list page the ribbon renders "Verwalten", "Ansicht" and "Berichte"
+    /// in this order — including the promoted large portfolio-analysis action.
+    /// </summary>
+    [Fact]
+    public async Task SecuritiesList_RendersManageViewReportsGroups()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await LoginNewUserAsync(page, "ribbon-order-securities");
+
+        await page.GotoAsync("/list/securities");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var footers = await GetGroupFooterTextsAsync(page);
+        footers.Count.Should().Be(3);
+        AssertFooter(footers[0], "Verwalten", "Manage");
+        AssertFooter(footers[1], "Ansicht", "View");
+        AssertFooter(footers[2], "Berichte", "Reports");
+    }
+
+    /// <summary>
+    /// On the users list page (admin) the ribbon renders exactly the "Verwalten" group — the
+    /// missing Reload/ClearSearch actions must not leave behind an empty "Ansicht" group.
+    /// </summary>
+    [Fact]
+    public async Task UsersList_RendersNoEmptyViewGroup()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await LoginNewUserAsync(page, "ribbon-order-users", isAdmin: true);
+
+        await page.GotoAsync("/list/users");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var footers = await GetGroupFooterTextsAsync(page);
+        footers.Count.Should().Be(1);
+        AssertFooter(footers[0], "Verwalten", "Manage");
+        footers.Should().NotContain(t => t == "Ansicht" || t == "View", "no empty view group may render while its actions are missing");
+    }
+
+    /// <summary>
+    /// On the setup card (admin) the ribbon groups follow the sort convention:
+    /// Verwalten → Daten → Profil → KI → Programmversion → Sicherungen.
+    /// </summary>
+    [Fact]
+    public async Task SetupCard_RendersGroupsInConventionOrder()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await LoginNewUserAsync(page, "ribbon-order-setup", isAdmin: true);
+
+        await page.GotoAsync("/card/setup");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var footers = await GetGroupFooterTextsAsync(page);
+        footers.Count.Should().Be(6);
+        AssertFooter(footers[0], "Verwalten", "Manage");
+        AssertFooter(footers[1], "Daten", "Data");
+        AssertFooter(footers[2], "Profil", "Profile");
+        AssertFooter(footers[3], "KI", "AI");
+        AssertFooter(footers[4], "Programmversion", "Program version");
+        AssertFooter(footers[5], "Sicherungen", "Backups");
+    }
+
+    /// <summary>
+    /// The RebuildAggregates action on the setup card exposes a localized tooltip instead of the
+    /// raw resource key — the Pages-localizer key was added alongside the new "Daten" group.
+    /// </summary>
+    [Fact]
+    public async Task SetupCard_RebuildAggregatesTooltip_IsLocalized()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await LoginNewUserAsync(page, "ribbon-tooltip-setup", isAdmin: true);
+
+        await page.GotoAsync("/card/setup");
+        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var action = page.Locator("button#RebuildAggregates").First;
+        await action.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+        var tooltip = await action.GetAttributeAsync("title");
+        tooltip.Should().NotBeNullOrWhiteSpace("the action must carry a tooltip");
+        tooltip.Should().NotBe("Hint_RebuildAggregates", "the tooltip must be the translated text, not the raw resource key");
+    }
+
     private static async Task AssertNavigationGroupFirstAndLinkedGroupLastAsync(IPage page)
     {
         var groups = page.Locator(".fm-ribbon-group");
@@ -106,13 +212,32 @@ public sealed class RibbonGroupOrderPlaywrightTests
             .Should().Be(1, "the last ribbon group must contain a linked-information action");
     }
 
-    private async Task<FinanceManager.Domain.Users.User> LoginNewUserAsync(IPage page, string prefix)
+    private static async Task<List<string>> GetGroupFooterTextsAsync(IPage page)
+    {
+        var footers = page.Locator(".fm-ribbon-group-footer");
+        await footers.First.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+        var texts = new List<string>();
+        var count = await footers.CountAsync();
+        for (var i = 0; i < count; i++)
+        {
+            // TextContentAsync statt InnerTextAsync: der Gruppen-Footer wird per CSS
+            // text-transform: uppercase gerendert; die Assertions pruefen die Ressourcentitel.
+            texts.Add((await footers.Nth(i).TextContentAsync() ?? string.Empty).Trim());
+        }
+
+        return texts;
+    }
+
+    private static void AssertFooter(string actual, params string[] expectedAlternates)
+        => expectedAlternates.Should().Contain(actual, $"unexpected ribbon group title '{actual}'");
+
+    private async Task<FinanceManager.Domain.Users.User> LoginNewUserAsync(IPage page, string prefix, bool isAdmin = false)
     {
         var username = $"{prefix}-{Guid.NewGuid():N}";
         const string password = "Secret123";
         var auth = new AuthGateway(page, _fixture.BaseUrl);
         var seeder = new TestUserSeeder(_fixture.DatabasePath);
-        var user = await seeder.EnsureUserAsync(username, password, timeZoneId: "UTC");
+        var user = await seeder.EnsureUserAsync(username, password, timeZoneId: "UTC", isAdmin: isAdmin);
         await auth.LoginAsync(username, password);
         return user;
     }

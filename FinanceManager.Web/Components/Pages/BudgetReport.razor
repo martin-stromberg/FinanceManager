@@ -8,6 +8,7 @@
 @using FinanceManager.Shared.Dtos.Budget
 @using FinanceManager.Shared.Dtos.Postings
 @using FinanceManager.Web.Components.Shared
+@using FinanceManager.Web.Extensions
 @using FinanceManager.Web.ViewModels.Budget
 @using FinanceManager.Web.ViewModels.Common
 @using System.Globalization
@@ -18,11 +19,19 @@
     private BudgetReportViewModel? _vm;
     private bool _initialized;
 
+    [Parameter, SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
+
     protected override void OnInitialized()
     {
         _vm = new BudgetReportViewModel(Services);
         _vm.StateChanged += VmOnStateChanged;
         _vm.UiActionRequested += OnUiActionRequested;
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Sanitize the back target: only same-origin URIs may be offered as back navigation.
+        _vm?.SetBackNavigation(Nav.IsSameOriginUri(Back) ? Back : null);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -56,6 +65,16 @@
 
     private void OnUiActionRequested(object? sender, BaseViewModel.UiActionEventArgs? e)
     {
+        if (e?.Action == "Back")
+        {
+            // The back target is validated against the app origin to prevent open redirects.
+            if (Nav.IsSameOriginUri(Back))
+            {
+                Nav.NavigateTo(Back!);
+            }
+            return;
+        }
+
         if (e?.Action == "ShowSettings")
         {
             _vm?.ShowSettings();

@@ -158,6 +158,44 @@ public class RibbonTests : Bunit.BunitContext
     }
 
     /// <summary>
+    /// A tab whose actions are all marked <c>Hidden = true</c> must not leave behind an empty rendered
+    /// group: after hidden actions are filtered out, the empty group (frame plus footer title) is
+    /// dropped entirely, while sibling groups with visible actions still render normally.
+    /// </summary>
+    [Fact]
+    public void HiddenOnlyGroup_IsNotRendered()
+    {
+        var registers = new List<UiRibbonRegister>
+        {
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab>
+            {
+                new UiRibbonTab("Versteckte Gruppe", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("hidden", "Versteckt", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+                    {
+                        Hidden = true
+                    }
+                }),
+                new UiRibbonTab("Sichtbare Gruppe", new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("visible", "Sichtbar", "<svg></svg>", UiRibbonItemSize.Small, false, null, null)
+                })
+            })
+        };
+
+        var cut = RenderRibbon(registers);
+
+        Assert.Single(cut.FindAll(".fm-ribbon-group"));
+        var footers = cut.FindAll(".fm-ribbon-group-footer");
+        Assert.Single(footers);
+        Assert.Equal("Sichtbare Gruppe", footers[0].TextContent.Trim());
+        Assert.DoesNotContain("Versteckte Gruppe", cut.Markup);
+        var mobilePanels = cut.FindAll(".fm-ribbon-mobile-group-panel");
+        Assert.Single(mobilePanels);
+        Assert.Equal("Sichtbare Gruppe", mobilePanels[0].QuerySelector(".fm-ribbon-mobile-group-title")?.TextContent.Trim());
+    }
+
+    /// <summary>
     /// In the mobile layout, the collapsed group panel shows the tab's title text and a hamburger toggle
     /// button, even before the menu has ever been opened.
     /// </summary>

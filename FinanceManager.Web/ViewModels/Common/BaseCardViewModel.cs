@@ -13,19 +13,12 @@ namespace FinanceManager.Web.ViewModels.Common
     public abstract class BaseCardViewModel<TKeyValue> : BaseViewModel, ISymbolAssignableCard, ICardInitializable
     {
         private string? _initPrefill;
-        private string? _initBack;
 
         /// <summary>
         /// Sets an optional initial prefill payload used when the card is first created/initialized.
         /// </summary>
         /// <param name="prefill">Arbitrary prefill string provided by the caller or navigation context.</param>
         public void SetInitValue(string? prefill) => _initPrefill = prefill;
-
-        /// <summary>
-        /// Sets an optional back navigation URL used by the UI to navigate back from the card.
-        /// </summary>
-        /// <param name="backUrl">Relative or absolute URL to navigate back to, or <c>null</c> to clear.</param>
-        public void SetBackNavigation(string? backUrl) => _initBack = backUrl;
 
         /// <summary>
         /// Default initialize implementation which delegates to <see cref="LoadAsync(Guid)"/>.
@@ -46,11 +39,6 @@ namespace FinanceManager.Web.ViewModels.Common
         /// Optional initial prefill string (available to derived classes).
         /// </summary>
         protected string? InitPrefill => _initPrefill;
-
-        /// <summary>
-        /// Optional back navigation URL (available to derived classes).
-        /// </summary>
-        protected string? InitBack => _initBack;
 
         /// <summary>
         /// Loads the card for the given identifier. Derived classes must implement loading and set the CardRecord / Loading / Error state accordingly.

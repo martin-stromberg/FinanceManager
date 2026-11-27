@@ -259,6 +259,35 @@ public sealed class AccountsOverviewStatisticsPlaywrightTests
     }
 
     /// <summary>
+    /// The ClearSearch ribbon action stays disabled while no search term is set, becomes enabled
+    /// once the user types into the filter, and returns to disabled after the filter is cleared.
+    /// </summary>
+    [Fact]
+    public async Task AccountsOverview_ClearSearch_DisabledUntilSearchTermIsSet()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        var user = await LoginNewUserAsync(page, "accounts-clearsearch-state");
+        var seed = new AccountsApiSeedHelper(page, _fixture.DatabasePath, user.Id);
+        var accountName = $"Disabled Clear {Guid.NewGuid():N}";
+        await seed.CreateAccountWithBalanceAsync(accountName, "DE88100100100000000009", AccountType.Giro, 10m, "Clear State Bank");
+
+        var list = new ListPageGateway(page);
+        await list.OpenAccountsAsync();
+        await list.WaitForAccountVisibleAsync(accountName);
+
+        var clearSearch = page.Locator("button#ClearSearch");
+        await clearSearch.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+        await Microsoft.Playwright.Assertions.Expect(clearSearch).ToBeDisabledAsync();
+
+        await list.SearchAccountsAsync(accountName, accountName);
+        await Microsoft.Playwright.Assertions.Expect(clearSearch).ToBeEnabledAsync();
+
+        await list.ClearSearchAsync();
+        await Microsoft.Playwright.Assertions.Expect(clearSearch).ToBeDisabledAsync();
+    }
+
+    /// <summary>
     /// ClearSearch restores the unfiltered table, KPI total and donut groups.
     /// </summary>
     [Fact]
