@@ -9,6 +9,6 @@ Ziel-Branch: `task/issue-590-...-schritt-2-variante-b` (PR #591)
 - [x] E2E-Abnahme-Screenshots erzeugt und sichtgeprüft
 - [x] Lifecycle-Artefakte aktualisiert
 - [x] Commit + Push auf Variante-B-Branch
-- [ ] Kommentar auf PR #592 (Anwender-Kommunikation)
-- [ ] PR-Checks #591 überwachen
-- [ ] complete.json schreiben
+- [x] Kommentar auf PR #592 (Anwender-Kommunikation)
+- [x] PR-Checks #591 überwachen (alle grün: build & test, static checks, backmerge)
+- [x] complete.json schreiben
