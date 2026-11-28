@@ -18,9 +18,9 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
 
         var home = await probe.ExpectApiAsync("/api/notifications", sequence, login.UserId);
         var interactiveHome = await probe.ExpectApiAsync("/api/notifications", home.Sequence, login.UserId);
-        await page.Locator("a[href='/list/accounts']").First.ClickAsync();
+        await page.Locator("a[href='list/accounts']").First.ClickAsync();
         var accounts = await probe.ExpectApiAsync("/api/accounts/statistics", interactiveHome.Sequence, login.UserId);
-        await page.Locator("a[href='/']").First.ClickAsync();
+        await page.Locator("a[href='']").First.ClickAsync();
         await probe.ExpectApiAsync("/api/notifications", accounts.Sequence, login.UserId);
         new Uri(page.Url).AbsolutePath.Should().Be("/");
     }
@@ -42,7 +42,7 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
         {
             DateTimeOffset.UtcNow.Should().BeBefore(deadline);
             var route = accounts ? "/list/accounts" : "/";
-            await page.Locator($"a[href='{route}']").First.ClickAsync();
+            await page.Locator($"a[href='{route.TrimStart('/')}']").First.ClickAsync();
             last = await probe.ExpectApiAsync(accounts ? "/api/accounts/statistics" : "/api/notifications", sequence, login.UserId);
             sequence = last.Sequence;
             _ = await probe.ReadBrowserTokenAsync();
@@ -83,7 +83,7 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
         await Task.Delay(5000, TestContext.Current.CancellationToken);
         fixture.ReadObservations().Count(e => e.Path == "/api/background-tasks/active").Should().Be(pollCount);
         var sequence = fixture.ReadObservations().Max(e => e.Sequence);
-        await page.Locator("a[href='/list/accounts']").First.ClickAsync();
+        await page.Locator("a[href='list/accounts']").First.ClickAsync();
         await probe.ExpectApiAsync("/api/accounts/statistics", sequence, login.UserId, 401);
         await page.WaitForURLAsync(url => new Uri(url).AbsolutePath == "/login");
         Uri.UnescapeDataString(new Uri(page.Url).Query).Should().Contain("returnUrl=/list/accounts");
@@ -106,7 +106,7 @@ public sealed class SessionExpiryPlaywrightTests(SessionExpiryWebAppFixture fixt
         await Task.Delay(500, TestContext.Current.CancellationToken);
         new Uri(page.Url).AbsolutePath.Should().Be("/");
         var sequence = fixture.ReadObservations().Max(e => e.Sequence);
-        await page.Locator("a[href='/list/accounts']").First.ClickAsync();
+        await page.Locator("a[href='list/accounts']").First.ClickAsync();
         await probe.ExpectApiAsync("/api/accounts/statistics", sequence, login.UserId, 401);
         await page.WaitForURLAsync(url => new Uri(url).AbsolutePath == "/login");
     }

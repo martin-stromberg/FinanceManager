@@ -17,49 +17,49 @@
         {
             <ul class="nav-links">
                 <li>
-                    <NavLink href="/" Match="NavLinkMatch.All" title="@L["Nav_Home"]">
+                    <NavLink href="" Match="NavLinkMatch.All" title="@L["Nav_Home"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#layers" /></svg>
                         <span class="nav-label">@L["Nav_Home"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/list/accounts" title="@L["Nav_Accounts"]">
+                    <NavLink href="list/accounts" title="@L["Nav_Accounts"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#accounts" /></svg>
                         <span class="nav-label">@L["Nav_Accounts"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/list/contacts" title="@L["Nav_Contacts"]">
+                    <NavLink href="list/contacts" title="@L["Nav_Contacts"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#groups" /></svg>
                         <span class="nav-label">@L["Nav_Contacts"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/list/savings-plans" title="@L["Nav_Plans"]">
+                    <NavLink href="list/savings-plans" title="@L["Nav_Plans"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#calendar" /></svg>
                         <span class="nav-label">@L["Nav_Plans"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/list/securities" title="@L["Nav_Securities"]">
+                    <NavLink href="list/securities" title="@L["Nav_Securities"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#security" /></svg>
                         <span class="nav-label">@L["Nav_Securities"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/list/statement-drafts" title="@L["Nav_StatementDrafts"]">
+                    <NavLink href="list/statement-drafts" title="@L["Nav_StatementDrafts"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#postings" /></svg>
                         <span class="nav-label">@L["Nav_StatementDrafts"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/list/budget/purposes" title="@L["Nav_Budget"]">
+                    <NavLink href="list/budget/purposes" title="@L["Nav_Budget"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#tag" /></svg>
                         <span class="nav-label">@L["Nav_Budget"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/reports" title="@L["Nav_Reports"]">
+                    <NavLink href="reports" title="@L["Nav_Reports"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#chart" /></svg>
                         <span class="nav-label">@L["Nav_Reports"]</span>
                     </NavLink>
@@ -68,27 +68,27 @@
                 @if (CurrentUser.IsAdmin)
                 {
                     <li>
-                        <NavLink href="/list/users" title="@L["Nav_UserManagement"]">
+                        <NavLink href="list/users" title="@L["Nav_UserManagement"]">
                             <svg aria-hidden="true"><use href="icons/sprite.svg#account" /></svg>
                             <span class="nav-label">@L["Nav_UserManagement"]</span>
                         </NavLink>
                     </li>
                 }
                 <li>
-                    <NavLink href="/list/mcp-accesses" title="@L["Nav_McpAccesses"]">
+                    <NavLink href="list/mcp-accesses" title="@L["Nav_McpAccesses"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#key" /></svg>
                         <span class="nav-label">@L["Nav_McpAccesses"]</span>
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink href="/card/setup" title="@L["Nav_Settings"]">
+                    <NavLink href="card/setup" title="@L["Nav_Settings"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#settings" /></svg>
                         <span class="nav-label">@L["Nav_Settings"]</span>
                     </NavLink>
                 </li>
                 <li class="nav-sep" aria-hidden="true"></li>
                 <li>
-                    <NavLink href="/help" title="@L["Nav_Help"]">
+                    <NavLink href="help" title="@L["Nav_Help"]">
                         <svg aria-hidden="true"><use href="icons/sprite.svg#info" /></svg>
                         <span class="nav-label">@L["Nav_Help"]</span>
                     </NavLink>
@@ -104,7 +104,7 @@
                 <span class="nav-collapse-label">@L["Nav_Menu_Expand"]</span>
             </button>
             <div class="user-area">
-                <NavLink href="/legal" class="user-area-link" title="@L["Nav_Legal"]">@L["Nav_Legal"]</NavLink>
+                <NavLink href="legal" class="user-area-link" title="@L["Nav_Legal"]">@L["Nav_Legal"]</NavLink>
                 <LoginStatus />
             </div>
         }
