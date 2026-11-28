@@ -33,7 +33,11 @@
             <g class="portfolio-bar-line-chart-labels">
                 @foreach (var p in _points)
                 {
-                    @((MarkupString)$"<text x='{Inv(p.X)}' y='{Inv(AxisLabelY)}' text-anchor='{p.Anchor}'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
+                    // clamp the label midpoint into the viewBox so edge labels can never be
+                    // clipped; estimated width 10.5 units per character (18px font)
+                    var est = p.Label.Length * 10.5;
+                    var lx = Math.Clamp(p.X, est / 2, 1000 - est / 2);
+                    @((MarkupString)$"<text x='{Inv(lx)}' y='{Inv(AxisLabelY)}' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
                 }
             </g>
         </svg>
@@ -80,7 +84,7 @@
     /// <summary>Optional formatter for the tooltip of each data point; defaults to "Label: line / bar" with "N2" values.</summary>
     [Parameter] public Func<PortfolioBarLineChartPoint, string>? TooltipFormatter { get; set; }
 
-    private sealed record RenderPoint(double X, string Label, string Anchor, string Tooltip, double LineY, decimal BarValue, double BarX, double BarY, double BarHeight);
+    private sealed record RenderPoint(double X, string Label, string Tooltip, double LineY, decimal BarValue, double BarX, double BarY, double BarHeight);
 
     private readonly List<RenderPoint> _points = new();
     private string _linePath = string.Empty;
@@ -133,21 +137,17 @@
             var barY = ChartBottom - (double)((point.BarValue - barMin) / (barMax - barMin)) * barAreaHeight;
             var tooltip = FormatTooltip(point);
 
-            // edge labels anchor inward so they never overflow the viewBox: the first label
-            // starts at the left edge, the last ends at the right edge
-            var anchor = Points.Count == 1 ? "middle"
-                : i == 0 ? "start"
-                : i == Points.Count - 1 ? "end"
-                : "middle";
+            // keep edge bars inside the plot area — a wide bar at the first/last data point
+            // would otherwise overflow the viewBox edge just like the labels did
+            var barX = Math.Clamp(x - _barWidth / 2, ChartLeft, ChartRight - _barWidth);
 
             _points.Add(new RenderPoint(
                 x,
                 point.Label,
-                anchor,
                 tooltip,
                 lineY,
                 point.BarValue,
-                x - _barWidth / 2,
+                barX,
                 Math.Min(barY, baselineY),
                 Math.Abs(barY - baselineY)));
         }

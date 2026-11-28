@@ -2,9 +2,9 @@ namespace FinanceManager.Tests.E2E;
 
 /// <summary>
 /// End-to-end verification of the chart edge-label fix (issue #610): the last x-axis label of the
-/// budget report line chart was clipped at the right SVG edge because all labels were
-/// middle-anchored. Edge labels now anchor inward (first 'start', last 'end'). Screenshots for
-/// desktop and a narrow mobile viewport are captured for the visual acceptance.
+/// budget report line chart was clipped at the right SVG edge. Label midpoints are now clamped
+/// into the viewBox (estimated width 10.5 units per character) so edge labels stay fully inside.
+/// Screenshots for desktop and a narrow mobile viewport are captured for the visual acceptance.
 /// </summary>
 [Collection(PlaywrightCollection.CollectionName)]
 public sealed class BudgetChartLabelsPlaywrightTests
@@ -21,12 +21,12 @@ public sealed class BudgetChartLabelsPlaywrightTests
     }
 
     /// <summary>
-    /// The budget report line chart must draw at least two x-axis labels, with the first label
-    /// start-anchored and the last label end-anchored so both stay fully inside the viewBox —
-    /// on desktop and on a narrow mobile viewport.
+    /// The budget report line chart must draw at least two x-axis labels, all middle-anchored with
+    /// their midpoints clamped into the viewBox — the last label is demonstrably displaced inward
+    /// — on desktop and on a narrow mobile viewport.
     /// </summary>
     [Fact]
-    public async Task BudgetReport_ChartEdgeLabels_AnchorInward()
+    public async Task BudgetReport_ChartEdgeLabels_StayInsideViewBox()
     {
         await using var session = await _fixture.CreateSessionAsync();
         var page = session.Page;
@@ -38,21 +38,28 @@ public sealed class BudgetChartLabelsPlaywrightTests
 
         var count = await labels.CountAsync();
         Assert.True(count >= 2, $"expected at least 2 x-axis labels, got {count}");
-        Assert.Equal("start", await labels.First.GetAttributeAsync("text-anchor"));
-        Assert.Equal("end", await labels.Last.GetAttributeAsync("text-anchor"));
 
-        // last label must end at or before the right drawing edge (x=980 of the 1000-unit viewBox)
-        var lastX = double.Parse(await labels.Last.GetAttributeAsync("x") ?? "0",
-            System.Globalization.CultureInfo.InvariantCulture);
-        Assert.True(lastX <= 980.0, $"last label x={lastX} exceeds the right drawing edge");
+        // every label's estimated extent must stay inside the 1000-unit viewBox (per-char width
+        // estimate mirrors the component: 10.5 units at 18px font)
+        foreach (var label in await labels.AllAsync())
+        {
+            Assert.Equal("middle", await label.GetAttributeAsync("text-anchor"));
+            var text = await label.TextContentAsync() ?? string.Empty;
+            var x = double.Parse(await label.GetAttributeAsync("x") ?? "0",
+                System.Globalization.CultureInfo.InvariantCulture);
+            var half = text.Length * 10.5 / 2;
+            Assert.True(x - half >= 0, $"label '{text}' overflows the left edge (x={x})");
+            Assert.True(x + half <= 1000, $"label '{text}' overflows the right edge (x={x})");
+        }
 
         await CaptureAsync(page, "s5-budget-report-chart-labels-desktop");
 
         // narrow mobile viewport — the same viewBox rule keeps labels inside the scaled chart
         await page.SetViewportSizeAsync(420, 800);
         await page.WaitForTimeoutAsync(800);
-        Assert.Equal("start", await labels.First.GetAttributeAsync("text-anchor"));
-        Assert.Equal("end", await labels.Last.GetAttributeAsync("text-anchor"));
+        var lastX = double.Parse(await labels.Last.GetAttributeAsync("x") ?? "0",
+            System.Globalization.CultureInfo.InvariantCulture);
+        Assert.True(lastX <= 980.0, $"last label x={lastX} exceeds the right drawing edge");
         await CaptureAsync(page, "s5-budget-report-chart-labels-mobile");
     }
 
