@@ -294,9 +294,13 @@ else
             }
             else if(Provider.Items.Count==0 && !Provider.Loading)
             {
-                <span style="opacity:.6;font-size:.75rem;">@EmptyText</span>
+                // no EmptyText when the provider rendered a hint record instead of data rows
+                if (Provider.Records == null || Provider.Records.Count == 0)
+                {
+                    <span style="opacity:.6;font-size:.75rem;">@EmptyText</span>
+                }
             }
-            else if(!Provider.CanLoadMore)
+            else if(!Provider.CanLoadMore && Provider.Items.Count > 0)
             {
                 <div class="end-of-list" style="opacity:.6;font-size:.65rem;">@EndOfListText</div>
             }

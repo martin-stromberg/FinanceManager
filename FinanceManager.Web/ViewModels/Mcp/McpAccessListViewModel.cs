@@ -54,6 +54,9 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
     /// <summary>
     /// Indicates whether the last load reported <c>Err_Mcp_Disabled</c> (MCP feature disabled server-side).
     /// The list then renders a friendly hint record instead of data rows.
+    /// The default <c>false</c> is intentionally fail-open: until the first status check completes
+    /// the New action stays enabled and the create wizard performs its own status check as the
+    /// second line of defense.
     /// </summary>
     public bool IsMcpDisabled { get; private set; }
 
@@ -154,6 +157,10 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
     /// </summary>
     public void RequestCreateWizard()
     {
+        if (IsMcpDisabled)
+        {
+            return;
+        }
         var parms = new Dictionary<string, object?>
         {
             ["OverlayTitle"] = Localizer?["McpWizard_Title"].Value
@@ -175,8 +182,8 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                 localizer["Ribbon_New"].Value,
                 "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
-                false,
-                null,
+                IsMcpDisabled,
+                IsMcpDisabled ? localizer["Mcp_Disabled_Hint"].Value : null,
                 new Func<Task>(() =>
                 {
                     RequestCreateWizard();

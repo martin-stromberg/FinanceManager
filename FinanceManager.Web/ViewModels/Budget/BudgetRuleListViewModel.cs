@@ -25,6 +25,15 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
     public Guid? BudgetCategoryId { get; private set; }
 
     /// <summary>
+    /// Whether a usable parent context (purpose or category) exists. Without one the list stays
+    /// empty and the New action is disabled — a rule cannot be created without its parent.
+    /// </summary>
+    /// <returns><c>true</c> when a purpose or category id is set; otherwise <c>false</c>.</returns>
+    private bool HasContext
+        => (BudgetPurposeId ?? Guid.Empty) != Guid.Empty
+            || (BudgetCategoryId ?? Guid.Empty) != Guid.Empty;
+
+    /// <summary>
     /// Creates a new instance.
     /// </summary>
     public BudgetRuleListViewModel(IServiceProvider services) : base(services)
@@ -65,7 +74,7 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
         // No paging for embedded list right now.
         CanLoadMore = false;
 
-        if ((BudgetPurposeId ?? Guid.Empty) == Guid.Empty && (BudgetCategoryId ?? Guid.Empty) == Guid.Empty)
+        if (!HasContext)
         {
             Items.Clear();
             return;
@@ -81,7 +90,7 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
             }
             else
             {
-                list = await _api.Budgets_ListRulesByCategoryAsync(BudgetCategoryId!.Value);
+                list = await _api.Budgets_ListRulesByCategoryAsync(BudgetCategoryId.GetValueOrDefault());
             }
 
             Items.Clear();
@@ -123,6 +132,26 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
             new ListColumn("end", L["List_Th_End"], "15%", ListColumnAlign.Left),
         };
 
+        if (!HasContext)
+        {
+            // muted hint row so the reason for the disabled New action is visible on every
+            // device — a tooltip on a disabled button is unreachable via touch and keyboard.
+            Records = new List<ListRecord>
+            {
+                new ListRecord(
+                    new List<ListCell>
+                    {
+                        new ListCell(ListCellKind.Text, Text: L["Budget_Rule_New_SaveFirst"].Value, Muted: true),
+                        new ListCell(ListCellKind.Text, Text: string.Empty, Muted: true),
+                        new ListCell(ListCellKind.Text, Text: string.Empty, Muted: true),
+                        new ListCell(ListCellKind.Text, Text: string.Empty, Muted: true),
+                        new ListCell(ListCellKind.Text, Text: string.Empty, Muted: true)
+                    },
+                    Item: null)
+            };
+            return;
+        }
+
         Records = Items.Select(i => new ListRecord(new List<ListCell>
         {
             new ListCell(ListCellKind.Text, Text: i.Interval),
@@ -136,6 +165,8 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
     /// <inheritdoc />
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
+        var noContext = !HasContext;
+
         var tab = new UiRibbonTab(localizer["Ribbon_Group_Rules"], new List<UiRibbonAction>
         {
             new UiRibbonAction(
@@ -143,13 +174,19 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
                 localizer["Ribbon_New"].Value,
                 "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
-                false,
-                null,
+                noContext,
+                noContext ? localizer["Budget_Rule_New_SaveFirst"].Value : null,
                 () =>
                 {
-                    var payload = (BudgetPurposeId.HasValue && BudgetPurposeId.Value != Guid.Empty)
-                        ? $"purpose,{BudgetPurposeId.Value}"
-                        : $"category,{BudgetCategoryId!.Value}";
+                    var payload = BudgetPurposeId is { } pid && pid != Guid.Empty
+                        ? $"purpose,{pid}"
+                        : BudgetCategoryId is { } cid && cid != Guid.Empty
+                            ? $"category,{cid}"
+                            : null;
+                    if (payload is null)
+                    {
+                        return Task.CompletedTask;
+                    }
 
                     RaiseUiActionRequested("NewRule", payload);
                     return Task.CompletedTask;

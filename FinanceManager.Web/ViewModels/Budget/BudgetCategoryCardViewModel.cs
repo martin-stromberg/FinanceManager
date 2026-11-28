@@ -48,7 +48,12 @@ public sealed class BudgetCategoryCardViewModel : BaseCardViewModel<(string Key,
                 var name = !string.IsNullOrWhiteSpace(InitPrefill) ? InitPrefill : string.Empty;
                 Category = new BudgetCategoryDto(Guid.Empty, Guid.Empty, name);
                 CardRecord = BuildCardRecord(Category);
-                EmbeddedList = null;
+
+                // show the rules section with its disabled New action + hint — same pattern
+                // as the unsaved purpose card
+                var rulesNew = CreateSubViewModel<BudgetRuleListViewModel>(singletonPerType: true);
+                await rulesNew.InitializeForCategoryAsync(Guid.Empty);
+                EmbeddedList = rulesNew;
                 return;
             }
 
