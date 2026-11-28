@@ -132,13 +132,22 @@ namespace FinanceManager.Web.ViewModels.Accounts
         /// <returns>A list of <see cref="UiRibbonRegister"/> describing available ribbon tabs and actions.</returns>
         protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
         {
-            var actions = new List<UiRibbonAction>
+            var tabs = new List<UiRibbonTab>();
+            if (!string.IsNullOrWhiteSpace(InitBack))
             {
-                new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true },
-                new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true },
-                new UiRibbonAction("ClearSearch", localizer["Ribbon_ClearSearch"].Value, "<svg><use href='icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; }) { MobileShortcut = true }
-            };
-            var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, actions) };
+                tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
+                {
+                    new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
+                }, Sort: 0));
+            }
+            tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, new List<UiRibbonAction>
+            {
+                new UiRibbonAction("New", localizer["Ribbon_New"].Value, "<svg><use href='icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true }
+            }, Sort: 10));
+            tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, new List<UiRibbonAction>
+            {
+                new UiRibbonAction("ClearSearch", localizer["Ribbon_ClearSearch"].Value, "<svg><use href='icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Large, string.IsNullOrWhiteSpace(Search), null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; }) { MobileShortcut = true }
+            }, Sort: 30));
             return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
         }
 

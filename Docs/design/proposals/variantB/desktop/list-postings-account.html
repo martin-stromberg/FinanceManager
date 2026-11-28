@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Kontakte - FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            base: {
+              950: '#06080c',
+              900: '#0a0d12',
+              850: '#0f131a',
+              800: '#151b24',
+              700: '#1f2836',
+              600: '#2d3748',
+            },
+            teal: {
+              DEFAULT: '#2dd4bf',
+              glow: 'rgba(45, 212, 191, 0.15)',
+              bright: '#5eead4',
+            },
+            violet: {
+              DEFAULT: '#8b5cf6',
+              glow: 'rgba(139, 92, 246, 0.15)',
+              bright: '#a78bfa',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Custom scrollbar & glass surface */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0d12;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2836;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+    .glass-panel {
+      background: rgba(15, 19, 26, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glass-card {
+      background: rgba(21, 27, 36, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glow-teal {
+      box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0a0d12] text-slate-200 font-sans antialiased h-screen flex flex-col md:flex-row overflow-hidden selection:bg-teal-500/30 selection:text-teal-200 relative fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class=" active" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Buchungen eines Kontos</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Csv exportieren"><span class="material-symbols-outlined">download</span><span>Csv exportieren</span></button><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div></div><!-- Background Ambient Glows -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR (Sidebar Collapses on small screens) -->
+<!-- LEFT SIDEBAR: Slim Modern Icon-Rail with Tooltips & Popout Labels (Desktop) -->
+<!-- MAIN VIEWPORT AREA -->
+<main class="flex-1 flex flex-col min-w-0 bg-[#0a0d12] z-10 relative overflow-hidden"><div class="flex flex-col w-full min-w-0 h-full overflow-y-auto">
+<!-- Top Ambient Glow Accents (Self-contained) -->
+<div class="relative w-full px-4 sm:px-6 lg:px-8 pt-6 pb-12 flex flex-col gap-6">
+<!-- BREADCRUMB & CONTEXT HEADER -->
+<!-- FILTER & SEARCH PANEL (GLASS CONTAINER) -->
+<section class="bg-surface-container-lowest/80 backdrop-blur-xl rounded-xl p-4 sm:p-5 border border-white/5 shadow-xl flex flex-col gap-4">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<!-- Search Input -->
+<div class="relative flex-1 max-w-xl">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-11 pr-4 py-2.5 rounded-lg bg-surface-container-high/60 text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md border border-white/10 focus:border-primary focus:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Buchungen durchsuchen (Beschreibung, Empfänger, Betrag)..." type="text">
+</div>
+<!-- Date Range Filter Pill -->
+<div class="flex items-center gap-2 flex-wrap">
+<div class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-high text-on-surface font-body-md text-body-md border border-white/5 cursor-pointer hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
+<span class="font-label-numeric-md text-label-numeric-md">01.05.2024 – 31.05.2024</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] ml-1">expand_more</span>
+</div>
+<!-- Quick Period Dropdown Trigger -->
+<div class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container text-on-surface-variant font-body-md text-body-md border border-white/5">
+<span class="text-xs text-outline font-label-caps">Zeitraum:</span>
+<span class="text-on-surface font-medium">Letzte 30 Tage</span>
+</div>
+<!-- Reset Filter -->
+<button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Filter zurücksetzen" type="button">
+<span class="material-symbols-outlined text-[19px]">restart_alt</span>
+</button>
+</div>
+</div>
+<!-- Quick-Filter Navigation Pills -->
+<div class="flex items-center justify-between gap-4 pt-2 border-t border-white/5 flex-wrap">
+<div class="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+<button class="px-3.5 py-1.5 rounded-md bg-primary-container text-on-primary-fixed font-headline-sm text-headline-sm text-xs font-semibold shadow-sm transition-all">
+            Alle (24)
+          </button>
+<button class="px-3.5 py-1.5 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-md text-xs transition-all">
+            Einnahmen (4)
+          </button>
+<button class="px-3.5 py-1.5 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-md text-xs transition-all">
+            Ausgaben (18)
+          </button>
+<button class="px-3.5 py-1.5 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-md text-xs transition-all">
+            Umbuchungen (2)
+          </button>
+</div>
+<div class="text-xs font-label-caps text-on-surface-variant tracking-wider uppercase hidden sm:block">
+          Sortiert nach: <span class="text-on-surface font-semibold">Datum (Absteigend)</span>
+</div>
+</div>
+</section>
+<!-- DATA TABLE: BUCHUNGSLISTE (FINTECH MODERN DARK GLASS) -->
+<div class="bg-surface-container-lowest/90 backdrop-blur-xl rounded-xl border border-white/5 shadow-2xl overflow-hidden flex flex-col">
+<!-- Table for Desktop screens -->
+<div class="overflow-x-auto min-w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/70 border-b border-white/5 text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase">
+<th class="py-3.5 px-6 font-semibold w-32" scope="col">Datum</th>
+<th class="py-3.5 px-6 font-semibold" scope="col">Beschreibung</th>
+<th class="py-3.5 px-6 font-semibold hidden md:table-cell" scope="col">Empfänger / Absender</th>
+<th class="py-3.5 px-6 font-semibold hidden sm:table-cell" scope="col">Postenart</th>
+<th class="py-3.5 px-6 font-semibold text-right" scope="col">Betrag</th>
+<th class="py-3.5 pr-6 pl-2 text-right w-12" scope="col"><span class="sr-only">Details</span></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5">
+<!-- ROW 1: Gehalt Mai 2024 -->
+<tr class="group hover:bg-white/[0.03] transition-all cursor-pointer">
+<td class="py-4 px-6 whitespace-nowrap font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                28.05.2024
+              </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 border border-primary/20">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                      Gehalt Mai 2024
+                    </div>
+<div class="font-body-sm text-body-sm text-on-surface-variant md:hidden truncate">
+                      Arbeitgeber GmbH
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-on-surface hidden md:table-cell">
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface font-medium truncate">Arbeitgeber GmbH</span>
+<span class="material-symbols-outlined text-primary text-[15px]" title="Verifiziertes deutsches Bankkonto">verified</span>
+</div>
+</td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-primary/10 text-primary font-label-caps text-label-caps border border-primary/20">
+                  Gehalt
+                </span>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-semibold tracking-tight">
+                  + 3.450,00 €
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 2: Miete Juni 2024 -->
+<tr class="group hover:bg-white/[0.03] transition-all cursor-pointer">
+<td class="py-4 px-6 whitespace-nowrap font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                27.05.2024
+              </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center flex-shrink-0 border border-white/5">
+<span class="material-symbols-outlined text-[18px]">home</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                      Miete Juni 2024
+                    </div>
+<div class="font-body-sm text-body-sm text-on-surface-variant md:hidden truncate">
+                      Hausverwaltung Schmidt
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-on-surface hidden md:table-cell">
+                Hausverwaltung Schmidt
+              </td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary-container/30 text-secondary font-label-caps text-label-caps border border-secondary/20">
+                  Fixkosten / Wohnen
+                </span>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold tracking-tight">
+                  - 1.150,00 €
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 3: Supermarkt Einkauf -->
+<tr class="group hover:bg-white/[0.03] transition-all cursor-pointer">
+<td class="py-4 px-6 whitespace-nowrap font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                25.05.2024
+              </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center flex-shrink-0 border border-white/5">
+<span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                      Supermarkt Einkauf
+                    </div>
+<div class="font-body-sm text-body-sm text-on-surface-variant md:hidden truncate">
+                      REWE Markt GmbH
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-on-surface hidden md:table-cell">
+                REWE Markt GmbH
+              </td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-variant text-on-surface-variant font-label-caps text-label-caps border border-white/5">
+                  Lebensmittel
+                </span>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold tracking-tight">
+                  - 84,20 €
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 4: Wertpapiersparplan Ausführung -->
+<tr class="group hover:bg-white/[0.03] transition-all cursor-pointer">
+<td class="py-4 px-6 whitespace-nowrap font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                20.05.2024
+              </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-secondary/15 text-secondary flex items-center justify-center flex-shrink-0 border border-secondary/25">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                      Wertpapiersparplan Ausführung
+                    </div>
+<div class="font-body-sm text-body-sm text-on-surface-variant md:hidden truncate">
+                      Trade Republic Bank GmbH
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-on-surface hidden md:table-cell">
+                Trade Republic Bank GmbH
+              </td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary-container/40 text-secondary-fixed font-label-caps text-label-caps border border-secondary/30">
+                  Wertpapiere
+                </span>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold tracking-tight">
+                  - 250,00 €
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 5: Restaurantbesuch -->
+<tr class="group hover:bg-white/[0.03] transition-all cursor-pointer">
+<td class="py-4 px-6 whitespace-nowrap font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                17.05.2024
+              </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center flex-shrink-0 border border-white/5">
+<span class="material-symbols-outlined text-[18px]">restaurant</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                      Restaurantbesuch
+                    </div>
+<div class="font-body-sm text-body-sm text-on-surface-variant md:hidden truncate">
+                      L'Osteria
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-on-surface hidden md:table-cell">
+                L'Osteria
+              </td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-surface-variant text-on-surface-variant font-label-caps text-label-caps border border-white/5">
+                  Freizeit
+                </span>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold tracking-tight">
+                  - 48,30 €
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 6: Stromabschlag Stadtwerke -->
+<tr class="group hover:bg-white/[0.03] transition-all cursor-pointer">
+<td class="py-4 px-6 whitespace-nowrap font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                15.05.2024
+              </td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center flex-shrink-0 border border-white/5">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                      Stromabschlag Stadtwerke
+                    </div>
+<div class="font-body-sm text-body-sm text-on-surface-variant md:hidden truncate">
+                      Stadtwerke München
+                    </div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6 font-body-md text-body-md text-on-surface hidden md:table-cell">
+                Stadtwerke München
+              </td>
+<td class="py-4 px-6 hidden sm:table-cell">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary-container/20 text-secondary-fixed font-label-caps text-label-caps border border-secondary/20">
+                  Energie &amp; Wohnen
+                </span>
+</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold tracking-tight">
+                  - 75,00 €
+                </span>
+</td>
+<td class="py-4 pr-6 pl-2 text-right text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- SUMMENZEILE / AGGREGATED FOOTER -->
+<div class="bg-surface-container/70 border-t border-white/10 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+<div class="flex flex-col gap-0.5">
+<div class="font-headline-sm text-headline-sm text-on-surface font-medium flex items-center gap-2">
+<span>Gesamtsumme (Ausgewählter Zeitraum)</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-label-caps bg-surface-container-high text-on-surface-variant">
+              Mai 2024
+            </span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-2">
+<span>Einnahmen: <span class="text-primary font-medium">+3.450,00 €</span></span>
+<span class="text-outline-variant">·</span>
+<span>Ausgaben: <span class="text-on-surface font-medium">-1.607,50 €</span></span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 self-end sm:self-auto">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant">Netto-Saldo:</span>
+<span class="font-label-numeric-lg text-label-numeric-lg font-bold text-primary tracking-tight">
+            + 1.842,50 €
+          </span>
+</div>
+</div>
+</div>
+</div>
+</div></main>
+</body></html>

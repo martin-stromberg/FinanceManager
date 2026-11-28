@@ -39,7 +39,8 @@ public sealed class McpApprovalGate : IMcpApprovalGate
     }
 
     /// <inheritdoc />
-    public async Task<McpApprovalDecision> EvaluateAsync(McpAccess access, IMcpToolDescriptor descriptor, CancellationToken ct)
+    public async Task<McpApprovalDecision> EvaluateAsync(McpAccess access, IMcpToolDescriptor descriptor,
+        string? actionKey, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(access);
         ArgumentNullException.ThrowIfNull(descriptor);
@@ -62,11 +63,22 @@ public sealed class McpApprovalGate : IMcpApprovalGate
 
         var requiresApproval = securityClass switch
         {
-            // Final/irreversible effects always pass through a request — also under
-            // PreApproved, where the request starts directly approved (approval-konzept.md §3.4).
+            // Final/irreversible effects always pass through a request — under every mode.
+            // A matching granular grant does not skip the request: the request record IS
+            // the documented approval instance, it merely starts approved
+            // (PreApprovalKind.GrantPreApproved) at enqueue time.
             McpToolSecurityClass.Genehmigungspflichtig => true,
             // Write-preparing calls follow the access approval mode.
-            McpToolSecurityClass.Schreibvorbereitend => access.ApprovalMode == McpApprovalMode.PerAction,
+            McpToolSecurityClass.Schreibvorbereitend => access.ApprovalMode switch
+            {
+                McpApprovalMode.PerAction => true,
+                McpApprovalMode.PreApproved => false,
+                // Granular: a routine (non-approval-required) operation covered by a
+                // matching grant runs directly; everything else queues — unmapped
+                // operations fail closed.
+                McpApprovalMode.Granular => !await IsGrantCoveredRoutineAsync(access, descriptor.Name, actionKey, ct),
+                _ => true
+            },
             _ => true
         };
 
@@ -84,5 +96,30 @@ public sealed class McpApprovalGate : IMcpApprovalGate
         }
 
         return McpApprovalDecision.Approval;
+    }
+
+    /// <summary>
+    /// Granular-mode check: the (tool, action) profile exists, marks the operation
+    /// routine (not approval-required), and a persisted grant covers its
+    /// (DataType, Right) tuple. Grant rows are queried fresh — the access entity handed
+    /// in does not necessarily carry the loaded navigation.
+    /// </summary>
+    /// <param name="access">The calling access entity.</param>
+    /// <param name="toolName">The requested tool name.</param>
+    /// <param name="actionKey">The operation key of the call.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when a matching grant covers a routine operation.</returns>
+    private async Task<bool> IsGrantCoveredRoutineAsync(McpAccess access, string toolName,
+        string? actionKey, CancellationToken ct)
+    {
+        var profile = McpApprovalActionCatalog.Find(toolName, actionKey);
+        if (profile is null || profile.RequiresApproval)
+        {
+            return false;
+        }
+        return await _db.McpAccessApprovalGrants.AsNoTracking().AnyAsync(
+            g => g.McpAccessId == access.Id
+                && g.DataType == profile.DataType
+                && g.Right == profile.Right, ct);
     }
 }

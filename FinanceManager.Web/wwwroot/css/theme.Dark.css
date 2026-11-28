@@ -1,184 +1,315 @@
 /* =====================================================
    theme.Dark.css - Dark Theme Farbschema und Effekte
+   Design-Variante B (Issue #590): Teal/Violett-Akzente,
+   geschichteter Dark-Background, Glas-Flaechen.
    ===================================================== */
 
 :root {
     color-scheme: dark;
-    --bg: #0f0f11;
-    --bg-alt: #191b1f;
-    --panel-bg: #181818;
-    --border: #2a2d33;
-    /* theme-specific variables used by shared styles */
-    --muted: #7f8a96;
-    --panel-bg: #181818;
-    --text: #e2e6ea;
-    --accent: #4dabf7;
-    --accent-hover: #339af0;
-    --danger: #ff6b6b;
-    --success: #51cf66;
+    /* Schichten: Basis -> Surface -> Elevated */
+    --bg: #080a0f;
+    --bg-alt: #0e1219;
+    --panel-bg: #141a24;
+    --border: rgba(255, 255, 255, .09);
+    --muted: #94a3b8;
+    --text: #e8eef7;
+    /* Akzente (Variante B) */
+    --accent: #2dd4bf;
+    --accent-2: #8b5cf6;
+    --accent-hover: #5eead4;
+    --accent-contrast: #04211c;
+    --accent-soft: rgba(45, 212, 191, .14);
+    --accent-soft-2: rgba(139, 92, 246, .16);
+    --danger: #f87171;
+    --success: #34d399;
+    --warning: #f0b429;
+    /* Glas-Flaechen */
+    --glass-bg: rgba(15, 19, 28, .72);
+    --glass-card: linear-gradient(145deg, rgba(22, 27, 38, .6) 0%, rgba(15, 19, 28, .82) 100%);
+    --glass-border: rgba(255, 255, 255, .08);
+    /* Masze */
+    --radius: 12px;
+    --radius-lg: 16px;
+    --rail-width: 72px;
+    --topbar-height: 60px;
+    /* Effekte */
+    --glow-teal: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, .12) 0%, transparent 40%);
+    --glow-violet: radial-gradient(circle at 85% 15%, rgba(139, 92, 246, .13) 0%, transparent 45%);
+    --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, .5);
+    --focus-ring: 0 0 0 2px rgba(45, 212, 191, .45);
 }
 
-html, body { 
-    background: var(--bg); 
-    color: var(--text); 
+html, body {
+    background: var(--bg);
+    color: var(--text);
 }
 
-.dark-mode { 
-    background: var(--bg); 
-    color: var(--text); 
+/* Geschichteter Hintergrund mit dezenten Glows */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        var(--glow-teal),
+        var(--glow-violet),
+        radial-gradient(ellipse 80% 80% at 50% -20%, rgba(120, 119, 198, .10), rgba(255, 255, 255, 0)),
+        var(--bg);
 }
 
-/* Sidebar Theme */
-.sidebar { 
-    background: var(--bg-alt); 
-    border-right: 1px solid var(--border); 
+.dark-mode {
+    background: transparent;
+    color: var(--text);
 }
 
-.nav-links a { 
-    color: var(--text); 
+/* Icon-Rail (Sidebar) Theme */
+.sidebar {
+    background: var(--bg-alt);
+    border-right: 1px solid var(--border);
 }
 
-.nav-links a.active, 
-.nav-links a:hover { 
-    background: var(--border); 
-    color: var(--text); 
+.nav-links a,
+.nav-action {
+    color: var(--muted);
+}
+
+.nav-links a.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    box-shadow: 0 0 20px -3px rgba(45, 212, 191, .4);
+}
+
+.nav-links a:hover,
+.nav-action:hover:not(:disabled) {
+    background: rgba(255, 255, 255, .05);
+    color: var(--text);
+}
+
+.nav-sep {
+    background: var(--border);
+}
+
+.user-area {
+    color: var(--muted);
+}
+
+.user-area a {
+    color: var(--muted);
+}
+
+.user-area a:hover {
+    color: var(--accent);
+}
+
+/* Topbar Theme */
+.topbar {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.topbar-title {
+    color: var(--text);
 }
 
 /* Button Theme */
-button { 
-    background: var(--accent); 
-    color: #000; 
+button {
+    background: var(--accent);
+    color: var(--accent-contrast);
 }
 
-button:hover:not(:disabled) { 
-    background: var(--accent-hover); 
+button:hover:not(:disabled) {
+    background: var(--accent-hover);
 }
 
-button.danger { 
-    background: var(--danger); 
-    color: #000; 
+button.secondary,
+button.btn-secondary {
+    background: var(--bg-alt);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
-button.danger:hover:not(:disabled) { 
-    filter: brightness(1.15); 
+button.secondary:hover:not(:disabled),
+button.btn-secondary:hover:not(:disabled) {
+    background: var(--panel-bg);
+    color: var(--accent);
+}
+
+button.danger {
+    background: var(--danger);
+    color: #2a0606;
+}
+
+button.danger:hover:not(:disabled) {
+    filter: brightness(1.15);
 }
 
 /* Input Theme */
-input { 
-    background: var(--bg-alt); 
-    color: var(--text); 
-    border: 1px solid var(--border); 
+input,
+select,
+textarea {
+    background: var(--bg-alt);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: var(--focus-ring);
 }
 
 /* Error Theme */
-.error { 
-    background: var(--danger); 
-    color: #000; 
+.error {
+    background: rgba(248, 113, 113, .14);
+    color: var(--danger);
+    border: 1px solid rgba(248, 113, 113, .35);
 }
 
 /* Icon Button Theme */
-.icon-btn { 
-    background: var(--bg-alt); 
-    border: 1px solid var(--border); 
-    color: var(--text); 
+.icon-btn {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
-.icon-btn:hover:not(:disabled) { 
-    background: var(--border); 
+.icon-btn:hover:not(:disabled) {
+    background: var(--panel-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.icon-btn.danger {
+    color: var(--danger);
+}
+
+/* Danger icon buttons keep a red background (button.danger) but must show a
+   black glyph while not hovered for readability in the backups table. */
+button.icon-btn.danger {
+    color: #000;
+}
+
+.icon-btn.danger:hover:not(:disabled) {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* On hover the danger icon button keeps its red button.danger background and
+   switches the glyph to the same dark contrast that button.danger itself uses —
+   the red-on-red combination would otherwise be unreadable. */
+button.icon-btn.danger:hover:not(:disabled) {
+    background: var(--danger);
+    color: #2a0606;
 }
 
 /* Login Status Theme */
-.login-status button { 
-    background: #343a40; 
-    color: var(--text); 
+.login-status button {
+    background: var(--bg-alt);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
-.login-status button:hover { 
-    background: #495057; 
+.login-status button:hover {
+    background: var(--panel-bg);
+    color: var(--accent);
 }
 
-/* Table Theme */
+/* Table Theme - ruhige Zeilen auf Glas-Karte */
 .fm-table {
-    background: #222;
-    color: #eee;
+    background: transparent;
+    color: var(--text);
 }
 
-.fm-table th, .fm-table td {
-    border-bottom: 1px solid #333;
+.fm-table th,
+.fm-table td {
+    border-bottom: 1px solid var(--border);
 }
 
 .fm-table th {
-    background: #282828;
+    background: rgba(255, 255, 255, .03);
+    color: var(--muted);
 }
 
 .fm-table tbody tr:hover {
-    background: #2a2a2a;
+    background: rgba(255, 255, 255, .04);
 }
 
 .table-responsive {
-    box-shadow: 0 2px 8px #0002;
+    box-shadow: var(--shadow-card);
 }
 
 /* Muted row style for dark theme */
 .fm-table tr.muted-row,
 .fm-table tr.muted-row td {
-    opacity: 0.65;
+    opacity: .65;
     color: var(--muted);
     background: transparent;
 }
 
 /* Split Dialog Theme */
-.split-center { 
-    background: rgba(0,0,0,.55); 
+.split-center {
+    background: rgba(4, 6, 10, .62);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
 }
 
-.split-dialog { 
-    background: var(--bg-alt); 
-    border: 1px solid var(--border); 
-    box-shadow: 0 6px 28px #000a, 0 0 0 1px #000 inset; 
+.split-dialog {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-card), 0 0 0 1px rgba(0, 0, 0, .4) inset;
 }
 
-.split-scroll { 
-    border: 1px solid var(--border); 
-    background: #141519; 
+.split-scroll {
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, .02);
 }
 
-.split-row { 
-    background: transparent; 
+.split-row {
+    background: transparent;
 }
 
-.split-row:hover { 
-    background: #1f2227; 
+.split-row:hover {
+    background: rgba(255, 255, 255, .05);
 }
 
-.split-row.active { 
-    background: #253041; 
-    border-color: var(--accent); 
+.split-row.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
 }
 
-.split-error { 
-    background: var(--danger); 
-    color: #000; 
+.split-error {
+    background: rgba(248, 113, 113, .14);
+    color: var(--danger);
 }
 
 /* Mobile Theme */
-.mobile-topbar { 
-    border-bottom: 1px solid var(--border); 
-    background: var(--bg); 
+.mobile-topbar {
+    border-bottom: 1px solid var(--border);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
 }
 
-.mobile-topbar .hamburger { 
-    color: var(--text); 
-    border: 1px solid var(--border); 
+.mobile-topbar .hamburger {
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
-.mobile-overlay { 
-    background: rgba(0,0,0,.5); 
+.mobile-overlay {
+    background: rgba(4, 6, 10, .55);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
 }
 
 @media (max-width: 900px) {
-    .sidebar { 
-        box-shadow: 2px 0 12px #0006; 
+    .sidebar {
+        box-shadow: 2px 0 24px rgba(0, 0, 0, .6);
     }
 
     .app-inner {
@@ -186,8 +317,29 @@ input {
     }
 }
 
+/* Scrollbars (dezent, Teal-Hover) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
 
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1e2638;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* Blazor Reconnect Overlay */
 div.components-reconnect-overlay {
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(4, 6, 10, .78);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     color: var(--text);
 }

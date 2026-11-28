@@ -28,6 +28,77 @@
         </div>
     </div>
 
+    @* ---- Vorab-Freigaben (Expertenmodus, granulare Genehmigung) ---- *@
+    @if ((McpApprovalMode)access.ApprovalMode == McpApprovalMode.Granular && opts is not null)
+    {
+        <div style="margin-bottom:1rem;border:1px solid var(--border,#444);border-radius:6px;padding:.6rem .75rem;">
+            <h5 style="margin:0 0 .4rem 0;">@L["Mcp_Grants_Title"]</h5>
+            <div style="color:var(--muted);font-size:.85rem;margin-bottom:.4rem;">
+                @L["Mcp_Grants_Hint"]
+            </div>
+            <div style="color:var(--muted);font-size:.85rem;margin-bottom:.5rem;">
+                @L["Mcp_Grants_FinalHint"]
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="fm-table" style="font-size:.85rem;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;padding:.25rem .4rem;">@L["Mcp_Rights_DataType"]</th>
+                            @foreach (var r in GrantableRights)
+                            {
+                                <th style="text-align:center;padding:.25rem .4rem;">@McpAccessText.RightKind(L, r)</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dt in opts.DataTypes)
+                        {
+                            var grantableForType = dt.AllowedRights.Where(r => GrantableRights.Contains(r)).ToList();
+                            @if (grantableForType.Count == 0)
+                            {
+                                continue;
+                            }
+                            <tr>
+                                <td style="padding:.25rem .4rem;">@McpAccessText.DataType(L, dt.DataType)</td>
+                                @foreach (var r in GrantableRights)
+                                {
+                                    <td style="text-align:center;padding:.15rem .3rem;">
+                                        @if (dt.AllowedRights.Contains(r))
+                                        {
+                                            <input type="checkbox"
+                                                   checked="@_grantDraft.Contains((dt.DataType, r))"
+                                                   disabled="@(revoked || _grantBusy)"
+                                                   @onchange="_ => ToggleGrantCell(dt.DataType, r)" />
+                                        }
+                                        else
+                                        {
+                                            <span style="opacity:.35;">—</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+                @if (_grantDirty && !revoked)
+                {
+                    <button type="button" class="btn btn-primary" disabled="@_grantBusy" @onclick="SaveGrantsAsync">
+                        @L["Btn_Save"]
+                    </button>
+                    <button type="button" class="btn" disabled="@_grantBusy" @onclick="ResetGrantDraft">
+                        @L["Mcp_Matrix_Reset"]
+                    </button>
+                }
+                else if (!revoked)
+                {
+                    <span style="color:var(--muted);font-size:.85rem;">@L["Mcp_Grants_EditHint"]</span>
+                }
+            </div>
+        </div>
+    }
+
     @* ---- Scope-Matrix (F-0502) ---- *@
     @if (opts is not null)
     {
@@ -219,6 +290,20 @@
     private readonly Dictionary<Guid, Dictionary<string, SortedSet<string>>> _filterDrafts = new();
     private (Guid Id, DateTime? ModifiedUtc)? _filterSeededKey;
 
+    /// <summary>Grant cells offered in the expert-mode matrix — Suggest/Book/Delete are
+    /// never grantable (final effects stay approval-bound).</summary>
+    private static readonly HashSet<short> GrantableRights = new()
+    {
+        (short)McpRightKind.Read, (short)McpRightKind.Complete,
+        (short)McpRightKind.Modify, (short)McpRightKind.Create
+    };
+
+    /// <summary>Checked grant cells of the expert-mode draft — (DataType, Right).</summary>
+    private readonly HashSet<(short DataType, short Right)> _grantDraft = new();
+    private bool _grantDirty;
+    private bool _grantBusy;
+    private (Guid Id, DateTime? ModifiedUtc)? _grantSeededKey;
+
     protected override void OnParametersSet()
     {
         if (_subscribed != Provider)
@@ -265,6 +350,12 @@
         {
             SeedFilterDrafts(access);
             _filterSeededKey = key;
+        }
+        if (key != _grantSeededKey)
+        {
+            SeedGrantDraft(access);
+            _grantSeededKey = key;
+            _grantDirty = false;
         }
         _effectiveCells = access.EffectiveScopes
             .Select(s => (s.DataType, s.Right))
@@ -378,6 +469,52 @@
             return "Mcp_Matrix_Lock_AccountTypes";
         }
         return "Mcp_Matrix_Lock_Generic";
+    }
+
+    // ---------- Vorab-Freigaben (Expertenmodus) ----------
+
+    private void SeedGrantDraft(McpAccessDetailDto access)
+    {
+        _grantDraft.Clear();
+        foreach (var g in access.ApprovalGrants)
+        {
+            _grantDraft.Add((g.DataType, g.Right));
+        }
+    }
+
+    private void ToggleGrantCell(short dataType, short right)
+    {
+        if (!_grantDraft.Remove((dataType, right)))
+        {
+            _grantDraft.Add((dataType, right));
+        }
+        var persisted = Provider?.Access?.ApprovalGrants
+            .Select(g => (g.DataType, g.Right)) ?? Enumerable.Empty<(short, short)>();
+        _grantDirty = !_grantDraft.SetEquals(persisted);
+    }
+
+    private void ResetGrantDraft()
+    {
+        if (Provider?.Access is { } a)
+        {
+            SeedGrantDraft(a);
+        }
+        _grantDirty = false;
+    }
+
+    private async Task SaveGrantsAsync()
+    {
+        if (Provider is null) return;
+        _grantBusy = true;
+        try
+        {
+            var rows = _grantDraft
+                .OrderBy(k => k.DataType).ThenBy(k => k.Right)
+                .Select(k => new McpAccessApprovalGrantDto(Guid.Empty, k.DataType, k.Right))
+                .ToList();
+            await Provider.SaveApprovalGrantsAsync(rows);
+        }
+        finally { _grantBusy = false; }
     }
 
     // ---------- Genehmigungsmodus ----------

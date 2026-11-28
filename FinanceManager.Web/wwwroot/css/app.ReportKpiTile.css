@@ -103,14 +103,14 @@
     pointer-events: none;
 }
 .budget-saldo-current {
-    background: #ffffff; /* white for current month */
+    background: var(--text); /* white for current month */
     box-shadow: 0 0 0 1px rgba(0,0,0,0.06) inset;
 }
 .budget-saldo-pos {
-    background: #28a745; /* green */
+    background: var(--success); /* green */
 }
 .budget-saldo-neg {
-    background: #dc3545; /* red */
+    background: var(--danger); /* red */
 }
 .budget-soll-marker {
     position: absolute;
@@ -122,12 +122,12 @@
 }
 
 .budget-soll-current {
-    background: #ffffff; /* white marker for current month */
+    background: var(--text); /* white marker for current month */
     box-shadow: 0 0 0 1px rgba(0,0,0,0.06) inset;
 }
 
-.budget-soll-pos { background: #28a745; }
-.budget-soll-neg { background: #dc3545; }
+.budget-soll-pos { background: var(--success); }
+.budget-soll-neg { background: var(--danger); }
 
 .budget-soll-marker-label {
     position: absolute;

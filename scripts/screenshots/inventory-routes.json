@@ -1,0 +1,670 @@
+{
+  "description": "Routen-/Zustandsmatrix fuer den Inventarlauf (generate-inventory.js). Jede Ansicht wird in beiden Viewports im Dark-Mode als PNG + HTML-Dump erfasst. Platzhalter {api:<pfad>} in URLs werden zur Laufzeit gegen die erste ID der List-API aufgeloest (verschachtelt moeglich). auth: public = ausgeloggter Kontext, user = eingeloggt (Demodaten-Benutzer), admin = eingeloggt + Admin-Anspruch erforderlich (Erstbenutzer ist automatisch Admin).",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 900
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "views": [
+    {
+      "id": "login",
+      "group": "public",
+      "url": "/login",
+      "auth": "public",
+      "wait": {
+        "selector": "#login-user"
+      }
+    },
+    {
+      "id": "register",
+      "group": "public",
+      "url": "/register",
+      "auth": "public",
+      "wait": {
+        "selector": "#username"
+      },
+      "note": "Erster-Benutzer-Zustand inkl. #create-demo-data; wird vor der Registrierung erfasst."
+    },
+    {
+      "id": "error",
+      "group": "public",
+      "url": "/Error",
+      "auth": "public",
+      "wait": {
+        "selector": "body"
+      },
+      "settle": 600
+    },
+    {
+      "id": "legal",
+      "group": "public",
+      "url": "/legal",
+      "auth": "public",
+      "wait": {
+        "selector": "body"
+      },
+      "settle": 600
+    },
+    {
+      "id": "help-hub",
+      "group": "public",
+      "url": "/help",
+      "auth": "public",
+      "wait": {
+        "selector": ".help-shell"
+      },
+      "note": "Eigene HelpLayout-Surface ohne Sidebar/Ribbon."
+    },
+    {
+      "id": "help-view",
+      "group": "public",
+      "url": "/help/view/konten-und-buchungen",
+      "auth": "public",
+      "wait": {
+        "selector": ".help-view-content"
+      }
+    },
+    {
+      "id": "home",
+      "group": "concrete",
+      "url": "/",
+      "auth": "user",
+      "wait": {
+        "selector": ".kpi-grid .kpi-tile",
+        "minCount": 3
+      },
+      "settle": 1000,
+      "waitSsr": {
+        "selector": ".kpi-grid .kpi-tile"
+      },
+      "note": "SSR erfasst die authentifizierte Shell ohne Kacheln; KPI-Kacheln laden erst interaktiv (OnAfterRender) und stehen im SSR-DOM leer."
+    },
+    {
+      "id": "change-password",
+      "group": "concrete",
+      "url": "/change-password",
+      "auth": "user",
+      "wait": {
+        "selector": "input[type='password'], form"
+      }
+    },
+    {
+      "id": "reports",
+      "group": "concrete",
+      "url": "/reports",
+      "auth": "user",
+      "wait": {
+        "selector": ".fav-grid .fav-card",
+        "minCount": 1
+      }
+    },
+    {
+      "id": "reports-dashboard",
+      "group": "concrete",
+      "url": "/reports/dashboard",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table.report-table, .empty-info, .report-dashboard-page, .generic-list-mobile-cards > *"
+      },
+      "settle": 1200
+    },
+    {
+      "id": "reports-budget",
+      "group": "concrete",
+      "url": "/reports/budget",
+      "auth": "user",
+      "wait": {
+        "selector": ".budget-report-table"
+      },
+      "settle": 800
+    },
+    {
+      "id": "portfolio-analysis-report",
+      "group": "concrete",
+      "url": "/portfolio/analysis-report",
+      "auth": "user",
+      "wait": {
+        "selector": ".portfolio-report-page"
+      },
+      "settle": 1500
+    },
+    {
+      "id": "security-performance",
+      "group": "security-tabs",
+      "url": "/securities/{api:api/securities}/performance",
+      "auth": "user",
+      "wait": {
+        "selector": ".perf-page .tab-btn"
+      },
+      "settle": 1200
+    },
+    {
+      "id": "security-performance-overview",
+      "group": "security-tabs",
+      "url": "/securities/{api:api/securities}/performance/Overview",
+      "auth": "user",
+      "wait": {
+        "selector": ".perf-page .tab-btn"
+      },
+      "settle": 1200
+    },
+    {
+      "id": "security-performance-timeseries",
+      "group": "security-tabs",
+      "url": "/securities/{api:api/securities}/performance/TimeSeries",
+      "auth": "user",
+      "wait": {
+        "selector": ".perf-page .tab-btn"
+      },
+      "settle": 1200
+    },
+    {
+      "id": "security-performance-cashflows",
+      "group": "security-tabs",
+      "url": "/securities/{api:api/securities}/performance/Cashflows",
+      "auth": "user",
+      "wait": {
+        "selector": ".perf-page .tab-btn"
+      },
+      "settle": 1200
+    },
+    {
+      "id": "security-performance-metrics",
+      "group": "security-tabs",
+      "url": "/securities/{api:api/securities}/performance/Metrics",
+      "auth": "user",
+      "wait": {
+        "selector": ".perf-page .tab-btn"
+      },
+      "settle": 1200
+    },
+    {
+      "id": "security-performance-benchmark",
+      "group": "security-tabs",
+      "url": "/securities/{api:api/securities}/performance/Benchmark",
+      "auth": "user",
+      "wait": {
+        "selector": ".perf-page .tab-btn"
+      },
+      "settle": 1200
+    },
+    {
+      "id": "list-accounts",
+      "group": "list",
+      "url": "/list/accounts",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-contacts",
+      "group": "list",
+      "url": "/list/contacts",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-contacts-categories",
+      "group": "list",
+      "url": "/list/contacts/categories",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-postings-account",
+      "group": "list",
+      "url": "/list/postings/account/{api:api/accounts}",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-postings-contact",
+      "group": "list",
+      "url": "/list/postings/contact/{api:api/contacts}",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-postings-savings-plan",
+      "group": "list",
+      "url": "/list/postings/savings-plan/{api:api/savings-plans}",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-postings-security",
+      "group": "list",
+      "url": "/list/postings/security/{api:api/securities}",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-savings-plans",
+      "group": "list",
+      "url": "/list/savings-plans",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-savings-plans-categories",
+      "group": "list",
+      "url": "/list/savings-plans/categories",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-securities",
+      "group": "list",
+      "url": "/list/securities",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-securities-categories",
+      "group": "list",
+      "url": "/list/securities/categories",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-securities-prices",
+      "group": "list",
+      "url": "/list/securities/prices/{api:api/securities}",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-statement-drafts",
+      "group": "list",
+      "url": "/list/statement-drafts",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-users",
+      "group": "list",
+      "url": "/list/users",
+      "auth": "admin",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      },
+      "note": "Admin-only; der Erstbenutzer ist automatisch Admin."
+    },
+    {
+      "id": "list-mcp-accesses",
+      "group": "list",
+      "url": "/list/mcp-accesses",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-budget",
+      "group": "list",
+      "url": "/list/budget",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      },
+      "note": "Default-SubKind purposes."
+    },
+    {
+      "id": "list-budget-purposes",
+      "group": "list",
+      "url": "/list/budget/purposes",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "list-budget-categories",
+      "group": "list",
+      "url": "/list/budget/categories",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-account",
+      "group": "card",
+      "url": "/card/accounts/{api:api/accounts}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "settle": 800
+    },
+    {
+      "id": "card-budget-category",
+      "group": "card",
+      "url": "/card/budget/categories/{api:api/budget/categories}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-budget-purpose",
+      "group": "card",
+      "url": "/card/budget/purposes/{api:api/budget/purposes}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-budget-rule",
+      "group": "card",
+      "url": "/card/budget/rules/{api:api/budget/rules/by-purpose/{api:api/budget/purposes}}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-contact",
+      "group": "card",
+      "url": "/card/contacts/{api:api/contacts}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "settle": 800
+    },
+    {
+      "id": "card-contact-category",
+      "group": "card",
+      "url": "/card/contacts/categories/{api:api/contact-categories}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-mcp-access",
+      "group": "card",
+      "url": "/card/mcp-accesses/{api:api/mcp-accesses}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "note": "Erfordert vorhandenen MCP-Access-Datensatz; vermutlich Datenluecke."
+    },
+    {
+      "id": "card-mcp-access-new",
+      "group": "card",
+      "url": "/card/mcp-accesses/new",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .mcp-wizard, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-mcp-approvals",
+      "group": "card",
+      "url": "/card/mcp-approvals",
+      "auth": "admin",
+      "wait": {
+        "selector": "main"
+      },
+      "settle": 1000
+    },
+    {
+      "id": "card-mcp-audit",
+      "group": "card",
+      "url": "/card/mcp-audit",
+      "auth": "admin",
+      "wait": {
+        "selector": "main"
+      },
+      "settle": 1000
+    },
+    {
+      "id": "card-mcp-security",
+      "group": "card",
+      "url": "/card/mcp-security",
+      "auth": "admin",
+      "wait": {
+        "selector": "main"
+      },
+      "settle": 1000
+    },
+    {
+      "id": "card-posting",
+      "group": "card",
+      "url": "/card/postings/{api:api/postings/account/{api:api/accounts}}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "settle": 800
+    },
+    {
+      "id": "card-savings-plan",
+      "group": "card",
+      "url": "/card/savings-plans/{api:api/savings-plans}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "settle": 800
+    },
+    {
+      "id": "card-savings-plan-category",
+      "group": "card",
+      "url": "/card/savings-plans/categories/{api:api/savings-plan-categories}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-security",
+      "group": "card",
+      "url": "/card/securities/{api:api/securities}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "settle": 800
+    },
+    {
+      "id": "card-security-category",
+      "group": "card",
+      "url": "/card/securities/categories/{api:api/security-categories}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-setup",
+      "group": "card",
+      "url": "/card/setup",
+      "auth": "user",
+      "wait": {
+        "selector": ".setup-sections .setup-section-toggle"
+      }
+    },
+    {
+      "id": "card-user",
+      "group": "card",
+      "url": "/card/users/{api:api/admin/users}",
+      "auth": "admin",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      }
+    },
+    {
+      "id": "card-statement-draft",
+      "group": "card",
+      "url": "/card/statement-drafts/{api:api/statement-drafts}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "settle": 1000
+    },
+    {
+      "id": "card-statement-draft-entry",
+      "group": "card",
+      "url": "/card/statement-drafts/entries/{api:api/statement-drafts/{api:api/statement-drafts}#entries}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "settle": 800
+    },
+    {
+      "id": "setup-sections",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "wait": {
+        "selector": ".setup-sections .setup-section-toggle"
+      },
+      "multiCapture": {
+        "toggleSelector": ".setup-section-toggle",
+        "contentSelector": ".setup-section-content",
+        "namePrefix": "setup-section",
+        "settle": 800
+      },
+      "note": "Erfasst jede aufklappbare Setup-Sektion einzeln (Anzahl dynamisch: 10-11, mcp-Sektion nur bei aktiviertem MCP-Feature)."
+    },
+    {
+      "id": "overlay-home-mass-import",
+      "group": "overlay",
+      "url": "/",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-ribbon, h1"
+      },
+      "actions": [
+        {
+          "setInputFiles": {
+            "selector": "#Import input[type='file']",
+            "file": "$DEMO_CSV"
+          }
+        }
+      ],
+      "waitAfter": {
+        "selector": ".mass-import-dialog, .split-dialog"
+      },
+      "settle": 800,
+      "note": "Mass-Import-Dialog; Startseite kann je nach Circuit-Zustand signed-out rendern."
+    },
+    {
+      "id": "overlay-budget-settings",
+      "group": "overlay",
+      "url": "/reports/budget",
+      "auth": "user",
+      "wait": {
+        "selector": ".budget-report-table"
+      },
+      "actions": [
+        {
+          "click": "#Settings"
+        }
+      ],
+      "waitAfter": {
+        "selector": ".split-dialog"
+      },
+      "settle": 500
+    },
+    {
+      "id": "overlay-dashboard-filters",
+      "group": "overlay",
+      "url": "/reports/dashboard",
+      "auth": "user",
+      "wait": {
+        "selector": ".report-dashboard-page"
+      },
+      "settle": 1000,
+      "actions": [
+        {
+          "click": "#FiltersOpen"
+        }
+      ],
+      "waitAfter": {
+        "selector": ".modal-overlay"
+      },
+      "note": "Filter-Dialog (modal-overlay)."
+    },
+    {
+      "id": "overlay-mcp-access-wizard",
+      "group": "overlay",
+      "url": "/list/mcp-accesses",
+      "auth": "user",
+      "wait": {
+        "selector": ".fm-table, .list-filters, .generic-list-mobile-cards > *"
+      },
+      "actions": [
+        {
+          "click": "#New"
+        }
+      ],
+      "waitAfter": {
+        "selector": ".mcp-wizard, .split-dialog, .modal-overlay"
+      },
+      "settle": 800,
+      "note": "McpAccessCreateWizard; erfordert aktiviertes MCP-Feature, sonst Datenluecke."
+    },
+    {
+      "id": "overlay-confirm-dialog",
+      "group": "overlay",
+      "url": "/card/contacts/{api:api/contacts}",
+      "auth": "user",
+      "wait": {
+        "selector": ".card-table, .fm-table, main, .generic-list-mobile-cards > *"
+      },
+      "actions": [
+        {
+          "click": "#Delete"
+        }
+      ],
+      "waitAfter": {
+        "selector": ".confirm-dialog, .modal-overlay, .split-dialog"
+      },
+      "settle": 500,
+      "postActions": [
+        {
+          "click": ".confirm-dialog .btn.secondary, .modal-overlay .btn.secondary"
+        }
+      ],
+      "note": "Globaler Bestaetigungsdialog (ConfirmationService) am Delete-Ribbon der Kontaktkarte; wird nach der Aufnahme mit Abbrechen geschlossen."
+    }
+  ]
+}

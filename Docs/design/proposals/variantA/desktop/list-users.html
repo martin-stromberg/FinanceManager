@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary": "#00354a", "secondary-container": "#23429c", "primary-fixed": "#dce1ff", "on-tertiary-fixed-variant": "#004c69", "on-primary-fixed-variant": "#0d3bac", "inverse-on-surface": "#2e3036", "inverse-primary": "#3255c5", "on-surface": "#e1e2ea", "error": "#ffb4ab", "primary": "#b6c4ff", "on-tertiary-container": "#003145", "tertiary-fixed": "#c4e7ff", "surface-container-lowest": "#0b0e13", "on-error": "#690005", "surface": "#111319", "tertiary-fixed-dim": "#7bd0ff", "surface-container-high": "#272a30", "on-tertiary-fixed": "#001e2c", "on-secondary": "#00287d", "on-primary-fixed": "#001550", "on-secondary-fixed": "#00164f", "secondary-fixed-dim": "#b6c4ff", "surface-bright": "#36393f", "surface-tint": "#b6c4ff", "background": "#111319", "surface-variant": "#32353b", "surface-dim": "#111319", "surface-container-highest": "#32353b", "outline-variant": "#444653", "on-surface-variant": "#c4c5d5", "surface-container-low": "#191c21", "surface-container": "#1d2025", "on-secondary-container": "#a2b5ff", "on-background": "#e1e2ea", "error-container": "#93000a", "tertiary": "#7bd0ff", "primary-container": "#6d8dff", "tertiary-container": "#009fd6", "on-secondary-fixed-variant": "#204099", "secondary": "#b6c4ff", "secondary-fixed": "#dce1ff", "on-primary-container": "#002477", "outline": "#8e909f", "inverse-surface": "#e1e2ea", "on-error-container": "#ffdad6", "primary-fixed-dim": "#b6c4ff", "on-primary": "#002780" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1.5rem", "space-lg": "1.25rem", "space-sm": "0.5rem", "margin-mobile": "1rem", "gutter-mobile": "0.75rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-md": "0.75rem", "gutter": "1rem" }, "fontFamily": { "label-md": ["Inter"], "headline-sm": ["Inter"], "headline-xl": ["Inter"], "headline-md": ["Inter"], "body-sm": ["Inter"], "headline-xl-mobile": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "currency-display": ["Inter"], "label-lg": ["Inter"] }, "fontSize": { "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }], "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-lg": ["15px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "currency-display": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }] } } } };</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head><body class="bg-surface-container-lowest font-body-md text-on-surface antialiased fm-body-a"><aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class=" active" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Benutzerverwaltung</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Neu"><span class="material-symbols-outlined">add</span><span>Neu</span></button></div><div class="fm-rib-caption">Verwalten</div></div></div><div class="pl-60"><main class="w-full max-w-[1200px] px-margin py-space-lg bg-surface-container-lowest"><div class="flex flex-col w-full">
+<!-- Ribbon Toolbar: Verwaltung Group -->
+<div class="w-full bg-[#10131a] border border-[#232a36] rounded-xl px-space-md py-space-sm mb-space-lg flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-primary">admin_panel_settings</span>
+<span>Verwaltung</span>
+</div>
+<div class="h-4 w-px bg-[#232a36]"></div>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#6d8dff] text-[#0b0e13] font-label-md text-label-md font-semibold hover:bg-[#85a0ff] transition-colors focus:outline-none focus:ring-1 focus:ring-primary shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Neu</span>
+</button>
+</div>
+<div class="text-on-surface-variant font-label-sm text-label-sm flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+<span>Admin-Konsole aktiv</span>
+</div>
+</div>
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-space-xs mb-space-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-semibold">Benutzerverwaltung</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Benutzerliste (Admin) • 6 registrierte Konten</p>
+</div>
+</div>
+<!-- Filter & Search Bar -->
+<div class="w-full bg-[#10131a] border border-[#232a36] rounded-xl p-space-md mb-space-md shadow-sm">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<!-- Search Input -->
+<div class="md:col-span-6 relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">search</span>
+<input class="w-full bg-[#0b0e13] border border-[#232a36] rounded-lg pl-9 pr-3 py-2 text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:outline-none focus:border-[#6d8dff] transition-colors" id="userSearchInput" placeholder="Benutzer suchen... (Name oder E-Mail)" type="text">
+</div>
+<!-- Role Filter -->
+<div class="md:col-span-3">
+<label class="sr-only" for="roleFilter">Rolle filtern</label>
+<div class="relative">
+<select class="w-full appearance-none bg-[#0b0e13] border border-[#232a36] rounded-lg px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-[#6d8dff] transition-colors cursor-pointer pr-8" id="roleFilter">
+<option value="">Rolle: Alle</option>
+<option value="Administrator">Administrator</option>
+<option value="Benutzer">Benutzer</option>
+<option value="Nur Lesen">Nur Lesen</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Status Filter -->
+<div class="md:col-span-3">
+<label class="sr-only" for="statusFilter">Status filtern</label>
+<div class="relative">
+<select class="w-full appearance-none bg-[#0b0e13] border border-[#232a36] rounded-lg px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-[#6d8dff] transition-colors cursor-pointer pr-8" id="statusFilter">
+<option value="">Status: Alle</option>
+<option value="Aktiv">Aktiv</option>
+<option value="Gesperrt">Gesperrt</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="w-full bg-[#10131a] border border-[#232a36] rounded-xl overflow-hidden shadow-sm">
+<!-- Desktop Table (Hidden on small viewports) -->
+<div class="hidden md:block overflow-x-auto">
+<table class="w-full text-left border-collapse" id="userTable">
+<thead>
+<tr class="border-b border-[#232a36] bg-[#0d1017]">
+<th class="py-2.5 px-4 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold" scope="col">Name</th>
+<th class="py-2.5 px-4 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold" scope="col">E-Mail</th>
+<th class="py-2.5 px-4 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold" scope="col">Rolle</th>
+<th class="py-2.5 px-4 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold text-right" scope="col">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#1e2430]">
+<!-- User Row 1 -->
+<tr class="user-row hover:bg-[#161b24] cursor-pointer transition-colors group" data-role="Administrator" data-status="Aktiv">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">
+              Alexander Weber
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant font-mono text-sm">
+              a.weber@financemanager.de
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-label-md text-label-md bg-[#23429c]/30 text-[#b6c4ff] border border-[#23429c]/50">
+                Administrator
+              </span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-label-md text-label-md bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Aktiv
+              </span>
+</td>
+</tr>
+<!-- User Row 2 -->
+<tr class="user-row hover:bg-[#161b24] cursor-pointer transition-colors group" data-role="Benutzer" data-status="Aktiv">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">
+              Birgit Schäfer
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant font-mono text-sm">
+              b.schaefer@financemanager.de
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-label-md text-label-md bg-[#191c21] text-on-surface-variant border border-[#232a36]">
+                Benutzer
+              </span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-label-md text-label-md bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Aktiv
+              </span>
+</td>
+</tr>
+<!-- User Row 3 -->
+<tr class="user-row hover:bg-[#161b24] cursor-pointer transition-colors group" data-role="Benutzer" data-status="Gesperrt">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">
+              Christian Meyer
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant font-mono text-sm">
+              c.meyer@financemanager.de
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-label-md text-label-md bg-[#191c21] text-on-surface-variant border border-[#232a36]">
+                Benutzer
+              </span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-label-md text-label-md bg-[#93000a]/20 text-[#ffb4ab] border border-[#93000a]/40">
+<span class="w-1.5 h-1.5 rounded-full bg-[#ffb4ab]"></span>
+                Gesperrt
+              </span>
+</td>
+</tr>
+<!-- User Row 4 -->
+<tr class="user-row hover:bg-[#161b24] cursor-pointer transition-colors group" data-role="Administrator" data-status="Aktiv">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">
+              Daniela Hoffmann
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant font-mono text-sm">
+              d.hoffmann@financemanager.de
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-label-md text-label-md bg-[#23429c]/30 text-[#b6c4ff] border border-[#23429c]/50">
+                Administrator
+              </span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-label-md text-label-md bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Aktiv
+              </span>
+</td>
+</tr>
+<!-- User Row 5 -->
+<tr class="user-row hover:bg-[#161b24] cursor-pointer transition-colors group" data-role="Nur Lesen" data-status="Aktiv">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">
+              Florian Klein
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant font-mono text-sm">
+              f.klein@financemanager.de
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-label-md text-label-md bg-[#191c21] text-on-surface-variant border border-[#232a36]">
+                Nur Lesen
+              </span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-label-md text-label-md bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Aktiv
+              </span>
+</td>
+</tr>
+<!-- User Row 6 -->
+<tr class="user-row hover:bg-[#161b24] cursor-pointer transition-colors group" data-role="Benutzer" data-status="Aktiv">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">
+              Julia Becker
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant font-mono text-sm">
+              j.becker@financemanager.de
+            </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-label-md text-label-md bg-[#191c21] text-on-surface-variant border border-[#232a36]">
+                Benutzer
+              </span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-label-md text-label-md bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Aktiv
+              </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Mobile Card Layout (Visible on small screens) -->
+<div class="block md:hidden divide-y divide-[#232a36]" id="userCards">
+<!-- Card 1 -->
+<div class="user-card p-4 hover:bg-[#161b24] transition-colors cursor-pointer" data-role="Administrator" data-status="Aktiv">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Alexander Weber</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Aktiv
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-mono mb-2">a.weber@financemanager.de</p>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant font-label-sm uppercase">Rolle</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#23429c]/30 text-[#b6c4ff] border border-[#23429c]/50">Administrator</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="user-card p-4 hover:bg-[#161b24] transition-colors cursor-pointer" data-role="Benutzer" data-status="Aktiv">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Birgit Schäfer</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Aktiv
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-mono mb-2">b.schaefer@financemanager.de</p>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant font-label-sm uppercase">Rolle</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#191c21] text-on-surface-variant border border-[#232a36]">Benutzer</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="user-card p-4 hover:bg-[#161b24] transition-colors cursor-pointer" data-role="Benutzer" data-status="Gesperrt">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Christian Meyer</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#93000a]/20 text-[#ffb4ab] border border-[#93000a]/40">
+<span class="w-1.5 h-1.5 rounded-full bg-[#ffb4ab]"></span> Gesperrt
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-mono mb-2">c.meyer@financemanager.de</p>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant font-label-sm uppercase">Rolle</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#191c21] text-on-surface-variant border border-[#232a36]">Benutzer</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="user-card p-4 hover:bg-[#161b24] transition-colors cursor-pointer" data-role="Administrator" data-status="Aktiv">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Daniela Hoffmann</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Aktiv
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-mono mb-2">d.hoffmann@financemanager.de</p>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant font-label-sm uppercase">Rolle</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#23429c]/30 text-[#b6c4ff] border border-[#23429c]/50">Administrator</span>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="user-card p-4 hover:bg-[#161b24] transition-colors cursor-pointer" data-role="Nur Lesen" data-status="Aktiv">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Florian Klein</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Aktiv
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-mono mb-2">f.klein@financemanager.de</p>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant font-label-sm uppercase">Rolle</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#191c21] text-on-surface-variant border border-[#232a36]">Nur Lesen</span>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="user-card p-4 hover:bg-[#161b24] transition-colors cursor-pointer" data-role="Benutzer" data-status="Aktiv">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Julia Becker</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-800/50">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Aktiv
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant font-mono mb-2">j.becker@financemanager.de</p>
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant font-label-sm uppercase">Rolle</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#191c21] text-on-surface-variant border border-[#232a36]">Benutzer</span>
+</div>
+</div>
+</div>
+<!-- Empty search result state fallback -->
+<div class="hidden py-10 px-4 text-center" id="emptySearchState">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant mb-2">person_off</span>
+<p class="font-headline-sm text-headline-sm text-on-surface">Keine Benutzer gefunden</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Passen Sie Ihre Suche oder die ausgewählten Filter an.</p>
+</div>
+</div>
+<script>
+    (function () {
+      const searchInput = document.getElementById('userSearchInput');
+      const roleFilter = document.getElementById('roleFilter');
+      const statusFilter = document.getElementById('statusFilter');
+      const tableRows = document.querySelectorAll('.user-row');
+      const cards = document.querySelectorAll('.user-card');
+      const emptyState = document.getElementById('emptySearchState');
+
+      function filterUsers() {
+        const query = (searchInput.value || '').trim().toLowerCase();
+        const role = (roleFilter.value || '').trim();
+        const status = (statusFilter.value || '').trim();
+
+        let visibleCount = 0;
+
+        function matchItem(element, textContent) {
+          const itemRole = element.getAttribute('data-role') || '';
+          const itemStatus = element.getAttribute('data-status') || '';
+          const matchesQuery = !query || textContent.toLowerCase().includes(query);
+          const matchesRole = !role || itemRole === role;
+          const matchesStatus = !status || itemStatus === status;
+
+          return matchesQuery && matchesRole && matchesStatus;
+        }
+
+        tableRows.forEach(row => {
+          const isMatch = matchItem(row, row.innerText);
+          row.style.display = isMatch ? '' : 'none';
+          if (isMatch) visibleCount++;
+        });
+
+        cards.forEach(card => {
+          const isMatch = matchItem(card, card.innerText);
+          card.style.display = isMatch ? '' : 'none';
+        });
+
+        if (emptyState) {
+          emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+      }
+
+      if (searchInput) searchInput.addEventListener('input', filterUsers);
+      if (roleFilter) roleFilter.addEventListener('change', filterUsers);
+      if (statusFilter) statusFilter.addEventListener('change', filterUsers);
+    })();
+  </script>
+</div></main></div></body></html>

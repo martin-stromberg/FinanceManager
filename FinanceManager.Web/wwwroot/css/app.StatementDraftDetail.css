@@ -33,11 +33,11 @@
 .row-booked { opacity: .55; }
 .row-announced { opacity: .55; }
 .quick-edit-new-row td {
-    background-color: color-mix(in srgb, var(--accent, #2f7d57) 8%, transparent);
+    background-color: color-mix(in srgb, var(--accent, var(--success)) 8%, transparent);
 }
 
 .quick-edit-placeholder-row td {
-    background-color: color-mix(in srgb, var(--border, #d6d6d6) 16%, transparent);
+    background-color: color-mix(in srgb, var(--border, var(--text)) 16%, transparent);
     opacity: .72;
 }
 
@@ -45,10 +45,10 @@
     width: 1.65rem;
     height: 1.65rem;
     min-width: 1.65rem;
-    border: 1px solid #dc3545;
+    border: 1px solid var(--danger);
     border-radius: .25rem;
     background: transparent;
-    color: #dc3545;
+    color: var(--danger);
     cursor: pointer;
     padding: 0;
     display: inline-flex;
@@ -59,8 +59,8 @@
 
 .quick-edit-delete-button:hover,
 .quick-edit-delete-button:focus-visible {
-    background: #dc3545;
-    color: #fff;
+    background: var(--danger);
+    color: var(--text);
 }
 
 .quick-edit-delete-button svg {
@@ -74,10 +74,10 @@
     width: 1.65rem;
     height: 1.65rem;
     min-width: 1.65rem;
-    border: 1px solid var(--border, #6c757d);
+    border: 1px solid var(--border, var(--muted));
     border-radius: .25rem;
     background: transparent;
-    color: var(--text-muted, #6c757d);
+    color: var(--text-muted, var(--muted));
     cursor: pointer;
     padding: 0;
     display: inline-flex;
@@ -89,8 +89,8 @@
 
 .quick-edit-open-button:hover,
 .quick-edit-open-button:focus-visible {
-    background: var(--text-muted, #6c757d);
-    color: var(--card-bg, #fff);
+    background: var(--text-muted, var(--muted));
+    color: var(--card-bg, var(--text));
 }
 
 .quick-edit-open-button svg {
@@ -194,8 +194,8 @@
 }
 
 /* Error/Warning colors */
-.msg-error { color: #e66; }
-.msg-warning { color: #cc6; }
+.msg-error { color: var(--danger); }
+.msg-warning { color: var(--warning); }
 
 /* Booking error */
 .booking-error {

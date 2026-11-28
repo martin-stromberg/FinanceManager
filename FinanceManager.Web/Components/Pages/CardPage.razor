@@ -132,16 +132,20 @@ else
             {
                 case "Back":
                     // If payload is a direct URL (absolute or app-relative), navigate to it.
-                    if (!string.IsNullOrWhiteSpace(payload) && (payload.StartsWith("/", StringComparison.Ordinal) || payload.StartsWith("http", StringComparison.OrdinalIgnoreCase)))
+                    // The target is validated against the app origin to prevent open redirects.
+                    if (!string.IsNullOrWhiteSpace(payload)
+                        && (payload.StartsWith("/", StringComparison.Ordinal) || payload.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                        && NavigationManager.IsSameOriginUri(payload))
                     {
                         NavigationManager.NavigateTo(payload);
                         break;
                     }
 
-                    // prefer explicit Back query param if present
-                    if (!string.IsNullOrWhiteSpace(Back))
+                    // prefer explicit Back query param if present; validated against the app
+                    // origin to prevent open redirects.
+                    if (NavigationManager.IsSameOriginUri(Back))
                     {
-                        NavigationManager.NavigateTo(Back);
+                        NavigationManager.NavigateTo(Back!);
                         break;
                     }
 
@@ -310,19 +314,20 @@ else
                     _ = HandleDeleteAsync();
                     break;
                 case "Deleted":
-                    // when deleted navigate back to list (prefer Back)
-                    if (!string.IsNullOrWhiteSpace(Back)) NavigationManager.NavigateTo(Back);
+                    // when deleted navigate back to list (prefer Back, validated against the
+                    // app origin to prevent open redirects)
+                    if (NavigationManager.IsSameOriginUri(Back)) NavigationManager.NavigateTo(Back!);
                     else NavigationManager.NavigateTo(BuildListPath());
                     break;
                 case "Saved":
                     var kindLower = (Kind ?? string.Empty).Trim().ToLowerInvariant();
                     var savedId = payload;
-                    if (!string.IsNullOrWhiteSpace(Back) && !string.IsNullOrWhiteSpace(savedId))
+                    if (NavigationManager.IsSameOriginUri(Back) && !string.IsNullOrWhiteSpace(savedId))
                     {
                         try
                         {
-                            // navigate back to Back URL
-                            var backUri = new Uri(Back);
+                            // navigate back to Back URL (non-null per IsSameOriginUri check)
+                            var backUri = new Uri(Back!);
                             var basePath = backUri.GetLeftPart(UriPartial.Path);
                             var newQuery = backUri.Query;
                             NavigationManager.NavigateTo(basePath + newQuery);
@@ -395,7 +400,8 @@ else
             var instance = ActivatorUtilities.CreateInstance(Services, resolvedType);
             if (instance is ICardInitializable init)
             {
-                init.SetBackNavigation(Back);
+                // Sanitize the back target: only same-origin URIs may be offered as back navigation.
+                init.SetBackNavigation(NavigationManager.IsSameOriginUri(Back) ? Back : null);
                 init.SetInitValue(Prefill);
                 await SetViewModel((BaseCardViewModel<(string Key, string Value)>)instance);
                 await init.InitializeAsync(Id);

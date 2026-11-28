@@ -265,7 +265,7 @@ Nach bestandener Backup-Validierung ruft `BackupService.ApplyAsync` den Import a
    - `PortfolioKpiConfigurations` (Upsert): Existiert bereits eine Zeile des Benutzers (Unique-Index auf `OwnerUserId`), wird sie per `AssignBackupDto` ersetzt, sonst neu angelegt. `ClearUserDataAsync` löscht die Tabelle bewusst nicht — alte Backups ohne diese Sektion lassen die vorhandene Konfiguration unverändert.
 5. `BudgetRules` übernehmen zusätzlich `PurposePattern`/`PurposePatternIsRegex` über `SetPurposePattern`. Eine `ArgumentException` (ungültiges Regex in einem alten oder manipulierten Backup) wird abgefangen: Die Regel wird ohne Muster importiert und ein `LogWarning` geschrieben.
 6. `Securities` übernehmen die Felder `HasPriceError`, `PriceErrorMessage`, `PriceErrorSinceUtc`, `GoldenCrossNotifiedPhase` und `TrendReversalNotifiedStatus` über `AssignBackupDto`. Die drei Fehlerfelder werden direkt zugewiesen, weil `SetPriceError` den Zeitstempel auf `DateTime.UtcNow` stempeln und den originalen Fehlerzeitpunkt verlieren würde.
-7. Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) werden bewusst nicht importiert — `ClearUserDataAsync` löscht sie ebenfalls nicht.
+7. Die MCP-Sektionen (`McpAccesses`, `McpAccessScopes`, `McpAccessApprovalGrants`, `McpAuditEntries`, `McpAuditEntryChanges`, `AiActionRequests`) werden bewusst nicht importiert — `ClearUserDataAsync` löscht sie ebenfalls nicht.
 
 Beteiligte Komponenten: `SetupImportService.ImportVersion3`, `AppDbContext.ClearUserDataAsync`, `BackupService.ApplyAsync`, `AccountLinkedIban`, `StatementImport`, `StatementEntry`, `Notification`, `AccountShare`, `PortfolioKpiConfiguration`, `BudgetRule`, `Security`
 
@@ -287,13 +287,15 @@ Beteiligte Komponenten: `BackgroundTaskStatusPanel`, `ICurrentUserService`, `Api
 
 ### 11. Self-Update-Pruefung und Download
 
-Die Self-Update-Logik wird aus dem externen Release-Artefakt
-`msTools.Updater` eingebunden. Bis zur NuGet-Veroeffentlichung liegt der
-gepruefte Release `v0.3.0` unter `external/msTools.Updater/v0.3.0/`; die dort
-entpackte `msTools.Updater.dll` wird ueber `builder.UseAutoUpdate(...)` in
-`ProgramExtensions` registriert. FinanceManager greift ausschliesslich ueber
-die Adapterklasse `UpdateOrchestratorAdapter` darauf zu, sodass Controller,
-`ApiClient` und ViewModel stabil bleiben.
+Die Self-Update-Logik wird aus dem externen NuGet-Paket
+`msTools.Updater` eingebunden. Das gepruefte Paket `0.11.0-rc.8` liegt unter
+`external/msTools.Updater/msTools.Updater.0.11.0-rc.8.nupkg`; der Ordner
+`external/msTools.Updater` ist in `NuGet.config` als lokale Paketquelle
+`local-msTools.Updater` registriert. Die Bibliothek wird ueber
+`builder.UseAutoUpdate(...)` in `ProgramExtensions` registriert.
+FinanceManager greift ausschliesslich ueber die Adapterklasse
+`UpdateOrchestratorAdapter` darauf zu, sodass Controller, `ApiClient` und
+ViewModel stabil bleiben.
 
 `UseAutoUpdate(...)` seedet die Bibliothekseinstellungen (`AutoUpdateOptions`)
 zunaechst ausschliesslich aus `appsettings*.json`. Direkt danach, aber noch vor
@@ -346,7 +348,12 @@ Beteiligte Komponenten: `UpdateController`, `AutoUpdateCheckerService`,
 1. Ein Administrator startet `POST /api/setup/update/install/start` mit
    `ConfirmDowntime = true` oder der Hintergrunddienst
    `AutoUpdateSchedulerService` erreicht eine geplante Uhrzeit
-   (`Updates:ScheduledInstallTime`) bei Status `Ready`.
+   (`Updates:ScheduledInstallTime`) bei Status `Ready`. Liegt der geplante
+   Zeitpunkt bereits in der Vergangenheit — etwa weil der Prozess zu diesem
+   Zeitpunkt nicht lief oder das Paket erst spaeter bereitstand —, holt
+   `AutoUpdateSchedulerService` die Installation seit `msTools.Updater`
+   `0.11.0-rc.8` unmittelbar nach, statt auf den naechsten geplanten Termin
+   zu warten.
 2. Der Orchestrator lehnt den Start ab, wenn kein vorbereitetes Paket vorliegt,
    ein Lock aktiv ist, keine Downtime-Bestaetigung vorliegt oder bereits
    `Installing` gemeldet wird.
@@ -426,3 +433,17 @@ Beteiligte Komponenten: `ChangePassword.razor`, `LoginStatus.razor`, `AuthRedire
 2. Der JWT-Cookie-Fallback in `JwtBearerEvents.OnMessageReceived` greift nur noch, wenn der Request keinen `Authorization: Bearer`-Header trägt. Ein mitgeschicktes, veraltetes Cookie kann ein gültiges Bearer-Token nicht mehr still überschreiben.
 
 Beteiligte Komponenten: `ProgramExtensions.RegisterAppServices`, `AuthenticatedHttpClientHandler`, `JwtBearerEvents`, `JwtCookieAuthTokenProvider`
+
+---
+
+### 17. Anfrageverarbeitung unter PathBase (Reverse-Proxy-Unterordner)
+
+Ist der Konfigurationsschlüssel `PathBase` gesetzt (z. B. `PathBase=/finance`), läuft die gesamte Anwendung unter einem Pfad-Präfix — typischerweise hinter einem Reverse-Proxy, der den Präfix unverändert weiterreicht (Konfiguration siehe [Server-Installation](server-installation.md), Abschnitt B). Die Präfix-Abbildung verteilt sich auf Middleware, gerendertes Markup und Redirect-Erzeugung:
+
+1. `ProgramExtensions.ConfigureMiddleware` registriert `app.UsePathBase(pathBase)` als erste Middleware. Sie entfernt das Präfix aus `Request.Path` und stellt es in `Request.PathBase` — Routing und Endpunkt-Matching sehen den gestrippten Pfad.
+2. Direkt danach folgt bei gesetzter PathBase ein explizites `app.UseRouting()`. `WebApplication` fügt `UseRouting` sonst automatisch am Pipeline-Anfang ein — vor dem Präfix-Stripping —, sodass das Endpunkt-Matching den rohen Pfad sähe und die SignalR-Route `POST /{pathBase}/_blazor/negotiate` mit `405` scheiterte (bekannter Fehler dotnet/aspnetcore#48370). Der explizite Aufruf fixiert die Routing-Position, damit auch der interaktive Blazor-Circuit unter dem Präfix funktioniert.
+3. `App.razor` rendert `<base href>` dynamisch aus `Request.PathBase`. Alle internen Links und Asset-Referenzen (`href`, `src`, `NavLink`, `fetch`, `NavigateTo`) sind relativ notiert (z. B. `href="list/accounts"`, `href=""` für die Home-Route mit `NavLinkMatch.All`) und werden vom Browser gegen `<base href>` aufgelöst — sie bleiben damit automatisch unter dem Präfix. Root-absolute Literale (`href="/…"`) würden dagegen gegen die Domain-Wurzel aufgelöst und das Präfix verlieren; der Guard-Test `RazorRootAbsolutePathTests` lehnt solche Literale in `*.razor`- und eingebettetem `*.cs`-Markup ab.
+4. Serverseitig erzeugte Ziel-URLs tragen das Präfix explizit: `AuthenticationRedirectMiddleware` baut den Login-Redirect als `{PathBase}/login?returnUrl={PathBase}{Route}` — der `returnUrl`-Parameter enthält das PathBase-Präfix ebenfalls (analog zu `CookieAuthenticationHandler.BuildRedirectUri` und `AuthReturnUrl.FromNavigationUri`), weil die Post-Login-Navigation ihn gegen die Domain-Wurzel auflöst.
+5. Requests ohne das Präfix (z. B. `GET /health` auf dem internen Port) lässt `UsePathBase` unverändert durch — lokale Smoke-Tests und der Updater-Healthcheck bleiben präfix-frei erreichbar.
+
+Beteiligte Komponenten: `ProgramExtensions.ConfigureMiddleware`, `App.razor`, `MainLayout.razor`, `LoginStatus.razor`, `AuthenticationRedirectMiddleware`, `AuthReturnUrl`, `RazorRootAbsolutePathTests`

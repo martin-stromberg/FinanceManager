@@ -17,9 +17,8 @@
 @inject IKpiLocalStorageCache KpiCache
 <PageTitle>@Localizer["PageTitle"]</PageTitle>
 
+<div class="card-page-content">
 <Ribbon TTabEnum="TabId" Provider="_vm" Localizer="Localizer" />
-
-<ConfirmationDialogHost />
 
 <h1>@Localizer["Home_PageTitle"]</h1>
 
@@ -65,8 +64,27 @@
         </div>
     }
 
-    @if (_vm?.PendingMassImport != null)
-    {
+    <div class="kpi-grid">
+        <HomeKpiGrid EditMode="@(_vm?.KpiEditMode == true)" />
+    </div>
+}
+else
+{
+    <div class="signed-out">
+        @* Lightweight placeholder when not authenticated to avoid unnecessary data loading *@
+        <p>@Localizer["PleaseLoginPrompt"]</p>
+    </div>
+}
+</div>
+
+@* Overlay/dialog hosts render outside .card-page-content: the panel applies
+   backdrop-filter, which establishes a containing block for position:fixed descendants
+   and would confine the viewport-wide dimmer to the panel bounds (clicks outside the
+   panel would no longer close the overlay). *@
+<ConfirmationDialogHost />
+
+@if (_vm?.PendingMassImport != null)
+{
         <div class="split-center" @onclick="CancelPendingMassImport">
             <div class="split-dialog mass-import-dialog" @onclick:stopPropagation="true">
                 <h3>@Localizer["MassImport_Dialog_Title"]</h3>
@@ -136,18 +154,6 @@
                 </div>
             </div>
         </div>
-    }
-
-    <div class="kpi-grid">
-        <HomeKpiGrid EditMode="@(_vm?.KpiEditMode == true)" />
-    </div>
-}
-else
-{
-    <div class="signed-out">
-        @* Lightweight placeholder when not authenticated to avoid unnecessary data loading *@
-        <p>@Localizer["PleaseLoginPrompt"]</p>
-    </div>
 }
 
 @code {

@@ -366,22 +366,26 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
             new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, new List<UiRibbonAction>
             {
                 new UiRibbonAction("Back", localizer["Ribbon_Back"].Value, "<svg><use href='icons/sprite.svg#back'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Back"); return Task.CompletedTask; }) { MobileShortcut = true }
-            }),
+            }, Sort: 0),
 
             new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, new List<UiRibbonAction>
             {
                 new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
-                new UiRibbonAction("Archive", localizer["Ribbon_Archive"].Value, "<svg><use href='icons/sprite.svg#archive'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty && Security != null && Security.IsActive), null, async () => { await ArchiveAsync(); }),
-                new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty && Security != null && !Security.IsActive), null, async () => { await DeleteAsync(); })
-            }),
+                new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty && Security != null && !Security.IsActive), null, async () => { await DeleteAsync(); }),
+                new UiRibbonAction("Archive", localizer["Ribbon_Archive"].Value, "<svg><use href='icons/sprite.svg#archive'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty && Security != null && Security.IsActive), null, async () => { await ArchiveAsync(); })
+            }, Sort: 10),
 
             new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, new List<UiRibbonAction>
             {
                 new UiRibbonAction("Postings", localizer["Ribbon_Postings"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { var url = $"list/postings/security/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; }),
-                new UiRibbonAction("Prices", localizer["Ribbon_Prices"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { var url = $"list/securities/prices/{Id}"; RaiseUiActionRequested("OpenPrices", url); return Task.CompletedTask; }),
-                new UiRibbonAction("Performance", localizer["Ribbon_Performance"].Value, "<svg><use href='icons/sprite.svg#chart'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { var url = $"securities/{Id}/performance"; RaiseUiActionRequested("OpenPerformance", url); return Task.CompletedTask; }),
-                new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { RequestOpenAttachments(AttachmentEntityKind.Security, Id); return Task.CompletedTask; })
-            })
+                new UiRibbonAction("Attachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { RequestOpenAttachments(AttachmentEntityKind.Security, Id); return Task.CompletedTask; }),
+                new UiRibbonAction("Prices", localizer["Ribbon_Prices"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty), null, () => { var url = $"list/securities/prices/{Id}"; RaiseUiActionRequested("OpenPrices", url); return Task.CompletedTask; })
+            }, Sort: 55),
+
+            new UiRibbonTab(localizer["Ribbon_Group_Reports"].Value, new List<UiRibbonAction>
+            {
+                new UiRibbonAction("Performance", localizer["Ribbon_Performance"].Value, "<svg><use href='icons/sprite.svg#chart'/></svg>", UiRibbonItemSize.Large, !(Id != Guid.Empty), null, () => { var url = $"securities/{Id}/performance"; RaiseUiActionRequested("OpenPerformance", url); return Task.CompletedTask; })
+            }, Sort: 70)
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

@@ -549,6 +549,15 @@
   <data name="Ribbon_Group_Analysis" xml:space="preserve">
     <value>Analyse</value>
   </data>
+  <data name="Ribbon_Group_View" xml:space="preserve">
+    <value>Ansicht</value>
+  </data>
+  <data name="Ribbon_Group_Data" xml:space="preserve">
+    <value>Daten</value>
+  </data>
+  <data name="Hint_RebuildAggregates" xml:space="preserve">
+    <value>Berechnet alle Summen aus den Buchungen neu. Kann je nach Datenmenge dauern.</value>
+  </data>
   <data name="Card_Caption_SavingsPlan_Name" xml:space="preserve">
     <value>Name</value>
   </data>
@@ -1381,7 +1390,7 @@
     <value>Well-Known</value>
   </data>
   <data name="Setup_Section_Update" xml:space="preserve">
-    <value>Aktualisierungen</value>
+    <value>Programmversion</value>
   </data>
   <data name="Setup_Section_ReturnAnalysis" xml:space="preserve">
     <value>Renditeanalyse</value>
@@ -1582,7 +1591,7 @@
     <value>Erzeugt am</value>
   </data>
   <data name="SetupBackup_Titel" xml:space="preserve">
-    <value>Datensicherungen</value>
+    <value>Sicherungen</value>
   </data>
   <data name="SetupBackup_RestoreConfirm_Title" xml:space="preserve">
     <value>Backup-Wiederherstellung bestätigen</value>
@@ -1723,7 +1732,7 @@
     <value>Aktivieren</value>
   </data>
   <data name="Ribbon_SetPassword" xml:space="preserve">
-    <value>Passwort zuweisen</value>
+    <value>Passwort zurücksetzen</value>
   </data>
   <data name="User_SetPassword_Placeholder" xml:space="preserve">
     <value>Neues Passwort</value>
@@ -3466,4 +3475,24 @@
   <data name="Ribbon_ReevaluatePostingTypes" xml:space="preserve"><value>Postenarten neu bewerten</value></data>
   <data name="Ribbon_PostingRules" xml:space="preserve"><value>Kontierungsregeln</value></data>
   <data name="Ribbon_PostingRules_DisabledHint" xml:space="preserve"><value>Nur für gespeicherte Konten verfügbar</value></data>
+  <data name="Mcp_ApprovalMode_Granular" xml:space="preserve"><value>Granular (Expertenmodus)</value></data>
+  <data name="Mcp_ApprovalModeDesc_Granular" xml:space="preserve"><value>Vorab-Freigaben pro Tupel: passende Routine-Aktionen laufen direkt, passende genehmigungspflichtige Aktionen starten genehmigt; alles andere wird einzeln entschieden.</value></data>
+  <data name="EnumType_McpApprovalMode_Granular" xml:space="preserve"><value>Granular (Expertenmodus)</value></data>
+  <data name="Mcp_Grants_Title" xml:space="preserve"><value>Vorab-Freigaben (Expertenmodus)</value></data>
+  <data name="Mcp_Grants_Hint" xml:space="preserve"><value>Markierte Tupel geben passende Aktionen vorab frei: Routine-Aktionen laufen direkt, genehmigungspflichtige Aktionen starten genehmigt. Aktionen ohne passendes Tupel werden einzeln entschieden.</value></data>
+  <data name="Mcp_Grants_FinalHint" xml:space="preserve"><value>Endwirkungen und destruktive Aktionen bleiben genehmigungspflichtig – Vorschlag, Buchung und Löschung können nie vorab freigegeben werden.</value></data>
+  <data name="Mcp_Grants_EditHint" xml:space="preserve"><value>Tupel markieren, um passende Aktionen vorab freizugeben; Änderungen werden beim Speichern übernommen.</value></data>
+  <data name="Confirmation_McpGrantWrite_Title" xml:space="preserve"><value>Schreibaktionen vorab freigeben</value></data>
+  <data name="Confirmation_McpGrantWrite_Message" xml:space="preserve"><value>Neue Schreib-Freigaben genehmigen passende Änderungen dieses Zugangs still vorab – Erstellen, Ändern und Vervollständigen fragen nicht mehr einzeln. Übernehmen?</value></data>
+  <data name="Confirmation_McpGrantAdminWrite_Title" xml:space="preserve"><value>Administrative Änderungen vorab freigeben</value></data>
+  <data name="Confirmation_McpGrantAdminWrite_Message" xml:space="preserve"><value>Ein Administration-Ändern/Erstellen-Tupel genehmigt administrative Änderungen still vorab – Installationen, Zeitpläne, Einstellungen, Backup-Aktionen – ohne Einzelgenehmigung. Übernehmen?</value></data>
+  <data name="Nav_Logout" xml:space="preserve"><value>Abmelden</value></data>
+  <data name="Nav_Login" xml:space="preserve"><value>Anmelden</value></data>
+  <data name="Nav_Budget" xml:space="preserve"><value>Budget</value></data>
+  <data name="Nav_UserManagement" xml:space="preserve"><value>Benutzerverwaltung</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Nav_Rail_AriaLabel" xml:space="preserve"><value>Hauptnavigation</value></data>
+  <data name="LoginStatus_VersionUnknown" xml:space="preserve"><value>Version unbekannt</value></data>
+  <data name="Nav_Menu_Expand" xml:space="preserve"><value>Menü ausklappen</value></data>
+  <data name="Nav_Menu_Collapse" xml:space="preserve"><value>Menü einklappen</value></data>
 </root>

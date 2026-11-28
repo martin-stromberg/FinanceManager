@@ -27,37 +27,16 @@ namespace FinanceManager.Tests.Mcp;
 /// output without persistence, scope denial, untrusted_data wrappers and the degraded
 /// coverage when auxiliary read scopes are missing.
 /// </summary>
-public sealed class McpSuggestionToolsTests
+public sealed class McpSuggestionToolsTests : McpToolTestBase
 {
-    private static McpAccess NewAccess(Guid owner, McpAccessLevel level = McpAccessLevel.Assistent)
-        => new(owner, "acc", "HINT01", "pbkdf2|1|AA|AA", level, McpApprovalMode.PerAction);
-
-    private static Mock<IMcpAccessContext> NewAccessContext(Guid owner, McpAccess? access = null)
-    {
-        var ctx = new Mock<IMcpAccessContext>();
-        ctx.SetupGet(c => c.OwnerUserId).Returns(owner);
-        ctx.SetupGet(c => c.Access).Returns(access ?? NewAccess(owner));
-        return ctx;
-    }
-
-    private static McpToolCallContext NewCallContext(IMcpAccessContext access)
-        => new(access, Mock.Of<IServiceProvider>(), Guid.NewGuid(), null);
-
-    private static McpRecordScopeFilter NewFilter(params McpAccessScope[] scopes)
-    {
-        var evaluator = new Mock<IMcpScopeEvaluator>();
-        evaluator.Setup(e => e.GetEffectiveScopesAsync(It.IsAny<McpAccess>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(scopes.Length == 0
-                ? McpLevelProfiles.GetDefaultScopes(McpAccessLevel.Assistent, isAdmin: true)
-                    .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList()
-                : scopes.ToList());
-        return new McpRecordScopeFilter(evaluator.Object);
-    }
+    /// <inheritdoc />
+    protected override McpAccessLevel DefaultLevel => McpAccessLevel.Assistent;
 
     /// <summary>
     /// Scope evaluator granting every runtime check (conditional feature gates of the
     /// suggestion tools).
     /// </summary>
+    /// <returns>An evaluator mock that allows all checks and reports full default scopes.</returns>
     private static IMcpScopeEvaluator AllowAllEvaluator()
     {
         var evaluator = new Mock<IMcpScopeEvaluator>();
@@ -69,10 +48,6 @@ public sealed class McpSuggestionToolsTests
                 .Select(t => new McpAccessScope(Guid.NewGuid(), Guid.NewGuid(), t.DataType, t.Right)).ToList());
         return evaluator.Object;
     }
-
-    private static JsonElement Args(string json) => JsonDocument.Parse(json).RootElement;
-
-    private static JsonDocument Serialize(object result) => JsonDocument.Parse(JsonSerializer.Serialize(result));
 
     private static IMcpToolDescriptor[] SuggestionCatalog() => new IMcpToolDescriptor[]
     {
@@ -160,7 +135,8 @@ public sealed class McpSuggestionToolsTests
             .ReturnsAsync(false);
         var audit = new Mock<IMcpAuditWriter>();
         var gate = new Mock<IMcpApprovalGate>();
-        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(), It.IsAny<CancellationToken>()))
+        gate.Setup(g => g.EvaluateAsync(It.IsAny<McpAccess>(), It.IsAny<IMcpToolDescriptor>(),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(McpApprovalDecision.Direct);
         var opts = new TestOptionsMonitor(new McpOptions());
         var dispatcher = new McpToolDispatcher(
@@ -743,7 +719,7 @@ public sealed class McpSuggestionToolsTests
         => new(draftId, "f.csv", null, accountId, null, null, StatementDraftStatus.Draft,
             0m, false, null, null, null, null, Array.Empty<StatementDraftEntryDto>());
 
-    private static FmStatementDraftAnalyzeHandler NewAnalyzeHandler(
+    private FmStatementDraftAnalyzeHandler NewAnalyzeHandler(
         IStatementDraftService drafts, IMcpScopeEvaluator evaluator)
     {
         var contacts = new Mock<IContactService>();

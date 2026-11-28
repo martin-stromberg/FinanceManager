@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface-container-high":"#1c2b3c","inverse-surface":"#d4e4fa","surface-container-highest":"#273647","tertiary-fixed":"#c4e7ff","on-surface":"#d4e4fa","surface-container-low":"#0d1c2d","on-secondary":"#002780","primary":"#b6c4ff","on-secondary-container":"#a3b5ff","tertiary-fixed-dim":"#7bd0ff","secondary-container":"#133eaf","on-tertiary":"#00354a","outline":"#8e909f","on-background":"#d4e4fa","on-primary-fixed":"#001550","on-primary":"#002780","primary-fixed-dim":"#b6c4ff","secondary-fixed-dim":"#b6c4ff","on-secondary-fixed":"#001551","on-surface-variant":"#c4c5d5","surface-container":"#122131","surface-dim":"#051424","background":"#051424","surface-tint":"#b6c4ff","surface":"#051424","on-tertiary-fixed-variant":"#004c69","on-error-container":"#ffdad6","primary-fixed":"#dce1ff","error-container":"#93000a","primary-container":"#6d8dff","surface-bright":"#2c3a4c","error":"#ffb4ab","on-tertiary-fixed":"#001e2c","on-error":"#690005","surface-variant":"#273647","inverse-primary":"#3255c5","inverse-on-surface":"#233143","tertiary-container":"#009fd6","outline-variant":"#444653","on-primary-fixed-variant":"#0d3bac","on-tertiary-container":"#003145","secondary":"#b6c4ff","tertiary":"#7bd0ff","secondary-fixed":"#dce1ff","surface-container-lowest":"#010f1f","on-secondary-fixed-variant":"#0f3bac","on-primary-container":"#002477"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"gutter":"1rem","space-sm":"0.5rem","space-xl":"1.75rem","margin-desktop":"2rem","gutter-desktop":"1.25rem","space-lg":"1.25rem","margin":"1rem","space-xs":"0.25rem","space-md":"0.75rem","margin-tablet":"1.5rem"},"fontFamily":{"headline-lg":["Inter"],"label-sm":["Inter"],"headline-sm":["Inter"],"metric-lg":["Inter"],"label-md":["Inter"],"metric-md":["Inter"],"body-sm":["Inter"],"body-lg":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"headline-md":["Inter"]},"fontSize":{"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"600"}],"metric-lg":["1.75rem",{"lineHeight":"2rem","letterSpacing":"-0.03em","fontWeight":"600"}],"label-md":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.01em","fontWeight":"500"}],"metric-md":["1.25rem",{"lineHeight":"1.5rem","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0em","fontWeight":"400"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.005em","fontWeight":"400"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0em","fontWeight":"400"}],"headline-xl":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.025em","fontWeight":"600"}],"headline-md":["1.125rem",{"lineHeight":"1.5rem","letterSpacing":"-0.015em","fontWeight":"600"}]}}}};</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head><body class="bg-background font-body-md text-on-surface antialiased fm-body-a fm-body-m"><aside class="fm-aside fm-aside-m"></aside><header class="fm-topbar fm-topbar-m"><div style="display:flex;align-items:center;gap:10px"><button class="fm-burger"><span class="material-symbols-outlined">menu</span></button><span class="fm-page-title">Einrichtung</span></div><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-m"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Zurücksetzen"><span class="material-symbols-outlined">undo</span><span>Zurücksetzen</span></button><button class="fm-rib-btn" type="button" title="Aggregatposten neu berechnen"><span class="material-symbols-outlined">refresh</span><span>Aggregatposten neu berechnen</span></button><button class="fm-rib-btn" type="button" title="Cache zurücksetzen"><span class="material-symbols-outlined">delete</span><span>Cache zurücksetzen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zeitzone ermitteln"><span class="material-symbols-outlined">refresh</span><span>Zeitzone ermitteln</span></button></div><div class="fm-rib-caption">Profil</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Genehmigungen"><span class="material-symbols-outlined">check</span><span>Genehmigungen</span></button><button class="fm-rib-btn" type="button" title="Protokoll"><span class="material-symbols-outlined">format_list_bulleted</span><span>Protokoll</span></button><button class="fm-rib-btn" type="button" title="KI-Sicherheit"><span class="material-symbols-outlined">vpn_key</span><span>KI-Sicherheit</span></button></div><div class="fm-rib-caption">KI</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Jetzt prüfen"><span class="material-symbols-outlined">refresh</span><span>Jetzt prüfen</span></button><button class="fm-rib-btn" type="button" title="Update installieren"><span class="material-symbols-outlined">download</span><span>Update installieren</span></button><button class="fm-rib-btn" type="button" title="Update-Lock zurücksetzen"><span class="material-symbols-outlined">undo</span><span>Update-Lock zurücksetzen</span></button></div><div class="fm-rib-caption">Aktualisierungen</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Backup erstellen"><span class="material-symbols-outlined">save</span><span>Backup erstellen</span></button><button class="fm-rib-btn" type="button" title="Backup einlesen"><span class="material-symbols-outlined">upload</span><span>Backup einlesen</span></button></div><div class="fm-rib-caption">Datensicherungen</div></div></div><div class="pl-60"><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Ribbon Toolbar: Action Command Bar -->
+<!-- Main View Area -->
+<div class="w-full max-w-[1600px] mx-auto px-margin-desktop py-space-lg flex flex-col gap-space-lg">
+<!-- Breadcrumb & Header Unit -->
+<div class="flex flex-col gap-space-xs">
+<!-- Breadcrumb -->
+<nav aria-label="Pfadnavigation" class="flex items-center gap-1.5 text-label-sm font-label-sm text-outline tracking-wider uppercase">
+<span>FINANCEMANAGER</span>
+<span class="material-symbols-outlined text-[12px] text-outline-variant">chevron_right</span>
+<span>SYSTEM</span>
+<span class="material-symbols-outlined text-[12px] text-outline-variant">chevron_right</span>
+<span>EINSTELLUNGEN</span>
+<span class="material-symbols-outlined text-[12px] text-outline-variant">chevron_right</span>
+<span class="text-on-surface font-semibold">EINRICHTUNG &amp; SYSTEMKONFIGURATION</span>
+</nav>
+<!-- Page Title & Badges -->
+<!-- Page Subtitle -->
+</div>
+<!-- 2-Column Responsive Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Primary Column: Accordion Panels (8 Cols on Desktop) -->
+<div class="lg:col-span-8 flex flex-col gap-space-md">
+<!-- Accordion Item 1: Systeminformationen & Mandantenparameter (EXPANDED) -->
+<section class="rounded-lg bg-surface-container-low border border-outline-variant/40 overflow-hidden shadow-sm">
+<div class="p-space-lg flex flex-col gap-space-lg">
+<!-- DB & Schema Info-Banner -->
+<div class="p-space-md rounded bg-surface-container border border-outline-variant/30 flex items-start justify-between gap-space-md">
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px] mt-0.5">database</span>
+</div>
+</div>
+<!-- Form Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Instanz-Bezeichnung -->
+<div class="flex flex-col gap-space-xs md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface font-medium flex items-center justify-between" for="instance-name">
+<span>Instanz-Bezeichnung</span>
+<span class="font-label-sm text-label-sm text-outline">Erforderlich</span>
+</label>
+<input class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="instance-name" type="text" value="FinanceManager Hauptinstanz Production">
+<p class="font-body-sm text-body-sm text-outline">Eindeutiger Bezeichner für Protokolle und externe Schnittstellen.</p>
+</div>
+<!-- Mandanten-Kennung -->
+<!-- Server-Zeitzone -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium" for="server-timezone">Server-Zeitzone</label>
+<select class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="server-timezone">
+<option selected>Europe/Berlin (UTC+01:00 / MESZ)</option>
+<option>Europe/Vienna (UTC+01:00 / MESZ)</option>
+<option>Europe/Zurich (UTC+01:00 / MESZ)</option>
+<option>UTC (Koordinierte Weltzeit)</option>
+</select>
+<p class="font-body-sm text-body-sm text-outline">Gültig für Wertstellung und Zinsberechnung.</p>
+</div>
+<!-- Basis- & Bilanzierungswährung -->
+<div class="flex flex-col gap-space-xs md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface font-medium" for="base-currency">Basis- &amp; Bilanzierungswährung</label>
+<select class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="base-currency">
+<option selected>EUR (€) - Euro (Deutschland/EZB)</option>
+<option>CHF (CHF) - Schweizer Franken (SNB)</option>
+<option>USD ($) - US-Dollar (Federal Reserve)</option>
+<option>GBP (£) - Britisches Pfund (BoE)</option>
+</select>
+<p class="font-body-sm text-body-sm text-outline">Maßgeblich für die GuV, Portfoliokonsolidierung und Steuerberichte.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Accordion Item 2: Benachrichtigungen, SMTP & Operative Alarme (EXPANDED) -->
+<section class="rounded-lg bg-surface-container-low border border-outline-variant/40 overflow-hidden shadow-sm">
+<button aria-expanded="true" class="w-full accordion-trigger flex items-center justify-between px-space-lg py-space-md bg-surface-container/60 hover:bg-surface-container text-left transition-colors border-b border-outline-variant/20" type="button">
+<div class="flex items-center gap-space-md">
+<span class="w-6 h-6 rounded flex items-center justify-center bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">2</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Benachrichtigungen, SMTP &amp; Operative Alarme</h2>
+<p class="font-body-sm text-body-sm text-outline">Mailing-Infrastruktur, Abweichungsmeldungen und Dispatcher-Trigger</p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-tertiary text-label-sm font-label-sm font-medium">Aktiv</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200 rotate-180">expand_more</span>
+</div>
+</button>
+<div class="p-space-lg flex flex-col gap-space-lg">
+<!-- Global Dispatching Toggle -->
+<div class="flex items-center justify-between p-space-md rounded bg-surface-container border border-outline-variant/30">
+<div class="flex items-center gap-space-md">
+<span class="material-symbols-outlined text-primary text-[22px]">mark_email_read</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">E-Mail-Dispatching &amp; Event-Signale</div>
+<div class="font-body-sm text-body-sm text-outline">Systemnachrichten über gesicherten TLS-Tunnel versenden</div>
+</div>
+</div>
+<!-- Custom Toggle Switch -->
+</div>
+<!-- SMTP Connection Fields -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium" for="smtp-host">SMTP-Relay / Host &amp; Port</label>
+<div class="relative flex items-center">
+<input class="w-full h-9 pl-space-md pr-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all font-mono" id="smtp-host" type="text" value="smtp.financemanager.internal:587">
+</div>
+<p class="font-body-sm text-body-sm text-outline">STARTTLS erzwungen. Kein offenes Relay.</p>
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium" for="alarm-email">System-Alarmempfänger</label>
+<div class="relative flex items-center">
+<input class="w-full h-9 pl-space-md pr-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="alarm-email" type="email" value="admin-finance@organisation.de">
+</div>
+<p class="font-body-sm text-body-sm text-outline">Zieladresse für kritische Systemereignisse.</p>
+</div>
+</div>
+<!-- Automatisierte Warnschwellen -->
+<div class="flex flex-col gap-space-sm pt-space-xs border-t border-outline-variant/20">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Automatisierte Warnschwellen (Dispatch-Filter)</span>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
+<!-- Checkbox 1 -->
+<label class="flex items-center gap-space-sm p-space-sm rounded bg-surface-container-lowest border border-outline-variant/30 hover:bg-surface-container cursor-pointer transition-colors">
+<input checked class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant/50 text-primary-container focus:ring-0 focus:ring-offset-0" type="checkbox">
+<span class="font-body-sm text-body-sm text-on-surface">Fehlerhafte Buchungsimporte</span>
+</label>
+<!-- Checkbox 2 -->
+<label class="flex items-center gap-space-sm p-space-sm rounded bg-surface-container-lowest border border-outline-variant/30 hover:bg-surface-container cursor-pointer transition-colors">
+<input checked class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant/50 text-primary-container focus:ring-0 focus:ring-offset-0" type="checkbox">
+<span class="font-body-sm text-body-sm text-on-surface">Kursabweichung &gt; 5,0%</span>
+</label>
+<!-- Checkbox 3 -->
+<label class="flex items-center gap-space-sm p-space-sm rounded bg-surface-container-lowest border border-outline-variant/30 hover:bg-surface-container cursor-pointer transition-colors">
+<input checked class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant/50 text-primary-container focus:ring-0 focus:ring-offset-0" type="checkbox">
+<span class="font-body-sm text-body-sm text-on-surface">Sicherungsbericht täglich</span>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Accordion Item 3: Datensicherung, Replikation & Archivierung (EXPANDED) -->
+<section class="rounded-lg bg-surface-container-low border border-outline-variant/40 overflow-hidden shadow-sm">
+<div class="p-space-lg flex flex-col gap-space-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Backup Intervall -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium" for="backup-interval">Backup-Intervall</label>
+<select class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="backup-interval">
+<option selected>Täglich um 03:00 Uhr (Vollständiger Snapshot)</option>
+<option>Alle 12 Stunden (Inkrementell)</option>
+<option>Stündlich (Transaktionsprotokoll-Archiv)</option>
+<option>Wöchentlich (Sonntags 02:00 Uhr)</option>
+</select>
+<p class="font-body-sm text-body-sm text-outline">Nächster Lauf: Morgen um 03:00:00 Uhr MESZ.</p>
+</div>
+<!-- Retention -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface font-medium" for="backup-retention">Aufbewahrungsdauer (Retention)</label>
+<select class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="backup-retention">
+<option selected>90 Tage (DSGVO- und GoBD-konform)</option>
+<option>30 Tage (Standard)</option>
+<option>365 Tage (Erweiterte Bilanzrevision)</option>
+<option>10 Jahre (Steuerliches Langzeitarchiv)</option>
+</select>
+<p class="font-body-sm text-body-sm text-outline">Ältere Snapshots werden im Cold-Storage purgiert.</p>
+</div>
+<!-- Storage Target -->
+<div class="flex flex-col gap-space-xs md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface font-medium flex items-center justify-between" for="backup-path">
+<span>Speicherziel &amp; Verschlüsselungspfad</span>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[14px]">shield</span> AES-256 HSM verschlüsselt
+                  </span>
+</label>
+<div class="flex items-center gap-space-xs">
+<input class="w-full h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-mono text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all" id="backup-path" type="text" value="/mnt/backups/ledger/cold-vault-primary">
+<button class="h-9 px-space-md rounded bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-on-surface text-label-md font-label-md transition-colors whitespace-nowrap" type="button">
+                    Ziel prüfen
+                  </button>
+</div>
+<p class="font-body-sm text-body-sm text-outline">Dediziertes NFS-Volume mit unveränderbarem WORM-Schreibschutz.</p>
+</div>
+</div>
+<!-- Backup Action Bar -->
+</div>
+</section>
+<!-- Accordion Item 4: Wartungsmodus & Betriebszustand (COLLAPSED) -->
+<section class="rounded-lg bg-surface-container-low border border-outline-variant/30 overflow-hidden shadow-sm">
+<div class="p-space-lg hidden border-t border-outline-variant/20 flex flex-col gap-space-md bg-surface-container-lowest/50">
+<div class="flex items-center justify-between">
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">Schreibsperre (Read-Only Modus)</div>
+<div class="font-body-sm text-body-sm text-outline">Verhindert neue Buchungen und Kontobewegungen während Systemprüfungen.</div>
+</div>
+<input class="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant/50 text-primary-container" type="checkbox">
+</div>
+</div>
+</section>
+<!-- Accordion Item 5: Dateianhänge & Dokumentenspeicher (COLLAPSED) -->
+<section class="rounded-lg bg-surface-container-low border border-outline-variant/30 overflow-hidden shadow-sm">
+<button aria-expanded="false" class="w-full accordion-trigger flex items-center justify-between px-space-lg py-space-md hover:bg-surface-container/50 text-left transition-colors" type="button">
+<div class="flex items-center gap-space-md">
+<span class="w-6 h-6 rounded flex items-center justify-center bg-surface-container-high text-outline font-label-sm text-label-sm font-semibold">5</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Dateianhänge &amp; Dokumentenspeicher</h2>
+<p class="font-body-sm text-body-sm text-outline">Ablageregeln, OCR-Vorverarbeitung und Speicher-Quotas</p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm">AES-256 / 4,2 GB belegt</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200">expand_more</span>
+</div>
+</button>
+<div class="p-space-lg hidden border-t border-outline-variant/20 flex flex-col gap-space-md bg-surface-container-lowest/50">
+<div class="grid grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface">Maximale Beleggröße (MB)</label>
+<input class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface" type="number" value="25">
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface">Zulässige MIME-Typen</label>
+<input class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface" type="text" value="application/pdf, image/jpeg, image/png">
+</div>
+</div>
+</div>
+</section>
+<!-- Accordion Item 6: Sprache & Lokalisierung (COLLAPSED) -->
+<section class="rounded-lg bg-surface-container-low border border-outline-variant/30 overflow-hidden shadow-sm">
+<button aria-expanded="false" class="w-full accordion-trigger flex items-center justify-between px-space-lg py-space-md hover:bg-surface-container/50 text-left transition-colors" type="button">
+<div class="flex items-center gap-space-md">
+<span class="w-6 h-6 rounded flex items-center justify-center bg-surface-container-high text-outline font-label-sm text-label-sm font-semibold">6</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Sprache &amp; Lokalisierung</h2>
+<p class="font-body-sm text-body-sm text-outline">Zahlenformate, Datumskonventionen und UI-Sprachpaket</p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-outline font-label-sm text-label-sm">DE-DE (Standard)</span>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200">expand_more</span>
+</div>
+</button>
+<div class="p-space-lg hidden border-t border-outline-variant/20 flex flex-col gap-space-md bg-surface-container-lowest/50">
+<div class="grid grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface">Zahlenformat</label>
+<input class="h-9 px-space-md rounded bg-surface-container border border-outline-variant/20 text-outline" disabled type="text" value="1.234.567,89">
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface">Datumsformat</label>
+<input class="h-9 px-space-md rounded bg-surface-container border border-outline-variant/20 text-outline" disabled type="text" value="TT.MM.JJJJ (31.12.2025)">
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Secondary Column: Live Status & System Telemetry Sidebar (4 Cols on Desktop) -->
+</div>
+</div>
+</div>
+<script>
+  // Simple Accordion Interactive Behavior
+  document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+      const content = trigger.nextElementSibling;
+      const chevron = trigger.querySelector('.material-symbols-outlined:last-child');
+
+      if (isExpanded) {
+        trigger.setAttribute('aria-expanded', 'false');
+        if (content) content.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+      } else {
+        trigger.setAttribute('aria-expanded', 'true');
+        if (content) content.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+      }
+    });
+  });
+
+  // Save Button Feedback
+  const saveBtn = document.getElementById('save-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span><span>Speichert…</span>';
+      setTimeout(() => {
+        saveBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">done</span><span>Gespeichert</span>';
+        setTimeout(() => {
+          saveBtn.innerHTML = originalText;
+        }, 1800);
+      }, 600);
+    });
+  }
+</script></main></div></body></html>

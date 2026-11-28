@@ -1,0 +1,1837 @@
+{
+  "generatedAt": "2026-11-25T04:56:22.970Z",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 900
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "entries": [
+    {
+      "id": "login",
+      "group": "public",
+      "url": "/login",
+      "auth": "public",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/login.png",
+      "html": "html/desktop/login.html",
+      "notes": []
+    },
+    {
+      "id": "register",
+      "group": "public",
+      "url": "/register",
+      "auth": "public",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/register.png",
+      "html": "html/desktop/register.html",
+      "notes": []
+    },
+    {
+      "id": "error",
+      "group": "public",
+      "url": "/Error",
+      "auth": "public",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/error.png",
+      "html": "html/desktop/error.html",
+      "notes": []
+    },
+    {
+      "id": "legal",
+      "group": "public",
+      "url": "/legal",
+      "auth": "public",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/legal.png",
+      "html": "html/desktop/legal.html",
+      "notes": []
+    },
+    {
+      "id": "help-hub",
+      "group": "public",
+      "url": "/help",
+      "auth": "public",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/help-hub.png",
+      "html": "html/desktop/help-hub.html",
+      "notes": []
+    },
+    {
+      "id": "help-view",
+      "group": "public",
+      "url": "/help/view/konten-und-buchungen",
+      "auth": "public",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/help-view.png",
+      "html": "html/desktop/help-view.html",
+      "notes": []
+    },
+    {
+      "id": "login",
+      "group": "public",
+      "url": "/login",
+      "auth": "public",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/login.png",
+      "html": "html/mobile/login.html",
+      "notes": []
+    },
+    {
+      "id": "register",
+      "group": "public",
+      "url": "/register",
+      "auth": "public",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/register.png",
+      "html": "html/mobile/register.html",
+      "notes": []
+    },
+    {
+      "id": "error",
+      "group": "public",
+      "url": "/Error",
+      "auth": "public",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/error.png",
+      "html": "html/mobile/error.html",
+      "notes": []
+    },
+    {
+      "id": "legal",
+      "group": "public",
+      "url": "/legal",
+      "auth": "public",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/legal.png",
+      "html": "html/mobile/legal.html",
+      "notes": []
+    },
+    {
+      "id": "help-hub",
+      "group": "public",
+      "url": "/help",
+      "auth": "public",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/help-hub.png",
+      "html": "html/mobile/help-hub.html",
+      "notes": []
+    },
+    {
+      "id": "help-view",
+      "group": "public",
+      "url": "/help/view/konten-und-buchungen",
+      "auth": "public",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/help-view.png",
+      "html": "html/mobile/help-view.html",
+      "notes": []
+    },
+    {
+      "id": "change-password",
+      "group": "concrete",
+      "url": "/change-password",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/change-password.png",
+      "html": "html/desktop/change-password.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "reports",
+      "group": "concrete",
+      "url": "/reports",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/reports.png",
+      "html": "html/desktop/reports.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "reports-dashboard",
+      "group": "concrete",
+      "url": "/reports/dashboard",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/reports-dashboard.png",
+      "html": "html/desktop/reports-dashboard.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "reports-budget",
+      "group": "concrete",
+      "url": "/reports/budget",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/reports-budget.png",
+      "html": "html/desktop/reports-budget.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "portfolio-analysis-report",
+      "group": "concrete",
+      "url": "/portfolio/analysis-report",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/portfolio-analysis-report.png",
+      "html": "html/desktop/portfolio-analysis-report.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/security-performance.png",
+      "html": "html/desktop/security-performance.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-overview",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Overview",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/security-performance-overview.png",
+      "html": "html/desktop/security-performance-overview.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-timeseries",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/TimeSeries",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/security-performance-timeseries.png",
+      "html": "html/desktop/security-performance-timeseries.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-cashflows",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Cashflows",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/security-performance-cashflows.png",
+      "html": "html/desktop/security-performance-cashflows.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-metrics",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Metrics",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/security-performance-metrics.png",
+      "html": "html/desktop/security-performance-metrics.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-benchmark",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Benchmark",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/security-performance-benchmark.png",
+      "html": "html/desktop/security-performance-benchmark.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-accounts",
+      "group": "list",
+      "url": "/list/accounts",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-accounts.png",
+      "html": "html/desktop/list-accounts.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-contacts",
+      "group": "list",
+      "url": "/list/contacts",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-contacts.png",
+      "html": "html/desktop/list-contacts.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-contacts-categories",
+      "group": "list",
+      "url": "/list/contacts/categories",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-contacts-categories.png",
+      "html": "html/desktop/list-contacts-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-account",
+      "group": "list",
+      "url": "/list/postings/account/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-postings-account.png",
+      "html": "html/desktop/list-postings-account.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-contact",
+      "group": "list",
+      "url": "/list/postings/contact/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-postings-contact.png",
+      "html": "html/desktop/list-postings-contact.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-savings-plan",
+      "group": "list",
+      "url": "/list/postings/savings-plan/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-postings-savings-plan.png",
+      "html": "html/desktop/list-postings-savings-plan.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-security",
+      "group": "list",
+      "url": "/list/postings/security/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-postings-security.png",
+      "html": "html/desktop/list-postings-security.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-savings-plans",
+      "group": "list",
+      "url": "/list/savings-plans",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-savings-plans.png",
+      "html": "html/desktop/list-savings-plans.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-savings-plans-categories",
+      "group": "list",
+      "url": "/list/savings-plans/categories",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-savings-plans-categories.png",
+      "html": "html/desktop/list-savings-plans-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-securities",
+      "group": "list",
+      "url": "/list/securities",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-securities.png",
+      "html": "html/desktop/list-securities.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-securities-prices",
+      "group": "list",
+      "url": "/list/securities/prices/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-securities-prices.png",
+      "html": "html/desktop/list-securities-prices.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-users",
+      "group": "list",
+      "url": "/list/users",
+      "auth": "admin",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-users.png",
+      "html": "html/desktop/list-users.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-mcp-accesses",
+      "group": "list",
+      "url": "/list/mcp-accesses",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-mcp-accesses.png",
+      "html": "html/desktop/list-mcp-accesses.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-budget",
+      "group": "list",
+      "url": "/list/budget",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-budget.png",
+      "html": "html/desktop/list-budget.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-budget-purposes",
+      "group": "list",
+      "url": "/list/budget/purposes",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-budget-purposes.png",
+      "html": "html/desktop/list-budget-purposes.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-budget-categories",
+      "group": "list",
+      "url": "/list/budget/categories",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-budget-categories.png",
+      "html": "html/desktop/list-budget-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-account",
+      "group": "card",
+      "url": "/card/accounts/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-account.png",
+      "html": "html/desktop/card-account.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-budget-category",
+      "group": "card",
+      "url": "/card/budget/categories/74926048-ea4d-40e7-ac23-8795421b6d6c",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-budget-category.png",
+      "html": "html/desktop/card-budget-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-budget-purpose",
+      "group": "card",
+      "url": "/card/budget/purposes/1642e7a2-711b-413c-b51d-e948205ca83b",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-budget-purpose.png",
+      "html": "html/desktop/card-budget-purpose.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-budget-rule",
+      "group": "card",
+      "url": "/card/budget/rules/c9543814-5824-4d30-9123-3855821be510",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-budget-rule.png",
+      "html": "html/desktop/card-budget-rule.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-contact",
+      "group": "card",
+      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-contact.png",
+      "html": "html/desktop/card-contact.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-contact-category",
+      "group": "card",
+      "url": "/card/contacts/categories/9aeb8b79-2258-4552-bddd-846b406d4379",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-contact-category.png",
+      "html": "html/desktop/card-contact-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-access",
+      "group": "card",
+      "url": "/card/mcp-accesses/4b6a97bb-cc99-43f0-b4e9-a029a95f4e04",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-mcp-access.png",
+      "html": "html/desktop/card-mcp-access.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-access-new",
+      "group": "card",
+      "url": "/card/mcp-accesses/new",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-mcp-access-new.png",
+      "html": "html/desktop/card-mcp-access-new.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-approvals",
+      "group": "card",
+      "url": "/card/mcp-approvals",
+      "auth": "admin",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-mcp-approvals.png",
+      "html": "html/desktop/card-mcp-approvals.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-audit",
+      "group": "card",
+      "url": "/card/mcp-audit",
+      "auth": "admin",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-mcp-audit.png",
+      "html": "html/desktop/card-mcp-audit.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-security",
+      "group": "card",
+      "url": "/card/mcp-security",
+      "auth": "admin",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-mcp-security.png",
+      "html": "html/desktop/card-mcp-security.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-posting",
+      "group": "card",
+      "url": "/card/postings/2a1c44b7-2500-4b4c-8e7f-d59ae5c5f6f0",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-posting.png",
+      "html": "html/desktop/card-posting.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-savings-plan",
+      "group": "card",
+      "url": "/card/savings-plans/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-savings-plan.png",
+      "html": "html/desktop/card-savings-plan.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-savings-plan-category",
+      "group": "card",
+      "url": "/card/savings-plans/categories/98135cc6-7639-4530-ac3a-04566f5f5ea9",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-savings-plan-category.png",
+      "html": "html/desktop/card-savings-plan-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-security",
+      "group": "card",
+      "url": "/card/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-security.png",
+      "html": "html/desktop/card-security.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-security-category",
+      "group": "card",
+      "url": "/card/securities/categories/ae5440af-6612-4b9c-8e45-2a57daf83212",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-security-category.png",
+      "html": "html/desktop/card-security-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-setup",
+      "group": "card",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-setup.png",
+      "html": "html/desktop/card-setup.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-user",
+      "group": "card",
+      "url": "/card/users/39350b0e-dc14-4b6a-a59f-46ad79577088",
+      "auth": "admin",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-user.png",
+      "html": "html/desktop/card-user.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-statement-draft",
+      "group": "card",
+      "url": "/card/statement-drafts/73acbb5f-b46e-4bf3-acbf-7dcae6f107f2",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-statement-draft.png",
+      "html": "html/desktop/card-statement-draft.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-statement-draft-entry",
+      "group": "card",
+      "url": "/card/statement-drafts/entries/7cccdbc4-7aca-401d-a3b0-3eaffa3664b0",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/card-statement-draft-entry.png",
+      "html": "html/desktop/card-statement-draft-entry.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "setup-section-01-profil",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-01-profil.png",
+      "html": "html/desktop/setup-section-01-profil.html",
+      "notes": [
+        "section: Profil"
+      ]
+    },
+    {
+      "id": "setup-section-02-benachrichtigungen",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-02-benachrichtigungen.png",
+      "html": "html/desktop/setup-section-02-benachrichtigungen.html",
+      "notes": [
+        "section: Benachrichtigungen"
+      ]
+    },
+    {
+      "id": "setup-section-03-kontoauszuege",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-03-kontoauszuege.png",
+      "html": "html/desktop/setup-section-03-kontoauszuege.html",
+      "notes": [
+        "section: Kontoauszüge"
+      ]
+    },
+    {
+      "id": "setup-section-04-anhaenge",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-04-anhaenge.png",
+      "html": "html/desktop/setup-section-04-anhaenge.html",
+      "notes": [
+        "section: Anhänge"
+      ]
+    },
+    {
+      "id": "setup-section-05-sicherung",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-05-sicherung.png",
+      "html": "html/desktop/setup-section-05-sicherung.html",
+      "notes": [
+        "section: Sicherung"
+      ]
+    },
+    {
+      "id": "setup-section-06-sicherheit",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-06-sicherheit.png",
+      "html": "html/desktop/setup-section-06-sicherheit.html",
+      "notes": [
+        "section: Sicherheit"
+      ]
+    },
+    {
+      "id": "setup-section-07-security-txt",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-07-security-txt.png",
+      "html": "html/desktop/setup-section-07-security-txt.html",
+      "notes": [
+        "section: security.txt"
+      ]
+    },
+    {
+      "id": "setup-section-08-well-known",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-08-well-known.png",
+      "html": "html/desktop/setup-section-08-well-known.html",
+      "notes": [
+        "section: Well-Known"
+      ]
+    },
+    {
+      "id": "setup-section-09-renditeanalyse",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/setup-section-09-renditeanalyse.png",
+      "html": "html/desktop/setup-section-09-renditeanalyse.html",
+      "notes": [
+        "section: Renditeanalyse"
+      ]
+    },
+    {
+      "id": "setup-sections",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": null,
+      "html": null,
+      "notes": [
+        "expanded 9 sections"
+      ]
+    },
+    {
+      "id": "overlay-home-mass-import",
+      "group": "overlay",
+      "url": "/",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/overlay-home-mass-import.png",
+      "html": "html/desktop/overlay-home-mass-import.html",
+      "notes": [
+        "Post-action wait failed: page.waitForSelector: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.mass-import-dialog, .split-dialog') to be visible\u001b[22m\n"
+      ]
+    },
+    {
+      "id": "overlay-budget-settings",
+      "group": "overlay",
+      "url": "/reports/budget",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/overlay-budget-settings.png",
+      "html": "html/desktop/overlay-budget-settings.html",
+      "notes": []
+    },
+    {
+      "id": "overlay-dashboard-filters",
+      "group": "overlay",
+      "url": "/reports/dashboard",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/overlay-dashboard-filters.png",
+      "html": "html/desktop/overlay-dashboard-filters.html",
+      "notes": []
+    },
+    {
+      "id": "overlay-mcp-access-wizard",
+      "group": "overlay",
+      "url": "/list/mcp-accesses",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/overlay-mcp-access-wizard.png",
+      "html": "html/desktop/overlay-mcp-access-wizard.html",
+      "notes": []
+    },
+    {
+      "id": "overlay-confirm-dialog",
+      "group": "overlay",
+      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/overlay-confirm-dialog.png",
+      "html": "html/desktop/overlay-confirm-dialog.html",
+      "notes": []
+    },
+    {
+      "id": "change-password",
+      "group": "concrete",
+      "url": "/change-password",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/change-password.png",
+      "html": "html/mobile/change-password.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "reports",
+      "group": "concrete",
+      "url": "/reports",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/reports.png",
+      "html": "html/mobile/reports.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "reports-dashboard",
+      "group": "concrete",
+      "url": "/reports/dashboard",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/reports-dashboard.png",
+      "html": "html/mobile/reports-dashboard.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "reports-budget",
+      "group": "concrete",
+      "url": "/reports/budget",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/reports-budget.png",
+      "html": "html/mobile/reports-budget.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "portfolio-analysis-report",
+      "group": "concrete",
+      "url": "/portfolio/analysis-report",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/portfolio-analysis-report.png",
+      "html": "html/mobile/portfolio-analysis-report.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/security-performance.png",
+      "html": "html/mobile/security-performance.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-overview",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Overview",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/security-performance-overview.png",
+      "html": "html/mobile/security-performance-overview.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-timeseries",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/TimeSeries",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/security-performance-timeseries.png",
+      "html": "html/mobile/security-performance-timeseries.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-cashflows",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Cashflows",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/security-performance-cashflows.png",
+      "html": "html/mobile/security-performance-cashflows.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-metrics",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Metrics",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/security-performance-metrics.png",
+      "html": "html/mobile/security-performance-metrics.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "security-performance-benchmark",
+      "group": "security-tabs",
+      "url": "/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646/performance/Benchmark",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/security-performance-benchmark.png",
+      "html": "html/mobile/security-performance-benchmark.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-accounts",
+      "group": "list",
+      "url": "/list/accounts",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-accounts.png",
+      "html": "html/mobile/list-accounts.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-contacts",
+      "group": "list",
+      "url": "/list/contacts",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-contacts.png",
+      "html": "html/mobile/list-contacts.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-contacts-categories",
+      "group": "list",
+      "url": "/list/contacts/categories",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-contacts-categories.png",
+      "html": "html/mobile/list-contacts-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-account",
+      "group": "list",
+      "url": "/list/postings/account/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-postings-account.png",
+      "html": "html/mobile/list-postings-account.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-contact",
+      "group": "list",
+      "url": "/list/postings/contact/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-postings-contact.png",
+      "html": "html/mobile/list-postings-contact.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-savings-plan",
+      "group": "list",
+      "url": "/list/postings/savings-plan/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-postings-savings-plan.png",
+      "html": "html/mobile/list-postings-savings-plan.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-postings-security",
+      "group": "list",
+      "url": "/list/postings/security/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-postings-security.png",
+      "html": "html/mobile/list-postings-security.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-savings-plans",
+      "group": "list",
+      "url": "/list/savings-plans",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-savings-plans.png",
+      "html": "html/mobile/list-savings-plans.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-savings-plans-categories",
+      "group": "list",
+      "url": "/list/savings-plans/categories",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-savings-plans-categories.png",
+      "html": "html/mobile/list-savings-plans-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-securities",
+      "group": "list",
+      "url": "/list/securities",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-securities.png",
+      "html": "html/mobile/list-securities.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-securities-prices",
+      "group": "list",
+      "url": "/list/securities/prices/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-securities-prices.png",
+      "html": "html/mobile/list-securities-prices.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-users",
+      "group": "list",
+      "url": "/list/users",
+      "auth": "admin",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-users.png",
+      "html": "html/mobile/list-users.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-mcp-accesses",
+      "group": "list",
+      "url": "/list/mcp-accesses",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-mcp-accesses.png",
+      "html": "html/mobile/list-mcp-accesses.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-budget",
+      "group": "list",
+      "url": "/list/budget",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-budget.png",
+      "html": "html/mobile/list-budget.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-budget-purposes",
+      "group": "list",
+      "url": "/list/budget/purposes",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-budget-purposes.png",
+      "html": "html/mobile/list-budget-purposes.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-budget-categories",
+      "group": "list",
+      "url": "/list/budget/categories",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-budget-categories.png",
+      "html": "html/mobile/list-budget-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-account",
+      "group": "card",
+      "url": "/card/accounts/833ddeba-edc7-431c-923f-a27c3056fbef",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-account.png",
+      "html": "html/mobile/card-account.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-budget-category",
+      "group": "card",
+      "url": "/card/budget/categories/74926048-ea4d-40e7-ac23-8795421b6d6c",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-budget-category.png",
+      "html": "html/mobile/card-budget-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-budget-purpose",
+      "group": "card",
+      "url": "/card/budget/purposes/1642e7a2-711b-413c-b51d-e948205ca83b",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-budget-purpose.png",
+      "html": "html/mobile/card-budget-purpose.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-budget-rule",
+      "group": "card",
+      "url": "/card/budget/rules/c9543814-5824-4d30-9123-3855821be510",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-budget-rule.png",
+      "html": "html/mobile/card-budget-rule.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-contact",
+      "group": "card",
+      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-contact.png",
+      "html": "html/mobile/card-contact.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-contact-category",
+      "group": "card",
+      "url": "/card/contacts/categories/9aeb8b79-2258-4552-bddd-846b406d4379",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-contact-category.png",
+      "html": "html/mobile/card-contact-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-access",
+      "group": "card",
+      "url": "/card/mcp-accesses/4b6a97bb-cc99-43f0-b4e9-a029a95f4e04",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-mcp-access.png",
+      "html": "html/mobile/card-mcp-access.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-access-new",
+      "group": "card",
+      "url": "/card/mcp-accesses/new",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-mcp-access-new.png",
+      "html": "html/mobile/card-mcp-access-new.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-approvals",
+      "group": "card",
+      "url": "/card/mcp-approvals",
+      "auth": "admin",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-mcp-approvals.png",
+      "html": "html/mobile/card-mcp-approvals.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-audit",
+      "group": "card",
+      "url": "/card/mcp-audit",
+      "auth": "admin",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-mcp-audit.png",
+      "html": "html/mobile/card-mcp-audit.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-mcp-security",
+      "group": "card",
+      "url": "/card/mcp-security",
+      "auth": "admin",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-mcp-security.png",
+      "html": "html/mobile/card-mcp-security.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-posting",
+      "group": "card",
+      "url": "/card/postings/2a1c44b7-2500-4b4c-8e7f-d59ae5c5f6f0",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-posting.png",
+      "html": "html/mobile/card-posting.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-savings-plan",
+      "group": "card",
+      "url": "/card/savings-plans/3dc97064-1f6a-4de3-90aa-1d154a0773da",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-savings-plan.png",
+      "html": "html/mobile/card-savings-plan.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-savings-plan-category",
+      "group": "card",
+      "url": "/card/savings-plans/categories/98135cc6-7639-4530-ac3a-04566f5f5ea9",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-savings-plan-category.png",
+      "html": "html/mobile/card-savings-plan-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-security",
+      "group": "card",
+      "url": "/card/securities/0ca3a569-fde1-44eb-a74d-6805dfd0d646",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-security.png",
+      "html": "html/mobile/card-security.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-security-category",
+      "group": "card",
+      "url": "/card/securities/categories/ae5440af-6612-4b9c-8e45-2a57daf83212",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-security-category.png",
+      "html": "html/mobile/card-security-category.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-setup",
+      "group": "card",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-setup.png",
+      "html": "html/mobile/card-setup.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-user",
+      "group": "card",
+      "url": "/card/users/39350b0e-dc14-4b6a-a59f-46ad79577088",
+      "auth": "admin",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-user.png",
+      "html": "html/mobile/card-user.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-statement-draft",
+      "group": "card",
+      "url": "/card/statement-drafts/73acbb5f-b46e-4bf3-acbf-7dcae6f107f2",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-statement-draft.png",
+      "html": "html/mobile/card-statement-draft.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "card-statement-draft-entry",
+      "group": "card",
+      "url": "/card/statement-drafts/entries/7cccdbc4-7aca-401d-a3b0-3eaffa3664b0",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/card-statement-draft-entry.png",
+      "html": "html/mobile/card-statement-draft-entry.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "setup-section-01-profil",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-01-profil.png",
+      "html": "html/mobile/setup-section-01-profil.html",
+      "notes": [
+        "section: Profil"
+      ]
+    },
+    {
+      "id": "setup-section-02-benachrichtigungen",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-02-benachrichtigungen.png",
+      "html": "html/mobile/setup-section-02-benachrichtigungen.html",
+      "notes": [
+        "section: Benachrichtigungen"
+      ]
+    },
+    {
+      "id": "setup-section-03-kontoauszuege",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-03-kontoauszuege.png",
+      "html": "html/mobile/setup-section-03-kontoauszuege.html",
+      "notes": [
+        "section: Kontoauszüge"
+      ]
+    },
+    {
+      "id": "setup-section-04-anhaenge",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-04-anhaenge.png",
+      "html": "html/mobile/setup-section-04-anhaenge.html",
+      "notes": [
+        "section: Anhänge"
+      ]
+    },
+    {
+      "id": "setup-section-05-sicherung",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-05-sicherung.png",
+      "html": "html/mobile/setup-section-05-sicherung.html",
+      "notes": [
+        "section: Sicherung"
+      ]
+    },
+    {
+      "id": "setup-section-06-sicherheit",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-06-sicherheit.png",
+      "html": "html/mobile/setup-section-06-sicherheit.html",
+      "notes": [
+        "section: Sicherheit"
+      ]
+    },
+    {
+      "id": "setup-section-07-security-txt",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-07-security-txt.png",
+      "html": "html/mobile/setup-section-07-security-txt.html",
+      "notes": [
+        "section: security.txt"
+      ]
+    },
+    {
+      "id": "setup-section-08-well-known",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-08-well-known.png",
+      "html": "html/mobile/setup-section-08-well-known.html",
+      "notes": [
+        "section: Well-Known"
+      ]
+    },
+    {
+      "id": "setup-section-09-renditeanalyse",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/setup-section-09-renditeanalyse.png",
+      "html": "html/mobile/setup-section-09-renditeanalyse.html",
+      "notes": [
+        "section: Renditeanalyse"
+      ]
+    },
+    {
+      "id": "setup-sections",
+      "group": "setup",
+      "url": "/card/setup",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": null,
+      "html": null,
+      "notes": [
+        "expanded 9 sections"
+      ]
+    },
+    {
+      "id": "overlay-home-mass-import",
+      "group": "overlay",
+      "url": "/",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/overlay-home-mass-import.png",
+      "html": "html/mobile/overlay-home-mass-import.html",
+      "notes": [
+        "Post-action wait failed: page.waitForSelector: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.mass-import-dialog, .split-dialog') to be visible\u001b[22m\n"
+      ]
+    },
+    {
+      "id": "overlay-budget-settings",
+      "group": "overlay",
+      "url": "/reports/budget",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/overlay-budget-settings.png",
+      "html": "html/mobile/overlay-budget-settings.html",
+      "notes": []
+    },
+    {
+      "id": "overlay-dashboard-filters",
+      "group": "overlay",
+      "url": "/reports/dashboard",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/overlay-dashboard-filters.png",
+      "html": "html/mobile/overlay-dashboard-filters.html",
+      "notes": []
+    },
+    {
+      "id": "overlay-mcp-access-wizard",
+      "group": "overlay",
+      "url": "/list/mcp-accesses",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/overlay-mcp-access-wizard.png",
+      "html": "html/mobile/overlay-mcp-access-wizard.html",
+      "notes": []
+    },
+    {
+      "id": "overlay-confirm-dialog",
+      "group": "overlay",
+      "url": "/card/contacts/f3713a65-74ed-46e0-903c-6c53e4fba032",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/overlay-confirm-dialog.png",
+      "html": "html/mobile/overlay-confirm-dialog.html",
+      "notes": []
+    },
+    {
+      "id": "home",
+      "group": "concrete",
+      "url": "/",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "partial",
+      "screenshot": "screenshots/desktop/home.png",
+      "html": "html/desktop/home.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)",
+        "wait selector not visible in SSR DOM: .kpi-grid .kpi-tile"
+      ]
+    },
+    {
+      "id": "list-securities-categories",
+      "group": "list",
+      "url": "/list/securities/categories",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-securities-categories.png",
+      "html": "html/desktop/list-securities-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-statement-drafts",
+      "group": "list",
+      "url": "/list/statement-drafts",
+      "auth": "user",
+      "viewport": "desktop",
+      "status": "captured",
+      "screenshot": "screenshots/desktop/list-statement-drafts.png",
+      "html": "html/desktop/list-statement-drafts.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "home",
+      "group": "concrete",
+      "url": "/",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "partial",
+      "screenshot": "screenshots/mobile/home.png",
+      "html": "html/mobile/home.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)",
+        "wait selector not visible in SSR DOM: .kpi-grid .kpi-tile"
+      ]
+    },
+    {
+      "id": "list-securities-categories",
+      "group": "list",
+      "url": "/list/securities/categories",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-securities-categories.png",
+      "html": "html/mobile/list-securities-categories.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    },
+    {
+      "id": "list-statement-drafts",
+      "group": "list",
+      "url": "/list/statement-drafts",
+      "auth": "user",
+      "viewport": "mobile",
+      "status": "captured",
+      "screenshot": "screenshots/mobile/list-statement-drafts.png",
+      "html": "html/mobile/list-statement-drafts.html",
+      "notes": [
+        "ssr-capture (blazor.web.js blocked)"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "id": "home",
+      "url": "/",
+      "viewport": "desktop",
+      "reason": "partial SSR capture — '.kpi-grid .kpi-tile' not visible"
+    },
+    {
+      "id": "home",
+      "url": "/",
+      "viewport": "mobile",
+      "reason": "partial SSR capture — '.kpi-grid .kpi-tile' not visible"
+    }
+  ]
+}

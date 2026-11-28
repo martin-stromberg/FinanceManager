@@ -820,7 +820,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Tooltip: null,
                 Callback: new Func<Task>(() => { RaiseUiActionRequested("Back"); return Task.CompletedTask; })
             )
-        });
+        }, Sort: 0);
 
         // Manage group (Save, Archive, Delete)
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, new List<UiRibbonAction>
@@ -833,6 +833,15 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Disabled: !canSave,
                 Tooltip: null,
                 Callback: new Func<Task>(async () => { await SaveAsync(); })
+            ) { MobileShortcut = true },
+            new UiRibbonAction(
+                Id: "Delete",
+                Label: localizer["Ribbon_Delete"].Value,
+                IconSvg: "<svg><use href='icons/sprite.svg#delete'/></svg>",
+                Size: UiRibbonItemSize.Small,
+                Disabled: !IsEdit,
+                Tooltip: null,
+                Callback: new Func<Task>(async () => { await DeleteAsync(); })
             ),
             new UiRibbonAction(
                 Id: "Archive",
@@ -842,17 +851,8 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Disabled: !IsEdit,
                 Tooltip: null,
                 Callback: new Func<Task>(async () => { await ArchiveAsync(); })
-            ),
-            new UiRibbonAction(
-                Id: "Delete",
-                Label: localizer["Ribbon_Delete"].Value,
-                IconSvg: "<svg><use href='icons/sprite.svg#delete'/></svg>",
-                Size: UiRibbonItemSize.Small,
-                Disabled: !IsEdit,
-                Tooltip: null,
-                Callback: new Func<Task>(async () => { await DeleteAsync(); })
             )
-        });
+        }, Sort: 10);
 
         // Linked information group
         var linked = new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, new List<UiRibbonAction>
@@ -860,7 +860,7 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             new UiRibbonAction("Category", localizer["Ribbon_Category"].Value, "<svg><use href='icons/sprite.svg#groups'/></svg>", UiRibbonItemSize.Small, Model.CategoryId is null, null, new Func<Task>(() => { var url = $"card/savings-plans/categories/{Model.CategoryId}"; RaiseUiActionRequested("OpenCategory", url); return Task.CompletedTask; })),
             new UiRibbonAction("OpenPostings", localizer["Ribbon_Postings"].Value, "<svg><use href='icons/sprite.svg#postings'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { var url = $"list/postings/savings-plan/{Id}"; RaiseUiActionRequested("OpenPostings", url); return Task.CompletedTask; })),
             new UiRibbonAction("OpenAttachments", localizer["Ribbon_Attachments"].Value, "<svg><use href='icons/sprite.svg#attachment'/></svg>", UiRibbonItemSize.Small, !IsEdit, null, new Func<Task>(() => { RequestOpenAttachments(AttachmentEntityKind.SavingsPlan, Id); return Task.CompletedTask; }))
-        });
+        }, Sort: 55);
 
         // Analysis group
         var analysis = new UiRibbonTab(localizer["Ribbon_Group_Analysis"].Value, new List<UiRibbonAction>
@@ -869,12 +869,12 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Id: "Recalculate",
                 Label: localizer["Ribbon_Recalculate"].Value,
                 IconSvg: "<svg><use href='icons/sprite.svg#refresh'/></svg>",
-                Size: UiRibbonItemSize.Small,
+                Size: UiRibbonItemSize.Large,
                 Disabled: !IsEdit,
                 Tooltip: null,
                 Callback: new Func<Task>(async () => { await LoadAnalysisAsync(); })
             )
-        });
+        }, Sort: 40);
 
         // Bookings group (Istmeldung): only for plans WITHOUT linked accounts — a
         // linked plan's account balance is the single source of truth, so the action is
@@ -885,12 +885,12 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Id: "ActualReport",
                 Label: localizer["Ribbon_SavingsPlan_ActualReport"].Value,
                 IconSvg: "<svg><use href='icons/sprite.svg#edit'/></svg>",
-                Size: UiRibbonItemSize.Small,
+                Size: UiRibbonItemSize.Large,
                 Disabled: !CanReportActualBalance,
                 Tooltip: HasLinkedAccounts ? localizer["ActualReport_Disabled_Linked"].Value : null,
                 Callback: new Func<Task>(() => { RequestActualReport(); return Task.CompletedTask; })
             )
-        });
+        }, Sort: 45);
 
         var tabs = new List<UiRibbonTab> { nav, manage, analysis, bookings, linked };
         var registers = new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

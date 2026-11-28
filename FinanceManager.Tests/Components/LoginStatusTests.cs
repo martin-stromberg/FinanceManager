@@ -7,6 +7,7 @@ using FinanceManager.Web.Services;
 using FinanceManager.Web.Services.Updates;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using System.Globalization;
 
 namespace FinanceManager.Tests.Components;
 
@@ -50,6 +51,28 @@ public sealed class LoginStatusTests : BunitContext
     }
 
     /// <summary>
+    /// Runs <paramref name="action"/> under the given UI culture (per-thread, restored). The component
+    /// resolves <c>Pages</c> resources against <see cref="CultureInfo.CurrentUICulture"/>, so assertions
+    /// on localized text must pin the culture explicitly - the ambient culture differs between local
+    /// dev machines (de) and CI runners (en-US).
+    /// </summary>
+    /// <param name="culture">The UI culture to apply while <paramref name="action"/> runs.</param>
+    /// <param name="action">The test body to execute under the pinned culture.</param>
+    private static void WithCulture(string culture, Action action)
+    {
+        var previous = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = new CultureInfo(culture);
+            action();
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = previous;
+        }
+    }
+
+    /// <summary>
     /// Verifies that an authenticated user with a known installed version sees that version number
     /// rendered in the login status.
     /// </summary>
@@ -71,22 +94,28 @@ public sealed class LoginStatusTests : BunitContext
 
     /// <summary>
     /// Verifies that when the installed-release metadata provider reports no version, the component
-    /// falls back to displaying "Version unbekannt" rather than an empty or broken version string.
+    /// falls back to displaying the localized "Version unbekannt" text rather than an empty or broken
+    /// version string. The UI culture is pinned to German because the resource lookup follows the
+    /// ambient <see cref="CultureInfo.CurrentUICulture"/>, which is en-US on CI runners and would
+    /// resolve the English fallback instead.
     /// </summary>
     [Fact]
     public void RendersFallback_WhenVersionIsNull()
     {
-        // Arrange
-        Services.AddSingleton<ICurrentUserService>(new FakeCurrentUserService());
-        RegisterLocalization();
-        Services.AddSingleton<IInstalledReleaseMetadataProvider>(
-            new FakeInstalledReleaseMetadataProvider(new InstalledReleaseMetadataDto(null, null, null, null, null)));
+        WithCulture("de", () =>
+        {
+            // Arrange
+            Services.AddSingleton<ICurrentUserService>(new FakeCurrentUserService());
+            RegisterLocalization();
+            Services.AddSingleton<IInstalledReleaseMetadataProvider>(
+                new FakeInstalledReleaseMetadataProvider(new InstalledReleaseMetadataDto(null, null, null, null, null)));
 
-        // Act
-        var cut = Render<LoginStatus>();
+            // Act
+            var cut = Render<LoginStatus>();
 
-        // Assert
-        Assert.Contains("Version unbekannt", cut.Find(".login-status").TextContent);
+            // Assert
+            Assert.Contains("Version unbekannt", cut.Find(".login-status").TextContent);
+        });
     }
 
     /// <summary>

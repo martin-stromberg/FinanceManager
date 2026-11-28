@@ -69,11 +69,12 @@
 
 **Bedingungen:**
 - Klassen: `Lesend`, `Vorschlagend`, `Schreibvorbereitend`, `Genehmigungspflichtig`.
-- Der Genehmigungsmodus des Zugangs (`PerAction` oder `PreApproved`) steuert, ob eine Anforderung im Genehmigungscenter landet oder als vorab genehmigt direkt in die Warteschlange geht.
+- Der Genehmigungsmodus des Zugangs (`PerAction`, `PreApproved` oder `Granular`) steuert, ob eine Anforderung im Genehmigungscenter landet oder als vorab genehmigt direkt in die Warteschlange geht.
 
 **Verhalten:**
 - Genehmigungspflichtige Werkzeuge (Verbuchung, Storno, Verwerfen) erzeugen immer einen `AiActionRequest` — niemals eine „stille" Direktausführung.
 - Im Modus `PreApproved` bleibt die Genehmigungsinstanz dokumentiert auf dem Datensatz; die Anforderung läuft ohne Wartephase in die Ausführungswarteschlange.
+- Im Modus `Granular` (Expertenmodus) entscheidet das Grant-Profil des Zugangs — `(Datentyp, Recht)`-Tupel: passende Routine-Aktionen laufen direkt, passende genehmigungspflichtige Aktionen starten als bereits genehmigte Anforderung (`PreApprovalKind.GrantPreApproved`); alles ohne passendes Tupel wird je Aktion entschieden. Entfernte Grants ziehen die von ihnen vorab freigegebenen, noch offenen Anforderungen zurück.
 - Der Parametersatz einer Anforderung ist zum Anfragezeitpunkt eingefroren und unveränderlich; eine Genehmigung kann nur erteilen oder ablehnen, niemals editieren.
 - Deaktiviert der Administrator den Schreibzugriff, werden die Klassen `Schreibvorbereitend` und `Genehmigungspflichtig` vollständig abgelehnt; genehmigte, aber zurückgehaltene Anforderungen können ablaufen.
 
@@ -178,3 +179,70 @@
 - Praxisbeispiel „aktuelles Jahr": `interval: "Ytd"` zusammen mit `year: 2026`, oder `interval: "Year"` mit clientseitigem `periodStart`-Filter.
 
 **Umsetzung:** `FmReportingAggregateTool` (`year`-Filter + `coverage`-Projektion).
+
+## Wertpapier-Antworten tragen stets den letzten gespeicherten Kurs
+
+**Beschreibung:** `fm_securities_analysis` liefert je ausgegebenem Wertpapier das Feld `latestPrice { close, date }` — immer aktiv, unabhängig davon, ob die Kurshistorie (`includePrices`/`priceTake`) angefordert wurde. Es ersetzt den Workaround `includePrices: true` + `priceTake: 1` und macht die Kursaktualität über das Datum transparent.
+
+**Bedingungen:**
+- Ausschließlich persistierte `SecurityPrice`-Sätze werden berücksichtigt — es gibt keinen Live-/Realtime-Abruf und keinen externen Kurzabruf.
+- Die Kursabfrage läuft erst **nach** dem Record-Scope-Filter (`McpRecordScopeFilter`): Kurse scope-gefilterter Wertpapiere werden nicht abgefragt und nicht ausgegeben.
+
+**Verhalten:**
+- Kurs vorhanden → `{ close, date }` mit dem jüngsten gespeicherten `Date` (eindeutig je Wertpapier und Datum); kein gespeicherter Kurs → `null`.
+- `latestPrice` wird auch bei `hasPriceError: true` ausgegeben — ein letzter fehlgeschlagener Abruf verwirft den gespeicherten Kurs nicht; `hasPriceError` bleibt eigenständiges Signal im selben Objekt.
+- Es gibt keine serverseitige Staleness-Bewertung oder Schwellwerte — die Aktualität beurteilt der Aufrufer anhand von `date`.
+- Eine fehlende, fremde oder scope-gefilterte `securityId` im Einzelpfad verhält sich wie „nicht vorhanden" (leere `securities`-Liste, kein `latestPrice`).
+
+**Umsetzung:** `FmSecuritiesAnalysisHandler.InvokeAsync` (Top-Level-Projektion im anonymen Ausgabeobjekt neben `hasPriceError`/`openQuantity`), `ISecurityPriceService.GetLatestPricesAsync` / `SecurityPriceService.GetLatestPricesAsync` — eine Batch-Abfrage statt N Einzelabfragen: Besitzer-Join auf `Securities` (`OwnerUserId`), `GroupBy`/`Max(Date)` mit Rück-Join für `Close` (deterministisch über den Unique-Index `(SecurityId, Date)`); Wertpapiere ohne Kurs oder ohne Besitzbezug fehlen im Ergebnis-Dictionary und erhalten `null`.
+
+## Wertpapier-Preisfehler werden mit Grund und Zeitpunkt ausgeliefert
+
+**Beschreibung:** Jedes Wertpapier-Objekt von `fm_securities_analysis` trägt zusätzlich zu `hasPriceError` die Metadaten des letzten bekannten Providerfehlers: `priceErrorSinceUtc` als strukturiertes Top-Level-Feld und den Provider-Fehlertext unter `untrusted_data.priceErrorMessage`.
+
+**Bedingungen:**
+- Die Felder entstammen den persistierten `Security`-Eigenschaften (`PriceErrorMessage`, `PriceErrorSinceUtc`) und werden über `SecurityService.MapToDtoAsync` in den `SecurityDto` gehoben — keine Migration nötig, die Daten existieren bereits.
+- Provider-Fehlertext ist Drittinhalt und steht ausschließlich unter `untrusted_data`; der Zeitstempel ist strukturierte Systemmetadaten und darf Top-Level stehen.
+
+**Verhalten:**
+- Fehler protokolliert → `hasPriceError: true`, `priceErrorSinceUtc` = Zeitstempel, `untrusted_data.priceErrorMessage` = Text; `hasPriceError` wird erst mit einem erfolgreichen Abruf zurückgesetzt, der letzte gespeicherte Kurs bleibt nutzbar.
+- Kein Fehler → alle drei Felder `false`/`null` (Explizit-`null`, kein Weglassen).
+- Ein leeres `prices`-Array ist kein Fehlersignal: mögliche Ursachen sind fehlender `alphaVantageCode`, Provider ohne Daten oder kein gespeicherter Kurs im Zeitraum.
+- Ein negatives `openQuantity` bedeutet Buchungsinkonsistenz (verkauft > gekauft), kein Short-Exposure.
+
+**Umsetzung:** `SecurityDto`-Felder `PriceErrorMessage`/`PriceErrorSinceUtc`, Mapping in `SecurityService.MapToDtoAsync`, Projektion in `FmSecuritiesAnalysisHandler` (Listen- und Einzelpfad teilen dieselbe Objektprojektion), Semantik im `FmSecuritiesAnalysisDescriptor.Description` dokumentiert.
+
+## Wertpapier-Statistik aggregiert serverseitig über die sichtbare Menge
+
+**Beschreibung:** Mit `includeStatistics: true` trägt die Antwort von `fm_securities_analysis` zusätzlich ein `statistics`-Objekt mit Portfolio-Aggregaten über dieselbe Menge wie die ausgegebene Liste — erspart dem KI-System clientseitige Aggregation.
+
+**Bedingungen:**
+- Die Aggregationsmenge ist die fachlich gefilterte (`securityId`, `onlyActive`) **und** Record-Scope-gefilterte Menge — `skip`/`take` wirken nicht auf die Statistik.
+- Der Record-Scope-Filter läuft vor dem Paging auf der vollen Menge (bewusste Reihenfolge-Korrektur): Liste und Statistik beschreiben dieselbe sichtbare Menge.
+- Bewertung: `openQuantity` × letzter **gespeicherter** Schlusskurs (`GetLatestPricesAsync`, ein Batch-Aufruf über die volle sichtbare ID-Menge — kein N+1, kein externer Abruf). Eine „Position" ist ein Wertpapier mit `openQuantity != 0`.
+- `onlyActive`/`securityId`-Semantik: `onlyActive: false` filtert inaktive Papiere in-memory (Service kennt nur „alle"/„aktiv") — das entfernt zugleich eine frühere Doppelzählung aktiver Papiere im ungefilterten Listenpfad.
+
+**Verhalten:**
+- `securityCount` (sichtbare Papiere), `positionCount`, `positionsWithoutPrice { count, securityIds }` (Positionen ohne Kurs — nicht in Marktwerten), `byCurrency` und `byCategory` je mit `marketValue`/`positionCount`/`positionsWithoutPrice`.
+- Währungsreinheit: `totalMarketValue`/`totalCurrencyCode` nur bei einheitlicher Währung aller bewertbaren Positionen, sonst `null`; `byCategory.marketValue`/`currencyCode` `null` bei Mischwährung in der Gruppe oder wenn die Gruppe keine bewertbare Position enthält. Es gibt keinen Mehrwährungs-Gesamtwert ohne FX-Umrechnung.
+- `oldestPriceDate`/`newestPriceDate` = Stichtagsspanne der verwendeten Kurse (`null` ohne Kurse); Kategorienamen stehen unter `untrusted_data`.
+- Opt-out: ohne `includeStatistics` ist `statistics` `null` — bestehender Vertrag unverändert.
+
+**Umsetzung:** `FmSecuritiesAnalysisHandler.InvokeAsync` + `BuildStatistics` (tool-interne Aggregation, anonymer Contract wie der übrige Output), Input-Schema-Parameter `includeStatistics`, Descriptor-Doku.
+
+## EUR-Gegenwert von Fremdwährungspositionen ist Opt-in und stichtagsbezogen
+
+**Beschreibung:** Mit `includeEurValue: true` trägt jede ausgegebene Position von `fm_securities_analysis` zusätzlich `valueEur` (EUR-Gegenwert) und `fxRate`; die Statistik ergänzt `marketValueEur` je `byCurrency`-Zeile und `totalMarketValueEur`. Damit ist ein aussagekräftiger Gesamtwert auch über mehrere Währungen möglich.
+
+**Bedingungen:**
+- Bewertungsbasis bleibt `openQuantity` × letzter **gespeicherter** Schlusskurs; der Wechselkurs gilt zum Kursdatum (`latestPrice.date`), nicht zum Abrufzeitpunkt — der Wert ist ein Stichtagswert, kein Live-Marktwert.
+- Der Kurs wird aus dem globalen `CurrencyExchangeRates`-Referenzpool (kein `OwnerUserId` — dokumentierte Ausnahme, Kurse sind für alle Benutzer identisch) bedient: neuster gespeicherter Kurs ≤ Kursdatum gewinnt; fehlt ein passender, fragt `FxRateService` den Frankfurter-Provider (EZB-Referenzkurse, „Fremdwährung je 1 EUR", konfigurierbar über `Fx:*`, `Enabled: false` = kein Provider-Verkehr) einmalig an und persistiert die Antwort; bei Provider-Ausfall greift der früheste gespeicherte Kurs der Währung als Fallback, sonst `null` — der Dienst wirft nie.
+- Kurskonvention „Fremdwährung je 1 EUR": `valueEur = openQuantity × close / ratePerEur` (Division); EUR-Positionen rechnen 1:1 ohne `fxRate`-Objekt (`fxRate: null` — keine Umrechnung).
+
+**Verhalten:**
+- `valueEur`/`fxRate` bleiben `null`, wenn Kurs, `openQuantity` oder FX-Kurs fehlt; ohne das Flag sind die Felder `null` bzw. in der Statistik gar nicht vorhanden.
+- `marketValueEur` einer `byCurrency`-Zeile ist `null`, sobald eine bewertbare Position der Zeile nicht umrechenbar ist; `totalMarketValueEur` ist `null`, wenn nicht alle bewertbaren Positionen umrechenbar sind — keine stillschweigend unvollständigen Summen.
+- FX-Werte sind System-Referenzdaten (strukturiert, Top-Level) und gehören nicht unter `untrusted_data`.
+- Der Handler gruppiert die benötigten (Währung, Kursdatum)-Paare und ruft `IFxRateService` je Paar einmal — kein Aufruf je Position, kein HTTP-Request je Position (persistenter Cache + In-Flight-Dedupe).
+
+**Umsetzung:** `FmSecuritiesAnalysisHandler` (`includeEurValue`-Schema-Parameter, `IFxRateService` per DI), `FxRateService` (Cache/Lazy-Fill/Fallback), `FrankfurterFxRateProvider` (`AddHttpClient "Frankfurter"`, `Fx`-Konfiguration), Entität `CurrencyExchangeRate` + Backup-Sektion `CurrencyExchangeRates`.

@@ -633,6 +633,11 @@ namespace FinanceManager.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<short>("PreApprovalKind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue((short)0);
+
                     b.Property<string>("ReasonText")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
@@ -742,6 +747,40 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasIndex("OwnerUserId", "Status");
 
                     b.ToTable("McpAccesses");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccessApprovalGrant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("DataType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("McpAccessId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Right")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("McpAccessId", "DataType", "Right")
+                        .IsUnique();
+
+                    b.ToTable("McpAccessApprovalGrants");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccessScope", b =>
@@ -1573,6 +1612,43 @@ namespace FinanceManager.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SavingsPlanCategories");
+                });
+
+            modelBuilder.Entity("FinanceManager.Domain.Securities.CurrencyExchangeRate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("RatePerEur")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyCode", "Date", "Source")
+                        .IsUnique();
+
+                    b.ToTable("CurrencyExchangeRates");
                 });
 
             modelBuilder.Entity("FinanceManager.Domain.Securities.Security", b =>
@@ -2497,6 +2573,17 @@ namespace FinanceManager.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccessApprovalGrant", b =>
+                {
+                    b.HasOne("FinanceManager.Domain.Mcp.McpAccess", "Access")
+                        .WithMany("ApprovalGrants")
+                        .HasForeignKey("McpAccessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Access");
+                });
+
             modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccessScope", b =>
                 {
                     b.HasOne("FinanceManager.Domain.Mcp.McpAccess", "Access")
@@ -2665,6 +2752,8 @@ namespace FinanceManager.Infrastructure.Migrations
 
             modelBuilder.Entity("FinanceManager.Domain.Mcp.McpAccess", b =>
                 {
+                    b.Navigation("ApprovalGrants");
+
                     b.Navigation("Scopes");
                 });
 

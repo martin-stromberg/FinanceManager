@@ -289,6 +289,16 @@ namespace FinanceManager.Web
             }
             builder.Services.Configure<AlphaVantageQuotaOptions>(builder.Configuration.GetSection("AlphaVantage:Quota"));
 
+            // FX rates: Frankfurter API (free ECB reference rates, no API key)
+            var fxOptions = builder.Configuration.GetSection(FxOptions.SectionName).Get<FxOptions>() ?? new FxOptions();
+            builder.Services.Configure<FxOptions>(builder.Configuration.GetSection(FxOptions.SectionName));
+            builder.Services.AddHttpClient(FrankfurterFxRateProvider.HttpClientName, client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(Math.Max(1, fxOptions.TimeoutSeconds));
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("FinanceManager/1.0 (+https://github.com/Muesli84/FinanceManager)");
+            });
+            builder.Services.AddScoped<IFxRateProvider, FrankfurterFxRateProvider>();
+
             // JWT + Identity
             builder.Services
                 .AddOptions<JwtOptions>()
@@ -625,6 +635,13 @@ namespace FinanceManager.Web
             if (!string.IsNullOrWhiteSpace(pathBase))
             {
                 app.UsePathBase(pathBase);
+                // WebApplication inserts UseRouting at the start of the pipeline - before
+                // UsePathBase has stripped the prefix - so endpoint matching otherwise sees the
+                // raw path and the SignalR /_blazor endpoints never match under the prefix
+                // (405 on POST /{pathBase}/_blazor/negotiate, killing the interactive circuit).
+                // The explicit call fixes the routing position so matching observes the stripped
+                // path (see https://github.com/dotnet/aspnetcore/issues/48370).
+                app.UseRouting();
             }
 
             // Forwarded headers are only honored from explicitly trusted proxies and only for the

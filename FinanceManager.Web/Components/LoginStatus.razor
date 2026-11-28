@@ -10,31 +10,26 @@
 @if (CurrentUser.IsAuthenticated)
 {
     <div class="login-status">@DisplayVersion<br />
-        <a id="change-password-link" href="change-password">@L["Nav_ChangePassword"]</a><br />
-        <button @onclick="LogoutAsync">Logout</button>
+        <a id="change-password-link" href="change-password" title="@L["Nav_ChangePassword"]">
+            <svg class="status-icon" aria-hidden="true"><use href="icons/sprite.svg#key" /></svg>
+            <span class="nav-label">@L["Nav_ChangePassword"]</span>
+        </a>
     </div>
 }
 else
 {
-    <div class="login-status"><a href="login">Login</a></div>
+    <div class="login-status"><a href="login">@L["Nav_Login"]</a></div>
 }
 
 @code {
     private InstalledReleaseMetadataDto? _versionInfo;
 
     private string DisplayVersion => string.IsNullOrEmpty(_versionInfo?.Version)
-        ? "Version unbekannt"
+        ? L["LoginStatus_VersionUnknown"]
         : _versionInfo.Version;
 
     protected override async Task OnInitializedAsync()
     {
         _versionInfo = await ReleaseMetadata.GetAsync();
-    }
-
-    private async Task LogoutAsync()
-    {
-        var ok = await JS.InvokeAsync<bool>("fmAuthLogout");
-        // Fallback: falls API nicht erreichbar, erzwungener Reload löscht serverseitig nicht gesetzte Cookies evtl. nicht, aber UI wird zur Login-Seite gehen
-        Nav.NavigateTo("login", forceLoad: true);
     }
 }

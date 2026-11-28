@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Kontakte - FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            base: {
+              950: '#06080c',
+              900: '#0a0d12',
+              850: '#0f131a',
+              800: '#151b24',
+              700: '#1f2836',
+              600: '#2d3748',
+            },
+            teal: {
+              DEFAULT: '#2dd4bf',
+              glow: 'rgba(45, 212, 191, 0.15)',
+              bright: '#5eead4',
+            },
+            violet: {
+              DEFAULT: '#8b5cf6',
+              glow: 'rgba(139, 92, 246, 0.15)',
+              bright: '#a78bfa',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Custom scrollbar & glass surface */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0d12;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2836;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+    .glass-panel {
+      background: rgba(15, 19, 26, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glass-card {
+      background: rgba(21, 27, 36, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glow-teal {
+      box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0a0d12] text-slate-200 font-sans antialiased h-screen flex flex-col md:flex-row overflow-hidden selection:bg-teal-500/30 selection:text-teal-200 relative fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class=" active" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Buchungen eines Kontakts</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Csv exportieren"><span class="material-symbols-outlined">download</span><span>Csv exportieren</span></button><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div></div><!-- Background Ambient Glows -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR (Sidebar Collapses on small screens) -->
+<!-- LEFT SIDEBAR: Slim Modern Icon-Rail with Tooltips & Popout Labels (Desktop) -->
+<!-- MAIN VIEWPORT AREA -->
+<main class="flex-1 flex flex-col min-w-0 bg-[#0a0d12] z-10 relative overflow-hidden"><div class="flex flex-col w-full h-full overflow-hidden">
+<!-- Top Contextual Ribbon Toolbar / Header (Layer 1 glass styling) -->
+<!-- Filter & Search Bar Area -->
+<section class="flex-shrink-0 px-6 py-3 bg-surface-container-lowest/50 backdrop-blur-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+<!-- Search Input -->
+<div class="relative flex-1 max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px] pointer-events-none">search</span>
+<input class="w-full bg-surface-container-high/70 text-on-background placeholder:text-outline text-body-md font-body-md pl-9 pr-4 py-2 rounded-lg focus:outline-none focus:bg-surface-container-highest transition-all duration-150" placeholder="Buchungen dieses Kontakts durchsuchen..." type="text">
+</div>
+<!-- Filter Segmented Tabs & Date Selector -->
+<div class="flex flex-wrap items-center gap-3">
+<!-- Filter Chips: Alle, Einnahmen, Ausgaben -->
+<nav aria-label="Buchungstyp Filter" class="flex items-center p-1 rounded-lg bg-surface-container-high/80">
+<button class="px-3 py-1 rounded-md bg-surface-bright text-on-surface font-body-sm text-body-sm font-medium shadow-sm" type="button">
+          Alle <span class="font-label-numeric-sm text-label-numeric-sm text-primary ml-1">14</span>
+</button>
+<button class="px-3 py-1 rounded-md text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+          Einnahmen <span class="font-label-numeric-sm text-label-numeric-sm text-outline ml-1">2</span>
+</button>
+<button class="px-3 py-1 rounded-md text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+          Ausgaben <span class="font-label-numeric-sm text-label-numeric-sm text-outline ml-1">12</span>
+</button>
+</nav>
+<!-- Date Quick Selector Pill -->
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-high/60 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">date_range</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">01.05.2024 – 31.05.2024</span>
+</div>
+</div>
+</section>
+<!-- Main Data Table Container (Layer 0 to Layer 1) -->
+<div class="flex-1 overflow-y-auto px-6 py-4">
+<div class="w-full bg-surface-container-low/80 backdrop-blur-md rounded-xl overflow-hidden shadow-2xl flex flex-col">
+<!-- Table Header (EXACT Columns: DATUM, BESCHREIBUNG, BETRAG, KONTO) -->
+<div class="hidden md:grid grid-cols-12 px-6 py-3.5 bg-surface-container/90 text-outline font-label-caps text-label-caps uppercase tracking-wider items-center">
+<div class="col-span-2 flex items-center gap-1.5">
+<span>DATUM</span>
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+</div>
+<div class="col-span-5">BESCHREIBUNG</div>
+<div class="col-span-2 text-right">BETRAG</div>
+<div class="col-span-3 text-right pr-4">KONTO</div>
+</div>
+<!-- Transaction Rows -->
+<div class="flex flex-col">
+<!-- Row 1: 28.05.2024 (+350,00 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-low/40 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-1">
+<!-- Datum -->
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary-container">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">28.05.2024</span>
+</div>
+<!-- Beschreibung -->
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface font-medium group-hover:text-white transition-colors">Privates Darlehen Rückzahlung Teil 2</span>
+<span class="inline-flex md:hidden px-2 py-0.5 rounded text-[10px] font-label-caps tracking-wider uppercase bg-primary-container/10 text-primary-container">Einnahme</span>
+</div>
+<!-- Betrag (Positive / Teal) -->
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-semibold text-primary-container">
+            +350,00 €
+          </div>
+<!-- Konto -->
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Hauptgirokonto (DKB)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+<!-- Row 2: 24.05.2024 (-45,50 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-lowest/30 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-2">
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">24.05.2024</span>
+</div>
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-white transition-colors">Restaurantanteil Abendessen Sushi</span>
+</div>
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-medium text-error">
+            -45,50 €
+          </div>
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Hauptgirokonto (DKB)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+<!-- Row 3: 18.05.2024 (+120,00 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-low/40 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-3">
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary-container">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">18.05.2024</span>
+</div>
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface font-medium group-hover:text-white transition-colors">Konzerttickets Erstattung</span>
+<span class="inline-flex md:hidden px-2 py-0.5 rounded text-[10px] font-label-caps tracking-wider uppercase bg-primary-container/10 text-primary-container">Einnahme</span>
+</div>
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-semibold text-primary-container">
+            +120,00 €
+          </div>
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Reisekreditkarte (Barclays)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+<!-- Row 4: 12.05.2024 (-35,00 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-lowest/30 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-4">
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">12.05.2024</span>
+</div>
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-white transition-colors">Geburtstagsgeschenk Anteil Lisa</span>
+</div>
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-medium text-error">
+            -35,00 €
+          </div>
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Hauptgirokonto (DKB)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+<!-- Row 5: 05.05.2024 (-89,90 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-low/40 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-5">
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">05.05.2024</span>
+</div>
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-white transition-colors">Auslage Bahnticket ICE</span>
+</div>
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-medium text-error">
+            -89,90 €
+          </div>
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Hauptgirokonto (DKB)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+<!-- Row 6: 01.05.2024 (-420,00 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-lowest/30 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-6">
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">01.05.2024</span>
+</div>
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-white transition-colors">Monatsabschlag WG-Kosten Mai</span>
+</div>
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-medium text-error">
+            -420,00 €
+          </div>
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Gemeinschaftskonto (Commerzbank)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+<!-- Row 7: 22.04.2024 (-24,50 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-low/40 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-7">
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">22.04.2024</span>
+</div>
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-white transition-colors">Kinoticket &amp; Snacks</span>
+</div>
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-medium text-error">
+            -24,50 €
+          </div>
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Hauptgirokonto (DKB)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+<!-- Row 8: 15.04.2024 (-310,00 €) -->
+<a class="group grid grid-cols-1 md:grid-cols-12 px-6 py-3.5 bg-surface-container-lowest/30 hover:bg-surface-container-highest/40 transition-colors duration-150 items-center" href="#buchung-detail-8">
+<div class="md:col-span-2 flex items-center gap-2 text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">event</span>
+<span class="font-label-numeric-md text-label-numeric-md">15.04.2024</span>
+</div>
+<div class="md:col-span-5 flex items-center justify-between md:justify-start gap-2 py-1 md:py-0">
+<span class="font-body-md text-body-md text-on-surface group-hover:text-white transition-colors">Urlaubstransfer Ferienwohnung Anteil</span>
+</div>
+<div class="md:col-span-2 text-left md:text-right font-label-numeric-md text-label-numeric-md font-medium text-error">
+            -310,00 €
+          </div>
+<div class="md:col-span-3 flex items-center justify-between md:justify-end gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-highest/60 text-on-surface group-hover:bg-surface-container-highest">Gemeinschaftskonto (Commerzbank)</span>
+<span class="material-symbols-outlined text-[16px] text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">chevron_right</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+<!-- Summary Footer & Pagination Bar -->
+<footer class="flex-shrink-0 bg-surface-container-lowest/90 backdrop-blur-md px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 z-20">
+<!-- Total Balance Metric Indicator -->
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface font-body-md text-body-md">
+<span class="text-on-surface-variant">Saldo mit diesem Kontakt:</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-error bg-error-container/30 px-2 py-0.5 rounded">
+          -454,90 €
+        </span>
+</div>
+<span class="font-body-sm text-body-sm text-outline hidden md:inline">
+        Zeige 1–8 von 14 Buchungen
+      </span>
+</div>
+<!-- Pagination Controls -->
+<div class="flex items-center gap-3">
+<span class="font-body-sm text-body-sm text-outline md:hidden">
+        1–8 von 14
+      </span>
+<div class="flex items-center gap-1.5 bg-surface-container-high/60 p-1 rounded-lg">
+<button aria-label="Vorherige Seite" class="flex items-center gap-1 px-3 py-1 rounded-md text-outline cursor-not-allowed font-body-sm text-body-sm opacity-50" disabled type="button">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+<span>Zurück</span>
+</button>
+<div class="h-3 w-px bg-outline-variant/40"></div>
+<button aria-label="Nächste Seite" class="flex items-center gap-1 px-3 py-1 rounded-md text-on-surface hover:text-white hover:bg-surface-bright/50 transition-colors font-body-sm text-body-sm font-medium" type="button">
+<span>Weiter</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</footer>
+</div></main>
+</body></html>

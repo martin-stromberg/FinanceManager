@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type">
+<style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class=" active" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Budgeteinstellungen-Dialog</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span>Einstellungen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Vormonat"><span class="material-symbols-outlined">arrow_back</span><span>Vormonat</span></button><button class="fm-rib-btn" type="button" title="Aktueller Monat"><span class="material-symbols-outlined">calendar_month</span><span>Aktueller Monat</span></button><button class="fm-rib-btn" type="button" title="Nächster Monat"><span class="material-symbols-outlined">arrow_forward</span><span>Nächster Monat</span></button><button class="fm-rib-btn" type="button" title="Vorjahr"><span class="material-symbols-outlined">arrow_back</span><span>Vorjahr</span></button><button class="fm-rib-btn" type="button" title="Nächstes Jahr"><span class="material-symbols-outlined">arrow_forward</span><span>Nächstes Jahr</span></button></div><div class="fm-rib-caption">Analyse</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div></div><!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen">
+<!-- SCRIPT FOR SIDEBAR SYNC: Setze 'Budget' aktiv statt 'Sparpläne' -->
+<script>
+    (function() {
+      const navLinks = document.querySelectorAll('aside nav a[data-path]');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'budget') {
+          link.className = 'flex items-center gap-3.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/10 text-teal-300 border border-teal-500/30 glow-active-pill font-semibold group relative';
+          if (!link.querySelector('.indicator-bar')) {
+            const bar = document.createElement('div');
+            bar.className = 'indicator-bar absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-to-b from-teal-400 to-violet-400 rounded-r-full shadow-sm shadow-teal-400/50';
+            link.prepend(bar);
+          }
+        } else if (link.getAttribute('data-path') === 'sparplaene') {
+          link.className = 'flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all group';
+          const existingBar = link.querySelector('.indicator-bar, div.absolute');
+          if (existingBar) existingBar.remove();
+        }
+      });
+    })();
+  </script>
+<!-- HINTERGRUND-EBENE: Vollständiger Budgetbericht (Atmosphärisch sichtbar hinter Glas-Scrim) -->
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto flex flex-col gap-6 select-none pointer-events-none filter blur-[2px] opacity-40 transition-all duration-300">
+<!-- Kontextuelle Status- & Filterleiste -->
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
+<div>
+<div class="flex items-center gap-2 text-primary font-label-caps text-label-caps uppercase tracking-wider">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          Haushaltsplanung • Zyklus Juni 2024
+        </div>
+<h1 class="text-on-surface font-headline-lg text-headline-lg tracking-tight mt-1">
+          Budgetbericht &amp; Allokation
+        </h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">
+          Monatlich • 01.06. - 30.06.2024
+        </span>
+<button class="px-4 py-2 rounded-lg bg-surface-container-highest text-on-surface font-body-sm text-body-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-base">tune</span>
+          Budgeteinstellungen
+        </button>
+</div>
+</div>
+<!-- KPI Summary Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Gesamtbudget</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">3.200,00 €</div>
+<span class="text-primary font-body-sm text-body-sm">100 % Sollvorgabe</span>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Aktuelle Ausgaben</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">2.418,50 €</div>
+<span class="text-tertiary-container font-body-sm text-body-sm">75,6 % ausgeschöpft</span>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Verbleibender Puffer</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">781,50 €</div>
+<span class="text-primary font-body-sm text-body-sm">18 Tage verbleibend</span>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between">
+<span class="text-on-surface-variant font-label-caps text-label-caps">Vormonatsübertrag</span>
+<div class="text-on-surface font-label-numeric-lg text-label-numeric-lg my-1">+142,20 €</div>
+<span class="text-secondary font-body-sm text-body-sm">Roll-Over aktiv</span>
+</div>
+</div>
+<!-- Kategorienübersicht mit visuellen Fortschrittsbalken -->
+<div class="p-6 rounded-2xl bg-surface-container shadow-md flex flex-col gap-5">
+<div class="flex items-center justify-between">
+<h2 class="text-on-surface font-headline-sm text-headline-sm">Kategorieauslastung</h2>
+<span class="text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">Limit-Prüfung: Normal</span>
+</div>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Wohnen &amp; Fixkosten (Miete, Energie, Internet)</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">1.180,00 € / 1.200,00 € (98%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full" style="width: 98%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Lebensmittel &amp; Haushalt</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">485,30 € / 650,00 € (74%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 74%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Freizeit, Gastronomie &amp; Kultur</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">312,00 € / 450,00 € (69%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 69%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1.5 text-on-surface">
+<span>Mobilität &amp; Kfz</span>
+<span class="font-label-numeric-sm text-label-numeric-sm">185,20 € / 300,00 € (61%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 61%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- FOREGROUND MODAL LAYER: Obsidian Aurora Frosted Scrim & Centered Dialog -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-surface-container-lowest/80 backdrop-blur-md overflow-y-auto" id="budget-modal-container">
+<!-- Atmospheric Underglow Orbs für den Dialog -->
+<div class="absolute w-80 h-80 rounded-full bg-primary/10 blur-[100px] pointer-events-none -top-12 -left-12"></div>
+<div class="absolute w-80 h-80 rounded-full bg-secondary-container/20 blur-[120px] pointer-events-none -bottom-12 -right-12"></div>
+<!-- Das eigentliche Dialogfenster -->
+<div class="relative w-full max-w-2xl bg-surface-container/95 rounded-2xl shadow-2xl backdrop-blur-2xl p-6 sm:p-8 flex flex-col gap-6 text-on-surface my-auto">
+<!-- Subtle Teal Top Edge Glow Decorator -->
+<div class="absolute -top-px left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80"></div>
+<!-- Header Bereich -->
+<div class="flex items-start justify-between gap-4">
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shadow-inner">
+<span class="material-symbols-outlined text-2xl">tune</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="text-on-surface font-headline-md text-headline-md tracking-tight">
+                Budgeteinstellungen
+              </h2>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-caps text-label-caps uppercase">
+                Aktiv
+              </span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+              Betragsgrenzen, Alarmierungsindikatoren und Berechnungsintervalle konfigurieren.
+            </p>
+</div>
+</div>
+<button aria-label="Dialog schließen" class="w-9 h-9 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" id="close-modal-btn">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<!-- Formularbereich -->
+<form class="flex flex-col gap-6" id="budget-settings-form">
+<!-- ABSCHNITT 1: Betragsgrenzen -->
+<div class="flex flex-col gap-4 p-5 rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center gap-2 text-primary font-label-caps text-label-caps tracking-wider uppercase">
+<span class="material-symbols-outlined text-base">payments</span>
+            1. Betragsgrenzen &amp; Schwellenwerte
+          </div>
+<!-- Gesamtbudget Monatslimit & Toleranzgrenze im 2-Spalten Layout -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Monatslimit -->
+<div class="flex flex-col gap-1.5">
+<label class="text-on-surface font-body-sm text-body-sm" for="monthly-limit">
+                Gesamtbudget-Monatslimit
+              </label>
+<div class="relative flex items-center">
+<input class="w-full h-11 pl-3.5 pr-12 rounded-lg bg-surface text-on-surface font-label-numeric-md text-label-numeric-md placeholder-on-surface-variant/40 focus:outline-none focus:bg-surface-container-high transition-all" id="monthly-limit" name="monthly-limit" type="text" value="3.200,00">
+<span class="absolute right-3.5 text-on-surface-variant font-label-numeric-md text-label-numeric-md pointer-events-none">
+                  €
+                </span>
+</div>
+<span class="text-on-surface-variant font-body-sm text-body-sm">
+                Monatliche Maximalobergrenze aller Kategorien.
+              </span>
+</div>
+<!-- Toleranzgrenze / Pufferbetrag -->
+<div class="flex flex-col gap-1.5">
+<label class="text-on-surface font-body-sm text-body-sm" for="buffer-amount">
+                Toleranzgrenze (Pufferbetrag)
+              </label>
+<div class="relative flex items-center">
+<input class="w-full h-11 pl-3.5 pr-12 rounded-lg bg-surface text-on-surface font-label-numeric-md text-label-numeric-md placeholder-on-surface-variant/40 focus:outline-none focus:bg-surface-container-high transition-all" id="buffer-amount" name="buffer-amount" type="text" value="250,00">
+<span class="absolute right-3.5 text-on-surface-variant font-label-numeric-md text-label-numeric-md pointer-events-none">
+                  €
+                </span>
+</div>
+<span class="text-on-surface-variant font-body-sm text-body-sm">
+                Kulanzspanne vor Auslösung roter Überschreitungen.
+              </span>
+</div>
+</div>
+<!-- Warnschwelle / Alarmgrenze mit interaktivem Schieberegler -->
+</div>
+<!-- ABSCHNITT 2: Zeitraum & Roll-Over -->
+<!-- Aktionsleiste unten -->
+<div class="flex items-center justify-end gap-3 pt-2">
+<button class="px-5 py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-body-md text-body-md transition-colors" id="cancel-btn" type="button">
+            Abbrechen
+          </button>
+<button class="px-6 py-2.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary-container font-headline-sm text-body-md shadow-lg shadow-teal-500/20 hover:shadow-teal-500/35 transition-all" type="submit">
+            Übernehmen
+          </button>
+</div>
+</form>
+</div>
+</div>
+<!-- INTERAKTIVE CLIENT-LOGIK FÜR DEN DIALOG -->
+<script>
+    (function initBudgetModal() {
+      // 1. Schieberegler synchronisieren
+      const thresholdSlider = document.getElementById('warning-threshold');
+      const thresholdDisplay = document.getElementById('threshold-display');
+      if (thresholdSlider && thresholdDisplay) {
+        thresholdSlider.addEventListener('input', (e) => {
+          thresholdDisplay.textContent = e.target.value + ' %';
+        });
+      }
+
+      // 2. Roll-Over Switch Toggle Logik
+      const toggleBtn = document.getElementById('rollover-toggle');
+      const toggleThumb = document.getElementById('rollover-thumb');
+      if (toggleBtn && toggleThumb) {
+        toggleBtn.addEventListener('click', () => {
+          const isChecked = toggleBtn.getAttribute('aria-checked') === 'true';
+          const nextState = !isChecked;
+          toggleBtn.setAttribute('aria-checked', String(nextState));
+          if (nextState) {
+            toggleBtn.className = 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full bg-primary-container transition-colors duration-200 ease-in-out focus:outline-none shadow-sm';
+            toggleThumb.className = 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface-container-lowest shadow ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5';
+          } else {
+            toggleBtn.className = 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full bg-surface-variant transition-colors duration-200 ease-in-out focus:outline-none shadow-sm';
+            toggleThumb.className = 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-on-surface-variant shadow ring-0 transition duration-200 ease-in-out translate-x-0.5 mt-0.5';
+          }
+        });
+      }
+
+      // 3. Segmented Picker (Monatlich, Quartal, Jahr)
+      const intervalButtons = document.querySelectorAll('.interval-btn');
+      intervalButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          intervalButtons.forEach(b => {
+            b.className = 'interval-btn py-2 px-3 rounded-md text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-all text-center';
+          });
+          btn.className = 'interval-btn py-2 px-3 rounded-md bg-surface-container-high text-primary font-body-sm text-body-sm shadow-sm transition-all text-center';
+        });
+      });
+
+      // 4. Modal Schließen Aktionen (Close, Cancel, Backdrop)
+      const closeModal = () => {
+        const modal = document.getElementById('budget-modal-container');
+        if (modal) {
+          modal.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+          modal.style.opacity = '0';
+          setTimeout(() => {
+            modal.style.display = 'none';
+            // Unblur Hintergrund falls geschlossen
+            const bgReport = document.querySelector('.filter.blur-\\[2px\\]');
+            if (bgReport) {
+              bgReport.classList.remove('blur-[2px]', 'opacity-40', 'pointer-events-none');
+            }
+          }, 200);
+        }
+      };
+
+      const closeBtn = document.getElementById('close-modal-btn');
+      const cancelBtn = document.getElementById('cancel-btn');
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+      // Submit Rückmeldung
+      const form = document.getElementById('budget-settings-form');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          closeModal();
+        });
+      }
+    })();
+  </script>
+</div></main>
+</body></html>

@@ -15,7 +15,7 @@
 | `AccessKeyHint` | `string` | Nicht geheimer Suchschlüssel des Tokens (`fm_mcp_<hint>_…`), global eindeutig |
 | `TokenHash` | `string` | PBKDF2-Hash des Tokens (`pbkdf2|…`); niemals Klartext |
 | `Level` | `McpAccessLevel` | Freigabestufe (`Analyse`, `Assistent`, `Sachbearbeiter`, `Buchhalter`, `Individuell`) |
-| `ApprovalMode` | `McpApprovalMode` | `PerAction` oder `PreApproved` |
+| `ApprovalMode` | `McpApprovalMode` | `PerAction`, `PreApproved` oder `Granular` (Expertenmodus) |
 | `Status` | `McpAccessStatus` | `Active`, `Deactivated`, `Revoked`; der Ablauf wird aus `ExpiresUtc` gerechnet |
 | `ExpiresUtc` | `DateTime?` | Optionaler Ablaufzeitpunkt; danach verhält sich der Zugang wie deaktiviert |
 | `AllowedIpRanges` | `string?` | CSV erlaubter Client-IPs/CIDR-Bereiche |
@@ -24,6 +24,7 @@
 | `RevokedUtc` | `DateTime?` | Widerrufszeitpunkt |
 | `RevocationReason` | `string?` | Widerrufsgrund (Benutzerentscheidung oder System) |
 | `Scopes` | `ICollection<McpAccessScope>` | Persistierte Scope-Zeilen; nur bei Stufe `Individuell` gefüllt |
+| `ApprovalGrants` | `ICollection<McpAccessApprovalGrant>` | Vorab-Freigabe-Tupel `(DataType, Right)` des Modus `Granular`; unique je Zugang/Tupel, grantbar sind nur `Read`, `Complete`, `Modify`, `Create` |
 
 ### `McpAccessScope`
 
@@ -59,6 +60,7 @@
 | `DecidedUtc` | `DateTime?` | Entscheidungszeitpunkt |
 | `DecidedByUserId` | `Guid?` | Entscheidender Benutzer (Besitzer); `null` bei Systementscheidungen |
 | `DecisionNote` | `string?` | Entscheidungsnotiz (Ablehnungsgrund, Vorab-Genehmigung, Systemgrund) |
+| `PreApprovalKind` | `PreApprovalKind` | Herkunft einer Vorab-Freigabe: `None` (normal entschieden), `AccessPreApproved` (Modus `PreApproved`), `GrantPreApproved` (Grant-Treffer im Modus `Granular`) — maschinenlesbar, unabhängig von der `DecisionNote` |
 | `ExecutedUtc` | `DateTime?` | Ausführungszeitpunkt |
 | `ExecutionResult` | `string?` | Ergebnisreferenz (angelegte IDs, Zusammenfassung); bei Status `Failed` trägt das Feld stattdessen den klassifizierten Fehler-Wrapper `{"error":{…}}` (`{code, message}` bei definierten Fehlern, `{type}` bei Fremd-Exceptions), den `fm_task_status` als `untrusted_data.error` ausliefert |
 | `FailureReason` | `string?` | Klassifizierter `Err_*`-Fehlergrund |

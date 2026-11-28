@@ -324,13 +324,34 @@ public sealed class BudgetReportViewModel : BaseViewModel
     /// <inheritdoc />
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
+        var tabs = new List<UiRibbonTab>();
+
+        if (!string.IsNullOrWhiteSpace(InitBack))
+        {
+            tabs.Add(new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
+            {
+                new UiRibbonAction(
+                    "Back",
+                    localizer["Ribbon_Back"],
+                    "<svg><use href='icons/sprite.svg#back'/></svg>",
+                    UiRibbonItemSize.Large,
+                    false,
+                    null,
+                    () =>
+                    {
+                        RaiseUiActionRequested("Back");
+                        return Task.CompletedTask;
+                    })
+            }, Sort: 0));
+        }
+
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction(
                 "Settings",
                 localizer["Ribbon_Settings"],
                 "<svg><use href='icons/sprite.svg#settings'/></svg>",
-                UiRibbonItemSize.Small,
+                UiRibbonItemSize.Large,
                 false,
                 null,
                 () =>
@@ -338,7 +359,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                     RaiseUiActionRequested("ShowSettings");
                     return Task.CompletedTask;
                 })
-        });
+        }, Sort: 10);
 
         var quickRange = new UiRibbonTab(localizer["Ribbon_Group_Analysis"], new List<UiRibbonAction>
         {
@@ -386,7 +407,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 null,
                 ()
                     => ShiftAsOfYearAsync(1))
-         });
+         }, Sort: 40);
 
         var export = new UiRibbonTab(localizer["Ribbon_Group_Export"], new List<UiRibbonAction>
         {
@@ -402,11 +423,15 @@ public sealed class BudgetReportViewModel : BaseViewModel
                     RaiseUiActionRequested("ExportExcel");
                     return Task.CompletedTask;
                 })
-        });
+        }, Sort: 80);
+
+        tabs.Add(manage);
+        tabs.Add(quickRange);
+        tabs.Add(export);
 
         return new List<UiRibbonRegister>
         {
-            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { manage, quickRange, export })
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs)
         };
     }
 

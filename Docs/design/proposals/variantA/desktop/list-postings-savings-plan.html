@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-error-container":"#ffdad6","tertiary-fixed":"#c4e7ff","surface-container-lowest":"#010f1f","surface-container-low":"#0d1c2d","on-primary-fixed-variant":"#0d3bac","on-tertiary-fixed":"#001e2c","secondary-fixed":"#dce1ff","on-primary":"#002780","inverse-on-surface":"#233143","on-tertiary-container":"#003145","primary-fixed":"#dce1ff","tertiary-container":"#009fd6","tertiary":"#7bd0ff","on-secondary-container":"#a3b5ff","surface-bright":"#2c3a4c","surface-container-highest":"#273647","on-tertiary":"#00354a","on-background":"#d4e4fa","surface":"#051424","background":"#051424","on-tertiary-fixed-variant":"#004c69","surface-container":"#122131","secondary-fixed-dim":"#b6c4ff","on-surface":"#d4e4fa","inverse-primary":"#3255c5","secondary":"#b6c4ff","surface-variant":"#273647","surface-container-high":"#1c2b3c","surface-dim":"#051424","on-surface-variant":"#c4c5d5","outline":"#8e909f","on-secondary":"#002780","primary":"#b6c4ff","tertiary-fixed-dim":"#7bd0ff","error-container":"#93000a","primary-fixed-dim":"#b6c4ff","on-secondary-fixed-variant":"#0f3bac","secondary-container":"#133eaf","on-secondary-fixed":"#001551","on-error":"#690005","on-primary-fixed":"#001550","on-primary-container":"#002477","error":"#ffb4ab","outline-variant":"#444653","surface-tint":"#b6c4ff","primary-container":"#6d8dff","inverse-surface":"#d4e4fa"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xs":"0.25rem","margin-tablet":"1.5rem","gutter-desktop":"1.25rem","margin":"1rem","space-xl":"1.75rem","space-md":"0.75rem","gutter":"1rem","margin-desktop":"2rem","space-lg":"1.25rem","space-sm":"0.5rem"},fontFamily:{"label-sm":["Inter"],"body-md":["Inter"],"metric-lg":["Inter"],"headline-md":["Inter"],"metric-md":["Inter"],"headline-xl":["Inter"],"headline-lg":["Inter"],"headline-sm":["Inter"],"body-sm":["Inter"],"label-md":["Inter"],"body-lg":["Inter"]},fontSize:{"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0em","fontWeight":"400"}],"metric-lg":["1.75rem",{"lineHeight":"2rem","letterSpacing":"-0.03em","fontWeight":"600"}],"headline-md":["1.125rem",{"lineHeight":"1.5rem","letterSpacing":"-0.015em","fontWeight":"600"}],"metric-md":["1.25rem",{"lineHeight":"1.5rem","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-xl":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.025em","fontWeight":"600"}],"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-sm":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0em","fontWeight":"400"}],"label-md":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.01em","fontWeight":"500"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.005em","fontWeight":"400"}]}}}};</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head><body class="bg-surface-container-lowest text-on-surface antialiased fm-body-a"><aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class=" active" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Buchungen eines Sparplans</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Csv exportieren"><span class="material-symbols-outlined">download</span><span>Csv exportieren</span></button><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div></div><div class="pl-60 min-h-screen flex flex-col bg-surface-container-lowest"><main class="w-full pt-14 flex-1 bg-surface-container-lowest"><div class="max-w-[1200px] mx-auto p-space-lg"><div class="flex flex-col w-full gap-space-lg select-none">
+<!-- Top Navigation & Context Bar -->
+<div class="flex flex-col gap-space-xs">
+<nav class="flex items-center gap-space-xs font-body-sm text-body-sm text-outline">
+<a class="hover:text-primary transition-colors flex items-center gap-1" data-path="sparplaene" href="#">
+<span class="material-symbols-outlined text-[14px]">savings</span>
+<span>Sparpläne</span>
+</a>
+<span class="material-symbols-outlined text-[12px] opacity-40">chevron_right</span>
+<span class="text-on-surface-variant font-medium">ETF Sparplan MSCI World</span>
+<span class="material-symbols-outlined text-[12px] opacity-40">chevron_right</span>
+<span class="text-primary font-semibold">Buchungen</span>
+</nav>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md pt-space-xs">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Buchungen eines Sparplans</h1>
+<p class="font-body-sm text-body-sm text-outline mt-0.5">Vollständige Historie aller automationsgestützten Lastschriften und Wertpapierkäufe</p>
+</div>
+<!-- Quick KPI Chips -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="flex items-center gap-2 bg-surface-container px-space-md py-1.5 rounded-lg border border-outline-variant/30 text-on-surface">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Status:</span>
+<span class="font-label-md text-label-md font-semibold text-emerald-400">Aktiv</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container px-space-md py-1.5 rounded-lg border border-outline-variant/30 text-on-surface">
+<span class="material-symbols-outlined text-primary text-[16px]">event_repeat</span>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Intervall:</span>
+<span class="font-label-md text-label-md font-medium text-on-surface">Monatlich am 01.</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container px-space-md py-1.5 rounded-lg border border-outline-variant/30 text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-[16px]">account_balance</span>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Referenzkonto:</span>
+<span class="font-label-md text-label-md font-medium text-on-surface">DE44 •••• 8190</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Savings Plan Details Banner (Hero Card) -->
+<div class="relative overflow-hidden bg-surface-container-low rounded-xl border border-outline-variant/40 p-space-md md:p-space-lg">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+<div class="md:col-span-6 flex items-start gap-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/40 text-primary">
+<span class="material-symbols-outlined text-[28px]">query_stats</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md text-on-surface font-semibold">iShares Core MSCI World UCITS ETF</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-primary-container/20 text-primary border border-primary/30 uppercase tracking-wide">Acc (EUR)</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-outline font-body-sm text-body-sm">
+<span>ISIN: <span class="font-mono text-on-surface font-medium">IE00B4L5Y983</span></span>
+<span>WKN: <span class="font-mono text-on-surface font-medium">A0RPWH</span></span>
+<span>Depot: <span class="text-on-surface font-medium">Hauptdepot (Trade Republic)</span></span>
+</div>
+</div>
+</div>
+<div class="md:col-span-6 grid grid-cols-2 sm:grid-cols-3 gap-space-sm text-right md:text-left">
+<div class="bg-surface-container/70 p-space-sm rounded-lg border border-outline-variant/20">
+<div class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Reguläre Rate</div>
+<div class="font-metric-md text-metric-md text-on-surface font-semibold mt-0.5 tabular-nums">250,00 €</div>
+</div>
+<div class="bg-surface-container/70 p-space-sm rounded-lg border border-outline-variant/20">
+<div class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Kumuliert (12M)</div>
+<div class="font-metric-md text-metric-md text-primary font-semibold mt-0.5 tabular-nums">2.500,00 €</div>
+</div>
+<div class="bg-surface-container/70 p-space-sm rounded-lg border border-outline-variant/20 col-span-2 sm:col-span-1">
+<div class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Nächster Termin</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold mt-1">01.06.2024</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter & Action Ribbon -->
+<div class="flex flex-col lg:flex-row gap-space-sm items-stretch lg:items-center justify-between bg-surface-container-low p-space-sm rounded-lg border border-outline-variant/30">
+<div class="flex flex-col sm:flex-row gap-space-sm flex-1 items-stretch sm:items-center">
+<!-- Search Input -->
+<div class="relative flex-1 min-w-[240px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-9 pl-9 pr-3 rounded bg-surface-container-lowest text-on-surface placeholder:text-outline border border-outline-variant/40 focus:outline-none focus:border-primary text-body-md font-body-md transition-colors" id="search-input" placeholder="Buchungen durchsuchen..." type="text">
+</div>
+<!-- Zeitraum Dropdown -->
+<div class="relative">
+<select class="w-full sm:w-auto appearance-none h-9 pl-3 pr-8 rounded bg-surface-container-lowest text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary text-body-md font-body-md cursor-pointer transition-colors" id="timeframe-select">
+<option value="12m">Zeitraum: Letzte 12 Monate</option>
+<option value="ytd">Laufendes Jahr (2024)</option>
+<option value="2023">Gesamtjahr 2023</option>
+<option value="all">Alle Ausführungen</option>
+<option value="custom">Benutzerdefiniert...</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<!-- Sortierung Dropdown -->
+<div class="relative">
+<select class="w-full sm:w-auto appearance-none h-9 pl-3 pr-8 rounded bg-surface-container-lowest text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary text-body-md font-body-md cursor-pointer transition-colors" id="sort-select">
+<option value="desc">Sortierung: Neueste zuerst</option>
+<option value="asc">Älteste zuerst</option>
+<option value="amount-desc">Betrag: Höchste</option>
+<option value="amount-asc">Betrag: Niedrigste</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">swap_vert</span>
+</div>
+</div>
+<!-- Filter Actions -->
+<div class="flex items-center gap-space-xs self-end sm:self-auto shrink-0">
+<button class="h-9 px-3 flex items-center gap-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md border border-outline-variant/30 transition-colors" id="btn-reset" type="button">
+<span class="material-symbols-outlined text-[16px]">filter_alt_off</span>
+<span>Filter zurücksetzen</span>
+</button>
+<button class="h-9 px-3 flex items-center gap-1.5 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors shadow-sm" onclick="alert('Einmalige Aufstockung / Sondertilgung vormerken');" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>Sonderkauf erfassen</span>
+</button>
+</div>
+</div>
+<!-- Bookings Data Ledger Container -->
+<div class="bg-surface-container-low border border-outline-variant/40 rounded-xl overflow-hidden shadow-md flex flex-col">
+<!-- Desktop Table (Header and Structure) -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse" id="bookings-table">
+<thead>
+<tr class="bg-surface-container border-b border-outline-variant/40 text-outline font-label-sm text-label-sm uppercase tracking-wider select-none">
+<th class="py-2.5 px-space-md w-[140px] font-semibold">Datum</th>
+<th class="py-2.5 px-space-md font-semibold">Beschreibung</th>
+<th class="py-2.5 px-space-md w-[160px] text-right font-semibold">Betrag</th>
+<th class="py-2.5 px-space-sm w-[48px] text-center"><span class="sr-only">Aktionen</span></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 font-body-md text-body-md text-on-surface" id="booking-rows">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.05.2024</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20240501-819</span>
+<span>•</span>
+<span>Stücke: +3,1054 @ 80,51 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.04.2024</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20240401-721</span>
+<span>•</span>
+<span>Stücke: +3,1427 @ 79,55 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 3 (Special / Sonderzahlung Highlighted) -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group bg-primary/5" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-primary font-medium">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+<span>01.03.2024</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-primary">Einmalige Sonderzahlung / Aufstockung</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-primary-container text-on-primary-container">Sonderorder</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920-SPECIAL</span>
+<span>•</span>
+<span>Order: ORD-20240301-994</span>
+<span>•</span>
+<span>Stücke: +6,3816 @ 78,35 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-bold text-tertiary tabular-nums">
+              - 500,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.02.2024</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20240201-105</span>
+<span>•</span>
+<span>Stücke: +3,2488 @ 76,95 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.01.2024</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20240101-002</span>
+<span>•</span>
+<span>Stücke: +3,3311 @ 75,05 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.12.2023</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20231201-943</span>
+<span>•</span>
+<span>Stücke: +3,3921 @ 73,70 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.11.2023</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20231101-381</span>
+<span>•</span>
+<span>Stücke: +3,4819 @ 71,80 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.10.2023</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20231001-209</span>
+<span>•</span>
+<span>Stücke: +3,5361 @ 70,70 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+<!-- Row 9 -->
+<tr class="hover:bg-surface-container-high/60 transition-colors cursor-pointer group" onclick="toggleDetails(this)">
+<td class="py-3 px-space-md whitespace-nowrap font-mono text-outline group-hover:text-primary transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+<span>01.09.2023</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Reguläre Sparplan-Ausführung - MSCI World UCITS ETF</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ausgeführt</span>
+</div>
+<div class="flex items-center gap-3 text-body-sm text-outline font-mono mt-0.5">
+<span>Ref: SP-884920</span>
+<span>•</span>
+<span>Order: ORD-20230901-098</span>
+<span>•</span>
+<span>Stücke: +3,4722 @ 72,00 €</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right whitespace-nowrap font-mono font-semibold text-on-surface tabular-nums">
+              - 250,00 €
+            </td>
+<td class="py-3 px-space-sm text-center text-outline group-hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Bottom Ledger Summary Bar -->
+<div class="bg-surface-container px-space-md py-space-sm border-t border-outline-variant/40 flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md text-body-sm text-outline font-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">data_check</span>
+<span class="font-medium text-on-surface">Gesamtumfang:</span>
+<span class="text-on-surface font-semibold" id="count-indicator">9 Buchungen</span>
+</div>
+<span class="hidden sm:inline opacity-30">•</span>
+<div class="hidden sm:flex items-center gap-1.5">
+<span>Durchschnittsrate:</span>
+<span class="font-mono text-on-surface font-medium">277,78 €</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline font-semibold">Summe Zeitraum:</span>
+<div class="font-metric-md text-metric-md text-on-surface font-mono font-bold tracking-tight" id="sum-indicator">
+          - 2.500,00 €
+        </div>
+</div>
+</div>
+</div>
+<!-- Detail Flyout Modal / Bottom Inspector (Accessible via row click) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden" id="booking-modal">
+<div class="w-full max-w-lg bg-surface-container-low border border-outline-variant/50 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+<div class="p-space-md border-b border-outline-variant/30 flex items-center justify-between bg-surface-container">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">receipt</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Buchungsdetail &amp; Ordernachweis</h3>
+</div>
+<button class="w-7 h-7 rounded hover:bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-colors" onclick="closeModal()" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="p-space-lg flex flex-col gap-space-md text-body-md text-on-surface">
+<div class="flex justify-between items-baseline border-b border-outline-variant/20 pb-space-sm">
+<span class="text-outline text-body-sm">Buchungsdatum</span>
+<span class="font-mono font-medium" id="modal-date">01.05.2024</span>
+</div>
+<div class="flex justify-between items-baseline border-b border-outline-variant/20 pb-space-sm">
+<span class="text-outline text-body-sm">Art der Buchung</span>
+<span class="font-medium text-on-surface" id="modal-desc">Reguläre Sparplan-Ausführung</span>
+</div>
+<div class="flex justify-between items-baseline border-b border-outline-variant/20 pb-space-sm">
+<span class="text-outline text-body-sm">Belastungsbetrag</span>
+<span class="font-mono text-metric-sm font-bold text-tertiary" id="modal-amount">- 250,00 €</span>
+</div>
+<div class="flex justify-between items-baseline border-b border-outline-variant/20 pb-space-sm">
+<span class="text-outline text-body-sm">Status der Transaktion</span>
+<span class="inline-flex items-center gap-1 text-emerald-400 font-medium text-body-sm">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Wertstellung erfolgreich
+          </span>
+</div>
+<div class="flex justify-between items-baseline border-b border-outline-variant/20 pb-space-sm">
+<span class="text-outline text-body-sm">Referenznummer</span>
+<span class="font-mono text-outline text-body-sm">SP-884920-X10928</span>
+</div>
+<div class="flex justify-between items-baseline">
+<span class="text-outline text-body-sm">Orderbeleg</span>
+<a class="text-primary hover:underline flex items-center gap-1 font-label-md" href="#">
+<span class="material-symbols-outlined text-[14px]">picture_as_pdf</span>
+<span>Abrechnung_2024.pdf</span>
+</a>
+</div>
+</div>
+<div class="p-space-md bg-surface-container border-t border-outline-variant/30 flex justify-end gap-space-sm">
+<button class="px-4 py-1.5 rounded bg-surface-container-high text-on-surface hover:bg-surface-variant font-label-md transition-colors" onclick="closeModal()" type="button">
+          Schließen
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function toggleDetails(rowElement) {
+    const cells = rowElement.querySelectorAll('td');
+    if (!cells || cells.length < 3) return;
+    
+    const date = cells[0].innerText.trim();
+    const desc = cells[1].querySelector('.text-on-surface, .text-primary').innerText.trim();
+    const amount = cells[2].innerText.trim();
+
+    document.getElementById('modal-date').innerText = date;
+    document.getElementById('modal-desc').innerText = desc;
+    document.getElementById('modal-amount').innerText = amount;
+
+    const modal = document.getElementById('booking-modal');
+    modal.classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('booking-modal').classList.add('hidden');
+  }
+
+  // Interactive Live Filter Prototype
+  document.getElementById('search-input').addEventListener('input', function(e) {
+    const val = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#booking-rows tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      if (text.includes(val)) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    document.getElementById('count-indicator').innerText = visibleCount + ' Buchungen';
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', function() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('timeframe-select').value = '12m';
+    document.getElementById('sort-select').value = 'desc';
+    const rows = document.querySelectorAll('#booking-rows tr');
+    rows.forEach(r => r.style.display = '');
+    document.getElementById('count-indicator').innerText = '9 Buchungen';
+  });
+</script></div></main></div></body></html>

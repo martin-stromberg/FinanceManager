@@ -126,7 +126,7 @@ public sealed class AccountsViewModelTests
 
         var loc = new DummyLocalizer();
         var groups = vm.GetRibbon(loc)!;
-        Assert.Contains(groups, g => g.Items.Any(i => i.Action == "ClearSearch"));
+        Assert.Contains(groups, g => (g.Tabs ?? new List<FinanceManager.Web.ViewModels.Common.UiRibbonTab>()).SelectMany(t => t.Items).Any(i => i.Action == "ClearSearch"));
     }
 
     /// <summary>

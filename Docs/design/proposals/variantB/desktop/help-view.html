@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hilfe-Artikel | FinanceManager Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            bgDark: '#080a0f',
+            bgSurface: '#0f131c',
+            bgElevated: '#161b26',
+            bgGlass: 'rgba(18, 24, 38, 0.72)',
+            tealAccent: '#2dd4bf',
+            violetAccent: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #080a0f;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .glow-teal {
+      background: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12) 0%, transparent 40%);
+    }
+    .glow-violet {
+      background: radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.13) 0%, transparent 45%);
+    }
+    .glass-panel {
+      background: rgba(15, 19, 28, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(22, 27, 38, 0.6) 0%, rgba(15, 19, 28, 0.8) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .active-nav-glow {
+      box-shadow: 0 0 20px -3px rgba(45, 212, 191, 0.4);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e2638;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+  </style>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative fm-body-b">
+
+  <aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class=" active" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Hilfe-Artikel</span><div class="fm-avatar">FM</div></header><!-- Ambient Light Overlays -->
+  <div class="fixed inset-0 pointer-events-none z-0 glow-teal"></div>
+  <div class="fixed inset-0 pointer-events-none z-0 glow-violet"></div>
+  <div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
+
+  <!-- ==================== LEFT SIDEBAR (SLIM ICON-RAIL VARIANT B) ==================== -->
+  <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+  <div class="flex-1 flex flex-col min-w-0 z-10">
+
+    <!-- TOP CONTEXTUAL ACTION BAR (Variant B rethink of classic ribbon toolbar) -->
+    <!-- ==================== SCROLLABLE CONTENT AREA ==================== -->
+    <main class="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-10">
+      <div class="max-w-7xl mx-auto space-y-8">
+
+        <!-- Breadcrumb & Topic Meta Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/5">
+          
+          <!-- Brotkrümel (Breadcrumbs) -->
+          <nav class="flex items-center gap-2 text-xs font-medium text-slate-400 flex-wrap" aria-label="Breadcrumb">
+            <a href="#" class="hover:text-teal-300 transition-colors flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+              Hilfe-Center
+            </a>
+            <span class="text-slate-600">/</span>
+            <a href="#" class="hover:text-teal-300 transition-colors">Konten und Buchungen</a>
+            <span class="text-slate-600">/</span>
+            </nav>
+
+          <!-- Status badge / Public Indicator -->
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-teal-500/10 border border-teal-500/25 text-teal-300">
+              <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+              Öffentlicher Leitfaden
+            </span>
+            <span class="text-xs text-slate-500 font-mono">Aktualisiert: Heute, 14:30 Uhr</span>
+          </div>
+
+        </div>
+
+        <!-- ==================== 2-COLUMN LAYOUT: INHALTSVERZEICHNIS (LINKS) + ARTIKEL (RECHTS) ==================== -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+          <!-- LINKS: INHALTSVERZEICHNIS DER HILFETHEMEN (Sticky Navigation Sidebar) -->
+          <!-- RECHTS: FLIESSTEXT, ARTIKELTITEL, ZWISCHENÜBERSCHRIFTEN & SCREENSHOT-PLATZHALTER -->
+          <article class="lg:col-span-8 xl:col-span-9 space-y-8">
+            
+            <!-- Artikeltitel & Lead -->
+            <!-- ARTIKEL-INHALT -->
+            <div class="glass-card rounded-2xl p-7 lg:p-10 space-y-8 text-slate-300 text-sm lg:text-base leading-relaxed">
+              
+              <!-- ZWISCHENÜBERSCHRIFT 1 -->
+              <section id="voraussetzungen" class="space-y-4">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/20 text-teal-300 font-mono font-bold text-xs border border-teal-500/30">01</span>
+                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Voraussetzungen &amp; Unterstützte Bankstandards</h2>
+                </div>
+                
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Bankleitzahl (BLZ) oder BIC des Kreditinstituts</span>
+                  </li>
+                  <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Online-Banking-Anmeldekennung / Legitimations-ID</span>
+                  </li>
+                  <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Aktives Zwei-Faktor-Verfahren (pushTAN, photoTAN oder ChipTAN)</span>
+                  </li>
+                  <li class="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <svg class="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Freigabe für Drittanbieter im Online-Portal der Bank</span>
+                  </li>
+                </ul>
+              </section>
+
+              <!-- SCREENSHOT-PLATZHALTER 1 -->
+              <div class="my-6 rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-b from-[#111622] to-[#0c0f18] p-4 lg:p-6 shadow-2xl relative group">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/10 text-xs text-slate-400">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span class="ml-2 font-mono text-[11px] text-slate-500">screenshot_konten_assistent_step1.png</span>
+                  </div>
+                  <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/20">Screenshot-Ansicht</span>
+                </div>
+                
+                <!-- Mocked UI Inside Screenshot Placeholder -->
+                <div class="h-64 rounded-xl border border-dashed border-teal-500/30 bg-[#080b12]/80 flex flex-col items-center justify-center text-center p-6 relative">
+                  <div class="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-300 mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewbox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  </div>
+                  <h4 class="text-sm font-semibold text-white mb-1">Abbildung 1.1: Auswahldialog der Bankenschnittstelle</h4>
+                  <p class="text-xs text-slate-400 max-w-md">Maske zur Eingabe der Bankleitzahl mit automatischer Erkennung des FinTS-Servers und TAN-Medium-Zuordnung.</p>
+                  <span class="mt-3 text-[11px] text-teal-400/80 font-mono">1920 × 1080 px • High-Resolution Mockup</span>
+                </div>
+              </div>
+
+              <!-- ZWISCHENÜBERSCHRIFT 2 -->
+              <section id="fints-einrichtung" class="space-y-4 pt-4 border-t border-white/5">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-violet-500/20 text-violet-300 font-mono font-bold text-xs border border-violet-500/30">02</span>
+                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">FinTS 3.0 Schnittstelle konfigurieren</h2>
+                </div>
+
+                <p>
+                  Wechseln Sie in der Hauptnavigation auf <strong class="text-teal-300">Konten</strong> und wählen Sie den Menüpunkt <em>„Neues Bankkonto verbinden“</em>. Unser Einrichtungsassistent prüft im Hintergrund automatisch die Kompatibilität des gewählten Bankrechenzentrums (z. B. Finanz Informatik, Atruvia oder Bundesbank-Knoten).
+                </p>
+
+                <div class="p-4 rounded-xl bg-violet-500/10 border border-violet-500/25 space-y-2">
+                  <div class="flex items-center gap-2 text-violet-300 font-semibold text-xs tracking-wide uppercase">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Sicherheitshinweis zu 90-Tage-SCA
+                  </div>
+                  </div>
+
+                <p>
+                  Nach erfolgreicher Authentifizierung erhalten Sie eine Übersicht sämtlicher unter dieser Kundennummer geführten Unterkonten (Giro, Festgeld, Kreditkarten und Tagesgeld). Markieren Sie die Konten, die in die laufende Liquiditätsplanung einbezogen werden sollen.
+                </p>
+              </section>
+
+              <!-- SCREENSHOT-PLATZHALTER 2 -->
+              <!-- ZWISCHENÜBERSCHRIFT 3 -->
+              <section id="automatisierung" class="space-y-4 pt-4 border-t border-white/5">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/20 text-teal-300 font-mono font-bold text-xs border border-teal-500/30">03</span>
+                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Automatische Regeln &amp; Buchungsabgleich</h2>
+                </div>
+
+                <p>
+                  Sobald die Verbindung aktiv ist, ruft das FinanceManager-Backend neue Kontoumsätze täglich um 04:00 Uhr sowie auf Knopfdruck über die Schaltfläche <strong class="text-teal-300">Buchung</strong> ab. Sie können individuelle Regeln hinterlegen:
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/5">
+                    <span class="text-xs font-mono text-teal-400 block mb-1">REGELTYP A</span>
+                    <strong class="text-white text-xs block mb-1">Daueraufträge matchen</strong>
+                    <p class="text-[11px] text-slate-400">Verknüpft Soll-Buchungen automatisch mit aktiven Sparplänen.</p>
+                  </div>
+                  <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/5">
+                    <span class="text-xs font-mono text-teal-400 block mb-1">REGELTYP B</span>
+                    <strong class="text-white text-xs block mb-1">USt-Splitting</strong>
+                    <p class="text-[11px] text-slate-400">Erkennt Vorsteuerbeträge (7% / 19%) in Überweisungsbetreffs.</p>
+                  </div>
+                  <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/5">
+                    <span class="text-xs font-mono text-teal-400 block mb-1">REGELTYP C</span>
+                    <strong class="text-white text-xs block mb-1">Budget-Warnung</strong>
+                    <p class="text-[11px] text-slate-400">Löst Sofortmeldungen aus, wenn variable Budgets 85% überschreiten.</p>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ZWISCHENÜBERSCHRIFT 4: FEHLERBEHEBUNG -->
+              <section id="fehlerbehebung" class="space-y-4 pt-4 border-t border-white/5">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center justify-center w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 font-mono font-bold text-xs border border-rose-500/30">04</span>
+                  <h2 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Häufige FinTS-Rückmeldecodes &amp; Fehlerbehebung</h2>
+                </div>
+
+                </section>
+
+            </div>
+
+            <!-- Footer Navigation / Verwandte Themen -->
+            </article>
+
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+</body>
+</html>

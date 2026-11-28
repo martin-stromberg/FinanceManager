@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 using FinanceManager.Shared.Dtos.Postings;
 
@@ -162,6 +163,86 @@ public static class NavigationManagerExtensions
         sb.Append($"{k}/categories");
 
         nav.NavigateTo(sb.ToString());
+        return true;
+    }
+
+    /// <summary>
+    /// Determines whether the supplied URI resolves to a same-origin target relative to the
+    /// application's <see cref="NavigationManager.BaseUri"/>. Relative paths (with or without a
+    /// leading slash) and absolute URIs pointing at the app itself are accepted; scheme-relative
+    /// URIs (<c>//host/...</c>), foreign origins and non-http(s) schemes such as
+    /// <c>javascript:</c> are rejected. Because navigation is ultimately resolved by the
+    /// browser's WHATWG URL parser — which strips tab/newline characters and treats inputs like
+    /// <c>https:host</c> or <c>https:/host</c> as absolute — the raw candidate and its
+    /// percent-decoded form are additionally rejected when they contain control or whitespace
+    /// characters or a scheme prefix whose <c>:</c> is not followed by <c>//</c>.
+    /// Used to validate user-controlled navigation targets (for example the <c>?back=</c>
+    /// query parameter) and prevent open redirects.
+    /// </summary>
+    /// <param name="nav">The <see cref="NavigationManager"/> instance. Must not be <c>null</c>.</param>
+    /// <param name="uri">The URI to validate. May be <c>null</c>.</param>
+    /// <returns><c>true</c> when the URI resolves to the same origin; otherwise <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="nav"/> is <c>null</c>.</exception>
+    public static bool IsSameOriginUri(this NavigationManager nav, string? uri)
+    {
+        if (nav == null) throw new ArgumentNullException(nameof(nav));
+        if (string.IsNullOrWhiteSpace(uri)) return false;
+
+        try
+        {
+            // Reject inputs that .NET resolves relative to the base URI but the browser's
+            // WHATWG parser resolves as an absolute/scheme URL. The percent-decoded form is
+            // checked as well because encoded characters (e.g. %09) can smuggle a scheme
+            // or control characters past the raw-string inspection.
+            if (!IsSafeNavigationCandidate(uri)) return false;
+            var decoded = Uri.UnescapeDataString(uri);
+            if (!string.Equals(decoded, uri, StringComparison.Ordinal)
+                && !IsSafeNavigationCandidate(decoded)) return false;
+
+            var target = nav.ToAbsoluteUri(uri);
+            var baseUri = new Uri(nav.BaseUri);
+            return string.Equals(target.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(target.Authority, baseUri.Authority, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // Detects a URI scheme prefix (e.g. "https:", "javascript:") at the start of a candidate string.
+    private static readonly Regex SchemePrefixRegex =
+        new(@"^[a-zA-Z][a-zA-Z0-9+.\-]*:", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Checks a navigation candidate (raw or percent-decoded) for characters and scheme
+    /// prefixes that the browser's WHATWG URL parser interprets differently than
+    /// <see cref="NavigationManager.ToAbsoluteUri(string)"/>.
+    /// </summary>
+    /// <param name="value">The candidate string to inspect.</param>
+    /// <returns><c>true</c> when the candidate is safe to resolve; otherwise <c>false</c>.</returns>
+    private static bool IsSafeNavigationCandidate(string value)
+    {
+        // WHATWG silently strips C0 control characters (in particular tab and newlines)
+        // before scheme detection, so any such character — or whitespace — is rejected.
+        foreach (var c in value)
+        {
+            if (c < 0x20 || char.IsWhiteSpace(c))
+            {
+                return false;
+            }
+        }
+
+        // A scheme prefix is only acceptable in the "scheme://" form. Inputs like
+        // "javascript:...", "data:...", "https:host" or "https:/host" are resolved as
+        // absolute URLs by the browser while .NET may treat them as relative paths.
+        var schemeMatch = SchemePrefixRegex.Match(value);
+        if (schemeMatch.Success
+            && !value.Substring(schemeMatch.Length).StartsWith("//", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
         return true;
     }
 

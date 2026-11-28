@@ -102,7 +102,7 @@
 
 /* Success/Error messages */
 .success {
-    color: #4caf50;
+    color: var(--success);
 }
 
 .success-margin {
@@ -121,7 +121,7 @@
 }
 
 .setup-section-accordion-item {
-    border: 1px solid var(--fm-border, #3a3d45);
+    border: 1px solid var(--fm-border, var(--border));
     border-radius: .4rem;
     overflow: hidden;
 }
@@ -205,7 +205,7 @@
 }
 
 .setup-mobile-card {
-    border: 1px solid var(--fm-border, #3a3d45);
+    border: 1px solid var(--fm-border, var(--border));
     border-radius: .5rem;
     padding: .7rem .75rem;
     background: var(--fm-panel, var(--panel, transparent));

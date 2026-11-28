@@ -24,10 +24,9 @@
 }
 else
 {
+    <div class="card-page-content">
     @* Render ribbon here so upload UI can be positioned directly under it *@
     <Ribbon TTabEnum="TabId" Provider="(IRibbonProvider)_provider" Localizer="Localizer" />
-
-    <ConfirmationDialogHost />
 
     <h3 class="list-page-title">@Localizer["General_PageTitle"]: @GetKindTitle()</h3>
 
@@ -48,8 +47,14 @@ else
                      ItemClick="OnItemClick" />
 
     <EmbeddedPanelHost TKeyValue="object" Provider="@(_provider as BaseViewModel)" Position="EmbeddedPanelPosition.AfterList" />
+    </div>
 
-    
+    @* Overlay/dialog hosts render outside .card-page-content: the panel applies
+       backdrop-filter, which establishes a containing block for position:fixed descendants
+       and would confine the viewport-wide dimmer to the panel bounds (clicks outside the
+       panel would no longer close the overlay). *@
+    <ConfirmationDialogHost />
+
     @* Generic overlay rendering for list providers *@
     @if (_overlayVisible && _overlaySpec is not null)
     {
@@ -91,6 +96,8 @@ else
     [Parameter] public string Kind { get; set; } = string.Empty;
     [Parameter] public string SubKind { get; set; } = string.Empty;
     [Parameter] public string? Id { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
 
     private IListProvider? _provider;
 
@@ -145,6 +152,8 @@ else
         _provider = result?.Provider;
         if (_provider != null)
         {
+            // Sanitize the back target: only same-origin URIs may be offered as back navigation.
+            (_provider as BaseViewModel)?.SetBackNavigation(Nav.IsSameOriginUri(Back) ? Back : null);
             _provider.StateChanged += (_, __) => _ = InvokeAsync(StateHasChanged);
 
             if (_provider is BaseViewModel newVm)
@@ -200,9 +209,16 @@ else
                 Nav.NavigateTo("list/budget/categories");
                 break;
             case "OpenBudgetReport":
-                Nav.NavigateTo("reports/budget");
+                Nav.NavigateTo("reports/budget?back=" + Uri.EscapeDataString(Nav.Uri));
                 break;
             case "Back":
+                // Prefer an explicit back target from the query when present; the target is
+                // validated against the app origin to prevent open redirects.
+                if (Nav.IsSameOriginUri(Back))
+                {
+                    Nav.NavigateTo(Back!);
+                    break;
+                }
                 // For postings lists, navigate back to card of calling dataset
                 if ((Kind ?? string.Empty).Trim().ToLowerInvariant() == "postings")
                 {

@@ -438,8 +438,8 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
     /// <summary>
     /// Verifies that when the process restarts mid-install but the installed version does not match the
     /// version that was being installed, status reconciliation reports "Failed" with a specific,
-    /// human-readable error describing the version mismatch - so a botched install is surfaced instead of
-    /// silently being reported as up to date or left "Installing" indefinitely.
+    /// human-readable error - so a botched install is surfaced instead of silently being reported as up
+    /// to date or left "Installing" indefinitely.
     /// </summary>
     [Fact]
     public async Task Status_WhenInstallingAndVersionMismatchAfterRestart_ReportsFailed()
@@ -467,7 +467,59 @@ public sealed class UpdateControllerIntegrationTests : IClassFixture<TestWebAppl
             response.EnsureSuccessStatusCode();
             var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>(cancellationToken: TestContext.Current.CancellationToken);
             status!.Status.Should().Be(UpdateStatusKind.Failed);
-            status.LastError.Should().Be("Installed version '1.2.3' does not match the expected version '9.9.9' after the update process finished.");
+            status.LastError.Should().Be($"Update failed. No update log found at {Path.Combine(tempDir.FullName, "update.log")}.");
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that a <c>status.json</c> written by msTools.Updater 0.10.1 - the 11-field serialization
+    /// schema without the <c>updateLogPath</c>/<c>readyToInstallAt</c> properties added in 0.11.0 - still
+    /// deserializes and maps to a correct <see cref="UpdateStatusDto"/>, so the productive upgrade path
+    /// keeps reading status files left behind by the previous library version.
+    /// </summary>
+    [Fact]
+    public async Task Status_ReadsStatusJsonWrittenByOlderSchema_ReportsMappedStatus()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            using var factory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services => SetDownloadPath(services, tempDir.FullName));
+            });
+            var client = factory.CreateClient();
+            await AuthenticateAdminAsync(client);
+
+            var legacyStatusJson = $$"""
+            {
+                "state": {{(int)AutoUpdateState.ReadyToInstall}},
+                "installedVersion": "1.0.0",
+                "availableVersion": "2.3.4",
+                "lastCheckedAt": "2026-11-20T10:15:30+00:00",
+                "lastCheckResult": null,
+                "lastDownloadResult": { "localPath": "release.zip", "sizeBytes": 10, "checksumValid": true },
+                "lastInstallResult": null,
+                "lastError": null,
+                "lastErrorCode": null,
+                "isLocked": false,
+                "lockCreatedAt": null
+            }
+            """;
+            await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, "status.json"), legacyStatusJson, TestContext.Current.CancellationToken);
+
+            var response = await client.GetAsync("/api/setup/update/status", TestContext.Current.CancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            var status = await response.Content.ReadFromJsonAsync<UpdateStatusDto>(cancellationToken: TestContext.Current.CancellationToken);
+            status!.Status.Should().Be(UpdateStatusKind.Ready);
+            status.AvailableVersion.Should().Be("2.3.4");
+            status.DownloadedAssetName.Should().Be("release.zip");
+            status.LastCheckedAt.Should().Be(new DateTimeOffset(2026, 11, 20, 10, 15, 30, TimeSpan.Zero));
+            status.LastError.Should().BeNull();
         }
         finally
         {

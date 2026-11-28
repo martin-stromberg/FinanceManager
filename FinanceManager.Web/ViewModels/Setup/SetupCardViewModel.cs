@@ -463,6 +463,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(Microsoft.Extensions.Localization.IStringLocalizer localizer)
     {
         var groupTitle = localizer["Ribbon_Group_Manage"].Value;
+        var dataTitle = localizer["Ribbon_Group_Data"].Value;
         var tabs = new List<UiRibbonTab>
         {
             new UiRibbonTab(groupTitle, new List<UiRibbonAction>
@@ -486,7 +487,10 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                     null,
                     new Func<Task>(()
                         => { ResetAll(); return Task.CompletedTask; }))
-                { MobileShortcut = true },
+                { MobileShortcut = true }
+            }, Sort: 10),
+            new UiRibbonTab(dataTitle, new List<UiRibbonAction>
+            {
                 new UiRibbonAction(
                     "RebuildAggregates",
                     localizer["Ribbon_RebuildAggregates"].Value,
@@ -520,7 +524,7 @@ public sealed class SetupCardViewModel : BaseCardViewModel<(string Key, string V
                         }
                         catch (Exception ex) { _logger?.LogError(ex, "ResetReportCache ribbon action failed"); }
                     }))
-            })
+            }, Sort: 15)
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

@@ -150,7 +150,7 @@ public sealed class HomeMassImportPlaywrightTests
             (await page.Locator(".mass-import-dialog").CountAsync()).Should().Be(0,
                 because: "a recognized ING statement must import directly without the review dialog");
             var detailsLink = success.Locator("a.alert-link");
-            (await detailsLink.GetAttributeAsync("href")).Should().Contain("/card/statement-drafts/");
+            (await detailsLink.GetAttributeAsync("href")).Should().Contain("card/statement-drafts/");
         }
         finally
         {

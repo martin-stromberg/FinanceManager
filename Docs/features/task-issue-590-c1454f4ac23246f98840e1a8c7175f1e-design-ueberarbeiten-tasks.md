@@ -1,0 +1,39 @@
+# Tasks: UI-Redesign aller Ansichten via Google Stitch (Issue #590)
+
+| # | Bereich | Aufgabe | Status | Testnachweis |
+|---|---------|---------|--------|--------------|
+| 1 | Vorbereitung | `GOOGLE_STITCH`-Abruf im Stitch-Tooling verdrahten: Key liegt im Windows-Benutzerkontext (verifiziert); aufrufender Prozess liest ihn via `[Environment]::GetEnvironmentVariable('GOOGLE_STITCH','User')` und reicht ihn als `process.env.GOOGLE_STITCH` weiter — Wert niemals in Dateien, Logs oder Kommentaren | Erledigt | generate-proposals.mjs resolveApiKey(): User-Scope + Env, nie geloggt |
+| 2 | Vorbereitung | Node-Toolchain verifizieren: `scripts/screenshots`-Tooling unter Node v24.15.0 ausführen; bei Inkompatibilität Node ≥26.13 anfordern | Erledigt | Node v24.15.0, playwright + stitch-sdk funktionsfaehig |
+| 3 | Vorbereitung | Routen-/Zustandsmanifest `scripts/screenshots/inventory-routes.json` aus `inventory/views.md` ableiten (15 Routen, 15 Listen-Instanzen, 19 Karten-Instanzen, 11 Setup-Sektionen, 5 Security-Tabs, repräsentative Overlays; je mit Auth-Zustand eingeloggt/ausgeloggt/Admin, Selektor, Voraktionen) | Erledigt | inventory-routes.json: 62 Views inkl. Auth/Selektoren/Overlays |
+| 4 | Vorbereitung | Routenmanifest dem Anwender zur Granularitäts-Abnahme vorlegen (übernommene Empfehlung) | Erledigt | Manifest vom Anwender bestaetigt |
+| 5 | Tooling | `lib/app-harness.js` aus `generate-screenshots.js` extrahieren (Publish-Start, temp. SQLite, UI-Registrierung mit `#create-demo-data`, Login, `CreateDemoData`-Warten) | Erledigt | scripts/screenshots/lib/app-harness.js |
+| 6 | Tooling | `generate-screenshots.js` auf `lib/app-harness.js` umstellen (ohne Funktionsänderung der 11 bestehenden Aufnahmen) | Erledigt | generate-screenshots.js nutzt Harness (11 Aufnahmen unveraendert) |
+| 7 | Tooling | `generate-inventory.js` anlegen: Manifest-Iteration über alle Ansichten mit Stabilisierungs-Selektor-Wartebedingungen (ausschließlich Dark-Mode) | Erledigt | generate-inventory.js: Stabilisierungs-Waits, Dark-only |
+| 8 | Tooling | Mobile-Viewport-Aufnahmen (390×844, touch) in `generate-inventory.js` implementieren | Erledigt | 390x844 touch-Viewport implementiert |
+| 9 | Tooling | HTML-Dump-Erfassung (`page.content()`) je Ansichtszustand in `generate-inventory.js` implementieren | Erledigt | page.content()-Dumps je Zustand |
+| 10 | Tooling | Admin-Flag für `/list/users` direkt in der temporären SQLite-DB setzen (analog `TestUserSeeder`-Ansatz), sofern Demodaten-Benutzer nicht Admin | Erledigt | Demo-Benutzer ist Admin (SQLite-Flag verifiziert) |
+| 11 | Inventar | `dotnet publish FinanceManager.Web -c Release` und vollständigen Inventarlauf ausführen | Erledigt | publish + Volllauf: 140 captured / 2 partial |
+| 12 | Inventar | Inventar-Artefakte (Screenshots + HTML + Index-Matrix, Dark-Mode, Desktop+Mobile) unter `Docs/design/inventory/` ablegen | Erledigt | Docs/design/inventory/{screenshots,html}/desktop+mobile |
+| 13 | Inventar | Datenlücken identifizieren, ggf. minimale Testdaten ergänzen oder Lücken für Follow-up-Issue dokumentieren | Erledigt | data-gaps.md: 2 Luecken (home KPI interactive-only) + Hinweise |
+| 14 | Designentwurf | Stitch-Client einrichten (`@google/stitch-sdk` bevorzugt, Fallback MCP-Endpunkt `stitch.googleapis.com/mcp` via `fetch`; Key ausschließlich aus Prozess-Env `GOOGLE_STITCH`) und mit Minimalaufruf verifizieren | Erledigt | @google/stitch-sdk, Minimalaufruf a/desktop/login ok |
+| 15 | Designentwurf | Prompt-/Eingabepaket Variante A (modernisierte Weiterentwicklung) erstellen — keine neuen Funktionen, Dark-only, Desktop+Mobile | Erledigt | Variante A-Prompt in generate-proposals.mjs (VARIANTS.a) |
+| 16 | Designentwurf | Prompt-/Eingabepaket Variante B (vollständig neu gedacht) erstellen — keine neuen Funktionen, Dark-only, Desktop+Mobile | Erledigt | Variante B-Prompt in generate-proposals.mjs (VARIANTS.b) |
+| 17 | Designentwurf | Beide Varianten für alle inventarisierten Ansichten generieren und unter `Docs/design/proposals/` ablegen | Erledigt | 136 Artefakte (2×68), 0 Fehler, manifest.json vollständig |
+| 18 | Abnahme | Abnahme-Gate: beide Varianten im GitHub-Issue #590 mit Anhängen (Bilder/Artefakte) vorlegen und schriftliche Freigabe einer Variante abwarten (keine Umsetzung vorher) | Offen | — |
+| 19 | Umsetzung Styles | Token-/Variablenmodell einführen (Dark-ausgeprägt, theme-fähig) und `app.css`/`app.*.css`/`theme.Dark.*.css` gemäß freigegebenem Entwurf konsolidieren/überarbeiten | Offen | — |
+| 20 | Umsetzung Styles | `wwwroot/help/css/help-page.css` an neue Designsprache anpassen | Offen | — |
+| 21 | Umsetzung Styles | Verwaiste `theme.Dark.SetupNotificationsTab.css.css` (Doppelendung, unverlinkt) bereinigen oder korrekt einbinden | Offen | — |
+| 22 | Umsetzung Styles | Doppelte Stylesheet-Einbindung `ribbon.css`/`app.css` in `MainLayout.razor` bereinigen; `manifest.json`-Farben an neues Theme anpassen (falls berührt) | Offen | — |
+| 23 | Umsetzung Markup | `App.razor` anpassen: `<link>`-Manifest auf neue CSS-Struktur; `<body class="dark-mode">` bleibt bestehen (Dark-only-Beschluss) | Offen | — |
+| 24 | Umsetzung Markup | `MainLayout.razor` und `HelpLayout.razor` anpassen (`.app-shell`, Sidebar, mobile Topbar; `#nav-toggle`-Mechanik funktionsfähig halten) | Offen | — |
+| 25 | Umsetzung Markup | `Components/Pages/**`-Markup gemäß Entwurf strukturell anpassen (nur wo erforderlich; `@rendermode InteractiveServer` erhalten) | Offen | — |
+| 26 | Umsetzung Markup | `Components/Shared/**`-Markup anpassen (Ribbon, Overlays, KPI-/Chart-Komponenten, Panels; Ribbon-Gruppenordnung gemäß `AGENT.md` erhalten) | Offen | — |
+| 27 | Umsetzung Markup | Etwaige neue UI-Texte in `Resources/*.resx` (de+en) pflegen — keine hartkodierten Strings | Offen | — |
+| 28 | Verifikation | `dotnet build FinanceManager.sln` — 0 Fehler | Offen | — |
+| 29 | Verifikation | `FinanceManager.Tests` (2511) und `FinanceManager.Tests.Integration` (180) vollständig grün | Offen | — |
+| 30 | Verifikation | `FinanceManager.Tests.E2E` laufen lassen und Ergebnis-Test-IDs gegen die 8 dokumentierten Baseline-Fehlschläge (`inventory/tests.md`) vergleichen — keine neuen Fehlschläge | Offen | — |
+| 31 | Verifikation | Bei markupbedingten E2E-Brüchen: betroffene Selektoren in den Testklassen nachziehen (kein Entfernen von Assertions) | Offen | — |
+| 32 | Dokumentation/PR | Nachher-Screenshots mit `generate-inventory.js` (gleiche Matrix, Dark, Desktop+Mobile) erzeugen und Vorher/Nachher-Gegenüberstellung erstellen | Offen | — |
+| 33 | Dokumentation/PR | Secret-Check: sicherstellen, dass kein `GOOGLE_STITCH`-Key in Repo/Commits/Logs enthalten ist | Offen | — |
+| 34 | Dokumentation/PR | Bei aufgetretenen Datenlücken: Follow-up-Issue zur Erweiterung der Demodatengenerierung anlegen (bedingt) | Offen | — |
+| 35 | Dokumentation/PR | Einzelnen Pull Request gegen `staging` mit Beschreibung und Vorher/Nachher-Nachweisen erstellen | Offen | — |

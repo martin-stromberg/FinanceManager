@@ -84,7 +84,9 @@ public sealed class McpAccessService : IMcpAccessService
             return null;
         }
         var scopes = await _scopeEvaluator.GetEffectiveScopesAsync(access, ct);
-        return ToDetail(access, scopes, DateTime.UtcNow);
+        var grants = await _db.McpAccessApprovalGrants.AsNoTracking()
+            .Where(g => g.McpAccessId == id).ToListAsync(ct);
+        return ToDetail(access, scopes, grants, DateTime.UtcNow);
     }
 
     /// <inheritdoc />
@@ -134,7 +136,9 @@ public sealed class McpAccessService : IMcpAccessService
                 continue; // access-key-hint collision: issue a fresh token
             }
             var scopes = await _scopeEvaluator.GetEffectiveScopesAsync(access, ct);
-            return new McpAccessCreatedDto(ToDetail(access, scopes, DateTime.UtcNow), issued.PlainText);
+            return new McpAccessCreatedDto(
+                ToDetail(access, scopes, Array.Empty<McpAccessApprovalGrant>(), DateTime.UtcNow),
+                issued.PlainText);
         }
     }
 
@@ -198,6 +202,44 @@ public sealed class McpAccessService : IMcpAccessService
         // required scope — those are system-withdrawn („Recht entfallen"), while requests
         // still covered by the new profile stay open for a normal decision.
         await _approvalService.WithdrawScopeUncoveredForAccessAsync(access.Id, "Recht entfallen", ct);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> SetApprovalGrantsAsync(Guid ownerUserId, Guid id, McpApprovalGrantSetRequest request, CancellationToken ct)
+    {
+        var access = await _db.McpAccesses.Include(a => a.ApprovalGrants)
+            .FirstOrDefaultAsync(a => a.Id == id && a.OwnerUserId == ownerUserId, ct);
+        if (access is null)
+        {
+            return false;
+        }
+        var grantDtos = request.Grants ?? Array.Empty<McpAccessApprovalGrantDto>();
+        ValidateGrants(grantDtos);
+        if (grantDtos.Any(g => g.DataType == (short)McpDataType.Administration)
+            && !await McpAdminRole.IsAdminAsync(_db, ownerUserId, ct))
+        {
+            // Same rule as the administration scope: an explicit administration tuple is
+            // rejected hard for non-admin owners, not filtered silently.
+            throw new DomainValidationException("Err_Mcp_AdminRequired",
+                "An Administration approval grant is restricted to owners with administrative privileges.");
+        }
+        // Explicitly track the new rows (same EF note as the scope replace).
+        var grantsBefore = SnapshotGrants(access.ApprovalGrants);
+        var newGrants = grantDtos
+            .Select(g => new McpAccessApprovalGrant(access.Id, ownerUserId,
+                (McpDataType)g.DataType, (McpRightKind)g.Right))
+            .ToList();
+        await _db.McpAccessApprovalGrants.AddRangeAsync(newGrants, ct);
+        access.ReplaceApprovalGrants(newGrants);
+        // audit-konzept.md §3.3: grant changes are recorded as a before/after tuple delta.
+        await StageAuditAsync(access, "ApprovalGrantsChanged", ct,
+            BuildGrantDelta(grantsBefore, SnapshotGrants(access.ApprovalGrants), access.Id));
+        await _db.SaveChangesAsync(ct);
+        // approval-konzept.md §3.5: a removed grant withdraws the still-open requests it
+        // pre-approved — only GrantPreApproved rows are touched; access-wide pre-approved
+        // and normally decided requests stay open.
+        await _approvalService.WithdrawGrantUncoveredForAccessAsync(access.Id, "Freigabe entzogen", ct);
         return true;
     }
 
@@ -379,6 +421,11 @@ public sealed class McpAccessService : IMcpAccessService
     /// without its audit record fails, and vice versa (F-0301). Unlike a read-path audit
     /// failure, a staging failure propagates deliberately.
     /// </summary>
+    /// <param name="access">The access the event belongs to.</param>
+    /// <param name="eventType">Audit event type key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <param name="changes">Optional before/after field changes.</param>
+    /// <returns>The staged audit entry task.</returns>
     private Task<McpAuditEntry?> StageAuditAsync(McpAccess access, string eventType, CancellationToken ct,
         IReadOnlyList<McpAuditFieldChange>? changes = null)
         => _auditWriter.StageAsync(new McpAuditWriteRequest(
@@ -396,6 +443,14 @@ public sealed class McpAccessService : IMcpAccessService
     /// carries credential material — <c>TokenHash</c>/<c>AccessKeyHint</c> are deliberately
     /// not part of the snapshot.
     /// </summary>
+    /// <param name="Name">Display name.</param>
+    /// <param name="Description">Free-text description.</param>
+    /// <param name="Level">Access level.</param>
+    /// <param name="ApprovalMode">Approval mode.</param>
+    /// <param name="ExpiresUtc">Optional expiry.</param>
+    /// <param name="AllowedIpRanges">IP-binding CSV.</param>
+    /// <param name="Scopes">Persisted scope profile rendered as tuple key → row list.</param>
+    /// <returns>The auditable configuration snapshot.</returns>
     private sealed record AccessConfigSnapshot(
         string Name,
         string? Description,
@@ -406,12 +461,20 @@ public sealed class McpAccessService : IMcpAccessService
         IReadOnlyDictionary<string, string> Scopes)
     {
         /// <summary>Captures the current auditable state of <paramref name="access"/>.</summary>
+        /// <param name="access">The access to snapshot.</param>
+        /// <returns>The before/after-image for the audit delta.</returns>
         public static AccessConfigSnapshot Capture(McpAccess access)
             => new(access.Name, access.Description, access.Level, access.ApprovalMode,
                 access.ExpiresUtc, access.AllowedIpRanges, SnapshotScopes(access.Scopes));
     }
 
     /// <summary>The five filter CSVs of one scope row (before-image for filter deltas).</summary>
+    /// <param name="AccountTypesCsv">Account-type filter CSV.</param>
+    /// <param name="ContactCategoryIdsCsv">Contact-category filter CSV.</param>
+    /// <param name="SecurityCategoryIdsCsv">Security-category filter CSV.</param>
+    /// <param name="SavingsPlanCategoryIdsCsv">Savings-plan-category filter CSV.</param>
+    /// <param name="AttachmentCategoryIdsCsv">Attachment-category filter CSV.</param>
+    /// <returns>The filter snapshot of one scope row.</returns>
     private sealed record ScopeFilterSnapshot(
         string? AccountTypesCsv,
         string? ContactCategoryIdsCsv,
@@ -420,6 +483,7 @@ public sealed class McpAccessService : IMcpAccessService
         string? AttachmentCategoryIdsCsv)
     {
         /// <summary>Captures the current filter CSVs of <paramref name="scope"/>.</summary>
+        /// <param name="scope">The scope row to snapshot.</param>
         public ScopeFilterSnapshot(McpAccessScope scope)
             : this(scope.AccountTypesCsv, scope.ContactCategoryIdsCsv, scope.SecurityCategoryIdsCsv,
                 scope.SavingsPlanCategoryIdsCsv, scope.AttachmentCategoryIdsCsv)
@@ -432,6 +496,9 @@ public sealed class McpAccessService : IMcpAccessService
     /// (a level switch away from <see cref="McpAccessLevel.Individuell"/> clears the scope
     /// rows — the removal is part of the delta). Only actually changed fields produce rows.
     /// </summary>
+    /// <param name="before">Before-image of the configuration.</param>
+    /// <param name="after">After-image entity.</param>
+    /// <returns>The field changes of the update.</returns>
     private static List<McpAuditFieldChange> BuildAccessDelta(AccessConfigSnapshot before, McpAccess after)
     {
         var changes = new List<McpAuditFieldChange>();
@@ -449,6 +516,9 @@ public sealed class McpAccessService : IMcpAccessService
     /// Per-dimension filter delta of one scope row: one row per changed CSV field
     /// (<c>null</c> = unrestricted). Only changed dimensions produce rows.
     /// </summary>
+    /// <param name="before">Before-image of the filter CSVs.</param>
+    /// <param name="after">After-image scope row.</param>
+    /// <returns>The filter field changes.</returns>
     private static List<McpAuditFieldChange> BuildFilterDelta(ScopeFilterSnapshot before, McpAccessScope after)
     {
         var changes = new List<McpAuditFieldChange>(5);
@@ -461,10 +531,42 @@ public sealed class McpAccessService : IMcpAccessService
     }
 
     /// <summary>
+    /// Grant delta keyed by the <c>DataType:Right</c> tuple: added tuples carry the
+    /// after-image (old = <see langword="null"/>), removed tuples the before-image
+    /// (new = <see langword="null"/>).
+    /// </summary>
+    /// <param name="before">Grant tuple keys before the replace.</param>
+    /// <param name="after">Grant tuple keys after the replace.</param>
+    /// <param name="accessId">Owning access id (audit row entity reference).</param>
+    /// <returns>The grant field changes.</returns>
+    private static List<McpAuditFieldChange> BuildGrantDelta(
+        IReadOnlySet<string> before, IReadOnlySet<string> after, Guid accessId)
+    {
+        var changes = new List<McpAuditFieldChange>();
+        foreach (var key in before.Union(after).OrderBy(k => k, StringComparer.Ordinal))
+        {
+            var oldRows = before.Contains(key) ? key : null;
+            var newRows = after.Contains(key) ? key : null;
+            AddChange(changes, nameof(McpAccessApprovalGrant), accessId, $"Grant[{key}]", oldRows, newRows);
+        }
+        return changes;
+    }
+
+    /// <summary>Renders the persisted grant profile as a set of <c>DataType:Right</c> keys.</summary>
+    /// <param name="grants">The grant rows to snapshot.</param>
+    /// <returns>The set of <c>DataType:Right</c> keys.</returns>
+    private static IReadOnlySet<string> SnapshotGrants(IEnumerable<McpAccessApprovalGrant> grants)
+        => grants.Select(g => $"{g.DataType}:{g.Right}").ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
     /// Scope delta keyed by the <c>DataType:Right</c> tuple: added tuples carry the rendered
     /// after-image (old = <see langword="null"/>), removed tuples the before-image
     /// (new = <see langword="null"/>), tuples with changed filter sets an old→new row.
     /// </summary>
+    /// <param name="before">Scope profile before the change.</param>
+    /// <param name="after">Scope profile after the change.</param>
+    /// <param name="accessId">Owning access id (audit row entity reference).</param>
+    /// <returns>The scope field changes.</returns>
     private static List<McpAuditFieldChange> BuildScopeDelta(
         IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after, Guid accessId)
     {
@@ -483,6 +585,8 @@ public sealed class McpAccessService : IMcpAccessService
     /// <c>|</c>-joined rendered rows of that tuple (several rows per tuple combine with OR,
     /// berechtigungsmodell.md §4.2).
     /// </summary>
+    /// <param name="scopes">The scope rows to snapshot.</param>
+    /// <returns>Tuple key → rendered rows.</returns>
     private static IReadOnlyDictionary<string, string> SnapshotScopes(IEnumerable<McpAccessScope> scopes)
     {
         var groups = new SortedDictionary<string, SortedSet<string>>(StringComparer.Ordinal);
@@ -502,6 +606,8 @@ public sealed class McpAccessService : IMcpAccessService
     /// Compact rendering of one scope row: <c>DataType:Right</c> plus the set filter CSVs
     /// (<c>[Dim=csv;…]</c>); an unrestricted row renders as the bare tuple.
     /// </summary>
+    /// <param name="scope">The scope row to render.</param>
+    /// <returns>The rendered audit row.</returns>
     private static string RenderScope(McpAccessScope scope)
     {
         var filters = new List<string>(5);
@@ -541,6 +647,7 @@ public sealed class McpAccessService : IMcpAccessService
     /// right requires a Read row on the same data type within the same profile — the
     /// implication rule of ui-konzept.md §4.3.2 ("Änderung ohne Lesen ist fachlich unsinnig").
     /// </summary>
+    /// <param name="scopes">The scope rows to validate.</param>
     private static void ValidateScopes(IReadOnlyList<McpAccessScopeDto> scopes)
     {
         var readableTypes = new HashSet<McpDataType>();
@@ -571,12 +678,48 @@ public sealed class McpAccessService : IMcpAccessService
     }
 
     /// <summary>
+    /// Validates an approval-grant profile: every tuple must be a defined enum value, carry
+    /// a grantable right kind (<see cref="McpAccessApprovalGrant.IsGrantableRight"/> — the
+    /// final ledger/destructive rights Suggest/Book/Delete can never be pre-approved) and
+    /// a valid F3-matrix combination (a grant can never exceed the catalog's normative
+    /// edges). The administration-owner check happens in the caller next to the scope rule.
+    /// </summary>
+    /// <param name="grants">The grant rows to validate.</param>
+    private static void ValidateGrants(IReadOnlyList<McpAccessApprovalGrantDto> grants)
+    {
+        var seen = new HashSet<(McpDataType DataType, McpRightKind Right)>();
+        foreach (var grant in grants)
+        {
+            var dataType = CheckedEnum<McpDataType>(grant.DataType, nameof(grant.DataType));
+            var right = CheckedEnum<McpRightKind>(grant.Right, nameof(grant.Right));
+            if (!McpAccessApprovalGrant.IsGrantableRight(right))
+            {
+                throw new DomainValidationException("Err_Mcp_InvalidScope",
+                    $"The right ({right}) cannot be pre-approved by an approval grant — grants only cover Read, Complete, Modify and Create.");
+            }
+            if (!McpScopeMatrix.IsValidCombination(dataType, right))
+            {
+                throw new DomainValidationException("Err_Mcp_InvalidScope",
+                    $"The grant ({dataType}, {right}) is not a valid F3-matrix combination.");
+            }
+            if (!seen.Add((dataType, right)))
+            {
+                throw new DomainValidationException("Err_Mcp_InvalidScope",
+                    $"The grant ({dataType}, {right}) is duplicated.");
+            }
+        }
+    }
+
+    /// <summary>
     /// Rejects an explicit <see cref="McpDataType.Administration"/> scope grant when the
     /// access owner does not carry the administrative role. Unlike the derived standard
     /// profiles (where the installation scope is filtered silently), an explicitly set
     /// tuple is rejected hard — the caller consciously asked for it and must see the
     /// denial (<c>Err_Mcp_AdminRequired</c>, the same code the fm_admin_* tool gate uses).
     /// </summary>
+    /// <param name="ownerUserId">The access owner to check.</param>
+    /// <param name="scopes">The scope rows to inspect.</param>
+    /// <param name="ct">Cancellation token.</param>
     private async Task RejectAdministrationScopeForNonAdminAsync(
         Guid ownerUserId, IReadOnlyList<McpAccessScopeDto> scopes, CancellationToken ct)
     {
@@ -606,12 +749,14 @@ public sealed class McpAccessService : IMcpAccessService
         => new(a.Id, a.Name, a.Description, (short)a.Level, (short)a.ApprovalMode, (short)a.Status,
             a.ExpiresUtc, a.IsExpired(utcNow), a.LastUsedUtc, a.TokenIssuedUtc, a.RevokedUtc, a.CreatedUtc);
 
-    private static McpAccessDetailDto ToDetail(McpAccess a, IReadOnlyList<McpAccessScope> scopes, DateTime utcNow)
+    private static McpAccessDetailDto ToDetail(McpAccess a, IReadOnlyList<McpAccessScope> scopes,
+        IReadOnlyList<McpAccessApprovalGrant> grants, DateTime utcNow)
         => new(a.Id, a.Name, a.Description, (short)a.Level, (short)a.ApprovalMode, (short)a.Status,
             a.ExpiresUtc, a.IsExpired(utcNow), a.AllowedIpRanges, a.LastUsedUtc, a.TokenIssuedUtc,
             a.RevokedUtc, a.RevocationReason,
             scopes.Select(s => new McpAccessScopeDto(s.Id, (short)s.DataType, (short)s.Right,
                 s.AccountTypesCsv, s.ContactCategoryIdsCsv, s.SecurityCategoryIdsCsv,
                 s.SavingsPlanCategoryIdsCsv, s.AttachmentCategoryIdsCsv)).ToList(),
+            grants.Select(g => new McpAccessApprovalGrantDto(g.Id, (short)g.DataType, (short)g.Right)).ToList(),
             a.CreatedUtc, a.ModifiedUtc);
 }

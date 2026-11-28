@@ -3,9 +3,9 @@
    ===================================================== */
 
 .chart {
-    --bar-color: #2d6cdf;
-    --bar-neg: #c94;
-    --axis: #555;
+    --bar-color: var(--accent);
+    --bar-neg: var(--warning);
+    --axis: var(--border);
     border: 1px solid var(--border);
 }
 
@@ -27,7 +27,7 @@
 }
 
 .bar:focus-visible {
-    box-shadow: 0 0 0 2px #ffffff40, 0 0 0 4px #2d6cdf90;
+    box-shadow: 0 0 0 2px var(--glass-border), 0 0 0 4px var(--accent-soft);
 }
 
 .zero-line {
@@ -35,11 +35,11 @@
 }
 
 .labels-row {
-    color: #aaa;
+    color: var(--muted);
 }
 
 .chart-loading-overlay {
-    background: rgba(18, 18, 20, .6);
+    background: var(--glass-bg);
 }
 
 .spinner .seg {
@@ -47,9 +47,9 @@
 }
 
 .chart-skeleton .skeleton-bar {
-    background: linear-gradient(180deg, #2a3036 0%, #1b1f23 100%);
+    background: linear-gradient(180deg, var(--border) 0%, var(--bg-alt) 100%);
 }
 
 .chart-skeleton .skeleton-label {
-    background: #262b30;
+    background: var(--panel-bg);
 }

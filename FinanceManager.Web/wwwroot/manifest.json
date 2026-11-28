@@ -3,13 +3,13 @@
   "short_name": "Finanzen",
   "icons": [
     {
-        "src": "icons/finance_manager.png",
-        "sizes": "1024x1024",
-        "type": "image/png"
+      "src": "icons/finance_manager.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ff5722"
+  "background_color": "#080a0f",
+  "theme_color": "#080a0f"
 }

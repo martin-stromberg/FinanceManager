@@ -343,6 +343,188 @@ window.financeManager = window.financeManager || {};
     unregister: unregisterKeepalive
   };
 
+  // Navigation rail expand/collapse state, persisted in localStorage.
+  // The expanded flag is mirrored as a class on <html> so pure CSS can react;
+  // initializing it here (script loads in <head>) avoids a flash of the wrong mode.
+  var navStorageKey = "fm.nav.expanded";
+  var navExpandedClass = "fm-nav-expanded";
+
+  function navIsExpanded() {
+    try { return window.localStorage.getItem(navStorageKey) === "1"; }
+    catch { return false; }
+  }
+
+  function navSetExpanded(expanded) {
+    try { window.localStorage.setItem(navStorageKey, expanded ? "1" : "0"); }
+    catch { }
+    document.documentElement.classList.toggle(navExpandedClass, !!expanded);
+  }
+
+  function navSyncToggle() {
+    var btn = document.querySelector(".nav-collapse-toggle");
+    if (!btn) { return; }
+    var expanded = navIsExpanded();
+    btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+    var label = expanded ? btn.getAttribute("data-label-collapse") : btn.getAttribute("data-label-expand");
+    if (label) {
+      btn.setAttribute("title", label);
+      var span = btn.querySelector(".nav-collapse-label");
+      if (span) { span.textContent = label; }
+    }
+  }
+
+  fm.nav = {
+    isExpanded: navIsExpanded,
+    setExpanded: function (expanded) { navSetExpanded(expanded); navSyncToggle(); },
+    toggleExpanded: function () { fm.nav.setExpanded(!navIsExpanded()); }
+  };
+
+  function navApply() {
+    document.documentElement.classList.toggle(navExpandedClass, navIsExpanded());
+    navSyncToggle();
+  }
+
+  navApply();
+
+  // Blazor page transitions may rewrite attributes on <html>, dropping the
+  // expanded class. Re-apply it whenever it disappears while the stored
+  // preference still says expanded.
+  new MutationObserver(navApply).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"]
+  });
+
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest(".nav-collapse-toggle")) {
+      fm.nav.toggleExpanded();
+    }
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", navSyncToggle);
+  } else {
+    navSyncToggle();
+  }
+  document.addEventListener("enhancedload", navApply);
+
+  // Ribbon label density (Issue #586 follow-up): labels are hidden only when
+  // hiding them actually saves a wrapped row. The groups wrap via flexbox, so
+  // each level is tried in turn and the level with the most labels that still
+  // reaches the lowest achievable row count wins. Fixed breakpoints proved too
+  // coarse: on pages with few actions labels vanished despite free space.
+  var ribbonLevels = ["", "fm-ribbon--hide-small-labels", "fm-ribbon--hide-labels"];
+  var ribbonObserved = typeof WeakSet === "function" ? new WeakSet() : null;
+  var ribbonScheduled = typeof WeakSet === "function" ? new WeakSet() : null;
+  var ribbonPendingFrame = false;
+
+  function ribbonVisibleDesktopGroups(ribbon) {
+    var groups = ribbon.querySelector(".fm-ribbon-groups");
+    if (!groups) { return []; }
+    return Array.prototype.filter.call(groups.children, function (el) {
+      return el.classList && el.classList.contains("fm-ribbon-group-desktop") && el.offsetParent !== null;
+    });
+  }
+
+  function ribbonClearState(ribbon) {
+    ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
+    var collapsed = ribbon.querySelectorAll(".fm-ribbon-group-desktop.desktop-collapsed");
+    Array.prototype.forEach.call(collapsed, function (el) { el.classList.remove("desktop-collapsed"); });
+  }
+
+  // All currently laid-out row items: visible desktop groups plus the
+  // mobile panels shown for collapsed groups.
+  function ribbonRowItems(groups) {
+    return Array.prototype.filter.call(groups.children, function (el) {
+      return el.offsetParent !== null;
+    });
+  }
+
+  function ribbonFitsOneRow(groups) {
+    var items = ribbonRowItems(groups);
+    if (!items.length) { return true; }
+    var bounds = groups.getBoundingClientRect();
+    var last = items[items.length - 1].getBoundingClientRect();
+    return last.right <= bounds.right + 1;
+  }
+
+  function ribbonEvaluate(ribbon) {
+    if (!ribbon.isConnected) { return; }
+    var groups = ribbon.querySelector(".fm-ribbon-groups");
+    ribbonClearState(ribbon);
+    var groupEls = ribbonVisibleDesktopGroups(ribbon);
+    if (!groups || !groupEls.length) {
+      // Mobile layout or empty ribbon: desktop buttons are hidden anyway.
+      return;
+    }
+    // Single-row ribbon: pick the richest label level that still fits on one
+    // line. Labels stay visible whenever there is room for them.
+    for (var i = 0; i < ribbonLevels.length; i++) {
+      ribbon.classList.remove(ribbonLevels[1], ribbonLevels[2]);
+      if (ribbonLevels[i]) { ribbon.classList.add(ribbonLevels[i]); }
+      if (ribbonFitsOneRow(groups)) { return; }
+    }
+    // Even icon-only does not fit: collapse rightmost groups into their
+    // popover trigger until the remaining row fits.
+    for (var j = groupEls.length - 1; j >= 0 && !ribbonFitsOneRow(groups); j--) {
+      groupEls[j].classList.add("desktop-collapsed");
+    }
+  }
+
+  function ribbonSchedule(ribbon) {
+    if (ribbonScheduled && ribbonScheduled.has(ribbon)) { return; }
+    if (ribbonScheduled) { ribbonScheduled.add(ribbon); }
+    window.requestAnimationFrame(function () {
+      if (ribbonScheduled) { ribbonScheduled.delete(ribbon); }
+      ribbonEvaluate(ribbon);
+    });
+  }
+
+  function ribbonObserve(ribbon) {
+    if (ribbonObserved && ribbonObserved.has(ribbon)) { return; }
+    if (ribbonObserved) { ribbonObserved.add(ribbon); }
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(function () { ribbonSchedule(ribbon); }).observe(ribbon);
+    }
+    // Blazor re-renders can swap items inside the same ribbon element.
+    // Class attributes are intentionally not observed: ribbonEvaluate
+    // mutates marker classes itself, which would retrigger evaluation.
+    new MutationObserver(function () { ribbonSchedule(ribbon); })
+      .observe(ribbon, { childList: true, subtree: true });
+    ribbonSchedule(ribbon);
+  }
+
+  function ribbonScan(root) {
+    var ribbons = root.querySelectorAll ? root.querySelectorAll(".fm-ribbon") : [];
+    Array.prototype.forEach.call(ribbons, ribbonObserve);
+  }
+
+  function ribbonScanAll() {
+    if (document.body) { ribbonScan(document.body); }
+  }
+
+  // Watches for ribbons added by client-side navigation or first render.
+  new MutationObserver(function (mutations) {
+    var needsScan = mutations.some(function (m) {
+      return Array.prototype.some.call(m.addedNodes, function (n) {
+        return n.nodeType === 1 && (n.matches && n.matches(".fm-ribbon") || n.querySelector && n.querySelector(".fm-ribbon"));
+      });
+    });
+    if (needsScan && !ribbonPendingFrame) {
+      ribbonPendingFrame = true;
+      window.requestAnimationFrame(function () {
+        ribbonPendingFrame = false;
+        ribbonScanAll();
+      });
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", ribbonScanAll);
+  } else {
+    ribbonScanAll();
+  }
+  document.addEventListener("enhancedload", ribbonScanAll);
+
   fm.loadingBar = {
     start: startLoadingBar,
     restart: startLoadingBar,

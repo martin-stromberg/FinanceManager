@@ -4,20 +4,20 @@
 
 :root {
     /* Categorical chart palette (validated for the dark surface, CVD-safe fixed order) */
-    --chart-1: #3987e5;
-    --chart-2: #d95926;
-    --chart-3: #199e70;
-    --chart-4: #c98500;
-    --chart-5: #d55181;
-    --chart-6: #008300;
-    --chart-7: #9085e9;
-    --chart-8: #e66767;
-    --chart-muted: #555a61;
+    --chart-1: var(--accent);
+    --chart-2: var(--warning);
+    --chart-3: var(--success);
+    --chart-4: var(--warning);
+    --chart-5: var(--accent-2);
+    --chart-6: var(--success);
+    --chart-7: var(--accent-2);
+    --chart-8: var(--danger);
+    --chart-muted: var(--border);
     /* Depot development bar/line chart: dark blue line, green bars */
-    --dev-line-color: #3a6ea8;
-    --dev-bar-color: #2f9e63;
+    --dev-line-color: var(--accent);
+    --dev-bar-color: var(--success);
     /* Depot development grouped bar chart: blue flow bars */
-    --dev-flow-color: #3987e5;
+    --dev-flow-color: var(--accent);
 }
 
 .portfolio-tile {
@@ -74,7 +74,7 @@
 }
 
 .kpi-explanation-table td {
-    border-bottom: 1px solid rgba(127, 127, 127, .18);
+    border-bottom: 1px solid var(--border);
 }
 
 .kpi-explanation-table .kpi-explanation-total td {

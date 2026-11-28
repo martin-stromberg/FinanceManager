@@ -82,7 +82,7 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
 
     /// <summary>
     /// Creates a new request that is immediately <see cref="AiActionRequestStatus.Approved"/>
-    /// (pre-approved scope, approval-konzept.md §3.4): the documented approval instance stays
+    /// (pre-approved scope, approval-konzept.md §3.5): the documented approval instance stays
     /// on the record — the request is enqueued into the execution queue without a pending phase.
     /// </summary>
     /// <param name="ownerUserId">Owner user id (= deciding owner). Must not be empty.</param>
@@ -97,6 +97,11 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
     /// <param name="correlationId">Correlation id of the effect chain.</param>
     /// <param name="idempotencyKey">Deduplication key (unique per owner).</param>
     /// <param name="decisionNote">Documented pre-approval note (e.g. "Vorab-Genehmigung Zugangseinstellung").</param>
+    /// <param name="preApprovalKind">The documented pre-approval source —
+    /// <see cref="PreApprovalKind.AccessPreApproved"/> for the access-wide
+    /// <see cref="McpApprovalMode.PreApproved"/> mode or
+    /// <see cref="PreApprovalKind.GrantPreApproved"/> for a granular-mode
+    /// <see cref="McpAccessApprovalGrant"/> match.</param>
     /// <returns>The pre-approved request, ready for the execution queue.</returns>
     public static AiActionRequest CreatePreApproved(
         Guid ownerUserId,
@@ -110,12 +115,14 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
         DateTime expiresUtc,
         Guid correlationId,
         string idempotencyKey,
-        string decisionNote)
+        string decisionNote,
+        PreApprovalKind preApprovalKind = PreApprovalKind.AccessPreApproved)
     {
         var request = new AiActionRequest(
             ownerUserId, mcpAccessId, mcpAccessName, toolName, actionKey, catalogVersion,
             parameterSnapshot, reasonText, expiresUtc, correlationId, idempotencyKey);
         request.Approve(ownerUserId, decisionNote);
+        request.PreApprovalKind = preApprovalKind;
         return request;
     }
 
@@ -172,6 +179,15 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
 
     /// <summary>Optional decision note (rejection reason, pre-approval marker, system reason).</summary>
     public string? DecisionNote { get; private set; }
+
+    /// <summary>
+    /// Which documented pre-approval placed the request directly into the queue as
+    /// approved — <see cref="PreApprovalKind.None"/> for normally decided requests,
+    /// <see cref="PreApprovalKind.AccessPreApproved"/> for the access-wide mode, or
+    /// <see cref="PreApprovalKind.GrantPreApproved"/> for a granular-mode grant match.
+    /// Grant-removal withdrawal keys on this field, never on note strings.
+    /// </summary>
+    public PreApprovalKind PreApprovalKind { get; private set; } = PreApprovalKind.None;
 
     /// <summary>Execution timestamp, or <see langword="null"/> while not executed.</summary>
     public DateTime? ExecutedUtc { get; private set; }
@@ -425,8 +441,12 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
     /// <param name="CorrelationId">Correlation id.</param>
     /// <param name="IdempotencyKey">Deduplication key.</param>
     /// <param name="AttemptCount">Execution attempt counter.</param>
+    /// <param name="PreApprovalKind">Pre-approval discriminator (defaults to
+    /// <see cref="PreApprovalKind.None"/> so backups written before the field existed
+    /// still deserialize).</param>
     /// <param name="CreatedUtc">Creation timestamp.</param>
     /// <param name="ModifiedUtc">Last modification timestamp.</param>
+    /// <returns>The backup record of a request.</returns>
     public sealed record AiActionRequestBackupDto(
         Guid Id,
         Guid OwnerUserId,
@@ -450,7 +470,8 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
         string IdempotencyKey,
         int AttemptCount,
         DateTime CreatedUtc,
-        DateTime? ModifiedUtc);
+        DateTime? ModifiedUtc,
+        PreApprovalKind PreApprovalKind = PreApprovalKind.None);
 
     /// <summary>
     /// Creates the backup DTO of this request. Claim fields are deliberately not exported —
@@ -462,7 +483,8 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
             Id, OwnerUserId, McpAccessId, McpAccessName, ToolName, ActionKey, CatalogVersion,
             ParameterSnapshot, ReasonText, Status, RequestedUtc, ExpiresUtc, DecidedUtc,
             DecidedByUserId, DecisionNote, ExecutedUtc, ExecutionResult, FailureReason,
-            CorrelationId, IdempotencyKey, AttemptCount, CreatedUtc, ModifiedUtc);
+            CorrelationId, IdempotencyKey, AttemptCount, CreatedUtc, ModifiedUtc,
+            PreApprovalKind);
 
     /// <summary>
     /// Applies a backup DTO to this request (restore path): state and timestamps are taken
@@ -493,6 +515,7 @@ public sealed class AiActionRequest : Entity, IAggregateRoot
         CorrelationId = dto.CorrelationId;
         IdempotencyKey = dto.IdempotencyKey;
         AttemptCount = dto.AttemptCount;
+        PreApprovalKind = dto.PreApprovalKind;
         ClaimToken = null;
         ClaimedUtc = null;
         SetDates(dto.CreatedUtc, dto.ModifiedUtc);

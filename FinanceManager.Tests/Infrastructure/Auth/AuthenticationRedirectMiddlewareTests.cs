@@ -33,19 +33,21 @@ public sealed class AuthenticationRedirectMiddlewareTests
 
     /// <summary>
     /// Verifies that the login redirect stays inside the application's base path when the app is hosted
-    /// under a reverse-proxy PathBase prefix.
+    /// under a reverse-proxy PathBase prefix. The returnUrl must carry the prefix as well because the
+    /// post-login <c>NavigateTo(returnUrl, forceLoad: true)</c> resolves it against the domain root -
+    /// an unprefixed value would escape the reverse-proxy subfolder.
     /// </summary>
     [Fact]
     public async Task InvokeAsync_AuthenticationRequired_PrependsPathBase()
     {
         var middleware = new AuthenticationRedirectMiddleware(_ => Task.FromException(
             new ApiAuthenticationRequiredException(HttpStatusCode.Unauthorized, null, null)));
-        var context = CreateContext("/reports");
+        var context = CreateContext("/reports", "?favoriteId=2b9cca67-cd62-4af2-bff7-b92385c913a0");
         context.Request.PathBase = "/finance";
 
         await middleware.InvokeAsync(context);
 
-        var expectedReturnUrl = Uri.EscapeDataString("/reports");
+        var expectedReturnUrl = Uri.EscapeDataString("/finance/reports?favoriteId=2b9cca67-cd62-4af2-bff7-b92385c913a0");
         Assert.Equal($"/finance/login?returnUrl={expectedReturnUrl}", context.Response.Headers.Location.ToString());
     }
 
