@@ -351,4 +351,156 @@ public sealed class SavingsPlanCardLinkTests
         var allTabs = registers!.SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>()).ToList();
         allTabs[^1].Title.Should().Be("Ribbon_Group_Linked");
     }
+
+    private static UiRibbonTab FindTab(SavingsPlanCardViewModel vm, string title)
+        => vm.GetRibbonRegisters(new DummyLocalizer())!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
+            .Single(t => t.Title == title);
+
+    private static UiRibbonAction FindAction(SavingsPlanCardViewModel vm, string actionId)
+        => vm.GetRibbonRegisters(new DummyLocalizer())!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
+            .SelectMany(t => t.Items ?? Enumerable.Empty<UiRibbonAction>())
+            .Single(a => a.Id == actionId);
+
+    /// <summary>
+    /// The "Zurücksetzen" action must sit in the manage group directly behind Save as a small
+    /// item with the undo icon, no mobile shortcut and a disabled state while no pending
+    /// changes exist.
+    /// </summary>
+    [Fact]
+    public async Task Ribbon_ContainsReset_AfterSave_InManageGroup()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        SetupLoad(apiMock, planId, Array.Empty<Guid>(), Array.Empty<AccountDto>());
+        await vm.LoadAsync(planId);
+
+        var manage = FindTab(vm, "Ribbon_Group_Manage");
+        var ids = manage.Items.Select(i => i.Id).ToList();
+        var saveIndex = ids.IndexOf("Save");
+        saveIndex.Should().BeGreaterThanOrEqualTo(0);
+        ids.IndexOf("Reset").Should().Be(saveIndex + 1);
+
+        var reset = manage.Items[saveIndex + 1];
+        reset.Size.Should().Be(UiRibbonItemSize.Small);
+        reset.IconSvg.Should().Contain("#undo");
+        reset.Label.Should().Be("Ribbon_Reset");
+        reset.MobileShortcut.Should().BeFalse();
+        reset.Disabled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Reset discards pending edits and rebuilds the card AND the edit model from the last
+    /// loaded dto - the model is mutated during input, so only the dto is a reliable baseline.
+    /// </summary>
+    [Fact]
+    public async Task Reset_DiscardsPending_RestoresPersistedState()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        SetupLoad(apiMock, planId, Array.Empty<Guid>(), Array.Empty<AccountDto>());
+        await vm.LoadAsync(planId);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SavingsPlan_Name");
+        vm.ValidateFieldValue(nameField, "Changed name");
+        vm.HasPendingChanges.Should().BeTrue();
+        vm.Model.Name.Should().Be("Changed name");
+
+        var reset = FindAction(vm, "Reset");
+        reset.Disabled.Should().BeFalse();
+        await reset.Callback!();
+
+        vm.HasPendingChanges.Should().BeFalse();
+        vm.Model.Name.Should().Be("Plan A");
+        vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SavingsPlan_Name").Text.Should().Be("Plan A");
+        apiMock.Verify(a => a.SavingsPlans_GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// After a failed save the input-mutated model still carries the unsaved value; Reset must
+    /// re-derive the model from the last persisted dto instead of keeping the stale value.
+    /// </summary>
+    [Fact]
+    public async Task Reset_AfterFailedSave_RestoresPersistedBaseline()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        SetupLoad(apiMock, planId, Array.Empty<Guid>(), Array.Empty<AccountDto>());
+        apiMock.Setup(a => a.SavingsPlans_UpdateAsync(planId, It.IsAny<SavingsPlanCreateRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SavingsPlanDto?)null);
+        await vm.LoadAsync(planId);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SavingsPlan_Name");
+        vm.ValidateFieldValue(nameField, "Changed name");
+
+        var ok = await vm.SaveAsync(TestContext.Current.CancellationToken);
+        ok.Should().BeFalse();
+        vm.Model.Name.Should().Be("Changed name");
+
+        await FindAction(vm, "Reset").Callback!();
+
+        vm.Model.Name.Should().Be("Plan A");
+        vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SavingsPlan_Name").Text.Should().Be("Plan A");
+        vm.HasPendingChanges.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// A failed load (entity not found) must clear the cached dto baseline: a subsequent
+    /// Reset has to fall back to the fresh initial state instead of rebuilding the card
+    /// from a previously loaded, different savings plan.
+    /// </summary>
+    [Fact]
+    public async Task Reset_AfterFailedLoad_DoesNotReuseStaleBaseline()
+    {
+        var (vm, apiMock) = CreateVm();
+        var planId = Guid.NewGuid();
+        SetupLoad(apiMock, planId, Array.Empty<Guid>(), Array.Empty<AccountDto>());
+        await vm.LoadAsync(planId);
+        vm.Model.Name.Should().Be("Plan A");
+
+        // the same VM instance is reused for another id whose entity does not exist
+        var missingId = Guid.NewGuid();
+        apiMock.Setup(a => a.SavingsPlans_GetAsync(missingId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SavingsPlanDto?)null);
+        await vm.LoadAsync(missingId);
+
+        // register a pending change so Reset is enabled (the card record is empty after the failed load)
+        var field = new CardField("Card_Caption_SavingsPlan_Name", CardFieldKind.Text, text: "draft", editable: true);
+        vm.ValidateFieldValue(field, "draft");
+        vm.HasPendingChanges.Should().BeTrue();
+
+        await FindAction(vm, "Reset").Callback!();
+
+        // a stale baseline would restore "Plan A"; the cleared baseline yields the fresh initial state
+        vm.Model.Name.Should().BeEmpty();
+        vm.HasPendingChanges.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// In new-create mode Reset restores the initial model - the InitPrefill name and the
+    /// default plan type - without any API roundtrip for the entity itself.
+    /// </summary>
+    [Fact]
+    public async Task Reset_NewMode_RestoresInitPrefill()
+    {
+        var (vm, apiMock) = CreateVm();
+        apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SavingsPlanCategoryDto>());
+        vm.SetInitValue("PrefillPlan");
+        await vm.LoadAsync(Guid.Empty);
+        vm.Model.Name.Should().Be("PrefillPlan");
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SavingsPlan_Name");
+        vm.ValidateFieldValue(nameField, "Other name");
+        vm.Model.Name.Should().Be("Other name");
+
+        await FindAction(vm, "Reset").Callback!();
+
+        vm.Model.Name.Should().Be("PrefillPlan");
+        vm.Model.Type.Should().Be(SavingsPlanType.OneTime);
+        vm.HasPendingChanges.Should().BeFalse();
+        apiMock.Verify(a => a.SavingsPlans_GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        apiMock.Verify(a => a.SavingsPlans_CreateAsync(It.IsAny<SavingsPlanCreateRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

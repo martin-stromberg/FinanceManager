@@ -392,6 +392,7 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+            new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }),
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         }, Sort: 10);
 
@@ -411,6 +412,24 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
         var pattern = new UiRibbonTab(localizer["Ribbon_Group_Fields"], new List<UiRibbonAction> { clearPurposePattern }, Sort: 47);
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage, pattern }) };
+    }
+
+    private Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            if (Rule != null)
+            {
+                CardRecord = BuildCardRecord(Rule);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
+        return Task.CompletedTask;
     }
 
     private BudgetIntervalType ParseIntervalType(string? value, BudgetIntervalType fallback)

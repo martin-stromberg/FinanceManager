@@ -112,6 +112,7 @@ In der Detailkarte eines Zugangs (`/card/mcp-accesses/{id}`) stehen bereit:
 - **Aktivieren/Deaktivieren**: sofort wirksame Umschaltung; ein deaktiviertes Token wird ab der nächsten Anfrage abgelehnt.
 - **Token rotieren**: erzeugt ein neues Token (wieder einmalige Klartextanzeige) und macht das alte sofort ungültig. Die Rotation ist zugleich der Reaktivierungsweg eines widerrufenen Zugangs.
 - **Widerrufen**: endgültige Sperrung mit dokumentiertem Grund; das Protokoll des Zugangs bleibt erhalten.
+- **Zurücksetzen**: verwirft ungespeicherte Änderungen an den Kartenfeldern (Name, Beschreibung, Stufe, Genehmigungsmodus, Ablaufdatum, IP-Bindung) und stellt deren zuletzt gespeicherten Stand wieder her. Änderungen am Rechteprofil (Scope-Matrix), an Filtern und an vorab erteilten Freigaben werden dagegen sofort gespeichert, sobald sie vorgenommen werden — sie bleiben vom Zurücksetzen unberührt (die Vereinheitlichung dieses Persistenzverhaltens ist als Folge-Issue #617 erfasst).
 - **Nutzung**: Aufrufzähler, Erfolgs- und Fehlerquoten, häufigste Werkzeuge und die letzten Aufrufe aus dem Protokoll, mit Verweis in die Audit-Timeline.
 - **Monitoring**: Warteschlangentiefe, Alter der ältesten offenen Anforderung und Ergebniszähler der Anforderungen des Zugangs.
 

@@ -226,6 +226,155 @@ public sealed class SecurityCategoryDetailViewModelTests
         Assert.False(save.Disabled);
     }
 
+    /// <summary>
+    /// The "Zurücksetzen" action must sit in the manage group directly behind Save as a small,
+    /// disabled-by-default item with the undo icon and no mobile shortcut.
+    /// </summary>
+    [Fact]
+    public async Task Ribbon_ContainsReset_AfterSave_InManageGroup()
+    {
+        var (vm, apiMock) = CreateVm();
+        var loc = new TestLocalizer<SecurityCategoryDetailViewModelTests>();
+        var id = Guid.NewGuid();
+        apiMock.Setup(a => a.SecurityCategories_GetAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityCategoryDto { Id = id, Name = "Cat1" });
+        await vm.InitializeAsync(id);
+
+        var manage = FindTab(vm, loc, "Ribbon_Group_Manage");
+        var ids = manage.Items.Select(i => i.Id).ToList();
+        var saveIndex = ids.IndexOf("Save");
+        Assert.True(saveIndex >= 0);
+        Assert.Equal(saveIndex + 1, ids.IndexOf("Reset"));
+
+        var reset = manage.Items[saveIndex + 1];
+        Assert.Equal(FinanceManager.Web.ViewModels.Common.UiRibbonItemSize.Small, reset.Size);
+        Assert.Contains("#undo", reset.IconSvg);
+        Assert.Equal("Ribbon_Reset", reset.Label);
+        Assert.False(reset.MobileShortcut);
+        Assert.True(reset.Disabled);
+    }
+
+    /// <summary>
+    /// Reset discards the pending name edit and rebuilds the card record from the loaded
+    /// model without re-fetching the category.
+    /// </summary>
+    [Fact]
+    public async Task Reset_DiscardsPendingChanges()
+    {
+        var (vm, apiMock) = CreateVm();
+        var loc = new TestLocalizer<SecurityCategoryDetailViewModelTests>();
+        var id = Guid.NewGuid();
+        apiMock.Setup(a => a.SecurityCategories_GetAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityCategoryDto { Id = id, Name = "Cat1" });
+        await vm.InitializeAsync(id);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
+        vm.ValidateFieldValue(nameField, "NewName");
+        Assert.True(vm.HasPendingChanges);
+
+        var reset = FindAction(vm, loc, "Reset");
+        Assert.False(reset.Disabled);
+        await reset.Callback!();
+
+        Assert.False(vm.HasPendingChanges);
+        Assert.Equal("Cat1", vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SecurityCategory_Name").Text);
+        apiMock.Verify(a => a.SecurityCategories_GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// When the update call fails the save path must roll the model baseline back to the
+    /// persisted state, so a subsequent Reset rebuilds the card from the persisted name -
+    /// not from the unsaved value that had been copied into the model before the API call.
+    /// </summary>
+    [Fact]
+    public async Task Reset_AfterFailedSave_RestoresPersistedBaseline()
+    {
+        var (vm, apiMock) = CreateVm();
+        var loc = new TestLocalizer<SecurityCategoryDetailViewModelTests>();
+        var id = Guid.NewGuid();
+        apiMock.Setup(a => a.SecurityCategories_GetAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityCategoryDto { Id = id, Name = "Cat1" });
+        apiMock.Setup(a => a.SecurityCategories_UpdateAsync(id, It.IsAny<SecurityCategoryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((SecurityCategoryDto?)null);
+        await vm.InitializeAsync(id);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
+        vm.ValidateFieldValue(nameField, "NewName");
+        vm.ApplyPendingValues(vm.CardRecord!);
+
+        var ok = await vm.SaveAsync();
+        Assert.False(ok);
+        Assert.Equal("Cat1", vm.Model.Name);
+
+        await FindAction(vm, loc, "Reset").Callback!();
+
+        Assert.False(vm.HasPendingChanges);
+        Assert.Equal("Cat1", vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SecurityCategory_Name").Text);
+    }
+
+    /// <summary>
+    /// When the update succeeds but the subsequent reload fails, the save must still report
+    /// success and keep the just-persisted values as the reset baseline - it must not roll
+    /// the model back to the pre-save state.
+    /// </summary>
+    [Fact]
+    public async Task Save_Success_ReloadFailure_KeepsPersistedBaseline()
+    {
+        var (vm, apiMock) = CreateVm();
+        var id = Guid.NewGuid();
+        apiMock.SetupSequence(a => a.SecurityCategories_GetAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityCategoryDto { Id = id, Name = "Cat1" })
+            .ReturnsAsync((SecurityCategoryDto?)null);
+        apiMock.Setup(a => a.SecurityCategories_UpdateAsync(id, It.IsAny<SecurityCategoryRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SecurityCategoryDto { Id = id, Name = "Updated" });
+        await vm.InitializeAsync(id);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
+        vm.ValidateFieldValue(nameField, "Updated");
+        vm.ApplyPendingValues(vm.CardRecord!);
+
+        var ok = await vm.SaveAsync();
+
+        Assert.True(ok);
+        Assert.Equal("Updated", vm.Model.Name);
+        Assert.False(vm.HasPendingChanges);
+    }
+
+    /// <summary>
+    /// In new-create mode Reset must restore the initial state including the InitPrefill name
+    /// without persisting anything.
+    /// </summary>
+    [Fact]
+    public async Task Reset_NewMode_RestoresPrefill()
+    {
+        var (vm, apiMock) = CreateVm();
+        var loc = new TestLocalizer<SecurityCategoryDetailViewModelTests>();
+        vm.SetInitValue("PreCat");
+        await vm.InitializeAsync(Guid.Empty);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
+        Assert.Equal("PreCat", nameField.Text);
+        vm.ValidateFieldValue(nameField, "Other");
+        Assert.True(vm.HasPendingChanges);
+
+        await FindAction(vm, loc, "Reset").Callback!();
+
+        Assert.False(vm.HasPendingChanges);
+        Assert.Equal("PreCat", vm.CardRecord!.Fields.First(f => f.LabelKey == "Card_Caption_SecurityCategory_Name").Text);
+        apiMock.Verify(a => a.SecurityCategories_CreateAsync(It.IsAny<SecurityCategoryRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private static FinanceManager.Web.ViewModels.Common.UiRibbonTab FindTab(FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoryCardViewModel vm, IStringLocalizer loc, string title)
+        => vm.GetRibbonRegisters(loc)!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonTab>())
+            .Single(t => t.Title == title);
+
+    private static FinanceManager.Web.ViewModels.Common.UiRibbonAction FindAction(FinanceManager.Web.ViewModels.Securities.Categories.SecurityCategoryCardViewModel vm, IStringLocalizer loc, string actionId)
+        => vm.GetRibbonRegisters(loc)!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<FinanceManager.Web.ViewModels.Common.UiRibbonTab>())
+            .SelectMany(t => t.Items)
+            .Single(a => a.Id == actionId);
+
     private sealed class TestLocalizer<T> : IStringLocalizer<T>
     {
         public LocalizedString this[string name] => new(name, name);

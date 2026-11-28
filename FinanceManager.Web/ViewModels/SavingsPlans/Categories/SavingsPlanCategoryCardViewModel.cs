@@ -106,6 +106,10 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
     /// <returns>Returns <c>true</c> when the save succeeded; otherwise <c>false</c>.</returns>
     public override async Task<bool> SaveAsync()
     {
+        // snapshot the persisted baseline so it can be restored when the save fails
+        var prevName = Name;
+        var prevSymbolId = SymbolId;
+
         // apply pending values
         if (CardRecord != null)
         {
@@ -120,25 +124,37 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
             if (Id == Guid.Empty)
             {
                 var created = await ApiClient.SavingsPlanCategories_CreateAsync(new SavingsPlanCategoryDto { Name = Name });
-                if (created == null) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Create failed"); return false; }
+                if (created == null) { Name = prevName; SymbolId = prevSymbolId; SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Create failed"); return false; }
                 Id = created.Id; SymbolId = created.SymbolAttachmentId;
             }
             else
             {
                 var updated = await ApiClient.SavingsPlanCategories_UpdateAsync(Id, new SavingsPlanCategoryDto { Id = Id, Name = Name });
-                if (updated == null) { SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed"); return false; }
+                if (updated == null) { Name = prevName; SymbolId = prevSymbolId; SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed"); return false; }
                 SymbolId = updated.SymbolAttachmentId;
             }
+        }
+        catch (Exception ex)
+        {
+            // persist call failed: roll the baseline back to the pre-save persisted state
+            Name = prevName; SymbolId = prevSymbolId;
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            return false;
+        }
+
+        // Create/Update already succeeded - a reload failure only affects the view refresh and
+        // must not roll the baseline back to the pre-save state, so it is handled separately.
+        try
+        {
             await LoadAsync(Id);
-            RaiseUiActionRequested("Saved", Id.ToString());
-            ClearPendingChanges();
-            return true;
         }
         catch (Exception ex)
         {
             SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
-            return false;
         }
+        RaiseUiActionRequested("Saved", Id.ToString());
+        ClearPendingChanges();
+        return true;
     }
 
     /// <summary>
@@ -192,10 +208,26 @@ public sealed class SavingsPlanCategoryCardViewModel : BaseCardViewModel<(string
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+            new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }),
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id==Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         }, Sort: 10);
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };
+    }
+
+    private Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            CardRecord = BuildCardRecord(Name, SymbolId);
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
+        return Task.CompletedTask;
     }
 
     // Symbol support
