@@ -149,6 +149,21 @@ else
                         break;
                     }
 
+                    // App-relative path payloads navigate directly (closed prefix whitelist).
+                    // Any query part of the payload (e.g. nested ?back= chains) is preserved.
+                    // Single-token subtype payloads such as "account/{guid}" keep falling
+                    // through to the legacy list route below.
+                    if (!string.IsNullOrWhiteSpace(payload)
+                        && (payload.StartsWith("card/", StringComparison.OrdinalIgnoreCase)
+                            || payload.StartsWith("list/", StringComparison.OrdinalIgnoreCase)
+                            || payload.StartsWith("reports/", StringComparison.OrdinalIgnoreCase))
+                        && !payload.Contains(':')
+                        && NavigationManager.IsSameOriginUri(payload))
+                    {
+                        NavigationManager.NavigateTo(payload);
+                        break;
+                    }
+
                     // If payload is a GUID and this is a statement-draft entry card,
                     // navigate back to the parent draft card instead of the list.
                     if (!string.IsNullOrWhiteSpace(payload) && Guid.TryParse(payload, out var draftGuid))
@@ -255,7 +270,22 @@ else
                         break;
                     }
                 case "OpenCategory":
-                    if (!string.IsNullOrWhiteSpace(payload)) NavigationManager.NavigateTo(payload);
+                    if (!string.IsNullOrWhiteSpace(payload))
+                    {
+                        // carry the current card URL as ?back= target so the category card's
+                        // Back action returns here (nested chains keep an existing Back).
+                        // For new, unsaved cards (Id == Guid.Empty) there is no stable URL to
+                        // return to — and a payload that already carries its own back= target
+                        // is authoritative — so in both cases the payload navigates unchanged.
+                        if (Id == Guid.Empty || payload.Contains("back=", StringComparison.Ordinal))
+                        {
+                            NavigationManager.NavigateTo(payload);
+                            break;
+                        }
+                        var catBack = BuildCardPath(Kind, SubKind, Id.ToString(), Back);
+                        var catSeparator = payload.Contains('?') ? "&" : "?";
+                        NavigationManager.NavigateTo($"{payload}{catSeparator}back={Uri.EscapeDataString(catBack)}");
+                    }
                     break;
                 case "OpenAttachments":
                     // Attachments are handled via UiOverlaySpec payloads emitted by viewmodels. No fallback.
