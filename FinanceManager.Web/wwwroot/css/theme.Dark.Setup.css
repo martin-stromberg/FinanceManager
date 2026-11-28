@@ -4,29 +4,29 @@
 
 /* Tabs */
 .fm-tab {
-    background: #2a2d34;
-    border: 1px solid #3a3d45;
-    color: #fff;
+    background: var(--border);
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .fm-tab.active {
-    background: #39404c;
+    background: var(--border);
     font-weight: 600;
 }
 
 .fm-tab-panel {
-    border: 1px solid #3a3d45;
-    background: #2a2d34;
+    border: 1px solid var(--border);
+    background: var(--border);
 }
 
 /* Help box */
 .help-box {
-    background: #252a33;
-    border: 1px solid #3a404a;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
 }
 
 @media (max-width: 900px) {
     .fm-tab-panel {
-        background: #232830;
+        background: var(--panel-bg);
     }
 }

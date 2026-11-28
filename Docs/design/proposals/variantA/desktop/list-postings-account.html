@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Konten - FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            page: '#0b0e13',
+            surface: {
+              DEFAULT: '#10131a',
+              dim: '#10131a',
+              bright: '#1a1f2c',
+              container: '#151922',
+              card: '#131720',
+              subtle: '#181d28',
+            },
+            border: {
+              DEFAULT: '#232a36',
+              light: '#2d3545',
+            },
+            primary: {
+              DEFAULT: '#6d8dff',
+              hover: '#5877f5',
+              soft: 'rgba(109, 141, 255, 0.12)',
+            },
+            muted: '#8e9aa8',
+            danger: '#f87171',
+            success: '#34d399',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b0e13;
+      color: #e2e8f0;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0e13;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #232a36;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2d3545;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0b0e13] text-[#e2e8f0] h-screen flex overflow-hidden antialiased text-sm fm-body-a">
+<aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class=" active" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Buchungen eines Kontos</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Csv exportieren"><span class="material-symbols-outlined">download</span><span>Csv exportieren</span></button><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div></div><!-- LEFT SIDEBAR (Fixed layout structure with all required items) -->
+<!-- MAIN WRAPPER (Top Header + Ribbon Toolbar + Scrollable Content) -->
+<div class="flex-1 flex flex-col min-w-0 bg-[#0b0e13]">
+<!-- TOP HEADER BAR (Global context & quick actions) -->
+<!-- CLASSIC RIBBON TOOLBAR (Modernized dark-mode evolution) -->
+<!-- SCROLLABLE CONTENT AREA (Max-width ~1200px) -->
+<main class="flex-1 overflow-y-auto px-6 py-6"><div class="flex flex-col w-full">
+<!-- Dynamic Atmospheric Glow -->
+<div class="relative w-full">
+<div class="absolute -top-6 left-1/4 w-96 h-28 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+</div>
+<!-- In-Page Ribbon Sub-Toolbar (Secondary Functional Strip) -->
+<!-- Bento Telemetry Row: Key Visual Indicators -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Saldo im Zeitraum</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary">trending_up</span>
+</div>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="font-data-metric text-data-metric text-tertiary tabular-nums">+1.240,50 €</span>
+<span class="font-body-sm text-body-sm text-tertiary bg-tertiary/10 px-1.5 py-0.2 rounded">+55,1%</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline mt-1">1. Okt – 31. Okt 2024</span>
+</div>
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Gesamteinnahmen</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary">arrow_downward_alt</span>
+</div>
+<div class="mt-2">
+<span class="font-data-metric text-data-metric text-on-surface tabular-nums">+3.500,00 €</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline mt-1">1 Gutschrift (Gehalt)</span>
+</div>
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Gesamtausgaben</span>
+<span class="material-symbols-outlined text-[18px] text-error">arrow_upward_alt</span>
+</div>
+<div class="mt-2">
+<span class="font-data-metric text-data-metric text-on-surface tabular-nums">-2.259,50 €</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline mt-1">17 Abbuchungen</span>
+</div>
+<!-- Visual Cashflow Progress / Sparkline Mini-Widget -->
+<div class="bg-surface-container rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Sparquote Zeitraum</span>
+<span class="font-label-md text-label-md text-primary font-mono">35,4%</span>
+</div>
+<div class="mt-2 flex items-center gap-2">
+<div class="flex-1 bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 35.4%"></div>
+</div>
+</div>
+<div class="flex justify-between items-center text-outline font-body-sm text-body-sm mt-1">
+<span>Sparziel: 25,0%</span>
+<span class="text-tertiary font-label-sm text-label-sm">+10,4% Überhang</span>
+</div>
+</div>
+</div>
+<!-- Filter & Search Toolbar Strip -->
+<!-- Main Ledger Data Table Container -->
+<div class="bg-surface-container-low rounded-xl shadow-lg overflow-hidden flex flex-col">
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<!-- Table Header -->
+<thead>
+<tr class="bg-surface-container text-outline font-label-sm text-label-sm uppercase tracking-wider select-none">
+<th class="py-3 px-4 w-32">Datum</th>
+<th class="py-3 px-4 min-w-[220px]">Beschreibung / Verwendungszweck</th>
+<th class="py-3 px-4 min-w-[200px]">Empfänger / Absender</th>
+<th class="py-3 px-4 w-44">Postenart</th>
+<th class="py-3 px-4 w-36 text-right">Betrag</th>
+<th class="py-3 pr-4 pl-1 w-10 text-center"><span class="sr-only">Details</span></th>
+</tr>
+</thead>
+<!-- Table Rows -->
+<tbody class="divide-y divide-surface-container font-data-table text-data-table text-on-surface">
+<!-- Row 1: Positive Gehalt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-28-01')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">28.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Gehalt Oktober 2024</span>
+<span class="font-body-sm text-body-sm text-outline">Entgeltabrechnung Ref. 883921</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-tertiary-container/30 text-tertiary flex items-center justify-center font-bold text-[10px]">T</div>
+<span class="text-on-surface">Tech AG</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-tertiary/10 text-tertiary font-label-sm text-label-sm inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                Gehalt
+              </span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-tertiary tabular-nums whitespace-nowrap">
+              + 3.500,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 2: REWE Supermarkt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-27-02')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">27.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Supermarkt REWE</span>
+<span class="font-body-sm text-body-sm text-outline">Kartenzahlung Terminal 44021</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">R</div>
+<span class="text-on-surface">REWE Markt GmbH</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 84,50 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 3: Miete -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-25-03')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">25.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Miete November 2024</span>
+<span class="font-body-sm text-body-sm text-outline">Dauerauftrag Whg. 4B / Nebenkosten</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">H</div>
+<span class="text-on-surface">Hausverwaltung Müller</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Wohnen &amp; Miete</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 1.200,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 4: Trade Republic Sparplan -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-22-04')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">22.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Trade Republic Sparplan</span>
+<span class="font-body-sm text-body-sm text-outline">MSCI World ETF Core (Acc)</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-primary-container/20 text-primary flex items-center justify-center text-[11px]">TR</div>
+<span class="text-on-surface">Trade Republic Bank</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-primary-container/15 text-primary-fixed font-label-sm text-label-sm">Investition / Sparplan</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 500,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 5: Stadtwerke Strom -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-18-05')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">18.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Stadtwerke Strom Abschlag</span>
+<span class="font-body-sm text-body-sm text-outline">Kdnr. 90421 Abschlag Okt 24</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">S</div>
+<span class="text-on-surface">Stadtwerke München</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Energie &amp; Nebenkosten</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 112,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 6: Restaurant Bella Italia -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-15-06')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">15.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Restaurant Bella Italia</span>
+<span class="font-body-sm text-body-sm text-outline">Bewirtung / Abendessen</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">B</div>
+<span class="text-on-surface">Bella Italia GbR</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 68,00 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 7: Netflix Abo -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-12-07')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">12.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Netflix Premium Abo</span>
+<span class="font-body-sm text-body-sm text-outline">Monatsbeitrag 4K UHD</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">N</div>
+<span class="text-on-surface">Netflix Services Germany</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Unterhaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 19,99 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 8: DB Ticket Fahrt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-08-08')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">08.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Deutsche Bahn Fahrkarte</span>
+<span class="font-body-sm text-body-sm text-outline">ICE München - Frankfurt Hbf</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">DB</div>
+<span class="text-on-surface">DB Fernverkehr AG</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Mobilität</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 74,90 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 9: Apotheke am Markt -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-04-09')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">04.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Apotheke am Markt</span>
+<span class="font-body-sm text-body-sm text-outline">Rezeptzuzahlung &amp; Vitamine</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">A</div>
+<span class="text-on-surface">Markt-Apotheke OHG</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Gesundheit</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 32,40 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 10: Drogerie dm -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-02-10')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">02.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">dm-drogerie markt</span>
+<span class="font-body-sm text-body-sm text-outline">Haushaltsbedarf Filiale 512</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">DM</div>
+<span class="text-on-surface">dm-drogerie markt GmbH</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 43,80 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 11: Spotify Streaming -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-01-11')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">01.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Spotify Individual</span>
+<span class="font-body-sm text-body-sm text-outline">Monatliches Musik-Abonnement</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">S</div>
+<span class="text-on-surface">Spotify AB Stockholm</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Unterhaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 10,99 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 12: Bäckerei Frühaufsteher -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-01-12')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">01.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Bäckerei Frühaufsteher</span>
+<span class="font-body-sm text-body-sm text-outline">Kontaktlos Mobile Payment</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">B</div>
+<span class="text-on-surface">Bäckerei Frühaufsteher e.K.</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lebenshaltung</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 8,70 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 13: Amazon Marketplace -->
+<tr class="group hover:bg-surface-container cursor-pointer transition-colors" onclick="openDetail('B-2024-10-01-13')">
+<td class="py-2.5 px-4 font-mono text-outline whitespace-nowrap">01.10.2024</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface group-hover:text-primary transition-colors">Amazon Marketplace Bestellung</span>
+<span class="font-body-sm text-body-sm text-outline">Bestellnr. 302-8819203-1120</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-surface-container-high text-outline flex items-center justify-center text-[11px]">A</div>
+<span class="text-on-surface">Amazon EU S.a.r.l.</span>
+</div>
+</td>
+<td class="py-2.5 px-4 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Wohnen &amp; Miete</span>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface tabular-nums whitespace-nowrap">
+              - 84,22 €
+            </td>
+<td class="py-2.5 pr-4 pl-1 text-right text-outline group-hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</td>
+</tr>
+</tbody>
+<!-- Rigorous Accounting Table Footer (Gesamtsummen) -->
+<tfoot>
+<tr class="bg-surface-container font-headline-sm text-headline-sm text-on-surface">
+<td class="py-3 px-4" colspan="3">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface uppercase tracking-wide">Summe / Saldo im gewählten Zeitraum</span>
+<span class="font-body-sm text-body-sm text-outline font-normal">Rechnerischer Nettoüberhang (18 Posten geprüft)</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex flex-col text-outline font-body-sm text-body-sm">
+<span>Einnahmen: <strong class="text-tertiary tabular-nums font-mono">+3.500,00 €</strong></span>
+<span>Ausgaben: <strong class="text-error tabular-nums font-mono">-2.259,50 €</strong></span>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="font-data-metric text-data-metric text-tertiary tabular-nums">+1.240,50 €</span>
+</td>
+<td></td>
+</tr>
+</tfoot>
+</table>
+</div>
+<!-- Interactive Navigation Hint / Pagination Ribbon -->
+<div class="bg-surface-container p-3 flex flex-wrap items-center justify-between gap-3 text-outline font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">touch_app</span>
+<span>Zeilenklick öffnet detaillierten Buchungsbeleg mit Split-Kategorisierung und Steuerkennzeichnung</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded bg-surface-container-high text-outline hover:text-on-surface text-label-sm font-label-sm disabled:opacity-40" disabled>Zurück</button>
+<span class="px-2 text-on-surface font-medium font-mono text-label-sm">Seite 1 von 1</span>
+<button class="px-2.5 py-1 rounded bg-surface-container-high text-outline hover:text-on-surface text-label-sm font-label-sm disabled:opacity-40" disabled>Weiter</button>
+</div>
+</div>
+</div>
+<!-- Detail Slide-Over Modal / Off-Canvas Preview Container -->
+<!-- Inline Script for Interactive Micro-Interactions -->
+<script>
+    function openDetail(id) {
+      const modal = document.getElementById('bookingDetailModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeDetail() {
+      const modal = document.getElementById('bookingDetailModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    // Fast client-side filter simulation
+    const searchInput = document.getElementById('bookingSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+    }
+  </script>
+</div></main>
+</div>
+</body></html>

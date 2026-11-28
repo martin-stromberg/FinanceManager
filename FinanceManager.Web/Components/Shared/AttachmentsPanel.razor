@@ -182,7 +182,7 @@ else
         {
             try
             {
-                _module = await JS.InvokeAsync<IJSObjectReference>("import", "js/attachments.js");
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/attachments.js");
                 _selfRef = DotNetObjectReference.Create(this);
             }
             catch { }

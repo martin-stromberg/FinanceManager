@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Konten - FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            page: '#0b0e13',
+            surface: {
+              DEFAULT: '#10131a',
+              dim: '#10131a',
+              bright: '#1a1f2c',
+              container: '#151922',
+              card: '#131720',
+              subtle: '#181d28',
+            },
+            border: {
+              DEFAULT: '#232a36',
+              light: '#2d3545',
+            },
+            primary: {
+              DEFAULT: '#6d8dff',
+              hover: '#5877f5',
+              soft: 'rgba(109, 141, 255, 0.12)',
+            },
+            muted: '#8e9aa8',
+            danger: '#f87171',
+            success: '#34d399',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b0e13;
+      color: #e2e8f0;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0e13;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #232a36;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2d3545;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0b0e13] text-[#e2e8f0] h-screen flex overflow-hidden antialiased text-sm fm-body-a fm-body-m">
+<aside class="fm-aside fm-aside-m"></aside><header class="fm-topbar fm-topbar-m"><div style="display:flex;align-items:center;gap:10px"><button class="fm-burger"><span class="material-symbols-outlined">menu</span></button><span class="fm-page-title">Konten</span></div><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-m"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button><button class="fm-rib-btn" type="button" title="Neu"><span class="material-symbols-outlined">add</span><span>Neu</span></button><button class="fm-rib-btn" type="button" title="Suche zurücksetzen"><span class="material-symbols-outlined">close</span><span>Suche zurücksetzen</span></button></div><div class="fm-rib-caption">Navigieren</div></div></div><!-- LEFT SIDEBAR (Fixed layout structure with all required items) -->
+<!-- MAIN WRAPPER (Top Header + Ribbon Toolbar + Scrollable Content) -->
+<div class="flex-1 flex flex-col min-w-0 bg-[#0b0e13]">
+<!-- TOP HEADER BAR (Global context & quick actions) -->
+<!-- CLASSIC RIBBON TOOLBAR (Modernized dark-mode evolution) -->
+<!-- SCROLLABLE CONTENT AREA (Max-width ~1200px) -->
+<main class="flex-1 overflow-y-auto px-6 py-6"><div class="flex flex-col w-full">
+<div class="flex flex-col gap-6">
+<!-- KPI / Top Overview Metrics Panel -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-surface-container rounded-lg p-5 flex flex-col justify-between relative overflow-hidden shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-sm uppercase tracking-wider">Gesamtsaldo</span>
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface tracking-tight">58.420,50 €</span>
+<span class="text-tertiary font-label-sm px-1.5 py-0.5 rounded bg-tertiary-container/20 text-[10px] font-semibold">+2,4%</span>
+</div>
+<div class="mt-2 text-on-surface-variant font-body-sm text-[11px]">Konsolidierter Stand aller aktiven Konten</div>
+</div>
+<div class="bg-surface-container rounded-lg p-5 flex flex-col justify-between relative overflow-hidden shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-sm uppercase tracking-wider">Liquiditätsverteilung</span>
+<span class="material-symbols-outlined text-primary text-[18px]">pie_chart</span>
+</div>
+<div class="mt-3">
+<!-- Sparkline Distribution Bar -->
+<div class="w-full h-2 rounded-full bg-surface-variant flex overflow-hidden gap-0.5">
+<div class="bg-primary h-full" style="width: 70%;" title="Depot (70.7%)"></div>
+<div class="bg-tertiary h-full" style="width: 20%;" title="Tagesgeld (21.4%)"></div>
+<div class="bg-secondary h-full" style="width: 9%;" title="Girokonten (9.0%)"></div>
+<div class="bg-error h-full" style="width: 1%;" title="Kreditkarte (-1.1%)"></div>
+</div>
+</div>
+<div class="mt-2 flex items-center justify-between text-on-surface-variant font-label-sm text-[10px]">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>Depot</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary inline-block"></span>Tagesgeld</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span>Giro</span>
+</div>
+</div>
+</div>
+<!-- Filter & Search Toolbar Container -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col gap-3 shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+<!-- Search Input -->
+<div class="relative flex-1 max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">search</span>
+<input class="w-full h-9 pl-9 pr-4 rounded-lg bg-surface text-on-surface placeholder:text-outline text-data-table font-data-table outline-none focus:bg-surface-container transition-colors" id="accountSearch" placeholder="Konto nach Name, Typ oder IBAN suchen..." type="text">
+</div>
+<!-- Filter Pills / Category Badges -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 select-none">
+<button class="filter-pill active px-3 py-1.5 rounded-lg text-label-sm font-label-sm bg-primary-container text-white transition-colors shrink-0" data-filter="all">
+            Alle Konten (6)
+          </button>
+<button class="filter-pill px-3 py-1.5 rounded-lg text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-colors shrink-0" data-filter="Girokonto">
+            Girokonten (2)
+          </button>
+<button class="filter-pill px-3 py-1.5 rounded-lg text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-colors shrink-0" data-filter="Tagesgeld">
+            Tagesgeld / Sparkonten (2)
+          </button>
+<button class="filter-pill px-3 py-1.5 rounded-lg text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-colors shrink-0" data-filter="Depot">
+            Wertpapierdepots (1)
+          </button>
+<button class="filter-pill px-3 py-1.5 rounded-lg text-label-sm font-label-sm bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-colors shrink-0" data-filter="Kreditkarte">
+            Kreditkarten (1)
+          </button>
+</div>
+</div>
+</div>
+<!-- Accounts Data View: Responsive Table (Desktop) & Cards (Mobile) -->
+<div class="bg-surface-container rounded-lg overflow-hidden shadow-sm">
+<!-- DESKTOP TABLE VIEW (hidden on small mobile screens) -->
+<div class="hidden md:block overflow-x-auto">
+<table class="table-auto w-full text-left" id="accountsTable">
+<thead>
+<tr class="bg-surface-container-high text-on-surface-variant font-label-sm text-[11px] uppercase tracking-wider select-none">
+<th class="py-3 px-4 font-semibold" scope="col">Name</th>
+<th class="py-3 px-4 font-semibold" scope="col">Typ</th>
+<th class="py-3 px-4 font-semibold font-mono" scope="col">IBAN</th>
+<th class="py-3 px-4 font-semibold text-right" scope="col">Aktueller Saldo</th>
+<th class="py-3 px-3 w-10 text-center" scope="col"><span class="sr-only">Aktion</span></th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-data-table font-data-table" id="accountsTableBody">
+<!-- Row 1: Girokonto Hauptkonto -->
+<tr class="account-row group cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Girokonto Hauptkonto (ING) Girokonto DE45 5001 0517 5412 8901 00" data-type="Girokonto">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary shrink-0 group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface font-medium truncate group-hover:text-primary transition-colors">Girokonto Hauptkonto (ING)</span>
+<span class="text-body-sm text-[11px] text-on-surface-variant">Gehaltskonto &amp; Fixkosten</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-full text-label-sm text-[11px] bg-secondary-container/60 text-secondary-fixed">
+                  Girokonto
+                </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface-variant font-mono text-[12px] tracking-wide">
+                DE45 5001 0517 5412 8901 00
+              </td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<span class="font-data-metric text-[15px] font-semibold text-on-surface tracking-tight tabular-nums">3.450,20 €</span>
+</td>
+<td class="py-3.5 px-3 text-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">chevron_right</span>
+</td>
+</tr>
+<!-- Row 2: Tagesgeld Notgroschen -->
+<tr class="account-row group cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Tagesgeldkonto Notgroschen Tagesgeld DE22 5001 0517 8923 1104 22" data-type="Tagesgeld">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary shrink-0 group-hover:bg-tertiary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">savings</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface font-medium truncate group-hover:text-primary transition-colors">Tagesgeldkonto Notgroschen</span>
+<span class="text-body-sm text-[11px] text-on-surface-variant">Sicherheitsrücklage (3 Monatsgehälter)</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-full text-label-sm text-[11px] bg-tertiary-container/30 text-tertiary">
+                  Tagesgeld
+                </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface-variant font-mono text-[12px] tracking-wide">
+                DE22 5001 0517 8923 1104 22
+              </td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<span class="font-data-metric text-[15px] font-semibold text-on-surface tracking-tight tabular-nums">12.000,00 €</span>
+</td>
+<td class="py-3.5 px-3 text-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">chevron_right</span>
+</td>
+</tr>
+<!-- Row 3: Wertpapierdepot Scalable Capital -->
+<tr class="account-row group cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Wertpapierdepot (Scalable Capital) Depot DE89 1001 1001 9912 3456 78" data-type="Depot">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary-fixed-dim shrink-0 group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface font-medium truncate group-hover:text-primary transition-colors">Wertpapierdepot (Scalable Capital)</span>
+<span class="text-body-sm text-[11px] text-on-surface-variant">ETF-Sparplan Portfolio</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-full text-label-sm text-[11px] bg-primary/20 text-primary">
+                  Depot
+                </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface-variant font-mono text-[12px] tracking-wide">
+                DE89 1001 1001 9912 3456 78
+              </td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<span class="font-data-metric text-[15px] font-semibold text-on-surface tracking-tight tabular-nums">41.328,00 €</span>
+</td>
+<td class="py-3.5 px-3 text-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">chevron_right</span>
+</td>
+</tr>
+<!-- Row 4: Girokonto Haushaltskonto -->
+<tr class="account-row group cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Girokonto Haushaltskonto (DKB) Girokonto DE12 1203 0000 1029 3847 56" data-type="Girokonto">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary shrink-0 group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">home</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface font-medium truncate group-hover:text-primary transition-colors">Girokonto Haushaltskonto (DKB)</span>
+<span class="text-body-sm text-[11px] text-on-surface-variant">Gemeinschaftsausgaben &amp; Miete</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-full text-label-sm text-[11px] bg-secondary-container/60 text-secondary-fixed">
+                  Girokonto
+                </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface-variant font-mono text-[12px] tracking-wide">
+                DE12 1203 0000 1029 3847 56
+              </td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<span class="font-data-metric text-[15px] font-semibold text-on-surface tracking-tight tabular-nums">1.820,50 €</span>
+</td>
+<td class="py-3.5 px-3 text-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">chevron_right</span>
+</td>
+</tr>
+<!-- Row 5: Zinskonto Trade Republic -->
+<tr class="account-row group cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Zinskonto (Trade Republic Cash) Tagesgeld DE77 1101 0101 4455 6677 88" data-type="Tagesgeld">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary shrink-0 group-hover:bg-tertiary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">percent</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface font-medium truncate group-hover:text-primary transition-colors">Zinskonto (Trade Republic Cash)</span>
+<span class="text-body-sm text-[11px] text-on-surface-variant">Verzinstes Verrechnungskonto</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-full text-label-sm text-[11px] bg-tertiary-container/30 text-tertiary">
+                  Tagesgeld
+                </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface-variant font-mono text-[12px] tracking-wide">
+                DE77 1101 0101 4455 6677 88
+              </td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<span class="font-data-metric text-[15px] font-semibold text-on-surface tracking-tight tabular-nums">500,00 €</span>
+</td>
+<td class="py-3.5 px-3 text-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">chevron_right</span>
+</td>
+</tr>
+<!-- Row 6: Visa Card Kreditkarte (Negative Balance) -->
+<tr class="account-row group cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Visa Card Kreditkarte Kreditkarte DE33 5001 0517 7788 9900 11" data-type="Kreditkarte">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-error shrink-0 group-hover:bg-error-container group-hover:text-on-error-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">credit_card</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-on-surface font-medium truncate group-hover:text-primary transition-colors">Visa Card Kreditkarte</span>
+<span class="text-body-sm text-[11px] text-on-surface-variant">Abrechnung zum Monatsende</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="px-2.5 py-1 rounded-full text-label-sm text-[11px] bg-error-container/40 text-error">
+                  Kreditkarte
+                </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap text-on-surface-variant font-mono text-[12px] tracking-wide">
+                DE33 5001 0517 7788 9900 11
+              </td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<span class="font-data-metric text-[15px] font-semibold text-error tracking-tight tabular-nums">-678,20 €</span>
+</td>
+<td class="py-3.5 px-3 text-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- MOBILE CARD LIST VIEW (shown only on small screens) -->
+<div class="block md:hidden divide-y-0 p-3 space-y-2.5" id="accountsMobileCards">
+<!-- Mobile Card 1 -->
+<div class="account-mobile-card bg-surface-container-low p-3.5 rounded-lg flex flex-col gap-2.5 cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Girokonto Hauptkonto (ING) Girokonto DE45 5001 0517 5412 8901 00" data-type="Girokonto">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-md bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[16px]">account_balance_wallet</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] text-on-surface font-medium leading-tight">Girokonto Hauptkonto (ING)</div>
+<div class="text-[10px] text-on-surface-variant mt-0.5">Gehaltskonto</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary-container/60 text-secondary-fixed shrink-0">Girokonto</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-mono text-[11px] text-on-surface-variant">DE45 •••• 8901 00</span>
+<span class="font-data-metric text-[14px] font-semibold text-on-surface">3.450,20 €</span>
+</div>
+</div>
+<!-- Mobile Card 2 -->
+<div class="account-mobile-card bg-surface-container-low p-3.5 rounded-lg flex flex-col gap-2.5 cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Tagesgeldkonto Notgroschen Tagesgeld DE22 5001 0517 8923 1104 22" data-type="Tagesgeld">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-md bg-surface-container flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[16px]">savings</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] text-on-surface font-medium leading-tight">Tagesgeldkonto Notgroschen</div>
+<div class="text-[10px] text-on-surface-variant mt-0.5">Sicherheitsrücklage</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-tertiary-container/30 text-tertiary shrink-0">Tagesgeld</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-mono text-[11px] text-on-surface-variant">DE22 •••• 1104 22</span>
+<span class="font-data-metric text-[14px] font-semibold text-on-surface">12.000,00 €</span>
+</div>
+</div>
+<!-- Mobile Card 3 -->
+<div class="account-mobile-card bg-surface-container-low p-3.5 rounded-lg flex flex-col gap-2.5 cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Wertpapierdepot (Scalable Capital) Depot DE89 1001 1001 9912 3456 78" data-type="Depot">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-md bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] text-on-surface font-medium leading-tight">Wertpapierdepot (Scalable)</div>
+<div class="text-[10px] text-on-surface-variant mt-0.5">ETF-Portfolio</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/20 text-primary shrink-0">Depot</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-mono text-[11px] text-on-surface-variant">DE89 •••• 3456 78</span>
+<span class="font-data-metric text-[14px] font-semibold text-on-surface">41.328,00 €</span>
+</div>
+</div>
+<!-- Mobile Card 4 -->
+<div class="account-mobile-card bg-surface-container-low p-3.5 rounded-lg flex flex-col gap-2.5 cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Girokonto Haushaltskonto (DKB) Girokonto DE12 1203 0000 1029 3847 56" data-type="Girokonto">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-md bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[16px]">home</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] text-on-surface font-medium leading-tight">Girokonto Haushalt (DKB)</div>
+<div class="text-[10px] text-on-surface-variant mt-0.5">Gemeinschaftskonto</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary-container/60 text-secondary-fixed shrink-0">Girokonto</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-mono text-[11px] text-on-surface-variant">DE12 •••• 3847 56</span>
+<span class="font-data-metric text-[14px] font-semibold text-on-surface">1.820,50 €</span>
+</div>
+</div>
+<!-- Mobile Card 5 -->
+<div class="account-mobile-card bg-surface-container-low p-3.5 rounded-lg flex flex-col gap-2.5 cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Zinskonto (Trade Republic Cash) Tagesgeld DE77 1101 0101 4455 6677 88" data-type="Tagesgeld">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-md bg-surface-container flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[16px]">percent</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] text-on-surface font-medium leading-tight">Zinskonto (Trade Republic)</div>
+<div class="text-[10px] text-on-surface-variant mt-0.5">Verrechnungskonto</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-tertiary-container/30 text-tertiary shrink-0">Tagesgeld</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-mono text-[11px] text-on-surface-variant">DE77 •••• 6677 88</span>
+<span class="font-data-metric text-[14px] font-semibold text-on-surface">500,00 €</span>
+</div>
+</div>
+<!-- Mobile Card 6 -->
+<div class="account-mobile-card bg-surface-container-low p-3.5 rounded-lg flex flex-col gap-2.5 cursor-pointer hover:bg-surface-container-high transition-colors" data-search="Visa Card Kreditkarte Kreditkarte DE33 5001 0517 7788 9900 11" data-type="Kreditkarte">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-md bg-surface-container flex items-center justify-center text-error shrink-0">
+<span class="material-symbols-outlined text-[16px]">credit_card</span>
+</div>
+<div>
+<div class="font-headline-sm text-[13px] text-on-surface font-medium leading-tight">Visa Card Kreditkarte</div>
+<div class="text-[10px] text-on-surface-variant mt-0.5">Kreditkartenabrechnung</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-error-container/40 text-error shrink-0">Kreditkarte</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-mono text-[11px] text-on-surface-variant">DE33 •••• 9900 11</span>
+<span class="font-data-metric text-[14px] font-semibold text-error">-678,20 €</span>
+</div>
+</div>
+</div>
+<!-- Empty State feedback (hidden by default) -->
+<div class="hidden p-8 text-center flex flex-col items-center justify-center" id="noResults">
+<span class="material-symbols-outlined text-outline text-[32px] mb-2">search_off</span>
+<span class="text-on-surface font-headline-sm text-[14px]">Keine Konten gefunden</span>
+<span class="text-on-surface-variant font-body-sm text-[12px] mt-1">Passen Sie Ihre Such- oder Filterkriterien an.</span>
+</div>
+<!-- Table Footer / Summary Bar -->
+<div class="bg-surface-container-low px-4 py-3 flex items-center justify-between text-[11px] text-on-surface-variant font-label-sm">
+<div class="flex items-center gap-2">
+<span>Gesamtanzahl:</span>
+<span class="font-semibold text-on-surface" id="visibleCount">6</span>
+<span>von 6 Konten</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Alle Daten live verifiziert</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function () {
+    const searchInput = document.getElementById('accountSearch');
+    const filterPills = document.querySelectorAll('.filter-pill');
+    const tableRows = document.querySelectorAll('.account-row');
+    const mobileCards = document.querySelectorAll('.account-mobile-card');
+    const noResults = document.getElementById('noResults');
+    const visibleCount = document.getElementById('visibleCount');
+
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    function applyFilterAndSearch() {
+      let matches = 0;
+
+      // Filter Table Rows
+      tableRows.forEach(row => {
+        const type = row.getAttribute('data-type');
+        const searchBlob = row.getAttribute('data-search').toLowerCase();
+
+        const matchesType = (currentFilter === 'all') || (type === currentFilter);
+        const matchesQuery = !searchQuery || searchBlob.includes(searchQuery);
+
+        if (matchesType && matchesQuery) {
+          row.style.display = '';
+          matches++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      // Filter Mobile Cards
+      mobileCards.forEach(card => {
+        const type = card.getAttribute('data-type');
+        const searchBlob = card.getAttribute('data-search').toLowerCase();
+
+        const matchesType = (currentFilter === 'all') || (type === currentFilter);
+        const matchesQuery = !searchQuery || searchBlob.includes(searchQuery);
+
+        if (matchesType && matchesQuery) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      // Update counters & empty state
+      if (visibleCount) {
+        visibleCount.textContent = matches;
+      }
+
+      if (noResults) {
+        if (matches === 0) {
+          noResults.classList.remove('hidden');
+        } else {
+          noResults.classList.add('hidden');
+        }
+      }
+    }
+
+    // Filter pill events
+    filterPills.forEach(pill => {
+      pill.addEventListener('click', function () {
+        filterPills.forEach(p => {
+          p.classList.remove('active', 'bg-primary-container', 'text-white');
+          p.classList.add('bg-surface-container', 'text-on-surface-variant');
+        });
+
+        this.classList.add('active', 'bg-primary-container', 'text-white');
+        this.classList.remove('bg-surface-container', 'text-on-surface-variant');
+
+        currentFilter = this.getAttribute('data-filter');
+        applyFilterAndSearch();
+      });
+    });
+
+    // Search input events
+    if (searchInput) {
+      searchInput.addEventListener('input', function (e) {
+        searchQuery = e.target.value.trim().toLowerCase();
+        applyFilterAndSearch();
+      });
+    }
+
+    // Row Click Feedback (Simulates Navigation to Detail View)
+    function attachRowClick(element) {
+      element.addEventListener('click', function () {
+        const accountName = this.querySelector('.font-headline-sm')?.textContent?.trim() || 'Konto';
+        // Subtly flash selection
+        const originalBg = this.style.backgroundColor;
+        this.style.backgroundColor = 'rgba(109, 141, 255, 0.15)';
+        setTimeout(() => {
+          this.style.backgroundColor = originalBg;
+        }, 200);
+      });
+    }
+
+    tableRows.forEach(attachRowClick);
+    mobileCards.forEach(attachRowClick);
+  })();
+</script></main>
+</div>
+</body></html>

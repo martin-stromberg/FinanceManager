@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type">
+<style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class=" active" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Kurshistorie</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Importieren"><span class="material-symbols-outlined">upload</span><span>Importieren</span></button><button class="fm-rib-btn" type="button" title="Historische Kurse nachladen"><span class="material-symbols-outlined">receipt_long</span><span>Historische Kurse nachladen</span></button></div><div class="fm-rib-caption">Verwalten</div></div></div><!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full">
+<!-- Interactive View Container -->
+<div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+<!-- Top Navigation Breadcrumb & Context Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
+<div class="space-y-1.5 min-w-0">
+<!-- Breadcrumb -->
+<nav aria-label="Breadcrumb" class="flex items-center gap-1.5 font-label-caps text-label-caps text-on-surface-variant tracking-wider uppercase">
+<span class="hover:text-on-surface cursor-pointer transition-colors">FINANCEMANAGER</span>
+<span class="text-outline-variant font-sans">/</span>
+<span class="hover:text-on-surface cursor-pointer transition-colors">WERTPAPIERE</span>
+<span class="text-outline-variant font-sans">/</span>
+<span class="text-primary font-semibold">KURSHISTORIE</span>
+</nav>
+<!-- Instrument Identity Title -->
+<!-- Metadata Ribbon -->
+</div>
+<!-- Action Ribbon (Group Verwaltung) -->
+<div class="flex items-center gap-2.5 flex-shrink-0">
+<button class="group inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-bright text-on-surface text-body-md font-body-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface transition-colors">download</span>
+<span>CSV Export</span>
+</button>
+<button class="group inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-bright text-on-surface text-body-md font-body-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary group-hover:rotate-180 transition-transform duration-500">sync</span>
+<span>Feed-Sync</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-fixed-dim text-on-primary font-headline-sm text-body-md shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30 transition-all font-medium" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>Neuer Kurs</span>
+</button>
+</div>
+</div>
+<!-- Key Metrics Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+<!-- 1. Aktueller Kurs -->
+<div class="p-4 rounded-xl bg-surface-container-low/80 backdrop-blur-md shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-primary/10 blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Aktueller Kurs</span>
+<span class="material-symbols-outlined text-[18px] text-primary">trending_up</span>
+</div>
+<div class="mt-2.5">
+<div class="font-label-numeric-lg text-headline-md font-semibold text-on-surface">178,45 €</div>
+<div class="mt-1 flex items-center gap-1 font-label-numeric-sm text-label-numeric-sm text-primary">
+<span class="material-symbols-outlined text-[15px]">arrow_upward</span>
+<span>+1,24% (+2,18 €) heute</span>
+</div>
+</div>
+</div>
+<!-- 2. 52-Wochen-Spanne -->
+<div class="p-4 rounded-xl bg-surface-container-low/80 backdrop-blur-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">52-Wochen-Spanne</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">linear_scale</span>
+</div>
+<div class="mt-2.5">
+<div class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">142,10 € – 184,50 €</div>
+<!-- Visual Range Bar -->
+<div class="mt-2 w-full h-1.5 bg-surface-variant rounded-full overflow-hidden relative">
+<div class="absolute left-[78%] top-0 bottom-0 w-2.5 -ml-1 rounded-full bg-primary shadow-sm"></div>
+<div class="h-full bg-gradient-to-r from-secondary/40 to-primary/80 rounded-full w-[85%]"></div>
+</div>
+</div>
+</div>
+<!-- 3. Höchstkurs -->
+<div class="p-4 rounded-xl bg-surface-container-low/80 backdrop-blur-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Höchstkurs (1J)</span>
+<span class="material-symbols-outlined text-[18px] text-primary">arrow_warm_up</span>
+</div>
+<div class="mt-2.5">
+<div class="font-label-numeric-lg text-headline-md font-semibold text-on-surface">184,50 €</div>
+<div class="mt-1 font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">
+            am 15.05.2024
+          </div>
+</div>
+</div>
+<!-- 4. Tiefstkurs -->
+<div class="p-4 rounded-xl bg-surface-container-low/80 backdrop-blur-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Tiefstkurs (1J)</span>
+<span class="material-symbols-outlined text-[18px] text-error">arrow_cool_down</span>
+</div>
+<div class="mt-2.5">
+<div class="font-label-numeric-lg text-headline-md font-semibold text-on-surface">154,20 €</div>
+<div class="mt-1 font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">
+            am 28.10.2023
+          </div>
+</div>
+</div>
+<!-- 5. Datenpunkte -->
+<div class="p-4 rounded-xl bg-surface-container-low/80 backdrop-blur-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Datenpunkte</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">database</span>
+</div>
+<div class="mt-2.5">
+<div class="font-label-numeric-lg text-headline-md font-semibold text-on-surface">252</div>
+<div class="mt-1 font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">
+            Handelstage lückenlos
+          </div>
+</div>
+</div>
+</div>
+<!-- Filter & Suchleiste Panel -->
+<div class="p-4 rounded-xl bg-surface-container-low/90 backdrop-blur-md shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<!-- Search Input -->
+<div class="relative flex-1 min-w-[260px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">search</span>
+<input class="w-full h-10 pl-10 pr-4 rounded-lg bg-surface-container text-on-surface placeholder:text-on-surface-variant/60 font-body-md text-body-md focus:outline-none focus:bg-surface-bright transition-colors" placeholder="Kurshistorie nach Datum filtern..." type="text">
+</div>
+<!-- Range Pills & Selectors -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- Quick Range Pills -->
+<div class="inline-flex p-1 rounded-lg bg-surface-container-lowest/80 gap-0.5">
+<button class="px-2.5 py-1 text-label-caps font-label-caps rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-colors" type="button">1M</button>
+<button class="px-2.5 py-1 text-label-caps font-label-caps rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-colors" type="button">3M</button>
+<button class="px-2.5 py-1 text-label-caps font-label-caps rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-colors" type="button">6M</button>
+<button class="px-2.5 py-1 text-label-caps font-label-caps rounded-md bg-primary/15 text-primary font-semibold shadow-sm" type="button">1J</button>
+<button class="px-2.5 py-1 text-label-caps font-label-caps rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-colors" type="button">3J</button>
+<button class="px-2.5 py-1 text-label-caps font-label-caps rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-colors" type="button">Max</button>
+<button class="hidden sm:inline-block px-2.5 py-1 text-label-caps font-label-caps rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-colors" type="button">Benutzerdefiniert</button>
+</div>
+<!-- Date Range Display Indicator -->
+<div class="h-10 px-3 rounded-lg bg-surface-container flex items-center gap-2 text-on-surface font-label-numeric-sm text-label-numeric-sm">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">date_range</span>
+<span>01.06.2023 – 31.05.2024</span>
+</div>
+<!-- Sort Select Dropdown -->
+<div class="h-10 px-3 rounded-lg bg-surface-container flex items-center gap-2 text-on-surface font-body-sm text-body-sm cursor-pointer hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">sort</span>
+<span>Datum (Neueste zuerst)</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Main Data Table Container (Desktop Tabular / Mobile Responsive Cards) -->
+<div class="rounded-xl bg-surface-container-low/70 backdrop-blur-md shadow-sm overflow-hidden">
+<!-- Desktop Table View (Hidden on mobile) -->
+<div class="hidden md:block overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/60 text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">
+<th class="py-3.5 px-6 font-semibold" scope="col">Datum / Handelstag</th>
+<th class="py-3.5 px-6 text-right font-semibold" scope="col">Schlusskurs</th>
+<th class="py-3.5 px-6 text-right font-semibold" scope="col">Differenz (Vortag)</th>
+<th class="py-3.5 px-6 text-right font-semibold" scope="col">Tageshoch</th>
+<th class="py-3.5 px-6 text-right font-semibold" scope="col">Tagestief</th>
+<th class="py-3.5 px-6 text-right font-semibold" scope="col">Volumen</th>
+<th class="py-3.5 px-6 text-center font-semibold w-24" scope="col">Aktion</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/[0.03]">
+<!-- Row 1 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">FR</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">31.05.2024</span>
+<span class="text-xs px-1.5 py-0.2 rounded bg-primary/10 text-primary font-label-caps">Letzter</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                178,45 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-primary">
+                +1,24 € <span class="text-xs opacity-80">(+0,70%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                179,10 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                176,80 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                48,2 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-primary group-hover:translate-x-0.5 transition-transform font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">DO</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">30.05.2024</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                177,21 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-error">
+                -0,80 € <span class="text-xs opacity-80">(-0,45%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                178,50 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                176,10 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                41,5 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">MI</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">29.05.2024</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                178,01 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-primary">
+                +2,02 € <span class="text-xs opacity-80">(+1,15%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                178,90 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                175,40 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                52,1 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">DI</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">28.05.2024</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                175,99 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-primary">
+                +0,32 € <span class="text-xs opacity-80">(+0,18%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                176,80 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                174,90 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                39,8 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">MO</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">27.05.2024</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                175,67 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-primary">
+                +1,48 € <span class="text-xs opacity-80">(+0,85%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                176,20 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                174,10 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                33,4 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">FR</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">24.05.2024</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                174,19 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-error">
+                -0,56 € <span class="text-xs opacity-80">(-0,32%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                175,00 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                173,60 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                36,9 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">DO</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">23.05.2024</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                174,75 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-primary">
+                +2,41 € <span class="text-xs opacity-80">(+1,40%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                175,30 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                172,10 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                45,7 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-white/[0.02] cursor-pointer transition-colors group">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-2.5">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">MI</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">22.05.2024</span>
+</div>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">
+                172,34 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-primary">
+                +1,03 € <span class="text-xs opacity-80">(+0,60%)</span>
+</td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                173,10 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                171,20 €
+              </td>
+<td class="py-3.5 px-6 text-right font-label-numeric-md text-label-numeric-md text-on-surface-variant">
+                40,2 Mio.
+              </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all font-body-sm text-body-sm font-medium">
+                  Details <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Mobile Responsive Cards (Visible only on mobile screens < md) -->
+<div class="md:hidden divide-y divide-white/[0.04]">
+<!-- Card Item 1 -->
+<div class="p-4 space-y-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">FR</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">31.05.2024</span>
+<span class="text-[10px] px-1 rounded bg-primary/10 text-primary font-label-caps">Letzter</span>
+</div>
+<div class="font-label-numeric-md text-label-numeric-md font-bold text-on-surface">178,45 €</div>
+</div>
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2 font-label-numeric-sm text-label-numeric-sm">
+<span class="text-on-surface-variant">H: 179,10 €</span>
+<span class="text-on-surface-variant">T: 176,80 €</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm font-medium text-primary">+1,24 € (+0,70%)</span>
+</div>
+<div class="flex items-center justify-between pt-1 text-xs text-on-surface-variant">
+<span>Volumen: 48,2 Mio.</span>
+<span class="inline-flex items-center text-primary font-medium">Details <span class="material-symbols-outlined text-[14px]">chevron_right</span></span>
+</div>
+</div>
+<!-- Card Item 2 -->
+<div class="p-4 space-y-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">DO</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">30.05.2024</span>
+</div>
+<div class="font-label-numeric-md text-label-numeric-md font-bold text-on-surface">177,21 €</div>
+</div>
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2 font-label-numeric-sm text-label-numeric-sm">
+<span class="text-on-surface-variant">H: 178,50 €</span>
+<span class="text-on-surface-variant">T: 176,10 €</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm font-medium text-error">-0,80 € (-0,45%)</span>
+</div>
+<div class="flex items-center justify-between pt-1 text-xs text-on-surface-variant">
+<span>Volumen: 41,5 Mio.</span>
+<span class="inline-flex items-center text-primary font-medium">Details <span class="material-symbols-outlined text-[14px]">chevron_right</span></span>
+</div>
+</div>
+<!-- Card Item 3 -->
+<div class="p-4 space-y-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps font-semibold">MI</span>
+<span class="font-label-numeric-md text-label-numeric-md font-semibold text-on-surface">29.05.2024</span>
+</div>
+<div class="font-label-numeric-md text-label-numeric-md font-bold text-on-surface">178,01 €</div>
+</div>
+<div class="flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2 font-label-numeric-sm text-label-numeric-sm">
+<span class="text-on-surface-variant">H: 178,90 €</span>
+<span class="text-on-surface-variant">T: 175,40 €</span>
+</div>
+<span class="font-label-numeric-sm text-label-numeric-sm font-medium text-primary">+2,02 € (+1,15%)</span>
+</div>
+<div class="flex items-center justify-between pt-1 text-xs text-on-surface-variant">
+<span>Volumen: 52,1 Mio.</span>
+<span class="inline-flex items-center text-primary font-medium">Details <span class="material-symbols-outlined text-[14px]">chevron_right</span></span>
+</div>
+</div>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="px-6 py-4 bg-surface-container-high/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+          Zeige <span class="font-medium text-on-surface font-label-numeric-sm">1–8</span> von <span class="font-medium text-on-surface font-label-numeric-sm">252</span> Kurseinträgen
+        </div>
+<nav aria-label="Tabellennavigation" class="inline-flex items-center gap-1 font-label-numeric-sm text-label-numeric-sm">
+<button class="px-3 py-1.5 rounded bg-surface-container text-on-surface-variant/40 cursor-not-allowed" disabled type="button">Zurück</button>
+<button class="px-3 py-1.5 rounded bg-primary text-on-primary font-semibold shadow-sm" type="button">1</button>
+<button class="px-3 py-1.5 rounded bg-surface-container hover:bg-surface-bright text-on-surface transition-colors" type="button">2</button>
+<button class="px-3 py-1.5 rounded bg-surface-container hover:bg-surface-bright text-on-surface transition-colors" type="button">3</button>
+<span class="px-1 text-on-surface-variant">…</span>
+<button class="px-3 py-1.5 rounded bg-surface-container hover:bg-surface-bright text-on-surface transition-colors" type="button">32</button>
+<button class="px-3 py-1.5 rounded bg-surface-container hover:bg-surface-bright text-on-surface transition-colors" type="button">Weiter</button>
+</nav>
+</div>
+</div>
+<!-- Informational Note Banner at the Bottom -->
+<div class="p-3.5 rounded-xl bg-surface-container/60 backdrop-blur-sm flex items-start gap-3 shadow-sm">
+<span class="material-symbols-outlined text-[20px] text-primary flex-shrink-0 mt-0.5">info</span>
+</div>
+</div>
+</div></main>
+</body></html>

@@ -17,6 +17,7 @@ namespace FinanceManager.Web.ViewModels.Mcp;
 /// <param name="IsExpired">Whether the access is currently expired.</param>
 /// <param name="ExpiresUtc">Optional expiry timestamp.</param>
 /// <param name="LastUsedUtc">Last successful authentication timestamp.</param>
+/// <returns>The result.</returns>
 public sealed record McpAccessListItem(
     Guid Id,
     string Name,
@@ -167,7 +168,7 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
     /// <returns>A collection of <see cref="UiRibbonRegister"/> instances.</returns>
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
-        var actions = new List<UiRibbonAction>
+        var manage = new List<UiRibbonAction>
         {
             new UiRibbonAction(
                 "New",
@@ -181,7 +182,23 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                     RequestCreateWizard();
                     return Task.CompletedTask;
                 }))
-                { MobileShortcut = true },
+                { MobileShortcut = true }
+        };
+
+        var view = new List<UiRibbonAction>
+        {
+            new UiRibbonAction(
+                "Reload",
+                localizer["Ribbon_Reload"].Value,
+                "<svg><use href='icons/sprite.svg#refresh'/></svg>",
+                UiRibbonItemSize.Large,
+                false,
+                null,
+                new Func<Task>(async () => { await LoadAsync(); }))
+        };
+
+        var linked = new List<UiRibbonAction>
+        {
             new UiRibbonAction(
                 "Approvals",
                 localizer["Nav_McpApprovals"].Value,
@@ -225,18 +242,15 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                     ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>()
                         .NavigateTo("card/mcp-security");
                     return Task.CompletedTask;
-                })),
-            new UiRibbonAction(
-                "Reload",
-                localizer["Ribbon_Reload"].Value,
-                "<svg><use href='icons/sprite.svg#refresh'/></svg>",
-                UiRibbonItemSize.Small,
-                false,
-                null,
-                new Func<Task>(async () => { await LoadAsync(); }))
+                }))
         };
 
-        var tabs = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions) };
+        var tabs = new List<UiRibbonTab>
+        {
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manage, Sort: 10),
+            new UiRibbonTab(localizer["Ribbon_Group_View"].Value, view, Sort: 30),
+            new UiRibbonTab(localizer["Ribbon_Group_Linked"].Value, linked, Sort: 55)
+        };
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }
 }

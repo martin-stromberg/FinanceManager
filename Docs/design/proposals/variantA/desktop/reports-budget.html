@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"secondary-fixed":"#dce2f3","on-surface-variant":"#c4c5d5","surface-bright":"#36393f","on-primary":"#002780","inverse-surface":"#e1e2ea","error-container":"#93000a","surface":"#111319","on-tertiary-container":"#003422","surface-container":"#1d2025","on-background":"#e1e2ea","secondary-container":"#404754","on-secondary-container":"#aeb5c5","primary":"#b6c4ff","primary-container":"#6d8dff","on-secondary":"#2a313d","tertiary-fixed":"#6ffbbe","on-error-container":"#ffdad6","secondary-fixed-dim":"#c0c7d6","surface-dim":"#111319","tertiary":"#4edea3","primary-fixed-dim":"#b6c4ff","on-tertiary-fixed-variant":"#005236","surface-variant":"#32353b","error":"#ffb4ab","surface-tint":"#b6c4ff","tertiary-container":"#00a975","background":"#111319","outline-variant":"#444653","on-error":"#690005","secondary":"#c0c7d6","inverse-on-surface":"#2e3036","outline":"#8e909f","on-primary-fixed":"#001550","primary-fixed":"#dce1ff","surface-container-low":"#191c21","surface-container-lowest":"#0b0e13","on-primary-fixed-variant":"#0d3bac","on-tertiary-fixed":"#002113","inverse-primary":"#3255c5","surface-container-high":"#272a30","on-tertiary":"#003824","on-secondary-fixed":"#151c27","on-surface":"#e1e2ea","on-secondary-fixed-variant":"#404754","tertiary-fixed-dim":"#4edea3","surface-container-highest":"#32353b","on-primary-container":"#002477"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xl":"1.5rem","margin":"1.5rem","space-md":"0.75rem","gutter-desktop":"1rem","space-lg":"1rem","space-sm":"0.5rem","margin-desktop":"2rem","margin-mobile":"1rem","gutter-tablet":"0.75rem","gutter":"1rem","space-xs":"0.25rem"},"fontFamily":{"headline-xl-mobile":["Inter"],"label-md":["Inter"],"data-table":["Inter"],"data-metric":["Inter"],"headline-lg":["Inter"],"body-md":["Inter"],"body-lg":["Inter"],"label-sm":["Inter"],"headline-md":["Inter"],"body-sm":["Inter"],"headline-sm":["Inter"],"headline-xl":["Inter"]},"fontSize":{"headline-xl-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"600"}],"label-md":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"500"}],"data-table":["13px",{"lineHeight":"18px","letterSpacing":"0em","fontWeight":"400"}],"data-metric":["24px",{"lineHeight":"28px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"0em","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0.005em","fontWeight":"400"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"600"}],"headline-xl":["36px",{"lineHeight":"44px","letterSpacing":"-0.02em","fontWeight":"600"}]}}}};</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head><body class="bg-surface-container-lowest font-body-md text-body-md text-on-surface antialiased fm-body-a"><aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class=" active" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Budgetbericht</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span>Einstellungen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Vormonat"><span class="material-symbols-outlined">arrow_back</span><span>Vormonat</span></button><button class="fm-rib-btn" type="button" title="Aktueller Monat"><span class="material-symbols-outlined">calendar_month</span><span>Aktueller Monat</span></button><button class="fm-rib-btn" type="button" title="Nächster Monat"><span class="material-symbols-outlined">arrow_forward</span><span>Nächster Monat</span></button><button class="fm-rib-btn" type="button" title="Vorjahr"><span class="material-symbols-outlined">arrow_back</span><span>Vorjahr</span></button><button class="fm-rib-btn" type="button" title="Nächstes Jahr"><span class="material-symbols-outlined">arrow_forward</span><span>Nächstes Jahr</span></button></div><div class="fm-rib-caption">Analyse</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div></div><div class="pl-64"><main class="w-full pt-16 bg-surface-container-lowest min-h-screen"><div class="flex flex-col w-full">
+<div class="w-full max-w-[1240px] mx-auto px-margin-mobile md:px-margin-desktop py-space-lg space-y-space-lg">
+<!-- Sub-Header & Ribbon Toolbar Section -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md pb-space-xs">
+<div>
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider mb-1">
+<span>Budget</span>
+<span class="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
+<span class="text-primary font-semibold">Budgetbericht</span>
+</div>
+<div class="flex items-center gap-space-md">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Monatlicher Budgetbericht</h1>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-tertiary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+            Oktober 2024
+          </span>
+</div>
+</div>
+<!-- Action Ribbon Toolbar -->
+<div class="flex items-center flex-wrap gap-space-sm bg-surface-container-low p-1.5 rounded-xl shadow-sm">
+<!-- Period Navigation -->
+<div class="flex items-center bg-surface-container rounded-lg px-2 py-1 gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Vorheriger Monat" type="button">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<div class="flex items-center gap-1.5 px-2">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_month</span>
+<span class="font-label-md text-label-md text-on-surface">Oktober 2024</span>
+</div>
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Nächster Monat" type="button">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+<div class="h-6 w-px bg-surface-container-highest hidden sm:block"></div>
+<!-- Export & Display Actions -->
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md inline-flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">file_download</span>
+<span>Exportieren</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md inline-flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">print</span>
+<span>Drucken</span>
+</button>
+<!-- Dedicated Einstellungen Ribbon Button -->
+<button class="h-9 px-3.5 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary-container/90 font-label-md text-label-md inline-flex items-center gap-1.5 shadow-sm transition-all font-semibold" id="btn-budget-settings" type="button">
+<span class="material-symbols-outlined text-[17px]">tune</span>
+<span>Budget-Einstellungen</span>
+</button>
+</div>
+</div>
+<!-- 1. Gesamtsummen (KPI Cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Card: Gesamtbudget (Soll) -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Gesamtbudget (Soll)</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+</div>
+</div>
+<div class="mt-space-sm">
+<div class="font-data-metric text-data-metric text-on-surface font-semibold tracking-tight">3.450,00 €</div>
+<p class="font-body-sm text-body-sm text-outline mt-1">Planziel für 31 Tage</p>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mt-3 overflow-hidden">
+<div class="h-full bg-primary" style="width: 100%"></div>
+</div>
+</div>
+<!-- Card: Gesamtausgaben (Ist) -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Gesamtausgaben (Ist)</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</div>
+</div>
+<div class="mt-space-sm">
+<div class="font-data-metric text-data-metric text-on-surface font-semibold tracking-tight">2.680,00 €</div>
+<p class="font-body-sm text-body-sm text-outline mt-1">Stand: 08. Oktober 2024</p>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mt-3 overflow-hidden">
+<div class="h-full bg-secondary-fixed-dim" style="width: 77.7%"></div>
+</div>
+</div>
+<!-- Card: Verbleibendes Budget -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Verbleibendes Budget</span>
+<div class="w-7 h-7 rounded-lg bg-tertiary-container/30 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">savings</span>
+</div>
+</div>
+<div class="mt-space-sm">
+<div class="font-data-metric text-data-metric text-tertiary font-semibold tracking-tight">+770,00 €</div>
+<div class="flex items-center gap-1.5 mt-1 font-body-sm text-body-sm text-tertiary">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>22,3 % Puffer verbleibend</span>
+</div>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mt-3 overflow-hidden">
+<div class="h-full bg-tertiary" style="width: 77.7%"></div>
+</div>
+</div>
+<!-- Card: Auslastung & Periodenstatus -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Ausschöpfungsgrad</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-tertiary/10 text-tertiary">
+            Im Budget
+          </span>
+</div>
+<div class="mt-space-sm">
+<div class="flex items-baseline gap-2">
+<span class="font-data-metric text-data-metric text-on-surface font-semibold tracking-tight">77,7 %</span>
+<span class="font-body-sm text-body-sm text-outline">von 100 %</span>
+</div>
+<div class="flex items-center gap-1 mt-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">timelapse</span>
+<span>23 Tage im Zyklus verbleibend</span>
+</div>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mt-3 overflow-hidden">
+<div class="h-full bg-primary-container" style="width: 77.7%"></div>
+</div>
+</div>
+</div>
+<!-- 2. Budgetübersicht mit Fortschrittsbalken pro Kategorie -->
+<div class="bg-surface-container-low rounded-xl p-space-lg shadow-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm mb-space-lg pb-space-sm">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">category</span>
+<span>Kategorieauslastung &amp; Fortschritt</span>
+</h2>
+<p class="font-body-sm text-body-sm text-outline mt-0.5">Visuelle Übersicht der einzelnen Budgets nach Aufwandskategorie</p>
+</div>
+<div class="flex items-center gap-space-sm font-label-sm text-label-sm text-on-surface-variant self-start sm:self-auto">
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span> Im Rahmen (&lt;90%)</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span> Geplant (100%)</span>
+<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-error"></span> Überschritten (&gt;100%)</span>
+</div>
+</div>
+<!-- Categories Progress Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-space-xl gap-y-space-md">
+<!-- 1. Wohnen & Nebenkosten -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">home</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Wohnen &amp; Nebenkosten</div>
+<div class="font-body-sm text-body-sm text-outline">Fixkosten &amp; Miete</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">1.200,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 1.200,00 €</span>
+</div>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-500" style="width: 100%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-outline">100,0 % ausgeschöpft</span>
+<span class="text-secondary font-medium">±0,00 € (Ausgeschöpft)</span>
+</div>
+</div>
+<!-- 2. Lebensmittel & Haushalt -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Lebensmittel &amp; Haushalt</div>
+<div class="font-body-sm text-body-sm text-outline">Supermarkt &amp; Drogerie</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">540,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 650,00 €</span>
+</div>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 83.1%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-outline">83,1 % ausgeschöpft</span>
+<span class="text-tertiary font-medium">+110,00 € verbleibend</span>
+</div>
+</div>
+<!-- 3. Mobilität & Fahrtkosten -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-error flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">directions_car</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Mobilität &amp; Fahrtkosten</div>
+<div class="font-body-sm text-body-sm text-outline">Treibstoff &amp; Nahverkehr</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-error font-semibold">395,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 350,00 €</span>
+</div>
+</div>
+<!-- Progress bar with overbudget fill -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full transition-all duration-500" style="width: 100%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-error font-semibold">112,9 % überschritten</span>
+<span class="text-error font-medium">-45,00 € über Budget</span>
+</div>
+</div>
+<!-- 4. Freizeit & Hobbys -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">sports_tennis</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Freizeit &amp; Hobbys</div>
+<div class="font-body-sm text-body-sm text-outline">Sport, Abos &amp; Kultur</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">210,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 300,00 €</span>
+</div>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 70%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-outline">70,0 % ausgeschöpft</span>
+<span class="text-tertiary font-medium">+90,00 € verbleibend</span>
+</div>
+</div>
+<!-- 5. Gastronomie & Ausgehen -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary-fixed-dim flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">restaurant</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Gastronomie &amp; Ausgehen</div>
+<div class="font-body-sm text-body-sm text-outline">Cafés, Bars &amp; Essen</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">215,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 250,00 €</span>
+</div>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-secondary-fixed-dim h-full rounded-full transition-all duration-500" style="width: 86%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-outline">86,0 % ausgeschöpft</span>
+<span class="text-tertiary font-medium">+35,00 € verbleibend</span>
+</div>
+</div>
+<!-- 6. Kleidung & Shopping -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">checkroom</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Kleidung &amp; Shopping</div>
+<div class="font-body-sm text-body-sm text-outline">Mode &amp; Anschaffungen</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">60,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 200,00 €</span>
+</div>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 30%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-outline">30,0 % ausgeschöpft</span>
+<span class="text-tertiary font-medium">+140,00 € verbleibend</span>
+</div>
+</div>
+<!-- 7. Versicherungen & Vorsorge -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">shield</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Versicherungen &amp; Vorsorge</div>
+<div class="font-body-sm text-body-sm text-outline">Beiträge &amp; Policen</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">300,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 300,00 €</span>
+</div>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-500" style="width: 100%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-outline">100,0 % ausgeschöpft</span>
+<span class="text-secondary font-medium">±0,00 € (Planmäßig)</span>
+</div>
+</div>
+<!-- 8. Sonstiges & Unvorhergesehenes -->
+<div class="bg-surface-container rounded-lg p-space-md hover:bg-surface-container-high/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface text-[14px] truncate">Sonstiges &amp; Unvorhergesehenes</div>
+<div class="font-body-sm text-body-sm text-outline">Notfall- &amp; Reserveposten</div>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold">80,00 €</span>
+<span class="font-label-sm text-label-sm text-outline block">von 200,00 €</span>
+</div>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 40%"></div>
+</div>
+<div class="flex items-center justify-between mt-2 font-label-sm text-label-sm">
+<span class="text-outline">40,0 % ausgeschöpft</span>
+<span class="text-tertiary font-medium">+120,00 € verbleibend</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Detaillierte Soll-/Ist-Vergleichstabelle -->
+<div class="bg-surface-container-low rounded-xl shadow-sm overflow-hidden">
+<div class="p-space-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">table_chart</span>
+<span>Detaillierter Soll-/Ist-Vergleich</span>
+</h2>
+<p class="font-body-sm text-body-sm text-outline mt-0.5">Vollständige Gegenüberstellung der Budgets, Ist-Buchungen und Salden</p>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="h-8 px-2.5 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">filter_list</span>
+<span>Filter</span>
+</button>
+<button class="h-8 px-2.5 rounded bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">density_medium</span>
+<span>Kompakt</span>
+</button>
+</div>
+</div>
+<!-- Table Wrapper -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-data-table text-data-table border-collapse">
+<thead>
+<tr class="bg-surface-container-high/60 text-outline font-label-sm text-label-sm uppercase tracking-wider select-none">
+<th class="py-2.5 px-4 font-semibold">Kategorie / Zweck</th>
+<th class="py-2.5 px-4 text-right font-semibold">Budget (Soll)</th>
+<th class="py-2.5 px-4 text-right font-semibold">Ausgaben (Ist)</th>
+<th class="py-2.5 px-4 font-semibold min-w-[170px]">Auslastung</th>
+<th class="py-2.5 px-4 text-right font-semibold">Differenz / Rest</th>
+<th class="py-2.5 px-4 text-center font-semibold">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-on-surface">
+<!-- Row 1: Wohnen -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">home</span>
+<div>
+<span class="font-medium text-on-surface">Wohnen &amp; Nebenkosten</span>
+<span class="text-[11px] text-outline block">Miete, Heizung, Strom</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">1.200,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">1.200,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 100%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-outline w-10 text-right">100 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-secondary">0,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-container-high text-on-surface-variant">
+                  Ausgeschöpft
+                </span>
+</td>
+</tr>
+<!-- Row 2: Lebensmittel -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">shopping_cart</span>
+<div>
+<span class="font-medium text-on-surface">Lebensmittel &amp; Haushalt</span>
+<span class="text-[11px] text-outline block">Einkäufe, Drogerieartikel</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">650,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">540,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 83.1%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary w-10 text-right">83,1 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-semibold text-tertiary">+110,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-tertiary/10 text-tertiary">
+                  Im Budget
+                </span>
+</td>
+</tr>
+<!-- Row 3: Mobilität -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-error transition-colors">directions_car</span>
+<div>
+<span class="font-medium text-on-surface">Mobilität &amp; Fahrtkosten</span>
+<span class="text-[11px] text-outline block">Tanken, Parken, Tickets</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">350,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-error">395,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full" style="width: 100%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-error font-semibold w-10 text-right">112,9 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-semibold text-error">-45,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-error/10 text-error">
+                  Überschritten
+                </span>
+</td>
+</tr>
+<!-- Row 4: Freizeit & Hobbys -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">sports_tennis</span>
+<div>
+<span class="font-medium text-on-surface">Freizeit &amp; Hobbys</span>
+<span class="text-[11px] text-outline block">Mitgliedschaften, Events</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">300,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">210,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 70%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary w-10 text-right">70,0 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-semibold text-tertiary">+90,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-tertiary/10 text-tertiary">
+                  Im Budget
+                </span>
+</td>
+</tr>
+<!-- Row 5: Gastronomie -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">restaurant</span>
+<div>
+<span class="font-medium text-on-surface">Gastronomie &amp; Ausgehen</span>
+<span class="text-[11px] text-outline block">Restaurantbesuche, Lieferdienste</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">250,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">215,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary-fixed-dim h-full rounded-full" style="width: 86%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant w-10 text-right">86,0 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-semibold text-tertiary">+35,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-secondary-container/40 text-on-secondary-container">
+                  Im Rahmen
+                </span>
+</td>
+</tr>
+<!-- Row 6: Kleidung -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">checkroom</span>
+<div>
+<span class="font-medium text-on-surface">Kleidung &amp; Shopping</span>
+<span class="text-[11px] text-outline block">Textilien, Schuhe</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">200,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">60,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 30%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary w-10 text-right">30,0 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-semibold text-tertiary">+140,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-tertiary/10 text-tertiary">
+                  Im Budget
+                </span>
+</td>
+</tr>
+<!-- Row 7: Versicherungen -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">shield</span>
+<div>
+<span class="font-medium text-on-surface">Versicherungen &amp; Vorsorge</span>
+<span class="text-[11px] text-outline block">Haftpflicht, Altersvorsorge</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">300,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">300,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 100%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-outline w-10 text-right">100 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-secondary">0,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-container-high text-on-surface-variant">
+                  Planmäßig
+                </span>
+</td>
+</tr>
+<!-- Row 8: Sonstiges -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">more_horiz</span>
+<div>
+<span class="font-medium text-on-surface">Sonstiges &amp; Unvorhergesehenes</span>
+<span class="text-[11px] text-outline block">Puffer, Kleinausgaben</span>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">200,00 €</td>
+<td class="py-2.5 px-4 text-right font-medium text-on-surface">80,00 €</td>
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 40%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary w-10 text-right">40,0 %</span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right font-semibold text-tertiary">+120,00 €</td>
+<td class="py-2.5 px-4 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-tertiary/10 text-tertiary">
+                  Im Budget
+                </span>
+</td>
+</tr>
+</tbody>
+<!-- Bottom Summary Row -->
+<tfoot>
+<tr class="bg-surface-container font-semibold text-on-surface">
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">functions</span>
+<span class="font-headline-sm text-headline-sm text-[14px]">Gesamtsumme (Oktober 2024)</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right text-on-surface font-headline-sm text-headline-sm text-[14px]">3.450,00 €</td>
+<td class="py-3 px-4 text-right text-on-surface font-headline-sm text-headline-sm text-[14px]">2.680,00 €</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 77.7%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold w-10 text-right">77,7 %</span>
+</div>
+</td>
+<td class="py-3 px-4 text-right font-headline-sm text-headline-sm text-[14px] text-tertiary">+770,00 €</td>
+<td class="py-3 px-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-bold bg-tertiary/15 text-tertiary">
+                  Im Soll
+                </span>
+</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+</div>
+<!-- Settings Flyout/Modal Script -->
+<script>
+    document.getElementById('btn-budget-settings')?.addEventListener('click', () => {
+      alert('Budget-Einstellungen: Hier können Sie monatliche Grenzwerte, Benachrichtigungsschwellen und Budgetperioden konfigurieren.');
+    });
+  </script>
+</div></main></div></body></html>

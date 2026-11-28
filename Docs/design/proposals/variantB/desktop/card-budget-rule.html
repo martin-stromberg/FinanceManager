@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#00354a","surface":"#111319","on-primary":"#003731","secondary":"#d0bcff","on-error-container":"#ffdad6","surface-dim":"#111319","tertiary-fixed-dim":"#7bd0ff","on-secondary-fixed-variant":"#5516be","background":"#111319","primary-container":"#2dd4bf","on-primary-fixed-variant":"#005047","inverse-primary":"#006b5f","surface-tint":"#3cddc7","on-tertiary-fixed-variant":"#004c69","primary-fixed":"#62fae3","on-primary-container":"#00574d","on-secondary-fixed":"#23005c","on-secondary":"#3c0091","secondary-fixed":"#e9ddff","inverse-on-surface":"#2e3036","on-tertiary-container":"#005371","surface-container-lowest":"#0b0e13","surface-container-high":"#272a30","on-secondary-container":"#c4abff","on-surface":"#e1e2ea","on-primary-fixed":"#00201c","error-container":"#93000a","surface-variant":"#32353b","on-background":"#e1e2ea","primary":"#57f1db","surface-bright":"#36393f","secondary-fixed-dim":"#d0bcff","surface-container-highest":"#32353b","outline-variant":"#3c4a46","primary-fixed-dim":"#3cddc7","on-surface-variant":"#bacac5","surface-container-low":"#191c21","tertiary-container":"#5ec9ff","tertiary-fixed":"#c4e7ff","surface-container":"#1d2025","secondary-container":"#571bc1","tertiary":"#afe0ff","error":"#ffb4ab","on-tertiary-fixed":"#001e2c","on-error":"#690005","inverse-surface":"#e1e2ea","outline":"#859490"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"gutter":"1rem","margin-tablet":"1.5rem","space-md":"1rem","space-xs":"0.25rem","space-xl":"2.5rem","space-lg":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem","margin":"1rem","gutter-desktop":"1.5rem"},fontFamily:{"display-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"]},fontSize:{"display-lg":["3.5rem",{lineHeight:"4rem",letterSpacing:"-0.03em",fontWeight:"700"}],"headline-lg-mobile":["1.5rem",{lineHeight:"2rem",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-lg":["2rem",{lineHeight:"2.5rem",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["1.25rem",{lineHeight:"1.75rem",letterSpacing:"-0.01em",fontWeight:"600"}],"body-lg":["1rem",{lineHeight:"1.5rem",fontWeight:"400"}],"headline-sm":["1.125rem",{lineHeight:"1.5rem",fontWeight:"600"}],"label-sm":["0.6875rem",{lineHeight:"0.875rem",letterSpacing:"0.04em",fontWeight:"500"}],"label-lg":["0.875rem",{lineHeight:"1.25rem",letterSpacing:"0.01em",fontWeight:"600"}],"body-md":["0.875rem",{lineHeight:"1.25rem",fontWeight:"400"}],"display-lg-mobile":["2.25rem",{lineHeight:"2.75rem",letterSpacing:"-0.02em",fontWeight:"700"}],"label-md":["0.75rem",{lineHeight:"1rem",letterSpacing:"0.02em",fontWeight:"600"}],"body-sm":["0.75rem",{lineHeight:"1rem",fontWeight:"400"}]}}}}</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased fm-body-b"><aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class=" active" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Budgetregel-Detailkarte</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zweckmuster leeren"><span class="material-symbols-outlined">delete</span><span>Zweckmuster leeren</span></button></div><div class="fm-rib-caption">Felder</div></div></div><div class="pl-16"><main class="relative pt-16 bg-background w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-space-xl">
+<!-- Dynamic Glow Ambience Underlay (Restricted to Card Headroom) -->
+<div class="relative w-full">
+<div class="absolute -top-10 left-1/4 w-96 h-48 bg-primary-container/10 blur-[110px] pointer-events-none rounded-full"></div>
+<div class="absolute top-20 right-10 w-80 h-56 bg-secondary-container/15 blur-[120px] pointer-events-none rounded-full"></div>
+</div>
+<!-- Breadcrumb, Identity Header & Status Indicator -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-space-md pt-space-md pb-space-lg">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+<span>Verwaltung</span>
+<span>›</span>
+<span>Budgetverwaltung</span>
+<span>›</span>
+<span>Budgetregeln</span>
+<span>›</span>
+<span class="text-primary font-label-md text-label-md">Detail</span>
+</div>
+<div class="flex flex-wrap items-center gap-space-md mt-space-xs">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Budgetregel-Detailkarte</h1>
+<div class="inline-flex items-center gap-space-xs bg-primary-container/10 px-space-sm py-space-xs rounded-full">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(87,241,219,0.8)]"></span>
+<span class="font-label-sm text-label-sm text-primary tracking-wide">Aktiv • Auto-Allokation</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">tune</span>
+        Regel-ID: <span class="font-label-md text-label-md text-on-surface">RGL-2024-8849</span> • Regelname: <span class="text-on-surface font-headline-sm text-headline-sm">Monatlicher Sparpuffer &amp; Lebenshaltung</span>
+</p>
+</div>
+<!-- Live Execution Status Quick-Tag -->
+<div class="flex items-center gap-space-sm bg-surface-container-low px-space-md py-space-sm rounded-xl">
+<span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Nächste Evaluierung</span>
+<span class="font-label-md text-label-md text-on-surface">In 4 Tagen (01. Nov 2024)</span>
+</div>
+</div>
+</section>
+<!-- Contextual Ribbon / Action Bar (Strictly Grouped: Navigation | Verwalten | Verknüpfte Informationen) -->
+<section class="sticky top-16 z-30 mb-space-lg bg-surface-container-lowest/85 backdrop-blur-xl p-space-sm rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.45)] flex flex-wrap items-center justify-between gap-space-md">
+<!-- Gruppe 1: Navigation -->
+<div class="flex items-center gap-space-sm">
+<a class="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-all shadow-sm" href="#">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Zurück</span>
+</a>
+<span class="h-6 w-px bg-surface-container-highest"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant hidden sm:inline-block">Regelansicht #093-B</span>
+</div>
+<!-- Gruppe 2: Verwalten (Speichern Primär Teal, Zurücksetzen Outline, Löschen Destruktiv) -->
+<div class="flex items-center gap-space-sm">
+<button class="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary-container text-on-primary-container font-label-lg text-label-lg shadow-[0_0_16px_rgba(45,212,191,0.35)] hover:bg-primary transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">save</span>
+<span>Speichern</span>
+</button>
+<button class="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+<span>Zurücksetzen</span>
+</button>
+<button class="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-error-container/20 hover:bg-error-container/40 text-error font-label-lg text-label-lg transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+<span>Löschen</span>
+</button>
+</div>
+<!-- Gruppe 3: Verknüpfte Informationen / Sprungmarken -->
+<div class="flex items-center gap-space-xs overflow-x-auto w-full lg:w-auto pt-space-xs lg:pt-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant mr-space-xs whitespace-nowrap">Sprungmarken:</span>
+<a class="px-space-sm py-space-xs rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm whitespace-nowrap transition-colors flex items-center gap-1" href="#zweck-detail">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Budgetzweck</span>
+</a>
+<a class="px-space-sm py-space-xs rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm whitespace-nowrap transition-colors flex items-center gap-1" href="#kategorie-detail">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Kategorie</span>
+</a>
+<a class="px-space-sm py-space-xs rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm whitespace-nowrap transition-colors flex items-center gap-1" href="#audit-detail">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Historie &amp; Audit</span>
+</a>
+</div>
+</section>
+<!-- Main Asymmetric Dashboard Grid (Form Details Left 8-cols, Metric & Visualization Right 4-cols) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start">
+<!-- Left Column (8 of 12 cols): Form and Structured Relation Data -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<!-- Card 1: Regel-Stammdaten & Parameter -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-space-lg rounded-xl shadow-xl flex flex-col gap-space-lg relative overflow-hidden">
+<div class="flex items-center justify-between pb-space-sm border-b border-surface-container-highest">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary shadow-[0_0_12px_rgba(45,212,191,0.2)]">
+<span class="material-symbols-outlined text-[20px]">settings_input_composite</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Regel-Stammdaten &amp; Parameter</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Definition des numerischen Schwellenwerts, Allokationszyklus und Geltungszeitraum.</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider bg-surface-container px-space-sm py-space-xs rounded">ID: #PARAM-01</span>
+</div>
+<form class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
+<!-- Betrag Field with Currency Decorator -->
+<div class="flex flex-col gap-space-xs md:col-span-2">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center justify-between" for="regel-betrag">
+<span>Regelbetrag (Soll- / Limitwert)</span>
+<span class="text-tertiary font-label-sm text-label-sm">Dynamische Kappung aktiv</span>
+</label>
+<div class="relative flex items-center">
+<span class="absolute left-space-md text-on-surface-variant font-headline-md text-headline-md">€</span>
+<input class="w-full bg-surface-container-lowest text-on-surface font-headline-md text-headline-md pl-10 pr-16 py-space-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" id="regel-betrag" placeholder="0,00" type="text" value="450,00">
+<span class="absolute right-space-md font-label-md text-label-md text-on-surface-variant uppercase bg-surface-container px-space-xs py-0.5 rounded">EUR</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Wird am Ersten jeden Ausführungsintervalls gegen das Haushaltskonto verprobt.</span>
+</div>
+<!-- Intervall Segmented Select -->
+<div class="flex flex-col gap-space-xs md:col-span-2">
+<label class="font-label-lg text-label-lg text-on-surface">Ausführungsintervall</label>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs bg-surface-container-lowest p-1 rounded-lg">
+<button class="py-space-sm px-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all text-center" type="button">Wöchentlich</button>
+<button class="py-space-sm px-space-xs rounded font-label-md text-label-md bg-primary-container text-on-primary-container shadow-sm transition-all text-center font-bold" type="button">Monatlich</button>
+<button class="py-space-sm px-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all text-center" type="button">Quartalsweise</button>
+<button class="py-space-sm px-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all text-center" type="button">Jährlich</button>
+</div>
+</div>
+<!-- Gültigkeit ab -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center gap-space-xs" for="gueltig-ab">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+<span>Gültigkeit ab</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" id="gueltig-ab" type="text" value="01.01.2024">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant absolute right-space-md pointer-events-none">event</span>
+</div>
+</div>
+<!-- Gültigkeit bis -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center justify-between" for="gueltig-bis">
+<span class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-secondary">event_repeat</span>
+<span>Gültigkeit bis</span>
+</span>
+<span class="text-on-surface-variant text-label-sm font-label-sm">Befristet</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-space-md py-space-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-secondary shadow-inner" id="gueltig-bis" type="text" value="31.12.2025">
+<button class="absolute right-space-sm font-label-sm text-label-sm bg-surface-container-high hover:bg-surface-bright text-on-surface px-space-xs py-1 rounded transition-colors" title="Auf unbegrenzt setzen" type="button">Unbefristet</button>
+</div>
+</div>
+</form>
+</div>
+<!-- Card 2: Verknüpfte Informationen, Zuordnung & Audit-Trail -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-space-lg rounded-xl shadow-xl flex flex-col gap-space-lg" id="zweck-detail">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Zweck Item -->
+<div class="p-space-md bg-surface-container-lowest rounded-xl flex flex-col gap-space-xs shadow-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary">folder_special</span>
+              Verknüpfter Budgetzweck
+            </span>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-1">Haushalt &amp; Lebenshaltung</span>
+<span class="font-body-sm text-body-sm text-tertiary">Konto: DE89 5001 ... 4400</span>
+</div>
+<!-- Kategorie Item -->
+<div class="p-space-md bg-surface-container-lowest rounded-xl flex flex-col gap-space-xs shadow-sm" id="kategorie-detail">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">label</span>
+              Zugeordnete Kategorie
+            </span>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-1">Lebensmittel &amp; Supermarkt</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Taxonomie: Konsumgüter (Tier-1)</span>
+</div>
+<!-- Ausführungstyp -->
+<div class="p-space-md bg-surface-container-lowest rounded-xl flex flex-col gap-space-xs shadow-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">bolt</span>
+              Ausführungstyp
+            </span>
+<span class="font-headline-sm text-headline-sm text-primary mt-1">Automatische Limitprüfung</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sperr-Trigger bei 100% Limit</span>
+</div>
+</div>
+<!-- Audit & Historie Timeline Block -->
+<div class="pt-space-sm flex flex-col gap-space-sm" id="audit-detail">
+<span class="font-label-lg text-label-lg text-on-surface flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">history</span>
+<span>Audit-Protokoll &amp; Systemzeitleiste</span>
+</span>
+<div class="bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between text-body-sm font-body-sm py-1 border-b border-surface-container">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></span>
+                Erstellt am
+              </span>
+<span class="text-on-surface font-label-md text-label-md">15.12.2023, 14:22:08 Uhr (durch M. Mustermann)</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm py-1 border-b border-surface-container">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                Letzte Ausführung / Aktualisierung
+              </span>
+<span class="text-on-surface font-label-md text-label-md">01.10.2024, 00:01:14 Uhr (Erfolgreich verbucht)</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm py-1">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                Nächster Prüfzyklus
+              </span>
+<span class="text-primary font-label-md text-label-md">01.11.2024, 00:00:00 Uhr</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (4 of 12 cols): KPI Card & Live Visual Status Monitor (Variante B Precision Look) -->
+<div class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- Primary KPI / Schnellübersichtskarte -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-space-lg rounded-xl shadow-xl flex flex-col gap-space-md relative overflow-hidden">
+<!-- Corner Ambient Glow -->
+<div class="absolute -right-12 -top-12 w-36 h-36 bg-primary-container/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Aktiver Sollwert</span>
+<span class="material-symbols-outlined text-primary text-[20px]">donut_large</span>
+</div>
+<div class="flex flex-col gap-space-xs mt-space-xs">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-display-lg text-display-lg text-on-surface tracking-tight">450,00</span>
+<span class="font-headline-sm text-headline-sm text-primary">€</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">pro Monat (Intervallzyklus)</span>
+</div>
+<!-- Visual Ring & Progress Indicator -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl flex flex-col gap-space-md mt-space-sm shadow-inner">
+<div class="flex justify-between items-end">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Zyklus-Ausschöpfung</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">82,0 %</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Verbleibend</span>
+<span class="font-label-lg text-label-lg text-primary font-bold">81,00 €</span>
+</div>
+</div>
+<!-- High-Contrast Precision Progress Bar -->
+<div class="w-full bg-surface-container h-2.5 rounded-full overflow-hidden flex">
+<div class="bg-gradient-to-r from-primary-container to-primary h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(87,241,219,0.5)]" style="width: 82%;"></div>
+</div>
+<!-- Micro Breakdown -->
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant pt-1 border-t border-surface-container-high">
+<span>Bisher gebucht: <strong class="text-on-surface">369,00 €</strong></span>
+<span>Limit: <strong class="text-on-surface">450,00 €</strong></span>
+</div>
+</div>
+<!-- Inline SVG Visualization Sparkline / Run-rate Trend -->
+<div class="flex flex-col gap-space-xs mt-space-xs">
+<div class="flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span>Verlauf der letzten 6 Monate</span>
+<span class="text-primary font-semibold">Stabil (±3,2%)</span>
+</div>
+<div class="w-full h-20 bg-surface-container-lowest rounded-lg p-space-xs flex items-center justify-center">
+<svg class="w-full h-full text-primary" fill="none" preserveaspectratio="none" viewbox="0 0 280 60">
+<defs>
+<lineargradient id="chartGlow" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#57f1db" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#57f1db" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<path d="M0 45 Q 30 40, 50 35 T 100 38 T 150 25 T 200 28 T 240 18 T 280 22 L 280 60 L 0 60 Z" fill="url(#chartGlow)"></path>
+<path d="M0 45 Q 30 40, 50 35 T 100 38 T 150 25 T 200 28 T 240 18 T 280 22" stroke="currentColor" stroke-linecap="round" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<!-- Target Limit Reference Dotted Line -->
+<line opacity="0.4" stroke="#bacac5" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="280" y1="15" y2="15"></line>
+</svg>
+</div>
+</div>
+</div>
+<!-- Quick Action Mini-Card -->
+<div class="bg-surface-container-low/90 backdrop-blur-xl p-space-md rounded-xl shadow-md flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Warnschwelle</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Push-Alarm bei 90% Erreichung</span>
+</div>
+</div>
+<input checked class="w-4 h-4 accent-primary rounded cursor-pointer" type="checkbox">
+</div>
+<!-- Compliance & Rules Policy Note -->
+<div class="bg-surface-container-low/60 p-space-md rounded-xl flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] shrink-0 mt-0.5">verified_user</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+          Veränderungen an Betrag oder Intervall erfordern keine Neu-Initialisierung der laufenden Daueraufträge, sondern treten mit der nächsten Ausführungsperiode in Kraft.
+        </p>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

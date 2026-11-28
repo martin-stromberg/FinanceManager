@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FinanceManager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-dim": "#111319",
+          "on-tertiary-container": "#003422",
+          "primary-container": "#6d8dff",
+          "inverse-surface": "#e1e2ea",
+          "error": "#ffb4ab",
+          "on-primary-fixed-variant": "#0d3bac",
+          "on-primary-container": "#002477",
+          "outline-variant": "#444653",
+          "on-surface-variant": "#c4c5d5",
+          "outline": "#8e909f",
+          "primary-fixed-dim": "#b6c4ff",
+          "on-tertiary-fixed-variant": "#005236",
+          "on-secondary": "#2a313d",
+          "tertiary": "#4edea3",
+          "tertiary-fixed": "#6ffbbe",
+          "on-tertiary": "#003824",
+          "primary-fixed": "#dce1ff",
+          "secondary-fixed-dim": "#c0c7d6",
+          "inverse-primary": "#3255c5",
+          "on-primary-fixed": "#001550",
+          "on-secondary-fixed-variant": "#404754",
+          "surface-container-low": "#191c21",
+          "on-error": "#690005",
+          "surface-bright": "#36393f",
+          "tertiary-container": "#00a975",
+          "on-surface": "#e1e2ea",
+          "surface-variant": "#32353b",
+          "surface": "#111319",
+          "on-error-container": "#ffdad6",
+          "on-secondary-container": "#aeb5c5",
+          "surface-tint": "#b6c4ff",
+          "error-container": "#93000a",
+          "tertiary-fixed-dim": "#4edea3",
+          "on-background": "#e1e2ea",
+          "surface-container": "#1d2025",
+          "on-primary": "#002780",
+          "secondary-container": "#404754",
+          "secondary-fixed": "#dce2f3",
+          "secondary": "#c0c7d6",
+          "surface-container-lowest": "#0b0e13",
+          "surface-container-high": "#272a30",
+          "inverse-on-surface": "#2e3036",
+          "surface-container-highest": "#32353b",
+          "primary": "#b6c4ff",
+          "on-secondary-fixed": "#151c27",
+          "background": "#111319",
+          "on-tertiary-fixed": "#002113"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "gutter-tablet": "0.75rem",
+          "gutter-desktop": "1rem",
+          "space-sm": "0.5rem",
+          "margin-mobile": "1rem",
+          "space-lg": "1rem",
+          "space-xl": "1.5rem",
+          "space-md": "0.75rem",
+          "margin-desktop": "2rem",
+          "space-xs": "0.25rem",
+          "margin": "1.5rem"
+        },
+        "fontFamily": {
+          "headline-xl": ["Inter"],
+          "label-sm": ["Inter"],
+          "headline-xl-mobile": ["Inter"],
+          "body-sm": ["Inter"],
+          "data-metric": ["Inter"],
+          "body-md": ["Inter"],
+          "label-md": ["Inter"],
+          "headline-sm": ["Inter"],
+          "data-table": ["Inter"],
+          "headline-lg": ["Inter"],
+          "body-lg": ["Inter"],
+          "headline-md": ["Inter"]
+        },
+        "fontSize": {
+          "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+          "headline-xl-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+          "body-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "400"}],
+          "data-metric": ["24px", {"lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+          "headline-sm": ["16px", {"lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600"}],
+          "data-table": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+          "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  @layer base {
+    html {
+      color-scheme: dark;
+      overscroll-behavior-y: none;
+    }
+    body {
+      background-color: #0b0e13;
+      color: #e1e2ea;
+      -webkit-font-smoothing: antialiased;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0b0e13;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #232a36;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2d3545;
+  }
+</style>
+<meta content="web_dashboard" name="shell-type">
+<style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0b0e13] text-[#e1e2ea] antialiased min-h-screen fm-body-a">
+<aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class=" active" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Kontakte</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Neu"><span class="material-symbols-outlined">add</span><span>Neu</span></button><button class="fm-rib-btn" type="button" title="Gruppen"><span class="material-symbols-outlined">layers</span><span>Gruppen</span></button><button class="fm-rib-btn" type="button" title="Neu laden"><span class="material-symbols-outlined">refresh</span><span>Neu laden</span></button><button class="fm-rib-btn" type="button" title="Suche zurücksetzen"><span class="material-symbols-outlined">close</span><span>Suche zurücksetzen</span></button></div><div class="fm-rib-caption">Verwalten</div></div></div><div class="pl-64 flex flex-col min-w-0 min-h-screen bg-[#0b0e13]">
+<main class="pt-14 flex-1 px-6 py-6 max-w-[1600px] w-full mx-auto"><div class="flex flex-col w-full max-w-[1200px] mx-auto space-y-4">
+<!-- 1. RIBBON TOOLBAR -->
+<section class="bg-surface-container-low rounded-lg p-2.5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+<div class="flex items-center gap-4">
+<div class="flex flex-col gap-1 pr-4 border-r border-outline-variant/30">
+<span class="font-label-sm text-outline tracking-wider uppercase text-[10px] select-none">VERWALTUNG</span>
+<div class="flex items-center gap-2">
+<button class="h-9 px-3.5 bg-primary-container hover:bg-[#5877f0] active:bg-[#4663d9] text-white rounded-lg flex items-center gap-2 transition-colors font-label-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-container focus:ring-offset-2 focus:ring-offset-surface-dim" type="button">
+<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M12 4.5v15m7.5-7.5h-15" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>+ Neuer Kontakt</span>
+</button>
+<button class="h-9 px-3 bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-white rounded-lg flex items-center gap-1.5 transition-colors font-label-md text-[13px]" type="button">
+<svg class="w-4 h-4 shrink-0 text-outline" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Importieren</span>
+</button>
+</div>
+</div>
+<div class="hidden sm:flex flex-col gap-1">
+<span class="font-label-sm text-outline tracking-wider uppercase text-[10px] select-none">ANSICHT</span>
+<div class="flex items-center gap-1">
+<button class="h-9 px-2.5 rounded-lg bg-surface-variant text-white font-label-sm flex items-center gap-1.5" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Liste</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-outline font-body-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-sm text-on-surface-variant">Datenbank aktiv</span>
+</div>
+</section>
+<!-- 2. FILTER- / SUCHLEISTE -->
+<section class="bg-surface-container-low rounded-lg p-3.5 flex flex-col gap-3 shadow-sm">
+<div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+<!-- Search Input -->
+<div class="relative flex-1">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<input class="w-full h-9 pl-9 pr-8 bg-surface-dim rounded-lg text-on-surface placeholder-outline font-body-md text-[13px] focus:outline-none focus:ring-1 focus:ring-primary-container transition-all" id="contact-search-input" placeholder="Kontakt suchen (Name, Gruppe, Notiz)..." type="text">
+<button class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-outline hover:text-white" id="clear-search-btn" title="Eingabe löschen" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- Group dropdown -->
+<div class="shrink-0">
+<select class="h-9 px-3 bg-surface-dim rounded-lg text-on-surface font-label-md text-[13px] focus:outline-none focus:ring-1 focus:ring-primary-container transition-all cursor-pointer" id="group-select">
+<option value="all">Alle Gruppen</option>
+<option value="Arbeitgeber &amp; Einkommen">Arbeitgeber &amp; Einkommen</option>
+<option value="Versicherungen">Versicherungen</option>
+<option value="Vermieter &amp; Wohnen">Vermieter &amp; Wohnen</option>
+<option value="Banken &amp; Broker">Banken &amp; Broker</option>
+<option value="Energie &amp; Versorgung">Energie &amp; Versorgung</option>
+<option value="Beratung &amp; Recht">Beratung &amp; Recht</option>
+<option value="Telekommunikation &amp; IT">Telekommunikation &amp; IT</option>
+<option value="Gesundheit &amp; Ärzte">Gesundheit &amp; Ärzte</option>
+<option value="Familie &amp; Privat">Familie &amp; Privat</option>
+</select>
+</div>
+</div>
+<!-- Quick filter chips/pills -->
+<div class="flex items-center flex-wrap gap-1.5 pt-1 border-t border-outline-variant/20">
+<span class="font-label-sm text-outline text-[11px] mr-1 select-none">Filter:</span>
+<button class="filter-type-pill h-7 px-3 rounded-full bg-primary-container/20 text-primary font-label-sm text-[12px] transition-colors" data-type="all" type="button">
+        Alle Kontakte (18)
+      </button>
+<button class="filter-type-pill h-7 px-3 rounded-full bg-surface-container text-on-surface-variant hover:text-white hover:bg-surface-variant font-label-sm text-[12px] transition-colors" data-type="Person" type="button">
+        Personen (11)
+      </button>
+<button class="filter-type-pill h-7 px-3 rounded-full bg-surface-container text-on-surface-variant hover:text-white hover:bg-surface-variant font-label-sm text-[12px] transition-colors" data-type="Unternehmen" type="button">
+        Unternehmen (7)
+      </button>
+</div>
+</section>
+<!-- 3. COMPACT DATA TABLE -->
+<section class="bg-surface-container-low rounded-lg overflow-hidden shadow-sm flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/60 text-outline uppercase font-label-sm text-[11px] tracking-wider select-none">
+<th class="py-3 px-4 font-semibold" scope="col">Name</th>
+<th class="py-3 px-4 font-semibold w-40" scope="col">Art</th>
+<th class="py-3 px-4 font-semibold" scope="col">Gruppe / Kategorie</th>
+<th class="py-3 px-4 text-right font-semibold w-16" scope="col"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-on-surface font-body-md text-[13px]" id="contact-table-body">
+<!-- Row 1 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Arbeitgeber &amp; Einkommen" data-name="Arbeitgeber Tech AG" data-type="Unternehmen">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-primary shrink-0 select-none">
+                  AT
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Arbeitgeber Tech AG</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Hauptarbeitgeber • Lohnabrechnung</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-secondary-container/50 text-secondary-fixed">
+                Unternehmen
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Arbeitgeber &amp; Einkommen
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Gesundheit &amp; Ärzte" data-name="Dr. Michael Schneider" data-type="Person">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-tertiary shrink-0 select-none">
+                  MS
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Dr. Michael Schneider</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Hausarztpraxis • Privatrechnungen</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-primary-container/15 text-primary">
+                Person
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Gesundheit &amp; Ärzte
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Versicherungen" data-name="Allianz Versicherungs-AG" data-type="Unternehmen">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-primary shrink-0 select-none">
+                  AL
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Allianz Versicherungs-AG</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Haftpflicht &amp; Hausratversicherungen</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-secondary-container/50 text-secondary-fixed">
+                Unternehmen
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Versicherungen
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Vermieter &amp; Wohnen" data-name="Hausverwaltung Müller &amp; Partner" data-type="Unternehmen">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-primary shrink-0 select-none">
+                  HM
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Hausverwaltung Müller &amp; Partner</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Mietkonto Wohnungsgesellschaft</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-secondary-container/50 text-secondary-fixed">
+                Unternehmen
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Vermieter &amp; Wohnen
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Banken &amp; Broker" data-name="Trade Republic Bank GmbH" data-type="Unternehmen">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-primary shrink-0 select-none">
+                  TR
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Trade Republic Bank GmbH</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Verrechnungskonto &amp; Wertpapierdepot</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-secondary-container/50 text-secondary-fixed">
+                Unternehmen
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Banken &amp; Broker
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Familie &amp; Privat" data-name="Anna Weber" data-type="Person">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-tertiary shrink-0 select-none">
+                  AW
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Anna Weber</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Gemeinschaftsausgaben • Dauerauftrag</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-primary-container/15 text-primary">
+                Person
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Familie &amp; Privat
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Energie &amp; Versorgung" data-name="Stadtwerke München (SWM)" data-type="Unternehmen">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-primary shrink-0 select-none">
+                  SW
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Stadtwerke München (SWM)</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Strom, Wasser, Heizungsabschläge</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-secondary-container/50 text-secondary-fixed">
+                Unternehmen
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Energie &amp; Versorgung
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Beratung &amp; Recht" data-name="Steuerberater Thomas Fischer" data-type="Person">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-tertiary shrink-0 select-none">
+                  TF
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Steuerberater Thomas Fischer</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Einkommensteuererklärung &amp; Beratung</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-primary-container/15 text-primary">
+                Person
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Beratung &amp; Recht
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 9 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Telekommunikation &amp; IT" data-name="Telekom Deutschland GmbH" data-type="Unternehmen">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-primary shrink-0 select-none">
+                  TD
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Telekom Deutschland GmbH</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Glasfaser-Internet &amp; Mobilfunk</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-secondary-container/50 text-secondary-fixed">
+                Unternehmen
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Telekommunikation &amp; IT
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+<!-- Row 10 -->
+<tr class="contact-row group hover:bg-surface-container cursor-pointer transition-colors" data-group="Familie &amp; Privat" data-name="Sarah Lehmann" data-type="Person">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center font-label-sm font-semibold text-tertiary shrink-0 select-none">
+                  SL
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-[14px] text-white tracking-tight truncate group-hover:text-primary transition-colors">Sarah Lehmann</span>
+<span class="font-body-sm text-outline text-[12px] truncate">Private Auslagen • Splitwise Rechnungen</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-primary-container/15 text-primary">
+                Person
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md font-label-sm text-[11px] bg-surface-container text-on-surface-variant">
+                Familie &amp; Privat
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right text-outline group-hover:text-primary group-hover:translate-x-0.5 transition-all">
+<svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m8.25 4.5 7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- 4. TABLE FOOTER / META INFO -->
+<div class="bg-surface-container-high/40 px-4 py-3 border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-2 text-outline font-label-sm text-[12px]">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Gesamtanzahl:</span>
+<span id="footer-count">18 Kontakte (11 Personen, 7 Unternehmen)</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="hidden md:inline text-outline/70">Hinweis: Zeilenklick führt zur Detailseite</span>
+<div class="flex items-center gap-1.5 text-tertiary">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="m4.5 12.75 6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-on-surface-variant">Alle Daten aktuell</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<script>
+  (function initContactsPage() {
+    const searchInput = document.getElementById('contact-search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+    const groupSelect = document.getElementById('group-select');
+    const filterPills = document.querySelectorAll('.filter-type-pill');
+    const rows = document.querySelectorAll('.contact-row');
+    const footerCount = document.getElementById('footer-count');
+
+    let activeType = 'all';
+
+    function applyFilters() {
+      const term = (searchInput.value || '').trim().toLowerCase();
+      const groupVal = groupSelect.value;
+      let visibleCount = 0;
+      let personCount = 0;
+      let unternehmenCount = 0;
+
+      rows.forEach(row => {
+        const name = (row.getAttribute('data-name') || '').toLowerCase();
+        const type = row.getAttribute('data-type') || '';
+        const group = row.getAttribute('data-group') || '';
+
+        const matchesSearch = !term || name.includes(term) || group.toLowerCase().includes(term);
+        const matchesType = (activeType === 'all') || (type === activeType);
+        const matchesGroup = (groupVal === 'all') || (group === groupVal);
+
+        if (matchesSearch && matchesType && matchesGroup) {
+          row.classList.remove('hidden');
+          visibleCount++;
+          if (type === 'Person') personCount++;
+          if (type === 'Unternehmen') unternehmenCount++;
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+
+      if (footerCount) {
+        footerCount.textContent = `${visibleCount} angezeigt (${personCount} Personen, ${unternehmenCount} Unternehmen)`;
+      }
+    }
+
+    searchInput?.addEventListener('input', applyFilters);
+
+    clearBtn?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+        applyFilters();
+      }
+    });
+
+    groupSelect?.addEventListener('change', applyFilters);
+
+    filterPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        filterPills.forEach(p => {
+          p.classList.remove('bg-primary-container/20', 'text-primary');
+          p.classList.add('bg-surface-container', 'text-on-surface-variant');
+        });
+        pill.classList.remove('bg-surface-container', 'text-on-surface-variant');
+        pill.classList.add('bg-primary-container/20', 'text-primary');
+        activeType = pill.getAttribute('data-type') || 'all';
+        applyFilters();
+      });
+    });
+
+    rows.forEach(row => {
+      row.addEventListener('click', () => {
+        const name = row.getAttribute('data-name');
+        console.log(`Kontakt-Detailansicht: ${name}`);
+      });
+    });
+  })();
+</script></main>
+</div>
+</body></html>

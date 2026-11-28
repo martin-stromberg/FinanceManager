@@ -228,7 +228,12 @@ public sealed class UsersViewModelTests
 
         var regs = listVm.GetRibbon(loc);
         var groups = regs.ToUiRibbonGroups(loc);
-        Assert.Equal(1, groups.Count); // UserListViewModel exposes only Actions group in new design
+        Assert.Equal(1, groups.Count); // UserListViewModel exposes only the Manage group in the new design
+
+        var tabs = (regs ?? new List<UiRibbonRegister>()).SelectMany(r => r.Tabs ?? new List<UiRibbonTab>()).ToList();
+        Assert.Single(tabs);
+        Assert.Equal("Ribbon_Group_Manage", tabs[0].Title);
+        Assert.DoesNotContain(tabs, t => t.Title == "Ribbon_Group_View"); // no empty "Ansicht" group until Reload/ClearSearch exist
     }
 
     private sealed class FakeLocalizer : IStringLocalizer

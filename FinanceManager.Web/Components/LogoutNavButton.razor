@@ -1,0 +1,20 @@
+@using Microsoft.AspNetCore.Components
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject Microsoft.Extensions.Localization.IStringLocalizer<FinanceManager.Web.Pages> L
+
+<button type="button" class="nav-action" title="@L["Nav_Logout"]" aria-label="@L["Nav_Logout"]" @onclick="LogoutAsync">
+    <svg aria-hidden="true"><use href="icons/sprite.svg#unlock" /></svg>
+    <span class="nav-label">@L["Nav_Logout"]</span>
+</button>
+
+@code {
+    private async Task LogoutAsync()
+    {
+        _ = await JS.InvokeAsync<bool>("fmAuthLogout");
+        // Fallback: wenn die API nicht erreichbar ist, geht der erzwungene Reload
+        // trotzdem zur Login-Seite.
+        Nav.NavigateTo("login", forceLoad: true);
+    }
+}

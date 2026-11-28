@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface-container-high":"#1c2b3c","inverse-surface":"#d4e4fa","surface-container-highest":"#273647","tertiary-fixed":"#c4e7ff","on-surface":"#d4e4fa","surface-container-low":"#0d1c2d","on-secondary":"#002780","primary":"#b6c4ff","on-secondary-container":"#a3b5ff","tertiary-fixed-dim":"#7bd0ff","secondary-container":"#133eaf","on-tertiary":"#00354a","outline":"#8e909f","on-background":"#d4e4fa","on-primary-fixed":"#001550","on-primary":"#002780","primary-fixed-dim":"#b6c4ff","secondary-fixed-dim":"#b6c4ff","on-secondary-fixed":"#001551","on-surface-variant":"#c4c5d5","surface-container":"#122131","surface-dim":"#051424","background":"#051424","surface-tint":"#b6c4ff","surface":"#051424","on-tertiary-fixed-variant":"#004c69","on-error-container":"#ffdad6","primary-fixed":"#dce1ff","error-container":"#93000a","primary-container":"#6d8dff","surface-bright":"#2c3a4c","error":"#ffb4ab","on-tertiary-fixed":"#001e2c","on-error":"#690005","surface-variant":"#273647","inverse-primary":"#3255c5","inverse-on-surface":"#233143","tertiary-container":"#009fd6","outline-variant":"#444653","on-primary-fixed-variant":"#0d3bac","on-tertiary-container":"#003145","secondary":"#b6c4ff","tertiary":"#7bd0ff","secondary-fixed":"#dce1ff","surface-container-lowest":"#010f1f","on-secondary-fixed-variant":"#0f3bac","on-primary-container":"#002477"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"gutter":"1rem","space-sm":"0.5rem","space-xl":"1.75rem","margin-desktop":"2rem","gutter-desktop":"1.25rem","space-lg":"1.25rem","margin":"1rem","space-xs":"0.25rem","space-md":"0.75rem","margin-tablet":"1.5rem"},"fontFamily":{"headline-lg":["Inter"],"label-sm":["Inter"],"headline-sm":["Inter"],"metric-lg":["Inter"],"label-md":["Inter"],"metric-md":["Inter"],"body-sm":["Inter"],"body-lg":["Inter"],"body-md":["Inter"],"headline-xl":["Inter"],"headline-md":["Inter"]},"fontSize":{"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"600"}],"metric-lg":["1.75rem",{"lineHeight":"2rem","letterSpacing":"-0.03em","fontWeight":"600"}],"label-md":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.01em","fontWeight":"500"}],"metric-md":["1.25rem",{"lineHeight":"1.5rem","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0em","fontWeight":"400"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.005em","fontWeight":"400"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0em","fontWeight":"400"}],"headline-xl":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.025em","fontWeight":"600"}],"headline-md":["1.125rem",{"lineHeight":"1.5rem","letterSpacing":"-0.015em","fontWeight":"600"}]}}}};</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head><body class="bg-background font-body-md text-on-surface antialiased fm-body-a"><aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Bestaetigungsdialog</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Buchungen"><span class="material-symbols-outlined">receipt_long</span><span>Buchungen</span></button><button class="fm-rib-btn" type="button" title="Zusammenführen"><span class="material-symbols-outlined">call_merge</span><span>Zusammenführen</span></button><button class="fm-rib-btn" type="button" title="Anhänge"><span class="material-symbols-outlined">attach_file</span><span>Anhänge</span></button></div><div class="fm-rib-caption">Verknüpfte Informationen</div></div></div><div class="pl-60"><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full relative min-h-[calc(100vh-3.5rem)]">
+<!-- Dimmed & Inactive Underlying Workspace (Wertpapier-Detailansicht) -->
+<div class="w-full max-w-[1600px] mx-auto p-gutter-desktop select-none pointer-events-none opacity-40 blur-[1.5px] transition-all duration-300">
+<!-- Top Action Breadcrumb Bar -->
+<div class="flex items-center justify-between pb-space-lg">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Wertpapiere</span>
+<span class="text-outline text-body-sm">/</span>
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider">Detailansicht</span>
+<span class="text-outline text-body-sm">/</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">US0378331005</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="px-space-md py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md">Depot A (Comdirect)</div>
+<div class="px-space-md py-1 rounded bg-surface-container text-outline font-label-md text-label-md">Status: Aktiv</div>
+</div>
+</div>
+<!-- Main Detail Dashboard Grid -->
+<div class="grid grid-cols-12 gap-gutter-desktop">
+<!-- Left 8-Cols Master Info -->
+<div class="col-span-12 lg:col-span-8 flex flex-col gap-space-lg">
+<div class="bg-surface-container rounded-xl p-space-xl flex flex-col gap-space-md">
+<!-- Synthetic Chart Visual Placeholder -->
+<div class="w-full h-44 bg-surface-container-lowest rounded-lg p-space-md flex flex-col justify-between mt-space-sm">
+<div class="flex justify-between items-center text-outline font-label-sm text-label-sm">
+<span>KURSHISTORIE (30 TAGE)</span>
+<span>VOLUMEN: 48,2M</span>
+</div>
+<div class="w-full h-24 flex items-end gap-1 px-1">
+<div class="flex-1 bg-surface-container-high h-[40%] rounded-t-sm"></div>
+<div class="flex-1 bg-surface-container-high h-[48%] rounded-t-sm"></div>
+<div class="flex-1 bg-surface-container-high h-[42%] rounded-t-sm"></div>
+<div class="flex-1 bg-surface-container-high h-[55%] rounded-t-sm"></div>
+<div class="flex-1 bg-surface-container-high h-[50%] rounded-t-sm"></div>
+<div class="flex-1 bg-surface-container-high h-[62%] rounded-t-sm"></div>
+<div class="flex-1 bg-surface-container-high h-[58%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/40 h-[70%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/40 h-[68%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary/60 h-[79%] rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-[85%] rounded-t-sm"></div>
+</div>
+</div>
+<!-- Core Attributes Form Row -->
+<div class="grid grid-cols-3 gap-space-md pt-space-xs">
+<div class="bg-surface-container-low p-space-md rounded-lg">
+<div class="font-label-sm text-label-sm text-outline uppercase">Bestand</div>
+<div class="font-metric-md text-metric-md text-on-surface mt-1">45 Anteile</div>
+<div class="font-body-sm text-body-sm text-outline mt-0.5">Kurswert: 9.645,75 €</div>
+</div>
+<div class="bg-surface-container-low p-space-md rounded-lg">
+<div class="font-label-sm text-label-sm text-outline uppercase">Einstandswert</div>
+<div class="font-metric-md text-metric-md text-on-surface mt-1">162,20 €</div>
+<div class="font-body-sm text-body-sm text-primary mt-0.5">+32,15% Total</div>
+</div>
+<div class="bg-surface-container-low p-space-md rounded-lg">
+<div class="font-label-sm text-label-sm text-outline uppercase">Dividendenrendite</div>
+<div class="font-metric-md text-metric-md text-on-surface mt-1">0,52% p.a.</div>
+<div class="font-body-sm text-body-sm text-outline mt-0.5">Nächster Ex-Tag: Nov 24</div>
+</div>
+</div>
+</div>
+<!-- Historical Ledger Table Mock -->
+<div class="bg-surface-container rounded-xl p-space-lg flex flex-col">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<span class="font-headline-sm text-headline-sm text-on-surface uppercase tracking-wider">Transaktionshistorie</span>
+<span class="font-label-sm text-label-sm text-outline">3 BUCHUNGEN VERKNÜPFT</span>
+</div>
+<div class="flex flex-col text-body-sm text-body-sm">
+<div class="flex justify-between py-space-sm text-on-surface-variant">
+<span>15.03.2024</span>
+<span>Kauf über Sparplan (Comdirect)</span>
+<span class="text-on-surface font-medium">+2,410 Anteile</span>
+<span>500,00 €</span>
+</div>
+<div class="flex justify-between py-space-sm text-on-surface-variant">
+<span>15.02.2024</span>
+<span>Kauf über Sparplan (Comdirect)</span>
+<span class="text-on-surface font-medium">+2,495 Anteile</span>
+<span>500,00 €</span>
+</div>
+<div class="flex justify-between py-space-sm text-on-surface-variant">
+<span>15.01.2024</span>
+<span>Kauf über Sparplan (Comdirect)</span>
+<span class="text-on-surface font-medium">+2,541 Anteile</span>
+<span>500,00 €</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right 4-Cols Meta Panel -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-space-lg">
+<div class="bg-surface-container rounded-xl p-space-lg flex flex-col gap-space-md">
+<span class="font-headline-sm text-headline-sm text-on-surface uppercase tracking-wider">Allokation &amp; Steuer</span>
+<div class="flex flex-col gap-space-sm">
+<div class="flex justify-between font-body-sm text-body-sm">
+<span class="text-outline">Anlageklasse</span>
+<span class="text-on-surface font-medium">Aktien &amp; Dividendenwerte</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm">
+<span class="text-outline">Währung</span>
+<span class="text-on-surface font-medium">USD (Basiskurs 1,08)</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm">
+<span class="text-outline">Steuertopf</span>
+<span class="text-on-surface font-medium">Aktien (26,375% Abgeltung)</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm">
+<span class="text-outline">Freibetrag angewendet</span>
+<span class="text-on-surface font-medium">Ja (Aktiv)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Backdrop Layer (Disciplined Obsidian Fog) -->
+</div>
+<script>
+  (function() {
+    const confirmBtn = document.getElementById('confirm-delete-btn');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function() {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Wird gelöscht...</span>';
+        setTimeout(function() {
+          const modal = document.getElementById('modal-container');
+          if (modal) {
+            modal.style.transition = 'opacity 0.2s ease-out';
+            modal.style.opacity = '0';
+            setTimeout(function() {
+              modal.remove();
+            }, 200);
+          }
+        }, 600);
+      });
+    }
+  })();
+</script></main></div></body></html>

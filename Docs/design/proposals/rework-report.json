@@ -1,0 +1,1090 @@
+{
+ "variantA/desktop/login": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/mobile/login": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/login": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/mobile/login": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/register": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/register": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/error": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/error": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/legal": {
+  "bad": 1,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/legal": {
+  "bad": 8,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/help-hub": {
+  "bad": 14,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantB/desktop/help-hub": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/help-view": {
+  "bad": 5,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/help-view": {
+  "bad": 11,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 2
+ },
+ "variantA/desktop/home": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/mobile/home": {
+  "bad": 7,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/home": {
+  "bad": 22,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/mobile/home": {
+  "bad": 20,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/change-password": {
+  "bad": 1,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/change-password": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/reports": {
+  "bad": 2,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/reports": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/reports-dashboard": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/mobile/reports-dashboard": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/reports-dashboard": {
+  "bad": 8,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/mobile/reports-dashboard": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/reports-budget": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/reports-budget": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantA/desktop/portfolio-analysis-report": {
+  "bad": 7,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/portfolio-analysis-report": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/security-performance": {
+  "bad": 2,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/security-performance": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 2,
+  "phr": 0
+ },
+ "variantA/desktop/security-performance-overview": {
+  "bad": 8,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/security-performance-overview": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantA/desktop/security-performance-timeseries": {
+  "bad": 13,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/security-performance-timeseries": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/security-performance-cashflows": {
+  "bad": 10,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/security-performance-cashflows": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/security-performance-metrics": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 2,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/security-performance-metrics": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 1,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/security-performance-benchmark": {
+  "bad": 8,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/security-performance-benchmark": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 3
+ },
+ "variantA/desktop/list-accounts": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/mobile/list-accounts": {
+  "bad": 2,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-accounts": {
+  "bad": 13,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/mobile/list-accounts": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/list-contacts": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-contacts": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-contacts-categories": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-contacts-categories": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-postings-account": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 3,
+  "phr": 0
+ },
+ "variantB/desktop/list-postings-account": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-postings-contact": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 2,
+  "phr": 0
+ },
+ "variantB/desktop/list-postings-contact": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-postings-savings-plan": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-postings-savings-plan": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-postings-security": {
+  "bad": 9,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-postings-security": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-savings-plans": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-savings-plans": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-savings-plans-categories": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-savings-plans-categories": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 1
+ },
+ "variantA/desktop/list-securities": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-securities": {
+  "bad": 9,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-securities-categories": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-securities-categories": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-securities-prices": {
+  "bad": 41,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-securities-prices": {
+  "bad": 5,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-statement-drafts": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-statement-drafts": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 1
+ },
+ "variantA/desktop/list-users": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-users": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/list-mcp-accesses": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-mcp-accesses": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/list-budget": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/list-budget": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/list-budget-purposes": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/list-budget-purposes": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantA/desktop/list-budget-categories": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/list-budget-categories": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/card-account": {
+  "bad": 1,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantA/mobile/card-account": {
+  "bad": 5,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantB/desktop/card-account": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 1
+ },
+ "variantB/mobile/card-account": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/card-budget-category": {
+  "bad": 3,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-budget-category": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 2,
+  "phr": 0
+ },
+ "variantA/desktop/card-budget-purpose": {
+  "bad": 3,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 4
+ },
+ "variantB/desktop/card-budget-purpose": {
+  "bad": 2,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 5
+ },
+ "variantA/desktop/card-budget-rule": {
+  "bad": 4,
+  "inputs": 2,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 2
+ },
+ "variantB/desktop/card-budget-rule": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/card-contact": {
+  "bad": 9,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-contact": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/card-contact-category": {
+  "bad": 2,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/card-contact-category": {
+  "bad": 0,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-mcp-access": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantB/desktop/card-mcp-access": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 1,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/card-mcp-access-new": {
+  "bad": 2,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantB/desktop/card-mcp-access-new": {
+  "bad": 7,
+  "inputs": 0,
+  "expl": 1,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 1
+ },
+ "variantA/desktop/card-mcp-approvals": {
+  "bad": 8,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-mcp-approvals": {
+  "bad": 0,
+  "inputs": 0,
+  "expl": 1,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/card-mcp-audit": {
+  "bad": 15,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-mcp-audit": {
+  "bad": 7,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-mcp-security": {
+  "bad": 14,
+  "inputs": 1,
+  "expl": 2,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/card-mcp-security": {
+  "bad": 7,
+  "inputs": 3,
+  "expl": 2,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-posting": {
+  "bad": 5,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 1,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-posting": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-savings-plan": {
+  "bad": 5,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/card-savings-plan": {
+  "bad": 5,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-savings-plan-category": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/card-savings-plan-category": {
+  "bad": 2,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-security": {
+  "bad": 7,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantB/desktop/card-security": {
+  "bad": 19,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-security-category": {
+  "bad": 5,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/card-security-category": {
+  "bad": 2,
+  "inputs": 1,
+  "expl": 1,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/card-setup": {
+  "bad": 26,
+  "inputs": 2,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/mobile/card-setup": {
+  "bad": 28,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-setup": {
+  "bad": 20,
+  "inputs": 4,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/mobile/card-setup": {
+  "bad": 37,
+  "inputs": 3,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-user": {
+  "bad": 17,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/card-user": {
+  "bad": 18,
+  "inputs": 1,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-statement-draft": {
+  "bad": 21,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-statement-draft": {
+  "bad": 11,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/card-statement-draft-entry": {
+  "bad": 12,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/card-statement-draft-entry": {
+  "bad": 6,
+  "inputs": 0,
+  "expl": 1,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantA/desktop/setup-sections": {
+  "bad": 33,
+  "inputs": 3,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 1
+ },
+ "variantB/desktop/setup-sections": {
+  "bad": 14,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/overlay-home-mass-import": {
+  "bad": 21,
+  "inputs": 2,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/overlay-home-mass-import": {
+  "bad": 7,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/overlay-budget-settings": {
+  "bad": 10,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/overlay-budget-settings": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 1
+ },
+ "variantA/desktop/overlay-dashboard-filters": {
+  "bad": 0,
+  "inputs": 7,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantB/desktop/overlay-dashboard-filters": {
+  "bad": 7,
+  "inputs": 7,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ },
+ "variantA/desktop/overlay-mcp-access-wizard": {
+  "bad": 5,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 2
+ },
+ "variantB/desktop/overlay-mcp-access-wizard": {
+  "bad": 11,
+  "inputs": 0,
+  "expl": 1,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 1
+ },
+ "variantA/desktop/overlay-confirm-dialog": {
+  "bad": 4,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 1,
+  "phr": 0
+ },
+ "variantB/desktop/overlay-confirm-dialog": {
+  "bad": 8,
+  "inputs": 0,
+  "expl": 0,
+  "clusters": 0,
+  "intb": 0,
+  "phr": 0
+ }
+}

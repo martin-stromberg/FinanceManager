@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type">
+<style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class=" active" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Massenimport-Dialog</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Importieren"><span class="material-symbols-outlined">upload</span><span>Importieren</span></button></div><div class="fm-rib-caption">Importieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Bearbeiten"><span class="material-symbols-outlined">edit</span><span>Bearbeiten</span></button></div><div class="fm-rib-caption">Kennzahlen</div></div></div><!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen">
+<!-- DIMMED BACKGROUND DASHBOARD (Startseite Silhouette) -->
+<div class="w-full p-6 md:p-8 space-y-6 opacity-35 filter blur-[2px] pointer-events-none select-none transition-all">
+<!-- Top KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Gesamtsaldo</span>
+<div class="mt-2 font-label-numeric-lg text-headline-md text-on-surface">148.920,45 €</div>
+<div class="mt-1 flex items-center gap-1.5 font-label-numeric-sm text-label-numeric-sm text-primary">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+2,4% ggü. Vormonat</span>
+</div>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Einnahmen (Mai)</span>
+<div class="mt-2 font-label-numeric-lg text-headline-md text-on-surface">6.850,00 €</div>
+<div class="mt-1 font-label-numeric-sm text-label-numeric-sm text-outline">Gehalt &amp; Dividenden</div>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Ausgaben (Mai)</span>
+<div class="mt-2 font-label-numeric-lg text-headline-md text-on-surface">3.120,80 €</div>
+<div class="mt-1 font-label-numeric-sm text-label-numeric-sm text-tertiary">45,5% des Monatsbudgets</div>
+</div>
+<div class="p-5 rounded-xl bg-surface-container-low shadow-sm">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Sparquote</span>
+<div class="mt-2 font-label-numeric-lg text-headline-md text-secondary">54,4 %</div>
+<div class="mt-1 font-label-numeric-sm text-label-numeric-sm text-outline">Ziel: min. 40,0 %</div>
+</div>
+</div>
+<!-- Chart & Account Overview -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="lg:col-span-8 p-6 rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<span class="font-headline-sm text-headline-sm text-on-surface">Vermögensentwicklung 2024</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-outline">Stand: 31. Mai</span>
+</div>
+<div class="h-44 w-full flex items-end gap-2 pt-6">
+<div class="flex-1 bg-surface-container-high rounded-t h-[40%]"></div>
+<div class="flex-1 bg-surface-container-high rounded-t h-[52%]"></div>
+<div class="flex-1 bg-surface-container-high rounded-t h-[65%]"></div>
+<div class="flex-1 bg-surface-container-high rounded-t h-[58%]"></div>
+<div class="flex-1 bg-primary/40 rounded-t h-[82%]"></div>
+</div>
+</div>
+<div class="lg:col-span-4 p-6 rounded-xl bg-surface-container-low shadow-sm space-y-4">
+<span class="font-headline-sm text-headline-sm text-on-surface">Verknüpfte Konten</span>
+<div class="p-3 rounded-lg bg-surface-container flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface">DKB Girokonto</span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary">12.430,22 €</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface">Trade Republic Depot</span>
+<span class="font-label-numeric-md text-label-numeric-md text-secondary">86.190,00 €</span>
+</div>
+</div>
+</div>
+</div>
+<!-- MODAL BACKDROP OVERLAY -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-[#0a0d12]/85 backdrop-blur-md overflow-y-auto">
+<!-- MODAL DIALOG CONTAINER -->
+<div class="relative w-full max-w-3xl my-auto rounded-xl bg-surface-container-lowest/95 shadow-2xl shadow-black/80 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+<!-- Subtle Ambient Top Glow -->
+<div class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- 1. MODAL HEADER -->
+<div class="px-6 md:px-8 pt-7 pb-5 flex items-start justify-between relative z-10">
+<div class="space-y-1.5 pr-6">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">
+              Massenimport von Kontoauszügen
+            </h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xl">
+            Laden Sie mehrere elektronische Bankauszüge gleichzeitig hoch, um Transaktionen automatisch einzulesen und zuzuordnen.
+          </p>
+</div>
+<!-- Close Button (X icon) -->
+<button aria-label="Schließen" class="p-2 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-highest transition-colors flex-shrink-0" type="button">
+<span class="material-symbols-outlined text-[22px]">close</span>
+</button>
+</div>
+<!-- MODAL BODY CONTENT -->
+<div class="px-6 md:px-8 py-2 space-y-6 relative z-10 flex-1">
+<!-- 2. DATEIAUSWAHL / DROPZONE -->
+<div class="relative group rounded-xl p-8 bg-surface-container-low/70 transition-all flex flex-col items-center justify-center text-center cursor-pointer shadow-inner">
+<div class="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-primary mb-3 shadow-sm group-hover:scale-105 transition-transform duration-200">
+<span class="material-symbols-outlined text-[30px]">cloud_upload</span>
+</div>
+<p class="font-headline-sm text-headline-sm text-on-surface mb-1">
+            Dateien hierher ziehen oder durchsuchen
+          </p>
+<p class="font-body-sm text-body-sm text-outline mb-4">
+            Unterstützt strukturierte Formate &amp; PDF-Auszüge aller deutschen Kreditinstitute
+          </p>
+<button class="px-4 py-2 rounded-lg bg-surface-container-highest text-on-surface font-body-md text-body-md hover:bg-surface-bright transition-colors shadow-sm flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">folder_open</span>
+<span>Dateien auswählen</span>
+</button>
+</div>
+<!-- STAGED / SELECTED FILES PREVIEW -->
+<div class="space-y-2.5">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">
+              Ausgewählte Dateien (3)
+            </span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-primary">
+              Gesamt: 1,63 MB
+            </span>
+</div>
+<div class="space-y-2">
+<!-- File 1: CAMT -->
+<!-- File 2: PDF -->
+<div class="p-3.5 rounded-lg bg-surface-container flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3.5 min-w-0">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase tracking-wider bg-secondary/15 text-secondary flex-shrink-0">
+                  PDF
+                </span>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface truncate">
+                    TradeRepublic_Abrechnungen_Q2.pdf
+                  </span>
+<div class="flex items-center gap-2 font-label-numeric-sm text-label-numeric-sm text-outline">
+<span>1.2 MB</span>
+<span>•</span>
+<span class="text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                      Bereit zur Validierung
+                    </span>
+</div>
+</div>
+</div>
+<button aria-label="Datei entfernen" class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/20 transition-colors flex-shrink-0 ml-3" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<!-- File 3: CSV -->
+<div class="p-3.5 rounded-lg bg-surface-container flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3.5 min-w-0">
+<span class="px-2 py-0.5 rounded text-[11px] font-label-caps uppercase tracking-wider bg-outline/20 text-on-surface flex-shrink-0">
+                  CSV
+                </span>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface truncate">
+                    Sparkasse_Umsaetze_202405.csv
+                  </span>
+<div class="flex items-center gap-2 font-label-numeric-sm text-label-numeric-sm text-outline">
+<span>88 KB</span>
+<span>•</span>
+<span class="text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                      Bereit zur Validierung
+                    </span>
+</div>
+</div>
+</div>
+<button aria-label="Datei entfernen" class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/20 transition-colors flex-shrink-0 ml-3" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- 3. HINWEIS AUF DATEIFORMATE (Callout Block) -->
+<div class="p-4 rounded-xl bg-surface-container-low shadow-sm flex items-start gap-3.5">
+<div class="p-1.5 rounded-lg bg-primary/10 text-primary flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</div>
+<div class="space-y-1.5 font-body-sm text-body-sm">
+<div class="text-on-surface font-headline-sm text-[13px] leading-5 font-semibold">
+              Unterstützte Spezifikationen &amp; Formate
+            </div>
+</div>
+</div>
+</div>
+<!-- 4. DIALOG FOOTER (Action Buttons) -->
+<div class="px-6 md:px-8 py-5 mt-4 bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2 font-label-numeric-sm text-label-numeric-sm text-outline">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+<span>Ende-zu-Ende verschlüsselte Verarbeitung</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2.5 rounded-lg bg-transparent text-outline hover:text-on-surface hover:bg-surface-container-highest font-body-md text-body-md transition-colors" type="button">
+            Abbrechen
+          </button>
+<button class="px-5 py-2.5 rounded-lg bg-primary text-on-primary font-headline-sm text-body-md font-semibold hover:bg-primary-fixed-dim transition-all shadow-md shadow-primary/20 flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">file_download_done</span>
+<span>3 Dateien importieren</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div></main>
+</body></html>

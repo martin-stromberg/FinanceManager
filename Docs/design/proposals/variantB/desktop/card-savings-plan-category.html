@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-primary": "#003731",
+          "inverse-surface": "#e1e2ea",
+          "secondary": "#d0bcff",
+          "on-secondary-fixed-variant": "#5516be",
+          "secondary-container": "#571bc1",
+          "outline-variant": "#3c4a46",
+          "surface": "#111319",
+          "surface-dim": "#111319",
+          "on-primary-fixed-variant": "#005047",
+          "secondary-fixed-dim": "#d0bcff",
+          "on-secondary": "#3c0091",
+          "on-secondary-container": "#c4abff",
+          "surface-container-lowest": "#0b0e13",
+          "surface-container-highest": "#32353b",
+          "error-container": "#93000a",
+          "on-error-container": "#ffdad6",
+          "on-tertiary-fixed": "#2d1600",
+          "inverse-on-surface": "#2e3036",
+          "surface-variant": "#32353b",
+          "inverse-primary": "#006b5f",
+          "surface-tint": "#3cddc7",
+          "error": "#ffb4ab",
+          "background": "#111319",
+          "tertiary-container": "#ffac5a",
+          "tertiary": "#ffd1aa",
+          "on-surface": "#e1e2ea",
+          "on-background": "#e1e2ea",
+          "on-primary-container": "#00574d",
+          "tertiary-fixed": "#ffdcc0",
+          "on-secondary-fixed": "#23005c",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "primary-container": "#2dd4bf",
+          "surface-container-high": "#272a30",
+          "primary-fixed": "#62fae3",
+          "surface-container": "#1d2025",
+          "outline": "#859490",
+          "primary": "#57f1db",
+          "surface-container-low": "#191c21",
+          "on-tertiary": "#4b2800",
+          "on-surface-variant": "#bacac5",
+          "secondary-fixed": "#e9ddff",
+          "on-error": "#690005",
+          "on-tertiary-container": "#744000",
+          "surface-bright": "#36393f",
+          "tertiary-fixed-dim": "#ffb875",
+          "primary-fixed-dim": "#3cddc7"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin": "2rem",
+          "gutter-sm": "1rem",
+          "space-sm": "0.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "margin-sm": "1rem",
+          "gutter": "1.5rem",
+          "space-md": "1rem",
+          "space-xl": "2.5rem"
+        },
+        "fontFamily": {
+          "label-caps": [
+            "Inter"
+          ],
+          "headline-sm": [
+            "Inter"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "headline-lg-mobile": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Inter"
+          ],
+          "label-numeric-md": [
+            "JetBrains Mono"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "headline-xl-mobile": [
+            "Inter"
+          ],
+          "label-numeric-lg": [
+            "JetBrains Mono"
+          ],
+          "label-numeric-sm": [
+            "JetBrains Mono"
+          ],
+          "headline-xl": [
+            "Inter"
+          ],
+          "headline-md": [
+            "Inter"
+          ],
+          "body-md": [
+            "Inter"
+          ]
+        },
+        "fontSize": {
+          "label-caps": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.06em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-sm": [
+            "18px",
+            {
+              "lineHeight": "24px",
+              "fontWeight": "500"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg-mobile": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-lg": [
+            "32px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-numeric-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "500"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-xl-mobile": [
+            "30px",
+            {
+              "lineHeight": "38px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-numeric-lg": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "500"
+            }
+          ],
+          "label-numeric-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-xl": [
+            "40px",
+            {
+              "lineHeight": "48px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "22px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ]
+        }
+      }
+    }
+  }</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased fm-body-b"><aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class=" active" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Sparplankategorie-Detailkarte</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button></div><div class="fm-rib-caption">Verwalten</div></div></div><div class="pl-72 min-h-screen bg-background"><main class="w-full pt-16 bg-background px-gutter py-space-lg"><div class="flex flex-col w-full gap-space-lg">
+<!-- BREADCRUMB -->
+<nav class="flex items-center gap-2 font-label-caps text-label-caps tracking-wider uppercase text-on-surface-variant/70">
+<span class="hover:text-primary transition-colors cursor-pointer">FINANCEMANAGER</span>
+<span class="material-symbols-outlined text-[13px] text-outline">chevron_right</span>
+<span class="hover:text-primary transition-colors cursor-pointer">SPARPLÄNE</span>
+<span class="material-symbols-outlined text-[13px] text-outline">chevron_right</span>
+<span class="hover:text-primary transition-colors cursor-pointer">SPARPLANKATEGORIEN</span>
+<span class="material-symbols-outlined text-[13px] text-outline">chevron_right</span>
+<span class="text-primary font-semibold">KATEGORIEDETAILS</span>
+</nav>
+<!-- KOPFZEILE MIT TITEL & STATUS-BADGES -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-low p-space-md rounded-xl shadow-lg relative overflow-hidden">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute right-32 -bottom-16 w-48 h-48 bg-secondary-container/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center gap-space-md z-10">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shadow-sm shadow-primary/20">
+<span class="material-symbols-outlined text-[26px]">pie_chart</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-3">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Kategoriedetails: ETFs &amp; Indexfonds</h1>
+<span class="px-2.5 py-0.5 rounded-full font-label-caps text-label-caps bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+            AKTIV
+          </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-[15px] text-secondary">category</span>
+          Kategorie-ID: <span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">KAT-ETF-0921-CORE</span>
+</span>
+</div>
+</div>
+</div>
+<!-- RIBBON-TOOLBAR / KONTEXTUELLE AKTIONSLEISTE -->
+<!-- CONTENT GRID: VARIANTE B OBSIDIAN AURORA -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- HAUPTKARTE: KATEGORIESTAMMDATEN (7 COLS) -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-xl relative overflow-hidden">
+<div class="flex items-center justify-between pb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Kategoriestammdaten</h2>
+</div>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">STAMM-01</span>
+</div>
+<form class="flex flex-col gap-5 pt-2">
+<!-- Zeile 1: Name der Kategorie -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center justify-between">
+<span>Name der Kategorie</span>
+<span class="text-primary font-normal">Pflichtfeld</span>
+</label>
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-primary">label</span>
+<input class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary focus:bg-surface-container transition-all" type="text" value="ETFs &amp; Indexfonds">
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant/70">Dient als primärer Bezeichner in Portfolio-Reports und Steuerunterlagen.</p>
+</div>
+<!-- Zeile 2: Beschreibung / Zweck -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+              Beschreibung &amp; Anlagezweck
+            </label>
+<textarea class="w-full p-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary focus:bg-surface-container transition-all resize-none" rows="3">Langfristiger weltweiter Vermögensaufbau durch automatisierte ETF-Sparpläne. Fokus auf kosteneffiziente Marktbreite, vierteljährliches Rebalancing und thesaurierende Ertragsverwendung.</textarea>
+</div>
+<!-- Zeile 3: Klassifizierung / Anlagestrategie -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+              Klassifizierung / Anlagestrategie
+            </label>
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-secondary">psychology</span>
+<input class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary focus:bg-surface-container transition-all" type="text" value="Aktien &amp; Welt-ETFs (Passiv / Vermögensaufbau)">
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-label-numeric-sm text-label-numeric-sm">Core-Satellite: CORE</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">Risikoklasse: 4 (Mittelhoch)</span>
+</div>
+</div>
+<!-- Zeile 4: Allokationsziel / Sparvolumen-Anteil -->
+<div class="p-4 rounded-xl bg-surface-container-low flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Allokationsziel &amp; Sparvolumen-Quote</span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-semibold">68,3 % IST / 65,0 % ZIEL</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2.5 rounded-full overflow-hidden flex">
+<div class="bg-primary h-full transition-all duration-500 rounded-l-full" style="width: 68.3%;"></div>
+<div class="bg-secondary-container h-full" style="width: 31.7%;"></div>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant pt-1">
+<span>Aktuelles Sparvolumen: <strong class="text-on-surface font-label-numeric-md text-label-numeric-md">700,00 €</strong> / Monat</span>
+<span class="text-tertiary-container flex items-center gap-1 font-label-numeric-sm text-label-numeric-sm">
+<span class="material-symbols-outlined text-[15px]">trending_up</span>
+                +3,3 % über Soll-Allokation
+              </span>
+</div>
+</div>
+<!-- Zeile 5: Status / Automatisierung Toggle -->
+<div class="flex items-center justify-between p-4 rounded-xl bg-surface-container-low">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-on-surface">Status / Automatisierte Ausführung</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Monatlicher Dauerauftrag &amp; Lastschrift-Triggern aktiv</span>
+</div>
+</div>
+</form>
+</div>
+<!-- ANALYTIK & PERFORMANCE MINI-CARD -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-md flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">bar_chart</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Rendite-Entwicklung YTD</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-primary font-bold">+11,48 %</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex flex-col text-right">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Gesamt investiert</span>
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold">24.850,00 €</span>
+</div>
+<div class="h-8 w-[1px] bg-surface-container-high"></div>
+<div class="flex flex-col text-right">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Sparrate Ø 12M</span>
+<span class="font-label-numeric-md text-label-numeric-md text-secondary font-semibold">680,00 €</span>
+</div>
+</div>
+</div>
+</div>
+<!-- VERKNÜPFTE INFORMATIONEN & ZUGEORDNETE ELEMENTE (5 COLS) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<!-- KENNZAHLEN COMPACT CARDS -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-md flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Monatl. Gesamtvolumen</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-primary font-bold tracking-tight">700,00 €</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant/80">3 aktive Ausführungen</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-md flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Nächste Fälligkeit</span>
+<span class="font-label-numeric-lg text-label-numeric-lg text-secondary font-bold tracking-tight">01.06.2024</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant/80">Letzte: 01.05.2024 (Erfolgreich)</span>
+</div>
+</div>
+<!-- ZUGEORDNETE SPARPLÄNE (LISTE / TABELLE) -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-xl flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">checklist</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Zugeordnete Sparpläne</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-caps text-label-caps">
+            3 Pläne aktiv
+          </span>
+</div>
+<div class="flex flex-col gap-2">
+<!-- Item 1 -->
+<div class="p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[18px]">public</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">MSCI World Core ETF</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant truncate">IE00B4L5Y983 · iShares</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-bold">400,00 €</span>
+<span class="font-label-caps text-label-caps text-primary">Monatlich / 1.</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[18px]">memory</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">S&amp;P 500 Info Tech Sector</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant truncate">IE00B3WJKG14 · SPDR</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-bold">150,00 €</span>
+<span class="font-label-caps text-label-caps text-primary">Monatlich / 1.</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary-fixed shrink-0">
+<span class="material-symbols-outlined text-[18px]">travel_explore</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">Vanguard FTSE All-World</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant truncate">IE00BK5BQT80 · Vanguard</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-bold">150,00 €</span>
+<span class="font-label-caps text-label-caps text-primary">Monatlich / 1.</span>
+</div>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between">
+<button class="flex items-center gap-1.5 text-primary hover:text-primary-fixed transition-colors font-body-sm text-body-sm font-medium" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+            Neuen Sparplan dieser Kategorie zuweisen
+          </button>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">Σ = 700,00 €</span>
+</div>
+</div>
+<!-- VISUELLE SPARPLAN-DURCHSCHNITTSRATE -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-md flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Kostenquote &amp; TER-Schnitt</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface">Gewichtetes TER: <strong class="text-primary font-bold">0,17 % p.a.</strong></span>
+</div>
+<div class="flex items-center gap-3 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px] text-primary">verified</span>
+<span>Effizientes Setup: Keine Depotführungskosten für zugeordnete Pläne.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- FOOTER / METADATEN-LEISTE -->
+<div class="w-full bg-surface-container-lowest rounded-xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4 text-on-surface-variant font-label-numeric-sm text-label-numeric-sm shadow-sm">
+<div class="flex flex-wrap items-center gap-4">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-outline">history</span>
+        Erstellt am: <strong class="text-on-surface">12.01.2023</strong>
+</span>
+<span class="hidden sm:inline text-surface-container-high">|</span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-outline">edit_calendar</span>
+        Zuletzt geändert: <strong class="text-on-surface">28.05.2024, 09:42 Uhr</strong>
+</span>
+<span class="hidden sm:inline text-surface-container-high">|</span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-outline">person_outline</span>
+        Bearbeiter: <span class="text-on-surface">Dr. Florian Weber</span>
+</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="text-primary font-medium tracking-wide">SYSTEMSTATUS SYNCHRON</span>
+</div>
+</div>
+</div></main></div></body></html>

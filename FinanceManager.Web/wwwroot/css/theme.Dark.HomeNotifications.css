@@ -3,33 +3,33 @@
    ===================================================== */
 
 .notif-container {
-    border: 1px solid #334;
-    background: #182028;
+    border: 1px solid var(--muted);
+    background: var(--bg-alt);
 }
 
 .notif-item {
-    border: 1px solid #2a323a;
-    background: #0f1419;
+    border: 1px solid var(--border);
+    background: var(--bg-alt);
 }
 
 .notif-item.info {
-    border-color: #29425f;
-    background: #0f1419;
+    border-color: var(--accent-soft);
+    background: var(--bg-alt);
 }
 
 .notif-item.warn {
-    border-color: #5f3a29;
-    background: #19120f;
+    border-color: rgba(240,180,41,.14);
+    background: rgba(240,180,41,.14);
 }
 
 .notif-icon svg {
-    fill: #8fb0ff;
+    fill: var(--accent);
 }
 
 .notif-item.warn .notif-icon svg {
-    fill: #d4a72c;
+    fill: var(--warning);
 }
 
 .notif-dismiss .ico {
-    fill: #a66;
+    fill: var(--warning);
 }

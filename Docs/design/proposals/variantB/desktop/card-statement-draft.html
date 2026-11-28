@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FinanceManager - Sparpläne</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-surface": "#e1e2ea",
+          "tertiary-fixed": "#ffdcc0",
+          "on-error-container": "#ffdad6",
+          "surface-variant": "#32353b",
+          "surface-container-low": "#191c21",
+          "secondary-fixed": "#e9ddff",
+          "on-background": "#e1e2ea",
+          "secondary-fixed-dim": "#d0bcff",
+          "surface-tint": "#3cddc7",
+          "primary": "#57f1db",
+          "surface-container-lowest": "#0b0e13",
+          "on-error": "#690005",
+          "outline-variant": "#3c4a46",
+          "inverse-on-surface": "#2e3036",
+          "on-tertiary": "#4b2800",
+          "outline": "#859490",
+          "surface-bright": "#36393f",
+          "on-primary-container": "#00574d",
+          "inverse-primary": "#006b5f",
+          "on-tertiary-fixed-variant": "#6b3b00",
+          "on-primary-fixed": "#00201c",
+          "on-surface-variant": "#bacac5",
+          "tertiary-fixed-dim": "#ffb875",
+          "tertiary-container": "#ffac5a",
+          "secondary-container": "#571bc1",
+          "inverse-surface": "#e1e2ea",
+          "on-secondary-container": "#c4abff",
+          "on-secondary-fixed": "#23005c",
+          "surface": "#111319",
+          "secondary": "#d0bcff",
+          "surface-container": "#1d2025",
+          "on-secondary": "#3c0091",
+          "surface-container-high": "#272a30",
+          "error-container": "#93000a",
+          "tertiary": "#ffd1aa",
+          "primary-fixed": "#62fae3",
+          "surface-container-highest": "#32353b",
+          "on-tertiary-fixed": "#2d1600",
+          "surface-dim": "#111319",
+          "on-primary": "#003731",
+          "on-primary-fixed-variant": "#005047",
+          "background": "#111319",
+          "on-tertiary-container": "#744000",
+          "primary-fixed-dim": "#3cddc7",
+          "primary-container": "#2dd4bf",
+          "on-secondary-fixed-variant": "#5516be",
+          "error": "#ffb4ab",
+          "base": {
+            "950": "#06080c",
+            "900": "#0a0d12",
+            "850": "#0f131a",
+            "800": "#151b24",
+            "700": "#1f2836",
+            "600": "#2d3748"
+          },
+          "teal": {
+            "DEFAULT": "#2dd4bf",
+            "glow": "rgba(45, 212, 191, 0.15)",
+            "bright": "#5eead4"
+          },
+          "violet": {
+            "DEFAULT": "#8b5cf6",
+            "glow": "rgba(139, 92, 246, 0.15)",
+            "bright": "#a78bfa"
+          }
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1.5rem",
+          "gutter-sm": "1rem",
+          "space-xl": "2.5rem",
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "margin-sm": "1rem",
+          "margin": "2rem"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  @layer base {
+    html, body {
+      background-color: #0a0d12;
+      color: #e1e2ea;
+      min-height: 100vh;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0d12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2836;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2dd4bf;
+  }
+  .glass-panel {
+    background: rgba(15, 19, 26, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-card {
+    background: rgba(21, 27, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .glow-teal {
+    box-shadow: 0 0 24px -4px rgba(45, 212, 191, 0.25);
+  }
+  .glow-active-pill {
+    box-shadow: 0 0 20px -2px rgba(45, 212, 191, 0.25), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+</style>
+<meta content="web_dashboard" name="shell-type">
+<style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="bg-[#0a0d12] text-[#e1e2ea] antialiased selection:bg-teal-500/30 selection:text-teal-200 relative min-h-screen fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class=" active" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Kontoauszug-Entwurf</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button><button class="fm-rib-btn" type="button" title="Vorherige"><span class="material-symbols-outlined">chevron_left</span><span>Vorherige</span></button><button class="fm-rib-btn" type="button" title="Nächste"><span class="material-symbols-outlined">chevron_right</span><span>Nächste</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Neuer Eintrag"><span class="material-symbols-outlined">add</span><span>Neuer Eintrag</span></button><button class="fm-rib-btn" type="button" title="Buchen"><span class="material-symbols-outlined">receipt_long</span><span>Buchen</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button><button class="fm-rib-btn" type="button" title="Neu klassifizieren"><span class="material-symbols-outlined">refresh</span><span>Neu klassifizieren</span></button><button class="fm-rib-btn" type="button" title="Prüfen"><span class="material-symbols-outlined">check</span><span>Prüfen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Schnellbearbeitung"><span class="material-symbols-outlined">edit</span><span>Schnellbearbeitung</span></button></div><div class="fm-rib-caption">Schnellbearbeitung</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Original anzeigen"><span class="material-symbols-outlined">visibility</span><span>Original anzeigen</span></button><button class="fm-rib-btn" type="button" title="Herunterladen"><span class="material-symbols-outlined">download</span><span>Herunterladen</span></button></div><div class="fm-rib-caption">Auszug</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Csv exportieren"><span class="material-symbols-outlined">download</span><span>Csv exportieren</span></button><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Bankkonto"><span class="material-symbols-outlined">account_balance</span><span>Bankkonto</span></button></div><div class="fm-rib-caption">Verknüpfte Informationen</div></div></div><!-- Background Ambient Glows (Obsidian Aurora) -->
+<div class="fixed top-[-10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-teal-500/10 blur-[130px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none z-0"></div>
+<!-- MOBILE TOP BAR -->
+<!-- LEFT SIDEBAR: Persistente Navigation -->
+<!-- MAIN VIEWPORT AREA -->
+<main class="pt-16 md:pt-0 md:pl-20 lg:md:pl-64 min-w-0 bg-[#0a0d12] z-10 relative"><div class="flex flex-col w-full">
+<!-- TOP RIBBON TOOLBAR -->
+<!-- MAIN VIEWPORT CONTENT WRAPPER -->
+<div class="w-full px-4 lg:px-8 py-6 max-w-[1700px] mx-auto space-y-6">
+<!-- BREADCRUMBS & KOPFBEREICH -->
+<div class="flex flex-col gap-3">
+<!-- Breadcrumb Bar -->
+<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-label-caps font-label-caps text-on-surface-variant">
+<span class="hover:text-primary transition-colors cursor-pointer tracking-wider uppercase">FINANCEMANAGER</span>
+<span class="text-white/30">/</span>
+<span class="hover:text-primary transition-colors cursor-pointer tracking-wider uppercase">KONTOAUSZÜGE</span>
+<span class="text-white/30">/</span>
+<span class="hover:text-primary transition-colors cursor-pointer tracking-wider uppercase">ENTWÜRFE</span>
+<span class="text-white/30">/</span>
+<span class="text-primary tracking-wider uppercase font-semibold">ENTWURF-DETAILS</span>
+</nav>
+<!-- Head Title & Dynamic Status Badges -->
+<div class="flex flex-wrap items-center justify-between gap-4">
+</div>
+</div>
+<!-- METADATEN-BEREICH (Import-Entwurf Bento-Grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Card 1: Konto & IBAN -->
+<div class="bg-surface-container/70 backdrop-blur-md p-5 rounded-xl shadow-lg relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-all pointer-events-none"></div>
+<div class="flex items-center justify-between mb-3">
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider">Zielkonto</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary uppercase">Girokonto</span>
+</div>
+<div class="text-body-lg font-body-lg text-white font-medium mb-1">Hauptgirokonto (DKB)</div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant flex items-center justify-between">
+<span>DE89 1203 0000 1029 3847 56</span>
+<button class="hover:text-primary transition-colors" title="IBAN kopieren">
+<span class="material-symbols-outlined text-sm">content_copy</span>
+</button>
+</div>
+<div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>Institut</span>
+<span class="text-on-surface font-medium">Deutsche Kreditbank AG</span>
+</div>
+</div>
+<!-- Card 2: Zeitraum & Importquelle -->
+<div class="bg-surface-container/70 backdrop-blur-md p-5 rounded-xl shadow-lg relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-secondary/5 rounded-full blur-xl group-hover:bg-secondary/10 transition-all pointer-events-none"></div>
+<div class="flex items-center justify-between mb-3">
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider">Buchungszeitraum</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-white/5 text-on-surface uppercase">Valuta</span>
+</div>
+<div class="text-body-lg font-body-lg text-white font-medium mb-1 font-label-numeric-md">
+          01.05.2024 – 31.05.2024
+        </div>
+<div class="text-body-sm font-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs text-primary">calendar_month</span>
+<span>Gesamter Kalendermonat Mai</span>
+</div>
+<div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>Importiert am</span>
+<span class="text-on-surface font-label-numeric-sm">02.06.2024, 08:30 Uhr</span>
+</div>
+</div>
+<!-- Card 3: Saldenabgleich -->
+<div class="bg-surface-container/70 backdrop-blur-md p-5 rounded-xl shadow-lg relative overflow-hidden group">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider">Saldenabgleich</span>
+<span class="material-symbols-outlined text-sm text-primary">account_balance_wallet</span>
+</div>
+<div class="grid grid-cols-2 gap-2 text-body-sm font-body-sm">
+<div>
+<div class="text-[11px] text-on-surface-variant">Anfangssaldo</div>
+<div class="font-label-numeric-md text-label-numeric-md text-on-surface">1.370,50 €</div>
+</div>
+<div>
+<div class="text-[11px] text-on-surface-variant">Endsaldo</div>
+<div class="font-label-numeric-md text-label-numeric-md text-white font-semibold">4.820,50 €</div>
+</div>
+</div>
+<div class="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-on-surface-variant">Netto-Differenz:</span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-bold">+3.450,00 €</span>
+</div>
+</div>
+<!-- Card 4: Zuordnungs-Fortschritt & KI/Regel Status -->
+<div class="bg-surface-container/70 backdrop-blur-md p-5 rounded-xl shadow-lg relative overflow-hidden group flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider">Zuordnungsstatus</span>
+<span class="text-label-caps font-label-caps text-primary font-semibold">95,2 %</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden my-2">
+<div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500" style="width: 95.2%;"></div>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface">
+<span class="text-primary font-medium">40 von 42</span> Posten automatisch zugeordnet.
+          </p>
+</div>
+<div class="pt-3 border-t border-white/5 flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-tertiary flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-sm">warning</span> 2 Offen
+          </span>
+<button class="text-primary hover:text-white text-body-sm font-body-sm font-semibold transition-colors flex items-center gap-1">
+<span>Filter aktiv</span>
+<span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- FILTER & SUCHE CONTROLS -->
+<div class="flex flex-wrap items-center justify-between gap-4 bg-surface-container-low/60 p-3.5 rounded-xl border border-white/5">
+<div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+<div class="relative flex-1 max-w-md">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+<input class="w-full bg-surface-container-lowest text-on-surface pl-10 pr-4 py-2 rounded-lg border border-white/5 focus:outline-none focus:border-primary text-body-sm font-body-sm placeholder:text-on-surface-variant/60 transition-all" placeholder="Posten nach Empfänger, Verwendungszweck oder Betrag durchsuchen..." type="text">
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high text-primary border border-primary/20 text-body-sm font-body-sm flex items-center gap-1.5">
+<span>Alle anzeigen</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary/20 text-[11px] font-bold">42</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface text-body-sm font-body-sm flex items-center gap-1.5 transition-colors">
+<span>Nur Offene</span>
+<span class="px-1.5 py-0.2 rounded-full bg-tertiary-container/20 text-tertiary text-[11px] font-bold">2</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface text-body-sm font-body-sm flex items-center gap-1.5 transition-colors">
+<span>Geprüft</span>
+<span class="px-1.5 py-0.2 rounded-full bg-white/5 text-[11px]">40</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container text-on-surface hover:text-white transition-all text-body-sm">
+<span class="material-symbols-outlined text-base">filter_list</span>
+<span>Erweiterte Filter</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container text-on-surface hover:text-white transition-all text-body-sm">
+<span class="material-symbols-outlined text-base">tune</span>
+<span>Spalten anpassen</span>
+</button>
+</div>
+</div>
+<!-- TABELLE DER AUSZUGSEINTRÄGE -->
+<div class="bg-surface-container/70 backdrop-blur-md rounded-xl overflow-hidden shadow-2xl border border-white/5">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/80 text-on-surface-variant text-label-caps font-label-caps uppercase tracking-wider border-b border-white/5">
+<th class="py-3.5 pl-6 pr-3 w-10" scope="col">
+<input class="rounded bg-surface-container-highest border-outline-variant text-primary focus:ring-0 focus:ring-offset-0" type="checkbox">
+</th>
+<th class="py-3.5 px-4" scope="col">Buchungstag / Valuta</th>
+<th class="py-3.5 px-4 min-w-[220px]" scope="col">Empfänger / Zahlungspflichtiger</th>
+<th class="py-3.5 px-4 min-w-[280px]" scope="col">Verwendungszweck</th>
+<th class="py-3.5 px-4 min-w-[180px]" scope="col">Kategorie / Zuordnung</th>
+<th class="py-3.5 px-4 text-right min-w-[140px]" scope="col">Betrag</th>
+<th class="py-3.5 px-4 min-w-[180px]" scope="col">Prüfstatus</th>
+<th class="py-3.5 pl-4 pr-6 text-right w-16" scope="col">Aktion</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/[0.04] text-body-sm font-body-sm text-on-surface">
+<!-- Row 1: Gehalt -->
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="py-4 pl-6 pr-3">
+<input class="rounded bg-surface-container-highest border-outline-variant text-primary focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<div class="font-label-numeric-sm text-white font-medium">28.05.2024</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm">Val. 28.05.2024</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-medium text-white flex items-center gap-2">
+<span>Arbeitgeber GmbH</span>
+<span class="material-symbols-outlined text-xs text-primary" title="Verifizierter Partner">verified</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm truncate max-w-[200px]">DE12 5001 0517 0648 4891 00</div>
+</td>
+<td class="py-4 px-4">
+<div class="text-on-surface max-w-xs truncate" title="Gehalt Mai 2024 / Personalnummer 99420">Gehalt Mai 2024</div>
+<div class="text-[11px] text-on-surface-variant">Lohn / Gehaltsabrechnung</div>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 text-body-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Gehalt &amp; Bezüge
+                </span>
+</td>
+<td class="py-4 px-4 text-right whitespace-nowrap font-label-numeric-md">
+<span class="text-primary font-bold text-base">+3.450,00 €</span>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 text-xs text-primary font-medium">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                  Automatisch zugeordnet
+                </span>
+</td>
+<td class="py-4 pl-4 pr-6 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Kategorie anpassen">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Regel erstellen">
+<span class="material-symbols-outlined text-base">rule</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Miete -->
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="py-4 pl-6 pr-3">
+<input class="rounded bg-surface-container-highest border-outline-variant text-primary focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<div class="font-label-numeric-sm text-white font-medium">27.05.2024</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm">Val. 27.05.2024</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-medium text-white">Hausverwaltung Schmidt</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm truncate max-w-[200px]">DE44 7002 0270 0012 3456 78</div>
+</td>
+<td class="py-4 px-4">
+<div class="text-on-surface max-w-xs truncate" title="Miete Juni 2024 Whg 4B Ref 8821">Miete Juni 2024</div>
+<div class="text-[11px] text-on-surface-variant">Dauerauftrag / Fixkosten</div>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/10 text-secondary border border-secondary/20 text-body-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Wohnen / Fixkosten
+                </span>
+</td>
+<td class="py-4 px-4 text-right whitespace-nowrap font-label-numeric-md">
+<span class="text-error font-semibold text-base">-1.150,00 €</span>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 text-xs text-primary font-medium">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                  Automatisch zugeordnet
+                </span>
+</td>
+<td class="py-4 pl-4 pr-6 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Kategorie anpassen">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Regel erstellen">
+<span class="material-symbols-outlined text-base">rule</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Supermarkt -->
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="py-4 pl-6 pr-3">
+<input class="rounded bg-surface-container-highest border-outline-variant text-primary focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<div class="font-label-numeric-sm text-white font-medium">25.05.2024</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm">Val. 26.05.2024</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-medium text-white">REWE Markt GmbH</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm truncate max-w-[200px]">DE33 3002 0900 0098 7654 32</div>
+</td>
+<td class="py-4 px-4">
+<div class="text-on-surface max-w-xs truncate" title="Supermarkt Einkauf Terminal 0948 München">Supermarkt Einkauf</div>
+<div class="text-[11px] text-on-surface-variant">Kartenzahlung girocard</div>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-on-surface border border-white/10 text-body-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-teal-bright"></span>
+                  Lebensmittel
+                </span>
+</td>
+<td class="py-4 px-4 text-right whitespace-nowrap font-label-numeric-md">
+<span class="text-error font-semibold text-base">-84,20 €</span>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 text-xs text-primary font-medium">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                  Automatisch zugeordnet
+                </span>
+</td>
+<td class="py-4 pl-4 pr-6 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Kategorie anpassen">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Regel erstellen">
+<span class="material-symbols-outlined text-base">rule</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Sparplan -->
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="py-4 pl-6 pr-3">
+<input class="rounded bg-surface-container-highest border-outline-variant text-primary focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<div class="font-label-numeric-sm text-white font-medium">20.05.2024</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm">Val. 20.05.2024</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-medium text-white flex items-center gap-1.5">
+<span>Trade Republic Bank</span>
+<span class="px-1.5 py-0.2 rounded text-[9px] bg-secondary/15 text-secondary font-bold">DEPOT</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm truncate max-w-[200px]">DE55 1001 1001 2623 8812 00</div>
+</td>
+<td class="py-4 px-4">
+<div class="text-on-surface max-w-xs truncate" title="Wertpapiersparplan Ausführung ISIN IE00B4L5Y983">Wertpapiersparplan Ausführung</div>
+<div class="text-[11px] text-on-surface-variant">SEPA-Lastschrift Sparplan</div>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary-container/20 text-secondary border border-secondary/30 text-body-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Wertpapiere
+                </span>
+</td>
+<td class="py-4 px-4 text-right whitespace-nowrap font-label-numeric-md">
+<span class="text-error font-semibold text-base">-250,00 €</span>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 text-xs text-primary font-medium">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                  Automatisch zugeordnet
+                </span>
+</td>
+<td class="py-4 pl-4 pr-6 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Kategorie anpassen">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Regel erstellen">
+<span class="material-symbols-outlined text-base">rule</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Offen / Zuordnung erforderlich -->
+<tr class="bg-tertiary-container/[0.03] hover:bg-tertiary-container/[0.08] transition-colors group">
+<td class="py-4 pl-6 pr-3">
+<input class="rounded bg-surface-container-highest border-outline-variant text-primary focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<div class="font-label-numeric-sm text-tertiary font-medium">18.05.2024</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm">Val. 18.05.2024</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-medium text-white flex items-center gap-1.5">
+<span>Cafe Extrablatt</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" title="Prüfung erforderlich"></span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm truncate max-w-[200px]">DE66 7005 0000 0019 9882 11</div>
+</td>
+<td class="py-4 px-4">
+<div class="text-on-surface max-w-xs truncate" title="Bewirtung privat Beleg 4429">Bewirtung privat</div>
+<div class="text-[11px] text-on-surface-variant">EC-Zahlung Gastronomie</div>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<button class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-tertiary/10 text-tertiary border border-tertiary/30 text-body-sm font-medium hover:bg-tertiary/20 transition-all">
+<span class="material-symbols-outlined text-xs">add</span>
+<span>Noch offen</span>
+</button>
+</td>
+<td class="py-4 px-4 text-right whitespace-nowrap font-label-numeric-md">
+<span class="text-error font-semibold text-base">-32,50 €</span>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 text-xs text-tertiary font-semibold px-2 py-0.5 rounded bg-tertiary/10">
+<span class="material-symbols-outlined text-sm">help_outline</span>
+                  Zuordnung erforderlich
+                </span>
+</td>
+<td class="py-4 pl-4 pr-6 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 rounded-lg bg-tertiary/20 text-tertiary hover:bg-tertiary/30 transition-colors" title="Jetzt zuordnen">
+<span class="material-symbols-outlined text-base">category</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Regel vorschlagen">
+<span class="material-symbols-outlined text-base">auto_fix_high</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Stadtwerke -->
+<tr class="hover:bg-white/[0.02] transition-colors group">
+<td class="py-4 pl-6 pr-3">
+<input class="rounded bg-surface-container-highest border-outline-variant text-primary focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<div class="font-label-numeric-sm text-white font-medium">15.05.2024</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm">Val. 15.05.2024</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-medium text-white">Stadtwerke München</div>
+<div class="text-[11px] text-on-surface-variant font-label-numeric-sm truncate max-w-[200px]">DE77 7015 0000 0001 2345 67</div>
+</td>
+<td class="py-4 px-4">
+<div class="text-on-surface max-w-xs truncate" title="Stromabschlag Mai Zählernummer 993182">Stromabschlag Mai</div>
+<div class="text-[11px] text-on-surface-variant">SEPA-Basislastschrift monatlich</div>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-on-surface border border-white/10 text-body-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-violet-bright"></span>
+                  Energie
+                </span>
+</td>
+<td class="py-4 px-4 text-right whitespace-nowrap font-label-numeric-md">
+<span class="text-error font-semibold text-base">-75,00 €</span>
+</td>
+<td class="py-4 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 text-xs text-primary font-medium">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                  Automatisch zugeordnet
+                </span>
+</td>
+<td class="py-4 pl-4 pr-6 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Kategorie anpassen">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-white" title="Regel erstellen">
+<span class="material-symbols-outlined text-base">rule</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / Ledger Summary Foot -->
+<div class="px-6 py-4 bg-surface-container-high/60 border-t border-white/5 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-4 text-body-sm font-body-sm text-on-surface-variant">
+<span>Zeige <span class="text-white font-medium">1 bis 6</span> von <span class="text-white font-medium">42</span> Einträgen</span>
+<span class="text-white/20">|</span>
+<span class="text-xs">Ausgewählt: <span class="text-primary font-semibold">0 Posten</span></span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="p-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-white disabled:opacity-30" disabled>
+<span class="material-symbols-outlined text-base">first_page</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-white disabled:opacity-30" disabled>
+<span class="material-symbols-outlined text-base">chevron_left</span>
+</button>
+<span class="px-3 py-1 rounded-lg bg-primary/10 text-primary font-label-numeric-sm font-semibold border border-primary/20">1</span>
+<button class="px-3 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:text-white font-label-numeric-sm transition-colors">2</button>
+<button class="px-3 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:text-white font-label-numeric-sm transition-colors">3</button>
+<button class="p-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-white">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-white">
+<span class="material-symbols-outlined text-base">last_page</span>
+</button>
+</div>
+</div>
+</div>
+<!-- HINWEIS-BANNER / SCHNELL-AKTIONEN -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+<div class="bg-surface-container p-5 rounded-xl border border-white/5 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-caps font-label-caps uppercase text-on-surface-variant tracking-wider">Erkennungslogik</span>
+<span class="text-label-caps font-label-caps text-secondary font-medium">v2.4 FinTS-AI</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+          40 Buchungen wurden über konfigurierte SEPA-Textschlüssel &amp; IBAN-Regelwerke validiert.
+        </p>
+<div class="pt-3 border-t border-white/5 flex items-center justify-between">
+<a class="text-body-sm font-body-sm text-secondary hover:text-white flex items-center gap-1 font-medium transition-colors" href="#">
+<span>Regelwerk bearbeiten</span>
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+<!-- DETAIL-FOOTER MIT METADATEN -->
+<div class="w-full pt-6 pb-12 mt-6 border-t border-white/5 flex flex-wrap items-center justify-between gap-4 text-body-sm font-body-sm text-on-surface-variant">
+<div class="flex flex-wrap items-center gap-4">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-white/40">history</span>
+<span>Erstellt am: <span class="font-label-numeric-sm text-on-surface">02.06.2024, 08:30:14 UTC</span></span>
+</div>
+<span class="text-white/20">•</span>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-white/40">update</span>
+<span>Zuletzt geändert: <span class="font-label-numeric-sm text-on-surface">Heute, 14:22:05 (System Auto-Match)</span></span>
+</div>
+</div>
+</div>
+</div>
+</div></main>
+</body></html>

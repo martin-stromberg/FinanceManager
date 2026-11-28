@@ -135,13 +135,17 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
     /// <inheritdoc />
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
-        var tab = new UiRibbonTab(localizer["Ribbon_Group_Navigation"], new List<UiRibbonAction>
+        var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("New", localizer["Ribbon_New"], "<svg><use href='icons/sprite.svg#plus'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("New"); return Task.CompletedTask; }) { MobileShortcut = true },
-            new UiRibbonAction("Reload", localizer["Ribbon_Reload"], "<svg><use href='icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; }) { MobileShortcut = true },
-            new UiRibbonAction("Categories", localizer["Budget_Ribbon_Categories"], "<svg><use href='icons/sprite.svg#list'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("OpenBudgetCategories"); return Task.CompletedTask; }),
-            new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearSearch"], "<svg><use href='icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; }) { MobileShortcut = true }
-        });
+            new UiRibbonAction("Categories", localizer["Budget_Ribbon_Categories"], "<svg><use href='icons/sprite.svg#list'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("OpenBudgetCategories"); return Task.CompletedTask; })
+        }, Sort: 10);
+
+        var view = new UiRibbonTab(localizer["Ribbon_Group_View"], new List<UiRibbonAction>
+        {
+            new UiRibbonAction("Reload", localizer["Ribbon_Reload"], "<svg><use href='icons/sprite.svg#refresh'/></svg>", UiRibbonItemSize.Large, false, null, () => { RaiseUiActionRequested("Reload"); return Task.CompletedTask; }),
+            new UiRibbonAction("ClearFilter", localizer["Ribbon_ClearSearch"], "<svg><use href='icons/sprite.svg#clear'/></svg>", UiRibbonItemSize.Small, string.IsNullOrWhiteSpace(Search), null, () => { RaiseUiActionRequested("ClearSearch"); return Task.CompletedTask; })
+        }, Sort: 30);
 
         var analysis = new UiRibbonTab(localizer["Ribbon_Group_Analysis"], new List<UiRibbonAction>
         {
@@ -181,20 +185,20 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
                 RaiseUiActionRequested("Reload");
                 return Task.CompletedTask;
             })
-        });
+        }, Sort: 40);
 
         var reports = new UiRibbonTab(localizer["Ribbon_Group_Reports"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("BudgetReport", localizer["Budget_Ribbon_Report"], "<svg><use href='icons/sprite.svg#chart'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            new UiRibbonAction("BudgetReport", localizer["Budget_Ribbon_Report"], "<svg><use href='icons/sprite.svg#chart'/></svg>", UiRibbonItemSize.Large, false, null, () =>
             {
                 RaiseUiActionRequested("OpenBudgetReport");
                 return Task.CompletedTask;
             })
-        });
+        }, Sort: 70);
 
         return new List<UiRibbonRegister>
         {
-            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { tab, analysis, reports })
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { manage, view, analysis, reports })
         };
     }
 }

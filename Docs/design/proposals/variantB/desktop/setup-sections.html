@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Einrichtung - Variante B</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: '#0a0d12',
+            surface: {
+              DEFAULT: '#11151d',
+              glass: 'rgba(17, 21, 29, 0.72)',
+              card: 'rgba(21, 27, 38, 0.65)',
+              elevated: '#1a202c',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderSubtle: 'rgba(255, 255, 255, 0.04)',
+            },
+            teal: {
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              glow: 'rgba(45, 212, 191, 0.15)',
+            },
+            violet: {
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              glow: 'rgba(139, 92, 246, 0.15)',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0a0d12;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(10, 13, 18, 0.8);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(45, 212, 191, 0.4);
+    }
+    .glass-panel {
+      background: rgba(18, 24, 34, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(23, 30, 44, 0.55);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glow-accent-teal {
+      box-shadow: 0 0 25px -4px rgba(45, 212, 191, 0.25);
+    }
+    .glow-accent-violet {
+      box-shadow: 0 0 25px -4px rgba(139, 92, 246, 0.25);
+    }
+  </style>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="h-screen w-screen overflow-hidden flex bg-[#0a0d12] text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 fm-body-b">
+
+  <aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class=" active" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Einrichtung (Setup-Sektionen)</span><div class="fm-avatar">FM</div></header><!-- Ambient Background Glows -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[140px]"></div>
+    <div class="absolute top-1/2 -right-40 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[160px]"></div>
+    <div class="absolute -bottom-20 left-1/3 w-[450px] h-[450px] bg-teal-400/5 rounded-full blur-[120px]"></div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- LEFT SIDEBAR (Slim Icon-Rail + Expandable Label) -->
+  <!-- Navigation entries: Start, Konten, Kontakte, Sparpläne, Wertpapiere, Kontoauszüge, Budget, Berichte, Benutzerverwaltung, KI-Zugänge, Einstellungen, Hilfe, Abmelden -->
+  <!-- ========================================== -->
+  <!-- ========================================== -->
+  <!-- MAIN WORKSPACE & CONTENT AREA -->
+  <!-- ========================================== -->
+  <main class="relative z-10 flex-1 flex flex-col h-full overflow-hidden bg-[#0a0d12]">
+
+    <!-- TOP CONTEXTUAL RIBBON ACTION BAR (Exact Ribbon functionality from Variant B) -->
+    <!-- SCROLLABLE PAGE BODY -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-6">
+
+      <!-- Page Header: Title + Context Badges + Global Accordion Toggles -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/5">
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+              <span>Systemkonfiguration &amp; Parameter</span>
+            </h1>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Knoten aktiv
+            </span>
+            <span class="hidden sm:inline-flex px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 bg-white/5">
+              #SEC-9844-AX
+            </span>
+          </div>
+          </div>
+
+        <!-- Global Collapse / Expand Actions -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-teal-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+            Alle ausklappen
+          </button>
+          <button class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-slate-400 hover:text-slate-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-colors flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
+            Alle einklappen
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- ACCORDION SECTIONS LIST -->
+      <!-- ============================================================== -->
+      <div class="space-y-4 max-w-7xl mx-auto">
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 1: Systeminformationen (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Frankfurt Equinix FR2 • PostgreSQL 16.2</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 2: Benachrichtigungen (AUFGEKLAPPTE AKKORDEON-SEKTION MIT FORMULARFELDERN & BUTTONS) -->
+        <!-- Formularfelder: Zeitraeume, Schwellwerte, Schalter + Sektions-Aktionsbuttons -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-teal-500/30 glow-accent-teal overflow-hidden shadow-2xl transition-all duration-300">
+          
+          <!-- Sektionstitel als aufklappbarer Header (AUFGEKLAPPT) -->
+          <div class="w-full px-6 py-4.5 bg-gradient-to-r from-teal-500/10 via-surface-card to-violet-500/5 border-b border-white/10 flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-300 shadow-sm shrink-0">
+                <svg class="w-5 h-5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white tracking-tight">2. Benachrichtigungen &amp; Alerting</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30">3 KANÄLE KONFIGURIERT</span>
+                  <span class="text-xs font-mono text-slate-400">Schwellenwert 500,00 €</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Push-Auslöser, Echtzeit-Umsatzmeldungen, Schwellenwerte und automatisierte Reporting-Zyklen</p>
+              </div>
+            </div>
+
+            <!-- Chevron Icon (Up = Expanded) -->
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-mono text-teal-400 font-medium">Sektion geöffnet</span>
+              <div class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center border border-teal-500/30">
+                <svg class="w-4 h-4 transform rotate-180" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accordion Inner Body (Formularfelder: Zeiträume, Schwellwerte, Schalter + Aktionsbuttons) -->
+          <div class="p-6 lg:p-7 space-y-6">
+
+            <!-- Intro / Info Banner for this section -->
+            <div class="flex items-start gap-3 p-3.5 rounded-xl bg-teal-500/5 border border-teal-500/20 text-xs text-slate-300">
+              <svg class="w-4 h-4 text-teal-400 mt-0.5 shrink-0" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <div class="flex-1 leading-relaxed">
+                Konfigurieren Sie hier die Dispatcher-Regeln für alle Banktransaktionen. Benachrichtigungen werden über das BaFin-zertifizierte mTLS-Gateway geroutet.
+              </div>
+              </div>
+
+            <!-- Form Grid: Switches, Thresholds, Timeframes -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+              <!-- FIELD 1: SCHALTER (E-Mail Benachrichtigung) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="space-y-1">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-teal-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                      E-Mail-Benachrichtigung bei Buchungen
+                    </label>
+                    </div>
+                  <!-- Switch Component (Active: Teal) -->
+                  <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                    <div class="w-12 h-6.5 bg-gradient-to-r from-teal-500 to-teal-400 rounded-full transition-colors p-0.5 shadow-inner shadow-teal-900/50">
+                      <div class="w-5.5 h-5.5 bg-slate-950 rounded-full shadow-md transform translate-x-5.5 transition-transform"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Status: Aktiviert (Echtzeit)</span>
+                  <span class="text-teal-400">Prio 1 (Sofort)</span>
+                </div>
+              </div>
+
+              <!-- FIELD 2: SCHWELLWERT (Numerischer Threshold mit Währung) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-violet-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                      Schwellenwert für Alarmmeldungen
+                    </label>
+                    <span class="text-[10px] font-mono text-slate-400">MIN. 50,00 €</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                    Löst priorisierte Sofortwarnungen bei Einzelbuchungen ab Überschreitung dieses Betrags aus.
+                  </p>
+                  
+                  <!-- Input with EUR Badge and Stepper -->
+                  <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                      <input type="text" value="500,00" class="w-full bg-[#0d121a] border border-white/10 rounded-lg px-3.5 py-2.5 text-sm font-mono text-white font-medium focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all">
+                      <span class="absolute right-3.5 top-2.5 text-xs font-mono text-slate-400">EUR (€)</span>
+                    </div>
+                    <button class="px-3 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-mono text-slate-300 border border-white/10">
+                      Standard
+                    </button>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Greift für: Ausgaben &amp; Eingänge</span>
+                  <span class="text-amber-400">Sicherheitsgrenze</span>
+                </div>
+              </div>
+
+              <!-- FIELD 3: ZEITRAUM & REPORTING-ZYKLUS (Intervall & Wochentag) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-teal-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      Wöchentlicher Finanzbericht per E-Mail (Zeitraum)
+                    </label>
+                    <!-- Switch Component -->
+                    <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                      <div class="w-10 h-5.5 bg-teal-500 rounded-full transition-colors p-0.5">
+                        <div class="w-4.5 h-4.5 bg-slate-950 rounded-full transform translate-x-4.5 transition-transform"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                    Zusammenfassung des aggregierten Portfoliowerts und Saldenabgleichs im gewählten Turnus.
+                  </p>
+
+                  <!-- Timeframe Controls -->
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <span class="block text-[10px] font-mono text-slate-400 mb-1">AUSFÜHRUNGSTAG</span>
+                      <select class="w-full bg-[#0d121a] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-400">
+                        <option selected>Jeden Montag</option>
+                        <option>Jeden Freitag</option>
+                        <option>Monatsletzter</option>
+                      </select>
+                    </div>
+                    <div>
+                      <span class="block text-[10px] font-mono text-slate-400 mb-1">UHRZEIT (MEZ)</span>
+                      <select class="w-full bg-[#0d121a] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-400">
+                        <option selected>07:00 Uhr</option>
+                        <option>08:00 Uhr</option>
+                        <option>18:00 Uhr</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Nächster Versand: 03.06.2024, 07:00 Uhr</span>
+                  <span class="text-emerald-400">Aktiv</span>
+                </div>
+              </div>
+
+              <!-- FIELD 4: SCHALTER (Kritische Sicherheitswarnungen via SMS) -->
+              <div class="glass-card p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors flex flex-col justify-between">
+                <div>
+                  <div class="flex items-start justify-between gap-4 mb-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                      Kritische Sicherheitswarnungen via SMS
+                    </label>
+                    <!-- Switch Component (Inactive: Gray) -->
+                    <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                      <div class="w-10 h-5.5 bg-slate-800 border border-white/10 rounded-full transition-colors p-0.5">
+                        <div class="w-4.5 h-4.5 bg-slate-400 rounded-full transition-transform"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                    SMS-Alerting bei API-Fehlschlägen, unautorisierten IP-Zugriffen oder geänderten Kontovollmachten.
+                  </p>
+
+                  <div class="flex items-center gap-2">
+                    <input type="text" value="+49 171 •••• 921 (mTLS-verifiziert)" disabled class="w-full bg-[#0d121a]/60 border border-white/5 rounded-lg px-3 py-2 text-xs font-mono text-slate-400">
+                    <span class="text-[10px] font-mono px-2 py-1 rounded bg-slate-800 text-slate-400 shrink-0">2FA</span>
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Status: Deaktiviert</span>
+                  <span class="text-slate-400">Optional</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- SEKTIONS-AKTIONSBUTTONS (Requirement: "Sektions-Aktionsbuttons") -->
+            <div class="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-wrap items-center justify-between gap-3 pt-4">
+              <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+                <span>Ungespeicherte Änderungen in dieser Sektion: 0</span>
+              </div>
+              
+              <div class="flex items-center gap-2.5">
+                <button class="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                  <span>Test-Benachrichtigung senden</span>
+                </button>
+                <button class="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 transition-colors">
+                  <span>Sektions-Standard</span>
+                </button>
+                <button class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-950 bg-teal-400 hover:bg-teal-300 transition-colors shadow-sm shadow-teal-500/20 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Sektion 2 anwenden</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 3: Sicherungen & Archivierung (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Letzte Sicherung: Heute 02:00 Uhr (14,8 MB)</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 4: Wartungsmodus (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                <svg class="w-5 h-5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">4. Wartungsmodus</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-800 text-slate-400 border border-white/10">BEREIT</span>
+                  <span class="text-xs font-mono text-slate-400">Status: Inaktiv</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Sperrung für Zugriffe, Wartungsfenster und Ausfallzeit-Pläne</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Geplant: Sonntags 01:00 – 03:00 Uhr</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 5: Anhänge & Dokumentenspeicher (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
+                <svg class="w-5 h-5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">5. Anhänge &amp; Dokumentenspeicher</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OCR AKTIV</span>
+                  <span class="text-xs font-mono text-slate-400">Max. 25 MB / Datei</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Belegprüfung, Quotenlimitierungen und Formatanforderungen (PDF, XML)</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">4,2 GB von 25,0 GB belegt (16,8%)</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- SEKTION 6: Sprache & Lokalisierung (COLLAPSED STATE) -->
+        <!-- ------------------------------------------------------------ -->
+        <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden transition-all duration-200">
+          <div class="w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 shrink-0">
+                <svg class="w-5 h-5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base font-semibold text-white">6. Sprache &amp; Lokalisierung</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-white/10">DE-DE</span>
+                  <span class="text-xs font-mono text-slate-400">EUR (€) / MEZ</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Zahlenformate, Zeitzoneneinstellungen und Währungsdarstellung</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline-block text-xs font-mono text-slate-400">Deutsch (Deutschland) • TT.MM.JJJJ</span>
+              <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                <svg class="w-4 h-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FOOTER STATUS & COMPLIANCE BAR -->
+      <div class="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 font-mono gap-3">
+        </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

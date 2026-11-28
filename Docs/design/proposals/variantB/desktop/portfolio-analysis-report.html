@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Hilfe-Artikel | FinanceManager Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            bgDark: '#080a0f',
+            bgSurface: '#0f131c',
+            bgElevated: '#161b26',
+            bgGlass: 'rgba(18, 24, 38, 0.72)',
+            tealAccent: '#2dd4bf',
+            violetAccent: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #080a0f;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .glow-teal {
+      background: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12) 0%, transparent 40%);
+    }
+    .glow-violet {
+      background: radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.13) 0%, transparent 45%);
+    }
+    .glass-panel {
+      background: rgba(15, 19, 28, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(22, 27, 38, 0.6) 0%, rgba(15, 19, 28, 0.8) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .active-nav-glow {
+      box-shadow: 0 0 20px -3px rgba(45, 212, 191, 0.4);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e2638;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class=" active" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Portfolio-Analysebericht</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button><button class="fm-rib-btn" type="button" title="Aktualisieren"><span class="material-symbols-outlined">refresh</span><span>Aktualisieren</span></button><button class="fm-rib-btn" type="button" title="Bearbeiten"><span class="material-symbols-outlined">edit</span><span>Bearbeiten</span></button></div><div class="fm-rib-caption">Aktionen</div></div></div><!-- Ambient Light Overlays -->
+<div class="fixed inset-0 pointer-events-none z-0 glow-teal"></div>
+<div class="fixed inset-0 pointer-events-none z-0 glow-violet"></div>
+<div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
+<!-- ==================== LEFT SIDEBAR (SLIM ICON-RAIL VARIANT B) ==================== -->
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="flex-1 flex flex-col min-w-0 z-10">
+<!-- TOP CONTEXTUAL ACTION BAR (Variant B rethink of classic ribbon toolbar) -->
+<!-- ==================== SCROLLABLE CONTENT AREA ==================== -->
+<main class="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-10"><div class="flex flex-col w-full space-y-6">
+<!-- 1. BREADCRUMB & HEADER CONTEXT BAR -->
+<!-- 2. KENNZAHLEN-ZEILE (KPIS) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- KPI 1: Gesamtwert -->
+<div class="relative overflow-hidden bg-surface-container p-5 rounded-2xl shadow-xl flex flex-col justify-between">
+<div class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-primary/10 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Depot-Gesamtwert</span>
+<span class="material-symbols-outlined text-primary text-lg">account_balance</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">128.450,00 €</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary/15 text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-xs">arrow_upward</span>
+            +18.920,40 € (+17,28 %)
+          </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Gewinn gesamt</span>
+</div>
+</div>
+</div>
+<!-- KPI 2: Rendite p.a. -->
+<div class="relative overflow-hidden bg-surface-container p-5 rounded-2xl shadow-xl flex flex-col justify-between">
+<div class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-secondary/15 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">TWROR Rendite (p.a.)</span>
+<span class="material-symbols-outlined text-secondary text-lg">trending_up</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight text-primary">+14,82 %</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/20 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-xs">insights</span>
+            +3,40 % über Benchmark
+          </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">vs. MSCI World</span>
+</div>
+</div>
+</div>
+<!-- KPI 3: Volatilität & Sharpe Ratio -->
+<div class="relative overflow-hidden bg-surface-container p-5 rounded-2xl shadow-xl flex flex-col justify-between">
+<div class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-tertiary-container/15 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Risikokennzahlen</span>
+<span class="material-symbols-outlined text-tertiary text-lg">shield</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<div class="font-headline-md text-headline-md text-on-surface font-semibold">11,4 %</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Volatilität (moderat)</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-primary font-semibold">1,42</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sharpe-Ratio (1J)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. ZWEISPALTIGER ANALYSEBEREICH -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- ALLOKATIONS-DONUT (4 von 12 Spalten) -->
+<div class="lg:col-span-5 bg-surface-container p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+<div class="flex items-center justify-between pb-4">
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Asset-Allokation</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Verteilung nach Anlagekategorien</p>
+</div>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm">more_vert</span>
+</button>
+</div>
+<!-- Donut Visualisierung & Center Metric -->
+<div class="relative flex items-center justify-center my-4">
+<svg class="w-52 h-52 transform -rotate-90" viewbox="0 0 160 160">
+<!-- Background track -->
+<circle class="text-surface-container-high" cx="80" cy="80" fill="transparent" r="64" stroke="currentColor" stroke-width="16"></circle>
+<!-- Liquidität (8%) -> circumference = 2 * PI * 64 ≈ 402.12; 8% = 32.17 -->
+<circle class="text-tertiary-container transition-all duration-700 ease-out hover:opacity-80" cx="80" cy="80" fill="transparent" r="64" stroke="currentColor" stroke-dasharray="32.17 369.95" stroke-dashoffset="-369.95" stroke-linecap="round" stroke-width="16"></circle>
+<!-- Krypto (12%) -> 12% = 48.25 -->
+<circle class="text-secondary-fixed-dim transition-all duration-700 ease-out hover:opacity-80" cx="80" cy="80" fill="transparent" r="64" stroke="currentColor" stroke-dasharray="48.25 353.87" stroke-dashoffset="-321.70" stroke-linecap="round" stroke-width="16"></circle>
+<!-- Anleihen (18%) -> 18% = 72.38 -->
+<circle class="text-secondary transition-all duration-700 ease-out hover:opacity-80" cx="80" cy="80" fill="transparent" r="64" stroke="currentColor" stroke-dasharray="72.38 329.74" stroke-dashoffset="-249.32" stroke-linecap="round" stroke-width="16"></circle>
+<!-- Aktien & ETFs (62%) -> 62% = 249.31 -->
+<circle class="text-primary transition-all duration-700 ease-out hover:opacity-80" cx="80" cy="80" fill="transparent" r="64" stroke="currentColor" stroke-dasharray="249.31 152.81" stroke-dashoffset="0" stroke-linecap="round" stroke-width="16"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gesamtwerte</span>
+<span class="font-headline-md text-headline-md font-bold text-on-surface">4 Klassen</span>
+<span class="font-label-sm text-label-sm text-primary">Ausgewogen</span>
+</div>
+</div>
+<!-- Aufgeschlüsselte Legende -->
+<div class="space-y-2.5 pt-2">
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_rgba(45,212,191,0.6)]"></span>
+<span class="font-body-md text-body-md text-on-surface">Aktien &amp; ETFs</span>
+</div>
+<div class="text-right">
+<span class="font-title-md text-title-md font-semibold text-on-surface">62,0 %</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">79.639,00 €</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-secondary shadow-[0_0_8px_rgba(208,188,255,0.6)]"></span>
+<span class="font-body-md text-body-md text-on-surface">Anleihen &amp; Renten</span>
+</div>
+<div class="text-right">
+<span class="font-title-md text-title-md font-semibold text-on-surface">18,0 %</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">23.121,00 €</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-secondary-fixed-dim shadow-[0_0_8px_rgba(208,188,255,0.4)]"></span>
+<span class="font-body-md text-body-md text-on-surface">Krypto-Assets</span>
+</div>
+<div class="text-right">
+<span class="font-title-md text-title-md font-semibold text-on-surface">12,0 %</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">15.414,00 €</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-2.5">
+<span class="w-3 h-3 rounded-full bg-tertiary-container shadow-[0_0_8px_rgba(94,201,255,0.6)]"></span>
+<span class="font-body-md text-body-md text-on-surface">Liquidität / Geldmarkt</span>
+</div>
+<div class="text-right">
+<span class="font-title-md text-title-md font-semibold text-on-surface">8,0 %</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">10.276,00 €</span>
+</div>
+</div>
+</div>
+</div>
+<!-- PERFORMANCE CHART (7 von 12 Spalten) -->
+<div class="lg:col-span-7 bg-surface-container p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4">
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Wertentwicklung &amp; Benchmark</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Vergleich mit MSCI World Net Return (EUR)</p>
+</div>
+<div class="flex items-center gap-4 font-label-sm text-label-sm">
+<div class="flex items-center gap-1.5 text-primary">
+<span class="w-3 h-1 bg-primary rounded-full"></span>
+<span>Portfolio (+17,28 %)</span>
+</div>
+<div class="flex items-center gap-1.5 text-secondary">
+<span class="w-3 h-0.5 border-t border-dashed border-secondary"></span>
+<span>MSCI World (+13,88 %)</span>
+</div>
+</div>
+</div>
+<!-- Performance Curve (Area & Stroke SVG) -->
+<!-- X-Axis Labels -->
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant pt-3">
+<span>Jan</span>
+<span>Feb</span>
+<span>Mär</span>
+<span>Apr</span>
+<span>Mai</span>
+<span>Jun</span>
+<span>Jul</span>
+<span>Aug</span>
+<span>Sep</span>
+<span>Aktuell (Okt)</span>
+</div>
+</div>
+</div>
+<!-- 4. TABELLE DER POSITIONEN (HOLDINGS) -->
+<div class="bg-surface-container p-6 rounded-2xl shadow-xl space-y-4">
+<!-- Header & Search Toolbar -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2.5">
+<h2 class="font-title-lg text-title-lg text-on-surface">Positionen &amp; Wertpapier-Holdings</h2>
+<span class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-label-sm text-label-sm font-semibold">7 aktive Werte</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Einzeltitelübersicht mit Einstandskursen und Echtzeit-Bewertung</p>
+</div>
+<!-- Search & Quick Filters -->
+<div class="flex items-center gap-3">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base">search</span>
+<input class="w-full bg-surface-container-low text-on-surface placeholder-on-surface-variant rounded-xl pl-9 pr-3 py-1.5 font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" placeholder="Position oder ISIN suchen..." type="text">
+</div>
+<button class="p-2 rounded-xl bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Filter anwenden">
+<span class="material-symbols-outlined text-base">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Responsive Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+<th class="py-3 px-4 rounded-l-xl">Wertpapier / ISIN</th>
+<th class="py-3 px-3">Klasse</th>
+<th class="py-3 px-3 text-right">Bestand</th>
+<th class="py-3 px-3 text-right">Kaufkurs (Ø)</th>
+<th class="py-3 px-3 text-right">Aktueller Kurs</th>
+<th class="py-3 px-3 text-right">Gesamtwert</th>
+<th class="py-3 px-3 text-right">GuV / Rendite</th>
+<th class="py-3 px-4 rounded-r-xl text-right">Allokation</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 font-body-md text-body-md">
+<!-- Row 1: Vanguard FTSE All-World -->
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                  VW
+                </div>
+<div>
+<div class="font-semibold text-on-surface">Vanguard FTSE All-World UCITS ETF</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">A2PKXG · IE00BK5BQT80</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2 py-0.5 rounded-md bg-primary/15 text-primary font-label-sm text-label-sm font-medium">ETF</span>
+</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">420 Stk.</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface-variant">102,40 €</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">124,15 €</td>
+<td class="py-3.5 px-3 text-right font-mono font-semibold text-on-surface">52.143,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono">
+<span class="text-primary font-semibold">+9.135,00 €</span>
+<span class="block text-primary/80 font-label-sm text-label-sm">+21,24 %</span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-mono text-xs text-on-surface">40,59 %</span>
+<div class="w-16 bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 40.59%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 2: Apple Inc. -->
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest text-on-surface flex items-center justify-center font-bold text-xs">
+                  AAPL
+                </div>
+<div>
+<div class="font-semibold text-on-surface">Apple Inc.</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">865985 · US0378331005</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2 py-0.5 rounded-md bg-secondary/15 text-secondary font-label-sm text-label-sm font-medium">Aktie</span>
+</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">75 Stk.</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface-variant">164,50 €</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">208,20 €</td>
+<td class="py-3.5 px-3 text-right font-mono font-semibold text-on-surface">15.615,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono">
+<span class="text-primary font-semibold">+3.277,50 €</span>
+<span class="block text-primary/80 font-label-sm text-label-sm">+26,56 %</span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-mono text-xs text-on-surface">12,16 %</span>
+<div class="w-16 bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 12.16%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 3: Microsoft Corp. -->
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs">
+                  MSFT
+                </div>
+<div>
+<div class="font-semibold text-on-surface">Microsoft Corp.</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">870747 · US5949181045</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2 py-0.5 rounded-md bg-secondary/15 text-secondary font-label-sm text-label-sm font-medium">Aktie</span>
+</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">28 Stk.</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface-variant">342,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">388,60 €</td>
+<td class="py-3.5 px-3 text-right font-mono font-semibold text-on-surface">10.880,80 €</td>
+<td class="py-3.5 px-3 text-right font-mono">
+<span class="text-primary font-semibold">+1.304,80 €</span>
+<span class="block text-primary/80 font-label-sm text-label-sm">+13,63 %</span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-mono text-xs text-on-surface">8,47 %</span>
+<div class="w-16 bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 8.47%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 4: iShares Euro Aggregate Bond -->
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-tertiary-container/10 text-tertiary flex items-center justify-center font-bold text-xs">
+                  EAGG
+                </div>
+<div>
+<div class="font-semibold text-on-surface">iShares Core € Govt Bond UCITS ETF</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">A0HGV3 · IE00B0M62X26</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2 py-0.5 rounded-md bg-surface-variant text-on-surface font-label-sm text-label-sm font-medium">Anleihe</span>
+</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">210 Stk.</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface-variant">114,80 €</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">110,10 €</td>
+<td class="py-3.5 px-3 text-right font-mono font-semibold text-on-surface">23.121,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono">
+<span class="text-error font-semibold">-987,00 €</span>
+<span class="block text-error font-label-sm text-label-sm">-4,09 %</span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-mono text-xs text-on-surface">18,00 %</span>
+<div class="w-16 bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-secondary h-1.5 rounded-full" style="width: 18.00%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 5: Bitcoin BTC -->
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-secondary-fixed-dim/20 text-secondary-fixed flex items-center justify-center font-bold text-xs">
+                  BTC
+                </div>
+<div>
+<div class="font-semibold text-on-surface">Bitcoin</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Cold Storage Vault</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-medium">Krypto</span>
+</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">0,25 BTC</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface-variant">38.200,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">61.656,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono font-semibold text-on-surface">15.414,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono">
+<span class="text-primary font-semibold">+5.864,00 €</span>
+<span class="block text-primary/80 font-label-sm text-label-sm">+61,40 %</span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-mono text-xs text-on-surface">12,00 %</span>
+<div class="w-16 bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-secondary-fixed-dim h-1.5 rounded-full" style="width: 12.00%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 6: Geldmarkt / Cash DBX0AN -->
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-tertiary/15 text-tertiary flex items-center justify-center font-bold text-xs">
+                  €STR
+                </div>
+<div>
+<div class="font-semibold text-on-surface">Xtrackers II EUR Overnight Rate Swap</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">DBX0AN · LU0290358497</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2 py-0.5 rounded-md bg-tertiary/15 text-tertiary font-label-sm text-label-sm font-medium">Geldmarkt</span>
+</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">72 Stk.</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface-variant">137,80 €</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">142,72 €</td>
+<td class="py-3.5 px-3 text-right font-mono font-semibold text-on-surface">10.276,00 €</td>
+<td class="py-3.5 px-3 text-right font-mono">
+<span class="text-primary font-semibold">+354,24 €</span>
+<span class="block text-primary/80 font-label-sm text-label-sm">+3,57 %</span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-mono text-xs text-on-surface">8,00 %</span>
+<div class="w-16 bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-tertiary-container h-1.5 rounded-full" style="width: 8.00%"></div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 7: iShares S&P 500 Information Tech -->
+<tr class="hover:bg-surface-container-high/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                  QDVE
+                </div>
+<div>
+<div class="font-semibold text-on-surface">iShares S&amp;P 500 Info Tech Sector</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">A142N1 · IE00B3WJKG14</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2 py-0.5 rounded-md bg-primary/15 text-primary font-label-sm text-label-sm font-medium">ETF</span>
+</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">36 Stk.</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface-variant">25,80 €</td>
+<td class="py-3.5 px-3 text-right font-mono text-on-surface">27,78 €</td>
+<td class="py-3.5 px-3 text-right font-mono font-semibold text-on-surface">1.000,20 €</td>
+<td class="py-3.5 px-3 text-right font-mono">
+<span class="text-primary font-semibold">+71,28 €</span>
+<span class="block text-primary/80 font-label-sm text-label-sm">+7,67 %</span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-mono text-xs text-on-surface">0,78 %</span>
+<div class="w-16 bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-1.5 rounded-full" style="width: 2%"></div>
+</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Summary Bar -->
+<div class="flex flex-col sm:flex-row items-center justify-between pt-3 border-t-0 bg-surface-container-low px-4 py-3 rounded-xl font-body-sm text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">verified_user</span>
+<span>Kursdaten mit 15-Minuten-Verzögerung · Abrechnungs-Währung: EUR (€)</span>
+</div>
+<div class="flex items-center gap-4 mt-2 sm:mt-0 font-label-md text-label-md">
+<span>Summe Positionen: <strong class="text-on-surface font-semibold font-mono">128.450,00 €</strong></span>
+<span>Realisierte Gewinne: <strong class="text-primary font-semibold font-mono">+4.218,50 €</strong></span>
+</div>
+</div>
+</div>
+</div></main>
+</div>
+</body></html>

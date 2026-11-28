@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"error-container":"#93000a","tertiary":"#7bd0ff","secondary-fixed-dim":"#b6c4ff","on-surface":"#d4e4fa","on-secondary-fixed-variant":"#0f3bac","outline":"#8e909f","surface-bright":"#2c3a4c","on-tertiary":"#00354a","surface-container":"#122131","outline-variant":"#444653","on-tertiary-fixed-variant":"#004c69","surface-container-high":"#1c2b3c","on-tertiary-fixed":"#001e2c","tertiary-fixed":"#c4e7ff","background":"#051424","tertiary-fixed-dim":"#7bd0ff","error":"#ffb4ab","surface-variant":"#273647","on-error-container":"#ffdad6","secondary-fixed":"#dce1ff","surface-container-highest":"#273647","secondary-container":"#133eaf","surface-tint":"#b6c4ff","on-primary":"#002780","secondary":"#b6c4ff","on-secondary":"#002780","on-secondary-container":"#a3b5ff","on-secondary-fixed":"#001551","primary-fixed":"#dce1ff","surface":"#051424","on-error":"#690005","on-tertiary-container":"#003145","surface-dim":"#051424","primary-container":"#6d8dff","surface-container-lowest":"#010f1f","on-primary-fixed":"#001550","tertiary-container":"#009fd6","on-background":"#d4e4fa","surface-container-low":"#0d1c2d","on-surface-variant":"#c4c5d5","inverse-surface":"#d4e4fa","on-primary-container":"#002477","on-primary-fixed-variant":"#0d3bac","primary-fixed-dim":"#b6c4ff","primary":"#b6c4ff","inverse-on-surface":"#233143","inverse-primary":"#3255c5"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"1rem","margin-tablet":"1.5rem","space-md":"0.75rem","space-lg":"1.25rem","gutter-desktop":"1.25rem","space-xl":"1.75rem","margin-desktop":"2rem","space-xs":"0.25rem","space-sm":"0.5rem","gutter":"1rem"},"fontFamily":{"headline-xl":["Inter"],"headline-md":["Inter"],"label-sm":["Inter"],"metric-lg":["Inter"],"body-sm":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"],"metric-md":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-lg":["Inter"]},"fontSize":{"headline-xl":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.025em","fontWeight":"600"}],"headline-md":["1.125rem",{"lineHeight":"1.5rem","letterSpacing":"-0.015em","fontWeight":"600"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"metric-lg":["1.75rem",{"lineHeight":"2rem","letterSpacing":"-0.03em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0em","fontWeight":"400"}],"headline-sm":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.005em","fontWeight":"400"}],"metric-md":["1.25rem",{"lineHeight":"1.5rem","letterSpacing":"-0.02em","fontWeight":"600"}],"label-md":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.01em","fontWeight":"500"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}]}}}};</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0b0e13;--fm-bg2:#10131a;--fm-bg3:#151922;--fm-border:#232a36;--fm-text:#e1e2ea;--fm-muted:#8e9aa8;--fm-accent:#6d8dff;--fm-active:#1c2333;--fm-hover:#171c26}body{font-family:'Inter',system-ui,sans-serif}</style></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen fm-body-a"><aside class="fm-aside"><div class="fm-brand"><span class="fm-logo" style="background:#1c2333;color:#6d8dff"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class=" active" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar"><span class="fm-page-title">Kontoauszug-Entwurf</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button><button class="fm-rib-btn" type="button" title="Vorherige"><span class="material-symbols-outlined">chevron_left</span><span>Vorherige</span></button><button class="fm-rib-btn" type="button" title="Nächste"><span class="material-symbols-outlined">chevron_right</span><span>Nächste</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Neuer Eintrag"><span class="material-symbols-outlined">add</span><span>Neuer Eintrag</span></button><button class="fm-rib-btn" type="button" title="Buchen"><span class="material-symbols-outlined">receipt_long</span><span>Buchen</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button><button class="fm-rib-btn" type="button" title="Neu klassifizieren"><span class="material-symbols-outlined">refresh</span><span>Neu klassifizieren</span></button><button class="fm-rib-btn" type="button" title="Prüfen"><span class="material-symbols-outlined">check</span><span>Prüfen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn primary" type="button" title="Schnellbearbeitung"><span class="material-symbols-outlined">edit</span><span>Schnellbearbeitung</span></button></div><div class="fm-rib-caption">Schnellbearbeitung</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Original anzeigen"><span class="material-symbols-outlined">visibility</span><span>Original anzeigen</span></button><button class="fm-rib-btn" type="button" title="Herunterladen"><span class="material-symbols-outlined">download</span><span>Herunterladen</span></button></div><div class="fm-rib-caption">Auszug</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Csv exportieren"><span class="material-symbols-outlined">download</span><span>Csv exportieren</span></button><button class="fm-rib-btn" type="button" title="Excel exportieren"><span class="material-symbols-outlined">download</span><span>Excel exportieren</span></button></div><div class="fm-rib-caption">Export</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Bankkonto"><span class="material-symbols-outlined">account_balance</span><span>Bankkonto</span></button></div><div class="fm-rib-caption">Verknüpfte Informationen</div></div></div><div class="pl-64"><main class="relative pt-14 w-full min-h-screen bg-background"><div class="flex flex-col w-full">
+<!-- Top Context Header Area -->
+<div class="px-space-lg py-space-md bg-surface-container-low border-b border-outline-variant/30">
+<div class="flex flex-col gap-space-sm max-w-[1600px] mx-auto w-full">
+<!-- Meta Navigation / Path / Status Badges -->
+<!-- Main Headline & Semantic Subtitle -->
+<div class="flex flex-col md:flex-row md:items-baseline md:justify-between gap-1">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight flex items-center gap-space-sm">
+<span>Kontoauszug-Entwurf: Girokonto Hauptkonto</span>
+<span class="material-symbols-outlined text-outline text-[20px]" title="Revisionsgeschütztes Dokument">lock</span>
+</h1>
+</div>
+</div>
+</div>
+</div>
+<!-- Ribbon Action Bar (Strict German Fintech Tooling Ergonomics) -->
+<!-- Primary Content Grid Area -->
+<div class="p-space-lg max-w-[1600px] mx-auto w-full flex flex-col gap-space-lg">
+<!-- Top Split: Metadata Form Module & Structured Analytics Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-stretch">
+<!-- Left Panel: Entwurfsparameter & Zuordnung Form View (7 Cols) -->
+<div class="lg:col-span-8 bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col overflow-hidden">
+<!-- Card Header -->
+<div class="px-space-md py-space-sm bg-surface-container-high/40 border-b border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">receipt_long</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Entwurfsparameter &amp; Zuordnungsmatrix</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-mono">PAR-REC #00938</span>
+</div>
+<!-- Card Body / Dense 2-Column Property Grid -->
+<div class="p-space-md grid grid-cols-1 md:grid-cols-2 gap-x-space-lg gap-y-3 font-body-sm text-body-sm">
+<!-- Field: Zeitraum -->
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Abrechnungszeitraum</span>
+<div class="flex items-center gap-1.5 text-on-surface font-medium pt-0.5">
+<span class="material-symbols-outlined text-[16px] text-primary">date_range</span>
+<span class="font-mono">01.05.2024</span>
+<span class="text-outline">bis</span>
+<span class="font-mono">31.05.2024</span>
+</div>
+</div>
+<!-- Field: Verknüpftes Konto -->
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Zugeordnetes Bankkonto</span>
+<div class="flex items-center gap-1.5 text-on-surface truncate pt-0.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">account_balance</span>
+<span class="font-medium truncate">Girokonto Hauptkonto</span>
+<span class="text-outline font-mono text-label-sm">(DE44 5001 •••• 78)</span>
+</div>
+</div>
+<!-- Field: Dateiquelle -->
+<!-- Field: Importdatum & Prüfer -->
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Import-Zeitstempel &amp; Auditor</span>
+<div class="flex items-center gap-1.5 text-on-surface pt-0.5">
+<span class="material-symbols-outlined text-[16px] text-outline">schedule</span>
+<span>02.06.2024, 08:45 Uhr durch <strong class="font-semibold text-on-surface">Finanzprüfer (System)</strong></span>
+</div>
+</div>
+<!-- Field: Erfasste Summen (Full Width in grid) -->
+<div class="md:col-span-2 pt-2 border-t border-outline-variant/20 flex flex-col md:flex-row md:items-center justify-between gap-2">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Giro-Volumen (Summenprüfung)</span>
+<div class="flex items-center gap-space-sm pt-0.5 font-mono text-body-md flex-wrap">
+<span class="text-primary font-medium">Haben: +14.280,50 €</span>
+<span class="text-outline/40">|</span>
+<span class="text-error font-medium">Soll: -9.845,20 €</span>
+<span class="text-outline/40">|</span>
+<span class="text-on-surface font-semibold">Netto-Saldo: +4.435,30 €</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Compact KPI / Control Cards (4 Cols) -->
+<div class="lg:col-span-4 flex flex-col gap-2.5">
+<!-- KPI 1: Gesamt-Einträge -->
+<!-- KPI 2: Prüfungsstatus -->
+<div class="p-space-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Prüfungsstatus</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-metric-lg text-metric-lg font-semibold text-primary tabular-nums">100%</span>
+<span class="font-body-sm text-body-sm text-on-surface">Validiert</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[13px] text-tertiary">check_circle</span>
+              0 Datenkonflikte, 0 Dubletten
+            </span>
+</div>
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30">
+<span class="material-symbols-outlined text-tertiary text-[22px]">rule</span>
+</div>
+</div>
+<!-- KPI 3: Errechneter Endsaldo -->
+<div class="p-space-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Errechneter Endsaldo</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="font-metric-lg text-metric-lg font-semibold text-on-surface tabular-nums">18.940,12 €</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">sync_saved_locally</span>
+              Bankabschluss Saldo konform
+            </span>
+</div>
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30">
+<span class="material-symbols-outlined text-secondary text-[22px]">account_balance_wallet</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table Section: Auszugseinträge -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col overflow-hidden">
+<!-- Table Header Bar: Filter, Search, Action Controls -->
+<div class="px-space-md py- space-sm py-2.5 bg-surface-container-high/30 border-b border-outline-variant/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap- space-sm gap-2">
+<!-- Left: Search input -->
+<div class="flex items-center gap-2 flex-1 max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-8 pl-8 pr-3 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface placeholder:text-outline/70 font-body-sm text-body-sm focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" placeholder="Verwendungszweck, Empfänger oder IBAN filtern..." type="text">
+</div>
+</div>
+<!-- Right: Filters & Summary Indicator -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- Buchungsart Select -->
+<div class="relative">
+<select class="h-8 pl-2.5 pr-7 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface-variant font-label-md text-label-md appearance-none focus:outline-none focus:border-primary-container cursor-pointer">
+<option>Alle Buchungsarten</option>
+<option>Nur Haben (+) Eingänge</option>
+<option>Nur Soll (-) Ausgänge</option>
+<option>Dauerauftrag / Lastschrift</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<!-- Kategorie Select -->
+<div class="relative">
+<select class="h-8 pl-2.5 pr-7 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface-variant font-label-md text-label-md appearance-none focus:outline-none focus:border-primary-container cursor-pointer">
+<option>Alle Kategorien</option>
+<option>Gehalt &amp; Bezüge</option>
+<option>Miete &amp; Wohnen</option>
+<option>Lebensmittel &amp; Haushalt</option>
+<option>Sparplan / Investment</option>
+<option>Nebenkosten &amp; Energie</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<!-- Status Select -->
+<div class="relative">
+<select class="h-8 pl-2.5 pr-7 rounded bg-surface-container-lowest border border-outline-variant/40 text-on-surface-variant font-label-md text-label-md appearance-none focus:outline-none focus:border-primary-container cursor-pointer">
+<option>Status (Alle)</option>
+<option>Zugeordnet</option>
+<option>Regel erkannt</option>
+<option>Manuell geprüft</option>
+</select>
+<span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<div class="h-4 w-px bg-outline-variant/30 mx-1 hidden sm:block"></div>
+<!-- Counter Label -->
+<div class="font-label-sm text-label-sm text-outline font-medium px-1 flex items-center gap-1">
+<span class="text-on-surface font-semibold">48</span> Positionen
+            <span class="text-outline-variant">•</span>
+<span class="text-primary font-medium">3</span> ausgewählt
+          </div>
+</div>
+</div>
+<!-- Modernized Evolution Financial Table (Strictly Zebra-Free with 1px Clean Hairlines) -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse select-text">
+<!-- Tabellen-Kopfzeile -->
+<thead>
+<tr class="h-9 border-b border-outline-variant/30 bg-surface-container-high/20 font-label-sm text-label-sm uppercase tracking-wider text-outline select-none">
+<th class="w-10 px-3 text-center">
+<input checked class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 text-primary-container accent-primary-container cursor-pointer" type="checkbox">
+</th>
+<th class="px-3 min-w-[90px]">Valuta</th>
+<th class="px-3 min-w-[220px]">Begünstigter / Auftraggeber</th>
+<th class="px-3 min-w-[280px]">Verwendungszweck &amp; Details</th>
+<th class="px-3 min-w-[170px]">Kategorie / Zuordnung</th>
+<th class="px-3 min-w-[130px] text-right">Betrag (€)</th>
+<th class="px-3 min-w-[130px] text-center">Prüfstatus</th>
+<th class="w-14 px-3 text-right">Aktion</th>
+</tr>
+</thead>
+<!-- Tabellen-Inhalt (7 hochpräzise Datensätze) -->
+<tbody class="divide-y divide-outline-variant/20 font-body-sm text-body-sm">
+<!-- Row 1: Gehalt -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input checked class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox">
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">31.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Arbeitgeber Tech AG</span>
+<span class="font-mono text-[10px] text-outline">DE89 5007 0010 0987 6543 21</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">description</span>
+<span class="truncate">Gehaltsabrechnung 05/2024 Ref: 89410 Pers-Nr 442</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Gehalt &amp; Bezüge
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-semibold text-primary tabular-nums whitespace-nowrap">
+                +4.650,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Stadtwerke München -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input checked class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox">
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">28.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Stadtwerke München GmbH</span>
+<span class="font-mono text-[10px] text-outline">DE32 7001 0080 0123 4567 89</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">receipt</span>
+<span class="truncate">Abschlagszahlung Strom / Gas 05/2024 Kd-Nr: 88102</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Nebenkosten &amp; Energie
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -185,40 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-tertiary-container/20 text-tertiary border border-tertiary/30">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+                  Regel erkannt
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Trade Republic -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input checked class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox">
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">24.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Trade Republic Bank</span>
+<span class="font-mono text-[10px] text-outline">DE11 1001 1001 2233 4455 66</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">trending_up</span>
+<span class="truncate">Wertpapiersparplan Ausführung iShares Core MSCI World</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-secondary/15 text-secondary border border-secondary/30">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Sparplan / Investment
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -250,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: EDEKA -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox">
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">20.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>EDEKA Markt Frische e.K.</span>
+<span class="font-mono text-[10px] text-outline">POS Kartenzahlung (Trace: 499102)</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">shopping_bag</span>
+<span class="truncate">Kartenzahlung Girocard Terminal 9942 20.05 14:22</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Lebensmittel &amp; Haushalt
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -84,20 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 5: Apple Services -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox">
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">15.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Apple Distribution Intl.</span>
+<span class="font-mono text-[10px] text-outline">IE29 9900 1234 5678 90</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">cloud</span>
+<span class="truncate">Abo-Dienst iCloud+ / Apple One Monatsbeitrag</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Software &amp; IT
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -16,99 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-tertiary-container/20 text-tertiary border border-tertiary/30">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+                  Regel erkannt
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 6: Hausverwaltung Schmidt -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox">
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">10.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span>Hausverwaltung Schmidt GbR</span>
+<span class="font-mono text-[10px] text-outline">DE77 5008 0000 1122 3344 55</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">home</span>
+<span class="truncate">Mietüberweisung Mai 2024 WE-04 Hauptstr. 12</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Miete &amp; Wohnen
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-medium text-on-surface tabular-nums whitespace-nowrap">
+                -1.150,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant/30">
+<span class="material-symbols-outlined text-[12px] text-primary">check</span>
+                  Zugeordnet
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 7: Bundeszentralamt für Steuern -->
+<tr class="h-11 hover:bg-surface-container-high/40 transition-colors group">
+<td class="px-3 text-center">
+<input class="w-3.5 h-3.5 rounded bg-surface-container-lowest border-outline-variant/60 accent-primary-container cursor-pointer" type="checkbox">
+</td>
+<td class="px-3 font-mono text-outline whitespace-nowrap">02.05.2024</td>
+<td class="px-3 font-medium text-on-surface">
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Bundeszentralamt f. Steuern</span>
+<span class="font-mono text-[10px] text-outline">DE02 1000 0000 0000 0110 01</span>
+</div>
+</td>
+<td class="px-3 text-on-surface-variant truncate max-w-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-outline">account_balance</span>
+<span class="truncate">Erstattung ESt-Bescheid 2023 St-Nr: 143/210/90411</span>
+</div>
+</td>
+<td class="px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Steuererstattung
+                </span>
+</td>
+<td class="px-3 text-right font-mono font-semibold text-primary tabular-nums whitespace-nowrap">
+                +1.420,00 €
+              </td>
+<td class="px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-surface-bright text-on-surface border border-outline-variant/40">
+<span class="material-symbols-outlined text-[12px] text-tertiary">person_search</span>
+                  Manuell geprüft
+                </span>
+</td>
+<td class="px-3 text-right">
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" title="Position im Detail öffnen" type="button">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Bottom Summary & Batch Operation Bar -->
+<div class="px-space-md py-space-xs bg-surface-container-high/20 border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-sm font-body-sm text-body-sm">
+<div class="flex items-center gap-space-md text-outline">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Haben: <strong>2 Posten (+6.070,00 €)</strong></span>
+</span>
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Soll: <strong>5 Posten (-1.636,59 €)</strong></span>
+</span>
+<span class="hidden sm:inline-block text-outline/40">|</span>
+<span class="hidden sm:inline-block text-on-surface-variant font-mono">Zwischensumme Seite: +4.433,41 €</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="h-7 px-2 rounded hover:bg-surface-container text-outline hover:text-on-surface transition-colors font-label-sm text-label-sm" type="button">
+            Vorherige 50
+          </button>
+<span class="px-2 font-mono text-label-sm text-on-surface font-semibold">1 – 7 von 48</span>
+<button class="h-7 px-2 rounded hover:bg-surface-container text-outline hover:text-on-surface transition-colors font-label-sm text-label-sm" type="button">
+            Nächste
+          </button>
+</div>
+</div>
+</div>
+<!-- Audit Footer / GoBD Compliance Disclaimer Bar -->
+<div class="px-space-md py- space-sm py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-outline font-body-sm text-body-sm">
+</div>
+</div>
+</div></main></div></body></html>

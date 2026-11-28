@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#00354a","surface":"#111319","on-primary":"#003731","secondary":"#d0bcff","on-error-container":"#ffdad6","surface-dim":"#111319","tertiary-fixed-dim":"#7bd0ff","on-secondary-fixed-variant":"#5516be","background":"#111319","primary-container":"#2dd4bf","on-primary-fixed-variant":"#005047","inverse-primary":"#006b5f","surface-tint":"#3cddc7","on-tertiary-fixed-variant":"#004c69","primary-fixed":"#62fae3","on-primary-container":"#00574d","on-secondary-fixed":"#23005c","on-secondary":"#3c0091","secondary-fixed":"#e9ddff","inverse-on-surface":"#2e3036","on-tertiary-container":"#005371","surface-container-lowest":"#0b0e13","surface-container-high":"#272a30","on-secondary-container":"#c4abff","on-surface":"#e1e2ea","on-primary-fixed":"#00201c","error-container":"#93000a","surface-variant":"#32353b","on-background":"#e1e2ea","primary":"#57f1db","surface-bright":"#36393f","secondary-fixed-dim":"#d0bcff","surface-container-highest":"#32353b","outline-variant":"#3c4a46","primary-fixed-dim":"#3cddc7","on-surface-variant":"#bacac5","surface-container-low":"#191c21","tertiary-container":"#5ec9ff","tertiary-fixed":"#c4e7ff","surface-container":"#1d2025","secondary-container":"#571bc1","tertiary":"#afe0ff","error":"#ffb4ab","on-tertiary-fixed":"#001e2c","on-error":"#690005","inverse-surface":"#e1e2ea","outline":"#859490"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"gutter":"1rem","margin-tablet":"1.5rem","space-md":"1rem","space-xs":"0.25rem","space-xl":"2.5rem","space-lg":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem","margin":"1rem","gutter-desktop":"1.5rem"},fontFamily:{"display-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"]},fontSize:{"display-lg":["3.5rem",{lineHeight:"4rem",letterSpacing:"-0.03em",fontWeight:"700"}],"headline-lg-mobile":["1.5rem",{lineHeight:"2rem",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-lg":["2rem",{lineHeight:"2.5rem",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-md":["1.25rem",{lineHeight:"1.75rem",letterSpacing:"-0.01em",fontWeight:"600"}],"body-lg":["1rem",{lineHeight:"1.5rem",fontWeight:"400"}],"headline-sm":["1.125rem",{lineHeight:"1.5rem",fontWeight:"600"}],"label-sm":["0.6875rem",{lineHeight:"0.875rem",letterSpacing:"0.04em",fontWeight:"500"}],"label-lg":["0.875rem",{lineHeight:"1.25rem",letterSpacing:"0.01em",fontWeight:"600"}],"body-md":["0.875rem",{lineHeight:"1.25rem",fontWeight:"400"}],"display-lg-mobile":["2.25rem",{lineHeight:"2.75rem",letterSpacing:"-0.02em",fontWeight:"700"}],"label-md":["0.75rem",{lineHeight:"1rem",letterSpacing:"0.02em",fontWeight:"600"}],"body-sm":["0.75rem",{lineHeight:"1rem",fontWeight:"400"}]}}}}</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased fm-body-b"><aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class=" active" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Konto-Detailkarte</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Zurücksetzen"><span class="material-symbols-outlined">undo</span><span>Zurücksetzen</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Vorläufige Buchung erfassen"><span class="material-symbols-outlined">edit</span><span>Vorläufige Buchung erfassen</span></button><button class="fm-rib-btn" type="button" title="Postenarten neu bewerten"><span class="material-symbols-outlined">refresh</span><span>Postenarten neu bewerten</span></button><button class="fm-rib-btn" type="button" title="Kontierungsregeln"><span class="material-symbols-outlined">filter_alt</span><span>Kontierungsregeln</span></button></div><div class="fm-rib-caption">Buchungen</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Buchungen"><span class="material-symbols-outlined">receipt_long</span><span>Buchungen</span></button><button class="fm-rib-btn" type="button" title="Bankkontakt"><span class="material-symbols-outlined">account_balance</span><span>Bankkontakt</span></button><button class="fm-rib-btn" type="button" title="Anhänge"><span class="material-symbols-outlined">attach_file</span><span>Anhänge</span></button></div><div class="fm-rib-caption">Verknüpfte Informationen</div></div></div><div class="pl-16"><main class="relative pt-16 bg-background w-full px-gutter-desktop min-h-screen"><div class="flex flex-col w-full pb-space-xl">
+<!-- Subtle ambient decorative glow (clipped inside canvas) -->
+<div class="relative w-full overflow-hidden">
+<div class="absolute -top-24 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-1/3 -right-24 w-96 h-96 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+<!-- 1. BREADCRUMB / TOP HEADER INFORMATION -->
+<div class="flex flex-col gap-space-sm pt-space-lg mb-space-lg">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<span>KONTEN</span>
+<span class="text-outline">›</span>
+<span>GIROKONTO HAUPTKONTO</span>
+<span class="text-outline">›</span>
+<span class="text-primary font-label-md text-label-md">KONTO-DETAILKARTE</span>
+</div>
+</div>
+<!-- 2. KONTEXTUELLES ACTION-RIBBON (Toolbar) -->
+<div class="w-full bg-surface-container-low/90 backdrop-blur-xl rounded-xl p-space-sm mb-space-lg shadow-[0_12px_32px_-4px_rgba(0,0,0,0.6),0_0_20px_-2px_rgba(45,212,191,0.08)] flex flex-wrap items-center justify-between gap-space-md">
+<!-- GRUPPE 1: NAVIGATION -->
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-all" title="Zurück zur Kontenübersicht" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Zurück</span>
+</button>
+</div>
+<!-- GRUPPE 2: VERWALTEN -->
+<div class="flex items-center gap-space-xs">
+<!-- Speichern -->
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-primary-container hover:bg-primary text-on-primary-container font-label-lg text-label-lg shadow-[0_0_16px_rgba(45,212,191,0.35)] transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Speichern</span>
+</button>
+<!-- Zurücksetzen -->
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+<span>Zurücksetzen</span>
+</button>
+<!-- Löschen -->
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-error-container/20 hover:bg-error-container/40 text-error font-label-lg text-label-lg transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">delete_outline</span>
+<span>Löschen</span>
+</button>
+</div>
+<!-- GRUPPE 3: VERKNÜPFTE INFORMATIONEN -->
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-primary text-[18px]">receipt_long</span>
+<span>Umsätze anzeigen / Kontoauszüge</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-secondary text-[18px]">savings</span>
+<span>Zugeordnete Sparpläne</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-[18px]">autorenew</span>
+<span>Daueraufträge &amp; Buchungsregeln</span>
+</button>
+</div>
+</div>
+<!-- 3. KONTO-DETAIL-FORMULAR -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop mb-space-lg">
+<!-- Linker Block: Hauptkarte Stammdaten & Identifikatoren (8 Cols) -->
+<div class="lg:col-span-8 bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-xl flex flex-col gap-space-lg">
+<div class="flex items-center justify-between pb-space-sm border-b-0">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">badge</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Kontodetails &amp; Stammdaten</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Konto-ID: FM-ACC-01042</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Name Feld -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Kontobezeichnung</label>
+<div class="flex items-center px-space-md py-space-sm bg-surface-container-lowest rounded-lg">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] mr-space-sm">edit_note</span>
+<input class="w-full bg-transparent text-on-surface font-body-md text-body-md focus:outline-none" type="text" value="Girokonto Hauptkonto">
+</div>
+</div>
+<!-- Kontotyp Dropdown -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Kontotyp</label>
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-lowest rounded-lg">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">account_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Girokonto / Gehaltskonto</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+</div>
+</div>
+<!-- IBAN & BIC Zeile -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">IBAN &amp; BIC</label>
+<div class="flex flex-wrap items-center justify-between gap-space-sm p-space-md bg-surface-container-lowest rounded-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">credit_card</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm tracking-wider text-on-surface">DE89 3704 0044 0532 0130 00</span>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" id="copy-iban-btn" onclick="navigator.clipboard?.writeText('DE89 3704 0044 0532 0130 00')" title="IBAN kopieren" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">BIC: <span class="text-on-surface font-label-md text-label-md">COBADEFFXXX</span></span>
+</div>
+</div>
+<span class="px-space-sm py-0.5 rounded bg-surface-container-high text-primary font-label-sm text-label-sm">SEPA Instant fähig</span>
+</div>
+</div>
+<!-- Bankkontakt -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Bankkontakt</label>
+<div class="flex items-start gap-space-md p-space-md bg-surface-container-lowest rounded-lg">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-secondary mt-0.5">
+<span class="material-symbols-outlined text-[20px]">domain</span>
+</div>
+<div class="flex flex-col flex-1">
+<span class="font-headline-sm text-headline-sm text-on-surface">Commerzbank Frankfurt am Main</span>
+<span class="font-body-md text-body-md text-on-surface-variant">BLZ 370 400 44 • Filiale Hauptwache</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">Ansprechpartner: Private Banking Desk • Hotline: +49 69 136 20</span>
+</div>
+</div>
+</div>
+<!-- Sparplanangabe -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Verknüpfte Sparplanausführung</label>
+<div class="flex items-center justify-between p-space-md bg-secondary-container/10 rounded-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-9 h-9 rounded-lg bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">3 aktive Sparpläne verknüpft</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Monatlich: 750,00 € Abbuchung via Dauerauftrag (Valuta zum 01. &amp; 15. des Monats)</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
+</div>
+</div>
+<!-- Flags / Kontoeigenschaften -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Flags &amp; Kontoeigenschaften</label>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+<!-- Wertpapierabwicklung (Aktiv) -->
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container cursor-pointer select-none">
+<div class="pt-0.5">
+<input checked class="w-4 h-4 accent-primary rounded cursor-pointer" type="checkbox">
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Wertpapierabwicklung</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Aktiviert als Verrechnungskonto für Wertpapierorders</span>
+</div>
+</label>
+<!-- Sammelkonto (Deaktiviert) -->
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container cursor-pointer select-none">
+<div class="pt-0.5">
+<input class="w-4 h-4 accent-primary rounded cursor-pointer" type="checkbox">
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Sammelkonto</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Deaktiviert: Separates Einzelkonto</span>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Rechter Block: Saldo KPI & Visual Icon Selector (4 Cols) -->
+<div class="lg:col-span-4 flex flex-col gap-gutter-desktop">
+<!-- Großes KPI-Element Saldo -->
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-xl relative overflow-hidden flex flex-col justify-between">
+<div class="absolute -right-12 -top-12 w-40 h-40 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-space-md">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Aktueller Saldo</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-primary font-label-sm text-label-sm">EUR (€)</span>
+</div>
+<div class="flex flex-col mb-space-md">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-display-lg text-display-lg text-on-surface tracking-tight">14.850,42</span>
+<span class="font-headline-md text-headline-md text-primary font-semibold">€</span>
+</div>
+<!-- Trendanzeige -->
+<div class="flex items-center gap-1.5 text-primary mt-space-xs font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+<span>+1.240,00 € zum Vormonat (+9,1 %)</span>
+</div>
+</div>
+<div class="pt-space-md border-t-0 bg-surface-container-lowest/60 rounded-lg p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Verfügbarer Betrag:</span>
+<span class="font-label-md text-label-md text-on-surface">14.850,42 €</span>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Dispositionskredit:</span>
+<span class="font-label-md text-label-md text-on-surface">5.000,00 €</span>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Vormerkposten:</span>
+<span class="font-label-md text-label-md text-error">-142,30 €</span>
+</div>
+</div>
+</div>
+<!-- Symbol / Visual Preview Selector -->
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-xl flex flex-col gap-space-md flex-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">palette</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Konto-Symbol</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Visual Preview</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ausgewähltes Icon für Dashboards und Buchungslisten:</p>
+<div class="grid grid-cols-3 gap-space-sm my-auto">
+<!-- Option 1 (Aktiv: Girokonto / Bankhaus) -->
+<button class="flex flex-col items-center justify-center p-space-md rounded-xl bg-surface-container-high text-primary shadow-[0_0_16px_rgba(45,212,191,0.25)] transition-all" type="button">
+<span class="material-symbols-outlined text-[30px]">account_balance</span>
+<span class="font-label-sm text-label-sm mt-1 text-on-surface">Bankhaus</span>
+</button>
+<!-- Option 2: Geldbörse -->
+<button class="flex flex-col items-center justify-center p-space-md rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" type="button">
+<span class="material-symbols-outlined text-[30px]">wallet</span>
+<span class="font-label-sm text-label-sm mt-1">Geldbörse</span>
+</button>
+<!-- Option 3: Girokarte -->
+<button class="flex flex-col items-center justify-center p-space-md rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" type="button">
+<span class="material-symbols-outlined text-[30px]">payments</span>
+<span class="font-label-sm text-label-sm mt-1">Zahlung</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm pt-space-xs">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span>Aktiv: Girokonto / Geldbörse / Bankhaus</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. MONATLICHES ERGEBNISDIAGRAMM (Vollbreiten-Karte) -->
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-xl flex flex-col gap-space-lg">
+<div class="flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">bar_chart</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Monatliches Ergebnisdiagramm (Cashflow &amp; Saldenentwicklung)</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Gegenüberstellung von monatlichen Einnahmen, Ausgaben und Nettoergebnis des Kontos für die letzten 12 Monate</p>
+</div>
+<!-- Farblegende -->
+<div class="flex items-center gap-space-md bg-surface-container-lowest px-space-md py-space-xs rounded-xl font-label-md text-label-md">
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-sm bg-primary"></span>
+<span class="text-on-surface">Einnahmen</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-sm bg-error"></span>
+<span class="text-on-surface">Ausgaben</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-sm bg-secondary"></span>
+<span class="text-on-surface">Nettoergebnis</span>
+</div>
+</div>
+</div>
+<!-- SVG Balkendiagramm (12 Monate) mit Tooltip-Präsenz -->
+<div class="relative w-full overflow-x-auto">
+<!-- Interaktiver Tooltip (fokussiert auf April als Showcase) -->
+<div class="relative w-full h-80 pt-8 pb-4">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 1000 240">
+<defs>
+<lineargradient id="primaryBarGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#57f1db" stop-opacity="0.95"></stop>
+<stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.65"></stop>
+</lineargradient>
+<lineargradient id="errorBarGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffb4ab" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#93000a" stop-opacity="0.65"></stop>
+</lineargradient>
+<lineargradient id="secondaryBarGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#d0bcff" stop-opacity="1"></stop>
+<stop offset="100%" stop-color="#571bc1" stop-opacity="0.75"></stop>
+</lineargradient>
+</defs>
+<!-- Horizontale Hilfslinien -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.5" x1="40" x2="980" y1="20" y2="20"></line>
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.5" x1="40" x2="980" y1="70" y2="70"></line>
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.5" x1="40" x2="980" y1="120" y2="120"></line>
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="0.5" x1="40" x2="980" y1="170" y2="170"></line>
+<!-- Basislinie (Y=210) -->
+<line stroke="#3c4a46" stroke-width="1" x1="40" x2="980" y1="210" y2="210"></line>
+<!-- Y-Achsen Labels -->
+<text fill="#859490" font-size="10" text-anchor="end" x="32" y="24">5k €</text>
+<text fill="#859490" font-size="10" text-anchor="end" x="32" y="74">3.75k €</text>
+<text fill="#859490" font-size="10" text-anchor="end" x="32" y="124">2.5k €</text>
+<text fill="#859490" font-size="10" text-anchor="end" x="32" y="174">1.25k €</text>
+<text fill="#859490" font-size="10" text-anchor="end" x="32" y="214">0 €</text>
+<!-- 12 Monate Balken-Cluster -->
+<!-- Jedes Monat: X_center = 75 + i * 78. Balkenbreite 14px, Spacing 3px -->
+<!-- 1. Jan (E: 3.900 -> h=156, A: 2.700 -> h=108, N: 1.200 -> h=48) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="156" rx="2" width="14" x="58" y="54"></rect>
+<rect fill="url(#errorBarGrad)" height="108" rx="2" width="14" x="74" y="102"></rect>
+<rect fill="url(#secondaryBarGrad)" height="48" rx="2" width="14" x="90" y="162"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="81" y="228">Jan</text>
+</g>
+<!-- 2. Feb (E: 4.100 -> h=164, A: 2.950 -> h=118, N: 1.150 -> h=46) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="164" rx="2" width="14" x="136" y="46"></rect>
+<rect fill="url(#errorBarGrad)" height="118" rx="2" width="14" x="152" y="92"></rect>
+<rect fill="url(#secondaryBarGrad)" height="46" rx="2" width="14" x="168" y="164"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="159" y="228">Feb</text>
+</g>
+<!-- 3. Mär (E: 4.300 -> h=172, A: 3.400 -> h=136, N: 900 -> h=36) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="172" rx="2" width="14" x="214" y="38"></rect>
+<rect fill="url(#errorBarGrad)" height="136" rx="2" width="14" x="230" y="74"></rect>
+<rect fill="url(#secondaryBarGrad)" height="36" rx="2" width="14" x="246" y="174"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="237" y="228">Mär</text>
+</g>
+<!-- 4. Apr (Hervorgehobener Monat laut Vorgabe: E: 4.250 €, A: 2.890 €, N: +1.360 €) -->
+<!-- E: 4250 -> h=170, A: 2890 -> h=115, N: 1360 -> h=55 -->
+<g>
+<!-- Highlight Scrim -->
+<rect fill="#2dd4bf" fill-opacity="0.06" height="204" rx="6" width="62" x="286" y="10"></rect>
+<rect fill="url(#primaryBarGrad)" height="170" rx="2" width="14" x="292" y="40"></rect>
+<rect fill="url(#errorBarGrad)" height="115" rx="2" width="14" x="308" y="95"></rect>
+<rect fill="url(#secondaryBarGrad)" height="55" rx="2" width="14" x="324" y="155"></rect>
+<text fill="#57f1db" font-size="11" font-weight="700" text-anchor="middle" x="315" y="228">Apr</text>
+</g>
+<!-- 5. Mai (E: 4.050 -> h=162, A: 3.100 -> h=124, N: 950 -> h=38) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="162" rx="2" width="14" x="370" y="48"></rect>
+<rect fill="url(#errorBarGrad)" height="124" rx="2" width="14" x="386" y="86"></rect>
+<rect fill="url(#secondaryBarGrad)" height="38" rx="2" width="14" x="402" y="172"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="393" y="228">Mai</text>
+</g>
+<!-- 6. Jun (E: 4.600 -> h=184, A: 3.050 -> h=122, N: 1.550 -> h=62) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="184" rx="2" width="14" x="448" y="26"></rect>
+<rect fill="url(#errorBarGrad)" height="122" rx="2" width="14" x="464" y="88"></rect>
+<rect fill="url(#secondaryBarGrad)" height="62" rx="2" width="14" x="480" y="148"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="471" y="228">Jun</text>
+</g>
+<!-- 7. Jul (E: 4.150 -> h=166, A: 3.300 -> h=132, N: 850 -> h=34) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="166" rx="2" width="14" x="526" y="44"></rect>
+<rect fill="url(#errorBarGrad)" height="132" rx="2" width="14" x="542" y="78"></rect>
+<rect fill="url(#secondaryBarGrad)" height="34" rx="2" width="14" x="558" y="176"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="549" y="228">Jul</text>
+</g>
+<!-- 8. Aug (E: 4.200 -> h=168, A: 2.800 -> h=112, N: 1.400 -> h=56) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="168" rx="2" width="14" x="604" y="42"></rect>
+<rect fill="url(#errorBarGrad)" height="112" rx="2" width="14" x="620" y="98"></rect>
+<rect fill="url(#secondaryBarGrad)" height="56" rx="2" width="14" x="636" y="154"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="627" y="228">Aug</text>
+</g>
+<!-- 9. Sep (E: 4.400 -> h=176, A: 3.120 -> h=125, N: 1.280 -> h=51) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="176" rx="2" width="14" x="682" y="34"></rect>
+<rect fill="url(#errorBarGrad)" height="125" rx="2" width="14" x="698" y="85"></rect>
+<rect fill="url(#secondaryBarGrad)" height="51" rx="2" width="14" x="714" y="159"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="705" y="228">Sep</text>
+</g>
+<!-- 10. Okt (E: 4.100 -> h=164, A: 3.000 -> h=120, N: 1.100 -> h=44) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="164" rx="2" width="14" x="760" y="46"></rect>
+<rect fill="url(#errorBarGrad)" height="120" rx="2" width="14" x="776" y="90"></rect>
+<rect fill="url(#secondaryBarGrad)" height="44" rx="2" width="14" x="792" y="166"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="783" y="228">Okt</text>
+</g>
+<!-- 11. Nov (E: 4.350 -> h=174, A: 3.250 -> h=130, N: 1.100 -> h=44) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="174" rx="2" width="14" x="838" y="36"></rect>
+<rect fill="url(#errorBarGrad)" height="130" rx="2" width="14" x="854" y="80"></rect>
+<rect fill="url(#secondaryBarGrad)" height="44" rx="2" width="14" x="870" y="166"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="861" y="228">Nov</text>
+</g>
+<!-- 12. Dez (E: 4.550 -> h=182, A: 3.280 -> h=131, N: 1.270 -> h=51) -->
+<g class="transition-opacity hover:opacity-80">
+<rect fill="url(#primaryBarGrad)" height="182" rx="2" width="14" x="916" y="28"></rect>
+<rect fill="url(#errorBarGrad)" height="131" rx="2" width="14" x="932" y="79"></rect>
+<rect fill="url(#secondaryBarGrad)" height="51" rx="2" width="14" x="948" y="159"></rect>
+<text fill="#bacac5" font-size="11" text-anchor="middle" x="939" y="228">Dez</text>
+</g>
+</svg>
+<!-- Schwebender Tooltip für April (Positioniert über 4. Spalte ca. 31%) -->
+<div class="absolute top-2 left-[28%] md:left-[30%] bg-surface-container-highest/95 backdrop-blur-md rounded-lg p-space-sm shadow-xl pointer-events-none min-w-[190px]">
+<div class="flex items-center justify-between border-b-0 pb-1 mb-1.5">
+<span class="font-label-md text-label-md text-primary font-semibold">April (Auswahl)</span>
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+</div>
+<div class="flex flex-col gap-1 font-body-sm text-body-sm">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Einnahmen:</span>
+<span class="font-label-md text-label-md text-primary">+4.250,00 €</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Ausgaben:</span>
+<span class="font-label-md text-label-md text-error">-2.890,00 €</span>
+</div>
+<div class="flex items-center justify-between pt-1 border-t-0 mt-0.5">
+<span class="text-on-surface font-semibold">Netto:</span>
+<span class="font-label-md text-label-md text-secondary font-bold">+1.360,00 €</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Kennzahlen-Leiste unter dem Diagramm -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-space-md border-t-0">
+<!-- 1: Durchschnittlicher Monatsüberschuss -->
+<div class="flex items-center gap-space-md p-space-md bg-surface-container-lowest rounded-xl">
+<div class="w-12 h-12 rounded-xl bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[24px]">balance</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ø Monatsüberschuss</span>
+<span class="font-headline-md text-headline-md text-secondary">+1.185,00 €</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Netto-Cashflow pro Monat</span>
+</div>
+</div>
+<!-- 2: Jahressumme Einnahmen -->
+<div class="flex items-center gap-space-md p-space-md bg-surface-container-lowest rounded-xl">
+<div class="w-12 h-12 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">arrow_downward</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jahressumme Einnahmen</span>
+<span class="font-headline-md text-headline-md text-primary">+51.000,00 €</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Kumuliert (12 Monate)</span>
+</div>
+</div>
+<!-- 3: Jahressumme Ausgaben -->
+<div class="flex items-center gap-space-md p-space-md bg-surface-container-lowest rounded-xl">
+<div class="w-12 h-12 rounded-xl bg-error-container/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[24px]">arrow_upward</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jahressumme Ausgaben</span>
+<span class="font-headline-md text-headline-md text-error">-36.760,00 €</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Kumulierte Soll-Posten</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

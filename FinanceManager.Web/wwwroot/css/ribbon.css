@@ -1,16 +1,20 @@
 /* =====================================================
-   ribbon.css - Allgemeingültige Ribbon Styles
+   ribbon.css - Kontextuelle Top-Action-Bar (Variante B)
+   Gleiche Aktionen/Gruppen wie bisher - nur neue Optik:
+   Glaspillen-Gruppen auf einer horizontalen Leiste.
    ===================================================== */
 
 .fm-ribbon {
     font-size: .75rem;
+    margin: 0 0 .75rem;
+    padding-bottom: .15rem;
 }
 
 /* Tabs */
 .fm-ribbon-tabs {
     list-style: none;
     margin: 0;
-    padding: .25rem .75rem;
+    padding: .25rem .25rem;
     display: flex;
     gap: .35rem;
 }
@@ -20,7 +24,7 @@
     border: 0;
     padding: .35rem .6rem;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 8px;
     font: inherit;
 }
 
@@ -30,21 +34,25 @@
 
 /* Content */
 .fm-ribbon-content {
-    padding: .6rem .75rem;
+    padding: .35rem 0 0;
 }
 
 .fm-ribbon-groups {
     display: flex;
-    gap: .75rem;
+    flex-wrap: nowrap;
+    gap: .6rem;
     align-items: stretch;
+    min-width: 0;
 }
 
+/* Gruppe = Glaspille */
 .fm-ribbon-group {
     display: flex;
     flex-direction: column;
-    min-width: 132px;
-    border-radius: 6px;
-    padding: .4rem .5rem .5rem;
+    min-width: 0;
+    flex-shrink: 0;
+    border-radius: 14px;
+    padding: .45rem .6rem .5rem;
 }
 
 .fm-ribbon-mobile-group-panel {
@@ -58,40 +66,45 @@
 }
 
 .fm-ribbon-group-footer {
-    margin-top: .4rem;
-    padding-top: .3rem;
-    font-size: .6rem;
+    margin-top: .35rem;
+    padding-top: .25rem;
+    font-size: .58rem;
     text-align: center;
-    opacity: .75;
-    letter-spacing: .05em;
+    opacity: .72;
+    letter-spacing: .06em;
     text-transform: uppercase;
 }
 
-/* Unified grid for items */
+/* Unified grid for items (Issue #586): Small-Aktionen als kompakte
+   Zeilen-Pills in bis zu drei Reihen, Large-Aktionen als Kachel
+   ueber die volle Gruppenhoehe. Spart Breite gegenueber
+   einheitlichen Kacheln und vermeidet den Horizontal-Scroll. */
 .ribbon-items-grid {
     display: grid;
     grid-auto-flow: column;
     grid-template-rows: repeat(3, auto);
-    gap: .35rem .6rem;
+    gap: .3rem .45rem;
     align-content: start;
 }
 
-/* Base Button Styling (size via CSS vars) */
+/* Base Button Styling (size via CSS vars)
+   Variante B: zwei Groessen — kompakte Zeilen-Pills (small) und
+   vertikale Kacheln (large). */
 .fm-ribbon-btn {
-    --rb-icon-size: 14px;
-    --rb-font-size: .62rem;
+    --rb-icon-size: 15px;
+    --rb-font-size: .68rem;
     --rb-gap: .35rem;
     --rb-pad-y: .28rem;
-    --rb-pad-x: .55rem;
+    --rb-pad-x: .5rem;
     --rb-flex-dir: row;
     --rb-width: auto;
     --rb-min-h: auto;
     --rb-text-wrap: nowrap;
     --rb-align: center;
     --rb-grid-row: auto;
-    --rb-justify: center;
+    --rb-justify: flex-start;
     --rb-text-align: left;
-    border-radius: 4px;
+    border-radius: 10px;
     cursor: pointer;
     display: inline-flex;
     flex-direction: var(--rb-flex-dir);
@@ -100,6 +113,8 @@
     transition: background .15s, color .15s, border-color .15s, padding .15s;
     gap: var(--rb-gap);
     font-size: var(--rb-font-size);
+    font-weight: 600;
+    font-family: inherit;
     padding: var(--rb-pad-y) var(--rb-pad-x);
     width: var(--rb-width);
     min-height: var(--rb-min-h);
@@ -130,22 +145,19 @@
     white-space: var(--rb-text-wrap);
 }
 
-/* Large Variant */
+/* Large Variant - Kachel ueber die volle Gruppenhoehe */
 .fm-ribbon-btn.large {
-    --rb-icon-size: 26px;
+    --rb-icon-size: 22px;
+    --rb-font-size: .62rem;
     --rb-pad-y: .45rem;
-    --rb-pad-x: .4rem;
+    --rb-pad-x: .55rem;
     --rb-flex-dir: column;
     --rb-width: 76px;
-    --rb-min-h: 82px;
     --rb-text-wrap: normal;
     --rb-align: center;
-    --rb-justify: flex-start;
+    --rb-justify: center;
     --rb-text-align: center;
     --rb-grid-row: span 3;
-}
-
-.fm-ribbon-btn.large {
     grid-row: var(--rb-grid-row);
 }
 
@@ -153,12 +165,131 @@
     line-height: 1.1;
 }
 
-/* Small Variant (defaults mostly) */
+/* Small Variant - kompakte Zeilen-Pille (icon + text nebeneinander) */
 .fm-ribbon-btn.small {
-    --rb-icon-size: 14px;
+    --rb-icon-size: 15px;
+}
+
+/* ---------------------------------------------------------------
+   Fit-basierte Verdichtung (Issue #586):
+   financeManager.ribbon misst das tatsaechliche Umbrechen der
+   Gruppen und setzt die Verdichtungsstufen nur, wenn dadurch eine
+   Zeile eingespart wird. Statt horizontal zu scrollen, wird zuerst
+   der Text der Small-Aktionen, dann auch der Large-Aktionen
+   ausgeblendet (Titel/aria-label bleiben erhalten).
+   --------------------------------------------------------------- */
+.fm-ribbon.fm-ribbon--hide-small-labels .fm-ribbon-btn .text-inline,
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn .text,
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn .text-inline {
+    display: none;
+}
+
+.fm-ribbon.fm-ribbon--hide-small-labels .fm-ribbon-btn.small,
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn.small {
+    --rb-pad-x: .4rem;
+    --rb-justify: center;
+    --rb-icon-size: 18px;
+    --rb-min-h: 34px;
+    --rb-width: 40px;
+}
+
+.fm-ribbon.fm-ribbon--hide-labels .fm-ribbon-btn.large {
+    --rb-width: 44px;
+    --rb-pad-x: .35rem;
+}
+
+/* ---------------------------------------------------------------
+   Einzeiliges Menueband (PR-Feedback): Reicht der Platz auch
+   icon-only nicht aus, klappt financeManager.ribbon Gruppen von
+   rechts zu kompakten Popover-Schaltern ein (Marker
+   .desktop-collapsed). Die eingeblendete Gruppenflaeche nutzt das
+   vorhandene Mobile-Panel — dessen Menue enthaelt die echten
+   Aktionen inkl. Blazor-Handler. Nur Desktop: Unter 900px gilt
+   weiterhin das Mobile-Akkordeon.
+   --------------------------------------------------------------- */
+@media (min-width: 901px) {
+    .fm-ribbon-group-desktop.desktop-collapsed {
+        display: none;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel {
+        display: flex;
+        align-items: stretch;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-group-header {
+        padding: 0;
+        gap: 0;
+        height: 100%;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-shortcuts,
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-group-toggle {
+        display: none;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-group-title-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .3rem;
+        padding: .35rem .55rem;
+        border-radius: 10px;
+        height: 100%;
+        font-size: .68rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-group-title::after {
+        content: "▾";
+        opacity: .7;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu {
+        display: none;
+        flex-direction: column;
+        gap: .35rem;
+        position: absolute;
+        top: calc(100% + .3rem);
+        left: 0;
+        z-index: 60;
+        min-width: 13rem;
+        padding: .4rem;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu.open {
+        display: flex;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu-item {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        width: 100%;
+        border-radius: 8px;
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+        padding: .45rem .6rem;
+        border: 1px solid transparent;
+        background: transparent;
+        box-sizing: border-box;
+    }
+
+    .fm-ribbon-group-desktop.desktop-collapsed + .fm-ribbon-mobile-group-panel .fm-ribbon-mobile-menu-item .icon svg {
+        width: 16px;
+        height: 16px;
+    }
 }
 
 @media (max-width: 900px) {
+    .fm-ribbon {
+        margin-bottom: .6rem;
+    }
+
     .fm-ribbon-tabs {
         padding: .25rem .35rem;
     }
@@ -242,7 +373,7 @@
         width: 34px;
         height: 34px;
         border: 1px solid transparent;
-        border-radius: 6px;
+        border-radius: 8px;
         background: transparent;
         cursor: pointer;
         display: inline-flex;
@@ -279,7 +410,7 @@
         align-items: center;
         gap: .45rem;
         width: 100%;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
         font: inherit;
         text-align: left;
@@ -289,9 +420,8 @@
     }
 
     .ribbon-items-grid {
-        grid-auto-flow: row;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        grid-template-rows: none;
+        display: flex;
+        flex-wrap: wrap;
     }
 
     .fm-ribbon-btn.large {
@@ -306,6 +436,14 @@
         --rb-icon-size: 16px;
         --rb-pad-y: .35rem;
         --rb-pad-x: .5rem;
+    }
+
+    .fm-ribbon-btn.small {
+        --rb-flex-dir: row;
+        --rb-min-h: 44px;
+        --rb-justify: flex-start;
+        --rb-text-align: left;
+        --rb-icon-size: 16px;
     }
 
     .fm-ribbon-mobile-menu-item .icon svg {

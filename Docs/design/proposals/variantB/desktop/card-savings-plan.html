@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"inverse-on-surface":"#2e3036","surface-container-lowest":"#0b0e13","tertiary":"#ffd1aa","error-container":"#93000a","on-tertiary":"#4b2800","tertiary-fixed":"#ffdcc0","on-primary-fixed-variant":"#005047","primary-container":"#2dd4bf","on-error-container":"#ffdad6","tertiary-container":"#ffac5a","inverse-primary":"#006b5f","on-secondary-fixed-variant":"#5516be","on-surface":"#e1e2ea","primary":"#57f1db","surface-variant":"#32353b","outline":"#859490","on-secondary-container":"#c4abff","inverse-surface":"#e1e2ea","on-primary-container":"#00574d","on-tertiary-container":"#744000","secondary":"#d0bcff","primary-fixed-dim":"#3cddc7","on-primary-fixed":"#00201c","outline-variant":"#3c4a46","surface-container":"#1d2025","surface-container-low":"#191c21","on-tertiary-fixed-variant":"#6b3b00","surface-bright":"#36393f","secondary-container":"#571bc1","surface-container-highest":"#32353b","on-background":"#e1e2ea","error":"#ffb4ab","on-error":"#690005","on-secondary":"#3c0091","secondary-fixed":"#e9ddff","tertiary-fixed-dim":"#ffb875","on-primary":"#003731","on-surface-variant":"#bacac5","secondary-fixed-dim":"#d0bcff","surface-container-high":"#272a30","surface-dim":"#111319","background":"#111319","on-secondary-fixed":"#23005c","primary-fixed":"#62fae3","surface-tint":"#3cddc7","surface":"#111319","on-tertiary-fixed":"#2d1600"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-sm":"0.5rem","space-lg":"1.5rem",gutter:"1.5rem","margin-sm":"1rem","space-md":"1rem","space-xl":"2.5rem",margin:"2rem","gutter-sm":"1rem","space-xs":"0.25rem"},fontFamily:{"label-numeric-lg":["JetBrains Mono"],"body-lg":["Inter"],"label-numeric-sm":["JetBrains Mono"],"headline-lg":["Inter"],"headline-lg-mobile":["Inter"],"headline-sm":["Inter"],"headline-md":["Inter"],"headline-xl":["Inter"],"body-sm":["Inter"],"label-numeric-md":["JetBrains Mono"],"headline-xl-mobile":["Inter"],"body-md":["Inter"],"label-caps":["Inter"]},fontSize:{"label-numeric-lg":["20px",{lineHeight:"28px",letterSpacing:"-0.02em",fontWeight:"500"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"label-numeric-sm":["11px",{lineHeight:"14px",letterSpacing:"0.04em",fontWeight:"500"}],"headline-lg":["32px",{lineHeight:"40px",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-lg-mobile":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"500"}],"headline-md":["22px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"500"}],"headline-xl":["40px",{lineHeight:"48px",letterSpacing:"-0.02em",fontWeight:"600"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"label-numeric-md":["14px",{lineHeight:"20px",fontWeight:"500"}],"headline-xl-mobile":["30px",{lineHeight:"38px",letterSpacing:"-0.015em",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.06em",fontWeight:"600"}]}}}}</script><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container fm-body-b"><aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class=" active" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class="" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Sparplan-Detailkarte</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Speichern"><span class="material-symbols-outlined">save</span><span>Speichern</span></button><button class="fm-rib-btn" type="button" title="Archivieren"><span class="material-symbols-outlined">archive</span><span>Archivieren</span></button><button class="fm-rib-btn" type="button" title="Löschen"><span class="material-symbols-outlined">delete</span><span>Löschen</span></button></div><div class="fm-rib-caption">Verwalten</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Neu berechnen"><span class="material-symbols-outlined">refresh</span><span>Neu berechnen</span></button></div><div class="fm-rib-caption">Analyse</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Istmeldung"><span class="material-symbols-outlined">edit</span><span>Istmeldung</span></button></div><div class="fm-rib-caption">Buchungen</div></div><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Kategorie"><span class="material-symbols-outlined">group</span><span>Kategorie</span></button><button class="fm-rib-btn" type="button" title="Buchungen"><span class="material-symbols-outlined">receipt_long</span><span>Buchungen</span></button><button class="fm-rib-btn" type="button" title="Anhänge"><span class="material-symbols-outlined">attach_file</span><span>Anhänge</span></button></div><div class="fm-rib-caption">Verknüpfte Informationen</div></div></div><div class="pl-72 flex flex-col min-h-screen"><main class="w-full pt-16 px-gutter flex-1 bg-surface"><div class="flex flex-col w-full pb-16">
+<!-- BREADCRUMBS & TOP HEADER -->
+<div class="flex flex-col gap-space-xs py-space-md">
+<div class="flex items-center gap-space-xs font-label-caps text-label-caps text-outline uppercase tracking-wider">
+<span>FinanceManager</span>
+<span class="text-outline-variant">/</span>
+<span>Sparpläne</span>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface">Sparplan-Details</span>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-space-md pt-space-xs">
+<div class="flex items-center gap-space-md flex-wrap">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Sparplandetails</h1>
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-primary/10 text-primary">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-caps text-label-caps font-semibold uppercase tracking-wider">Status: AKTIV</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-lg text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">
+<span class="text-primary font-semibold">#SP-01</span>
+<span class="text-outline">•</span>
+<span class="font-body-sm text-body-sm text-on-surface">MSCI World Core ETF</span>
+</div>
+</div>
+</div>
+<!-- RIBBON TOOLBAR -->
+<!-- 1. TOP KPI SUMMARY CARD -->
+<div class="w-full bg-surface-container-low rounded-xl p-space-lg mb-space-lg shadow-md relative overflow-hidden">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -left-16 -bottom-16 w-64 h-64 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-lg relative z-10">
+<!-- KPI 1 -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Sparplan</span>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">MSCI World Core ETF</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">iShares • IE00B4L5Y983</span>
+</div>
+<!-- KPI 2 -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Sparrate</span>
+<div class="font-headline-sm text-headline-sm text-primary font-semibold font-label-numeric-lg text-label-numeric-lg">
+          +450,00 EUR
+        </div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">SEPA-Lastschriftmandat aktiv</span>
+</div>
+<!-- KPI 3 -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Intervall</span>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold">Monatlich</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Jeweils am 1. des Monats</span>
+</div>
+<!-- KPI 4 -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Status &amp; Nächste Fälligkeit</span>
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_rgba(45,212,191,0.6)]"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Aktiv</span>
+</div>
+<span class="font-body-sm text-body-sm text-primary-fixed-dim font-label-numeric-sm text-label-numeric-sm">Nächste Ausführung: 01.06.2024</span>
+</div>
+</div>
+</div>
+<!-- 2. FORMULAR-KARTEN (2-SPALTIGES GRID) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg mb-space-lg">
+<!-- Feld 1: NAME -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<label class="font-label-caps text-label-caps text-outline uppercase tracking-wider" for="plan-name">Name des Sparplans</label>
+<span class="material-symbols-outlined text-outline text-[18px]">edit_note</span>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest text-on-surface px-space-md py-space-sm rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" id="plan-name" type="text" value="MSCI World Core ETF">
+</div>
+<div class="flex items-center gap-space-xs mt-space-xs text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">
+<span class="text-outline">WKN:</span>
+<span class="text-on-surface">A0RPWH</span>
+<span class="text-outline-variant">•</span>
+<span class="text-outline">ISIN:</span>
+<span class="text-on-surface">IE00B4L5Y983</span>
+</div>
+</div>
+<!-- Feld 2: INTERVALL -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<label class="font-label-caps text-label-caps text-outline uppercase tracking-wider" for="plan-intervall">Ausführungsintervall</label>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-secondary font-label-caps text-label-caps uppercase">Turnusmäßig</span>
+</div>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest text-on-surface px-space-md py-space-sm rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer" id="plan-intervall">
+<option selected>Monatlich (zum 1. Bankarbeitstag)</option>
+<option>Monatlich (zum 15. Bankarbeitstag)</option>
+<option>Zweimonatlich (1. des Monats)</option>
+<option>Quartalsweise (Jan / Apr / Jul / Okt)</option>
+</select>
+<span class="material-symbols-outlined text-outline pointer-events-none absolute right-space-md top-1/2 -translate-y-1/2 text-[20px]">expand_more</span>
+</div>
+<div class="flex items-center gap-space-xs mt-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">event_repeat</span>
+<span>Automatische Ausführung durch Bankinstitut um 08:00 Uhr</span>
+</div>
+</div>
+<!-- Feld 3: BETRAG -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<label class="font-label-caps text-label-caps text-outline uppercase tracking-wider" for="plan-betrag">Sparrate / Betrag</label>
+<span class="material-symbols-outlined text-primary text-[18px]">payments</span>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest text-primary px-space-md py-space-sm rounded-lg font-label-numeric-lg text-label-numeric-lg font-semibold focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" id="plan-betrag" type="text" value="450,00 EUR">
+</div>
+<div class="flex items-center gap-space-xs mt-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="text-on-surface">Dynamisierung: Deaktiviert</span>
+<span class="text-outline-variant">•</span>
+<span>SEPA-Lastschriftverfahren</span>
+</div>
+</div>
+<!-- Feld 4: ZIELKONTO -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<label class="font-label-caps text-label-caps text-outline uppercase tracking-wider" for="plan-zielkonto">Zielkonto / Verrechnungskonto</label>
+<span class="px-space-xs py-0.5 rounded bg-secondary/10 text-secondary font-label-caps text-label-caps uppercase">Depot</span>
+</div>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest text-on-surface px-space-md py-space-sm rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer" id="plan-zielkonto">
+<option selected>Trade Republic Verrechnungskonto (DE44 1101 0100 8823 4901 77) [DEPOT]</option>
+<option>Scalable Capital Brokerage (DE89 5001 0517 2291 0044 12)</option>
+<option>Comdirect Depotverrechnung (DE02 2004 1144 0932 1198 00)</option>
+</select>
+<span class="material-symbols-outlined text-outline pointer-events-none absolute right-space-md top-1/2 -translate-y-1/2 text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Feld 5: KATEGORIE -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<label class="font-label-caps text-label-caps text-outline uppercase tracking-wider" for="plan-kategorie">Sparplankategorie</label>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-tertiary-fixed font-label-caps text-label-caps uppercase">Passiv &amp; Langfristig</span>
+</div>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest text-on-surface px-space-md py-space-sm rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer" id="plan-kategorie">
+<option selected>ETFs &amp; Indexfonds (Aktien / Vermögensaufbau)</option>
+<option>Einzelaktien (Blue Chips)</option>
+<option>Rohstoffe &amp; Edelmetalle</option>
+<option>Kryptowerte &amp; Digital Assets</option>
+</select>
+<span class="material-symbols-outlined text-outline pointer-events-none absolute right-space-md top-1/2 -translate-y-1/2 text-[20px]">expand_more</span>
+</div>
+<div class="flex items-center gap-space-xs mt-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">pie_chart</span>
+<span>Allokation im Gesamtdepot: 62,4% des Sparvolumens</span>
+</div>
+</div>
+<!-- Feld 6: STATUS / AKTIV -->
+<div class="bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<label class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Sparplan-Status</label>
+<span class="font-label-numeric-sm text-label-numeric-sm text-primary font-medium">33 Ausführungen</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-space-md py-space-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-semibold">Aktiv geschaltet</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Regulärer automatischer Einzug</span>
+</div>
+<!-- Toggle Switch ON (Teal) -->
+<button aria-checked="true" class="w-12 h-6 bg-primary rounded-full p-0.5 flex items-center justify-end shadow-sm cursor-pointer transition-colors focus:outline-none" role="switch" type="button">
+<span class="w-5 h-5 rounded-full bg-surface-container-lowest shadow-md"></span>
+</button>
+</div>
+<div class="flex items-center justify-between mt-space-xs text-on-surface-variant font-label-numeric-sm text-label-numeric-sm">
+<span class="text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+          33 erfolgreiche Ausführungen
+        </span>
+<span class="text-outline">0 fehlgeschlagen</span>
+</div>
+</div>
+</div>
+<!-- 3. BEWEGUNGSDIAGRAMM & WERTENTWICKLUNG -->
+<div class="w-full bg-surface-container-low rounded-xl p-space-lg mb-space-lg shadow-md flex flex-col">
+<!-- Header Controls & Legende -->
+<div class="flex flex-wrap items-center justify-between gap-space-md pb-space-lg">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">ssid_chart</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Bewegungsdiagramm &amp; Wertentwicklung</h2>
+</div>
+<div class="flex items-center gap-space-md flex-wrap pt-space-xs">
+<!-- Legende 1: Eingezahltes Kapital -->
+<div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="w-3 h-0.5 bg-secondary border-b border-dashed border-secondary"></span>
+<span>Eingezahltes Kapital:</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-on-surface font-semibold">14.850 €</span>
+</div>
+<!-- Legende 2: Depotwert -->
+<div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="w-3 h-1.5 rounded-sm bg-primary shadow-[0_0_6px_rgba(45,212,191,0.6)]"></span>
+<span>Depotwert:</span>
+<span class="font-label-numeric-sm text-label-numeric-sm text-primary font-semibold">17.412,85 €</span>
+<span class="text-primary font-label-numeric-sm text-label-numeric-sm">(+17,26%)</span>
+</div>
+</div>
+</div>
+<!-- Zeitraum Filter -->
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-lg gap-1">
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-all" type="button">6M</button>
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-all" type="button">1J</button>
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-all" type="button">3J</button>
+<button class="px-space-sm py-1 rounded bg-primary-container text-on-primary-container font-semibold font-label-caps text-label-caps shadow-sm" type="button">Gesamtlaufzeit</button>
+</div>
+</div>
+<!-- Chart Visualization (Inline SVG) -->
+<div class="w-full relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md">
+<!-- Glow Underlay -->
+<div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-primary/10 via-primary/5 to-transparent pointer-events-none"></div>
+<svg class="w-full h-72 overflow-visible" preserveaspectratio="none" viewbox="0 0 960 320">
+<defs>
+<!-- Gradient for Teal Area Under Curve -->
+<lineargradient id="chartGradientTeal" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.35"></stop>
+<stop offset="60%" stop-color="#2dd4bf" stop-opacity="0.08"></stop>
+<stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.0"></stop>
+</lineargradient>
+<!-- Gradient for Violet Area Under Curve (Invested Capital) -->
+<lineargradient id="chartGradientViolet" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.12"></stop>
+<stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<!-- Horizontal Grid Lines -->
+<line stroke="#32353b" stroke-opacity="0.3" stroke-width="1" x1="40" x2="940" y1="40" y2="40"></line>
+<text fill="#859490" font-family="JetBrains Mono" font-size="10" text-anchor="end" x="32" y="44">18.000 €</text>
+<line stroke="#32353b" stroke-opacity="0.3" stroke-width="1" x1="40" x2="940" y1="100" y2="100"></line>
+<text fill="#859490" font-family="JetBrains Mono" font-size="10" text-anchor="end" x="32" y="104">14.000 €</text>
+<line stroke="#32353b" stroke-opacity="0.3" stroke-width="1" x1="40" x2="940" y1="160" y2="160"></line>
+<text fill="#859490" font-family="JetBrains Mono" font-size="10" text-anchor="end" x="32" y="164">10.000 €</text>
+<line stroke="#32353b" stroke-opacity="0.3" stroke-width="1" x1="40" x2="940" y1="220" y2="220"></line>
+<text fill="#859490" font-family="JetBrains Mono" font-size="10" text-anchor="end" x="32" y="224">6.000 €</text>
+<line stroke="#32353b" stroke-opacity="0.4" stroke-width="1" x1="40" x2="940" y1="270" y2="270"></line>
+<!-- AREA 1: Depotwert (Glowing Teal Area) -->
+<path d="M 50 240 
+                 C 110 230, 160 215, 220 205 
+                 C 280 195, 340 185, 400 160 
+                 C 460 145, 520 165, 580 130 
+                 C 640 105, 700 115, 760 85 
+                 C 820 65, 870 52, 920 48 
+                 L 920 270 L 50 270 Z" fill="url(#chartGradientTeal)"></path>
+<!-- AREA 2: Cumulative Savings (Violet dashed steady climb) -->
+<path d="M 50 250 
+                 L 110 240 
+                 L 170 230 
+                 L 230 220 
+                 L 290 208 
+                 L 350 196 
+                 L 410 184 
+                 L 470 172 
+                 L 530 160 
+                 L 590 148 
+                 L 650 136 
+                 L 710 124 
+                 L 770 112 
+                 L 830 100 
+                 L 920 88 
+                 L 920 270 L 50 270 Z" fill="url(#chartGradientViolet)"></path>
+<!-- LINE 2: Cumulative savings (Dashed Violet) -->
+<path d="M 50 250 
+                 L 110 240 
+                 L 170 230 
+                 L 230 220 
+                 L 290 208 
+                 L 350 196 
+                 L 410 184 
+                 L 470 172 
+                 L 530 160 
+                 L 590 148 
+                 L 650 136 
+                 L 710 124 
+                 L 770 112 
+                 L 830 100 
+                 L 920 88" fill="none" stroke="#8b5cf6" stroke-dasharray="4,4" stroke-width="2"></path>
+<!-- LINE 1: Depot Market Value (Glowing Teal Smooth Curve) -->
+<path d="M 50 240 
+                 C 110 230, 160 215, 220 205 
+                 C 280 195, 340 185, 400 160 
+                 C 460 145, 520 165, 580 130 
+                 C 640 105, 700 115, 760 85 
+                 C 820 65, 870 52, 920 48" fill="none" stroke="#2dd4bf" stroke-linecap="round" stroke-width="3"></path>
+<!-- Execution Dots along the curve -->
+<circle cx="50" cy="240" fill="#2dd4bf" r="3"></circle>
+<circle cx="160" cy="215" fill="#2dd4bf" r="3"></circle>
+<circle cx="280" cy="195" fill="#2dd4bf" r="3"></circle>
+<circle cx="400" cy="160" fill="#2dd4bf" r="3"></circle>
+<circle cx="520" cy="165" fill="#2dd4bf" r="3"></circle>
+<circle cx="640" cy="105" fill="#2dd4bf" r="3"></circle>
+<circle cx="760" cy="85" fill="#2dd4bf" r="3"></circle>
+<circle cx="870" cy="52" fill="#2dd4bf" r="3"></circle>
+<circle class="animate-pulse" cx="920" cy="48" fill="#2dd4bf" r="5" stroke="#0b0e13" stroke-width="2"></circle>
+<!-- Tooltip Line at Mai 2024 (x=920) -->
+<line stroke="#2dd4bf" stroke-dasharray="2,2" stroke-opacity="0.5" x1="920" x2="920" y1="48" y2="270"></line>
+<!-- X Axis Labels (Jan 2023 bis Mai 2024) -->
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="50" y="290">Jan 23</text>
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="160" y="290">Mär 23</text>
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="270" y="290">Mai 23</text>
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="380" y="290">Jul 23</text>
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="490" y="290">Sep 23</text>
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="600" y="290">Nov 23</text>
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="710" y="290">Jan 24</text>
+<text fill="#859490" font-family="Inter" font-size="10" text-anchor="middle" x="820" y="290">Mär 24</text>
+<text fill="#2dd4bf" font-family="Inter" font-size="10" font-weight="600" text-anchor="middle" x="920" y="290">Mai 24</text>
+</svg>
+<!-- Tooltip Box (Mai 2024) -->
+<div class="absolute right-8 top-6 bg-surface-container-high/90 backdrop-blur-md px-space-md py-space-xs rounded-lg shadow-xl pointer-events-none">
+<div class="font-label-caps text-label-caps text-primary uppercase font-semibold">Mai 2024</div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-on-surface font-bold">17.412,85 € Depotwert</div>
+<div class="font-label-numeric-sm text-label-numeric-sm text-on-surface-variant">Einzahlungen: 14.850,00 €</div>
+</div>
+</div>
+<!-- Quick Metrics Footer under Chart -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-space-lg">
+<div class="flex items-center gap-space-sm bg-surface-container-lowest p-space-md rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">price_change</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-outline uppercase">Durchschnittl. Einstiegskurs</span>
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold">462,10 €</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm bg-surface-container-lowest p-space-md rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-outline uppercase">Erste Ausführung</span>
+<span class="font-label-numeric-md text-label-numeric-md text-on-surface font-semibold">01.09.2021</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm bg-surface-container-lowest p-space-md rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">check_circle_outline</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-outline uppercase">Letzte Ausführung</span>
+<span class="font-label-numeric-md text-label-numeric-md text-primary font-semibold">01.05.2024 (+450,00 €)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- FOOTER STATUS BAR -->
+</div></main></div></body></html>

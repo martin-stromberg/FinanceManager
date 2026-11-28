@@ -135,11 +135,19 @@ public sealed class SetupMcpViewModel : BaseViewModel
 
     /// <summary>Updates the pending kill-switch value (does not persist).</summary>
     /// <param name="enabled">New pending value.</param>
-    public void SetSettingsEnabled(bool enabled) { SettingsEnabled = enabled; RaiseStateChanged(); }
+    public void SetSettingsEnabled(bool enabled)
+    {
+        SettingsEnabled = enabled;
+        RaiseStateChanged();
+    }
 
     /// <summary>Updates the pending write-access value (does not persist).</summary>
     /// <param name="enabled">New pending value.</param>
-    public void SetSettingsWriteAccess(bool enabled) { SettingsWriteAccess = enabled; RaiseStateChanged(); }
+    public void SetSettingsWriteAccess(bool enabled)
+    {
+        SettingsWriteAccess = enabled;
+        RaiseStateChanged();
+    }
 
     /// <summary>
     /// Persists the pending MCP settings (<c>PUT /api/mcp-audit/settings</c>). Enabling the
@@ -210,7 +218,7 @@ public sealed class SetupMcpViewModel : BaseViewModel
                 "McpApprovals",
                 approvalsLabel,
                 "<svg><use href='icons/sprite.svg#check'/></svg>",
-                UiRibbonItemSize.Large,
+                UiRibbonItemSize.Small,
                 false,
                 null,
                 new Func<Task>(() =>
@@ -247,7 +255,7 @@ public sealed class SetupMcpViewModel : BaseViewModel
 
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(localizer["Ribbon_Group_Mcp"].Value, actions)
+            new UiRibbonTab(localizer["Ribbon_Group_Mcp"].Value, actions, Sort: 35)
         };
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
     }

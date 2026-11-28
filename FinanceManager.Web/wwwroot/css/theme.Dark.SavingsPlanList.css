@@ -12,5 +12,5 @@
 }
 
 .status-item {
-    color: #333;
+    color: var(--border);
 }

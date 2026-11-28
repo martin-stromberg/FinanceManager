@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html class="dark" lang="de"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Hilfe-Artikel | FinanceManager Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            bgDark: '#080a0f',
+            bgSurface: '#0f131c',
+            bgElevated: '#161b26',
+            bgGlass: 'rgba(18, 24, 38, 0.72)',
+            tealAccent: '#2dd4bf',
+            violetAccent: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #080a0f;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .glow-teal {
+      background: radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12) 0%, transparent 40%);
+    }
+    .glow-violet {
+      background: radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.13) 0%, transparent 45%);
+    }
+    .glass-panel {
+      background: rgba(15, 19, 28, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(22, 27, 38, 0.6) 0%, rgba(15, 19, 28, 0.8) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+    .active-nav-glow {
+      box-shadow: 0 0 20px -3px rgba(45, 212, 191, 0.4);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e2638;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+  </style>
+<meta content="web_dashboard" name="shell-type"><style id="fm-canonical">
+
+/* --- canonical chrome injected by rework-proposals.py --- */
+.fm-aside{position:fixed;left:0;top:0;bottom:0;width:232px;display:flex;flex-direction:column;
+  background:var(--fm-bg2);border-right:1px solid var(--fm-border);z-index:60}
+.fm-brand{display:flex;align-items:center;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--fm-border)}
+.fm-logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fm-brand-name{display:block;font-weight:600;font-size:15px;color:var(--fm-text);letter-spacing:-.01em}
+.fm-brand-sub{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--fm-muted)}
+.fm-nav{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px}
+.fm-nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;
+  color:var(--fm-muted);font-size:13px;text-decoration:none}
+.fm-nav a .material-symbols-outlined{font-size:19px;width:20px;text-align:center}
+.fm-nav a.active{background:var(--fm-active);color:var(--fm-accent);font-weight:600}
+.fm-nav a:hover{background:var(--fm-hover);color:var(--fm-text)}
+.fm-nav-sep{height:1px;background:var(--fm-border);margin:8px 10px}
+.fm-topbar{position:fixed;top:0;left:232px;right:0;height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;background:var(--fm-bg2);border-bottom:1px solid var(--fm-border);z-index:50}
+.fm-page-title{font-size:15px;font-weight:600;color:var(--fm-text);letter-spacing:-.01em}
+.fm-avatar{width:30px;height:30px;border-radius:50%;background:var(--fm-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.fm-ribbon{position:fixed;top:52px;left:232px;right:0;display:flex;gap:14px;align-items:stretch;
+  padding:8px 24px;background:var(--fm-bg3);border-bottom:1px solid var(--fm-border);z-index:40;
+  overflow-x:auto;min-height:58px}
+.fm-rib-group{display:flex;flex-direction:column}
+.fm-rib-group-body{display:flex;gap:4px;align-items:stretch;flex:1}
+.fm-rib-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:60px;padding:5px 10px;border:none;border-radius:7px;background:transparent;
+  color:var(--fm-text);font-size:11px;cursor:default}
+.fm-rib-btn .material-symbols-outlined{font-size:20px}
+.fm-rib-btn.primary{background:var(--fm-accent);color:#fff}
+.fm-rib-caption{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fm-muted);
+  text-align:center;border-top:1px solid var(--fm-border);padding-top:2px;margin-top:2px}
+.fm-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;background:var(--fm-bg3);border:1px solid var(--fm-border);cursor:help;
+  color:var(--fm-muted);vertical-align:middle}
+.fm-info .material-symbols-outlined{font-size:13px}
+body{margin:0;padding-left:232px;padding-top:110px;background:var(--fm-bg);color:var(--fm-text)}
+/* Variant B (icon rail) */
+.fm-aside-b{width:72px;align-items:center}
+.fm-aside-b .fm-brand{padding:14px 0;flex-direction:column;gap:4px}
+.fm-aside-b .fm-brand-text{display:none}
+.fm-aside-b .fm-brand-sub{display:none}
+.fm-aside-b .fm-nav{padding:12px 0;align-items:center;gap:4px}
+.fm-aside-b .fm-nav a{padding:0;width:44px;height:44px;justify-content:center;border-radius:12px;position:relative}
+.fm-aside-b .fm-nav a .material-symbols-outlined{font-size:20px}
+.fm-aside-b .fm-nav a .fm-nav-label{display:none}
+.fm-aside-b .fm-nav-sep{width:32px;margin:8px 0}
+.fm-topbar-b{left:72px}
+.fm-ribbon-b{top:60px;left:72px;background:var(--fm-bg2);border-radius:0;min-height:64px;gap:10px;align-items:center}
+.fm-ribbon-b .fm-rib-group{background:var(--fm-bg3);border:1px solid var(--fm-border);border-radius:14px;padding:6px 10px}
+.fm-ribbon-b .fm-rib-btn{min-width:0;padding:4px 9px}
+body.fm-body-b{padding-left:72px;padding-top:124px}
+/* mobile */
+.fm-aside-m{display:none}
+body.fm-body-m{padding-left:0;padding-top:108px}
+.fm-topbar-m{left:0}
+.fm-ribbon-m{left:0;top:56px}
+.fm-burger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border:none;border-radius:8px;background:transparent;color:var(--fm-muted)}
+/* neutralize legacy offsets of the old generated chrome */
+body>*{padding-left:0!important;margin-left:0!important;padding-top:0!important}
+body>header,body>aside{position:fixed}
+main{min-height:60vh}
+
+</style><style>:root{--fm-bg:#0a0d12;--fm-bg2:#0e1219;--fm-bg3:#141a24;--fm-border:rgba(255,255,255,.09);--fm-text:#e8eef7;--fm-muted:#94a3b8;--fm-accent:#2dd4bf;--fm-active:rgba(45,212,191,.14);--fm-hover:rgba(255,255,255,.05)}body{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif}</style></head>
+<body class="min-h-screen text-slate-200 antialiased selection:bg-teal-500/30 selection:text-teal-200 flex flex-col md:flex-row relative fm-body-b">
+<aside class="fm-aside fm-aside-b"><div class="fm-brand"><span class="fm-logo" style="background:linear-gradient(135deg,rgba(45,212,191,.18),rgba(139,92,246,.18));color:#2dd4bf"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="8" rx="1" fill="currentColor"></rect><rect x="10" y="7" width="4.5" height="13" rx="1" fill="currentColor" opacity=".75"></rect><rect x="17" y="3" width="4.5" height="17" rx="1" fill="currentColor" opacity=".5"></rect></svg></span><div class="fm-brand-text"><span class="fm-brand-name">FinanceManager</span><span class="fm-brand-sub">Finanzverwaltung</span></div></div><nav class="fm-nav"><a class="" data-path="start" href="#" title="Start"><span class="material-symbols-outlined">grid_view</span><span class="fm-nav-label">Start</span></a><a class="" data-path="konten" href="#" title="Konten"><span class="material-symbols-outlined">account_balance_wallet</span><span class="fm-nav-label">Konten</span></a><a class="" data-path="kontakte" href="#" title="Kontakte"><span class="material-symbols-outlined">contacts</span><span class="fm-nav-label">Kontakte</span></a><a class="" data-path="sparplaene" href="#" title="Sparpläne"><span class="material-symbols-outlined">savings</span><span class="fm-nav-label">Sparpläne</span></a><a class=" active" data-path="wertpapiere" href="#" title="Wertpapiere"><span class="material-symbols-outlined">trending_up</span><span class="fm-nav-label">Wertpapiere</span></a><a class="" data-path="kontoauszuege" href="#" title="Kontoauszüge"><span class="material-symbols-outlined">receipt_long</span><span class="fm-nav-label">Kontoauszüge</span></a><a class="" data-path="budget" href="#" title="Budget"><span class="material-symbols-outlined">pie_chart</span><span class="fm-nav-label">Budget</span></a><a class="" data-path="berichte" href="#" title="Berichte"><span class="material-symbols-outlined">analytics</span><span class="fm-nav-label">Berichte</span></a><div class="fm-nav-sep"></div><a class="" data-path="benutzerverwaltung" href="#" title="Benutzerverwaltung"><span class="material-symbols-outlined">group</span><span class="fm-nav-label">Benutzerverwaltung</span></a><a class="" data-path="ki-zugaenge" href="#" title="KI-Zugänge"><span class="material-symbols-outlined">psychology</span><span class="fm-nav-label">KI-Zugänge</span></a><a class="" data-path="einstellungen" href="#" title="Einstellungen"><span class="material-symbols-outlined">settings</span><span class="fm-nav-label">Einstellungen</span></a><div class="fm-nav-sep"></div><a class="" data-path="hilfe" href="#" title="Hilfe"><span class="material-symbols-outlined">help</span><span class="fm-nav-label">Hilfe</span></a><a class="" data-path="abmelden" href="#" title="Abmelden"><span class="material-symbols-outlined">logout</span><span class="fm-nav-label">Abmelden</span></a></nav></aside><header class="fm-topbar fm-topbar-b"><span class="fm-page-title">Performance &gt; Cashflows</span><div class="fm-avatar">FM</div></header><div class="fm-ribbon fm-ribbon-b"><div class="fm-rib-group"><div class="fm-rib-group-body"><button class="fm-rib-btn" type="button" title="Zurück"><span class="material-symbols-outlined">arrow_back</span><span>Zurück</span></button></div><div class="fm-rib-caption">Navigieren</div></div></div><!-- Ambient Light Overlays -->
+<div class="fixed inset-0 pointer-events-none z-0 glow-teal"></div>
+<div class="fixed inset-0 pointer-events-none z-0 glow-violet"></div>
+<div class="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))]"></div>
+<!-- ==================== LEFT SIDEBAR (SLIM ICON-RAIL VARIANT B) ==================== -->
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="flex-1 flex flex-col min-w-0 z-10">
+<!-- TOP CONTEXTUAL ACTION BAR (Variant B rethink of classic ribbon toolbar) -->
+<!-- ==================== SCROLLABLE CONTENT AREA ==================== -->
+<main class="flex-1 overflow-y-auto px-6 py-8 lg:px-10 lg:py-10"><div class="flex flex-col w-full space-y-8">
+<!-- Top Navigation & View Header -->
+<section class="flex flex-col gap-6">
+<!-- Breadcrumb & Context Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="flex flex-col gap-2">
+<nav class="flex items-center gap-2 font-label-sm text-outline uppercase tracking-wider">
+<span>Wertpapiere</span>
+<span class="material-symbols-outlined text-[12px] text-outline-variant">chevron_right</span>
+<span>Performance</span>
+<span class="material-symbols-outlined text-[12px] text-outline-variant">chevron_right</span>
+<span class="text-primary font-medium">Cashflows</span>
+</nav>
+<div class="flex flex-col">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Depot-Cashflows &amp; Liquiditätsströme</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Historische Einzahlungen, Auszahlungen, Dividenden-Cashflows &amp; kumulierte Netto-Zuflüsse</p>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-3 self-start md:self-auto">
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">stacked_line_chart</span>
+<span>Benchmark zuschalten</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md hover:brightness-110 transition-all shadow-lg shadow-primary-container/20" type="button">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+<span>Exportieren</span>
+</button>
+</div>
+</div>
+<!-- Sub-Navigation Tabs & Period Filter Rail -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-container-low p-2 rounded-2xl">
+<!-- Sub-Tabs -->
+<div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Übersicht</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Zeitreihe</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-primary bg-primary-container font-semibold shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">sync_alt</span>
+<span>Cashflows</span>
+</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Benchmark</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Rendite-Treiber</button>
+<button class="px-4 py-2 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap" type="button">Asset-Klassen</button>
+</div>
+<!-- Time Filter Pills -->
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-xl self-start lg:self-auto">
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">1M</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">6M</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">YTD</button>
+<button class="px-3 py-1 text-xs font-semibold text-on-primary-container bg-primary-container rounded-lg shadow-sm" type="button">1J</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">3J</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">5J</button>
+<button class="px-2.5 py-1 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">Max</button>
+</div>
+</div>
+</section>
+<!-- Summary KPI Cards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI 1: Kumulierte Netto-Einzahlungen -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-primary/10 blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Kumulierte Netto-Zuflüsse</span>
+<div class="p-2 rounded-xl bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight font-mono">+84.200,00</span>
+<span class="font-label-md text-label-md text-primary/80 font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">Einzahlungen abzgl. Entnahmen seit Depoteröffnung</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Letzte 12 Monate</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold font-mono">+14.200,00 €</span>
+</div>
+</div>
+<!-- KPI 2: Brutto-Einzahlungen -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Brutto-Einzahlungen</span>
+<div class="p-2 rounded-xl bg-surface-container-highest text-on-surface">
+<span class="material-symbols-outlined text-[20px]">south_west</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight font-mono">96.500,00</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">28 Sparplanausführungen + Einmalanlagen</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ø Monatlicher Zufluss</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold font-mono">1.183,33 €</span>
+</div>
+</div>
+<!-- KPI 3: Auszahlungen & Entnahmen -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Auszahlungen &amp; Entnahmen</span>
+<div class="p-2 rounded-xl bg-error/10 text-error">
+<span class="material-symbols-outlined text-[20px]">north_east</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-error tracking-tight font-mono">-12.300,00</span>
+<span class="font-label-md text-label-md text-error/80 font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">Rebalancing-Entnahmen &amp; Steuerliquidität</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Zuletzt Juli 2024</span>
+<span class="font-label-sm text-label-sm text-error font-semibold font-mono">-1.500,00 €</span>
+</div>
+</div>
+<!-- KPI 4: Reinvestierte Dividenden -->
+<div class="bg-surface-container p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-all shadow-md">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-secondary/10 blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Reinvestierte Dividenden</span>
+<div class="p-2 rounded-xl bg-secondary/15 text-secondary">
+<span class="material-symbols-outlined text-[20px]">autorenew</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-secondary tracking-tight font-mono">+3.428,50</span>
+<span class="font-label-md text-label-md text-secondary/80 font-mono">€</span>
+</div>
+<p class="font-legal-disclaimer text-legal-disclaimer text-on-surface-variant mt-1">100% automatisch reinvestiert (DRIP)</p>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between bg-surface-container-lowest/50 -mx-5 -mb-5 px-5 py-2.5">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rendite auf Einstand</span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold font-mono">4,07 %</span>
+</div>
+</div>
+</section>
+<!-- Interactive Cashflow Chart Section -->
+<section class="bg-surface-container p-6 rounded-2xl flex flex-col gap-6 shadow-xl relative">
+<!-- Chart Header & Mode Controls -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex flex-col">
+<h2 class="font-title-lg text-title-lg text-on-surface">Historischer Verlauf der Ein- und Auszahlungen</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Gegenüberstellung monatlicher Einlagen, Entnahmen sowie akkumulierter Netto-Verlauf</p>
+</div>
+<div class="flex flex-wrap items-center gap-3">
+<!-- Legend Indicator -->
+<div class="hidden sm:flex items-center gap-4 bg-surface-container-low px-3 py-1.5 rounded-xl font-label-sm text-label-sm text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary"></span>
+<span>Zuflüsse</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-error"></span>
+<span>Entnahmen</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-1 rounded-full bg-secondary"></span>
+<span>Kumuliert</span>
+</div>
+</div>
+<!-- Interval Toggle -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-xl">
+<button class="px-3 py-1 font-label-sm text-label-sm font-semibold text-on-primary-container bg-primary-container rounded-lg shadow-sm" type="button">Monatlich</button>
+<button class="px-3 py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">Quartalsweise</button>
+<button class="px-3 py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface rounded-lg transition-colors" type="button">Kumuliert</button>
+</div>
+</div>
+</div>
+<!-- Active Callout Tooltip Banner -->
+<div class="flex flex-wrap items-center justify-between gap-3 bg-surface-container-high/70 p-3.5 rounded-xl backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 rounded-full bg-primary"></div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Fokus-Periode: Oktober 2024</span>
+<p class="font-body-sm text-body-sm text-on-surface">
+<span class="font-mono text-primary font-semibold">+1.250,00 €</span> Sparplan &amp; Zuzahlung  •  
+            <span class="font-mono text-on-surface-variant">0,00 €</span> Entnahmen  •  
+            <span class="font-mono text-secondary font-medium">+48,20 €</span> Reinvestierte Dividenden
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Netto-Monatssaldo:</span>
+<span class="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono font-semibold text-label-md">+1.298,20 €</span>
+</div>
+</div>
+<!-- Inline SVG Cashflow Visualization -->
+<div class="w-full h-72 relative flex flex-col justify-end pt-4">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 240">
+<defs>
+<lineargradient id="primaryBarGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#57f1db" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.4"></stop>
+</lineargradient>
+<lineargradient id="errorBarGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffb4ab" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#93000a" stop-opacity="0.3"></stop>
+</lineargradient>
+<lineargradient id="lineGlow" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#d0bcff"></stop>
+<stop offset="100%" stop-color="#57f1db"></stop>
+</lineargradient>
+</defs>
+<!-- Zero / Base Line (Middle Baseline for Inflow vs Outflow) -->
+<line stroke="#32353b" stroke-dasharray="4 4" stroke-width="1.5" x1="0" x2="1000" y1="160" y2="160"></line>
+<line stroke="#32353b" stroke-opacity="0.5" stroke-width="1" x1="0" x2="1000" y1="80" y2="80"></line>
+<line stroke="#32353b" stroke-opacity="0.3" stroke-width="1" x1="0" x2="1000" y1="20" y2="20"></line>
+<!-- Y-Axis Ticks -->
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="25">85k € (Kum.)</text>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="85">+2.000 €</text>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="155">0 €</text>
+<text fill="#859490" font-family="'JetBrains Mono', monospace" font-size="10" x="5" y="210">-2.000 €</text>
+<!-- Bars for 12 Months: Nov23 to Oct24 -->
+<!-- Month 1: Nov 23 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="65" y="115"></rect>
+<!-- Month 2: Dez 23 (In: 1250) -->
+<rect fill="url(#primaryBarGrad)" height="57" rx="4" width="28" x="145" y="103"></rect>
+<!-- Month 3: Jan 24 (In: 2200 - Sonderzahlung) -->
+<rect fill="url(#primaryBarGrad)" height="100" rx="4" width="28" x="225" y="60"></rect>
+<!-- Month 4: Feb 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="305" y="115"></rect>
+<!-- Month 5: Mär 24 (In: 1100) -->
+<rect fill="url(#primaryBarGrad)" height="50" rx="4" width="28" x="385" y="110"></rect>
+<!-- Month 6: Apr 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="465" y="115"></rect>
+<!-- Month 7: Mai 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="545" y="115"></rect>
+<!-- Month 8: Jun 24 (In: 1065) -->
+<rect fill="url(#primaryBarGrad)" height="48" rx="4" width="28" x="625" y="112"></rect>
+<!-- Month 9: Jul 24 (In: 1000, Out: -1500) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="705" y="115"></rect>
+<rect fill="url(#errorBarGrad)" height="65" rx="4" width="28" x="705" y="160"></rect>
+<!-- Month 10: Aug 24 (In: 1000) -->
+<rect fill="url(#primaryBarGrad)" height="45" rx="4" width="28" x="785" y="115"></rect>
+<!-- Month 11: Sep 24 (In: 1172) -->
+<rect fill="url(#primaryBarGrad)" height="53" rx="4" width="28" x="865" y="107"></rect>
+<!-- Month 12: Okt 24 (In: 1250 - Aktuell selektiert) -->
+<rect class="filter drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" fill="url(#primaryBarGrad)" height="57" rx="4" width="28" x="945" y="103"></rect>
+<!-- Cumulative Net Flow Curve -->
+<path d="M 79 125 Q 159 118, 239 100 T 399 92 T 559 84 T 719 86 T 879 66 T 959 52" fill="none" stroke="url(#lineGlow)" stroke-linecap="round" stroke-width="3"></path>
+<!-- Dot markers on cumulative curve -->
+<circle cx="79" cy="125" fill="#111319" r="4" stroke="#d0bcff" stroke-width="2"></circle>
+<circle cx="239" cy="100" fill="#111319" r="4" stroke="#d0bcff" stroke-width="2"></circle>
+<circle cx="719" cy="86" fill="#111319" r="4" stroke="#ffb4ab" stroke-width="2"></circle>
+<circle class="animate-pulse" cx="959" cy="52" fill="#57f1db" r="6" stroke="#111319" stroke-width="2.5"></circle>
+</svg>
+<!-- X-Axis Labels -->
+<div class="grid grid-cols-12 text-center font-mono font-label-sm text-[11px] text-outline pt-2">
+<span>Nov 23</span>
+<span>Dez 23</span>
+<span>Jan 24</span>
+<span>Feb 24</span>
+<span>Mär 24</span>
+<span>Apr 24</span>
+<span>Mai 24</span>
+<span>Jun 24</span>
+<span class="text-error font-medium">Jul 24</span>
+<span>Aug 24</span>
+<span>Sep 24</span>
+<span class="text-primary font-bold">Okt 24</span>
+</div>
+</div>
+</section>
+<!-- Cashflow Table Section -->
+<section class="bg-surface-container rounded-2xl flex flex-col overflow-hidden shadow-xl">
+<!-- Table Toolbar Header -->
+<div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[22px]">receipt_long</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Transaktionsjournal &amp; Liquiditätsbewegungen</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Vollständiges Register aller Valuta-Transaktionen im gewählten Zeitraum</p>
+</div>
+</div>
+<!-- Quick Filter Chips -->
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant hidden md:inline">Filter:</span>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container text-on-surface hover:bg-surface-variant transition-colors" type="button">Alle (42)</button>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container-highest text-primary transition-colors" type="button">Einzahlungen</button>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container text-on-surface hover:bg-surface-variant transition-colors" type="button">Entnahmen</button>
+<button class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container text-on-surface hover:bg-surface-variant transition-colors" type="button">Dividenden</button>
+</div>
+</div>
+<!-- Responsive Table Container -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest/80 text-outline uppercase font-label-sm text-[11px] tracking-wider">
+<th class="py-3 px-5 font-medium">Datum / Valuta</th>
+<th class="py-3 px-5 font-medium">Art / Transaktionstyp</th>
+<th class="py-3 px-5 font-medium">Verwendungszweck / Quellkonto</th>
+<th class="py-3 px-5 font-medium text-right">Betrag</th>
+<th class="py-3 px-5 font-medium text-right">Kumulierter Saldo</th>
+<th class="py-3 px-5 font-medium text-center">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.10.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              84.200,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">01.10.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Einmal-Zuzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">Sparkasse Referenzkonto</span>
+</td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +250,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              83.200,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">28.09.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-medium text-secondary">Dividendengutschrift</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+              Vanguard FTSE All-World (<span class="font-mono text-xs">A1JX52</span>) • DRIP
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-secondary">
+              +172,20 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.950,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary/15 text-secondary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.09.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.777,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 5: Outflow -->
+<tr class="hover:bg-surface-container-high/40 transition-colors bg-error/5">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">18.07.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-medium text-error">Entnahme / Auszahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+              Wertpapierdepot › <span class="text-on-surface">Commerzbank</span>
+</td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-error">
+              -1.500,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              81.777,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-error/15 text-error">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.07.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              83.277,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">24.06.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-medium text-secondary">Dividendengutschrift</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+              ASML Holding N.V. • Automatische Reinvestition
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-secondary">
+              +65,25 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.277,80 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary/15 text-secondary">
+                Verbucht
+              </span>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-4 px-5 whitespace-nowrap font-mono text-on-surface-variant">15.06.2024</td>
+<td class="py-4 px-5 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-medium">Sparplan-Einzahlung</span>
+</div>
+</td>
+<td class="py-4 px-5 text-on-surface-variant">
+<span class="text-on-surface">DKB Girokonto</span> › Wertpapierdepot
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono font-semibold text-primary">
+              +1.000,00 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-right font-mono text-on-surface-variant">
+              82.212,55 €
+            </td>
+<td class="py-4 px-5 whitespace-nowrap text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                Verbucht
+              </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Summary Balance Bar (Summenzeile Zeitraum) -->
+<div class="p-4 bg-surface-container-high flex flex-col md:flex-row md:items-center justify-between gap-3 text-body-sm font-body-sm">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">functions</span>
+<span class="font-semibold">Summenzeile ausgewählter Zeitraum (1 Jahr):</span>
+</div>
+<div class="flex flex-wrap items-center gap-4 font-mono text-xs">
+<div>
+<span class="text-on-surface-variant">Einzahlungen:</span>
+<span class="text-primary font-bold ml-1">+14.200,00 €</span>
+</div>
+<div class="text-outline-variant">•</div>
+<div>
+<span class="text-on-surface-variant">Auszahlungen:</span>
+<span class="text-error font-bold ml-1">-1.500,00 €</span>
+</div>
+<div class="text-outline-variant">•</div>
+<div>
+<span class="text-on-surface-variant">Netto-Cashflow:</span>
+<span class="text-primary font-bold ml-1">+12.700,00 €</span>
+</div>
+</div>
+</div>
+<!-- Pagination Footer -->
+<div class="p-4 bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-4 font-label-sm text-label-sm text-on-surface-variant">
+<div>
+        Zeige <span class="text-on-surface font-semibold font-mono">1–8</span> von <span class="text-on-surface font-semibold font-mono">42</span> Cashflows
+      </div>
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-40" disabled type="button">
+          Vorherige
+        </button>
+<button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container font-bold font-mono text-xs flex items-center justify-center" type="button">1</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface font-mono text-xs flex items-center justify-center transition-colors" type="button">2</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface font-mono text-xs flex items-center justify-center transition-colors" type="button">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface font-mono text-xs flex items-center justify-center transition-colors" type="button">6</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface transition-colors" type="button">
+          Nächste
+        </button>
+</div>
+</div>
+</section>
+</div></main>
+</div>
+</body></html>

@@ -170,27 +170,14 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
                 "Categories",
                 localizer["Ribbon_Categories"].Value,
                 "<svg><use href='icons/sprite.svg#groups'/></svg>",
-                UiRibbonItemSize.Small,
+                UiRibbonItemSize.Large,
                 false,
                 null,
                 () => { RaiseUiActionRequested("OpenCategories"); return Task.CompletedTask; }
             )
         };
 
-        var reports = new List<UiRibbonAction>
-        {
-            new UiRibbonAction(
-                "PortfolioAnalysisReport",
-                localizer["Ribbon_PortfolioAnalysisReport"].Value,
-                "<svg><use href='icons/sprite.svg#chart'/></svg>",
-                UiRibbonItemSize.Small,
-                false,
-                null,
-                () => { _nav.NavigateTo("portfolio/analysis-report"); return Task.CompletedTask; }
-            )
-        };
-
-        var filter = new List<UiRibbonAction>
+        var view = new List<UiRibbonAction>
         {
             new UiRibbonAction(
                 "ToggleActive",
@@ -203,17 +190,29 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             )
         };
 
+        var reports = new List<UiRibbonAction>
+        {
+            new UiRibbonAction(
+                "PortfolioAnalysisReport",
+                localizer["Ribbon_PortfolioAnalysisReport"].Value,
+                "<svg><use href='icons/sprite.svg#chart'/></svg>",
+                UiRibbonItemSize.Large,
+                false,
+                null,
+                () => { _nav.NavigateTo("portfolio/analysis-report"); return Task.CompletedTask; }
+            )
+        };
+
         var tabsActions = new List<UiRibbonTab>
         {
-            new UiRibbonTab(localizer["Ribbon_Group_Actions"].Value, actions),
-            new UiRibbonTab(localizer["Ribbon_Group_Reports"].Value, reports)
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, actions, Sort: 10),
+            new UiRibbonTab(localizer["Ribbon_Group_View"].Value, view, Sort: 30),
+            new UiRibbonTab(localizer["Ribbon_Group_Reports"].Value, reports, Sort: 70)
         };
-        var tabsFilter = new List<UiRibbonTab> { new UiRibbonTab(localizer["Ribbon_Group_Filter"].Value, filter) };
 
         return new List<UiRibbonRegister>
         {
-            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabsActions),
-            new UiRibbonRegister(UiRibbonRegisterKind.Custom, tabsFilter)
+            new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabsActions)
         };
     }
 

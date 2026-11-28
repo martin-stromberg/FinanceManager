@@ -106,6 +106,19 @@ namespace FinanceManager.Web.ViewModels.Common
             }
         }
 
+        private string? _initBack;
+
+        /// <summary>
+        /// Sets an optional back navigation URL used by the UI to navigate back from the view.
+        /// </summary>
+        /// <param name="backUrl">Relative or absolute URL to navigate back to, or <c>null</c> to clear.</param>
+        public void SetBackNavigation(string? backUrl) => _initBack = backUrl;
+
+        /// <summary>
+        /// Optional back navigation URL (available to derived classes).
+        /// </summary>
+        protected string? InitBack => _initBack;
+
         /// <summary>
         /// Service provider used to obtain scoped or singleton services.
         /// </summary>

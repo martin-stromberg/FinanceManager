@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="en" data-culture="de"><head><script type="importmap">{"imports":{"js/profile.js":"/js/profile.js","js/financeManager.js":"/js/financeManager.js","js/attachments.js":"/js/attachments.js"}}</script><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
+    <link rel="shortcut icon" type="image/icon" href="icons/finance_manager-64x64.ico">
+    <script src="js/financeManager.js"></script>
+
+    
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/ribbon.css">
+    <link rel="stylesheet" href="css/app.Contacts.css">
+    <link rel="stylesheet" href="css/app.ContactMergeDialog.css">
+    <link rel="stylesheet" href="css/app.ReportDashboard.css">
+    <link rel="stylesheet" href="css/app.BudgetReport.css">
+    <link rel="stylesheet" href="css/app.BudgetLineChart.css">
+    <link rel="stylesheet" href="css/app.StatementDraftDetail.css">
+    <link rel="stylesheet" href="css/app.ReportKpiTile.css">
+    <link rel="stylesheet" href="css/app.NumericKpi.css">
+    <link rel="stylesheet" href="css/app.HomeKpiGrid.css">
+    <link rel="stylesheet" href="css/app.Home.css">
+    <link rel="stylesheet" href="css/app.AggregateBarChart.css">
+    <link rel="stylesheet" href="css/app.HomeNotifications.css">
+    <link rel="stylesheet" href="css/app.Users.css">
+    <link rel="stylesheet" href="css/app.Setup.css">
+    <link rel="stylesheet" href="css/app.SecurityPrices.css">
+    <link rel="stylesheet" href="css/app.SavingsPlanList.css">
+    <link rel="stylesheet" href="css/app.ReportsHome.css">
+    <link rel="stylesheet" href="css/app.BackgroundTaskStatusPanel.css">
+    <link rel="stylesheet" href="css/app.SetupNotificationsTab.css">
+    <link rel="stylesheet" href="css/app.ReturnAnalysis.css">
+    <link rel="stylesheet" href="help/css/help-page.css">
+    <link rel="stylesheet" href="css/app.ReturnSummaryWidget.css">
+    <link rel="stylesheet" href="css/app.PortfolioReport.css">
+
+    
+    
+    <link rel="stylesheet" href="css/theme.Dark.css">
+    <link rel="stylesheet" href="css/theme.Dark.Ribbon.css">
+    <link rel="stylesheet" href="css/theme.Dark.Contacts.css">
+    <link rel="stylesheet" href="css/theme.Dark.ContactMergeDialog.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReportDashboard.css">
+    <link rel="stylesheet" href="css/theme.Dark.BudgetReport.css">
+    <link rel="stylesheet" href="css/theme.Dark.BudgetLineChart.css">
+    <link rel="stylesheet" href="css/theme.Dark.StatementDraftDetail.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReportKpiTile.css">
+    <link rel="stylesheet" href="css/theme.Dark.HomeKpiGrid.css">
+    <link rel="stylesheet" href="css/theme.Dark.Home.css">
+    <link rel="stylesheet" href="css/theme.Dark.AggregateBarChart.css">
+    <link rel="stylesheet" href="css/theme.Dark.HomeNotifications.css">
+    <link rel="stylesheet" href="css/theme.Dark.Users.css">
+    <link rel="stylesheet" href="css/theme.Dark.Setup.css">
+    <link rel="stylesheet" href="css/theme.Dark.SecurityPrices.css">
+    <link rel="stylesheet" href="css/theme.Dark.SavingsPlanList.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReportsHome.css">
+    <link rel="stylesheet" href="css/theme.Dark.BackgroundTaskStatusPanel.css">
+    <link rel="stylesheet" href="css/theme.Dark.SetupNotificationsTab.css">
+    <link rel="stylesheet" href="css/theme.Dark.ReturnAnalysis.css">
+    <link rel="stylesheet" href="css/theme.Dark.PortfolioReport.css">
+
+    <link rel="stylesheet" href="FinanceManager.Web.styles.css">
+    <link rel="manifest" href="manifest.json"><meta name="fm-xsrf-token" content="CfDJ8A01FDFIdqJEllLlLrlmLWWaOSqhqvvKOGoi0ADEpRkzs4w1SGKgEnbkG9K7eXZSYi5lQtSu-kZr5hB8kVxZXQpcJh0SST9De3FNc_NTMQMMTYs1B1Ek7_0GcXZgx6aQRrnf_O8AFpjZqdaYIfSl5h1SeDewhHyPFU-lrwnRt4GFQ_WSM3EyyyxIjBWlu1VxSg"><script type="importmap">{
+  "imports": {
+    "./_framework/blazor.server.js": "./_framework/blazor.server.kyitu4x8cy.js",
+    "./_framework/blazor.web.js": "./_framework/blazor.web.whefm3rrpu.js",
+    "./auth.js": "./auth.1ygq65ce9r.js",
+    "./help/js/help-search.js": "./help/js/help-search.2jobhb7ckq.js",
+    "./js/attachments.js": "./js/attachments.d3qsotv1io.js",
+    "./js/financeManager.js": "./js/financeManager.407i7ksy61.js",
+    "./js/profile.js": "./js/profile.p4g8baeoxp.js",
+    "./scroll.js": "./scroll.rr5db2fayq.js"
+  },
+  "integrity": {
+    "./_framework/blazor.server.js": "sha256-PIOH5QlrFWt/dguZM0yUYJfMD5u0BamSuVy30XXrAzs=",
+    "./_framework/blazor.server.kyitu4x8cy.js": "sha256-PIOH5QlrFWt/dguZM0yUYJfMD5u0BamSuVy30XXrAzs=",
+    "./_framework/blazor.web.js": "sha256-JCkXN7mlakRbdRiGAWIeq1aFJKx6A3jlt5Fq2mbVLSU=",
+    "./_framework/blazor.web.whefm3rrpu.js": "sha256-JCkXN7mlakRbdRiGAWIeq1aFJKx6A3jlt5Fq2mbVLSU=",
+    "./auth.1ygq65ce9r.js": "sha256-t+1cOy5425rDPCT8B6TeiJKpNm67ens2LWWfhE2WwiQ=",
+    "./auth.js": "sha256-t+1cOy5425rDPCT8B6TeiJKpNm67ens2LWWfhE2WwiQ=",
+    "./help/js/help-search.2jobhb7ckq.js": "sha256-EoIezdfZSZveZuFog6gLyAbxxPhu8iJcBZoHyG3wEH4=",
+    "./help/js/help-search.js": "sha256-EoIezdfZSZveZuFog6gLyAbxxPhu8iJcBZoHyG3wEH4=",
+    "./js/attachments.d3qsotv1io.js": "sha256-57CMJQNh8O7I3q2Nn4MvC4X90wvkYHr+LXBIdSGKSLk=",
+    "./js/attachments.js": "sha256-57CMJQNh8O7I3q2Nn4MvC4X90wvkYHr+LXBIdSGKSLk=",
+    "./js/financeManager.407i7ksy61.js": "sha256-DJU2YJwGKk7TwNCoxeWhImC21NEGWFZmRlRs0jUvRLw=",
+    "./js/financeManager.js": "sha256-DJU2YJwGKk7TwNCoxeWhImC21NEGWFZmRlRs0jUvRLw=",
+    "./js/profile.js": "sha256-qTboG6X62h8K+v3ATETntBjiCuLXP8bOxo+jmKzPXJo=",
+    "./js/profile.p4g8baeoxp.js": "sha256-qTboG6X62h8K+v3ATETntBjiCuLXP8bOxo+jmKzPXJo=",
+    "./scroll.js": "sha256-if6MFj2EHIDdHRM3lMiZqewPxiNL8oBbz8KwrOj1ol0=",
+    "./scroll.rr5db2fayq.js": "sha256-if6MFj2EHIDdHRM3lMiZqewPxiNL8oBbz8KwrOj1ol0="
+  }
+}</script><title>Depot-Analysebericht</title></head>
+
+<body class="dark-mode"><div id="fm-loading-bar" class="mst-loading-bar" style="--mst-loading-bar-height:3px;--mst-loading-bar-top:0;--mst-loading-bar-mobile-top:54px;--mst-loading-bar-z-index:1200" data-mst-loading-bar="" data-loading-colors="#4dabf7,#51cf66,#ffd43b,#ff6b6b,#b197fc,#20c997,#ff922b" aria-hidden="true" b-w8317ziaus=""></div>
+
+<style b-w8317ziaus="">@media (max-width: 900px) {
+        #fm-loading-bar {
+            top: var(--mst-loading-bar-mobile-top, var(--mst-loading-bar-top, 0));
+        }
+    }
+</style>
+        <!--Blazor:{"type":"server","prerenderId":"e734651699c74ac897ec6ed0017cc5ea","key":{"locationHash":"3D52735BBB4D599BB422BD989FA24C35B3D97C802CE2BFD86697C04A187302EA:19","formattedComponentKey":""},"sequence":0,"descriptor":"CfDJ8A01FDFIdqJEllLlLrlmLWWp/evuTAypXV93QC3dxkPf/9/hdrzlJXH3VnTB5CR81mbN7K7A6C7wql4NSrsHNhsCJm0xhp0ygoA/svPdt0XjX3KqSaVOzHclUDQCDM48AGgc9EzyRkaMrXDx66NtrB1yF4fVQ6vC\u002BWEOiZbe7V6ziryJKuT45wFvFMLnr5NLg30jnc9C56dSw4RA7xpPSxgnO4EEvFdvF3xXTgXqMPWGeJPdwSZFr3NqXEO\u002B2WeE\u002BSg/dBZ/FnXiAdX1yg7DWGyEZrkoyC4iq2deDtqx/AUcAnJm385o0/1vGXLaOYl1Qkmrc4Mg876B6OLoY\u002BQDcpdATrHdG3E8Kf3KvvqJistsCPxYkA/I43ItNk62A\u002BJzb2t56hiHCrbJ35DfTAhgRMMzJs8eGm6XOxeAbnu1z8b3LlVn\u002B5jLm/kPsLnotnC\u002BZNTzG3QFSPMzm23tlqbu8rBGYVy42XVsry\u002BU4EJ/19LGiyXFmrK9u55u45NQWueRanfH7urY0hwbfvBIy7hJEAnzWtjAqQdVFrjri5wHxgI1"}--><!--Blazor:{"prerenderId":"e734651699c74ac897ec6ed0017cc5ea"}--><link rel="stylesheet" href="css/ribbon.css">
+<link rel="stylesheet" href="css/app.css">
+
+<div class="app-shell dark-mode"><input type="checkbox" id="nav-toggle" class="nav-toggle" style="">
+    <nav class="sidebar"><div class="brand"><img src="icons/finance_manager.png" alt="App-Logo" class="brand-logo">
+            <span>Finance Manager</span></div>
+        <ul class="nav-links"><li><a href="">Start</a></li>
+                <li><a href="list/accounts">Konten</a></li>
+                <li><a href="list/statement-drafts">Kontoauszüge</a></li>
+                <li><a href="list/contacts">Kontakte</a></li>
+                <li><a href="list/savings-plans">Sparpläne</a></li>
+                <li><a href="list/securities">Wertpapiere</a></li>
+                <li><a href="list/budget/purposes">Budgetplanung</a></li>
+                <li><a href="reports">Berichte</a></li>
+                <li><a href="card/setup">Einrichtung</a></li><li><a href="list/users">Benutzer</a></li><li><a href="help">📖 Hilfe</a></li></ul>
+        <div class="user-area"><div style="margin-bottom:.35rem; font-size:.85rem;"><a href="legal">Impressum</a></div>
+            <!--Blazor:{"type":"server","prerenderId":"db9becb155a245789413af210c9cb468","key":{"locationHash":"42963F96764D9EB7F224AAF502B368012E4690D75899E094AC069B3B3E71F4C7:94","formattedComponentKey":""},"sequence":1,"descriptor":"CfDJ8A01FDFIdqJEllLlLrlmLWX9s5uJDfMKp7QZ5BfWGJAJcq137Zbc\u002BL8ZO9hFipZ/UMw4F7SkO0ZHJnxtUODwTSVgdRTs56i9hipkkBEdIwCGn23cIEEKKxZgejjFzn5NLrD\u002BXxsPY1G/HGJPlPOC6dXgJqS8aQP4YuF\u002B2hbDHe0YNFsVTEVyFjbwrFM12haT4enb31cI/HPAWuhDQKeR2/FFBPBsXoXGcIoRzpPK2MpLzkHn90eROEVUhRv14pL6iKqwdwGH8mMgY0v1xhrVvt2mdxKQVRM1I0GhQs1CcZpD\u002BHRv8zOkiRiLQRbBAbO5APf1ecz15Nxlt30KCM0ny20kLa9B0zIhlH6Kx5/I3YHZjH\u002BOKSVwhDCFhvU6Bku6Oa4qg8loBxOO38NgNDduONTfd39ch8UTbtaTbvYe//4wFwDpwxsIEK4E5tLJO3Eh8nNXVWOiw4j2\u002Bj70cXIG6ZxWuxhNVkF\u002BEM7MA9Es7pU3NwTVFSiNm4qdq2rjGQ1AxxXeJSNW6RTRgUd77yOII8NIxloM\u002BcZtFLBDVTh\u002BpIvI"}--><div class="login-status">1.0.0<br>
+        <a id="change-password-link" href="change-password">Passwort ändern</a><br>
+        <button>Logout</button></div><!--Blazor:{"prerenderId":"db9becb155a245789413af210c9cb468"}--></div></nav>
+    <main class="content"><div class="mobile-topbar"><label for="nav-toggle" class="hamburger" aria-label="Menü"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></label>
+            <div class="mobile-brand"><img src="icons/finance_manager.png" alt="App-Logo" class="brand-logo">
+                <span>Finance Manager</span></div></div>
+        <div class="inner app-inner" style="max-width:none"><!--Blazor:{"type":"server","prerenderId":"0c337297cc2f4b8faa228fc25d5d90c5","key":{"locationHash":"3670965B5B332ACE30B5F5A60F50CF055650617ED3BFCC916C39816B37CED1D4:0","formattedComponentKey":""},"sequence":2,"descriptor":"CfDJ8A01FDFIdqJEllLlLrlmLWUck6yPbMIWm9Ef/L6hYFdo65C17zzORJie2DUp9S\u002Bu/LEiAwMrbp641S2tNDCkELpN3j1FRdjmV1OkcdMHSFA/iC3U2sZhOEvey9R4L/zqLT4q3rFyynIkYPXVQ0gjuaZfxNmL\u002BDqW9QO7AceR/\u002BIq\u002Bg0ugqCUnuz6xyQ5RoNzNXvBjNyd1SiBhOsFlyCX80G6hHpaubA\u002BDgC8dc0NJ9kJ3Ux5b2ICF35B2DQnlmLUno3kZ2MUHzmuhDUWI416ynuweVxE/U83yhbzEgIMk3Jo/O/a5xIYMVj7Qcw\u002Bx5X7wEonOnJliQVXd/W9c6mmcVQ4r48/w3Op4dX78swApOJuwQI1cQq41rVnLYT\u002BOGkBjO2SzFNiQnFxW6AXleBSxGEfn7/6BmBkmnR48OddHLIBpFPV6ZB/hrTUcWvGI68e0R\u002BKjA\u002BNrhuiiLE/pUS\u002BBnRcKrz4w4EJk73lK\u002BJ5xMd1J6NymtDzh26vACPfCX1/9DUVVV7zAMDarXPDKiI8AKxEg42iBEPEvzKWE\u002BhGVqlbU5Erpc0V7\u002B1ijVAbK5M2ul5QptCFTkFRVj1ohmHq\u002BOg="}--><div class="portfolio-report-page"><div class="fm-ribbon single-tab" role="region" aria-label="Application ribbon"><div class="fm-ribbon-content" role="tabpanel" id="ribbon-panel-0" aria-labelledby="ribbon-tab-0"><div class="fm-ribbon-groups" role="toolbar" aria-label="Ribbon action groups"><div class="fm-ribbon-group fm-ribbon-group-desktop" role="group" aria-labelledby="ribbon-group-label-0-0"><div class="fm-ribbon-group-body ribbon-items-grid"><button id="Back" aria-label="Zurück" title="Zurück" type="button" class="fm-ribbon-btn large">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#back"></use></svg></span><span class="text">Zurück</span></button><button id="Refresh" aria-label="Aktualisieren" title="Aktualisieren" type="button" class="fm-ribbon-btn large">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#refresh"></use></svg></span><span class="text">Aktualisieren</span></button><button id="Edit" aria-label="Bearbeiten" title="Bearbeiten" type="button" class="fm-ribbon-btn large">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#edit"></use></svg></span><span class="text">Bearbeiten</span></button></div>
+                           <div class="fm-ribbon-group-footer" id="ribbon-group-label-0-0">Aktionen</div></div>
+                       <div class="fm-ribbon-mobile-group-panel"><div class="fm-ribbon-mobile-group-header"><button type="button" class="fm-ribbon-mobile-group-title-toggle" aria-controls="ribbon-mobile-menu-0-0"><span class="fm-ribbon-mobile-group-title">Aktionen</span></button><button type="button" class="fm-ribbon-mobile-group-toggle" aria-controls="ribbon-mobile-menu-0-0"><span class="fm-ribbon-mobile-group-hamburger" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg></span></button></div>
+                           <div id="ribbon-mobile-menu-0-0" class="fm-ribbon-mobile-menu "><button id="Back-mobile" aria-label="Zurück" title="Zurück" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#back"></use></svg></span><span class="text-inline">Zurück</span></button><button id="Refresh-mobile" aria-label="Aktualisieren" title="Aktualisieren" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#refresh"></use></svg></span><span class="text-inline">Aktualisieren</span></button><button id="Edit-mobile" aria-label="Bearbeiten" title="Bearbeiten" type="button" class="fm-ribbon-mobile-menu-item">
+        <span class="icon" aria-hidden="true"><svg><use href="icons/sprite.svg#edit"></use></svg></span><span class="text-inline">Bearbeiten</span></button></div></div></div></div></div>
+
+    <div class="portfolio-report-header"><h2>Depot-Analysebericht</h2></div><div class="portfolio-tile-grid"><div class="portfolio-tile"><h3 class="portfolio-tile-title">Depotstruktur</h3>
+    <div class="portfolio-tile-body"><div class="donut-chart"><div class="donut-chart-ring" role="img" aria-label="Ringdiagramm der Asset Allocation nach Kategorie"><svg viewBox="0 0 36 36" class="donut-chart-svg"><circle class="donut-track" cx="18" cy="18" r="15.9155"></circle><circle class="donut-segment" cx="18" cy="18" r="15.9155" stroke="var(--chart-1)" stroke-dasharray="60.34 39.66" stroke-dashoffset="-0.00"><title>Aktien: 60,3%</title></circle><circle class="donut-segment" cx="18" cy="18" r="15.9155" stroke="var(--chart-2)" stroke-dasharray="39.66 60.34" stroke-dashoffset="-60.34"><title>ETF: 39,7%</title></circle></svg><div class="donut-center"><span class="donut-center-value">6.894</span><span class="donut-center-label">Gesamtmarktwert</span></div></div><ul class="donut-legend"><li class="donut-legend-item"><span class="donut-swatch" style="background:var(--chart-1)"></span>
+                    <span class="donut-legend-label">Aktien</span>
+                    <span class="donut-legend-value">60,3%</span></li><li class="donut-legend-item"><span class="donut-swatch" style="background:var(--chart-2)"></span>
+                    <span class="donut-legend-label">ETF</span>
+                    <span class="donut-legend-value">39,7%</span></li></ul></div><div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Gesamtmarktwert</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich der Gesamtmarktwert zusammensetzt" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value">6.893,89</span></div>
+    <div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Investiertes Kapital</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich das investierte Kapital berechnet" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value">5.343,66</span></div>
+    <div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Unrealisierte Gewinne/Verluste</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich der unrealisierte Gewinn/Verlust berechnet" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value positive">1.550,23</span></div><h4>Regionale Verteilung</h4>
+        <ul class="portfolio-distribution-list"><li>DE: 4.159,58 (60,3%)</li><li>Global: 2.734,31 (39,7%)</li></ul><h4>Sektorverteilung</h4>
+        <ul class="portfolio-distribution-list"><li>Logistik: 4.159,58 (60,3%)</li><li>MSCI World: 2.734,31 (39,7%)</li></ul><h4>Top 10 Positionen</h4>
+        <div class="portfolio-table-scroll"><table class="portfolio-top-positions"><thead><tr><th>Name</th>
+                        <th>Marktwert</th>
+                        <th>Anteil</th></tr></thead>
+                <tbody><tr><td>Inländische Post AG</td>
+                            <td>4.159,58</td>
+                            <td>60,3%</td></tr><tr><td>USHSIV-MSCI WLD</td>
+                            <td>2.734,31</td>
+                            <td>39,7%</td></tr></tbody></table></div></div></div><div class="portfolio-tile"><h3 class="portfolio-tile-title">Performance</h3>
+    <div class="portfolio-tile-body"><div class="mini-bar-chart" role="img" aria-label="Balkendiagramm der jährlichen Renditen"><div class="mini-bar-chart-bars" style="height:90px;"><div class="mini-bar-chart-row pos"><div class="mini-bar-chart-bar-wrap" title="2025: 23,5%"><div class="mini-bar-chart-bar positive" style="height:45px;"></div></div><div class="mini-bar-chart-bar-wrap" title="2026*: 15,4%"><div class="mini-bar-chart-bar positive" style="height:29px;"></div></div></div>
+            <div class="mini-bar-chart-zero"></div>
+            <div class="mini-bar-chart-row neg"><div class="mini-bar-chart-bar-wrap" title="2025: 23,5%"><div class="mini-bar-chart-bar negative" style="height:0px;"></div></div><div class="mini-bar-chart-bar-wrap" title="2026*: 15,4%"><div class="mini-bar-chart-bar negative" style="height:0px;"></div></div></div></div>
+        <div class="mini-bar-chart-labels"><span class="mini-bar-chart-label">2025</span><span class="mini-bar-chart-label">2026*</span></div></div><p class="portfolio-chart-footnote">* Laufendes, noch nicht abgeschlossenes Jahr (YTD)</p><div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Zeitgewichtete Rendite (seit Beginn)</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich die zeitgewichtete Rendite berechnet" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value">42,59%</span></div>
+    <div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Jahr-zu-Datum</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich die Jahr-zu-Datum-Rendite berechnet" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value">15,43%</span></div><h4>Jährliche Rendite</h4>
+        <table class="portfolio-return-table"><thead><tr><th>Jahr</th>
+                    <th>Rendite</th></tr></thead>
+            <tbody><tr><td>2025</td>
+                        <td class="positive">23,54%</td></tr><tr><td>2026 (YTD)</td>
+                        <td class="positive">15,43%</td></tr></tbody></table></div></div><div class="portfolio-tile"><h3 class="portfolio-tile-title">Cashflow</h3>
+    <div class="portfolio-tile-body"><div class="mini-bar-chart" role="img" aria-label="Balkendiagramm mit Netto-Einzahlungen, Dividenden und realisierten Gewinnen des laufenden Jahres"><div class="mini-bar-chart-bars" style="height:90px;"><div class="mini-bar-chart-row pos"><div class="mini-bar-chart-bar-wrap" title="Netto-Einzahlungen (dieses Jahr): 0,00"><div class="mini-bar-chart-bar positive" style="height:0px;"></div></div><div class="mini-bar-chart-bar-wrap" title="Dividenden (dieses Jahr): 176,61"><div class="mini-bar-chart-bar positive" style="height:45px;"></div></div><div class="mini-bar-chart-bar-wrap" title="Realisierte Gewinne/Verluste (dieses Jahr): 0,00"><div class="mini-bar-chart-bar positive" style="height:0px;"></div></div></div>
+            <div class="mini-bar-chart-zero"></div>
+            <div class="mini-bar-chart-row neg"><div class="mini-bar-chart-bar-wrap" title="Netto-Einzahlungen (dieses Jahr): 0,00"><div class="mini-bar-chart-bar negative" style="height:0px;"></div></div><div class="mini-bar-chart-bar-wrap" title="Dividenden (dieses Jahr): 176,61"><div class="mini-bar-chart-bar negative" style="height:0px;"></div></div><div class="mini-bar-chart-bar-wrap" title="Realisierte Gewinne/Verluste (dieses Jahr): 0,00"><div class="mini-bar-chart-bar negative" style="height:0px;"></div></div></div></div>
+        <div class="mini-bar-chart-labels"><span class="mini-bar-chart-label">Netto-Einzahlungen (dieses Jahr)</span><span class="mini-bar-chart-label">Dividenden (dieses Jahr)</span><span class="mini-bar-chart-label">Realisierte Gewinne/Verluste (dieses Jahr)</span></div></div>
+
+    <div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Netto-Einzahlungen (dieses Jahr)</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich die Netto-Einzahlungen berechnen" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value">0,00</span></div>
+    <div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Dividenden (dieses Jahr)</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich die Dividenden berechnen" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value">176,61</span></div>
+    <div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Realisierte Gewinne/Verluste (dieses Jahr)</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich die realisierten Gewinne/Verluste berechnen" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value positive">0,00</span></div>
+    <div class="portfolio-kpi-row"><span class="portfolio-kpi-label-wrap"><span class="portfolio-kpi-label">Liquiditätsquote</span>
+            <button type="button" class="kpi-info-btn" title="Wie sich die Liquiditätsquote berechnet" aria-haspopup="dialog"><svg><use href="icons/sprite.svg#info"></use></svg></button></span>
+        <span class="portfolio-kpi-value">87,47 %</span></div></div></div><div class="portfolio-tile"><h3 class="portfolio-tile-title">Depotentwicklung Jahreswechsel</h3>
+    <div class="portfolio-tile-body"><div class="portfolio-dev-filters"><label class="portfolio-dev-filter-label" for="dev-period-filter">Zeitraum</label>
+        <select id="dev-period-filter" class="portfolio-dev-filter-select" value="AllHistory"><option value="AllHistory" selected="">Gesamte Historie</option>
+            <option value="Last5Years">Letzte 5 Jahre</option>
+            <option value="Last10Years">Letzte 10 Jahre</option></select>
+        <label class="portfolio-dev-filter-label" for="dev-yield-basis">Rendite-Basis</label>
+        <select id="dev-yield-basis" class="portfolio-dev-filter-select" value="YearStartValue"><option value="YearStartValue" selected="">Jahresanfangswert</option>
+            <option value="InvestedCapital">Eingezahltes Kapital (Yield on Cost)</option></select></div><div class="portfolio-bar-line-chart"><svg viewBox="0 0 1000 325" preserveAspectRatio="none" class="portfolio-bar-line-chart-svg" role="img" aria-label="Kombiniertes Linien- und Balkendiagramm aus Depotwert und Netto-Dividenden je Jahr" style="height:200px;"><g class="portfolio-bar-line-chart-grid"><line x1="60" y1="20" x2="980" y2="20"></line><line x1="60" y1="90" x2="980" y2="90"></line><line x1="60" y1="160" x2="980" y2="160"></line><line x1="60" y1="230" x2="980" y2="230"></line><line x1="60" y1="300" x2="980" y2="300"></line></g>
+
+            <path class="portfolio-bar-line-chart-line" d="M 60.00,300.00 L 980.00,20.00"></path><g class="portfolio-bar-line-chart-point"><title>2025: Depotwert 5.973 €, Netto-Dividenden 173 €</title>
+                    <rect class="portfolio-bar-line-chart-bar" x="30.00" y="160.00" width="60.00" height="140.00"></rect>
+                    <circle class="portfolio-bar-line-chart-dot" cx="60.00" cy="300.00" r="5"></circle></g><g class="portfolio-bar-line-chart-point"><title>2026*: Depotwert 6.894 €, Netto-Dividenden 132 €</title>
+                    <rect class="portfolio-bar-line-chart-bar" x="950.00" y="192.86" width="60.00" height="107.14"></rect>
+                    <circle class="portfolio-bar-line-chart-dot" cx="980.00" cy="20.00" r="5"></circle></g><g class="portfolio-bar-line-chart-labels"><text x="60.00" y="320.00" text-anchor="middle">2025</text><text x="980.00" y="320.00" text-anchor="middle">2026*</text></g></svg><div class="portfolio-bar-line-chart-legend"><span class="portfolio-bar-line-chart-legend-item"><span class="portfolio-bar-line-chart-swatch line"></span>Depotwert</span>
+        <span class="portfolio-bar-line-chart-legend-item"><span class="portfolio-bar-line-chart-swatch bar"></span>Netto-Dividenden</span></div></div><div class="portfolio-dev-table-wrap"><table class="portfolio-return-table portfolio-dev-table"><thead><tr><th>Jahreswechsel</th>
+                        <th><span class="dev-desktop-only">Depotwert</span>
+                            <span class="dev-mobile-only">Dividende/Depotwert</span></th>
+                        <th><span class="dev-desktop-only">Veränderung</span>
+                            <span class="dev-mobile-only">Veränderung €/%</span></th>
+                        <th class="dev-col-changepct">Veränderung %</th>
+                        <th class="dev-col-dividend">Netto-Dividende</th>
+                        <th>Rendite</th></tr></thead>
+                <tbody><tr><td>2025</td>
+                            <td><span class="dev-mobile-only">173 € / </span>5.973 €</td>
+                            <td class="positive">+629 €<span class="dev-mobile-only"> / +11,77%</span></td>
+                            <td class="dev-col-changepct positive">+11,77%</td>
+                            <td class="dev-col-dividend">173 €</td>
+                            <td class="positive">+3,24%</td></tr><tr><td>2026*</td>
+                            <td><span class="dev-mobile-only">132 € / </span>6.894 €</td>
+                            <td class="positive">+921 €<span class="dev-mobile-only"> / +15,43%</span></td>
+                            <td class="dev-col-changepct positive">+15,43%</td>
+                            <td class="dev-col-dividend">132 €</td>
+                            <td class="positive">+2,22%</td></tr></tbody></table></div><p class="portfolio-chart-footnote">Rendite-Basis: Depotwert zum Jahresanfang; im ersten Jahr wird stattdessen das initial eingezahlte Kapital (Anschaffungskosten) verwendet. * Laufendes, noch nicht abgeschlossenes Jahr (YTD).</p></div></div></div></div><!--Blazor:{"prerenderId":"0c337297cc2f4b8faa228fc25d5d90c5"}--></div></main>
+    <label for="nav-toggle" class="mobile-overlay" aria-hidden="true"></label></div>
+
+<div id="blazor-error-ui" data-nosnippet="">Ein unerwarteter Fehler ist aufgetreten.
+    <a href="." class="reload">Neu laden</a>
+    <span class="dismiss">🗙</span></div>
+        <blazor-focus-on-navigate selector="h1"></blazor-focus-on-navigate><script src="auth.js"></script>
+        <script src="scroll.js"></script>
+        <script src="_framework/blazor.web.js"></script></body></html>

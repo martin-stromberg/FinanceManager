@@ -268,7 +268,7 @@ public sealed class SetupProfileViewModel : BaseViewModel
         );
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(lblProfileGroup, new List<UiRibbonAction> { detectAction })
+            new UiRibbonTab(lblProfileGroup, new List<UiRibbonAction> { detectAction }, Sort: 20)
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };

@@ -6,7 +6,7 @@
 
 ## Benutzerführung
 
-- [Benutzeroberfläche](benutzeroberflaeche/index.md) — Dieser Bereich beschreibt die Bedienung der Web-Oberfläche: die responsive Darstellung auf kleinen Viewports sowie das Verhalten von Dialogen und Bestätigungsabfragen.
+- [Benutzeroberfläche](benutzeroberflaeche/index.md) — Dieser Bereich beschreibt die Bedienung der Web-Oberfläche: das Menüband (Ribbon) mit seiner ansichtsabhängigen Standardkonfiguration und konditionalen Zurück-Aktionen, die responsive Darstellung auf kleinen Viewports sowie das Verhalten von Dialogen und Bestätigungsabfragen.
 
 ## Prozesse
 

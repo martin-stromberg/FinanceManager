@@ -11,9 +11,9 @@
 }
 
 .budget-linechart .labels text {
-    fill: rgba(255,255,255,.75);
+    fill: var(--text);
 }
 
 .budget-linechart .ylabels text {
-    fill: rgba(255,255,255,.65);
+    fill: var(--muted);
 }

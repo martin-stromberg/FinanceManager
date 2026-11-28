@@ -13,8 +13,8 @@
 }
 
 .budget-report-sheet {
-    background: #ffffff;
-    border: 1px solid #ddd;
+    background: var(--text);
+    border: 1px solid var(--text);
     box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
     padding: 1.5rem;
     border-radius: var(--radius);
@@ -31,7 +31,7 @@
 
 .budget-report-chart {
     height: 220px;
-    border: 1px dashed #bbb;
+    border: 1px dashed var(--muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -57,7 +57,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    color: var(--text-muted, #666);
+    color: var(--text-muted, var(--muted));
     z-index: 3;
     border-radius: var(--radius);
     padding: 0.5rem 0.75rem;
@@ -69,8 +69,8 @@
 .budget-report-spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid #d0d0d0;
-    border-top-color: var(--accent, #3b82f6);
+    border: 3px solid var(--text);
+    border-top-color: var(--accent, var(--accent));
     border-radius: 50%;
     animation: budget-report-spin 0.9s linear infinite;
 }
@@ -84,25 +84,25 @@
 
 .budget-report-loading-range {
     font-size: 0.85rem;
-    color: var(--text-muted, #666);
+    color: var(--text-muted, var(--muted));
 }
 
 .budget-report-postings-head {
     position: sticky;
     top: 0;
-    background: #eef2f7;
-    color: #111827;
+    background: var(--text);
+    color: var(--bg-alt);
     z-index: 1;
 }
 
 .budget-report-postings-head th {
-    border-bottom: 1px solid #cbd5e1;
+    border-bottom: 1px solid var(--text);
     font-weight: 600;
 }
 
 .budget-report-posting-unbudgeted {
-    background: #ffffff;
-    color: #111827;
+    background: var(--text);
+    color: var(--bg-alt);
     opacity: 0.4;
 }
 
@@ -110,11 +110,11 @@
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.05rem 0.35rem;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--text);
     border-radius: 0.25rem;
     font-size: 0.75rem;
-    color: #334155;
-    background: #ffffff;
+    color: var(--panel-bg);
+    background: var(--text);
 }
 
 @keyframes budget-report-spin {

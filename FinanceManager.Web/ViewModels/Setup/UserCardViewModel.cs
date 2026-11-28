@@ -372,9 +372,20 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await DeleteAsync(); })
         };
 
-        // Activate/Deactivate
         if (User != null)
         {
+            // Set password action for existing users
+            if (UserId != Guid.Empty)
+            {
+                var specParams = new Dictionary<string, object?>
+                {
+                    ["UserId"] = User.Id,
+                    ["OverlayTitle"] = localizer["Users_SetPassword_Title"].Value
+                };
+                manage.Add(new UiRibbonAction("SetPassword", localizer["Ribbon_SetPassword"].Value, "<svg><use href='icons/sprite.svg#key'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("SetPassword", new BaseViewModel.UiOverlaySpec(typeof(SetPasswordOverlay), specParams)); return Task.CompletedTask; }));
+            }
+
+            // Activate/Deactivate
             if (User.IsAdmin == false) // don't allow toggling admin flag; we toggle active state
             {
                 if (User.Active)
@@ -393,23 +404,12 @@ public sealed class UserCardViewModel : BaseCardViewModel<(string Key, string Va
             {
                 manage.Add(new UiRibbonAction("Unblock", localizer["Ribbon_Unblock"].Value, "<svg><use href='icons/sprite.svg#unlock'/></svg>", UiRibbonItemSize.Small, !(UserId != Guid.Empty && User != null), null, async () => { await UnblockAsync(); }));
             }
-
-            // Set password action for existing users
-            if (UserId != Guid.Empty && User != null)
-            {
-                var specParams = new Dictionary<string, object?>
-                {
-                    ["UserId"] = User.Id,
-                    ["OverlayTitle"] = localizer["Users_SetPassword_Title"].Value
-                };
-                manage.Add(new UiRibbonAction("SetPassword", localizer["Ribbon_SetPassword"].Value, "<svg><use href='icons/sprite.svg#key'/></svg>", UiRibbonItemSize.Small, false, null, () => { RaiseUiActionRequested("SetPassword", new BaseViewModel.UiOverlaySpec(typeof(SetPasswordOverlay), specParams)); return Task.CompletedTask; }));
-            }
         }
 
         var tabs = new List<UiRibbonTab>
         {
-            new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, actions),
-            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manage)
+            new UiRibbonTab(localizer["Ribbon_Group_Navigation"].Value, actions, Sort: 0),
+            new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, manage, Sort: 10)
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
