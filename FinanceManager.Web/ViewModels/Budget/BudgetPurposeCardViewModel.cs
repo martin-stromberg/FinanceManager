@@ -478,7 +478,10 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
                         return Task.CompletedTask;
                     }
 
-                    RaiseUiActionRequested("Back", $"card/budget/categories/{id.Value}");
+                    // forward navigation to the linked category card: routed via the
+                    // OpenCategory action so the page appends this card as ?back= target
+                    // instead of the action being swallowed by the Back handler.
+                    RaiseUiActionRequested("OpenCategory", $"card/budget/categories/{id.Value}");
                     return Task.CompletedTask;
                 })
         }, Sort: 55);

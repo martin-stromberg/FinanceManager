@@ -195,6 +195,65 @@ namespace FinanceManager.Tests.Components
         }
 
         /// <summary>
+        /// The budget purpose card's linked Category action must forward-navigate through the
+        /// <c>OpenCategory</c> channel so the category card receives the purpose card as
+        /// <c>?back=</c> target — the action must not be swallowed by the Back handler or broken
+        /// by an existing <c>?back=</c> context.
+        /// </summary>
+        [Fact]
+        public void BudgetPurposeCard_OpenCategory_AppendsPurposeCardAsBackTarget()
+        {
+            var apiMock = new Mock<IApiClient>();
+            var purposeId = Guid.NewGuid();
+            var categoryId = Guid.NewGuid();
+            apiMock.Setup(a => a.Budgets_GetPurposeAsync(purposeId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new BudgetPurposeDto(purposeId, Guid.NewGuid(), "Purpose", null,
+                    BudgetSourceType.Contact, Guid.NewGuid(), categoryId));
+            apiMock.Setup(a => a.Budgets_ListRulesByPurposeAsync(purposeId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<BudgetRuleDto>());
+            RegisterServices(apiMock);
+
+            var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
+                .Add(p => p.Kind, "budget")
+                .Add(p => p.SubKind, "purposes")
+                .Add(p => p.Id, purposeId));
+
+            cut.WaitForState(() => cut.FindAll("button").Any(b => b.Id == "Category"));
+            cut.FindAll("button").First(b => b.Id == "Category").Click();
+
+            var nav = Services.GetRequiredService<NavigationManager>();
+            var expectedBack = Uri.EscapeDataString($"card/budget/purposes/{purposeId}");
+            Assert.Contains($"card/budget/categories/{categoryId}?back={expectedBack}", nav.Uri);
+        }
+
+        /// <summary>
+        /// A budget rule without purpose and category context (reachable only via direct URL) must
+        /// fall back to the existing purposes list <c>list/budget/purposes</c> — the generic
+        /// <c>list/budget/rules</c> route does not exist and would hang on loading.
+        /// </summary>
+        [Fact]
+        public void BudgetRuleCard_Back_WithoutContext_NavigatesToPurposesList()
+        {
+            var apiMock = new Mock<IApiClient>();
+            var ruleId = Guid.NewGuid();
+            apiMock.Setup(a => a.Budgets_GetRuleAsync(ruleId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new BudgetRuleDto(ruleId, Guid.NewGuid(), null, null, 25m,
+                    BudgetIntervalType.Monthly, null, DateOnly.FromDateTime(DateTime.Today), null));
+            RegisterServices(apiMock);
+
+            var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
+                .Add(p => p.Kind, "budget")
+                .Add(p => p.SubKind, "rules")
+                .Add(p => p.Id, ruleId));
+
+            cut.WaitForState(() => cut.FindAll("button").Any(b => b.Id == "Back"));
+            cut.FindAll("button").First(b => b.Id == "Back").Click();
+
+            var nav = Services.GetRequiredService<NavigationManager>();
+            Assert.EndsWith("list/budget/purposes", nav.Uri);
+        }
+
+        /// <summary>
         /// For a new, unsaved savings plan (<c>Id == Guid.Empty</c>) there is no stable URL to return
         /// to, so <c>OpenCategory</c> must navigate to the category card without appending a
         /// <c>?back=</c> parameter pointing at the empty id.
