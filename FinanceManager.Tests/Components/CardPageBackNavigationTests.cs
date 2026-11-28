@@ -1,10 +1,13 @@
 using Bunit;
 using FinanceManager.Application;
 using FinanceManager.Shared;
+using FinanceManager.Shared.Dtos.Attachments;
 using FinanceManager.Shared.Dtos.Budget;
+using FinanceManager.Shared.Dtos.Contacts;
 using FinanceManager.Shared.Dtos.Mcp;
 using FinanceManager.Shared.Dtos.Postings;
 using FinanceManager.Shared.Dtos.SavingsPlans;
+using FinanceManager.Shared.Dtos.Statements;
 using FinanceManager.Web;
 using FinanceManager.Web.Components.Pages;
 using FinanceManager.Web.Services;
@@ -225,6 +228,107 @@ namespace FinanceManager.Tests.Components
 
             var nav = Services.GetRequiredService<NavigationManager>();
             Assert.EndsWith($"card/savings-plans/categories/{categoryId}", nav.Uri);
+        }
+
+        /// <summary>
+        /// Regression guard: the comma-separated payload convention <c>card,{draftId}</c> from the
+        /// statement-draft entry card must keep navigating to the typed card route
+        /// <c>card/statement-drafts/{draftId}</c> (the parent draft card).
+        /// </summary>
+        [Fact]
+        public void StatementDraftEntryCard_Back_NavigatesToParentDraftCard()
+        {
+            var apiMock = new Mock<IApiClient>();
+            var draftId = Guid.NewGuid();
+            var entryId = Guid.NewGuid();
+            var entry = new StatementDraftEntryDto(entryId, 1, DateTime.Today, null, 42m, "EUR",
+                "subject", null, null, false, false, StatementDraftEntryStatus.Open,
+                null, null, false, null, null, null, null, null, null);
+            apiMock.Setup(a => a.StatementDrafts_GetEntryAsync(draftId, entryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StatementDraftEntryDetailDto(draftId, "file.pdf", entry, null, null, null, null, null, null));
+            apiMock.Setup(a => a.StatementDrafts_GetAsync(draftId, true, null, null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StatementDraftDetailDto?)null);
+            RegisterServices(apiMock);
+
+            Services.GetRequiredService<NavigationManager>()
+                .NavigateTo($"card/statement-drafts/entries/{entryId}?draftId={draftId}");
+
+            var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
+                .Add(p => p.Kind, "statement-drafts")
+                .Add(p => p.SubKind, "entries")
+                .Add(p => p.Id, entryId));
+
+            cut.WaitForState(() => cut.FindAll("button").Any(b => b.Id == "Back"));
+            cut.FindAll("button").First(b => b.Id == "Back").Click();
+
+            var nav = Services.GetRequiredService<NavigationManager>();
+            Assert.EndsWith($"card/statement-drafts/{draftId}", nav.Uri);
+        }
+
+        /// <summary>
+        /// Regression guard: a Back action without any payload (contact card) must keep the legacy
+        /// behaviour of navigating to the generic list route <c>list/{kind}</c>.
+        /// </summary>
+        [Fact]
+        public void ContactCard_Back_WithoutPayload_NavigatesToListRoute()
+        {
+            var apiMock = new Mock<IApiClient>();
+            var id = Guid.NewGuid();
+            apiMock.Setup(a => a.Contacts_GetAsync(id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ContactDto(id, "Name", ContactType.Person, null, "desc", false, null));
+            apiMock.Setup(a => a.ContactCategories_ListAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<ContactCategoryDto>());
+            RegisterServices(apiMock);
+
+            var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
+                .Add(p => p.Kind, "contacts")
+                .Add(p => p.Id, id));
+
+            cut.WaitForState(() => cut.FindAll("button").Any(b => b.Id == "Back"));
+            cut.FindAll("button").First(b => b.Id == "Back").Click();
+
+            var nav = Services.GetRequiredService<NavigationManager>();
+            Assert.EndsWith("list/contacts", nav.Uri);
+        }
+
+        /// <summary>
+        /// When the savings-plan card itself was reached via a <c>?back=</c> parameter, the
+        /// <c>OpenCategory</c> action must nest that chain: the category card's <c>back</c> target is
+        /// the plan card URL including its own <c>back</c> parameter, so the return chain keeps
+        /// walking back to the original list.
+        /// </summary>
+        [Fact]
+        public void SavingsPlanCard_OpenCategory_NestsExistingBackParameter()
+        {
+            var apiMock = new Mock<IApiClient>();
+            var planId = Guid.NewGuid();
+            var categoryId = Guid.NewGuid();
+            apiMock.Setup(a => a.SavingsPlans_GetAsync(planId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new SavingsPlanDto(planId, "Plan A", SavingsPlanType.OneTime, null, null,
+                    null, true, DateTime.UtcNow, null, categoryId));
+            apiMock.Setup(a => a.SavingsPlanCategories_ListAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new SavingsPlanCategoryDto { Id = categoryId, Name = "Cat" } });
+            apiMock.Setup(a => a.SavingsPlans_AnalyzeAsync(planId, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("no analysis"));
+            apiMock.Setup(a => a.SavingsPlans_GetLinkedAccountsAsync(planId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<Guid>());
+            apiMock.Setup(a => a.GetAccountsAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<FinanceManager.Shared.Dtos.Accounts.AccountDto>());
+            RegisterServices(apiMock);
+
+            Services.GetRequiredService<NavigationManager>()
+                .NavigateTo($"card/savings-plans/{planId}?back=" + Uri.EscapeDataString("list/savings-plans"));
+
+            var cut = Render<FinanceManager.Web.Components.Pages.CardPage>(parameters => parameters
+                .Add(p => p.Kind, "savings-plans")
+                .Add(p => p.Id, planId));
+
+            cut.WaitForState(() => cut.FindAll("button").Any(b => b.Id == "Category"));
+            cut.FindAll("button").First(b => b.Id == "Category").Click();
+
+            var nav = Services.GetRequiredService<NavigationManager>();
+            var nestedCardUrl = $"card/savings-plans/{planId}?back={Uri.EscapeDataString("list/savings-plans")}";
+            Assert.Contains($"card/savings-plans/categories/{categoryId}?back={Uri.EscapeDataString(nestedCardUrl)}", nav.Uri);
         }
 
         private static Mock<IApiClient> CreateMcpAuditApiMock()
