@@ -178,7 +178,7 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         var target = plan.TargetDate.Value.Date;
         var inRange = (DateTime d) => (!from.HasValue || d >= from.Value) && (!to.HasValue || d <= to.Value);
 
-        if (plan.Type != SavingsPlanType.Recurring || IntervalMonths(plan.Interval) <= 0)
+        if (plan.Type != SavingsPlanType.Recurring || plan.Interval is not { } interval || IntervalMonths(interval) <= 0)
         {
             return inRange(target);
         }
@@ -195,7 +195,6 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
             return true;
         }
 
-        var interval = plan.Interval.Value;
         var floor = plan.CreatedUtc.Date;
         var lower = from.HasValue && from.Value > floor ? from.Value : floor;
         if (upper < lower)
@@ -204,22 +203,40 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
         }
 
         // walk backward from the next due date; dues before plan creation do not exist
-        for (var d = target; ; d = FinanceManager.Domain.Savings.SavingsPlan.SubtractIntervalWithMonthEndRule(d, interval))
+        for (var d = target; ;)
         {
             if (d <= upper && d >= lower)
             {
                 return true;
             }
-            if (d < lower)
+            DateTime prev;
+            try
+            {
+                prev = FinanceManager.Domain.Savings.SavingsPlan.SubtractIntervalWithMonthEndRule(d, interval);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                break; // date domain underflow — no earlier dues exist
+            }
+            if (prev < lower)
             {
                 break;
             }
+            d = prev;
         }
 
         // walk forward from the next due date while inside the upper bound
         for (var d = target; ;)
         {
-            var next = FinanceManager.Domain.Savings.SavingsPlan.AddIntervalWithMonthEndRule(d, interval);
+            DateTime next;
+            try
+            {
+                next = FinanceManager.Domain.Savings.SavingsPlan.AddIntervalWithMonthEndRule(d, interval);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                break; // date domain overflow — no later dues exist
+            }
             if (next > upper)
             {
                 break;
@@ -238,7 +255,7 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
     /// Maps a <see cref="SavingsPlanInterval"/> value to a number of months represented by that interval.
     /// </summary>
     /// <param name="iv">Interval enum value or <c>null</c> for no recurrence.</param>
-    /// <returns>Number of months for the provided interval; returns 0 when no recurring interval applies.</returns>
+    /// <returns>Number of months for the provided interval; returns 0 when no recurring interval applies. Must stay in sync with SavingsPlan.IntervalMonths (domain).</returns>
     private static int IntervalMonths(SavingsPlanInterval? iv)
     {
         return iv switch

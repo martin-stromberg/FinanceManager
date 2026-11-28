@@ -201,7 +201,7 @@ public sealed class SavingsPlan : Entity
     /// <param name="date">The original date.</param>
     /// <param name="interval">The interval to add.</param>
     /// <returns>The advanced date respecting month-end rules and preserving time-of-day and Kind.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided or the result would leave the <see cref="DateTime"/> domain.</exception>
     public static DateTime AddIntervalWithMonthEndRule(DateTime date, SavingsPlanInterval interval)
     {
         int monthsToAdd = IntervalMonths(interval);
@@ -226,8 +226,8 @@ public sealed class SavingsPlan : Entity
     /// </summary>
     /// <param name="date">The original date.</param>
     /// <param name="interval">The interval to subtract.</param>
-    /// <returns>The recessed date respecting month-end rules and preserving time-of-day and Kind.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided.</exception>
+    /// <returns>The date moved back by the interval, respecting month-end rules and preserving time-of-day and Kind.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided or the result would leave the <see cref="DateTime"/> domain.</exception>
     public static DateTime SubtractIntervalWithMonthEndRule(DateTime date, SavingsPlanInterval interval)
     {
         int monthsToSubtract = IntervalMonths(interval);

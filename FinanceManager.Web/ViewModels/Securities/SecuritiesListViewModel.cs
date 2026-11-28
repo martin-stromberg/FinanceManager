@@ -106,6 +106,7 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             _displaySymbolBySecurity[s.Id] = display;
         }
 
+        BuildRecords();
         RaiseStateChanged();
     }
 
