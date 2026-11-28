@@ -91,6 +91,33 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         }
     }
 
+    /// <summary>
+    /// Shifts the currently displayed date range by the given number of months and years, then
+    /// requests a reload. The range width is preserved: both bounds move by the exact calendar
+    /// delta (day-of-month is clamped, e.g. 31.03. → 28./29.02.); a range ending on a month end
+    /// keeps ending on a month end, so a month-aligned view stays month-aligned. When a bound is
+    /// unset the other bound's calendar month serves as the anchor (current month when both are
+    /// unset), so the shifted range never inverts.
+    /// </summary>
+    /// <param name="months">Number of months to shift (negative = past).</param>
+    /// <param name="years">Number of years to shift (negative = past).</param>
+    private void ShiftRange(int months = 0, int years = 0)
+    {
+        var today = DateTime.Today;
+        var fromDate = RangeFrom?.Date;
+        var toDate = RangeTo?.Date;
+        fromDate ??= new DateTime((toDate ?? today).Year, (toDate ?? today).Month, 1);
+        toDate ??= new DateTime(fromDate.Value.Year, fromDate.Value.Month, DateTime.DaysInMonth(fromDate.Value.Year, fromDate.Value.Month));
+        var from = fromDate.Value.AddYears(years).AddMonths(months);
+        var to = toDate.Value.AddYears(years).AddMonths(months);
+        if (toDate.Value.Day == DateTime.DaysInMonth(toDate.Value.Year, toDate.Value.Month))
+        {
+            to = new DateTime(to.Year, to.Month, DateTime.DaysInMonth(to.Year, to.Month));
+        }
+        SetRange(from, to);
+        RaiseUiActionRequested("Reload");
+    }
+
     private (DateOnly From, DateOnly To) GetEffectiveMonthlyRange()
     {
         var fromDt = RangeFrom?.Date ?? DateTime.Today;
@@ -151,11 +178,7 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         {
             new UiRibbonAction("PrevMonth", localizer["Ribbon_PrevMonth"], "<svg><use href='icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, null, () =>
             {
-                var today = DateTime.Today;
-                var start = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
-                var end = start.AddMonths(1).AddDays(-1);
-                SetRange(start, end);
-                RaiseUiActionRequested("Reload");
+                ShiftRange(months: -1);
                 return Task.CompletedTask;
             }),
             new UiRibbonAction("ThisMonth", localizer["Ribbon_ThisMonth"], "<svg><use href='icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, null, () =>
@@ -167,13 +190,19 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
                 RaiseUiActionRequested("Reload");
                 return Task.CompletedTask;
             }),
+            new UiRibbonAction("NextMonth", localizer["Ribbon_NextMonth"], "<svg><use href='icons/sprite.svg#next'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            {
+                ShiftRange(months: +1);
+                return Task.CompletedTask;
+            }),
             new UiRibbonAction("PrevYear", localizer["Ribbon_PrevYear"], "<svg><use href='icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, null, () =>
             {
-                var year = DateTime.Today.Year - 1;
-                var start = new DateTime(year, 1, 1);
-                var end = new DateTime(year, 12, 31);
-                SetRange(start, end);
-                RaiseUiActionRequested("Reload");
+                ShiftRange(years: -1);
+                return Task.CompletedTask;
+            }),
+            new UiRibbonAction("NextYear", localizer["Ribbon_NextYear"], "<svg><use href='icons/sprite.svg#next'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            {
+                ShiftRange(years: +1);
                 return Task.CompletedTask;
             }),
             new UiRibbonAction("ThisYear", localizer["Ribbon_ThisYear"], "<svg><use href='icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, null, () =>
