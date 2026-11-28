@@ -33,7 +33,7 @@
             <g class="portfolio-bar-line-chart-labels">
                 @foreach (var p in _points)
                 {
-                    @((MarkupString)$"<text x='{Inv(p.X)}' y='{Inv(AxisLabelY)}' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
+                    @((MarkupString)$"<text x='{Inv(p.X)}' y='{Inv(AxisLabelY)}' text-anchor='{p.Anchor}'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
                 }
             </g>
         </svg>
@@ -51,7 +51,7 @@
     private const double ChartTop = 20;
     private const double ChartBottom = 300;
     private const double BarAreaTop = 160;
-    private const double AxisLabelY = ChartBottom + 20;
+    private const double AxisLabelY = ChartBottom + 18;
 
     /// <summary>A single labeled data point rendered as a bar and a line value.</summary>
     /// <param name="Label">Short label shown on the x-axis (e.g. a year).</param>
@@ -80,7 +80,7 @@
     /// <summary>Optional formatter for the tooltip of each data point; defaults to "Label: line / bar" with "N2" values.</summary>
     [Parameter] public Func<PortfolioBarLineChartPoint, string>? TooltipFormatter { get; set; }
 
-    private sealed record RenderPoint(double X, string Label, string Tooltip, double LineY, decimal BarValue, double BarX, double BarY, double BarHeight);
+    private sealed record RenderPoint(double X, string Label, string Anchor, string Tooltip, double LineY, decimal BarValue, double BarX, double BarY, double BarHeight);
 
     private readonly List<RenderPoint> _points = new();
     private string _linePath = string.Empty;
@@ -133,9 +133,17 @@
             var barY = ChartBottom - (double)((point.BarValue - barMin) / (barMax - barMin)) * barAreaHeight;
             var tooltip = FormatTooltip(point);
 
+            // edge labels anchor inward so they never overflow the viewBox: the first label
+            // starts at the left edge, the last ends at the right edge
+            var anchor = Points.Count == 1 ? "middle"
+                : i == 0 ? "start"
+                : i == Points.Count - 1 ? "end"
+                : "middle";
+
             _points.Add(new RenderPoint(
                 x,
                 point.Label,
+                anchor,
                 tooltip,
                 lineY,
                 point.BarValue,

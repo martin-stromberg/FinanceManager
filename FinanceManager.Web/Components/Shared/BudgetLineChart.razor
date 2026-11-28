@@ -48,7 +48,7 @@
             @for (var i = 0; i < _labels.Count; i++)
             {
                 var xInv = _labels[i].X.ToString("F2", CultureInfo.InvariantCulture);
-                @((MarkupString)$"<text x='{xInv}' y='320' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(_labels[i].Text)}</text>")
+                @((MarkupString)$"<text x='{xInv}' y='318' text-anchor='{_labels[i].Anchor}'>{System.Net.WebUtility.HtmlEncode(_labels[i].Text)}</text>")
             }
         </g>
     </svg>
@@ -66,7 +66,7 @@
     [Parameter] public string ActualLabel { get; set; } = "Actual";
     [Parameter] public string AriaLabel { get; set; } = "Budget vs. actual";
 
-    private sealed record LabelPoint(double X, string Text);
+    private sealed record LabelPoint(double X, string Text, string Anchor);
     private sealed record Point(double X, double Y, string Tooltip);
 
     private readonly List<LabelPoint> _labels = new();
@@ -146,7 +146,13 @@
 
             if (i % labelStep == 0 || i == ordered.Count - 1)
             {
-                _labels.Add(new LabelPoint(x, label));
+                // edge labels anchor inward so they never overflow the viewBox: the first
+                // label starts at the left edge, the last ends at the right edge
+                var anchor = ordered.Count == 1 ? "middle"
+                    : i == 0 ? "start"
+                    : i == ordered.Count - 1 ? "end"
+                    : "middle";
+                _labels.Add(new LabelPoint(x, label, anchor));
             }
 
             _budgetPoints.Add(new Point(x, bY, ttBudget));
