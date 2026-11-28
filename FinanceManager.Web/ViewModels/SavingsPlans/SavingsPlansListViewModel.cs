@@ -59,6 +59,10 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
             // load categories to map names
             var categories = (await _api.SavingsPlanCategories_ListAsync(CancellationToken.None)).ToDictionary(c => c.Id, c => c.Name ?? string.Empty);
 
+            // apply search + date range filters before projecting items so the analysis calls (N+1)
+            // and the caches below only run for visible plans
+            list = list.Where(p => MatchesSearch(p, categories) && MatchesRange(p)).ToList();
+
             // capture interval + type info for later rendering
             _intervalByPlan.Clear();
             _typeByPlan.Clear();
@@ -109,6 +113,125 @@ public sealed class SavingsPlansListViewModel : BaseListViewModel<SavingsPlanLis
 
         // build visual records
         BuildRecords();
+    }
+
+    /// <summary>
+    /// Determines whether a savings plan matches the current search string. The search applies to the
+    /// plan name, the contract number and the category name (substring, case-insensitive). An empty
+    /// search string matches every plan.
+    /// </summary>
+    /// <param name="plan">The savings plan DTO to test.</param>
+    /// <param name="categories">Category id to category name map used to resolve the plan's category name.</param>
+    /// <returns><c>true</c> when the plan matches; otherwise <c>false</c>.</returns>
+    private bool MatchesSearch(SavingsPlanDto plan, IReadOnlyDictionary<Guid, string> categories)
+    {
+        var search = Search?.Trim();
+        if (string.IsNullOrEmpty(search))
+        {
+            return true;
+        }
+
+        if (plan.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return true;
+        }
+        if (plan.ContractNumber?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return true;
+        }
+        if (plan.CategoryId.HasValue
+            && categories.TryGetValue(plan.CategoryId.Value, out var catName)
+            && catName.Contains(search, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether a savings plan matches the current inclusive date range filter. The filter
+    /// applies to due dates (<see cref="SavingsPlanDto.TargetDate"/>): non-recurring plans match when
+    /// their target date lies inside the range, recurring plans match when at least one due date
+    /// (target date ± n × interval, month-end semantics) lies inside the range. Plans without a
+    /// target date never match a set range. With only one bound the range is open-ended; swapped
+    /// bounds are normalized.
+    /// </summary>
+    /// <param name="plan">The savings plan DTO to test.</param>
+    /// <returns><c>true</c> when the plan matches; otherwise <c>false</c>.</returns>
+    private bool MatchesRange(SavingsPlanDto plan)
+    {
+        var from = RangeFrom?.Date;
+        var to = RangeTo?.Date;
+        if (from.HasValue && to.HasValue && to.Value < from.Value)
+        {
+            (from, to) = (to, from);
+        }
+        if (!from.HasValue && !to.HasValue)
+        {
+            return true;
+        }
+        if (!plan.TargetDate.HasValue)
+        {
+            return false;
+        }
+
+        var target = plan.TargetDate.Value.Date;
+        var inRange = (DateTime d) => (!from.HasValue || d >= from.Value) && (!to.HasValue || d <= to.Value);
+
+        if (plan.Type != SavingsPlanType.Recurring || IntervalMonths(plan.Interval) <= 0)
+        {
+            return inRange(target);
+        }
+
+        // recurring: the plan ends at its archive date (or runs unbounded while active)
+        var upper = to?.Date ?? DateTime.MaxValue.Date;
+        if (plan.ArchivedUtc.HasValue && plan.ArchivedUtc.Value.Date < upper)
+        {
+            upper = plan.ArchivedUtc.Value.Date;
+        }
+        if (!to.HasValue && !plan.ArchivedUtc.HasValue)
+        {
+            // active plan + open-ended upper bound always matches (future dues are unbounded)
+            return true;
+        }
+
+        var interval = plan.Interval.Value;
+        var floor = plan.CreatedUtc.Date;
+        var lower = from.HasValue && from.Value > floor ? from.Value : floor;
+        if (upper < lower)
+        {
+            return false;
+        }
+
+        // walk backward from the next due date; dues before plan creation do not exist
+        for (var d = target; ; d = FinanceManager.Domain.Savings.SavingsPlan.SubtractIntervalWithMonthEndRule(d, interval))
+        {
+            if (d <= upper && d >= lower)
+            {
+                return true;
+            }
+            if (d < lower)
+            {
+                break;
+            }
+        }
+
+        // walk forward from the next due date while inside the upper bound
+        for (var d = target; ;)
+        {
+            var next = FinanceManager.Domain.Savings.SavingsPlan.AddIntervalWithMonthEndRule(d, interval);
+            if (next > upper)
+            {
+                break;
+            }
+            if (next >= lower)
+            {
+                return true;
+            }
+            d = next;
+        }
+
+        return false;
     }
 
     /// <summary>

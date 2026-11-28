@@ -40,6 +40,11 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
     }
 
     /// <summary>
+    /// Users carry no list-relevant date — the date range filter is not offered.
+    /// </summary>
+    public override bool AllowRangeFiltering => false;
+
+    /// <summary>
     /// Loads the full user list from the admin API and populates the view model's <see cref="FinanceManager.Web.ViewModels.Common.BaseListViewModel{TItem}.Items"/> collection.
     /// This method is safe to call from the UI and will clear the list on failure.
     /// </summary>
@@ -54,7 +59,11 @@ public sealed class UserListViewModel : BaseListViewModel<UserListItem>
             Items.Clear();
             if (list != null)
             {
-                Items.AddRange(list.Select(u => new UserListItem(u.Id, u.Username, u.IsAdmin, u.Active, u.LockoutEnd, u.LastLoginUtc)));
+                var search = Search?.Trim();
+                var filtered = string.IsNullOrEmpty(search)
+                    ? list
+                    : list.Where(u => u.Username?.Contains(search, StringComparison.OrdinalIgnoreCase) == true);
+                Items.AddRange(filtered.Select(u => new UserListItem(u.Id, u.Username, u.IsAdmin, u.Active, u.LockoutEnd, u.LastLoginUtc)));
             }
         }
         catch
