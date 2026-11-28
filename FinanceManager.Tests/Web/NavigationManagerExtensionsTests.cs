@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 namespace FinanceManager.Tests.Web;
 
 /// <summary>
-/// Tests for <see cref="NavigationManagerExtensions.IsSameOriginUri"/>, which validates
+/// Tests for <see cref="FinanceManager.Web.Extensions.NavigationManagerExtensions.IsSameOriginUri(NavigationManager, string)"/>, which validates
 /// user-controlled navigation targets (e.g. the <c>?back=</c> query parameter used by
 /// <c>ListPage</c> and <c>BudgetReport</c>) to prevent open redirects.
 /// </summary>
