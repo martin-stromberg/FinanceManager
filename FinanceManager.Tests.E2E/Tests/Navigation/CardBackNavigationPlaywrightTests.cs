@@ -45,7 +45,10 @@ public sealed class CardBackNavigationPlaywrightTests
         await backAction.ClickAsync();
 
         await page.WaitForURLAsync(url => url.Contains($"/card/budget/purposes/{purposeId}"), new() { Timeout = 15000 });
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // wait until the purpose card content actually rendered (URL flips before the VM reloads)
+        await page.WaitForFunctionAsync(
+            "() => [...document.querySelectorAll('input.card-input')].some(i => i.value === 'E2E Back Nav Purpose')",
+            options: new() { Timeout = 15000 });
         await CaptureAsync(page, "s1-budget-rule-back-purpose-card");
     }
 
@@ -80,7 +83,10 @@ public sealed class CardBackNavigationPlaywrightTests
         await backAction.ClickAsync();
 
         await page.WaitForURLAsync(url => url.Contains($"/card/savings-plans/{planId}") && !url.Contains("/categories/"), new() { Timeout = 15000 });
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // wait until the plan card content actually rendered (URL flips before the VM reloads)
+        await page.WaitForFunctionAsync(
+            "() => [...document.querySelectorAll('input.card-input')].some(i => i.value === 'E2E Back Nav Plan')",
+            options: new() { Timeout = 15000 });
         await CaptureAsync(page, "s1-savings-plan-card-returned");
     }
 
