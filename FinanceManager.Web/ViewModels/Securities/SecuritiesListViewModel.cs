@@ -29,6 +29,11 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
     }
 
     /// <summary>
+    /// Securities are master data without a list-relevant date — the date range filter is not offered.
+    /// </summary>
+    public override bool AllowRangeFiltering => false;
+
+    /// <summary>
     /// When true only active securities are loaded; when false archived securities are included as well.
     /// </summary>
     public bool OnlyActive { get; private set; } = true;
@@ -49,8 +54,16 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
         try
         {
             var list = await _api.Securities_ListAsync(OnlyActive, ct);
+            var search = Search?.Trim();
+            var filtered = string.IsNullOrEmpty(search)
+                ? list
+                : list.Where(s =>
+                    (s.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                    || (s.Identifier?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                    || (s.AlphaVantageCode?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                    || (s.CategoryName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true));
             Items.Clear();
-            Items.AddRange(list.Select(s => new SecurityListItem(s.Id, s.Name ?? string.Empty, s.Identifier ?? string.Empty, s.AlphaVantageCode, s.CategoryId, s.CategoryName, s.IsActive, s.SymbolAttachmentId)));
+            Items.AddRange(filtered.Select(s => new SecurityListItem(s.Id, s.Name ?? string.Empty, s.Identifier ?? string.Empty, s.AlphaVantageCode, s.CategoryId, s.CategoryName, s.IsActive, s.SymbolAttachmentId)));
         }
         catch
         {
@@ -93,6 +106,7 @@ public sealed partial class SecuritiesListViewModel : BaseListViewModel<Security
             _displaySymbolBySecurity[s.Id] = display;
         }
 
+        BuildRecords();
         RaiseStateChanged();
     }
 
