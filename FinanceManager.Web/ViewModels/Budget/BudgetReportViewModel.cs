@@ -369,7 +369,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 "<svg><use href='icons/sprite.svg#prev'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
-                null,
+                localizer["Ribbon_Tip_PrevMonth"],
                 ()
                     => ShiftAsOfMonthAsync(-1)),
             new UiRibbonAction(
@@ -378,7 +378,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 "<svg><use href='icons/sprite.svg#calendar'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
-                null,
+                localizer["Ribbon_Tip_ThisMonth"],
                 SetAsOfToCurrentMonthAsync),
             new UiRibbonAction(
                 "NextMonth",
@@ -386,7 +386,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 "<svg><use href='icons/sprite.svg#next'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
-                null,
+                localizer["Ribbon_Tip_NextMonth"],
                 ()
                     => ShiftAsOfMonthAsync(1)),
             new UiRibbonAction(
@@ -395,7 +395,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 "<svg><use href='icons/sprite.svg#prev'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
-                null,
+                localizer["Ribbon_Tip_PrevYear"],
                 ()
                     => ShiftAsOfYearAsync(-1)),
             new UiRibbonAction(
@@ -404,7 +404,7 @@ public sealed class BudgetReportViewModel : BaseViewModel
                 "<svg><use href='icons/sprite.svg#next'/></svg>",
                 UiRibbonItemSize.Small,
                 false,
-                null,
+                localizer["Ribbon_Tip_NextYear"],
                 ()
                     => ShiftAsOfYearAsync(1))
          }, Sort: 40);
@@ -513,7 +513,15 @@ public sealed class BudgetReportViewModel : BaseViewModel
     private async Task ShiftAsOfMonthAsync(int monthDelta)
     {
         var cur = Settings.AsOfDate;
-        var shifted = cur.AddMonths(monthDelta);
+        DateOnly shifted;
+        try
+        {
+            shifted = cur.AddMonths(monthDelta);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return;
+        }
         var monthEnd = new DateOnly(shifted.Year, shifted.Month, DateTime.DaysInMonth(shifted.Year, shifted.Month));
         Settings = Settings with { AsOfDate = monthEnd };
         await LoadAsync();
@@ -531,6 +539,10 @@ public sealed class BudgetReportViewModel : BaseViewModel
     {
         var cur = Settings.AsOfDate;
         var year = cur.Year + yearDelta;
+        if (year is < 1 or > 9999)
+        {
+            return;
+        }
         var month = cur.Month;
         var monthEnd = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
         Settings = Settings with { AsOfDate = monthEnd };

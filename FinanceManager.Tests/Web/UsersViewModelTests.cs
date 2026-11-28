@@ -217,6 +217,47 @@ public sealed class UsersViewModelTests
     }
 
     /// <summary>
+    /// The users overview hides the date range filter — users carry no list-relevant date.
+    /// </summary>
+    [Fact]
+    public void AllowRangeFiltering_IsFalse()
+    {
+        var (vm, _) = CreateListVm();
+        Assert.False(vm.AllowRangeFiltering);
+    }
+
+    /// <summary>
+    /// A search term filters the user list by username substring (case-insensitive); clearing it
+    /// restores the full list.
+    /// </summary>
+    [Fact]
+    public async Task Search_ShouldFilterByUsername()
+    {
+        var (vm, apiMock) = CreateListVm();
+        var users = new List<UserAdminDto>
+        {
+            new UserAdminDto(Guid.NewGuid(), "alice", false, true, null, DateTime.UtcNow, null),
+            new UserAdminDto(Guid.NewGuid(), "Bob", true, true, null, DateTime.UtcNow, null)
+        };
+        apiMock.Setup(a => a.Admin_ListUsersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(users);
+
+        vm.SetSearch("ALI");
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Single(vm.Items);
+        Assert.Equal("alice", vm.Items[0].Username);
+
+        vm.SetSearch("ob");
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Single(vm.Items);
+        Assert.Equal("Bob", vm.Items[0].Username);
+
+        vm.SetSearch(string.Empty);
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, vm.Items.Count);
+    }
+
+    /// <summary>
     /// Verifies that the user list's ribbon exposes exactly one group ("Actions") in the current UI design,
     /// a regression guard against an unintended extra group appearing after a ribbon layout change.
     /// </summary>

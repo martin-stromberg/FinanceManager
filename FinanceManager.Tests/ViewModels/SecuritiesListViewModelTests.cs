@@ -104,6 +104,56 @@ public sealed class SecuritiesListViewModelTests
     }
 
     /// <summary>
+    /// The securities overview hides the date range filter — securities are master data without a
+    /// list-relevant date.
+    /// </summary>
+    [Fact]
+    public void AllowRangeFiltering_IsFalse()
+    {
+        var (vm, _) = CreateVm();
+        Assert.False(vm.AllowRangeFiltering);
+    }
+
+    /// <summary>
+    /// A search term filters the list across name, identifier, AlphaVantage code and category name
+    /// (substring, case-insensitive); clearing it restores the full list.
+    /// </summary>
+    [Fact]
+    public async Task Search_FiltersAcrossFields()
+    {
+        var (vm, apiMock) = CreateVm();
+        var items = new List<SecurityDto>
+        {
+            new SecurityDto { Id = Guid.NewGuid(), Name = "Alpha ETF", Identifier = "A1" },
+            new SecurityDto { Id = Guid.NewGuid(), Name = "Beta AG", Identifier = "B2", AlphaVantageCode = "BETA" },
+            new SecurityDto { Id = Guid.NewGuid(), Name = "Gamma", Identifier = "G3", CategoryName = "Rohstoffe" }
+        };
+        apiMock.Setup(a => a.Securities_ListAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(items);
+        apiMock.Setup(a => a.SecurityCategories_ListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SecurityCategoryDto>());
+
+        vm.SetSearch("alpha etf");
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Single(vm.Items);
+        Assert.Equal("Alpha ETF", vm.Items[0].Name);
+
+        vm.SetSearch("beta");
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Single(vm.Items);
+        Assert.Equal("Beta AG", vm.Items[0].Name);
+
+        vm.SetSearch("rohstoffe");
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Single(vm.Items);
+        Assert.Equal("Gamma", vm.Items[0].Name);
+
+        vm.SetSearch(string.Empty);
+        await vm.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(3, vm.Items.Count);
+    }
+
+    /// <summary>
     /// Verifies that an unauthenticated user never reaches the securities API: initialization raises
     /// <c>AuthenticationRequired</c> and leaves the view model unloaded instead of calling the list endpoint.
     /// </summary>

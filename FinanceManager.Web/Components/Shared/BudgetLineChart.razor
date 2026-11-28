@@ -48,7 +48,7 @@
             @for (var i = 0; i < _labels.Count; i++)
             {
                 var xInv = _labels[i].X.ToString("F2", CultureInfo.InvariantCulture);
-                @((MarkupString)$"<text x='{xInv}' y='320' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(_labels[i].Text)}</text>")
+                @((MarkupString)$"<text x='{xInv}' y='{AxisLabelY.ToString("F2", CultureInfo.InvariantCulture)}' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(_labels[i].Text)}</text>")
             }
         </g>
     </svg>
@@ -65,6 +65,10 @@
     [Parameter] public string BudgetLabel { get; set; } = "Budget";
     [Parameter] public string ActualLabel { get; set; } = "Actual";
     [Parameter] public string AriaLabel { get; set; } = "Budget vs. actual";
+
+    // label baseline below the plot area (300) with headroom for descenders inside the
+    // 325-unit viewBox
+    private const double AxisLabelY = 318;
 
     private sealed record LabelPoint(double X, string Text);
     private sealed record Point(double X, double Y, string Tooltip);
@@ -146,7 +150,20 @@
 
             if (i % labelStep == 0 || i == ordered.Count - 1)
             {
-                _labels.Add(new LabelPoint(x, label));
+                // clamp the label midpoint into the viewBox so edge labels can never be
+                // clipped; estimated width 10.5 units per character (18px font, ~0.58em margin)
+                var est = label.Length * 10.5;
+                var xEff = Math.Clamp(x, est / 2, 1000 - est / 2);
+
+                // a forced end label that does not sit on the step grid would collide with
+                // the previous stepped label — drop the predecessor instead of overlapping
+                if (i == ordered.Count - 1 && i % labelStep != 0 && _labels.Count > 0
+                    && xEff - _labels[^1].X < (_labels[^1].Text.Length * 10.5 + est) / 2 + 6)
+                {
+                    _labels.RemoveAt(_labels.Count - 1);
+                }
+
+                _labels.Add(new LabelPoint(xEff, label));
             }
 
             _budgetPoints.Add(new Point(x, bY, ttBudget));

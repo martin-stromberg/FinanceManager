@@ -92,7 +92,8 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
             BudgetCategoryId = Rule.BudgetCategoryId ?? Guid.Empty;
 
             // When opening an existing rule from the embedded list we may not have a back parameter.
-            // Default to navigating back to the parent budget purpose card.
+            // Default to navigating back to the parent budget purpose card; rules without purpose
+            // and category fall back to the budget purposes list (list/budget/rules does not exist).
             if (string.IsNullOrWhiteSpace(InitBack))
             {
                 if (BudgetPurposeId != Guid.Empty)
@@ -102,6 +103,10 @@ public sealed class BudgetRuleCardViewModel : BaseCardViewModel<(string Key, str
                 else if (BudgetCategoryId != Guid.Empty)
                 {
                     SetBackNavigation($"card/budget/categories/{BudgetCategoryId}");
+                }
+                else
+                {
+                    SetBackNavigation("list/budget/purposes");
                 }
             }
 

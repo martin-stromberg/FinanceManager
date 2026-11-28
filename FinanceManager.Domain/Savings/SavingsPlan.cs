@@ -201,18 +201,10 @@ public sealed class SavingsPlan : Entity
     /// <param name="date">The original date.</param>
     /// <param name="interval">The interval to add.</param>
     /// <returns>The advanced date respecting month-end rules and preserving time-of-day and Kind.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided.</exception>
-    private static DateTime AddIntervalWithMonthEndRule(DateTime date, SavingsPlanInterval interval)
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided or the result would leave the <see cref="DateTime"/> domain.</exception>
+    public static DateTime AddIntervalWithMonthEndRule(DateTime date, SavingsPlanInterval interval)
     {
-        int monthsToAdd = interval switch
-        {
-            SavingsPlanInterval.Monthly => 1,
-            SavingsPlanInterval.BiMonthly => 2,
-            SavingsPlanInterval.Quarterly => 3,
-            SavingsPlanInterval.SemiAnnually => 6,
-            SavingsPlanInterval.Annually => 12,
-            _ => throw new ArgumentOutOfRangeException(nameof(interval), interval, "Unsupported interval")
-        };
+        int monthsToAdd = IntervalMonths(interval);
 
         int originalDay = date.Day;
         bool wasMonthEnd = originalDay == DateTime.DaysInMonth(date.Year, date.Month);
@@ -226,6 +218,43 @@ public sealed class SavingsPlan : Entity
 
         return new DateTime(added.Year, added.Month, newDay, date.Hour, date.Minute, date.Second, date.Millisecond, date.Kind);
     }
+
+    /// <summary>
+    /// Subtracts the specified interval from a date while preserving month-end semantics — the
+    /// mirror image of <see cref="AddIntervalWithMonthEndRule"/> used to enumerate past due dates
+    /// of a recurring plan.
+    /// </summary>
+    /// <param name="date">The original date.</param>
+    /// <param name="interval">The interval to subtract.</param>
+    /// <returns>The date moved back by the interval, respecting month-end rules and preserving time-of-day and Kind.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported interval value is provided or the result would leave the <see cref="DateTime"/> domain.</exception>
+    public static DateTime SubtractIntervalWithMonthEndRule(DateTime date, SavingsPlanInterval interval)
+    {
+        int monthsToSubtract = IntervalMonths(interval);
+
+        int originalDay = date.Day;
+        bool wasMonthEnd = originalDay == DateTime.DaysInMonth(date.Year, date.Month);
+
+        var subtracted = date.AddMonths(-monthsToSubtract);
+        int daysInNewMonth = DateTime.DaysInMonth(subtracted.Year, subtracted.Month);
+
+        int newDay = wasMonthEnd
+            ? daysInNewMonth
+            : Math.Min(originalDay, daysInNewMonth);
+
+        return new DateTime(subtracted.Year, subtracted.Month, newDay, date.Hour, date.Minute, date.Second, date.Millisecond, date.Kind);
+    }
+
+    private static int IntervalMonths(SavingsPlanInterval interval)
+        => interval switch
+        {
+            SavingsPlanInterval.Monthly => 1,
+            SavingsPlanInterval.BiMonthly => 2,
+            SavingsPlanInterval.Quarterly => 3,
+            SavingsPlanInterval.SemiAnnually => 6,
+            SavingsPlanInterval.Annually => 12,
+            _ => throw new ArgumentOutOfRangeException(nameof(interval), interval, "Unsupported interval")
+        };
 
     // Backup DTO
     /// <summary>
