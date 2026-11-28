@@ -9,12 +9,12 @@ Issue: #614 (Bugfix-Projekt, Meta-Issue für #599–#610)
 | [x] | 2 | Verzeichnis/Tracking angelegt | `docs/projects/task/issue-614-…-bugfix-projekt/` |
 | [x] | – | Einstiegspunkt ermittelt (Neustart, keine Artefakte vorhanden) | – |
 | [x] | 3 | Anforderung aufbereiten | `requirement.md` |
-| [ ] | 4 | Bestandsaufnahme | `inventory.md`, `inventory/` |
-| [ ] | 5 | Projektplan | `project-plan.md` |
-| [ ] | 5a | Offene Punkte klären | `project-plan.md` (aktualisiert) |
-| [ ] | 5b | Planprüfung (Unteragent) | `project-plan-check.md` |
-| [ ] | 5c | Planungscommit | – |
-| [ ] | 6 | Schritte-Tracking anlegen | `steps.md`, `status.html` |
-| [ ] | 7 | Entwicklungsschleife (Lifecycle je Schritt + Abnahme + Merge) | `acceptance-schritt-{n}.md` |
+| [x] | 4 | Bestandsaufnahme | `inventory.md`, `inventory/` |
+| [x] | 5 | Projektplan | `project-plan.md` |
+| [x] | 5a | Offene Punkte klären | `project-plan.md` (aktualisiert) |
+| [x] | 5b | Planprüfung (Unteragent) | `project-plan-check.md` (+`project-plan-check.1.md`) |
+| [x] | 5c | Planungscommit | – |
+| [x] | 6 | Schritte-Tracking anlegen | `steps.md`, `status.html` |
+| [~] | 7 | Entwicklungsschleife (Lifecycle je Schritt + Abnahme + Merge) — Schritt 1/5 fertig | `acceptance-schritt-{n}.md` |
 | [ ] | 8 | Aufräumen (Projektverzeichnis entfernen) | – |
 | [ ] | 9 | Abschlusscommit | – |
