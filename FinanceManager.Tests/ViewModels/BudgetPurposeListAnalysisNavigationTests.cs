@@ -281,6 +281,90 @@ public sealed class BudgetPurposeListAnalysisNavigationTests
     }
 
     /// <summary>
+    /// When only an upper bound is set, the lower bound is anchored to that bound's calendar
+    /// month before shifting.
+    /// </summary>
+    [Fact]
+    public async Task PrevMonth_OnlyToSet_AnchorsToBoundsMonth()
+    {
+        var apiMock = new Mock<IApiClient>();
+        var sp = CreateSp(apiMock);
+        var vm = CreateVm(sp);
+
+        vm.SetRange(null, new DateTime(2030, 6, 20));
+
+        await InvokeAsync(vm, sp, "PrevMonth");
+
+        Assert.Equal((new DateTime(2030, 5, 1), new DateTime(2030, 5, 20)), RangeOf(vm));
+    }
+
+    /// <summary>
+    /// An inverted user-entered range (Von > Bis) is normalized before applying — the shifted
+    /// result must be a valid ascending range.
+    /// </summary>
+    [Fact]
+    public async Task PrevMonth_InvertedRange_Normalizes()
+    {
+        var apiMock = new Mock<IApiClient>();
+        var sp = CreateSp(apiMock);
+        var vm = CreateVm(sp);
+
+        vm.SetRange(new DateTime(2025, 5, 20), new DateTime(2025, 3, 15));
+
+        await InvokeAsync(vm, sp, "PrevMonth");
+
+        Assert.Equal((new DateTime(2025, 2, 15), new DateTime(2025, 4, 20)), RangeOf(vm));
+    }
+
+    /// <summary>
+    /// After a navigation click a reload must pass the shifted range to the API.
+    /// </summary>
+    [Fact]
+    public async Task NextMonth_LoadAsync_QueriesApiWithShiftedRange()
+    {
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Budgets_ListPurposesAsync(
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<BudgetSourceType?>(), It.IsAny<string?>(),
+                It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BudgetPurposeOverviewDto>());
+        var sp = CreateSp(apiMock);
+        var vm = CreateVm(sp);
+
+        vm.SetRange(new DateTime(2025, 3, 1), new DateTime(2025, 3, 31));
+
+        await InvokeAsync(vm, sp, "NextMonth");
+        await ((IListProvider)vm).LoadAsync();
+
+        apiMock.Verify(a => a.Budgets_ListPurposesAsync(
+            It.IsAny<int>(), It.IsAny<int>(), It.IsAny<BudgetSourceType?>(), It.IsAny<string?>(),
+            new DateOnly(2025, 4, 1), new DateOnly(2025, 4, 30), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// A shift that would leave the DateTime domain (e.g. NextYear at year 9999) is a no-op —
+    /// the current range is kept and no reload is triggered.
+    /// </summary>
+    [Fact]
+    public async Task NextYear_AtDateTimeBoundary_KeepsRange()
+    {
+        var apiMock = new Mock<IApiClient>();
+        var sp = CreateSp(apiMock);
+        var vm = CreateVm(sp);
+
+        string? raised = null;
+        vm.UiActionRequested += (_, e) => raised = e?.Action;
+
+        var from = new DateTime(9999, 6, 1);
+        var to = new DateTime(9999, 6, 30);
+        vm.SetRange(from, to);
+
+        await InvokeAsync(vm, sp, "NextYear");
+
+        Assert.Equal((from, to), RangeOf(vm));
+        Assert.Null(raised);
+    }
+
+    /// <summary>
     /// Repeated clicks must keep walking backwards — the shift is relative to the current view,
     /// not re-anchored on today.
     /// </summary>
@@ -303,12 +387,13 @@ public sealed class BudgetPurposeListAnalysisNavigationTests
     }
 
     /// <summary>
-    /// The analysis tab must offer the five unified buttons in the required order, followed by the
-    /// kept ThisYear quick-filter (same order as the budget report: PrevMonth, ThisMonth,
-    /// NextMonth, PrevYear, NextYear).
+    /// The analysis tab must offer the five unified buttons plus the kept ThisYear quick-filter.
+    /// The ribbon renders three items per column, so ThisYear sits between PrevYear and NextYear
+    /// giving both columns a symmetric prev/this/next layout; the five shared buttons keep the
+    /// same relative order as the budget report.
     /// </summary>
     [Fact]
-    public void AnalysisButtons_FiveInOrder_ThenThisYear()
+    public void AnalysisButtons_OrderedForSymmetricColumns()
     {
         var apiMock = new Mock<IApiClient>();
         var sp = CreateSp(apiMock);
@@ -320,7 +405,7 @@ public sealed class BudgetPurposeListAnalysisNavigationTests
             .Single(t => t.Items.Any(i => i.Id == "PrevMonth") && t.Items.Any(i => i.Id == "ThisYear"));
 
         Assert.Equal(
-            new[] { "PrevMonth", "ThisMonth", "NextMonth", "PrevYear", "NextYear", "ThisYear" },
+            new[] { "PrevMonth", "ThisMonth", "NextMonth", "PrevYear", "ThisYear", "NextYear" },
             analysisTab.Items.Select(i => i.Id).ToArray());
     }
 

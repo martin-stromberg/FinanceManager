@@ -48,7 +48,7 @@ public sealed class BudgetAnalysisNavigationPlaywrightTests
         var thisMonth = MonthBounds(today.Year, today.Month);
 
         // default view: current calendar month
-        await WaitForRangeAsync(page, thisMonth, 30000);
+        await WaitForRangeAsync(page, thisMonth.From, thisMonth.To, 30000);
 
         // Vormonat: one calendar month back from the displayed month (repeatable, not re-anchored)
         var prevMonth = MonthBounds(thisMonth.From.AddMonths(-1).Year, thisMonth.From.AddMonths(-1).Month);
@@ -136,11 +136,20 @@ public sealed class BudgetAnalysisNavigationPlaywrightTests
     /// <param name="expectedTo">Expected upper range bound.</param>
     private static async Task ClickUntilRangeAsync(IPage page, string buttonId, DateTime expectedFrom, DateTime expectedTo)
     {
-        var expected = (expectedFrom, expectedTo);
+        var baseline = await ReadRangeAsync(page);
         for (var attempt = 0; attempt < 5; attempt++)
         {
+            var current = await ReadRangeAsync(page);
+            if (current.From == expectedFrom && current.To == expectedTo)
+            {
+                return;
+            }
+            if (current != baseline)
+            {
+                break; // range moved past the target — do not click again (overshoot)
+            }
             await page.Locator($"button#{buttonId}").ClickAsync();
-            if (await TryWaitForRangeAsync(page, expected, 10000))
+            if (await TryWaitForRangeAsync(page, expectedFrom, expectedTo, 10000))
             {
                 await page.WaitForTimeoutAsync(800);
                 var (from, to) = await ReadRangeAsync(page);
@@ -158,15 +167,15 @@ public sealed class BudgetAnalysisNavigationPlaywrightTests
     /// Waits until the range inputs show the expected bounds; throws when the timeout elapses.
     /// </summary>
     /// <param name="page">Playwright page.</param>
-    /// <param name="From">Expected lower range bound.</param>
-    /// <param name="expected">Expected range bounds.</param>
+    /// <param name="expectedFrom">Expected lower range bound.</param>
+    /// <param name="expectedTo">Expected upper range bound.</param>
     /// <param name="timeoutMs">Wait timeout in milliseconds.</param>
-    private static async Task WaitForRangeAsync(IPage page, (DateTime From, DateTime To) expected, int timeoutMs)
+    private static async Task WaitForRangeAsync(IPage page, DateTime expectedFrom, DateTime expectedTo, int timeoutMs)
     {
-        if (!await TryWaitForRangeAsync(page, expected, timeoutMs))
+        if (!await TryWaitForRangeAsync(page, expectedFrom, expectedTo, timeoutMs))
         {
             var (actualFrom, actualTo) = await ReadRangeAsync(page);
-            throw new TimeoutException($"range never reached {expected.From:yyyy-MM-dd}..{expected.To:yyyy-MM-dd} (actual {actualFrom:yyyy-MM-dd}..{actualTo:yyyy-MM-dd})");
+            throw new TimeoutException($"range never reached {expectedFrom:yyyy-MM-dd}..{expectedTo:yyyy-MM-dd} (actual {actualFrom:yyyy-MM-dd}..{actualTo:yyyy-MM-dd})");
         }
     }
 
@@ -174,18 +183,18 @@ public sealed class BudgetAnalysisNavigationPlaywrightTests
     /// Polls until the range inputs show the expected bounds or the timeout elapses.
     /// </summary>
     /// <param name="page">Playwright page.</param>
-    /// <param name="From">Expected lower range bound.</param>
-    /// <param name="expected">Expected range bounds.</param>
+    /// <param name="expectedFrom">Expected lower range bound.</param>
+    /// <param name="expectedTo">Expected upper range bound.</param>
     /// <param name="timeoutMs">Wait timeout in milliseconds.</param>
     /// <returns><see langword="true"/> when the expected bounds appeared in time.</returns>
-    private static async Task<bool> TryWaitForRangeAsync(IPage page, (DateTime From, DateTime To) expected, int timeoutMs)
+    private static async Task<bool> TryWaitForRangeAsync(IPage page, DateTime expectedFrom, DateTime expectedTo, int timeoutMs)
     {
         try
         {
             await page.WaitForFunctionAsync(
                 "([from, to]) => { const i = document.querySelectorAll('.list-filter-range input');" +
                 " return i.length >= 2 && i[0].value === from && i[1].value === to; }",
-                arg: new object[] { expected.From.ToString("yyyy-MM-dd"), expected.To.ToString("yyyy-MM-dd") },
+                arg: new object[] { expectedFrom.ToString("yyyy-MM-dd"), expectedTo.ToString("yyyy-MM-dd") },
                 options: new() { Timeout = timeoutMs });
             return true;
         }

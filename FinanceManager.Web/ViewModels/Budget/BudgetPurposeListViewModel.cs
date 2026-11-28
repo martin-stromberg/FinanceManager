@@ -97,7 +97,8 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
     /// delta (day-of-month is clamped, e.g. 31.03. → 28./29.02.); a range ending on a month end
     /// keeps ending on a month end, so a month-aligned view stays month-aligned. When a bound is
     /// unset the other bound's calendar month serves as the anchor (current month when both are
-    /// unset), so the shifted range never inverts.
+    /// unset), so the shifted range never inverts. A shift that would leave the DateTime domain
+    /// is ignored (current range kept).
     /// </summary>
     /// <param name="months">Number of months to shift (negative = past).</param>
     /// <param name="years">Number of years to shift (negative = past).</param>
@@ -108,11 +109,24 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
         var toDate = RangeTo?.Date;
         fromDate ??= new DateTime((toDate ?? today).Year, (toDate ?? today).Month, 1);
         toDate ??= new DateTime(fromDate.Value.Year, fromDate.Value.Month, DateTime.DaysInMonth(fromDate.Value.Year, fromDate.Value.Month));
-        var from = fromDate.Value.AddYears(years).AddMonths(months);
-        var to = toDate.Value.AddYears(years).AddMonths(months);
+        DateTime from;
+        DateTime to;
+        try
+        {
+            from = fromDate.Value.AddYears(years).AddMonths(months);
+            to = toDate.Value.AddYears(years).AddMonths(months);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return;
+        }
         if (toDate.Value.Day == DateTime.DaysInMonth(toDate.Value.Year, toDate.Value.Month))
         {
             to = new DateTime(to.Year, to.Month, DateTime.DaysInMonth(to.Year, to.Month));
+        }
+        if (to < from)
+        {
+            (from, to) = (to, from);
         }
         SetRange(from, to);
         RaiseUiActionRequested("Reload");
@@ -176,12 +190,12 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
 
         var analysis = new UiRibbonTab(localizer["Ribbon_Group_Analysis"], new List<UiRibbonAction>
         {
-            new UiRibbonAction("PrevMonth", localizer["Ribbon_PrevMonth"], "<svg><use href='icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            new UiRibbonAction("PrevMonth", localizer["Ribbon_PrevMonth"], "<svg><use href='icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, localizer["Ribbon_Tip_PrevMonth"], () =>
             {
                 ShiftRange(months: -1);
                 return Task.CompletedTask;
             }),
-            new UiRibbonAction("ThisMonth", localizer["Ribbon_ThisMonth"], "<svg><use href='icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            new UiRibbonAction("ThisMonth", localizer["Ribbon_ThisMonth"], "<svg><use href='icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, localizer["Ribbon_Tip_ThisMonth"], () =>
             {
                 var today = DateTime.Today;
                 var start = new DateTime(today.Year, today.Month, 1);
@@ -190,28 +204,28 @@ public sealed class BudgetPurposeListViewModel : BaseListViewModel<BudgetPurpose
                 RaiseUiActionRequested("Reload");
                 return Task.CompletedTask;
             }),
-            new UiRibbonAction("NextMonth", localizer["Ribbon_NextMonth"], "<svg><use href='icons/sprite.svg#next'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            new UiRibbonAction("NextMonth", localizer["Ribbon_NextMonth"], "<svg><use href='icons/sprite.svg#next'/></svg>", UiRibbonItemSize.Small, false, localizer["Ribbon_Tip_NextMonth"], () =>
             {
                 ShiftRange(months: +1);
                 return Task.CompletedTask;
             }),
-            new UiRibbonAction("PrevYear", localizer["Ribbon_PrevYear"], "<svg><use href='icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            new UiRibbonAction("PrevYear", localizer["Ribbon_PrevYear"], "<svg><use href='icons/sprite.svg#prev'/></svg>", UiRibbonItemSize.Small, false, localizer["Ribbon_Tip_PrevYear"], () =>
             {
                 ShiftRange(years: -1);
                 return Task.CompletedTask;
             }),
-            new UiRibbonAction("NextYear", localizer["Ribbon_NextYear"], "<svg><use href='icons/sprite.svg#next'/></svg>", UiRibbonItemSize.Small, false, null, () =>
-            {
-                ShiftRange(years: +1);
-                return Task.CompletedTask;
-            }),
-            new UiRibbonAction("ThisYear", localizer["Ribbon_ThisYear"], "<svg><use href='icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, null, () =>
+            new UiRibbonAction("ThisYear", localizer["Ribbon_ThisYear"], "<svg><use href='icons/sprite.svg#calendar'/></svg>", UiRibbonItemSize.Small, false, localizer["Ribbon_Tip_ThisYear"], () =>
             {
                 var year = DateTime.Today.Year;
                 var start = new DateTime(year, 1, 1);
                 var end = new DateTime(year, 12, 31);
                 SetRange(start, end);
                 RaiseUiActionRequested("Reload");
+                return Task.CompletedTask;
+            }),
+            new UiRibbonAction("NextYear", localizer["Ribbon_NextYear"], "<svg><use href='icons/sprite.svg#next'/></svg>", UiRibbonItemSize.Small, false, localizer["Ribbon_Tip_NextYear"], () =>
+            {
+                ShiftRange(years: +1);
                 return Task.CompletedTask;
             })
         }, Sort: 40);
