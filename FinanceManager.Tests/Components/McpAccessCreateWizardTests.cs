@@ -89,4 +89,26 @@ public sealed class McpAccessCreateWizardTests : Bunit.BunitContext
         Assert.DoesNotContain("Mcp_Disabled_Hint", cut.Markup);
         Assert.NotEmpty(cut.FindAll(".mcp-wizard-steps"));
     }
+
+    /// <summary>
+    /// When the status call fails the wizard surfaces the error message instead of silently
+    /// rendering a half-empty wizard.
+    /// </summary>
+    [Fact]
+    public void StatusCallFails_ShowsErrorMessage()
+    {
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("status boom"));
+        apiMock.Setup(a => a.Mcp_GetLevelsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<McpAccessLevelDto>());
+        apiMock.Setup(a => a.Mcp_GetOptionsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((McpAccessOptionsDto?)null);
+        Services.AddSingleton(apiMock.Object);
+
+        var cut = Render<McpAccessCreateWizard>();
+
+        Assert.Contains("status boom", cut.Markup);
+        Assert.DoesNotContain("Mcp_Disabled_Hint", cut.Markup);
+    }
 }

@@ -54,6 +54,9 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
     /// <summary>
     /// Indicates whether the last load reported <c>Err_Mcp_Disabled</c> (MCP feature disabled server-side).
     /// The list then renders a friendly hint record instead of data rows.
+    /// The default <c>false</c> is intentionally fail-open: until the first status check completes
+    /// the New action stays enabled and the create wizard performs its own status check as the
+    /// second line of defense.
     /// </summary>
     public bool IsMcpDisabled { get; private set; }
 

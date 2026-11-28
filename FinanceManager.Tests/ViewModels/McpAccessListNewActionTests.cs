@@ -111,4 +111,51 @@ public sealed class McpAccessListNewActionTests
         Assert.Equal("New", raised);
         Assert.IsType<BaseViewModel.UiOverlaySpec>(payload);
     }
+
+    /// <summary>
+    /// A failing status call is best-effort: the list keeps loading and the New action stays
+    /// enabled — the create wizard re-checks the status itself.
+    /// </summary>
+    [Fact]
+    public async Task StatusCallFails_ListStillLoadsAndNewStaysEnabled()
+    {
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("network"));
+        apiMock.Setup(a => a.Mcp_ListAccessesAsync(
+                It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<McpAccessListItemDto>());
+        var sp = CreateSp(apiMock);
+        var vm = new McpAccessListViewModel(sp);
+
+        await vm.LoadAsync();
+
+        Assert.False(vm.IsMcpDisabled);
+        Assert.False(FindNewAction(vm, sp).Disabled);
+    }
+
+    /// <summary>
+    /// When the list call itself reports <c>Err_Mcp_Disabled</c> the fallback marks the
+    /// integration as disabled: hint record is rendered and the New action is disabled.
+    /// </summary>
+    [Fact]
+    public async Task ListCallFailsWithErrMcpDisabled_MarksDisabledAndShowsHint()
+    {
+        var apiMock = new Mock<IApiClient>();
+        apiMock.Setup(a => a.Mcp_GetStatusAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new McpStatusDto(true));
+        apiMock.Setup(a => a.Mcp_ListAccessesAsync(
+                It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("disabled"));
+        apiMock.SetupGet(a => a.LastErrorCode).Returns("Err_Mcp_Disabled");
+        var sp = CreateSp(apiMock);
+        var vm = new McpAccessListViewModel(sp);
+
+        await vm.LoadAsync();
+
+        Assert.True(vm.IsMcpDisabled);
+        Assert.True(FindNewAction(vm, sp).Disabled);
+        var record = Assert.Single(vm.Records ?? new List<ListRecord>());
+        Assert.Contains(record.Cells, c => c.Text == "Mcp_Disabled_Hint");
+    }
 }

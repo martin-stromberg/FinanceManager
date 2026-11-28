@@ -86,6 +86,26 @@ public sealed class BudgetRuleListNewActionTests
     }
 
     /// <summary>
+    /// Without a parent context the embedded list renders a muted hint record explaining why
+    /// nothing can be created — the disabled tooltip alone is unreachable via touch/keyboard.
+    /// </summary>
+    [Fact]
+    public async Task NewRule_NoContext_ShowsHintRecord()
+    {
+        var apiMock = CreateApiMock();
+        var sp = CreateSp(apiMock);
+        var vm = new BudgetRuleListViewModel(sp);
+
+        await vm.InitializeForPurposeAsync(Guid.Empty);
+
+        var record = Assert.Single(vm.Records ?? new List<ListRecord>());
+        Assert.Contains(record.Cells, c => c.Text == "Budget_Rule_New_SaveFirst" && c.Muted);
+        Assert.Null(record.Item);
+        apiMock.Verify(a => a.Budgets_ListRulesByPurposeAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        apiMock.Verify(a => a.Budgets_ListRulesByCategoryAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
     /// For a saved budget purpose the action stays enabled and raises the purpose payload.
     /// </summary>
     [Fact]

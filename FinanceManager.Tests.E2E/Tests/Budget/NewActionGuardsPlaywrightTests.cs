@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace FinanceManager.Tests.E2E;
 
 /// <summary>
@@ -39,8 +41,14 @@ public sealed class NewActionGuardsPlaywrightTests
 
         // disabled until the ribbon has re-evaluated after the card finished loading
         await Assertions.Expect(newRule).ToBeDisabledAsync(new() { Timeout = 15000 });
-        var title = await newRule.GetAttributeAsync("title");
-        Assert.False(string.IsNullOrWhiteSpace(title));
+        // Budget_Rule_New_SaveFirst — de "…zuerst speichern" / en "Save the budget purpose…"
+        await Assertions.Expect(newRule).ToHaveAttributeAsync("title",
+            new Regex("speicher|save", RegexOptions.IgnoreCase), new() { Timeout = 5000 });
+
+        // muted hint row in the embedded rules list explains the disabled action on every
+        // device — the tooltip alone is unreachable via touch and keyboard
+        var hint = page.Locator(".card-embedded-list").GetByText(new Regex("speicher|save", RegexOptions.IgnoreCase));
+        await Assertions.Expect(hint.First).ToBeVisibleAsync(new() { Timeout = 15000 });
 
         await CaptureAsync(page, "s4-budget-purpose-newrule-disabled");
 
@@ -48,6 +56,31 @@ public sealed class NewActionGuardsPlaywrightTests
         await newRule.ClickAsync(new() { Force = true });
         await page.WaitForTimeoutAsync(500);
         Assert.Contains("/card/budget/purposes/new", page.Url);
+    }
+
+    /// <summary>
+    /// A new, not yet saved budget category card shows the same guarded pattern: the embedded
+    /// rules section is present with the NewRule action disabled and the hint row visible.
+    /// </summary>
+    [Fact]
+    public async Task BudgetCategoryCard_Unsaved_NewRuleDisabled()
+    {
+        await using var session = await _fixture.CreateSessionAsync();
+        var page = session.Page;
+        await LoginNewUserAsync(page, "newrule-guard");
+
+        await page.GotoAsync("card/budget/categories/new");
+        var newRule = page.Locator("button#NewRule");
+        await newRule.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+
+        await Assertions.Expect(newRule).ToBeDisabledAsync(new() { Timeout = 15000 });
+        await Assertions.Expect(newRule).ToHaveAttributeAsync("title",
+            new Regex("speicher|save", RegexOptions.IgnoreCase), new() { Timeout = 5000 });
+
+        var hint = page.Locator(".card-embedded-list").GetByText(new Regex("speicher|save", RegexOptions.IgnoreCase));
+        await Assertions.Expect(hint.First).ToBeVisibleAsync(new() { Timeout = 15000 });
+
+        await CaptureAsync(page, "s4-budget-category-newrule-disabled");
     }
 
     /// <summary>
@@ -93,8 +126,9 @@ public sealed class NewActionGuardsPlaywrightTests
         await newButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         await Assertions.Expect(newButton).ToBeDisabledAsync(new() { Timeout = 15000 });
-        var title = await newButton.GetAttributeAsync("title");
-        Assert.False(string.IsNullOrWhiteSpace(title));
+        // Mcp_Disabled_Hint — de "…nicht aktiviert…" / en "…not activated…"
+        await Assertions.Expect(newButton).ToHaveAttributeAsync("title",
+            new Regex("aktiviert|activated", RegexOptions.IgnoreCase), new() { Timeout = 5000 });
 
         await CaptureAsync(page, "s4-mcp-accesses-new-disabled");
 

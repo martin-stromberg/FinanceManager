@@ -168,9 +168,11 @@ else
             var status = await Api.Mcp_GetStatusAsync();
             _disabled = !status.Enabled;
         }
-        catch
+        catch (Exception ex)
         {
-            _disabled = false;
+            // surface the failure instead of rendering a half-empty wizard (levels/options
+            // would most likely fail too and leave step 1 without choices)
+            _error = Api.LastError ?? ex.Message;
         }
         if (_disabled)
         {
