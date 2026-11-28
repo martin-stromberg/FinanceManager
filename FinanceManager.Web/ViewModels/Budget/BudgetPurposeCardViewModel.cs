@@ -458,6 +458,7 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !HasPendingChanges, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+            new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }),
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         }, Sort: 10);
 
@@ -487,6 +488,24 @@ public sealed class BudgetPurposeCardViewModel : BaseCardViewModel<(string Key, 
         {
             new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage, linked })
         };
+    }
+
+    private Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            if (Purpose != null)
+            {
+                CardRecord = BuildCardRecord(Purpose);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

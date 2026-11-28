@@ -108,6 +108,10 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
     /// <returns><c>true</c> when save succeeded; otherwise <c>false</c> and <see cref="FinanceManager.Web.ViewModels.Common.BaseViewModel.SetError(string?, string?)"/> provides details.</returns>
     public override async Task<bool> SaveAsync()
     {
+        // snapshot the persisted baseline so it can be restored when the save fails
+        var prevName = Model.Name;
+        var prevSymbolId = Model.SymbolAttachmentId;
+
         if (CardRecord != null)
         {
             var nameField = CardRecord.Fields.FirstOrDefault(f => f.LabelKey == "Card_Caption_SecurityCategory_Name");
@@ -123,6 +127,7 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
                 var created = await ApiClient.SecurityCategories_CreateAsync(new SecurityCategoryRequest { Name = Model.Name });
                 if (created == null)
                 {
+                    Model.Name = prevName; Model.SymbolAttachmentId = prevSymbolId;
                     SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Create failed");
                     return false;
                 }
@@ -134,21 +139,33 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
                 var dto = await ApiClient.SecurityCategories_UpdateAsync(Id, new SecurityCategoryRequest { Name = Model.Name });
                 if (dto == null)
                 {
+                    Model.Name = prevName; Model.SymbolAttachmentId = prevSymbolId;
                     SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Update failed");
                     return false;
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            // persist call failed: roll the baseline back to the pre-save persisted state
+            Model.Name = prevName; Model.SymbolAttachmentId = prevSymbolId;
+            SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
+            return false;
+        }
 
+        // Create/Update already succeeded - a reload failure only affects the view refresh and
+        // must not roll the baseline back to the pre-save state, so it is handled separately.
+        try
+        {
             await LoadAsync(Id);
-            RaiseUiActionRequested("Saved", Id.ToString());
-            ClearPendingChanges();
-            return true;
         }
         catch (Exception ex)
         {
             SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? ex.Message);
-            return false;
         }
+        RaiseUiActionRequested("Saved", Id.ToString());
+        ClearPendingChanges();
+        return true;
     }
 
     /// <summary>
@@ -207,10 +224,26 @@ public sealed class SecurityCategoryCardViewModel : BaseCardViewModel<(string Ke
         var manage = new UiRibbonTab(localizer["Ribbon_Group_Manage"], new List<UiRibbonAction>
         {
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+            new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }),
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Id == Guid.Empty, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; })
         }, Sort: 10);
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage }) };
+    }
+
+    private Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            CardRecord = BuildCardRecord(Model.Name, Model.SymbolAttachmentId);
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
+        return Task.CompletedTask;
     }
 
     /// <summary>

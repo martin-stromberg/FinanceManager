@@ -152,6 +152,8 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
             var dto = await ApiClient.SavingsPlans_GetAsync(id);
             if (dto == null)
             {
+                // drop the stale baseline so a later reset does not rebuild the card from a different entity
+                _loadedDto = null;
                 SetError(ApiClient.LastErrorCode ?? null, ApiClient.LastError ?? "Savings plan not found");
                 CardRecord = new CardRecord(new List<CardField>());
                 return;
@@ -766,6 +768,34 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
     }
 
     /// <summary>
+    /// Discards all pending field changes and rebuilds the card from the last loaded or saved
+    /// <see cref="SavingsPlanDto"/>. The edit model is re-derived as well because it is mutated
+    /// during input and therefore is not a reliable baseline.
+    /// </summary>
+    private async Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            if (_loadedDto is { } dto)
+            {
+                Model = new SavingsPlanCreateRequest(dto.Name, dto.Type, dto.TargetAmount, dto.TargetDate, dto.Interval, dto.CategoryId, dto.ContractNumber);
+            }
+            else
+            {
+                var initialName = !string.IsNullOrWhiteSpace(InitPrefill) ? InitPrefill : string.Empty;
+                Model = new SavingsPlanCreateRequest(initialName, SavingsPlanType.OneTime, null, null, null, null, null);
+            }
+            CardRecord = await BuildCardRecordAsync(_loadedDto);
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
+    }
+
+    /// <summary>
     /// Stores pending lookup field values and updates the in-memory model for fields that impact save enablement.
     /// </summary>
     /// <param name="field">Card field containing the lookup.</param>
@@ -834,6 +864,15 @@ public sealed class SavingsPlanCardViewModel : BaseCardViewModel<(string Key, st
                 Tooltip: null,
                 Callback: new Func<Task>(async () => { await SaveAsync(); })
             ) { MobileShortcut = true },
+            new UiRibbonAction(
+                Id: "Reset",
+                Label: localizer["Ribbon_Reset"].Value,
+                IconSvg: "<svg><use href='icons/sprite.svg#undo'/></svg>",
+                Size: UiRibbonItemSize.Small,
+                Disabled: !HasPendingChanges,
+                Tooltip: null,
+                Callback: new Func<Task>(async () => { await ResetPendingAsync(); })
+            ),
             new UiRibbonAction(
                 Id: "Delete",
                 Label: localizer["Ribbon_Delete"].Value,

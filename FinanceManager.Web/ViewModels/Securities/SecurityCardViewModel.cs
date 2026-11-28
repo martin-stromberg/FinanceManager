@@ -205,6 +205,21 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
     {
         Error = null;
         SetError(null, null);
+
+        // Snapshot the model so the persisted baseline can be restored when the save fails;
+        // ApplyPendingValuesToModel mutates Model before the API call.
+        var prevModel = new EditModel
+        {
+            Name = Model.Name,
+            Identifier = Model.Identifier,
+            Description = Model.Description,
+            AlphaVantageCode = Model.AlphaVantageCode,
+            CurrencyCode = Model.CurrencyCode,
+            CategoryId = Model.CategoryId,
+            SymbolAttachmentId = Model.SymbolAttachmentId,
+            Region = Model.Region,
+            Sector = Model.Sector
+        };
         try
         {
             // Ensure any pending UI field values are applied to the in-memory Model so request uses latest inputs
@@ -217,6 +232,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 var dto = await ApiClient.Securities_CreateAsync(req, ct);
                 if (dto == null)
                 {
+                    RestoreModel(prevModel);
                     Error = ApiClient.LastError;
                     SetError(ApiClient.LastErrorCode, ApiClient.LastError);
                     RaiseStateChanged();
@@ -227,6 +243,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName };
                 Model.SymbolAttachmentId = dto.SymbolAttachmentId;
                 CardRecord = await BuildCardRecordAsync(dto);
+                ClearPendingChanges();
                 RaiseUiActionRequested("Saved", Id.ToString());
                 return dto;
             }
@@ -235,6 +252,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 var dto = await ApiClient.Securities_UpdateAsync(Id, req, ct);
                 if (dto == null)
                 {
+                    RestoreModel(prevModel);
                     Error = ApiClient.LastError;
                     SetError(ApiClient.LastErrorCode, ApiClient.LastError);
                     RaiseStateChanged();
@@ -244,12 +262,14 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
                 Display = new DisplayModel { Id = dto.Id, IsActive = dto.IsActive, CategoryName = dto.CategoryName };
                 Model.SymbolAttachmentId = dto.SymbolAttachmentId;
                 CardRecord = await BuildCardRecordAsync(dto);
+                ClearPendingChanges();
                 RaiseUiActionRequested("Saved", Id.ToString());
                 return dto;
             }
         }
         catch (Exception ex)
         {
+            RestoreModel(prevModel);
             Error = ApiClient.LastError ?? ex.Message;
             SetError(ApiClient.LastErrorCode, ApiClient.LastError ?? ex.Message);
             return null;
@@ -258,6 +278,19 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         {
             RaiseStateChanged();
         }
+    }
+
+    private void RestoreModel(EditModel snapshot)
+    {
+        Model.Name = snapshot.Name;
+        Model.Identifier = snapshot.Identifier;
+        Model.Description = snapshot.Description;
+        Model.AlphaVantageCode = snapshot.AlphaVantageCode;
+        Model.CurrencyCode = snapshot.CurrencyCode;
+        Model.CategoryId = snapshot.CategoryId;
+        Model.SymbolAttachmentId = snapshot.SymbolAttachmentId;
+        Model.Region = snapshot.Region;
+        Model.Sector = snapshot.Sector;
     }
 
     private SecurityRequest BuildRequestFromModel()
@@ -371,6 +404,7 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
             new UiRibbonTab(localizer["Ribbon_Group_Manage"].Value, new List<UiRibbonAction>
             {
                 new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>", UiRibbonItemSize.Large, !canSave, null, async () => { await SaveAsync(); }) { MobileShortcut = true },
+                new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }),
                 new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty && Security != null && !Security.IsActive), null, async () => { await DeleteAsync(); }),
                 new UiRibbonAction("Archive", localizer["Ribbon_Archive"].Value, "<svg><use href='icons/sprite.svg#archive'/></svg>", UiRibbonItemSize.Small, !(Id != Guid.Empty && Security != null && Security.IsActive), null, async () => { await ArchiveAsync(); })
             }, Sort: 10),
@@ -389,6 +423,23 @@ public sealed class SecurityCardViewModel : BaseCardViewModel<(string Key, strin
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+    }
+
+    private async Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            if (Security != null)
+            {
+                CardRecord = await BuildCardRecordAsync(Security);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
     }
 
     /// <summary>

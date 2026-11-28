@@ -745,7 +745,9 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
         {
             new UiRibbonAction("Save", localizer["Ribbon_Save"].Value, "<svg><use href='icons/sprite.svg#save'/></svg>",
                 UiRibbonItemSize.Large, Access is null, null, async () => { await SaveAsync(); })
-            { MobileShortcut = true }
+            { MobileShortcut = true },
+            new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>",
+                UiRibbonItemSize.Small, Access is null || !HasPendingChanges, null, async () => { await ResetPendingAsync(); })
         };
 
         if (Access is not null)
@@ -783,5 +785,29 @@ public sealed class McpAccessCardViewModel : BaseCardViewModel<(string Key, stri
         };
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, tabs) };
+    }
+
+    /// <summary>
+    /// Discards pending master-data edits and rebuilds the card from the loaded
+    /// <see cref="McpAccessDetailDto"/>. Scope profile, filters and approval grants are
+    /// persisted immediately through their own endpoints and are intentionally not
+    /// touched by this reset.
+    /// </summary>
+    private Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            if (Access is not null)
+            {
+                CardRecord = BuildCardRecord(Access);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
+        return Task.CompletedTask;
     }
 }

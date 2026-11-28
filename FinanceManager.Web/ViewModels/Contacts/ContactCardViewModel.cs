@@ -287,6 +287,7 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
                     if (updated != null) { Contact = updated; CardRecord = await BuildCardRecordAsync(Contact); ClearPendingChanges(); RaiseStateChanged(); RaiseUiActionRequested("Saved", Id.ToString()); }
                 }
             }) { MobileShortcut = true },
+            new UiRibbonAction("Reset", localizer["Ribbon_Reset"].Value, "<svg><use href='icons/sprite.svg#undo'/></svg>", UiRibbonItemSize.Small, !HasPendingChanges, null, async () => { await ResetPendingAsync(); }),
             new UiRibbonAction("Delete", localizer["Ribbon_Delete"].Value, "<svg><use href='icons/sprite.svg#delete'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => { RaiseUiActionRequested("Delete"); return Task.CompletedTask; }),
             new UiRibbonAction("OpenMerge", localizer["Ribbon_Merge"].Value, "<svg><use href='icons/sprite.svg#merge'/></svg>", UiRibbonItemSize.Small, Contact==null, null, () => {
                 RequestOpenMerge(Id, Contact?.Type.ToString() ?? string.Empty);
@@ -304,6 +305,23 @@ public sealed class ContactCardViewModel : BaseCardViewModel<(string Key, string
         }, Sort: 55);
 
         return new List<UiRibbonRegister> { new UiRibbonRegister(UiRibbonRegisterKind.Actions, new List<UiRibbonTab> { nav, manage, linked }) };
+    }
+
+    private async Task ResetPendingAsync()
+    {
+        try
+        {
+            ClearPendingChanges();
+            if (Contact != null)
+            {
+                CardRecord = await BuildCardRecordAsync(Contact);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        RaiseStateChanged();
     }
 
     private ContactDto BuildDto(CardRecord? record)

@@ -19,29 +19,46 @@
 | Ansicht (ViewModel) | Gruppen und Aktionen |
 |---|---|
 | Kontenübersicht (`BankAccountListViewModel`) | `Navigieren` (nur mit `?back=`-Kontext): Zurück — groß · `Verwalten`: Neu — groß · `Filter`: Suche zurücksetzen — groß, nur aktiv bei Suchbegriff |
+| Kontodetail (`BankAccountCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein · `Buchungen`: Vorläufige Buchung erfassen — groß, Postenarten neu bewerten — klein, Kontierungsregeln — klein · `Verknüpfte Informationen`: Buchungen — klein, Bankkontakt — klein, Anhänge — klein |
 | Kontaktübersicht (`ContactListViewModel`) | `Verwalten`: Neu — groß, Gruppen — groß · `Ansicht`: Neu laden — groß, Suche zurücksetzen — klein |
-| Kontaktdetail (`ContactCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein, Zusammenführen — klein · `Verknüpfte Informationen`: Buchungen — klein, Anhänge — klein |
+| Kontaktdetail (`ContactCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein, Zusammenführen — klein · `Verknüpfte Informationen`: Buchungen — klein, Anhänge — klein |
 | Sparplanübersicht (`SavingsPlansListViewModel`) | `Verwalten`: Neu — groß, Kategorien — groß · `Ansicht`: Neu laden — groß, Suche zurücksetzen — klein, Nur aktive/Archiviert — klein |
-| Sparplandetail (`SavingsPlanCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein, Archivieren — klein · `Analyse`: Neu berechnen — groß · `Buchungen`: Istmeldung — groß · `Verknüpfte Informationen`: Kategorie, Buchungen, Anhänge — klein |
+| Sparplandetail (`SavingsPlanCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein, Archivieren — klein · `Analyse`: Neu berechnen — groß · `Buchungen`: Istmeldung — groß · `Verknüpfte Informationen`: Kategorie, Buchungen, Anhänge — klein |
 | Sparplankategorieübersicht (`SavingsPlanCategoryListViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Neu — groß |
-| Sparplankategoriedetail (`SavingsPlanCategoryCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein |
+| Sparplankategoriedetail (`SavingsPlanCategoryCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein |
 | Wertpapierübersicht (`SecuritiesListViewModel`) | `Verwalten`: Neu — groß, Kategorien — groß · `Ansicht`: Neu laden — groß, Suche zurücksetzen — klein, Nur aktive/Archiviert — klein · `Berichte`: Depot-Bericht — groß |
-| Wertpapierdetail (`SecurityCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein, Archivieren — klein · `Verknüpfte Informationen`: Buchungen, Anhänge, Kurse — klein · `Berichte`: Detaillierte Analyse — groß |
+| Wertpapierdetail (`SecurityCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein, Archivieren — klein · `Verknüpfte Informationen`: Buchungen, Anhänge, Kurse — klein · `Berichte`: Detaillierte Analyse — groß |
 | Wertpapierkategorieübersicht (`SecurityCategoriesListViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Neu — groß |
-| Wertpapierkategoriedetail (`SecurityCategoryCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein |
+| Wertpapierkategoriedetail (`SecurityCategoryCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein |
 | Budgetübersicht (`BudgetPurposeListViewModel`) | `Verwalten`: Neu — groß, Kategorien — groß · `Ansicht`: Neu laden — groß, Suche zurücksetzen — klein · `Analyse`: Vormonat, Aktueller Monat, Vorjahr, Aktuelles Jahr — klein · `Berichte`: Bericht — groß |
-| Budgetzweckdetail (`BudgetPurposeCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein · `Verknüpfte Informationen`: Kategorie — klein |
-| Budgetzweckregeldetail (`BudgetRuleCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein · `Felder`: Zweckmuster leeren — klein |
+| Budgetzweckdetail (`BudgetPurposeCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein · `Verknüpfte Informationen`: Kategorie — klein |
+| Budgetzweckregeldetail (`BudgetRuleCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein, Löschen — klein · `Felder`: Zweckmuster leeren — klein |
 | Budgetbericht (`BudgetReportViewModel`) | `Navigieren` (nur mit `?back=`-Kontext): Zurück — groß · `Verwalten`: Einstellungen — groß · `Analyse`: Vormonat, Aktueller Monat, Nächster Monat, Vorjahr, Nächstes Jahr — klein · `Export`: Excel exportieren — klein |
 | Benutzerübersicht (`UserListViewModel`) | `Verwalten`: Neu — groß |
 | Benutzerdetail (`UserCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein, Passwort zurücksetzen — klein, Deaktivieren bzw. Aktivieren — klein (statusabhängig), Entsperren — klein (nur bei gesperrtem Benutzer) |
 | KI-Zugänge-Übersicht (`McpAccessListViewModel`) | `Verwalten`: Neu — groß · `Ansicht`: Neu laden — groß · `Verknüpfte Informationen`: Genehmigungen, Protokoll, KI-Sicherheit — klein |
-| KI-Zugang-Detail (`McpAccessCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Token rotieren — klein, Deaktivieren bzw. Aktivieren — klein (statusabhängig), Zugang widerrufen — klein |
+| KI-Zugang-Detail (`McpAccessCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Zurücksetzen — klein (nur Kartenfelder, siehe eigene Regel), Token rotieren — klein, Deaktivieren bzw. Aktivieren — klein (statusabhängig), Zugang widerrufen — klein |
 | Einstellungen (`SetupCardViewModel`, `SetupProfileViewModel`, `SetupMcpViewModel`, `SetupUpdateViewModel`, `SetupBackupsViewModel`) | `Verwalten`: Speichern — groß, Zurücksetzen — klein · `Daten`: Aggregatposten neu berechnen, Cache zurücksetzen — klein · `Profil`: Zeitzone ermitteln — klein · `KI`: Genehmigungen, Protokoll, KI-Sicherheit — klein (`KI-Sicherheit` nur für Administratoren sichtbar) · `Programmversion`: Jetzt prüfen, Update installieren, Update-Lock zurücksetzen — klein · `Sicherungen`: Backup erstellen, Backup einlesen — klein |
 
 **Umsetzung:** `GetRibbonRegisters(...)`/`GetRibbonRegisterDefinition(...)` der jeweiligen ViewModels baut die `UiRibbonTab`-Liste mit den `Sort`-Werten der Skala; `Ribbon.BuildTabsToRender()` merged registerübergreifend nach Gruppentitel und sortiert stabil nach `Sort` — dadurch kann die Setup-Ansicht ihr Ribbon aus den Registern mehrerer ViewModels zusammensetzen.
 
-> **Offene Ergänzungen:** In der Zielkonfiguration vorgesehene, heute noch nicht implementierte Aktionen (u. a. „Zurücksetzen" auf den Detailansichten, „Neu laden"/„Suche zurücksetzen" auf den Übersichten Sparplankategorie, Benutzer und KI-Zugänge, „Kategorie" im Wertpapierdetail, „Regeln → Neu" im Budgetzweck) werden nicht gestubbt; sie sind als GitHub-Issues #593–#609 erfasst und ergänzen das Menü, sobald sie implementiert sind.
+> **Offene Ergänzungen:** In der Zielkonfiguration vorgesehene, heute noch nicht implementierte Aktionen (u. a. „Neu laden"/„Suche zurücksetzen" auf den Übersichten Sparplankategorie, Benutzer und KI-Zugänge, „Kategorie" im Wertpapierdetail, „Regeln → Neu" im Budgetzweck) werden nicht gestubbt; sie sind als GitHub-Issues #594–#609 erfasst und ergänzen das Menü, sobald sie implementiert sind.
+
+## „Zurücksetzen" auf Karten-Detailansichten verwirft ungespeicherte Änderungen
+
+**Beschreibung:** Mit Issue #593 erhielten die Karten-Detailansichten Kontakt, Sparplan, Sparplankategorie, Wertpapier, Wertpapierkategorie, Budgetzweck, Budgetzweckregel und KI-Zugang die Ribbon-Aktion „Zurücksetzen" in der Gruppe „Verwalten" direkt hinter „Speichern" (kleines Symbol, Undo-Icon); auf der Kontokarte existierte die Aktion bereits. Sie verwirft alle noch nicht gespeicherten Feldänderungen und stellt den zuletzt geladenen bzw. zuletzt erfolgreich gespeicherten Zustand wieder her — ohne den Datensatz erneut vom Server zu laden.
+
+**Bedingungen:**
+- Die Aktion ist nur aktiviert, solange ungespeicherte Änderungen vorliegen (`HasPendingChanges`); beim KI-Zugang zusätzlich nur bei geladenem Zugang.
+- „Zurücksetzen" trägt keinen `MobileShortcut` — als primäre Aktion bleibt „Speichern" der mobile Shortcut der Gruppe „Verwalten".
+
+**Verhalten:**
+- Nach dem Zurücksetzen zeigen alle Felder wieder den persistierten Stand; „Speichern" und „Zurücksetzen" sind anschließend deaktiviert, bis erneut eine Änderung vorgenommen wird.
+- Auf einer Neuanlage-Karte stellt die Aktion den initialen Zustand wieder her (leer bzw. mit Vorbelegung); es wird weder ein Datensatz angelegt noch gelöscht, und es findet kein Server-Aufruf statt.
+- Schlägt ein Speichern fehl, stellt „Zurücksetzen" ebenfalls den zuletzt persistierten Stand her — nicht die zuletzt eingegebenen Werte.
+- **Sonderfall KI-Zugang:** Das Rechteprofil (Scope-Matrix), die Filter und vorab erteilte Freigaben eines Zugangs werden bei jeder Änderung sofort gespeichert. „Zurücksetzen" verwirft dort deshalb nur die ungespeicherten Kartenfelder (Name, Beschreibung, Stufe, Genehmigungsmodus, Ablaufdatum, IP-Bindung) und lässt den bereits persistierten Rechtezustand unverändert. Die Vereinheitlichung dieses Persistenzverhaltens ist als Folge-Issue #617 erfasst.
+
+**Umsetzung:** `ResetPendingAsync` je Card-ViewModel — `ClearPendingChanges()` leert die ausstehenden Feldwerte, danach wird das `CardRecord` aus dem im ViewModel gehaltenen DTO (zuletzt geladener/gespeicherter Stand) neu aufgebaut und `RaiseStateChanged()` aktualisiert Ribbon und Karte; Referenzimplementierung `BankAccountCardViewModel`.
 
 ## Konditionaler Zurück-Button auf Übersichts- und Berichtsansichten
 

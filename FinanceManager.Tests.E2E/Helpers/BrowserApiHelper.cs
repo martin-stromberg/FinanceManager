@@ -122,6 +122,23 @@ public static class BrowserApiHelper
     }
 
     /// <summary>
+    /// PUTs JSON via the browser and throws if the response was not a 2xx status; use this for
+    /// endpoints that return <c>204 NoContent</c> on success.
+    /// </summary>
+    /// <typeparam name="TRequest">Type of the request payload.</typeparam>
+    /// <param name="page">Browser page to issue the request from.</param>
+    /// <param name="path">Relative API path to PUT to.</param>
+    /// <param name="payload">Request payload, serialized as JSON.</param>
+    public static async Task PutNoContentAsync<TRequest>(IPage page, string path, TRequest payload)
+    {
+        var result = await SendJsonAsync<TRequest>(page, "PUT", path, payload);
+        if (result.Status < 200 || result.Status >= 300)
+        {
+            throw new InvalidOperationException(result.Raw ?? $"Request to {path} failed with status {result.Status}.");
+        }
+    }
+
+    /// <summary>
     /// POSTs JSON via the browser and returns the status code alongside the (possibly failed) response,
     /// without throwing - use this when a test needs to assert on an expected error status.
     /// </summary>

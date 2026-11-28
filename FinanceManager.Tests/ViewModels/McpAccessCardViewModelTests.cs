@@ -246,4 +246,120 @@ public sealed class McpAccessCardViewModelTests
                 && r.TitleResourceKey == "Confirmation_McpPreApproved_Title"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    private sealed class DummyLocalizer : IStringLocalizer
+    {
+        public LocalizedString this[string name] => new(name, name);
+        public LocalizedString this[string name, params object[] arguments] => new(name, name);
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => Array.Empty<LocalizedString>();
+        public IStringLocalizer WithCulture(System.Globalization.CultureInfo culture) => this;
+    }
+
+    private static UiRibbonAction FindAction(McpAccessCardViewModel vm, string actionId)
+        => vm.GetRibbonRegisters(new DummyLocalizer())!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
+            .SelectMany(t => t.Items)
+            .Single(a => a.Id == actionId);
+
+    /// <summary>
+    /// The "Zurücksetzen" action must sit in the manage group directly behind Save as a small
+    /// item with the undo icon and no mobile shortcut; it is disabled while there are no
+    /// pending changes (or no access is loaded).
+    /// </summary>
+    [Fact]
+    public async Task Ribbon_ContainsReset_AfterSave_InManageGroup()
+    {
+        var id = Guid.NewGuid();
+        var detail = Detail(id, McpAccessLevel.Analyse, McpApprovalMode.PerAction);
+        var (vm, api, _) = CreateVm(id, detail);
+        await vm.LoadAsync(id);
+
+        var manage = vm.GetRibbonRegisters(new DummyLocalizer())!
+            .SelectMany(r => r.Tabs ?? Enumerable.Empty<UiRibbonTab>())
+            .Single(t => t.Title == "Ribbon_Group_Manage");
+        var saveIndex = manage.Items.ToList().FindIndex(i => i.Id == "Save");
+        Assert.True(saveIndex >= 0);
+        Assert.Equal(saveIndex + 1, manage.Items.ToList().FindIndex(i => i.Id == "Reset"));
+
+        var reset = manage.Items[saveIndex + 1];
+        Assert.Equal(UiRibbonItemSize.Small, reset.Size);
+        Assert.Contains("#undo", reset.IconSvg);
+        Assert.Equal("Ribbon_Reset", reset.Label);
+        Assert.False(reset.MobileShortcut);
+        Assert.True(reset.Disabled);
+    }
+
+    /// <summary>
+    /// Reset discards pending master-data edits and rebuilds the card record from the loaded
+    /// access detail without another fetch.
+    /// </summary>
+    [Fact]
+    public async Task Reset_DiscardsPendingChanges()
+    {
+        var id = Guid.NewGuid();
+        var detail = Detail(id, McpAccessLevel.Analyse, McpApprovalMode.PerAction);
+        var (vm, api, _) = CreateVm(id, detail);
+        await vm.LoadAsync(id);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Mcp_Card_Name");
+        vm.ValidateFieldValue(nameField, "renamed-access");
+        Assert.True(vm.HasPendingChanges);
+
+        var reset = FindAction(vm, "Reset");
+        Assert.False(reset.Disabled);
+        await reset.Callback!();
+
+        Assert.False(vm.HasPendingChanges);
+        Assert.Equal("test-access", vm.CardRecord!.Fields.First(f => f.LabelKey == "Mcp_Card_Name").Text);
+        api.Verify(x => x.Mcp_GetAccessAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Reset must only discard the card fields - the scope profile, per-scope filters and
+    /// approval grants persist immediately through their own endpoints and must not be
+    /// touched (no additional Set-calls, no re-fetch).
+    /// </summary>
+    [Fact]
+    public async Task Reset_DoesNotTouchScopesFiltersOrGrants()
+    {
+        var id = Guid.NewGuid();
+        var detail = Detail(id, McpAccessLevel.Analyse, McpApprovalMode.PerAction,
+            new[] { Scope(McpDataType.Postings, McpRightKind.Read) });
+        var (vm, api, _) = CreateVm(id, detail);
+        await vm.LoadAsync(id);
+
+        var nameField = vm.CardRecord!.Fields.First(f => f.LabelKey == "Mcp_Card_Name");
+        vm.ValidateFieldValue(nameField, "renamed-access");
+
+        await FindAction(vm, "Reset").Callback!();
+
+        Assert.False(vm.HasPendingChanges);
+        api.Verify(x => x.Mcp_SetScopesAsync(It.IsAny<Guid>(), It.IsAny<McpScopeSetRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        api.Verify(x => x.Mcp_SetFiltersAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<McpFilterSetRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        api.Verify(x => x.Mcp_SetApprovalGrantsAsync(It.IsAny<Guid>(), It.IsAny<McpApprovalGrantSetRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        api.Verify(x => x.Mcp_UpdateAccessAsync(It.IsAny<Guid>(), It.IsAny<McpAccessUpdateRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    /// Without a loaded access the Reset action is disabled; invoking its callback directly
+    /// must not throw and must leave the state unchanged.
+    /// </summary>
+    [Fact]
+    public void Reset_WithoutAccess_DisabledAndNoThrow()
+    {
+        var id = Guid.NewGuid();
+        var detail = Detail(id, McpAccessLevel.Analyse, McpApprovalMode.PerAction);
+        var (vm, _, _) = CreateVm(id, detail);
+
+        var reset = FindAction(vm, "Reset");
+        Assert.True(reset.Disabled);
+
+        var task = reset.Callback!();
+        Assert.Equal(Task.CompletedTask, task);
+        Assert.False(vm.HasPendingChanges);
+    }
 }
