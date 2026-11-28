@@ -1,0 +1,21 @@
+# Plan-Check – Schritt 1: Back-Navigation
+
+**Status:** Plan vollständig
+
+## Befunde
+
+1. **Abweichung Ist-Code ↔ Planentscheidung bei `OpenCategory` (behoben):** Der Plan (plan.md) entscheidet explizit: „`?back=` nur anhängen, wenn `Id != Guid.Empty`, sonst Payload unverändert". Die erste Code-Fassung in `CardPage.razor` hängte `?back=` unbedingt an — bei einer neuen, ungespeicherten Sparplankarte mit gesetztem `Model.CategoryId` (die Ribbon-Aktion `SavingsPlanCardViewModel.cs` ist nur bei `CategoryId == null` deaktiviert, nicht bei `Id == Guid.Empty`) entstünde das Rücksprungziel `card/savings-plans/00000000-0000-0000-0000-000000000000`. **In der Implementierung nachgezogen:** `OpenCategory` navigiert bei `Id == Guid.Empty` den Payload unverändert (CardPage.razor, `case "OpenCategory"`, Guard `Id == Guid.Empty`).
+
+2. **Prämisse der Test-Fallback-Option nicht erfüllt (informativ):** plan.md sah als Alternative eine `internal static`-Hilfsmethode vor. `FinanceManager.Web.csproj` enthält kein `InternalsVisibleTo` — nur `FinanceManager.Infrastructure.csproj` gewährt den Tests Internals-Zugriff. Wurde nicht benötigt: die Tests laufen über den primären bUnit-Weg (`FinanceManager.Tests/Components/CardPageBackNavigationTests.cs`).
+
+## Hinweise
+
+- **Position und Whitelist korrekt:** Der neue Check steht an der geplanten Position — nach Direkt-URL und `?back=`, vor GUID-Sonderfall, leerem Payload und Komma-/Legacy-Auswertung (`CardPage.razor` `case "Back"`). Alle gemeldeten Payloads sind abgedeckt: `card/setup` (McpAccessCardViewModel, McpSecurityOverviewViewModel, McpAuditViewModel, McpApprovalCenterViewModel), `card/budget/purposes/{id}` und `card/budget/categories/{id}` (BudgetRuleCardViewModel, BudgetPurposeCardViewModel). `InitBack` mit verschachteltem `?back=` erfüllt die `!payload.Contains(':')`-Bedingung, da `BuildCardPath` den `back`-Wert via `Uri.EscapeDataString` escapet.
+- **Keine Regressionsfälle gefunden** — vollständige Senderliste verifiziert: `account/{guid}`/`contact/{guid}`/`savings-plan/{guid}`/`security/{guid}` (PostingsCardViewModel; `PostingKind` hat nur 4 Member, alle ohne Whitelist-Präfix), `card,{DraftId}` (`card,` ≠ `card/`, StatementDraftEntryCardViewModel), GUID-Payloads, leere/null Payloads, `/`-/`http`-Payloads (Branch 1 greift vor der Whitelist), `list/budget/purposes` (BudgetCategoryListViewModel → ListPage ignoriert Payloads). Kein Payload beginnt mit einem der drei Präfixe und musste bisher anders behandelt werden.
+- **`OpenCategory`:** Einziger Sender ist `SavingsPlanCardViewModel` — kein weiterer Aufrufer betroffen.
+- **Nebenwirkung (dokumentiert, fachlich plausibel):** Mit dem neuen `?back=` auf der Kategoriekarte greifen auch die `Saved`-/`Deleted`-Fälle: Speichern bzw. Löschen der Kategorie navigiert künftig zurück zur Sparplankarte statt auf der Karte zu verbleiben. Konsistent mit der `?back=`-Semantik (`OpenBankContact`-Muster), fachlich für #600 plausibel.
+- **Dokumentierter Trade-off:** Bei gesetztem `?back=` auf der Purpose-Karte gewinnt `?back=` vor dem `card/budget/categories/{id}`-Payload der „Category"-Aktion (BudgetPurposeCardViewModel nutzt den Back-Kanal für eine Linked-Aktion) — bewusst entschieden.
+- **Testbarkeit bestätigt:** bUnit registriert `FakeNavigationManager`; Button-Klick-Pattern existiert (`CardPageTests`); VMs für `budget/rules`, `postings`, `mcp-audit`, `savings-plans` sind via `CardViewModelResolver`/`CardRoute` auflösbar; API-Mocks machbar — umgesetzt in `CardPageBackNavigationTests` (6 Tests, alle grün).
+- **Kleine Plan-Inkonsistenzen (informativ):** plan.md deklarierte „Offene Punkte: Keine", obwohl der Test-Mechanismus explizit in den Implementierungsschritt delegiert war; Plan-Snippet zu `OpenCategory` zeigte `?back=`-Anhang ohne `Guid.Empty`-Guard — die Notiz darunter war maßgeblich und wurde umgesetzt.
+- **Nicht betroffen:** CS1591 (Änderung in privatem `@code`-Block), resx (keine neuen UI-Texte), `EnumCoverageTests`, `RazorRootAbsolutePathTests` (relatives `NavigateTo` ist PathBase-konform), EF/Backup-Regeln.
+- **Optionale Härtung (nicht erforderlich):** `OrdinalIgnoreCase`-Präfixvergleich und zusätzliches `IsSameOriginUri` auf das Whitelist-Ziel — sicherheitlich nicht nötig, da `card/`-Präfix + `:`-Ausschluss Open-Redirects ausschließt.
