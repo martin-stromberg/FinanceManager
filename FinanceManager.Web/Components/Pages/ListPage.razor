@@ -4,6 +4,7 @@
 @inject NavigationManager Nav
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Pages> Localizer
 @inject IJSRuntime JS
+@inject LoadingBarService LoadingBar
 @using FinanceManager.Web.Components.Shared
 @using FinanceManager.Web.Extensions
 @using FinanceManager.Web.ViewModels
@@ -244,7 +245,7 @@ else
                 if (_provider != null)
                 {
                     _provider.ResetAndSearch();
-                    await _provider.LoadAsync();
+                    await LoadingBar.RunAsync(() => _provider.LoadAsync());
                 }
                 break;
             case "ClearFilter":
@@ -254,7 +255,7 @@ else
                     _provider.ClearSearch();
                     _provider.ClearRange();
                     _provider.ResetAndSearch();
-                    await _provider.LoadAsync();
+                    await LoadingBar.RunAsync(() => _provider.LoadAsync());
                 }
                 break;
             case "ExportCsv":

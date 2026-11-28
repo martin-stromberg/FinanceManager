@@ -29,7 +29,7 @@
 | Wertpapierdetail (`SecurityCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein, Archivieren — klein · `Verknüpfte Informationen`: Buchungen, Anhänge, Kurse — klein · `Berichte`: Detaillierte Analyse — groß |
 | Wertpapierkategorieübersicht (`SecurityCategoriesListViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Neu — groß |
 | Wertpapierkategoriedetail (`SecurityCategoryCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein |
-| Budgetübersicht (`BudgetPurposeListViewModel`) | `Verwalten`: Neu — groß, Kategorien — groß · `Ansicht`: Neu laden — groß, Suche zurücksetzen — klein · `Analyse`: Vormonat, Aktueller Monat, Vorjahr, Aktuelles Jahr — klein · `Berichte`: Bericht — groß |
+| Budgetübersicht (`BudgetPurposeListViewModel`) | `Verwalten`: Neu — groß, Kategorien — groß · `Ansicht`: Neu laden — groß, Suche zurücksetzen — klein · `Analyse`: Vormonat, Aktueller Monat, Nächster Monat, Vorjahr, Nächstes Jahr, Aktuelles Jahr — klein · `Berichte`: Bericht — groß |
 | Budgetzweckdetail (`BudgetPurposeCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein · `Verknüpfte Informationen`: Kategorie — klein |
 | Budgetzweckregeldetail (`BudgetRuleCardViewModel`) | `Navigieren`: Zurück — groß · `Verwalten`: Speichern — groß, Löschen — klein · `Felder`: Zweckmuster leeren — klein |
 | Budgetbericht (`BudgetReportViewModel`) | `Navigieren` (nur mit `?back=`-Kontext): Zurück — groß · `Verwalten`: Einstellungen — groß · `Analyse`: Vormonat, Aktueller Monat, Nächster Monat, Vorjahr, Nächstes Jahr — klein · `Export`: Excel exportieren — klein |

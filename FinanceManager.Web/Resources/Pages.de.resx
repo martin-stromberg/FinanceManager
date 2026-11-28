@@ -3495,4 +3495,22 @@
   <data name="LoginStatus_VersionUnknown" xml:space="preserve"><value>Version unbekannt</value></data>
   <data name="Nav_Menu_Expand" xml:space="preserve"><value>Menü ausklappen</value></data>
   <data name="Nav_Menu_Collapse" xml:space="preserve"><value>Menü einklappen</value></data>
+  <data name="Ribbon_Tip_PrevMonth" xml:space="preserve">
+    <value>Zeitraum um einen Monat zurückverschieben</value>
+  </data>
+  <data name="Ribbon_Tip_ThisMonth" xml:space="preserve">
+    <value>Auf den laufenden Kalendermonat setzen</value>
+  </data>
+  <data name="Ribbon_Tip_NextMonth" xml:space="preserve">
+    <value>Zeitraum um einen Monat vorverschieben</value>
+  </data>
+  <data name="Ribbon_Tip_PrevYear" xml:space="preserve">
+    <value>Zeitraum um ein Jahr zurückverschieben</value>
+  </data>
+  <data name="Ribbon_Tip_ThisYear" xml:space="preserve">
+    <value>Auf das laufende Kalenderjahr setzen</value>
+  </data>
+  <data name="Ribbon_Tip_NextYear" xml:space="preserve">
+    <value>Zeitraum um ein Jahr vorverschieben</value>
+  </data>
 </root>
