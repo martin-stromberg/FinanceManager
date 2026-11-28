@@ -33,7 +33,11 @@
             <g class="portfolio-bar-line-chart-labels">
                 @foreach (var p in _points)
                 {
-                    @((MarkupString)$"<text x='{Inv(p.X)}' y='{Inv(AxisLabelY)}' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
+                    // clamp the label midpoint into the viewBox so edge labels can never be
+                    // clipped; estimated width 10.5 units per character (18px font)
+                    var est = p.Label.Length * 10.5;
+                    var lx = Math.Clamp(p.X, est / 2, 1000 - est / 2);
+                    @((MarkupString)$"<text x='{Inv(lx)}' y='{Inv(AxisLabelY)}' text-anchor='middle'>{System.Net.WebUtility.HtmlEncode(p.Label)}</text>")
                 }
             </g>
         </svg>
@@ -51,7 +55,7 @@
     private const double ChartTop = 20;
     private const double ChartBottom = 300;
     private const double BarAreaTop = 160;
-    private const double AxisLabelY = ChartBottom + 20;
+    private const double AxisLabelY = ChartBottom + 18;
 
     /// <summary>A single labeled data point rendered as a bar and a line value.</summary>
     /// <param name="Label">Short label shown on the x-axis (e.g. a year).</param>
@@ -133,13 +137,17 @@
             var barY = ChartBottom - (double)((point.BarValue - barMin) / (barMax - barMin)) * barAreaHeight;
             var tooltip = FormatTooltip(point);
 
+            // keep edge bars inside the plot area — a wide bar at the first/last data point
+            // would otherwise overflow the viewBox edge just like the labels did
+            var barX = Math.Clamp(x - _barWidth / 2, ChartLeft, ChartRight - _barWidth);
+
             _points.Add(new RenderPoint(
                 x,
                 point.Label,
                 tooltip,
                 lineY,
                 point.BarValue,
-                x - _barWidth / 2,
+                barX,
                 Math.Min(barY, baselineY),
                 Math.Abs(barY - baselineY)));
         }

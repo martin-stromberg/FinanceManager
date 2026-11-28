@@ -68,10 +68,9 @@
 - **#599:** Suchfelder `Name` + `ContractNumber` + Kategoriename (Issue-Vorschlag); Fälligkeiten
   beider Zeitrichtungen; Pläne ohne `TargetDate` bei gesetztem Datumsfilter ausblenden.
 - **#601:** Suchfelder `Name`, `Identifier`, `AlphaVantageCode`, `CategoryName` (Issue-Vorschlag).
-- **#610:** Schwester-Charts mit identischem Muster (`PortfolioBarLineChart`,
-  `PortfolioGroupedBarChart`) werden im selben Schritt mitkorrigiert; Rand-Reserven im
-  viewBox/Koordinatensystem so wählen, dass erste/letzte Labels bei beiden Themes sicher
-  sichtbar sind.
+- **#610:** Schwester-Charts mit identischem Muster werden im selben Schritt mitkorrigiert —
+  konkret `PortfolioBarLineChart`; `PortfolioGroupedBarChart` ist slot-zentriert (Label-Mitte
+  erreicht den viewBox-Rand nie) und bleibt bewusst unverändert (Entscheidung in Schritt-5-Plan).
 
 ## Entwicklungsschritte
 
@@ -170,8 +169,9 @@ Behebt #610.
   `text-anchor='middle'`-Labels vollständig im viewBox liegen (z. B. erweiterte
   viewBox-Min/Max- oder Plot-Konstanten); vertikale Knappheit (Label-Basislinie y=320 bei
   Höhe 325) im selben Zug prüfen/beheben.
-- Gleiche Korrektur für `PortfolioBarLineChart.razor` und `PortfolioGroupedBarChart.razor`
-  (identisches Konstantenmuster).
+- Gleiche Korrektur für `PortfolioBarLineChart.razor` (identisches Konstantenmuster).
+  `PortfolioGroupedBarChart.razor` bleibt ausgenommen — slot-zentrierte Labels erreichen den
+  viewBox-Rand geometrisch nie (Label-Mitte = Slot-Mitte).
 - **Akzeptanzkriterien:** Issue-Akzeptanzkriterien (alle Labels sichtbar, Desktop+Mobile,
   Light+Dark, 1/2/>12 Perioden); bUnit-Tests der Rand-Label-Positionen für die betroffenen
   Charts (`BudgetLineChart` erstmalig testabgedeckt). Der E2E-Screenshot-Nachweis erfolgt
@@ -187,7 +187,7 @@ Behebt #610.
 | 2 | Suche/Datumsfilter in Sparplan-, Wertpapier-, Benutzerliste (#599/#601/#604) | Keine | 3 ListViewModels, Domain-Sichtbarkeit |
 | 3 | Analyse-Buttons vereinheitlichen (#603) | Keine | BudgetPurpose- und BudgetReportViewModel |
 | 4 | „Neu"-Aktionen bei ungültigem Kontext absichern (#605/#609) | Keine | McpAccessList/Wizard, BudgetRuleList, resx |
-| 5 | X-Achsenbeschriftung der SVG-Charts (#610) | Keine | 3 Chart-Komponenten, bUnit |
+| 5 | X-Achsenbeschriftung der SVG-Charts (#610) | Keine | 2 Chart-Komponenten, bUnit |
 
 ## Abschluss / Delivery (kein Entwicklungsschritt)
 
