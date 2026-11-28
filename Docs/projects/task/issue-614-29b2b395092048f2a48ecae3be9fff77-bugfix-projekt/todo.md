@@ -15,6 +15,6 @@ Issue: #614 (Bugfix-Projekt, Meta-Issue für #599–#610)
 | [x] | 5b | Planprüfung (Unteragent) | `project-plan-check.md` (+`project-plan-check.1.md`) |
 | [x] | 5c | Planungscommit | – |
 | [x] | 6 | Schritte-Tracking anlegen | `steps.md`, `status.html` |
-| [~] | 7 | Entwicklungsschleife (Lifecycle je Schritt + Abnahme + Merge) — Schritt 4/5 fertig | `acceptance-schritt-{n}.md` |
+| [x] | 7 | Entwicklungsschleife (Lifecycle je Schritt + Abnahme + Merge) — 5/5 fertig | `acceptance-schritt-{n}.md` |
 | [ ] | 8 | Aufräumen (Projektverzeichnis entfernen) | – |
 | [ ] | 9 | Abschlusscommit | – |
