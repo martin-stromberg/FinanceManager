@@ -3513,4 +3513,7 @@
   <data name="Ribbon_Tip_NextYear" xml:space="preserve">
     <value>Shift the range one year forward</value>
   </data>
+  <data name="Budget_Rule_New_SaveFirst" xml:space="preserve">
+    <value>Save the budget purpose or category first</value>
+  </data>
 </root>

@@ -154,6 +154,10 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
     /// </summary>
     public void RequestCreateWizard()
     {
+        if (IsMcpDisabled)
+        {
+            return;
+        }
         var parms = new Dictionary<string, object?>
         {
             ["OverlayTitle"] = Localizer?["McpWizard_Title"].Value
@@ -175,8 +179,8 @@ public sealed class McpAccessListViewModel : BaseListViewModel<McpAccessListItem
                 localizer["Ribbon_New"].Value,
                 "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
-                false,
-                null,
+                IsMcpDisabled,
+                IsMcpDisabled ? localizer["Mcp_Disabled_Hint"].Value : null,
                 new Func<Task>(() =>
                 {
                     RequestCreateWizard();

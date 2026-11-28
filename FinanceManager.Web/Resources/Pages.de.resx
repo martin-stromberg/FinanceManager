@@ -3513,4 +3513,7 @@
   <data name="Ribbon_Tip_NextYear" xml:space="preserve">
     <value>Zeitraum um ein Jahr vorverschieben</value>
   </data>
+  <data name="Budget_Rule_New_SaveFirst" xml:space="preserve">
+    <value>Budgetzweck bzw. Budgetkategorie zuerst speichern</value>
+  </data>
 </root>

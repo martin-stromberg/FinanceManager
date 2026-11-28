@@ -136,6 +136,9 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
     /// <inheritdoc />
     protected override IReadOnlyList<UiRibbonRegister>? GetRibbonRegisterDefinition(IStringLocalizer localizer)
     {
+        var noContext = (BudgetPurposeId ?? Guid.Empty) == Guid.Empty
+            && (BudgetCategoryId ?? Guid.Empty) == Guid.Empty;
+
         var tab = new UiRibbonTab(localizer["Ribbon_Group_Rules"], new List<UiRibbonAction>
         {
             new UiRibbonAction(
@@ -143,13 +146,19 @@ public sealed class BudgetRuleListViewModel : BaseListViewModel<BudgetRuleListIt
                 localizer["Ribbon_New"].Value,
                 "<svg><use href='icons/sprite.svg#plus'/></svg>",
                 UiRibbonItemSize.Large,
-                false,
-                null,
+                noContext,
+                noContext ? localizer["Budget_Rule_New_SaveFirst"].Value : null,
                 () =>
                 {
-                    var payload = (BudgetPurposeId.HasValue && BudgetPurposeId.Value != Guid.Empty)
-                        ? $"purpose,{BudgetPurposeId.Value}"
-                        : $"category,{BudgetCategoryId!.Value}";
+                    var payload = BudgetPurposeId is { } pid && pid != Guid.Empty
+                        ? $"purpose,{pid}"
+                        : BudgetCategoryId is { } cid && cid != Guid.Empty
+                            ? $"category,{cid}"
+                            : null;
+                    if (payload is null)
+                    {
+                        return Task.CompletedTask;
+                    }
 
                     RaiseUiActionRequested("NewRule", payload);
                     return Task.CompletedTask;

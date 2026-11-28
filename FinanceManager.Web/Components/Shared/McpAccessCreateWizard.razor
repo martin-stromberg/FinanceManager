@@ -6,6 +6,17 @@
 @inject IApiClient Api
 
 <div class="mcp-wizard" style="display:flex;flex-direction:column;gap:.9rem;max-width:44rem;">
+@if (_disabled)
+{
+    <div style="padding:.6rem .75rem;border:1px solid var(--border,#444);border-radius:6px;color:var(--muted);">
+        @L["Mcp_Disabled_Hint"]
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button type="button" class="btn" @onclick="Cancel">@L["Btn_Cancel"]</button>
+    </div>
+}
+else
+{
     <div class="mcp-wizard-steps" style="display:flex;gap:.75rem;font-size:.9rem;color:var(--muted);">
         <span style="@(StepStyle(0))">1. @L["McpWizard_Step_MasterData"]</span>
         <span style="@(StepStyle(1))">2. @L["McpWizard_Step_Level"]</span>
@@ -122,6 +133,7 @@
             }
         </div>
     }
+}
 </div>
 
 @code {
@@ -136,6 +148,7 @@
 
     private int _step;
     private bool _busy;
+    private bool _disabled;
     private bool _showTlsWarning;
     private string? _error;
     private string _name = string.Empty;
@@ -150,6 +163,20 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var status = await Api.Mcp_GetStatusAsync();
+            _disabled = !status.Enabled;
+        }
+        catch
+        {
+            _disabled = false;
+        }
+        if (_disabled)
+        {
+            return;
+        }
+
         try
         {
             _levels = await Api.Mcp_GetLevelsAsync();
