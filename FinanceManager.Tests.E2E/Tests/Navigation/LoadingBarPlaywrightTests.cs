@@ -153,7 +153,7 @@ public sealed class LoadingBarPlaywrightTests
         await AssertLoadingBarApiAvailableAsync(page);
 
         await InstallLoadingBarVisibilityObserverAsync(page);
-        await page.Locator("nav.sidebar a[href='/list/accounts']").ClickAsync();
+        await page.Locator("nav.sidebar a[href='list/accounts']").ClickAsync();
         await page.WaitForURLAsync("**/list/accounts");
 
         await page.WaitForFunctionAsync("() => window.__fmLoadingBarObservedVisible === true");

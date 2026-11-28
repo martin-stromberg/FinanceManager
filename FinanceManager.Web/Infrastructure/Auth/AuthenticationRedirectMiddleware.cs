@@ -27,8 +27,11 @@ namespace FinanceManager.Web.Infrastructure.Auth
         /// <summary>
         /// Invokes the middleware. Passes the request through and, when the downstream pipeline throws an
         /// <see cref="ApiAuthenticationRequiredException"/>, issues a <c>302</c> redirect to
-        /// <c>{PathBase}/login?returnUrl={current route}</c> so the user returns to the originally
-        /// requested page after signing in.
+        /// <c>{PathBase}/login?returnUrl={PathBase}{current route}</c> so the user returns to the
+        /// originally requested page after signing in. The return URL carries the
+        /// <see cref="HttpRequest.PathBase"/> prefix (like <c>CookieAuthenticationHandler.BuildRedirectUri</c>
+        /// and <c>AuthReturnUrl.FromNavigationUri</c>) because the post-login navigation resolves it
+        /// against the domain root, not the app base.
         /// </summary>
         /// <param name="context">The current <see cref="HttpContext"/>.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
@@ -50,7 +53,8 @@ namespace FinanceManager.Web.Infrastructure.Auth
                     throw;
                 }
 
-                var returnUrl = AuthReturnUrl.Validate(context.Request.Path.Value + context.Request.QueryString.Value);
+                var returnUrl = AuthReturnUrl.Validate(
+                    context.Request.PathBase.Value + context.Request.Path.Value + context.Request.QueryString.Value);
                 var loginUrl = context.Request.PathBase + "/" + AuthReturnUrl.BuildLoginUrl(returnUrl);
                 context.Response.Redirect(loginUrl);
             }

@@ -463,6 +463,18 @@ curl https://finance.example.com/finance/health
 Erwartete Antwort: `{"status":"ok"}` über TLS. Danach im Browser
 `https://finance.example.com/finance/` aufrufen und die Anwendung bedienen.
 
+Prüfpunkte für den Unterpfad-Betrieb:
+
+- Die Adresszeile bleibt bei jeder internen Navigation unter `/finance/` —
+  Klicks in der seitlichen Icon-Leiste (z. B. „Konten") führen zu
+  `…/finance/list/accounts`, nicht zu `…/list/accounts`.
+- Nach dem Anmelden ist die Oberfläche interaktiv (Ribbon-Aktionen,
+  Suche, Detailansichten reagieren sofort) — die Live-Verbindung läuft
+  ebenfalls unter dem Präfix.
+- Ein direkter Aufruf einer geschützten Seite ohne Anmeldung leitet auf
+  `…/finance/login?returnUrl=…` weiter — nicht auf `/login` der
+  Domain-Wurzel.
+
 Kontrolle der Header-Übernahme: Client-IP und `https`-Schema müssen korrekt
 bei der Anwendung ankommen — sonst greifen Rate-Limits auf die
 Proxy-Adresse oder das Schema wird als `http` erkannt. Das typische

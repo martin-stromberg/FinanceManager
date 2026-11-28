@@ -6,6 +6,7 @@
 
 ## What's New
 
+- Bugfix: operation under a sub-path via PathBase/reverse proxy (e.g. `https://server/finance/`) works fully again — navigation and links are generated relative to the prefix, the login return URL is correct and the interactive Blazor circuit is established under the prefix (middleware order fix); an existing `PathBase` configuration (e.g. `PathBase=/finance` with Caddy `handle /finance*`) keeps working unchanged (issue #612).
 - UI: mandatory ribbon standard configuration per view — fixed group order and large/small icon sizes on ~19 list, detail, report and settings views; new groups "View" and "Data"; renamed groups "Updates" → "Program version" (also the settings section title) and "Data backups" → "Backups"; the "Rebuild aggregate postings" tooltip is now translated (issue #590).
 - UI: conditional back buttons — the accounts overview and the budget report show "Back" only when opened with a navigation context; back targets are restricted to the application's own origin (issue #590).
 - UI: overview pages have a content panel again — lists and cards keep identical position and spacing, so there is no more layout jump between overview and detail views (issue #590).
@@ -24,6 +25,7 @@
 
 ## Neuerungen
 
+- Bugfix: der Betrieb unter einem Unterordner via PathBase/Reverse-Proxy (z. B. `https://server/finance/`) funktioniert wieder vollständig — Navigation und Links werden relativ zum Präfix erzeugt, die Login-Rückkehr-URL ist korrekt und der interaktive Blazor-Circuit wird unter dem Präfix aufgebaut (Korrektur der Middleware-Reihenfolge); eine bestehende `PathBase`-Konfiguration (z. B. `PathBase=/finance` mit Caddy `handle /finance*`) bleibt unverändert nutzbar (Issue #612).
 - UI: verbindliche Ribbon-Standardkonfiguration je Ansicht — feste Gruppenreihenfolge und große/kleine Symbolgrößen auf ~19 Listen-, Detail-, Berichts- und Einstellungsansichten; neue Gruppen „Ansicht" und „Daten"; umbenannte Gruppen „Aktualisierungen" → „Programmversion" (zugleich Titel des Einstellungsabschnitts) und „Datensicherungen" → „Sicherungen"; der Tooltip „Aggregatposten neu berechnen" ist jetzt übersetzt (Issue #590).
 - UI: konditionale Zurück-Schaltflächen — Kontenübersicht und Budgetbericht zeigen „Zurück" nur, wenn sie mit Navigationskontext geöffnet wurden; Zurück-Ziele sind auf die eigene Herkunft der Anwendung beschränkt (Issue #590).
 - UI: Übersichtsseiten besitzen wieder ein Inhaltspanel — Listen und Karten stehen an identischer Position mit identischen Abständen, es gibt keinen Layout-Sprung mehr zwischen Übersicht und Detailansicht (Issue #590).

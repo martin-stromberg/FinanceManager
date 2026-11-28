@@ -161,7 +161,7 @@ public sealed class LoginStatusTests : BunitContext
 
         // Assert
         var loginStatus = cut.Find(".login-status");
-        Assert.NotNull(loginStatus.QuerySelector("a[href='/login']"));
+        Assert.NotNull(loginStatus.QuerySelector("a[href='login']"));
         Assert.DoesNotContain("1.2.3", loginStatus.TextContent);
     }
 }

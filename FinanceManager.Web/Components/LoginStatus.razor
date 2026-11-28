@@ -10,7 +10,7 @@
 @if (CurrentUser.IsAuthenticated)
 {
     <div class="login-status">@DisplayVersion<br />
-        <a id="change-password-link" href="/change-password" title="@L["Nav_ChangePassword"]">
+        <a id="change-password-link" href="change-password" title="@L["Nav_ChangePassword"]">
             <svg class="status-icon" aria-hidden="true"><use href="icons/sprite.svg#key" /></svg>
             <span class="nav-label">@L["Nav_ChangePassword"]</span>
         </a>
@@ -18,7 +18,7 @@
 }
 else
 {
-    <div class="login-status"><a href="/login">@L["Nav_Login"]</a></div>
+    <div class="login-status"><a href="login">@L["Nav_Login"]</a></div>
 }
 
 @code {

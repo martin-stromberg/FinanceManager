@@ -635,6 +635,13 @@ namespace FinanceManager.Web
             if (!string.IsNullOrWhiteSpace(pathBase))
             {
                 app.UsePathBase(pathBase);
+                // WebApplication inserts UseRouting at the start of the pipeline - before
+                // UsePathBase has stripped the prefix - so endpoint matching otherwise sees the
+                // raw path and the SignalR /_blazor endpoints never match under the prefix
+                // (405 on POST /{pathBase}/_blazor/negotiate, killing the interactive circuit).
+                // The explicit call fixes the routing position so matching observes the stripped
+                // path (see https://github.com/dotnet/aspnetcore/issues/48370).
+                app.UseRouting();
             }
 
             // Forwarded headers are only honored from explicitly trusted proxies and only for the
